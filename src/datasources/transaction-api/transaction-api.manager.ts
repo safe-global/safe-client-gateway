@@ -14,6 +14,7 @@ import { TransactionApi } from '@/datasources/transaction-api/transaction-api.se
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class TransactionApiManager implements ITransactionApiManager {
@@ -29,6 +30,7 @@ export class TransactionApiManager implements ITransactionApiManager {
     @Inject(CacheService) private readonly cacheService: ICacheService,
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(NetworkService) private readonly networkService: INetworkService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
@@ -48,6 +50,7 @@ export class TransactionApiManager implements ITransactionApiManager {
       this.configurationService,
       this.httpErrorFactory,
       this.networkService,
+      this.loggingService,
     );
     return this.transactionApiMap[chainId];
   }

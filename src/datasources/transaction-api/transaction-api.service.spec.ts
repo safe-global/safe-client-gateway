@@ -24,6 +24,7 @@ import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__t
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { DeviceType } from '@/domain/notifications/entities/device.entity';
 import { getAddress } from 'viem';
+import { ILoggingService } from '@/logging/logging.interface';
 
 const dataSource = {
   get: jest.fn(),
@@ -33,6 +34,7 @@ const mockDataSource = jest.mocked(dataSource);
 const cacheService = {
   deleteByKey: jest.fn(),
   set: jest.fn(),
+  get: jest.fn(),
 } as jest.MockedObjectDeep<ICacheService>;
 const mockCacheService = jest.mocked(cacheService);
 
@@ -48,11 +50,16 @@ const networkService = jest.mocked({
 } as jest.MockedObjectDeep<INetworkService>);
 const mockNetworkService = jest.mocked(networkService);
 
+const mockLoggingService = {
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+
 describe('TransactionApi', () => {
   const chainId = '1';
   const baseUrl = faker.internet.url({ appendSlash: false });
   let httpErrorFactory: HttpErrorFactory;
   let service: TransactionApi;
+  let indefiniteExpirationTime = -1;
   let defaultExpirationTimeInSeconds: number;
   let notFoundExpireTimeSeconds: number;
   let ownersTtlSeconds: number;
@@ -91,6 +98,7 @@ describe('TransactionApi', () => {
       mockConfigurationService,
       httpErrorFactory,
       mockNetworkService,
+      mockLoggingService,
     );
   });
 
@@ -321,6 +329,115 @@ describe('TransactionApi', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_safe_${safeAddress}`,
+      );
+    });
+  });
+
+  describe('isSafe', () => {
+    it('should return whether Safe exists', async () => {
+      const safe = safeBuilder().build();
+      const cacheDir = new CacheDir(
+        `${chainId}_safe_exists_${safe.address}`,
+        '',
+      );
+      cacheService.get.mockResolvedValueOnce(undefined);
+      networkService.get.mockResolvedValueOnce({ status: 200, data: safe });
+
+      const actual = await service.isSafe(safe.address);
+
+      expect(actual).toBe(true);
+      expect(cacheService.get).toHaveBeenCalledTimes(1);
+      expect(cacheService.get).toHaveBeenCalledWith(cacheDir);
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${baseUrl}/api/v1/safes/${safe.address}`,
+      });
+    });
+
+    it('should return the cached value', async () => {
+      const safe = safeBuilder().build();
+      const cacheDir = new CacheDir(
+        `${chainId}_safe_exists_${safe.address}`,
+        '',
+      );
+      const isSafe = faker.datatype.boolean();
+      cacheService.get.mockResolvedValueOnce(JSON.stringify(isSafe));
+      networkService.get.mockResolvedValueOnce({ status: 200, data: safe });
+
+      const actual = await service.isSafe(safe.address);
+
+      expect(actual).toBe(isSafe);
+      expect(cacheService.get).toHaveBeenCalledTimes(1);
+      expect(cacheService.get).toHaveBeenCalledWith(cacheDir);
+      expect(networkService.get).not.toHaveBeenCalled();
+    });
+
+    it('should return false if Safe does not exist', async () => {
+      const safe = safeBuilder().build();
+      const cacheDir = new CacheDir(
+        `${chainId}_safe_exists_${safe.address}`,
+        '',
+      );
+      cacheService.get.mockResolvedValueOnce(undefined);
+      networkService.get.mockResolvedValueOnce({ status: 404, data: null });
+
+      const actual = await service.isSafe(safe.address);
+
+      expect(actual).toBe(false);
+      expect(cacheService.get).toHaveBeenCalledTimes(1);
+      expect(cacheService.get).toHaveBeenCalledWith(cacheDir);
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${baseUrl}/api/v1/safes/${safe.address}`,
+      });
+    });
+
+    const errorMessage = faker.word.words();
+    it.each([
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
+      ['standard', new Error(errorMessage)],
+    ])(`should forward a %s error`, async (_, error) => {
+      const safe = safeBuilder().build();
+      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      const cacheDir = new CacheDir(
+        `${chainId}_safe_exists_${safe.address}`,
+        '',
+      );
+      cacheService.get.mockResolvedValueOnce(undefined);
+      networkService.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getSafeUrl),
+          {
+            status: statusCode,
+          } as Response,
+          error,
+        ),
+      );
+
+      await expect(service.isSafe(safe.address)).rejects.toThrow(expected);
+
+      expect(cacheService.get).toHaveBeenCalledTimes(1);
+      expect(cacheService.get).toHaveBeenCalledWith(cacheDir);
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${baseUrl}/api/v1/safes/${safe.address}`,
+      });
+    });
+  });
+
+  describe('clearIsSafe', () => {
+    it('should clear the Safe existence cache', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      await service.clearIsSafe(safeAddress);
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_safe_exists_${safeAddress}`,
       );
     });
   });

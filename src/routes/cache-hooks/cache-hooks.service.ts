@@ -321,8 +321,8 @@ export class CacheHooksService implements OnModuleInit {
         promises.push(this.safeAppsRepository.clearSafeApps(event.chainId));
         this._logEvent(event);
         break;
-      // A new Safe created does not trigger any action
       case EventType.SAFE_CREATED:
+        promises.push(this.safeRepository.clearIsSafe(event));
         break;
     }
     return Promise.all(promises);

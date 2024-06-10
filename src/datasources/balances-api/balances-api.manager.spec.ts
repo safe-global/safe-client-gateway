@@ -12,7 +12,6 @@ import { getAddress } from 'viem';
 import { sample } from 'lodash';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 
 const configurationService = {
   getOrThrow: jest.fn(),
@@ -43,7 +42,7 @@ const transactionApiManagerMock = {
 } as jest.MockedObjectDeep<ITransactionApiManager>;
 
 const transactionApiMock = {
-  getSafe: jest.fn(),
+  isSafe: jest.fn(),
 } as jest.MockedObjectDeep<ITransactionApi>;
 
 const zerionBalancesApi = {
@@ -115,9 +114,7 @@ describe('Balances API Manager Tests', () => {
       transactionApiManagerMock.getTransactionApi.mockResolvedValue(
         transactionApiMock,
       );
-      transactionApiMock.getSafe.mockImplementation(() => {
-        throw new Error();
-      });
+      transactionApiMock.isSafe.mockResolvedValue(false);
 
       const result = await manager.getBalancesApi(
         faker.string.numeric({ exclude: ZERION_BALANCES_CHAIN_IDS }),
@@ -175,7 +172,7 @@ describe('Balances API Manager Tests', () => {
       transactionApiManagerMock.getTransactionApi.mockResolvedValue(
         transactionApiMock,
       );
-      transactionApiMock.getSafe.mockResolvedValue(safeBuilder().build());
+      transactionApiMock.isSafe.mockResolvedValue(true);
 
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeBalancesApi = await balancesApiManager.getBalancesApi(
