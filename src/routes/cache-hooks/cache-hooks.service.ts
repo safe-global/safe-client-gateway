@@ -12,6 +12,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IQueuesRepository } from '@/domain/queues/queues-repository.interface';
 import { ConsumeMessage } from 'amqplib';
 import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
+import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository.interface';
 
 @Injectable()
 export class CacheHooksService implements OnModuleInit {
@@ -21,6 +22,8 @@ export class CacheHooksService implements OnModuleInit {
   constructor(
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
+    @Inject(IBlockchainRepository)
+    private readonly blockchainRepository: IBlockchainRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     @Inject(ICollectiblesRepository)
@@ -314,9 +317,12 @@ export class CacheHooksService implements OnModuleInit {
         this._logMessageEvent(event);
         break;
       case EventType.CHAIN_UPDATE:
-        // TODO: We need to destroy the blockchain client as the RPC may have changed
-        // Should it be located here or a different service?
-        promises.push(this.chainsRepository.clearChain(event.chainId));
+        promises.push(
+          this.chainsRepository.clearChain(event.chainId).then(() => {
+            // Clear after updated as RPC may have change
+            this.blockchainRepository.clearClient(event.chainId);
+          }),
+        );
         this._logEvent(event);
         break;
       case EventType.SAFE_APPS_UPDATE:
