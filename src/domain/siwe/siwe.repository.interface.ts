@@ -1,4 +1,5 @@
 import { SiweApiModule } from '@/datasources/siwe-api/siwe-api.module';
+import { BlockchainApiManagerModule } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { SiweRepository } from '@/domain/siwe/siwe.repository';
 import { Module } from '@nestjs/common';
 
@@ -14,7 +15,7 @@ export interface ISiweRepository {
 }
 
 @Module({
-  imports: [SiweApiModule],
+  imports: [SiweApiModule, BlockchainApiManagerModule],
   providers: [
     {
       provide: ISiweRepository,

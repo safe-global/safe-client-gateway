@@ -31,10 +31,17 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { FakeBlockchainApiManager } from '@/datasources/blockchain/__tests__/fake.blockchain-api.manager';
+import {
+  BlockchainApiManagerModule,
+  IBlockchainApiManager,
+} from '@/domain/interfaces/blockchain-api.manager.interface';
+import { TestBlockchainApiManagerModule } from '@/datasources/blockchain/__tests__/test.blockchain-api.manager';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
+  let blockchainApiManager: FakeBlockchainApiManager;
   let maxValidityPeriodInMs: number;
 
   beforeEach(async () => {
@@ -55,6 +62,8 @@ describe('AuthController', () => {
     })
       .overrideModule(JWT_CONFIGURATION_MODULE)
       .useModule(JwtConfigurationModule.register(jwtConfiguration))
+      .overrideModule(BlockchainApiManagerModule)
+      .useModule(TestBlockchainApiManagerModule)
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
@@ -70,6 +79,7 @@ describe('AuthController', () => {
       .compile();
 
     cacheService = moduleFixture.get(CacheService);
+    blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
     );
@@ -127,6 +137,55 @@ describe('AuthController', () => {
       );
       const signature = await signer.signMessage({
         message,
+      });
+      const maxAge = getSecondsUntil(expirationTime);
+      // jsonwebtoken sets expiration based on timespans, not exact dates
+      // meaning we cannot use expirationTime directly
+      const expires = new Date(Date.now() + maxAge * 1_000);
+
+      await expect(cacheService.get(cacheDir)).resolves.toBe(
+        nonceResponse.body.nonce,
+      );
+      await request(app.getHttpServer())
+        .post('/v1/auth/verify')
+        .send({
+          message,
+          signature,
+        })
+        .expect(200)
+        .expect(({ headers }) => {
+          const setCookie = headers['set-cookie'];
+          const setCookieRegExp = new RegExp(
+            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expires.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
+          );
+
+          expect(setCookie).toHaveLength;
+          expect(setCookie[0]).toMatch(setCookieRegExp);
+        });
+      // Nonce deleted
+      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+    });
+
+    it('should verify a smart contract signer', async () => {
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
+      });
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = faker.string.hexadecimal({ length: 132 });
+      blockchainApiManager.eth_call.mockResolvedValue({
+        // Signature is valid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
+        data: '0x1',
       });
       const maxAge = getSecondsUntil(expirationTime);
       // jsonwebtoken sets expiration based on timespans, not exact dates
@@ -284,7 +343,7 @@ describe('AuthController', () => {
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
 
-    it('should not verify a signer if the signature is invalid', async () => {
+    it('should not verify a (smart contract) signer if the signature is invalid', async () => {
       const nonceResponse = await request(app.getHttpServer()).get(
         '/v1/auth/nonce',
       );
@@ -300,7 +359,11 @@ describe('AuthController', () => {
           .build(),
       );
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
-      const signature = faker.string.hexadecimal();
+      const signature = faker.string.hexadecimal({ length: 132 });
+      blockchainApiManager.eth_call.mockResolvedValue({
+        // Signature is invalid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
+        data: '0x0',
+      });
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(nonce);
       await request(app.getHttpServer())
