@@ -38,8 +38,17 @@ describe('Balances Controller (Unit)', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): typeof defaultConfiguration => ({
+      ...defaultConfiguration,
+      features: {
+        ...defaultConfiguration.features,
+        counterfactualBalances: true,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
