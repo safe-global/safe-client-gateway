@@ -18,6 +18,7 @@ import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.mana
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
   private safeBalancesApiMap: Record<string, SafeBalancesApi> = {};
+  private readonly isCounterFactualBalancesEnabled: boolean;
   private readonly zerionChainIds: string[];
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
@@ -34,6 +35,10 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
   ) {
+    this.isCounterFactualBalancesEnabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.counterFactualBalances',
+      );
     this.zerionChainIds = this.configurationService.getOrThrow<string[]>(
       'features.zerionBalancesChainIds',
     );
@@ -51,16 +56,20 @@ export class BalancesApiManager implements IBalancesApiManager {
       return this.zerionBalancesApi;
     }
 
-    // SafeBalancesApi will be returned only if TransactionApi returns the Safe data.
-    // Otherwise ZerionBalancesApi will be returned as the Safe is considered counterfactual/not deployed.
-    try {
-      const transactionApi =
-        await this.transactionApiManager.getTransactionApi(chainId);
-      await transactionApi.getSafe(safeAddress);
-      return this._getSafeBalancesApi(chainId);
-    } catch {
-      return this.zerionBalancesApi;
+    if (this.isCounterFactualBalancesEnabled) {
+      // SafeBalancesApi will be returned only if TransactionApi returns the Safe data.
+      // Otherwise ZerionBalancesApi will be returned as the Safe is considered counterfactual/not deployed.
+      try {
+        const transactionApi =
+          await this.transactionApiManager.getTransactionApi(chainId);
+        await transactionApi.getSafe(safeAddress);
+        return this._getSafeBalancesApi(chainId);
+      } catch {
+        return this.zerionBalancesApi;
+      }
     }
+
+    return this._getSafeBalancesApi(chainId);
   }
 
   async getFiatCodes(): Promise<string[]> {

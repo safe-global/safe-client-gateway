@@ -44,8 +44,17 @@ describe('Collectibles Controller (Unit)', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): typeof defaultConfiguration => ({
+      ...defaultConfiguration,
+      features: {
+        ...defaultConfiguration.features,
+        counterFactualBalances: false,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(AccountDataSourceModule)
       .useModule(TestAccountDataSourceModule)
@@ -154,7 +163,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: {
           limit: 10,
           offset: 20,
@@ -200,7 +209,7 @@ describe('Collectibles Controller (Unit)', () => {
         )
         .expect(200);
 
-      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: {
           limit: PaginationData.DEFAULT_LIMIT,
           offset: PaginationData.DEFAULT_OFFSET,

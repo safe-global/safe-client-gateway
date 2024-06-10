@@ -52,6 +52,10 @@ describe('Safes Controller Overview (Unit)', () => {
           maxOverviews: 3,
         },
       },
+      features: {
+        ...configuration().features,
+        counterFactualBalances: true,
+      },
     });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({

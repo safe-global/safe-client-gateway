@@ -117,6 +117,7 @@ export default (): ReturnType<typeof configuration> => ({
     confirmationView: false,
     eventsQueue: false,
     delegatesV2: false,
+    counterFactualBalances: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {

@@ -62,6 +62,10 @@ describe('Balances Controller (Unit)', () => {
           },
         },
       },
+      features: {
+        ...defaultConfiguration.features,
+        counterFactualBalances: true,
+      },
     });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
