@@ -121,10 +121,7 @@ export class CacheRouter {
     chainId: string;
     safeAddress: `0x${string}`;
   }): CacheDir {
-    return new CacheDir(
-      `${args.chainId}_${CacheRouter.SAFE_EXISTS_KEY}_${args.safeAddress}`,
-      '',
-    );
+    return new CacheDir(CacheRouter.getIsSafeCacheKey(args), '');
   }
 
   static getIsSafeCacheKey(args: {

@@ -401,7 +401,7 @@ describe('TransactionApi', () => {
       expect(cacheService.set).toHaveBeenCalledWith(
         cacheDir,
         'false',
-        indefiniteExpirationTime,
+        defaultExpirationTimeInSeconds,
       );
     });
 
@@ -439,6 +439,7 @@ describe('TransactionApi', () => {
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${baseUrl}/api/v1/safes/${safe.address}`,
       });
+      expect(cacheService.set).not.toHaveBeenCalled();
     });
   });
 

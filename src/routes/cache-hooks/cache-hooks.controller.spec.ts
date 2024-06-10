@@ -181,7 +181,6 @@ describe('Post Hook Events (Unit)', () => {
     },
     {
       type: 'SAFE_CREATED',
-      chainId: faker.string.numeric(),
       address: faker.finance.ethereumAddress(),
       blockNumber: faker.number.int(),
     },

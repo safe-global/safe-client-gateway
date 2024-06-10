@@ -197,9 +197,10 @@ export class TransactionApi implements ITransactionApi {
     await this.cacheService.set(
       cacheDir,
       JSON.stringify(isSafe),
-      // We can indefinitely cache this as an address cannot "un-Safe" itself
-      // and invalidation (clearIsSafe) is called on SAFE_CREATED event
-      TransactionApi.INDEFINITE_EXPIRATION_TIME,
+      isSafe
+        ? // We can indefinitely cache this as an address cannot "un-Safe" itself
+          TransactionApi.INDEFINITE_EXPIRATION_TIME
+        : this.defaultExpirationTimeInSeconds,
     );
 
     return isSafe;
