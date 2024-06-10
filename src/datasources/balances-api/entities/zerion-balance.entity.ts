@@ -28,7 +28,7 @@ const ZerionImplementationSchema = z.object({
 const ZerionFungibleInfoSchema = z.object({
   name: z.string().nullable(),
   symbol: z.string().nullable(),
-  description: z.string().nullable(),
+  description: z.string().nullish().default(null),
   icon: z
     .object({
       url: z.string().nullable(),
@@ -67,3 +67,5 @@ export const ZerionBalanceSchema = z.object({
 export const ZerionBalancesSchema = z.object({
   data: z.array(ZerionBalanceSchema),
 });
+
+// TODO: add schema tests.
