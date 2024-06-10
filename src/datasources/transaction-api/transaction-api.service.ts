@@ -502,6 +502,7 @@ export class TransactionApi implements ITransactionApi {
   async getModuleTransactions(args: {
     safeAddress: `0x${string}`;
     to?: string;
+    txHash?: string;
     module?: string;
     limit?: number;
     offset?: number;
@@ -519,6 +520,7 @@ export class TransactionApi implements ITransactionApi {
         networkRequest: {
           params: {
             to: args.to,
+            transaction_hash: args.txHash,
             module: args.module,
             limit: args.limit,
             offset: args.offset,

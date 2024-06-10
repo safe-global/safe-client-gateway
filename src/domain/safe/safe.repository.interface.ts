@@ -67,6 +67,7 @@ export interface ISafeRepository {
     chainId: string;
     safeAddress: `0x${string}`;
     to?: string;
+    txHash?: string;
     module?: string;
     limit?: number;
     offset?: number;
