@@ -860,6 +860,8 @@ describe('Post Hook Events (Unit)', () => {
     await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
   });
 
+  it.todo('destroys the blockchain client');
+
   it.each([
     {
       type: 'SAFE_APPS_UPDATE',

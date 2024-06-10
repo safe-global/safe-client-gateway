@@ -66,6 +66,11 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  blockchain: {
+    infura: {
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+    },
+  },
   db: {
     postgres: {
       host: process.env.POSTGRES_TEST_HOST || 'localhost',

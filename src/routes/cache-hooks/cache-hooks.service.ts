@@ -314,6 +314,8 @@ export class CacheHooksService implements OnModuleInit {
         this._logMessageEvent(event);
         break;
       case EventType.CHAIN_UPDATE:
+        // TODO: We need to destroy the blockchain client as the RPC may have changed
+        // Should it be located here or a different service?
         promises.push(this.chainsRepository.clearChain(event.chainId));
         this._logEvent(event);
         break;

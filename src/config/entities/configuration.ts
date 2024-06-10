@@ -105,6 +105,11 @@ export default () => ({
       },
     },
   },
+  blockchain: {
+    infura: {
+      apiKey: process.env.INFURA_API_KEY,
+    },
+  },
   db: {
     postgres: {
       host: process.env.POSTGRES_HOST || 'localhost',
