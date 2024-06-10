@@ -6,7 +6,8 @@ import { localhost } from 'viem/chains';
 
 @Injectable()
 export class FakeBlockchainApiManager implements IBlockchainApiManager {
-  async getBlockchainApi(_: string): Promise<IBlockchainApi> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getBlockchainApi(chainId: string): Promise<IBlockchainApi> {
     const client = createPublicClient({
       chain: localhost,
       transport: http(),
@@ -14,13 +15,14 @@ export class FakeBlockchainApiManager implements IBlockchainApiManager {
       call: this.eth_call,
     }));
 
-    return {
+    return Promise.resolve({
       getClient: () => client,
       destroyClient: this.destroyBlockchainApi.bind(this),
-    };
+    });
   }
 
-  destroyBlockchainApi(_: string): void {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  destroyBlockchainApi(chainId: string): void {}
 
   // Used for mocking `eth_call` in tests
   eth_call = jest.fn();
