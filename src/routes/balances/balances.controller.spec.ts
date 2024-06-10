@@ -43,7 +43,7 @@ describe('Balances Controller (Unit)', () => {
       ...defaultConfiguration,
       features: {
         ...defaultConfiguration.features,
-        counterFactualBalances: true,
+        counterfactualBalances: true,
       },
     });
 

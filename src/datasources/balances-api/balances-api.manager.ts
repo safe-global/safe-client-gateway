@@ -37,7 +37,7 @@ export class BalancesApiManager implements IBalancesApiManager {
   ) {
     this.isCounterFactualBalancesEnabled =
       this.configurationService.getOrThrow<boolean>(
-        'features.counterFactualBalances',
+        'features.counterfactualBalances',
       );
     this.zerionChainIds = this.configurationService.getOrThrow<string[]>(
       'features.zerionBalancesChainIds',

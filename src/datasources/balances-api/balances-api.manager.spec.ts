@@ -73,7 +73,7 @@ beforeEach(() => {
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
     if (key === 'features.zerionBalancesChainIds')
       return ZERION_BALANCES_CHAIN_IDS;
-    if (key === 'features.counterFactualBalances') return true;
+    if (key === 'features.counterfactualBalances') return true;
   });
 });
 
@@ -157,7 +157,7 @@ describe('Balances API Manager Tests', () => {
           return notFoundExpireTimeSeconds;
         else if (key === 'features.zerionBalancesChainIds')
           return ZERION_BALANCES_CHAIN_IDS;
-        else if (key === 'features.counterFactualBalances') return true;
+        else if (key === 'features.counterfactualBalances') return true;
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(chain);

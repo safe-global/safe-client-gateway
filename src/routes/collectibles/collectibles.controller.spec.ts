@@ -49,7 +49,7 @@ describe('Collectibles Controller (Unit)', () => {
       ...defaultConfiguration,
       features: {
         ...defaultConfiguration.features,
-        counterFactualBalances: false,
+        counterfactualBalances: false,
       },
     });
 

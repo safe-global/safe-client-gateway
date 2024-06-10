@@ -54,7 +54,7 @@ describe('Safes Controller Overview (Unit)', () => {
       },
       features: {
         ...configuration().features,
-        counterFactualBalances: true,
+        counterfactualBalances: true,
       },
     });
 
