@@ -26,6 +26,7 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { safeCreatedEventBuilder } from '@/routes/cache-hooks/entities/__tests__/safe-created.build';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication<Server>;
@@ -180,6 +181,8 @@ describe('Post Hook Events (Unit)', () => {
     },
     {
       type: 'SAFE_CREATED',
+      address: faker.finance.ethereumAddress(),
+      blockNumber: faker.number.int(),
     },
   ])('accepts $type', async (payload) => {
     const chainId = faker.string.numeric();
@@ -961,4 +964,40 @@ describe('Post Hook Events (Unit)', () => {
       await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
     },
   );
+
+  it.each([
+    {
+      type: 'SAFE_CREATED',
+    },
+  ])('$type clears Safe existence', async () => {
+    const data = safeCreatedEventBuilder().build();
+    const cacheDir = new CacheDir(
+      `${data.chainId}_safe_exists_${data.address}`,
+      '',
+    );
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${data.chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', data.chainId).build(),
+            status: 200,
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    await fakeCacheService.set(
+      cacheDir,
+      faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(202);
+
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
 });

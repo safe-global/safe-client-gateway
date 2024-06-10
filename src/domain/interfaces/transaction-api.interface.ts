@@ -33,6 +33,10 @@ export interface ITransactionApi {
 
   clearSafe(address: `0x${string}`): Promise<void>;
 
+  isSafe(address: `0x${string}`): Promise<boolean>;
+
+  clearIsSafe(address: `0x${string}`): Promise<void>;
+
   getContract(contractAddress: `0x${string}`): Promise<Contract>;
 
   getDelegates(args: {

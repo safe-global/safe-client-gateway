@@ -30,6 +30,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
+import { z } from 'zod';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -49,6 +50,25 @@ export class SafeRepository implements ISafeRepository {
       await this.transactionApiManager.getTransactionApi(args.chainId);
     const safe = await transactionService.getSafe(args.address);
     return SafeSchema.parse(safe);
+  }
+
+  async isSafe(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<boolean> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const isSafe = await transactionService.isSafe(args.address);
+    return z.boolean().parse(isSafe);
+  }
+
+  async clearIsSafe(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<void> {
+    const transactionService =
+      await this.transactionApiManager.getTransactionApi(args.chainId);
+    return transactionService.clearIsSafe(args.address);
   }
 
   async clearSafe(args: {
