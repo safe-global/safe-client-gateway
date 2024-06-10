@@ -2,7 +2,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { Chain as DomainChain } from '@/domain/chains/entities/chain.entity';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
 import { IBlockchainApi } from '@/domain/interfaces/blockchain-api.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Chain, PublicClient, createPublicClient, http } from 'viem';
 
 @Injectable()
@@ -40,7 +40,7 @@ export class BlockchainApi implements IBlockchainApi {
     };
   }
 
-  private formatRpcUri(rpcUri: DomainChain['rpcUri']) {
+  private formatRpcUri(rpcUri: DomainChain['rpcUri']): string {
     return rpcUri.authentication === RpcUriAuthentication.ApiKeyPath
       ? rpcUri.value + this.infuraApiKey
       : rpcUri.value;
