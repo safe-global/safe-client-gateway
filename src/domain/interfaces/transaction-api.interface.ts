@@ -125,6 +125,7 @@ export interface ITransactionApi {
   getModuleTransactions(args: {
     safeAddress: `0x${string}`;
     to?: string;
+    txHash?: string;
     module?: string;
     limit?: number;
     offset?: number;

@@ -215,13 +215,14 @@ export class CacheRouter {
     chainId: string;
     safeAddress: `0x${string}`;
     to?: string;
+    txHash?: string;
     module?: string;
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getModuleTransactionsCacheKey(args),
-      `${args.to}_${args.module}_${args.limit}_${args.offset}`,
+      `${args.to}_${args.module}_${args.txHash}_${args.limit}_${args.offset}`,
     );
   }
 

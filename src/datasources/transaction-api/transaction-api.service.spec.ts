@@ -1177,7 +1177,7 @@ describe('TransactionApi', () => {
       const getModuleTransactionsUrl = `${baseUrl}/api/v1/safes/${moduleTransaction.safe}/module-transactions/`;
       const cacheDir = new CacheDir(
         `${chainId}_module_transactions_${moduleTransaction.safe}`,
-        `${moduleTransaction.to}_${moduleTransaction.module}_${limit}_${offset}`,
+        `${moduleTransaction.to}_${moduleTransaction.module}_${moduleTransaction.transactionHash}_${limit}_${offset}`,
       );
       mockDataSource.get.mockResolvedValueOnce(moduleTransactionsPage);
 
@@ -1185,6 +1185,7 @@ describe('TransactionApi', () => {
         safeAddress: moduleTransaction.safe,
         to: moduleTransaction.to,
         module: moduleTransaction.module,
+        txHash: moduleTransaction.transactionHash,
         limit,
         offset,
       });
@@ -1200,6 +1201,7 @@ describe('TransactionApi', () => {
           params: {
             to: moduleTransaction.to,
             module: moduleTransaction.module,
+            transaction_hash: moduleTransaction.transactionHash,
             limit,
             offset,
           },
@@ -1222,7 +1224,7 @@ describe('TransactionApi', () => {
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_module_transactions_${moduleTransaction.safe}`,
-        `${moduleTransaction.to}_${moduleTransaction.module}_${limit}_${offset}`,
+        `${moduleTransaction.to}_${moduleTransaction.module}_${moduleTransaction.transactionHash}_${limit}_${offset}`,
       );
       mockDataSource.get.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -1239,6 +1241,7 @@ describe('TransactionApi', () => {
           safeAddress: moduleTransaction.safe,
           to: moduleTransaction.to,
           module: moduleTransaction.module,
+          txHash: moduleTransaction.transactionHash,
           limit,
           offset,
         }),
@@ -1254,6 +1257,7 @@ describe('TransactionApi', () => {
           params: {
             to: moduleTransaction.to,
             module: moduleTransaction.module,
+            transaction_hash: moduleTransaction.transactionHash,
             limit,
             offset,
           },
