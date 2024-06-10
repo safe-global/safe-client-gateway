@@ -11,7 +11,6 @@ import { TEST_SAFE } from '@/routes/common/__tests__/constants';
 describe('Get safes by owner e2e test', () => {
   let app: INestApplication<Server>;
   let redisClient: RedisClientType;
-  const chainId = '1'; // Mainnet
   const cacheKeyPrefix = crypto.randomUUID();
 
   beforeAll(async () => {
@@ -33,10 +32,10 @@ describe('Get safes by owner e2e test', () => {
   });
 
   it('GET /owners/<owner_address>/safes', async () => {
-    const ownerCacheKey = `${cacheKeyPrefix}-${chainId}_owner_safes_${TEST_SAFE.owners[0]}`;
+    const ownerCacheKey = `${cacheKeyPrefix}-${TEST_SAFE.chainId}_owner_safes_${TEST_SAFE.owners[0]}`;
 
     await request(app.getHttpServer())
-      .get(`/chains/${chainId}/owners/${TEST_SAFE.owners[0]}/safes`)
+      .get(`/chains/${TEST_SAFE.chainId}/owners/${TEST_SAFE.owners[0]}/safes`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual(
