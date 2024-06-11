@@ -30,7 +30,7 @@ describe('BlockchainApiManager', () => {
       const api = await target.getBlockchainApi(chain.chainId);
       const cachedApi = await target.getBlockchainApi(chain.chainId);
 
-      expect(api === cachedApi);
+      expect(api).toBe(cachedApi);
     });
   });
 
@@ -40,10 +40,10 @@ describe('BlockchainApiManager', () => {
       configApiMock.getChain.mockResolvedValue(chain);
 
       const api = await target.getBlockchainApi(chain.chainId);
-      api.destroyClient(chain.chainId);
+      target.destroyBlockchainApi(chain.chainId);
       const cachedApi = await target.getBlockchainApi(chain.chainId);
 
-      expect(api !== cachedApi);
+      expect(api).not.toBe(cachedApi);
     });
   });
 });
