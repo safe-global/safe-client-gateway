@@ -20,7 +20,6 @@ export class BlockchainApi implements IBlockchainApi {
   }
 
   getClient(): PublicClient {
-    // TODO: Error handling
     return createPublicClient({
       chain: this.getChain(),
       transport: http(),
