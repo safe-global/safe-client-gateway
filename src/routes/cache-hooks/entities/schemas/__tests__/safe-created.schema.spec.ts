@@ -2,6 +2,7 @@ import { safeCreatedEventBuilder } from '@/routes/cache-hooks/entities/__tests__
 import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { SafeCreatedEventSchema } from '@/routes/cache-hooks/entities/schemas/safe-created.schema';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('SafeCreatedEventSchema', () => {
@@ -11,6 +12,19 @@ describe('SafeCreatedEventSchema', () => {
     const result = SafeCreatedEventSchema.safeParse(safeCreatedEvent);
 
     expect(result.success).toBe(true);
+  });
+
+  it('should checksum the address', () => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
+    const safeCreatedEvent = safeCreatedEventBuilder()
+      .with('address', nonChecksummedAddress as `0x${string}`)
+      .build();
+
+    const result = SafeCreatedEventSchema.safeParse(safeCreatedEvent);
+
+    expect(result.success && result.data.address).toBe(
+      getAddress(nonChecksummedAddress),
+    );
   });
 
   it('should not allow a non-SAFE_CREATED event', () => {

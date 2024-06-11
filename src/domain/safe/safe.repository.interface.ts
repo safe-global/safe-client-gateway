@@ -20,6 +20,10 @@ export interface ISafeRepository {
 
   clearSafe(args: { chainId: string; address: `0x${string}` }): Promise<void>;
 
+  isSafe(args: { chainId: string; address: `0x${string}` }): Promise<boolean>;
+
+  clearIsSafe(args: { chainId: string; address: `0x${string}` }): Promise<void>;
+
   isOwner(args: {
     chainId: string;
     safeAddress: `0x${string}`;
@@ -67,6 +71,7 @@ export interface ISafeRepository {
     chainId: string;
     safeAddress: `0x${string}`;
     to?: string;
+    txHash?: string;
     module?: string;
     limit?: number;
     offset?: number;

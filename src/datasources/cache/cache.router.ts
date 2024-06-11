@@ -22,6 +22,7 @@ export class CacheRouter {
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_BALANCES_KEY = 'safe_balances';
   private static readonly SAFE_COLLECTIBLES_KEY = 'safe_collectibles';
+  private static readonly SAFE_EXISTS_KEY = 'safe_exists';
   private static readonly SAFE_FIAT_CODES_KEY = 'safe_fiat_codes';
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
@@ -114,6 +115,20 @@ export class CacheRouter {
     safeAddress: `0x${string}`;
   }): string {
     return `${args.chainId}_${CacheRouter.SAFE_KEY}_${args.safeAddress}`;
+  }
+
+  static getIsSafeCacheDir(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getIsSafeCacheKey(args), '');
+  }
+
+  static getIsSafeCacheKey(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): string {
+    return `${args.chainId}_${CacheRouter.SAFE_EXISTS_KEY}_${args.safeAddress}`;
   }
 
   static getContractCacheDir(args: {
@@ -215,13 +230,14 @@ export class CacheRouter {
     chainId: string;
     safeAddress: `0x${string}`;
     to?: string;
+    txHash?: string;
     module?: string;
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getModuleTransactionsCacheKey(args),
-      `${args.to}_${args.module}_${args.limit}_${args.offset}`,
+      `${args.to}_${args.module}_${args.txHash}_${args.limit}_${args.offset}`,
     );
   }
 

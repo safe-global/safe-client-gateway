@@ -26,10 +26,12 @@ import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { ILoggingService } from '@/logging/logging.interface';
 import { get } from 'lodash';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
+  private static readonly INDEFINITE_EXPIRATION_TIME = -1;
 
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
@@ -45,6 +47,7 @@ export class TransactionApi implements ITransactionApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
     private readonly networkService: INetworkService,
+    private readonly loggingService: ILoggingService,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -141,6 +144,70 @@ export class TransactionApi implements ITransactionApi {
 
   async clearSafe(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getSafeCacheKey({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  // TODO: this replicates logic from the CacheFirstDataSource.get method to avoid
+  // implementation of response remapping but we should refactor it to avoid duplication
+  async isSafe(safeAddress: `0x${string}`): Promise<boolean> {
+    const cacheDir = CacheRouter.getIsSafeCacheDir({
+      chainId: this.chainId,
+      safeAddress,
+    });
+
+    const cached = await this.cacheService.get(cacheDir).catch(() => null);
+
+    if (cached != null) {
+      this.loggingService.debug({
+        type: 'cache_hit',
+        ...cacheDir,
+      });
+
+      return cached === 'true';
+    } else {
+      this.loggingService.debug({
+        type: 'cache_miss',
+        ...cacheDir,
+      });
+    }
+
+    const isSafe = await (async (): Promise<boolean> => {
+      try {
+        const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
+        const { data } = await this.networkService.get({
+          url,
+        });
+
+        return !!data;
+      } catch (error) {
+        if (
+          error instanceof NetworkResponseError &&
+          // Transaction Service returns 404 when address is not of a Safe
+          error.response.status === 404
+        ) {
+          return false;
+        }
+        throw this.httpErrorFactory.from(this.mapError(error));
+      }
+    })();
+
+    await this.cacheService.set(
+      cacheDir,
+      JSON.stringify(isSafe),
+      isSafe
+        ? // We can indefinitely cache this as an address cannot "un-Safe" itself
+          TransactionApi.INDEFINITE_EXPIRATION_TIME
+        : this.defaultExpirationTimeInSeconds,
+    );
+
+    return isSafe;
+  }
+
+  async clearIsSafe(safeAddress: `0x${string}`): Promise<void> {
+    const key = CacheRouter.getIsSafeCacheKey({
       chainId: this.chainId,
       safeAddress,
     });
@@ -502,6 +569,7 @@ export class TransactionApi implements ITransactionApi {
   async getModuleTransactions(args: {
     safeAddress: `0x${string}`;
     to?: string;
+    txHash?: string;
     module?: string;
     limit?: number;
     offset?: number;
@@ -519,6 +587,7 @@ export class TransactionApi implements ITransactionApi {
         networkRequest: {
           params: {
             to: args.to,
+            transaction_hash: args.txHash,
             module: args.module,
             limit: args.limit,
             offset: args.offset,

@@ -577,7 +577,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     ];
 
     networkService.get.mockImplementation(({ url }) => {
-      console.log('=>', url);
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({ data: chain, status: 200 });
       }

@@ -124,12 +124,14 @@ export class TransactionsController {
     safeAddress: `0x${string}`,
     @Query('to') to?: string,
     @Query('module') module?: string,
+    @Query('transaction_hash') txHash?: string,
   ): Promise<Page<ModuleTransaction>> {
     return this.transactionsService.getModuleTransactions({
       chainId,
       routeUrl,
       safeAddress,
       to,
+      txHash,
       module,
       paginationData,
     });
