@@ -185,7 +185,7 @@ describe('AuthController', () => {
           .build(),
       );
       const signature = faker.string.hexadecimal({ length: 132 });
-      blockchainApiManager.request.mockImplementation(({ method, param }) => {
+      blockchainApiManager.request.mockImplementation(({ method }) => {
         if (method === 'eth_call') {
           // Signature is valid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
           return Promise.resolve('0x1');
