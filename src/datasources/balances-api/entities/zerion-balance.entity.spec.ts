@@ -17,6 +17,7 @@ import {
   ZerionQuantitySchema,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('Zerion Balance Entity schemas', () => {
@@ -65,17 +66,17 @@ describe('Zerion Balance Entity schemas', () => {
 
       const result = ZerionBalanceSchema.safeParse(zerionBalance);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            received: 'invalid',
-            code: 'invalid_literal',
-            expected: 'positions',
-            path: ['type'],
-            message: 'Invalid literal value, expected "positions"',
-          },
-        ]),
-      );
+      expect(result.success && result.data.type).toBe('unknown');
+    });
+
+    it('should fallback to "unknown" if type is not defined', () => {
+      const zerionBalance = zerionBalanceBuilder().build();
+      // @ts-expect-error - type is expected to be a 'positions' literal
+      delete zerionBalance['type'];
+
+      const result = ZerionBalanceSchema.safeParse(zerionBalance);
+
+      expect(result.success && result.data.type).toBe('unknown');
     });
 
     it('should not allow an invalid id value', () => {
@@ -98,7 +99,7 @@ describe('Zerion Balance Entity schemas', () => {
       );
     });
 
-    it.each(['type' as const, 'id' as const, 'attributes' as const])(
+    it.each(['id' as const, 'attributes' as const])(
       'should not allow %s to be undefined',
       (key) => {
         const zerionBalance = zerionBalanceBuilder().build();
@@ -531,6 +532,21 @@ describe('Zerion Balance Entity schemas', () => {
             message: 'Expected string, received number',
           },
         ]),
+      );
+    });
+
+    it('should checksum a valid, non-checksummed address', () => {
+      const zerionImplementation = zerionImplementationBuilder().build();
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase();
+      // @ts-expect-error - address is expected to be a checksummed address
+      zerionImplementation.address = nonChecksummedAddress;
+
+      const result = ZerionImplementationSchema.safeParse(zerionImplementation);
+
+      expect(result.success && result.data.address).toBe(
+        getAddress(nonChecksummedAddress),
       );
     });
 

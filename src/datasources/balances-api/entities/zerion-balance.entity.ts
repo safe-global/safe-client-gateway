@@ -3,6 +3,7 @@
  * Reference documentation: https://developers.zerion.io/reference/listwalletpositions
  */
 
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 
 export type ZerionFungibleInfo = z.infer<typeof ZerionFungibleInfoSchema>;
@@ -21,7 +22,7 @@ export type ZerionBalances = z.infer<typeof ZerionBalancesSchema>;
 
 export const ZerionImplementationSchema = z.object({
   chain_id: z.string(),
-  address: z.string().nullish().default(null),
+  address: AddressSchema.nullish().default(null),
   decimals: z.number(),
 });
 
@@ -59,7 +60,7 @@ export const ZerionAttributesSchema = z.object({
 });
 
 export const ZerionBalanceSchema = z.object({
-  type: z.literal('positions'),
+  type: z.enum(['positions', 'unknown']).catch('unknown'),
   id: z.string(),
   attributes: ZerionAttributesSchema,
 });
