@@ -162,6 +162,8 @@ describe('AuthController', () => {
           expect(setCookie).toHaveLength;
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
+      // Verified off-chain as EOA
+      expect(blockchainApiManager.eth_call).not.toHaveBeenCalled();
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -211,6 +213,8 @@ describe('AuthController', () => {
           expect(setCookie).toHaveLength;
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
+      // Verified on-chain as could not verify EOA
+      expect(blockchainApiManager.eth_call).toHaveBeenCalledTimes(1);
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -381,6 +385,8 @@ describe('AuthController', () => {
             statusCode: 401,
           });
         });
+      // Tried to verify off-/on-chain but failed
+      expect(blockchainApiManager.eth_call).toHaveBeenCalledTimes(1);
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
