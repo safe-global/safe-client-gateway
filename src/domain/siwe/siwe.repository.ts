@@ -8,7 +8,6 @@ import {
   generateSiweNonce,
   parseSiweMessage,
   validateSiweMessage,
-  verifySiweMessage,
 } from 'viem/siwe';
 import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 
@@ -139,7 +138,7 @@ export class SiweRepository implements ISiweRepository {
       args.chainId,
     );
     const client = blockchainApi.getClient();
-    return verifySiweMessage(client, {
+    return client.verifySiweMessage({
       message: args.message,
       signature: args.signature,
     });
