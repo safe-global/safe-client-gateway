@@ -8,5 +8,7 @@ export function balanceBuilder(): IBuilder<Balance> {
   return new Builder<Balance>()
     .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
     .with('token', balanceTokenBuilder().build())
-    .with('balance', faker.string.numeric());
+    .with('balance', faker.string.numeric())
+    .with('fiatBalance', null)
+    .with('fiatConversion', null);
 }
