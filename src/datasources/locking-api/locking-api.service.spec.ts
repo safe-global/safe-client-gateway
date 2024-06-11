@@ -16,6 +16,7 @@ import { lockingRankBuilder } from '@/domain/community/entities/__tests__/lockin
 import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
+import { campaignPointsBuilder } from '@/domain/community/entities/__tests__/campaign-points.builder';
 
 const networkService = {
   get: jest.fn(),
@@ -151,6 +152,102 @@ describe('LockingApi', () => {
       await expect(service.getCampaigns({})).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
       );
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getCampaignPointsForAddress', () => {
+    it('should get campaigns for address', async () => {
+      const campaign = campaignBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const campaignPointsPage = pageBuilder()
+        .with('results', [
+          campaignPointsBuilder().build(),
+          campaignPointsBuilder().build(),
+        ])
+        .build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignPointsPage,
+        status: 200,
+      });
+
+      const result = await service.getCampaignPointsForAddress({
+        resourceId: campaign.resourceId,
+        safeAddress,
+      });
+
+      expect(result).toEqual(campaignPointsPage);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`,
+        networkRequest: {
+          params: {
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+
+    it('should forward pagination queries', async () => {
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const campaign = campaignBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const campaignPointsPage = pageBuilder()
+        .with('results', [
+          campaignPointsBuilder().build(),
+          campaignPointsBuilder().build(),
+        ])
+        .build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignPointsPage,
+        status: 200,
+      });
+
+      await service.getCampaignPointsForAddress({
+        resourceId: campaign.resourceId,
+        safeAddress,
+        limit,
+        offset,
+      });
+
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    it('should forward error', async () => {
+      const campaign = campaignBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(
+          `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`,
+        ),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(
+        service.getCampaignPointsForAddress({
+          resourceId: campaign.resourceId,
+          safeAddress,
+        }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     });

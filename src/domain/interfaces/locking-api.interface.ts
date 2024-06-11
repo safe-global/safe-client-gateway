@@ -14,6 +14,13 @@ export interface ILockingApi {
     offset?: number;
   }): Promise<Page<Campaign>>;
 
+  getCampaignPointsForAddress(args: {
+    resourceId: string;
+    safeAddress: `0x${string}`;
+    limit?: number;
+    offset?: number;
+  }): Promise<number>;
+
   getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank>;
 
   getLeaderboard(args: {

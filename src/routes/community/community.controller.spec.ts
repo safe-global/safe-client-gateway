@@ -40,6 +40,10 @@ import { Campaign } from '@/domain/community/entities/campaign.entity';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { Server } from 'net';
+import {
+  campaignPointsBuilder,
+  toJson as campaignPointsToJson,
+} from '@/domain/community/entities/__tests__/campaign-points.builder';
 
 describe('Community (Unit)', () => {
   let app: INestApplication<Server>;
@@ -271,6 +275,124 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/campaigns/${resourceId}`)
+        .expect(statusCode)
+        .expect({
+          message: errorMessage,
+          code: statusCode,
+        });
+    });
+  });
+
+  describe('GET /campaigns/:resourceId/points/:safeAddress', () => {
+    it('should get the campaign points by campaign ID and Safe address', async () => {
+      const campaign = campaignBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const campaignPoints = campaignPointsBuilder().build();
+      const campaignPointsPage = pageBuilder()
+        .with('results', [campaignPoints])
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`:
+            return Promise.resolve({ data: campaignPointsPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/points/${safeAddress}`,
+        )
+        .expect(200)
+        .expect({
+          count: 1,
+          next: null,
+          previous: null,
+          results: [campaignPointsToJson(campaignPoints)],
+        });
+    });
+
+    it('should validate the Safe address in URL', async () => {
+      const campaign = campaignBuilder().build();
+      const safeAddress = faker.string.alphanumeric();
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/points/${safeAddress}`,
+        )
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid address',
+          path: [],
+        });
+    });
+
+    it('should validate the response', async () => {
+      const campaign = campaignBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const invalidCampaignPoints = [{ invalid: 'campaignPoints' }];
+      const campaignPointsPage = pageBuilder()
+        .with('results', invalidCampaignPoints)
+        .with('count', invalidCampaignPoints.length)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`:
+            return Promise.resolve({ data: campaignPointsPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/points/${safeAddress}`,
+        )
+        .expect(500)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it('should forward an error from the service', () => {
+      const campaign = campaignBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const errorMessage = faker.word.words();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(
+                  `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`,
+                ),
+                {
+                  status: statusCode,
+                } as Response,
+                { message: errorMessage, status: statusCode },
+              ),
+            );
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      return request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/points/${safeAddress}`,
+        )
         .expect(statusCode)
         .expect({
           message: errorMessage,

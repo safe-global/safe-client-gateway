@@ -57,6 +57,29 @@ export class LockingApi implements ILockingApi {
     }
   }
 
+  async getCampaignPointsForAddress(args: {
+    resourceId: string;
+    safeAddress: `0x${string}`;
+    limit?: number;
+    offset?: number;
+  }): Promise<number> {
+    try {
+      const url = `${this.baseUri}/api/v1/campaigns/${args.resourceId}/addresses/${args.safeAddress}/periods`;
+      const { data } = await this.networkService.get<number>({
+        url,
+        networkRequest: {
+          params: {
+            limit: args.limit,
+            offset: args.offset,
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getCampaignRank(args: {
     resourceId: string;
     safeAddress: `0x${string}`;

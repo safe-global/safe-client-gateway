@@ -2,6 +2,7 @@ import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { CommunityService } from '@/routes/community/community.service';
+import { CampaignPointsPage } from '@/routes/community/entities/campaign-points.page.entity';
 import { CampaignRank } from '@/routes/community/entities/campaign-rank.entity';
 import { CampaignRankPage } from '@/routes/community/entities/campaign-rank.page.entity';
 import { Campaign } from '@/routes/community/entities/campaign.entity';
@@ -42,6 +43,22 @@ export class CommunityController {
     @Param('resourceId') resourceId: string,
   ): Promise<Campaign> {
     return this.communityService.getCampaignById(resourceId);
+  }
+
+  @Get('/campaigns/:resourceId/points/:safeAddress')
+  async getCampaignPointsForAddress(
+    @Param('resourceId') resourceId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
+    @RouteUrlDecorator() routeUrl: URL,
+    @PaginationDataDecorator() paginationData: PaginationData,
+  ): Promise<CampaignPointsPage> {
+    return this.communityService.getCampaignPointsForAddress({
+      resourceId,
+      safeAddress,
+      routeUrl,
+      paginationData,
+    });
   }
 
   @ApiOkResponse({ type: CampaignRankPage })
