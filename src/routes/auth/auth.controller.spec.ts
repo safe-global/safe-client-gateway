@@ -163,7 +163,7 @@ describe('AuthController', () => {
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Verified off-chain as EOA
-      expect(blockchainApiManager.eth_call).not.toHaveBeenCalled();
+      expect(blockchainApiManager.request).not.toHaveBeenCalled();
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -185,9 +185,12 @@ describe('AuthController', () => {
           .build(),
       );
       const signature = faker.string.hexadecimal({ length: 132 });
-      blockchainApiManager.eth_call.mockResolvedValue({
-        // Signature is valid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
-        data: '0x1',
+      blockchainApiManager.request.mockImplementation(({ method, param }) => {
+        if (method === 'eth_call') {
+          // Signature is valid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
+          return Promise.resolve('0x1');
+        }
+        return Promise.reject(new Error('Invalid request'));
       });
       const maxAge = getSecondsUntil(expirationTime);
       // jsonwebtoken sets expiration based on timespans, not exact dates
@@ -214,7 +217,7 @@ describe('AuthController', () => {
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Verified on-chain as could not verify EOA
-      expect(blockchainApiManager.eth_call).toHaveBeenCalledTimes(1);
+      expect(blockchainApiManager.request).toHaveBeenCalledTimes(1);
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -364,9 +367,13 @@ describe('AuthController', () => {
       );
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
       const signature = faker.string.hexadecimal({ length: 132 });
-      blockchainApiManager.eth_call.mockResolvedValue({
-        // Signature is invalid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
-        data: '0x0',
+
+      blockchainApiManager.request.mockImplementation(({ method }) => {
+        if (method === 'eth_call') {
+          // Signature is invalid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
+          return Promise.resolve('0x0');
+        }
+        return Promise.reject(new Error('Invalid request'));
       });
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(nonce);
@@ -386,7 +393,7 @@ describe('AuthController', () => {
           });
         });
       // Tried to verify off-/on-chain but failed
-      expect(blockchainApiManager.eth_call).toHaveBeenCalledTimes(1);
+      expect(blockchainApiManager.request).toHaveBeenCalledTimes(1);
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
