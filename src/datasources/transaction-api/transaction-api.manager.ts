@@ -37,7 +37,7 @@ export class TransactionApiManager implements ITransactionApiManager {
     );
   }
 
-  async getTransactionApi(chainId: string): Promise<TransactionApi> {
+  async getApi(chainId: string): Promise<TransactionApi> {
     const transactionApi = this.transactionApiMap[chainId];
     if (transactionApi !== undefined) return transactionApi;
 
@@ -53,5 +53,11 @@ export class TransactionApiManager implements ITransactionApiManager {
       this.loggingService,
     );
     return this.transactionApiMap[chainId];
+  }
+
+  destroyApi(chainId: string): void {
+    if (this.transactionApiMap[chainId] !== undefined) {
+      delete this.transactionApiMap[chainId];
+    }
   }
 }

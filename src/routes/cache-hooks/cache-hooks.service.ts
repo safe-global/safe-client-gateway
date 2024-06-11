@@ -5,6 +5,7 @@ import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repo
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { ITransactionsRepository } from '@/domain/transactions/transactions.repository.interface';
 import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
@@ -31,6 +32,8 @@ export class CacheHooksService implements OnModuleInit {
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(ITransactionsRepository)
+    private readonly transactionsRepository: ITransactionsRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     @Inject(IQueuesRepository)
@@ -314,7 +317,13 @@ export class CacheHooksService implements OnModuleInit {
         this._logMessageEvent(event);
         break;
       case EventType.CHAIN_UPDATE:
-        promises.push(this.chainsRepository.clearChain(event.chainId));
+        promises.push(
+          this.chainsRepository.clearChain(event.chainId).then(() => {
+            // Clear after chain updated as Transaction Service URL may have changed
+            this.transactionsRepository.clearApi(event.chainId);
+            this.balancesRepository.clearApi(event.chainId);
+          }),
+        );
         this._logEvent(event);
         break;
       case EventType.SAFE_APPS_UPDATE:

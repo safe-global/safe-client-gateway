@@ -85,7 +85,7 @@ describe('Transaction API Manager Tests', () => {
       mockLoggingService,
     );
 
-    const transactionApi = await target.getTransactionApi(chain.chainId);
+    const transactionApi = await target.getApi(chain.chainId);
     await transactionApi.getBackbone();
 
     expect(dataSourceMock.get).toHaveBeenCalledWith({

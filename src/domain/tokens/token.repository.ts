@@ -16,8 +16,9 @@ export class TokenRepository implements ITokenRepository {
   ) {}
 
   async getToken(args: { chainId: string; address: string }): Promise<Token> {
-    const transactionService =
-      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
     const token = await transactionService.getToken(args.address);
     return TokenSchema.parse(token);
   }
@@ -27,8 +28,9 @@ export class TokenRepository implements ITokenRepository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Token>> {
-    const transactionService =
-      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
     const page = await transactionService.getTokens(args);
     return TokenPageSchema.parse(page);
   }

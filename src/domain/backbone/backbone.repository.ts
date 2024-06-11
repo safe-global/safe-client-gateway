@@ -12,7 +12,7 @@ export class BackboneRepository implements IBackboneRepository {
   ) {}
 
   async getBackbone(chainId: string): Promise<Backbone> {
-    const api = await this.transactionApiManager.getTransactionApi(chainId);
+    const api = await this.transactionApiManager.getApi(chainId);
     const data = await api.getBackbone();
     return BackboneSchema.parse(data);
   }

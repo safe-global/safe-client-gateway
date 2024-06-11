@@ -34,8 +34,7 @@ export class ChainsRepository implements IChainsRepository {
   }
 
   async getSingletons(chainId: string): Promise<Singleton[]> {
-    const transactionApi =
-      await this.transactionApiManager.getTransactionApi(chainId);
+    const transactionApi = await this.transactionApiManager.getApi(chainId);
     const singletons = await transactionApi.getSingletons();
     return singletons.map((singleton) => SingletonSchema.parse(singleton));
   }

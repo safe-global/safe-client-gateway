@@ -4,12 +4,11 @@ import { TransactionApiManager } from '@/datasources/transaction-api/transaction
 import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
+import { IApiManager } from '@/domain/interfaces/api.manager.interface';
 
 export const ITransactionApiManager = Symbol('ITransactionApiManager');
 
-export interface ITransactionApiManager {
-  getTransactionApi(chainId: string): Promise<ITransactionApi>;
-}
+export interface ITransactionApiManager extends IApiManager<ITransactionApi> {}
 
 @Module({
   imports: [CacheFirstDataSourceModule, ConfigApiModule],

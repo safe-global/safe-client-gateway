@@ -1,8 +1,9 @@
+import { IApiManager } from '@/domain/interfaces/api.manager.interface';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 
 export const IBalancesApiManager = Symbol('IBalancesApiManager');
 
-export interface IBalancesApiManager {
+export interface IBalancesApiManager extends IApiManager<IBalancesApi> {
   /**
    * Gets an {@link IBalancesApi} implementation.
    * Each chain is associated with an implementation (i.e.: to a balances
@@ -15,10 +16,7 @@ export interface IBalancesApiManager {
    * @param safeAddress - the Safe address to check.
    * @returns {@link IBalancesApi} configured for the input chain ID.
    */
-  getBalancesApi(
-    chainId: string,
-    safeAddress: `0x${string}`,
-  ): Promise<IBalancesApi>;
+  getApi(chainId: string, safeAddress: `0x${string}`): Promise<IBalancesApi>;
 
   /**
    * Gets the list of supported fiat codes.

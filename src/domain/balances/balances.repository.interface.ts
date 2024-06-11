@@ -32,6 +32,11 @@ export interface IBalancesRepository {
    * @returns an alphabetically ordered list of uppercase strings representing the supported fiat codes.
    */
   getFiatCodes(): Promise<string[]>;
+
+  /**
+   * Clears the API associated with {@link chainId}
+   */
+  clearApi(chainId: string): void;
 }
 
 @Module({

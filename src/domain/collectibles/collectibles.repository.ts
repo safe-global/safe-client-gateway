@@ -20,7 +20,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Page<Collectible>> {
-    const api = await this.balancesApiManager.getBalancesApi(
+    const api = await this.balancesApiManager.getApi(
       args.chainId,
       args.safeAddress,
     );
@@ -32,7 +32,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void> {
-    const api = await this.balancesApiManager.getBalancesApi(
+    const api = await this.balancesApiManager.getApi(
       args.chainId,
       args.safeAddress,
     );

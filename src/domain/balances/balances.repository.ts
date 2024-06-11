@@ -19,7 +19,7 @@ export class BalancesRepository implements IBalancesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]> {
-    const api = await this.balancesApiManager.getBalancesApi(
+    const api = await this.balancesApiManager.getApi(
       args.chain.chainId,
       args.safeAddress,
     );
@@ -31,7 +31,7 @@ export class BalancesRepository implements IBalancesRepository {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void> {
-    const api = await this.balancesApiManager.getBalancesApi(
+    const api = await this.balancesApiManager.getApi(
       args.chainId,
       args.safeAddress,
     );
@@ -40,5 +40,9 @@ export class BalancesRepository implements IBalancesRepository {
 
   async getFiatCodes(): Promise<string[]> {
     return this.balancesApiManager.getFiatCodes();
+  }
+
+  clearApi(chainId: string): void {
+    this.balancesApiManager.destroyApi(chainId);
   }
 }
