@@ -6,6 +6,7 @@ import { INetworkService } from '@/datasources/network/network.service.interface
 import { TransactionApiManager } from '@/datasources/transaction-api/transaction-api.manager';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 
 const configurationService = {
@@ -31,6 +32,10 @@ const cacheService = {} as jest.MockedObjectDeep<ICacheService>;
 const httpErrorFactory = {} as jest.MockedObjectDeep<HttpErrorFactory>;
 
 const networkService = {} as jest.MockedObjectDeep<INetworkService>;
+
+const mockLoggingService = {
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('Transaction API Manager Tests', () => {
   beforeEach(() => {
@@ -77,6 +82,7 @@ describe('Transaction API Manager Tests', () => {
       cacheService,
       httpErrorFactory,
       networkService,
+      mockLoggingService,
     );
 
     const transactionApi = await target.getTransactionApi(chain.chainId);

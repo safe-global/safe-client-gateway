@@ -18,6 +18,7 @@ import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.mana
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
   private safeBalancesApiMap: Record<string, SafeBalancesApi> = {};
+  private readonly isCounterFactualBalancesEnabled: boolean;
   private readonly zerionChainIds: string[];
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
@@ -34,6 +35,10 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
   ) {
+    this.isCounterFactualBalancesEnabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.counterfactualBalances',
+      );
     this.zerionChainIds = this.configurationService.getOrThrow<string[]>(
       'features.zerionBalancesChainIds',
     );
@@ -50,15 +55,19 @@ export class BalancesApiManager implements IBalancesApiManager {
     if (this.zerionChainIds.includes(chainId)) {
       return this.zerionBalancesApi;
     }
+    const transactionApi =
+      await this.transactionApiManager.getTransactionApi(chainId);
+
+    if (!this.isCounterFactualBalancesEnabled) {
+      return this._getSafeBalancesApi(chainId);
+    }
 
     // SafeBalancesApi will be returned only if TransactionApi returns the Safe data.
     // Otherwise ZerionBalancesApi will be returned as the Safe is considered counterfactual/not deployed.
-    try {
-      const transactionApi =
-        await this.transactionApiManager.getTransactionApi(chainId);
-      await transactionApi.getSafe(safeAddress);
+    const isSafe = await transactionApi.isSafe(safeAddress);
+    if (isSafe) {
       return this._getSafeBalancesApi(chainId);
-    } catch {
+    } else {
       return this.zerionBalancesApi;
     }
   }

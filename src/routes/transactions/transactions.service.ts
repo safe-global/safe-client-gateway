@@ -222,6 +222,7 @@ export class TransactionsService {
     safeAddress: `0x${string}`;
     to?: string;
     module?: string;
+    txHash?: string;
     paginationData?: PaginationData;
   }): Promise<Page<ModuleTransaction>> {
     const domainTransactions = await this.safeRepository.getModuleTransactions({
