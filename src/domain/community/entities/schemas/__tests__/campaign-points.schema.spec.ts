@@ -1,13 +1,13 @@
-import { campaignPointsBuilder } from '@/domain/community/entities/__tests__/campaign-points.builder';
-import { CampaignPointsSchema } from '@/domain/community/entities/campaign-points.entity';
+import { campaignActivityBuilder } from '@/domain/community/entities/__tests__/campaign-points.builder';
+import { CampaignActivitySchema } from '@/domain/community/entities/campaign-activity.entity';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 
-describe('CampaignPointsSchema', () => {
-  it('should validate a valid CampaignPoints', () => {
-    const campaignPoints = campaignPointsBuilder().build();
+describe('CampaignActivitySchema', () => {
+  it('should validate a valid CampaignActivity', () => {
+    const campaignActivity = campaignActivityBuilder().build();
 
-    const result = CampaignPointsSchema.safeParse(campaignPoints);
+    const result = CampaignActivitySchema.safeParse(campaignActivity);
 
     expect(result.success).toBe(true);
   });
@@ -15,11 +15,11 @@ describe('CampaignPointsSchema', () => {
   it.each(['startDate' as const, 'endDate' as const])(
     `should coerce %s to a Date`,
     (field) => {
-      const campaignPoints = campaignPointsBuilder()
+      const campaignActivity = campaignActivityBuilder()
         .with(field, faker.date.recent().toISOString() as unknown as Date)
         .build();
 
-      const result = CampaignPointsSchema.safeParse(campaignPoints);
+      const result = CampaignActivitySchema.safeParse(campaignActivity);
 
       expect(result.success && result.data[field]).toBeInstanceOf(Date);
     },
@@ -30,11 +30,11 @@ describe('CampaignPointsSchema', () => {
     'totalPoints' as const,
     'totalBoostedPoints' as const,
   ])(`should validate a decimal %s`, (field) => {
-    const campaignPoints = campaignPointsBuilder()
+    const campaignActivity = campaignActivityBuilder()
       .with(field, faker.number.float())
       .build();
 
-    const result = CampaignPointsSchema.safeParse(campaignPoints);
+    const result = CampaignActivitySchema.safeParse(campaignActivity);
 
     expect(result.success).toBe(true);
   });
@@ -44,19 +44,19 @@ describe('CampaignPointsSchema', () => {
     'totalPoints' as const,
     'totalBoostedPoints' as const,
   ])(`should validate a float %s`, (field) => {
-    const campaignPoints = campaignPointsBuilder()
+    const campaignActivity = campaignActivityBuilder()
       .with(field, faker.number.float())
       .build();
 
-    const result = CampaignPointsSchema.safeParse(campaignPoints);
+    const result = CampaignActivitySchema.safeParse(campaignActivity);
 
     expect(result.success).toBe(true);
   });
 
-  it('should not validate an invalid CampaignPoints', () => {
-    const campaignPoints = { invalid: 'campaignPoints' };
+  it('should not validate an invalid CampaignActivity', () => {
+    const campaignActivity = { invalid: 'campaignActivity' };
 
-    const result = CampaignPointsSchema.safeParse(campaignPoints);
+    const result = CampaignActivitySchema.safeParse(campaignActivity);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([

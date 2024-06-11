@@ -2,7 +2,7 @@ import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { CommunityService } from '@/routes/community/community.service';
-import { CampaignPointsPage } from '@/routes/community/entities/campaign-points.page.entity';
+import { CampaignActivityPage } from '@/routes/community/entities/campaign-activity.page.entity';
 import { CampaignRank } from '@/routes/community/entities/campaign-rank.entity';
 import { CampaignRankPage } from '@/routes/community/entities/campaign-rank.page.entity';
 import { Campaign } from '@/routes/community/entities/campaign.entity';
@@ -45,15 +45,15 @@ export class CommunityController {
     return this.communityService.getCampaignById(resourceId);
   }
 
-  @Get('/campaigns/:resourceId/points/:safeAddress')
-  async getCampaignPointsForAddress(
+  @Get('/campaigns/:resourceId/activities/:safeAddress')
+  async getCampaignActivity(
     @Param('resourceId') resourceId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
-  ): Promise<CampaignPointsPage> {
-    return this.communityService.getCampaignPointsForAddress({
+  ): Promise<CampaignActivityPage> {
+    return this.communityService.getCampaignActivity({
       resourceId,
       safeAddress,
       routeUrl,

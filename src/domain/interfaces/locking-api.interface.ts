@@ -14,7 +14,7 @@ export interface ILockingApi {
     offset?: number;
   }): Promise<Page<Campaign>>;
 
-  getCampaignPointsForAddress(args: {
+  getCampaignActivity(args: {
     resourceId: string;
     safeAddress: `0x${string}`;
     limit?: number;

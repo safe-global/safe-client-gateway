@@ -41,8 +41,8 @@ import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { Server } from 'net';
 import {
-  campaignPointsBuilder,
-  toJson as campaignPointsToJson,
+  campaignActivityBuilder,
+  toJson as campaignActivityToJson,
 } from '@/domain/community/entities/__tests__/campaign-points.builder';
 
 describe('Community (Unit)', () => {
@@ -287,17 +287,17 @@ describe('Community (Unit)', () => {
     it('should get the campaign points by campaign ID and Safe address', async () => {
       const campaign = campaignBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const campaignPoints = campaignPointsBuilder().build();
-      const campaignPointsPage = pageBuilder()
-        .with('results', [campaignPoints])
+      const campaignActivity = campaignActivityBuilder().build();
+      const campaignActivityPage = pageBuilder()
+        .with('results', [campaignActivity])
         .with('count', 1)
         .with('previous', null)
         .with('next', null)
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`:
-            return Promise.resolve({ data: campaignPointsPage, status: 200 });
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
+            return Promise.resolve({ data: campaignActivityPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -305,14 +305,14 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.resourceId}/points/${safeAddress}`,
+          `/v1/community/campaigns/${campaign.resourceId}/activities/${safeAddress}`,
         )
         .expect(200)
         .expect({
           count: 1,
           next: null,
           previous: null,
-          results: [campaignPointsToJson(campaignPoints)],
+          results: [campaignActivityToJson(campaignActivity)],
         });
     });
 
@@ -322,7 +322,7 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.resourceId}/points/${safeAddress}`,
+          `/v1/community/campaigns/${campaign.resourceId}/activities/${safeAddress}`,
         )
         .expect(422)
         .expect({
@@ -336,17 +336,17 @@ describe('Community (Unit)', () => {
     it('should validate the response', async () => {
       const campaign = campaignBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const invalidCampaignPoints = [{ invalid: 'campaignPoints' }];
-      const campaignPointsPage = pageBuilder()
-        .with('results', invalidCampaignPoints)
-        .with('count', invalidCampaignPoints.length)
+      const invalidCampaignActivity = [{ invalid: 'campaignActivity' }];
+      const campaignActivityPage = pageBuilder()
+        .with('results', invalidCampaignActivity)
+        .with('count', invalidCampaignActivity.length)
         .with('previous', null)
         .with('next', null)
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`:
-            return Promise.resolve({ data: campaignPointsPage, status: 200 });
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
+            return Promise.resolve({ data: campaignActivityPage, status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -354,7 +354,7 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.resourceId}/points/${safeAddress}`,
+          `/v1/community/campaigns/${campaign.resourceId}/activities/${safeAddress}`,
         )
         .expect(500)
         .expect({
@@ -372,11 +372,11 @@ describe('Community (Unit)', () => {
       const errorMessage = faker.word.words();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`:
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
             return Promise.reject(
               new NetworkResponseError(
                 new URL(
-                  `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`,
+                  `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
                 ),
                 {
                   status: statusCode,
@@ -391,7 +391,7 @@ describe('Community (Unit)', () => {
 
       return request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.resourceId}/points/${safeAddress}`,
+          `/v1/community/campaigns/${campaign.resourceId}/activities/${safeAddress}`,
         )
         .expect(statusCode)
         .expect({

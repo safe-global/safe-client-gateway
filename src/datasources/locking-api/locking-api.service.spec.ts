@@ -16,7 +16,7 @@ import { lockingRankBuilder } from '@/domain/community/entities/__tests__/lockin
 import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
-import { campaignPointsBuilder } from '@/domain/community/entities/__tests__/campaign-points.builder';
+import { campaignActivityBuilder } from '@/domain/community/entities/__tests__/campaign-points.builder';
 
 const networkService = {
   get: jest.fn(),
@@ -157,32 +157,33 @@ describe('LockingApi', () => {
     });
   });
 
-  describe('getCampaignPointsForAddress', () => {
+  describe('getCampaignActivity', () => {
     it('should get campaigns for address', async () => {
       const campaign = campaignBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const campaignPointsPage = pageBuilder()
+      const campaignActivityPage = pageBuilder()
         .with('results', [
-          campaignPointsBuilder().build(),
-          campaignPointsBuilder().build(),
+          campaignActivityBuilder().build(),
+          campaignActivityBuilder().build(),
         ])
         .build();
 
       mockNetworkService.get.mockResolvedValueOnce({
-        data: campaignPointsPage,
+        data: campaignActivityPage,
         status: 200,
       });
 
-      const result = await service.getCampaignPointsForAddress({
+      const result = await service.getCampaignActivity({
         resourceId: campaign.resourceId,
         safeAddress,
       });
 
-      expect(result).toEqual(campaignPointsPage);
+      expect(result).toEqual(campaignActivityPage);
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
         networkRequest: {
           params: {
+            holder: safeAddress,
             limit: undefined,
             offset: undefined,
           },
@@ -195,19 +196,19 @@ describe('LockingApi', () => {
       const offset = faker.number.int();
       const campaign = campaignBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const campaignPointsPage = pageBuilder()
+      const campaignActivityPage = pageBuilder()
         .with('results', [
-          campaignPointsBuilder().build(),
-          campaignPointsBuilder().build(),
+          campaignActivityBuilder().build(),
+          campaignActivityBuilder().build(),
         ])
         .build();
 
       mockNetworkService.get.mockResolvedValueOnce({
-        data: campaignPointsPage,
+        data: campaignActivityPage,
         status: 200,
       });
 
-      await service.getCampaignPointsForAddress({
+      await service.getCampaignActivity({
         resourceId: campaign.resourceId,
         safeAddress,
         limit,
@@ -215,9 +216,10 @@ describe('LockingApi', () => {
       });
 
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`,
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
         networkRequest: {
           params: {
+            holder: safeAddress,
             limit,
             offset,
           },
@@ -231,7 +233,7 @@ describe('LockingApi', () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(
-          `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/addresses/${safeAddress}/periods`,
+          `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
         ),
         {
           status,
@@ -243,7 +245,7 @@ describe('LockingApi', () => {
       mockNetworkService.get.mockRejectedValueOnce(error);
 
       await expect(
-        service.getCampaignPointsForAddress({
+        service.getCampaignActivity({
           resourceId: campaign.resourceId,
           safeAddress,
         }),

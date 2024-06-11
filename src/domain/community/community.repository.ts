@@ -20,9 +20,9 @@ import {
 import { ICommunityRepository } from '@/domain/community/community.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  CampaignPoints,
-  CampaignPointsPageSchema,
-} from '@/domain/community/entities/campaign-points.entity';
+  CampaignActivity,
+  CampaignActivityPageSchema,
+} from '@/domain/community/entities/campaign-activity.entity';
 
 @Injectable()
 export class CommunityRepository implements ICommunityRepository {
@@ -44,14 +44,14 @@ export class CommunityRepository implements ICommunityRepository {
     return CampaignPageSchema.parse(page);
   }
 
-  async getCampaignPointsForAddress(args: {
+  async getCampaignActivity(args: {
     resourceId: string;
     safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
-  }): Promise<Page<CampaignPoints>> {
-    const page = await this.lockingApi.getCampaignPointsForAddress(args);
-    return CampaignPointsPageSchema.parse(page);
+  }): Promise<Page<CampaignActivity>> {
+    const page = await this.lockingApi.getCampaignActivity(args);
+    return CampaignActivityPageSchema.parse(page);
   }
 
   async getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank> {

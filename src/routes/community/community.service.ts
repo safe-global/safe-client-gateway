@@ -9,7 +9,7 @@ import {
   cursorUrlFromLimitAndOffset,
 } from '@/routes/common/pagination/pagination.data';
 import { Inject, Injectable } from '@nestjs/common';
-import { CampaignPoints } from '@/domain/community/entities/campaign-points.entity';
+import { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
 
 @Injectable()
 export class CommunityService {
@@ -44,14 +44,13 @@ export class CommunityService {
     return this.communityRepository.getCampaignById(resourceId);
   }
 
-  async getCampaignPointsForAddress(args: {
+  async getCampaignActivity(args: {
     resourceId: string;
     safeAddress: `0x${string}`;
     routeUrl: URL;
     paginationData: PaginationData;
-  }): Promise<Page<CampaignPoints>> {
-    const result =
-      await this.communityRepository.getCampaignPointsForAddress(args);
+  }): Promise<Page<CampaignActivity>> {
+    const result = await this.communityRepository.getCampaignActivity(args);
 
     const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
     const previousUrl = cursorUrlFromLimitAndOffset(

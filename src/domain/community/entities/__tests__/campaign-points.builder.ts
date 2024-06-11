@@ -1,9 +1,9 @@
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { CampaignPoints } from '@/domain/community/entities/campaign-points.entity';
+import { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
 import { faker } from '@faker-js/faker';
 
-export function campaignPointsBuilder(): IBuilder<CampaignPoints> {
-  return new Builder<CampaignPoints>()
+export function campaignActivityBuilder(): IBuilder<CampaignActivity> {
+  return new Builder<CampaignActivity>()
     .with('startDate', faker.date.recent())
     .with('endDate', faker.date.future())
     .with('boost', faker.number.float())
@@ -11,10 +11,10 @@ export function campaignPointsBuilder(): IBuilder<CampaignPoints> {
     .with('totalBoostedPoints', faker.number.float());
 }
 
-export function toJson(campaignPoints: CampaignPoints): unknown {
+export function toJson(campaignActivity: CampaignActivity): unknown {
   return {
-    ...campaignPoints,
-    startDate: campaignPoints.startDate.toISOString(),
-    endDate: campaignPoints.endDate.toISOString(),
+    ...campaignActivity,
+    startDate: campaignActivity.startDate.toISOString(),
+    endDate: campaignActivity.endDate.toISOString(),
   };
 }

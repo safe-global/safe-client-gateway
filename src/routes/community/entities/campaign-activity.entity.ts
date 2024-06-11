@@ -1,7 +1,7 @@
-import { CampaignPoints as DomainCampaignPoints } from '@/domain/community/entities/campaign-points.entity';
+import { CampaignActivity as DomainCampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CampaignPoints implements DomainCampaignPoints {
+export class CampaignActivity implements DomainCampaignActivity {
   @ApiProperty({ type: String })
   startDate!: Date;
   @ApiProperty({ type: String })

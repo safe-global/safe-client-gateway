@@ -1,7 +1,7 @@
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { z } from 'zod';
 
-export const CampaignPointsSchema = z.object({
+export const CampaignActivitySchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   boost: z.number(),
@@ -9,6 +9,8 @@ export const CampaignPointsSchema = z.object({
   totalBoostedPoints: z.number(),
 });
 
-export const CampaignPointsPageSchema = buildPageSchema(CampaignPointsSchema);
+export const CampaignActivityPageSchema = buildPageSchema(
+  CampaignActivitySchema,
+);
 
-export type CampaignPoints = z.infer<typeof CampaignPointsSchema>;
+export type CampaignActivity = z.infer<typeof CampaignActivitySchema>;
