@@ -222,9 +222,9 @@ export class ZerionBalancesApi implements IBalancesApi {
           throw Error(
             `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
           );
-        const { value } = zb.attributes;
+        const { value, price } = zb.attributes;
         const fiatBalance = value ? getNumberString(value) : null;
-        const fiatConversion = getNumberString(zb.attributes.price);
+        const fiatConversion = price ? getNumberString(price) : null;
 
         return {
           ...(implementation.address === null

@@ -9,11 +9,12 @@ import {
   ZerionImplementation,
   ZerionQuantity,
 } from '@/datasources/balances-api/entities/zerion-balance.entity';
+import { getAddress } from 'viem';
 
 export function zerionImplementationBuilder(): IBuilder<ZerionImplementation> {
   return new Builder<ZerionImplementation>()
     .with('chain_id', faker.string.sample())
-    .with('address', faker.finance.ethereumAddress())
+    .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('decimals', faker.number.int());
 }
 
