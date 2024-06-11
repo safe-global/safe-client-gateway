@@ -889,8 +889,7 @@ describe('Post Hook Events (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    const blockchainApi = await blockchainApiManager.getBlockchainApi(chainId);
-    const client = blockchainApi.getClient();
+    const client = await blockchainApiManager.getBlockchainApi(chainId);
 
     await request(app.getHttpServer())
       .post(`/hooks/events`)
@@ -898,7 +897,7 @@ describe('Post Hook Events (Unit)', () => {
       .send(data)
       .expect(202);
 
-    const newClient = blockchainApi.getClient();
+    const newClient = await blockchainApiManager.getBlockchainApi(chainId);
     expect(client).not.toBe(newClient);
   });
 
