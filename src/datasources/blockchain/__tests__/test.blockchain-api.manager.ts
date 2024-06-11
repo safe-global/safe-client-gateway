@@ -4,7 +4,10 @@ import { Module } from '@nestjs/common';
 
 @Module({
   providers: [
-    { provide: IBlockchainApiManager, useClass: FakeBlockchainApiManager },
+    {
+      provide: IBlockchainApiManager,
+      useClass: FakeBlockchainApiManager,
+    },
   ],
   exports: [IBlockchainApiManager],
 })

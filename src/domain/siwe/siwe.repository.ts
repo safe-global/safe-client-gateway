@@ -137,8 +137,7 @@ export class SiweRepository implements ISiweRepository {
     const blockchainApi = await this.blockchainApiManager.getBlockchainApi(
       args.chainId,
     );
-    const client = blockchainApi.getClient();
-    return client.verifySiweMessage({
+    return blockchainApi.verifySiweMessage({
       message: args.message,
       signature: args.signature,
     });

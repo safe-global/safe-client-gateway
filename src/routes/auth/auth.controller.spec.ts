@@ -38,6 +38,8 @@ import {
 } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { TestBlockchainApiManagerModule } from '@/datasources/blockchain/__tests__/test.blockchain-api.manager';
 
+const verifySiweMessageMock = jest.fn();
+
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
@@ -85,6 +87,10 @@ describe('AuthController', () => {
     );
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
+
+    blockchainApiManager.getBlockchainApi.mockImplementation(() => ({
+      verifySiweMessage: verifySiweMessageMock,
+    }));
 
     app = await new TestAppProvider().provide(moduleFixture);
 
@@ -163,7 +169,7 @@ describe('AuthController', () => {
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Verified off-chain as EOA
-      expect(blockchainApiManager.request).not.toHaveBeenCalled();
+      expect(verifySiweMessageMock).not.toHaveBeenCalled();
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -185,13 +191,7 @@ describe('AuthController', () => {
           .build(),
       );
       const signature = faker.string.hexadecimal({ length: 132 });
-      blockchainApiManager.request.mockImplementation(({ method }) => {
-        if (method === 'eth_call') {
-          // Signature is valid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
-          return Promise.resolve('0x1');
-        }
-        return Promise.reject(new Error('Invalid request'));
-      });
+      verifySiweMessageMock.mockResolvedValue(true);
       const maxAge = getSecondsUntil(expirationTime);
       // jsonwebtoken sets expiration based on timespans, not exact dates
       // meaning we cannot use expirationTime directly
@@ -217,7 +217,7 @@ describe('AuthController', () => {
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Verified on-chain as could not verify EOA
-      expect(blockchainApiManager.request).toHaveBeenCalledTimes(1);
+      expect(verifySiweMessageMock).toHaveBeenCalledTimes(1);
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
@@ -367,14 +367,7 @@ describe('AuthController', () => {
       );
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
       const signature = faker.string.hexadecimal({ length: 132 });
-
-      blockchainApiManager.request.mockImplementation(({ method }) => {
-        if (method === 'eth_call') {
-          // Signature is invalid @see https://eips.ethereum.org/EIPS/eip-6492#off-chain-validation
-          return Promise.resolve('0x0');
-        }
-        return Promise.reject(new Error('Invalid request'));
-      });
+      verifySiweMessageMock.mockResolvedValue(false);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(nonce);
       await request(app.getHttpServer())
@@ -393,7 +386,7 @@ describe('AuthController', () => {
           });
         });
       // Tried to verify off-/on-chain but failed
-      expect(blockchainApiManager.request).toHaveBeenCalledTimes(1);
+      expect(verifySiweMessageMock).toHaveBeenCalledTimes(1);
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
