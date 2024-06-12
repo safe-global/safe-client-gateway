@@ -64,19 +64,17 @@ export default () => ({
         chains: {
           1: { chainName: 'ethereum' },
           10: { chainName: 'optimism' },
-          56: { chainName: 'binance-smart-chain' },
           100: { chainName: 'xdai' },
+          1101: { chainName: 'polygon-zkevm' },
+          1313161554: { chainName: 'aurora' },
           137: { chainName: 'polygon' },
           324: { chainName: 'zksync-era' },
-          // 1101 (Polygon zkEVM) is not available on Zerion
-          // 1101: { chainName: '' },
-          8453: { chainName: 'base' },
           42161: { chainName: 'arbitrum' },
           42220: { chainName: 'celo' },
           43114: { chainName: 'avalanche' },
-          // 11155111 (Sepolia) is not available on Zerion
-          // 11155111: { chainName: '' },
-          1313161554: { chainName: 'aurora' },
+          534352: { chainName: 'scroll' },
+          56: { chainName: 'binance-smart-chain' },
+          8453: { chainName: 'base' },
         },
         currencies: [
           'usd',
