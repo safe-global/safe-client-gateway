@@ -3,6 +3,7 @@
  * Reference documentation: https://developers.zerion.io/reference/listwalletpositions
  */
 
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 
 export type ZerionFungibleInfo = z.infer<typeof ZerionFungibleInfoSchema>;
@@ -19,47 +20,47 @@ export type ZerionBalance = z.infer<typeof ZerionBalanceSchema>;
 
 export type ZerionBalances = z.infer<typeof ZerionBalancesSchema>;
 
-const ZerionImplementationSchema = z.object({
+export const ZerionImplementationSchema = z.object({
   chain_id: z.string(),
-  address: z.string().nullable(),
+  address: AddressSchema.nullish().default(null),
   decimals: z.number(),
 });
 
-const ZerionFungibleInfoSchema = z.object({
-  name: z.string().nullable(),
-  symbol: z.string().nullable(),
+export const ZerionFungibleInfoSchema = z.object({
+  name: z.string().nullish().default(null),
+  symbol: z.string().nullish().default(null),
   description: z.string().nullish().default(null),
   icon: z
     .object({
-      url: z.string().nullable(),
+      url: z.string().nullish().default(null),
     })
     .nullish()
     .default(null),
   implementations: z.array(ZerionImplementationSchema),
 });
 
-const ZerionQuantitySchema = z.object({
+export const ZerionQuantitySchema = z.object({
   int: z.string(),
   decimals: z.number(),
   float: z.number(),
   numeric: z.string(),
 });
 
-const ZerionFlagsSchema = z.object({
+export const ZerionFlagsSchema = z.object({
   displayable: z.boolean(),
 });
 
-const ZerionAttributesSchema = z.object({
+export const ZerionAttributesSchema = z.object({
   name: z.string(),
   quantity: ZerionQuantitySchema,
-  value: z.number().nullable(),
-  price: z.number(),
+  value: z.number().nullish().default(null),
+  price: z.number().nullish().default(null),
   fungible_info: ZerionFungibleInfoSchema,
   flags: ZerionFlagsSchema,
 });
 
 export const ZerionBalanceSchema = z.object({
-  type: z.literal('positions'),
+  type: z.enum(['positions', 'unknown']).catch('unknown'),
   id: z.string(),
   attributes: ZerionAttributesSchema,
 });
@@ -67,5 +68,3 @@ export const ZerionBalanceSchema = z.object({
 export const ZerionBalancesSchema = z.object({
   data: z.array(ZerionBalanceSchema),
 });
-
-// TODO: add schema tests.
