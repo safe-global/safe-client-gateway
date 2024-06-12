@@ -26,6 +26,7 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { safeCreatedEventBuilder } from '@/routes/cache-hooks/entities/__tests__/safe-created.build';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
@@ -37,6 +38,7 @@ describe('Post Hook Events (Unit)', () => {
   let fakeCacheService: FakeCacheService;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: IConfigurationService;
+  let blockchainApiManager: IBlockchainApiManager;
   let transactionApiManager: ITransactionApiManager;
   let balancesApiManager: IBalancesApiManager;
 
@@ -59,6 +61,9 @@ describe('Post Hook Events (Unit)', () => {
 
     fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
     configurationService = moduleFixture.get(IConfigurationService);
+    blockchainApiManager = moduleFixture.get<IBlockchainApiManager>(
+      IBlockchainApiManager,
+    );
     transactionApiManager = moduleFixture.get(ITransactionApiManager);
     balancesApiManager = moduleFixture.get(IBalancesApiManager);
     authToken = configurationService.getOrThrow('auth.token');
@@ -867,6 +872,39 @@ describe('Post Hook Events (Unit)', () => {
       .expect(202);
 
     await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
+
+  it.each([
+    {
+      type: 'CHAIN_UPDATE',
+    },
+  ])('$type clears the blockchain API', async (payload) => {
+    const chainId = faker.string.numeric();
+    const data = {
+      chainId: chainId,
+      ...payload,
+    };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    const api = await blockchainApiManager.getApi(chainId);
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(202);
+
+    const newApi = await blockchainApiManager.getApi(chainId);
+    expect(api).not.toBe(newApi);
   });
 
   it.each([

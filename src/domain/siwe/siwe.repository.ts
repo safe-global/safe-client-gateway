@@ -9,6 +9,7 @@ import {
   parseSiweMessage,
   validateSiweMessage,
 } from 'viem/siwe';
+import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 
 @Injectable()
 export class SiweRepository implements ISiweRepository {
@@ -21,6 +22,8 @@ export class SiweRepository implements ISiweRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(IBlockchainApiManager)
+    private readonly blockchainApiManager: IBlockchainApiManager,
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
@@ -72,7 +75,7 @@ export class SiweRepository implements ISiweRepository {
         message,
       });
 
-      if (!isValidMessage || !message.address) {
+      if (!isValidMessage || !message.chainId || !message.address) {
         return false;
       }
 
@@ -88,7 +91,8 @@ export class SiweRepository implements ISiweRepository {
 
       // Verify signature and nonce is cached (not a replay attack)
       const [isValidSignature, isNonceCached] = await Promise.all([
-        verifyMessage({
+        this.isValidSignature({
+          chainId: message.chainId.toString(),
           address: message.address,
           message: args.message,
           signature: args.signature,
@@ -105,5 +109,35 @@ export class SiweRepository implements ISiweRepository {
     } finally {
       await this.siweApi.clearNonce(message.nonce);
     }
+  }
+
+  /**
+   * Verifies signature of signed SiWe message, either by EOA or smart contract
+   *
+   * @param args.message - SiWe message
+   * @param args.chainId - chainId of the blockchain
+   * @param args.address - address of the signer
+   * @param args.signature - signature from signing {@link args.message}
+   *
+   * @returns boolean - whether the signature is valid
+   */
+  private async isValidSignature(args: {
+    message: string;
+    chainId: string;
+    address: `0x${string}`;
+    signature: `0x${string}`;
+  }): Promise<boolean> {
+    // First check if valid signature of EOA as it can be done off chain
+    const isValidEoaSignature = await verifyMessage(args).catch(() => false);
+    if (isValidEoaSignature) {
+      return true;
+    }
+
+    // Else, verify hash on-chain using ERC-6492 for smart contract accounts
+    const blockchainApi = await this.blockchainApiManager.getApi(args.chainId);
+    return blockchainApi.verifySiweMessage({
+      message: args.message,
+      signature: args.signature,
+    });
   }
 }

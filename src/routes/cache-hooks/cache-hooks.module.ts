@@ -9,10 +9,12 @@ import { TransactionsRepositoryModule } from '@/domain/transactions/transactions
 import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
+import { BlockchainRepositoryModule } from '@/domain/blockchain/blockchain.repository.interface';
 
 @Module({
   imports: [
     BalancesRepositoryModule,
+    BlockchainRepositoryModule,
     ChainsRepositoryModule,
     CollectiblesRepositoryModule,
     MessagesRepositoryModule,
