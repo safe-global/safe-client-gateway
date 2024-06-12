@@ -59,6 +59,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     };
   }
 
+  // Note: this assumes Infura as provider when using an API key as authentication method.
   private formatRpcUri(rpcUri: DomainChain['rpcUri']): string {
     return rpcUri.authentication === RpcUriAuthentication.ApiKeyPath
       ? rpcUri.value + this.infuraApiKey
