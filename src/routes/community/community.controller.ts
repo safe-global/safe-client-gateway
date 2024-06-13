@@ -14,7 +14,6 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
-import { z } from 'zod';
 
 @ApiTags('community')
 @Controller({
