@@ -158,6 +158,7 @@ export default (): ReturnType<typeof configuration> => ({
     ttlSeconds: faker.number.int(),
     apiKey: {
       100: faker.string.hexadecimal({ length: 32 }),
+      42161: faker.string.hexadecimal({ length: 32 }),
       11155111: faker.string.hexadecimal({ length: 32 }),
     },
   },

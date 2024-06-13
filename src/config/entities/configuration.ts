@@ -239,6 +239,7 @@ export default () => ({
     ),
     apiKey: {
       100: process.env.RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN,
+      42161: process.env.RELAY_PROVIDER_API_KEY_ARBITRUM_ONE,
       11155111: process.env.RELAY_PROVIDER_API_KEY_SEPOLIA,
     },
   },
