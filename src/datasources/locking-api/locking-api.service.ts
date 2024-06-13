@@ -57,7 +57,7 @@ export class LockingApi implements ILockingApi {
     }
   }
 
-  async getCampaignActivity(args: {
+  async getCampaignActivities(args: {
     resourceId: string;
     holder?: `0x${string}`;
     limit?: number;

@@ -44,13 +44,13 @@ export class CommunityRepository implements ICommunityRepository {
     return CampaignPageSchema.parse(page);
   }
 
-  async getCampaignActivity(args: {
+  async getCampaignActivities(args: {
     resourceId: string;
     holder?: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<CampaignActivity>> {
-    const page = await this.lockingApi.getCampaignActivity(args);
+    const page = await this.lockingApi.getCampaignActivities(args);
     return CampaignActivityPageSchema.parse(page);
   }
 

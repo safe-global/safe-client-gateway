@@ -47,14 +47,14 @@ export class CommunityController {
   }
 
   @Get('/campaigns/:resourceId/activities')
-  async getCampaignActivity(
+  async getCampaignActivities(
     @Param('resourceId') resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('holder', new ValidationPipe(AddressSchema.optional()))
     holder?: `0x${string}`,
   ): Promise<CampaignActivityPage> {
-    return this.communityService.getCampaignActivity({
+    return this.communityService.getCampaignActivities({
       resourceId,
       holder,
       routeUrl,

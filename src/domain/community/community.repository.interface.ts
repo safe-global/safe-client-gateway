@@ -15,7 +15,7 @@ export interface ICommunityRepository {
     offset?: number;
   }): Promise<Page<Campaign>>;
 
-  getCampaignActivity(args: {
+  getCampaignActivities(args: {
     resourceId: string;
     holder?: `0x${string}`;
   }): Promise<Page<CampaignActivity>>;

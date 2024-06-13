@@ -14,7 +14,7 @@ export interface ILockingApi {
     offset?: number;
   }): Promise<Page<Campaign>>;
 
-  getCampaignActivity(args: {
+  getCampaignActivities(args: {
     resourceId: string;
     holder?: `0x${string}`;
     limit?: number;

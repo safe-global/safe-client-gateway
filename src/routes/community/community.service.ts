@@ -44,13 +44,13 @@ export class CommunityService {
     return this.communityRepository.getCampaignById(resourceId);
   }
 
-  async getCampaignActivity(args: {
+  async getCampaignActivities(args: {
     resourceId: string;
     holder?: `0x${string}`;
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<CampaignActivity>> {
-    const result = await this.communityRepository.getCampaignActivity(args);
+    const result = await this.communityRepository.getCampaignActivities(args);
 
     const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
     const previousUrl = cursorUrlFromLimitAndOffset(

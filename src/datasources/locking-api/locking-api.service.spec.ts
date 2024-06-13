@@ -157,7 +157,7 @@ describe('LockingApi', () => {
     });
   });
 
-  describe('getCampaignActivity', () => {
+  describe('getCampaignActivities', () => {
     it('should get campaigns activities', async () => {
       const campaign = campaignBuilder().build();
       const holder = getAddress(faker.finance.ethereumAddress());
@@ -173,7 +173,7 @@ describe('LockingApi', () => {
         status: 200,
       });
 
-      const result = await service.getCampaignActivity({
+      const result = await service.getCampaignActivities({
         resourceId: campaign.resourceId,
         holder,
       });
@@ -206,7 +206,7 @@ describe('LockingApi', () => {
         status: 200,
       });
 
-      const result = await service.getCampaignActivity({
+      const result = await service.getCampaignActivities({
         resourceId: campaign.resourceId,
         holder,
       });
@@ -241,7 +241,7 @@ describe('LockingApi', () => {
         status: 200,
       });
 
-      await service.getCampaignActivity({
+      await service.getCampaignActivities({
         resourceId: campaign.resourceId,
         holder,
         limit,
@@ -278,7 +278,7 @@ describe('LockingApi', () => {
       mockNetworkService.get.mockRejectedValueOnce(error);
 
       await expect(
-        service.getCampaignActivity({
+        service.getCampaignActivities({
           resourceId: campaign.resourceId,
           holder,
         }),
