@@ -32,7 +32,7 @@ import {
   Theme,
   Theme as ApiTheme,
 } from '@/routes/chains/entities/theme.entity';
-import { CounterfactualBalancesProvider } from '@/routes/chains/entities/counterfactual-balances-provider.entity';
+import { BalancesProvider } from '@/routes/chains/entities/balances-provider.entity';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)
 export class Chain {
@@ -59,7 +59,7 @@ export class Chain {
   @ApiPropertyOptional({ type: String, nullable: true })
   ensRegistryAddress: string | null;
   @ApiProperty()
-  counterfactualBalancesProvider: CounterfactualBalancesProvider;
+  balancesProvider: BalancesProvider;
   @ApiProperty()
   features: string[];
   @ApiProperty({
@@ -105,7 +105,7 @@ export class Chain {
     ensRegistryAddress: string | null,
     isTestnet: boolean,
     chainLogoUri: string | null,
-    counterfactualBalancesProvider: CounterfactualBalancesProvider,
+    balancesProvider: BalancesProvider,
   ) {
     this.chainId = chainId;
     this.chainName = chainName;
@@ -125,6 +125,6 @@ export class Chain {
     this.safeAppsRpcUri = safeAppsRpcUri;
     this.shortName = shortName;
     this.theme = theme;
-    this.counterfactualBalancesProvider = counterfactualBalancesProvider;
+    this.balancesProvider = balancesProvider;
   }
 }

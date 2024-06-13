@@ -1,5 +1,5 @@
+import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { counterfactualBalancesProviderBuilder } from '@/domain/chains/entities/__tests__/counterfactual-balances-provider.builder';
 import { gasPriceFixedEIP1559Builder } from '@/domain/chains/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceFixedBuilder } from '@/domain/chains/entities/__tests__/gas-price-fixed.builder';
 import { gasPriceOracleBuilder } from '@/domain/chains/entities/__tests__/gas-price-oracle.builder';
@@ -9,7 +9,7 @@ import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builde
 import { themeBuilder } from '@/domain/chains/entities/__tests__/theme.builder';
 import {
   ChainSchema,
-  CounterfactualBalancesProviderSchema,
+  BalancesProviderSchema,
   GasPriceFixedEip1559Schema,
   GasPriceFixedSchema,
   GasPriceOracleSchema,
@@ -356,27 +356,21 @@ describe('Chain schemas', () => {
     });
   });
 
-  describe('CounterfactualBalancesProviderSchema', () => {
-    it('should validate a valid counterfactualBalances provider', () => {
-      const counterfactualBalancesProvider =
-        counterfactualBalancesProviderBuilder().build();
+  describe('BalancesProviderSchema', () => {
+    it('should validate a valid BalancesProvider', () => {
+      const balancesProvider = balancesProviderBuilder().build();
 
-      const result = CounterfactualBalancesProviderSchema.safeParse(
-        counterfactualBalancesProvider,
-      );
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
 
       expect(result.success).toBe(true);
     });
 
-    it('should not validate an invalid counterfactualBalances provider chainName', () => {
-      const counterfactualBalancesProvider =
-        counterfactualBalancesProviderBuilder().build();
+    it('should not validate an invalid balancesProvider chainName', () => {
+      const balancesProvider = balancesProviderBuilder().build();
       // @ts-expect-error - chainName is expected to be a string
-      counterfactualBalancesProvider.chainName = faker.number.int();
+      balancesProvider.chainName = faker.number.int();
 
-      const result = CounterfactualBalancesProviderSchema.safeParse(
-        counterfactualBalancesProvider,
-      );
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -391,28 +385,22 @@ describe('Chain schemas', () => {
       );
     });
 
-    it('should default counterfactualBalances provider chainName to null', () => {
-      const counterfactualBalancesProvider =
-        counterfactualBalancesProviderBuilder().build();
+    it('should default balancesProvider chainName to null', () => {
+      const balancesProvider = balancesProviderBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete counterfactualBalancesProvider.chainName;
+      delete balancesProvider.chainName;
 
-      const result = CounterfactualBalancesProviderSchema.safeParse(
-        counterfactualBalancesProvider,
-      );
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
 
       expect(result.success && result.data.chainName).toStrictEqual(null);
     });
 
-    it('should not validate an undefined counterfactual balances provider enablement status', () => {
-      const counterfactualBalancesProvider =
-        counterfactualBalancesProviderBuilder().build();
+    it('should not validate an undefined balancesProvider enablement status', () => {
+      const balancesProvider = balancesProviderBuilder().build();
       // @ts-expect-error - inferred types don't allow optional fields
-      delete counterfactualBalancesProvider.enabled;
+      delete balancesProvider.enabled;
 
-      const result = CounterfactualBalancesProviderSchema.safeParse(
-        counterfactualBalancesProvider,
-      );
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([
@@ -427,15 +415,12 @@ describe('Chain schemas', () => {
       );
     });
 
-    it('should not validate an invalid counterfactual balances provider enablement status', () => {
-      const counterfactualBalancesProvider =
-        counterfactualBalancesProviderBuilder().build();
+    it('should not validate an invalid balancesProvider enablement status', () => {
+      const balancesProvider = balancesProviderBuilder().build();
       // @ts-expect-error - enabled is expected to be a boolean
-      counterfactualBalancesProvider.enabled = 'true';
+      balancesProvider.enabled = 'true';
 
-      const result = CounterfactualBalancesProviderSchema.safeParse(
-        counterfactualBalancesProvider,
-      );
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
 
       expect(!result.success && result.error).toStrictEqual(
         new ZodError([

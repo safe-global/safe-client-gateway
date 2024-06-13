@@ -59,7 +59,7 @@ export const PricesProviderSchema = z.object({
   nativeCoin: z.string(),
 });
 
-export const CounterfactualBalancesProviderSchema = z.object({
+export const BalancesProviderSchema = z.object({
   chainName: z.string().nullish().default(null),
   enabled: z.boolean(),
 });
@@ -78,7 +78,7 @@ export const ChainSchema = z.object({
   blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
-  counterfactualBalancesProvider: CounterfactualBalancesProviderSchema,
+  balancesProvider: BalancesProviderSchema,
   transactionService: z.string().url(),
   vpcTransactionService: z.string().url(),
   theme: ThemeSchema,
