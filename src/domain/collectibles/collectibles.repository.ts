@@ -4,6 +4,7 @@ import { CollectiblePageSchema } from '@/domain/collectibles/entities/schemas/co
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 
 @Injectable()
 export class CollectiblesRepository implements ICollectiblesRepository {
@@ -13,7 +14,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
   ) {}
 
   async getCollectibles(args: {
-    chainId: string;
+    chain: Chain;
     safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
@@ -21,7 +22,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     excludeSpam?: boolean;
   }): Promise<Page<Collectible>> {
     const api = await this.balancesApiManager.getBalancesApi(
-      args.chainId,
+      args.chain.chainId,
       args.safeAddress,
     );
     const page = await api.getCollectibles(args);

@@ -32,6 +32,7 @@ import { Server } from 'net';
 
 describe('Zerion Collectibles Controller', () => {
   let app: INestApplication<Server>;
+  let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
   let zerionChainIds: string[];
@@ -57,6 +58,7 @@ describe('Zerion Collectibles Controller', () => {
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
+    safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     zerionBaseUri = configurationService.getOrThrow(
       'balances.providers.zerion.baseUri',
     );
@@ -136,6 +138,8 @@ describe('Zerion Collectibles Controller', () => {
           .getOrThrow(`balances.providers.zerion.apiKey`);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain, status: 200 });
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.resolve({
                 data: zerionApiCollectiblesResponse,
@@ -240,12 +244,15 @@ describe('Zerion Collectibles Controller', () => {
             });
           });
 
-        expect(networkService.get.mock.calls.length).toBe(1);
+        expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0].url).toBe(
+          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        expect(networkService.get.mock.calls[1][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
         );
         expect(
-          networkService.get.mock.calls[0][0].networkRequest,
+          networkService.get.mock.calls[1][0].networkRequest,
         ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
@@ -255,6 +262,7 @@ describe('Zerion Collectibles Controller', () => {
           },
         });
       });
+
       it('successfully maps pagination option (no limit)', async () => {
         const chain = chainBuilder().with('chainId', zerionChainIds[0]).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -278,6 +286,8 @@ describe('Zerion Collectibles Controller', () => {
           .getOrThrow(`balances.providers.zerion.apiKey`);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain, status: 200 });
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.resolve({
                 data: zerionApiCollectiblesResponse,
@@ -302,12 +312,15 @@ describe('Zerion Collectibles Controller', () => {
             });
           });
 
-        expect(networkService.get.mock.calls.length).toBe(1);
+        expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0].url).toBe(
+          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        expect(networkService.get.mock.calls[1][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
         );
         expect(
-          networkService.get.mock.calls[0][0].networkRequest,
+          networkService.get.mock.calls[1][0].networkRequest,
         ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
@@ -343,6 +356,8 @@ describe('Zerion Collectibles Controller', () => {
           .getOrThrow(`balances.providers.zerion.apiKey`);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain, status: 200 });
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.resolve({
                 data: zerionApiCollectiblesResponse,
@@ -367,12 +382,15 @@ describe('Zerion Collectibles Controller', () => {
             });
           });
 
-        expect(networkService.get.mock.calls.length).toBe(1);
+        expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0].url).toBe(
+          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        expect(networkService.get.mock.calls[1][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
         );
         expect(
-          networkService.get.mock.calls[0][0].networkRequest,
+          networkService.get.mock.calls[1][0].networkRequest,
         ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
@@ -407,6 +425,8 @@ describe('Zerion Collectibles Controller', () => {
           .getOrThrow(`balances.providers.zerion.apiKey`);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: chain, status: 200 });
             case `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`:
               return Promise.resolve({
                 data: zerionApiCollectiblesResponse,
@@ -431,12 +451,15 @@ describe('Zerion Collectibles Controller', () => {
             });
           });
 
-        expect(networkService.get.mock.calls.length).toBe(1);
+        expect(networkService.get.mock.calls.length).toBe(2);
         expect(networkService.get.mock.calls[0][0].url).toBe(
+          `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
+        );
+        expect(networkService.get.mock.calls[1][0].url).toBe(
           `${zerionBaseUri}/v1/wallets/${safeAddress}/nft-positions`,
         );
         expect(
-          networkService.get.mock.calls[0][0].networkRequest,
+          networkService.get.mock.calls[1][0].networkRequest,
         ).toStrictEqual({
           headers: { Authorization: `Basic ${apiKey}` },
           params: {
