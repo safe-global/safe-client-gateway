@@ -50,7 +50,12 @@ export class CommunityService {
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<CampaignActivity>> {
-    const result = await this.communityRepository.getCampaignActivities(args);
+    const result = await this.communityRepository.getCampaignActivities({
+      resourceId: args.resourceId,
+      holder: args.holder,
+      limit: args.paginationData.limit,
+      offset: args.paginationData.offset,
+    });
 
     const nextUrl = cursorUrlFromLimitAndOffset(args.routeUrl, result.next);
     const previousUrl = cursorUrlFromLimitAndOffset(

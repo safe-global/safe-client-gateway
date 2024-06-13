@@ -18,6 +18,8 @@ export interface ICommunityRepository {
   getCampaignActivities(args: {
     resourceId: string;
     holder?: `0x${string}`;
+    limit?: number;
+    offset?: number;
   }): Promise<Page<CampaignActivity>>;
 
   getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank>;
