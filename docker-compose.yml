@@ -66,6 +66,7 @@ services:
       INFURA_API_KEY: ${INFURA_API_KEY-example_api_key}
       JWT_ISSUER: ${JWT_ISSUER-example_issuer}
       JWT_TOKEN: ${JWT_TOKEN-example_token}
+      RELAY_PROVIDER_API_KEY_ARBITRUM_ONE: ${RELAY_PROVIDER_API_KEY_ARBITRUM_ONE-example_api_key}
       RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: ${RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN-example_api_key}
       RELAY_PROVIDER_API_KEY_SEPOLIA: ${RELAY_PROVIDER_API_KEY_SEPOLIA-example_api_key}
     depends_on:
