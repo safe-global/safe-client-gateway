@@ -26,6 +26,7 @@ import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import axios from 'axios';
 import { get } from 'lodash';
 
 export class TransactionApi implements ITransactionApi {
@@ -596,7 +597,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/all-transactions/`;
-      return await this.dataSource.get({
+      const payload_params = {
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -611,8 +612,10 @@ export class TransactionApi implements ITransactionApi {
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
+      }
+      return await this.dataSource.get(payload_params);
     } catch (error) {
+      console.log("Error:", error)
       throw this.httpErrorFactory.from(this.mapError(error));
     }
   }
@@ -808,15 +811,21 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async postMultisigTransaction(args: {
-    address: string;
-    data: ProposeTransactionDto;
-  }): Promise<unknown> {
+  async postMultisigTransaction(
+    args: {
+      address: string;
+      data: ProposeTransactionDto;
+    },
+    config?: { headers?: Record<string, string> },
+  ): Promise<unknown> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.address}/multisig-transactions/`;
-      return await this.networkService.post({
+
+      const headers = config?.headers || {};
+
+      const response = await axios.post(
         url,
-        data: {
+        {
           to: args.data.to,
           value: args.data.value,
           data: args.data.data,
@@ -832,9 +841,14 @@ export class TransactionApi implements ITransactionApi {
           signature: args.data.signature,
           origin: args.data.origin,
         },
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
+        {
+          headers: headers,
+        },
+      );
+
+      return response.data;
+    } catch (error: unknown) {
+      throw new Error(`HTTP Error: ${error || 'Not'}`);
     }
   }
 

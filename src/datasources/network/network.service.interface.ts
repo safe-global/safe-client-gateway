@@ -13,6 +13,7 @@ export interface INetworkService {
     url: string;
     data: object;
     networkRequest?: NetworkRequest;
+    headers?: Record<string, string>; // Optional headers
   }): Promise<NetworkResponse<T>>;
 
   delete<T>(args: {

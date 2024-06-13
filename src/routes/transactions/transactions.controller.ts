@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  Req
 } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
@@ -252,11 +253,17 @@ export class TransactionsController {
     @Param('safeAddress') safeAddress: string,
     @Body(new ValidationPipe(ProposeTransactionDtoSchema))
     proposeTransactionDto: ProposeTransactionDto,
+    @Req() request: any, // Inject request object
   ): Promise<TransactionDetails> {
+    const ipAddresses = request.headers["x-forwarded-for"];
+    const ipAddress = ipAddresses ? ipAddresses.split(',')[0] : request.headers["x-real-ip"];
+    console.log('Client IP:', ipAddress); // Log the IP address
+
     return this.transactionsService.proposeTransaction({
       chainId,
       safeAddress,
-      proposeTransactionDto,
+      ipAddress,
+      proposeTransactionDto
     });
   }
 }

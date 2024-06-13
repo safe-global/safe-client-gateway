@@ -184,7 +184,7 @@ export interface ITransactionApi {
   postMultisigTransaction(args: {
     address: string;
     data: ProposeTransactionDto;
-  }): Promise<unknown>;
+  }, config?: { headers?: Record<string, string> }): Promise<unknown>;
 
   postMessage(args: {
     safeAddress: string;

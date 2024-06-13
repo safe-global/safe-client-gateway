@@ -408,6 +408,7 @@ export class TransactionsService {
   async proposeTransaction(args: {
     chainId: string;
     safeAddress: string;
+    ipAddress: string;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<TransactionDetails> {
     await this.safeRepository.proposeTransaction(args);

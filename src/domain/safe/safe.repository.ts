@@ -423,15 +423,24 @@ export class SafeRepository implements ISafeRepository {
   async proposeTransaction(args: {
     chainId: string;
     safeAddress: string;
+    ipAddress: string;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown> {
     const transactionService =
       await this.transactionApiManager.getTransactionApi(args.chainId);
 
+    // Set the headers with the IP address
+    const config = {
+      headers: {
+        'X-Forwarded-For': args.ipAddress // Custom header to forward IP address
+      }
+    };
+
+
     return transactionService.postMultisigTransaction({
       address: args.safeAddress,
-      data: args.proposeTransactionDto,
-    });
+      data: args.proposeTransactionDto
+    }, config);
   }
 
   async getNonces(args: {
