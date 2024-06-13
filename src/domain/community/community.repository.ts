@@ -46,7 +46,7 @@ export class CommunityRepository implements ICommunityRepository {
 
   async getCampaignActivity(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    holder?: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<CampaignActivity>> {

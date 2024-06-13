@@ -43,7 +43,7 @@ import { Server } from 'net';
 import {
   campaignActivityBuilder,
   toJson as campaignActivityToJson,
-} from '@/domain/community/entities/__tests__/campaign-points.builder';
+} from '@/domain/community/entities/__tests__/campaign-activity.builder';
 
 describe('Community (Unit)', () => {
   let app: INestApplication<Server>;
@@ -283,10 +283,9 @@ describe('Community (Unit)', () => {
     });
   });
 
-  describe('GET /campaigns/:resourceId/points/:safeAddress', () => {
-    it('should get the campaign points by campaign ID and Safe address', async () => {
+  describe('GET /campaigns/:resourceId/activity', () => {
+    it('should get the campaign activity by campaign ID', async () => {
       const campaign = campaignBuilder().build();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const campaignActivity = campaignActivityBuilder().build();
       const campaignActivityPage = pageBuilder()
         .with('results', [campaignActivity])
@@ -304,8 +303,40 @@ describe('Community (Unit)', () => {
       });
 
       await request(app.getHttpServer())
+        .get(`/v1/community/campaigns/${campaign.resourceId}/activities`)
+        .expect(200)
+        .expect({
+          count: 1,
+          next: null,
+          previous: null,
+          results: [campaignActivityToJson(campaignActivity)],
+        });
+    });
+
+    it('should get the campaign activity by campaign ID and holder', async () => {
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const campaignActivity = campaignActivityBuilder()
+        .with('holder', holder)
+        .build();
+      const campaignActivityPage = pageBuilder()
+        .with('results', [campaignActivity])
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
+            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.resourceId}/activities/${safeAddress}`,
+          `/v1/community/campaigns/${campaign.resourceId}/activities?holder=${holder}`,
         )
         .expect(200)
         .expect({
@@ -316,13 +347,13 @@ describe('Community (Unit)', () => {
         });
     });
 
-    it('should validate the Safe address in URL', async () => {
+    it('should validate the holder query', async () => {
       const campaign = campaignBuilder().build();
-      const safeAddress = faker.string.alphanumeric();
+      const holder = faker.string.alphanumeric();
 
       await request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.resourceId}/activities/${safeAddress}`,
+          `/v1/community/campaigns/${campaign.resourceId}/activities?holder=${holder}`,
         )
         .expect(422)
         .expect({
@@ -335,7 +366,7 @@ describe('Community (Unit)', () => {
 
     it('should validate the response', async () => {
       const campaign = campaignBuilder().build();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const holder = getAddress(faker.finance.ethereumAddress());
       const invalidCampaignActivity = [{ invalid: 'campaignActivity' }];
       const campaignActivityPage = pageBuilder()
         .with('results', invalidCampaignActivity)
@@ -354,7 +385,7 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.resourceId}/activities/${safeAddress}`,
+          `/v1/community/campaigns/${campaign.resourceId}/activities?holder=${holder}`,
         )
         .expect(500)
         .expect({
@@ -365,7 +396,7 @@ describe('Community (Unit)', () => {
 
     it('should forward an error from the service', () => {
       const campaign = campaignBuilder().build();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const holder = getAddress(faker.finance.ethereumAddress());
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
       });
@@ -391,7 +422,7 @@ describe('Community (Unit)', () => {
 
       return request(app.getHttpServer())
         .get(
-          `/v1/community/campaigns/${campaign.resourceId}/activities/${safeAddress}`,
+          `/v1/community/campaigns/${campaign.resourceId}/activities?holder${holder}`,
         )
         .expect(statusCode)
         .expect({

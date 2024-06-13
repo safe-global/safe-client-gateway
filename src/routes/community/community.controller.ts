@@ -12,8 +12,9 @@ import { LockingRank } from '@/routes/community/entities/locking-rank.entity';
 import { LockingRankPage } from '@/routes/community/entities/locking-rank.page.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
+import { z } from 'zod';
 
 @ApiTags('community')
 @Controller({
@@ -45,17 +46,17 @@ export class CommunityController {
     return this.communityService.getCampaignById(resourceId);
   }
 
-  @Get('/campaigns/:resourceId/activities/:safeAddress')
+  @Get('/campaigns/:resourceId/activities')
   async getCampaignActivity(
     @Param('resourceId') resourceId: string,
-    @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('holder', new ValidationPipe(AddressSchema.optional()))
+    holder?: `0x${string}`,
   ): Promise<CampaignActivityPage> {
     return this.communityService.getCampaignActivity({
       resourceId,
-      safeAddress,
+      holder,
       routeUrl,
       paginationData,
     });

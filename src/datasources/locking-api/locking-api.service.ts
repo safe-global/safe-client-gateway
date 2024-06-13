@@ -59,7 +59,7 @@ export class LockingApi implements ILockingApi {
 
   async getCampaignActivity(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    holder?: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<number> {
@@ -69,7 +69,7 @@ export class LockingApi implements ILockingApi {
         url,
         networkRequest: {
           params: {
-            holder: args.safeAddress,
+            holder: args.holder,
             limit: args.limit,
             offset: args.offset,
           },

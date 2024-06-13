@@ -17,7 +17,7 @@ export interface ICommunityRepository {
 
   getCampaignActivity(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    holder?: `0x${string}`;
   }): Promise<Page<CampaignActivity>>;
 
   getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank>;

@@ -16,7 +16,7 @@ import { lockingRankBuilder } from '@/domain/community/entities/__tests__/lockin
 import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
-import { campaignActivityBuilder } from '@/domain/community/entities/__tests__/campaign-points.builder';
+import { campaignActivityBuilder } from '@/domain/community/entities/__tests__/campaign-activity.builder';
 
 const networkService = {
   get: jest.fn(),
@@ -158,13 +158,13 @@ describe('LockingApi', () => {
   });
 
   describe('getCampaignActivity', () => {
-    it('should get campaigns for address', async () => {
+    it('should get campaigns activities', async () => {
       const campaign = campaignBuilder().build();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const holder = getAddress(faker.finance.ethereumAddress());
       const campaignActivityPage = pageBuilder()
         .with('results', [
-          campaignActivityBuilder().build(),
-          campaignActivityBuilder().build(),
+          campaignActivityBuilder().with('holder', holder).build(),
+          campaignActivityBuilder().with('holder', holder).build(),
         ])
         .build();
 
@@ -175,7 +175,7 @@ describe('LockingApi', () => {
 
       const result = await service.getCampaignActivity({
         resourceId: campaign.resourceId,
-        safeAddress,
+        holder,
       });
 
       expect(result).toEqual(campaignActivityPage);
@@ -183,7 +183,40 @@ describe('LockingApi', () => {
         url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
         networkRequest: {
           params: {
-            holder: safeAddress,
+            holder: holder,
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+
+    it('should get campaigns activities for address', async () => {
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const campaignActivityPage = pageBuilder()
+        .with('results', [
+          campaignActivityBuilder().with('holder', holder).build(),
+          campaignActivityBuilder().with('holder', holder).build(),
+        ])
+        .build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignActivityPage,
+        status: 200,
+      });
+
+      const result = await service.getCampaignActivity({
+        resourceId: campaign.resourceId,
+        holder,
+      });
+
+      expect(result).toEqual(campaignActivityPage);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+        networkRequest: {
+          params: {
+            holder,
             limit: undefined,
             offset: undefined,
           },
@@ -195,11 +228,11 @@ describe('LockingApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const campaign = campaignBuilder().build();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const holder = getAddress(faker.finance.ethereumAddress());
       const campaignActivityPage = pageBuilder()
         .with('results', [
-          campaignActivityBuilder().build(),
-          campaignActivityBuilder().build(),
+          campaignActivityBuilder().with('holder', holder).build(),
+          campaignActivityBuilder().with('holder', holder).build(),
         ])
         .build();
 
@@ -210,7 +243,7 @@ describe('LockingApi', () => {
 
       await service.getCampaignActivity({
         resourceId: campaign.resourceId,
-        safeAddress,
+        holder,
         limit,
         offset,
       });
@@ -219,7 +252,7 @@ describe('LockingApi', () => {
         url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
         networkRequest: {
           params: {
-            holder: safeAddress,
+            holder,
             limit,
             offset,
           },
@@ -229,11 +262,11 @@ describe('LockingApi', () => {
 
     it('should forward error', async () => {
       const campaign = campaignBuilder().build();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const holder = getAddress(faker.finance.ethereumAddress());
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(
-          `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+          `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities/${holder}`,
         ),
         {
           status,
@@ -247,7 +280,7 @@ describe('LockingApi', () => {
       await expect(
         service.getCampaignActivity({
           resourceId: campaign.resourceId,
-          safeAddress,
+          holder,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 

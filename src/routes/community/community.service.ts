@@ -46,7 +46,7 @@ export class CommunityService {
 
   async getCampaignActivity(args: {
     resourceId: string;
-    safeAddress: `0x${string}`;
+    holder?: `0x${string}`;
     routeUrl: URL;
     paginationData: PaginationData;
   }): Promise<Page<CampaignActivity>> {

@@ -2,6 +2,8 @@ import { CampaignActivity as DomainCampaignActivity } from '@/domain/community/e
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CampaignActivity implements DomainCampaignActivity {
+  @ApiProperty()
+  holder!: `0x${string}`;
   @ApiProperty({ type: String })
   startDate!: Date;
   @ApiProperty({ type: String })
