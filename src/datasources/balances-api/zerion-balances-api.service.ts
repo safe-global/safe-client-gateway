@@ -284,14 +284,16 @@ export class ZerionBalancesApi implements IBalancesApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  // TODO: get chainName from Chain entity - add tests
   private _getChainName(chain: Chain): string {
     const chainName =
+      chain.balancesProvider.chainName ??
       this.chainsConfiguration[Number(chain.chainId)]?.chainName;
+
     if (!chainName)
       throw Error(
         `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
       );
+
     return chainName;
   }
 
