@@ -345,6 +345,17 @@ describe('Community (Unit)', () => {
           previous: null,
           results: [campaignActivityToJson(campaignActivity)],
         });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+        networkRequest: {
+          params: {
+            limit: 20,
+            offset: 0,
+            holder,
+          },
+        },
+      });
     });
 
     it('should forward the pagination parameters', async () => {
