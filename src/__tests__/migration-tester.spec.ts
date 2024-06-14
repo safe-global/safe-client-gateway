@@ -78,6 +78,7 @@ describe('migrationTester', () => {
 
   afterEach(async () => {
     await sql`drop table if exists test`;
+    await sql.end();
     fs.rmSync(folder, { recursive: true, force: true });
   });
 
