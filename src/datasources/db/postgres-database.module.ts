@@ -4,6 +4,7 @@ import { PostgresDatabaseShutdownHook } from '@/datasources/db/postgres-database
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseMigrationHook } from '@/datasources/db/postgres-database.migration.hook';
 import fs from 'fs';
+import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 
 function dbFactory(configurationService: IConfigurationService): postgres.Sql {
   const caPath = configurationService.get<string>('db.postgres.ssl.caPath');
@@ -31,12 +32,21 @@ function dbFactory(configurationService: IConfigurationService): postgres.Sql {
   });
 }
 
+function migratorFactory(sql: postgres.Sql): PostgresDatabaseMigrator {
+  return new PostgresDatabaseMigrator(sql);
+}
+
 @Module({
   providers: [
     {
       provide: 'DB_INSTANCE',
       useFactory: dbFactory,
       inject: [IConfigurationService],
+    },
+    {
+      provide: PostgresDatabaseMigrator,
+      useFactory: migratorFactory,
+      inject: ['DB_INSTANCE'],
     },
     PostgresDatabaseShutdownHook,
     PostgresDatabaseMigrationHook,

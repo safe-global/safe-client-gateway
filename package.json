@@ -40,7 +40,6 @@
     "lodash": "^4.17.21",
     "nestjs-cls": "^4.3.0",
     "postgres": "^3.4.4",
-    "postgres-shift": "^0.1.0",
     "redis": "^4.6.14",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
@@ -105,8 +104,5 @@
   },
   "main": "main.ts",
   "repository": "https://github.com/5afe/safe-client-gateway-nest.git",
-  "packageManager": "yarn@4.1.1",
-  "resolutions": {
-    "postgres-shift@^0.1.0": "patch:postgres-shift@npm%3A0.1.0#./.yarn/patches/postgres-shift-npm-0.1.0-9342b5f6f6.patch"
-  }
+  "packageManager": "yarn@4.1.1"
 }

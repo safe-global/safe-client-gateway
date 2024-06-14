@@ -3,7 +3,7 @@ import postgres from 'postgres';
 import { PostgresError } from 'postgres';
 import { faker } from '@faker-js/faker';
 import { AccountDoesNotExistError } from '@/domain/account/errors/account-does-not-exist.error';
-import shift from 'postgres-shift';
+import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import configuration from '@/config/entities/__tests__/configuration';
 import {
   Account,
@@ -44,10 +44,11 @@ describe('Account DataSource Tests', () => {
             ),
           },
   });
+  const migrator = new PostgresDatabaseMigrator(sql);
 
   // Run any pending migration before test execution
   beforeAll(async () => {
-    await shift({ sql });
+    await migrator.migrate();
   });
 
   beforeEach(() => {
