@@ -109,14 +109,10 @@ describe('Balances Controller (Unit)', () => {
   describe('Balances provider: Zerion', () => {
     describe('GET /balances', () => {
       it(`maps native coin + ERC20 token balance correctly, and sorts balances by fiatBalance`, async () => {
-        const chainName = faker.company.name();
         const chain = chainBuilder()
           .with('chainId', zerionChainIds[0])
-          .with(
-            'balancesProvider',
-            balancesProviderBuilder().with('chainName', chainName).build(),
-          )
           .build();
+        const chainName = chain.balancesProvider.chainName
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const currency = sample(zerionCurrencies);
         const nativeCoinFungibleInfo = zerionFungibleInfoBuilder()
