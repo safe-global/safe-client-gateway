@@ -25,7 +25,7 @@ export class CollectiblesService {
     trusted: boolean;
     excludeSpam: boolean;
   }): Promise<Page<Collectible>> {
-    const chain = await this.chainsRepository.getChain(chain.chainId);
+    const chain = await this.chainsRepository.getChain(args.chainId);
     const collectibles = await this.repository.getCollectibles({
       ...args,
       chain,

@@ -291,7 +291,7 @@ export class ZerionBalancesApi implements IBalancesApi {
 
     if (!chainName)
       throw Error(
-        `Chain ${chain.chainId} is not configured for balance retrieval via Zerion`,
+        `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
       );
 
     return chainName;

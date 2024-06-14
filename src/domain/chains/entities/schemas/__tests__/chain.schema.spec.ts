@@ -483,5 +483,33 @@ describe('Chain schemas', () => {
         ]),
       );
     });
+
+    it.each([
+      ['rpcUri' as const],
+      ['safeAppsRpcUri' as const],
+      ['publicRpcUri' as const],
+      ['blockExplorerUriTemplate' as const],
+      ['nativeCurrency' as const],
+      ['pricesProvider' as const],
+      ['balancesProvider' as const],
+      ['theme' as const],
+    ])('should not validate a chain without %s', (field) => {
+      const chain = chainBuilder().build();
+      delete chain[field];
+
+      const result = ChainSchema.safeParse(chain);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_type',
+            expected: 'object',
+            received: 'undefined',
+            path: [field],
+            message: 'Required',
+          },
+        ]),
+      );
+    });
   });
 });
