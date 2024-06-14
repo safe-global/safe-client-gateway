@@ -81,7 +81,6 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -97,10 +96,10 @@
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@/abis/(.*)$": "<rootDir>/../abis/$1",
-      "^@/(.*)$": "<rootDir>/../src/$1"
+      "^@/abis/(.*)$": "<rootDir>/abis/$1",
+      "^@/(.*)$": "<rootDir>/src/$1"
     },
-    "globalSetup": "<rootDir>/../test/global-setup.ts"
+    "globalSetup": "<rootDir>/test/global-setup.ts"
   },
   "main": "main.ts",
   "repository": "https://github.com/5afe/safe-client-gateway-nest.git",

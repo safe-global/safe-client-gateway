@@ -1,4 +1,4 @@
-import configuration from '@/config/entities/__tests__/configuration';
+import { dbFactory } from '@/__tests__/db.factory';
 import postgres from 'postgres';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -51,31 +51,7 @@ describe('PostgresDatabaseMigrator tests', () => {
   let target: PostgresDatabaseMigrator;
 
   beforeEach(() => {
-    const config = configuration();
-
-    const isCIContext = process.env.CI?.toLowerCase() === 'true';
-
-    sql = postgres({
-      host: config.db.postgres.host,
-      port: parseInt(config.db.postgres.port),
-      db: config.db.postgres.database,
-      user: config.db.postgres.username,
-      password: config.db.postgres.password,
-      // If running on a CI context (e.g.: GitHub Actions),
-      // disable certificate pinning for the test execution
-      ssl:
-        isCIContext || !config.db.postgres.ssl.enabled
-          ? false
-          : {
-              requestCert: config.db.postgres.ssl.requestCert,
-              rejectUnauthorized: config.db.postgres.ssl.rejectUnauthorized,
-              ca: fs.readFileSync(
-                path.join(process.cwd(), './db_config/test/server.crt'),
-                'utf8',
-              ),
-            },
-    });
-
+    sql = dbFactory();
     target = new PostgresDatabaseMigrator(sql);
   });
 
