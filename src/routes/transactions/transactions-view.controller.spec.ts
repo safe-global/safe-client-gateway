@@ -6,8 +6,6 @@ import {
 import configuration from '@/config/entities/__tests__/configuration';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
-import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
-import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -55,8 +53,6 @@ describe('TransactionsViewController tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
-      .overrideModule(AccountDataSourceModule)
-      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

@@ -1,4 +1,4 @@
-import { CreateEmailMessageDto } from '@/domain/account/entities/create-email-message.dto.entity';
+import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
 
 export const IEmailApi = Symbol('IEmailApi');
 

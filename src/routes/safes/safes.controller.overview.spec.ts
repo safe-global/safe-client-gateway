@@ -18,8 +18,6 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
-import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { faker } from '@faker-js/faker';
 import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
 import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
@@ -61,8 +59,6 @@ describe('Safes Controller Overview (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
-      .overrideModule(AccountDataSourceModule)
-      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

@@ -30,8 +30,6 @@ import { updateMessageSignatureDtoBuilder } from '@/routes/messages/entities/__t
 import { MessageStatus } from '@/routes/messages/entities/message.entity';
 import { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
-import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
@@ -47,8 +45,6 @@ describe('Messages controller', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(AccountDataSourceModule)
-      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

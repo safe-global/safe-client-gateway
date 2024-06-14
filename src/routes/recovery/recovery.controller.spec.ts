@@ -18,8 +18,6 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { addRecoveryModuleDtoBuilder } from '@/routes/recovery/entities/__tests__/add-recovery-module.dto.builder';
 import configuration from '@/config/entities/__tests__/configuration';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
-import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -73,8 +71,6 @@ describe('Recovery (Unit)', () => {
     })
       .overrideModule(JWT_CONFIGURATION_MODULE)
       .useModule(JwtConfigurationModule.register(jwtConfiguration))
-      .overrideModule(AccountDataSourceModule)
-      .useModule(TestAccountDataSourceModule)
       .overrideModule(ALERTS_CONFIGURATION_MODULE)
       .useModule(AlertsConfigurationModule.register(alertsConfiguration))
       .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
