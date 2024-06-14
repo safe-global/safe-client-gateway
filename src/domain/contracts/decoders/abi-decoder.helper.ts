@@ -7,6 +7,7 @@ import {
   Hex,
   decodeEventLog as _decodeEventLog,
   decodeFunctionData as _decodeFunctionData,
+  toFunctionSelector,
 } from 'viem';
 
 type Helper<TAbi extends Abi> = `is${Capitalize<ContractFunctionName<TAbi>>}`;
@@ -30,17 +31,10 @@ export function _generateHelpers<TAbi extends Abi>(
     }
 
     const helperName = `is${capitalize(item.name)}` as Helper<TAbi>;
+    const functionSelector = toFunctionSelector(item);
 
     helpers[helperName] = (data: Hex): boolean => {
-      try {
-        const { functionName } = _decodeFunctionData({
-          data,
-          abi,
-        });
-        return functionName === item.name;
-      } catch {
-        return false;
-      }
+      return data.startsWith(functionSelector);
     };
   }
 
