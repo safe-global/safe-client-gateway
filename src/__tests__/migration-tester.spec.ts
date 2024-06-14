@@ -49,7 +49,7 @@ const migrations: Array<{
 describe('migrationTester', () => {
   let sql: postgres.Sql;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     const config = configuration();
 
     const isCIContext = process.env.CI?.toLowerCase() === 'true';
@@ -218,6 +218,7 @@ describe('migrationTester', () => {
 
   it('throws if there is inconsistent numbering', async () => {
     // Ignore the second so that naming is 00001, 00003
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [migration1, _, migration3] = migrations;
 
     for (const migration of [migration1, migration3]) {

@@ -9,26 +9,24 @@ import { Migration } from 'postgres-shift';
 const SQL_MIGRATION_FILE = 'index.sql';
 const JS_MIGRATION_FILE = 'index.js';
 
-function getMigrations(
-  folder = path.join(process.cwd(), 'migrations'),
-): Array<Migration> {
-  return fs
-    .readdirSync(folder)
-    .filter((file) => {
-      const isDirectory = fs.statSync(path.join(folder, file)).isDirectory();
-      const isMigration = file.match(/^[0-9]{5}_/);
-      return isDirectory && isMigration;
-    })
-    .sort()
-    .map((file) => {
-      return {
-        path: path.join(folder, file),
-        migration_id: parseInt(file.slice(0, 5)),
-        name: file.slice(6),
-      };
-    });
-}
-
+/**
+ * The following allows for migration testing in accordance with the
+ * p ostgres-shift library.
+ *
+ * The provided migration is tested against the provided SQL instance,
+ * calling the before and after functions before and after the migration
+ * is applied, respectively.
+ *
+ * Not: all migrations prior to that specified are applied before.
+ *
+ * @param args.migration - the migration to test, matching the folder name
+ * @param args.sql - the SQL instance to test against
+ * @param args.before - the function to call before the migration is applied
+ * @param args.after - the function to call after the migration is applied
+ * @param args.folder - the folder containing migrations (=root 'migrations')
+ *
+ * @returns the before and after results returned by before/after functions
+ */
 export async function migrationTester(args: {
   migration: string;
   sql: postgres.Sql;
@@ -70,7 +68,11 @@ export async function migrationTester(args: {
       if (isSql) {
         await transaction.file(path.join(migration.path, SQL_MIGRATION_FILE));
       } else {
-        const file = await import(path.join(migration.path, JS_MIGRATION_FILE));
+        const file = (await import(
+          path.join(migration.path, JS_MIGRATION_FILE)
+        )) as {
+          default: (transaction: postgres.TransactionSql) => Promise<void>;
+        };
         await file.default(transaction);
       }
     });
@@ -83,4 +85,24 @@ export async function migrationTester(args: {
   const after = await args.after(args.sql).catch(() => undefined);
 
   return { before, after };
+}
+
+function getMigrations(
+  folder = path.join(process.cwd(), 'migrations'),
+): Array<Migration> {
+  return fs
+    .readdirSync(folder)
+    .filter((file) => {
+      const isDirectory = fs.statSync(path.join(folder, file)).isDirectory();
+      const isMigration = file.match(/^[0-9]{5}_/);
+      return isDirectory && isMigration;
+    })
+    .sort()
+    .map((file) => {
+      return {
+        path: path.join(folder, file),
+        migration_id: parseInt(file.slice(0, 5)),
+        name: file.slice(6),
+      };
+    });
 }
