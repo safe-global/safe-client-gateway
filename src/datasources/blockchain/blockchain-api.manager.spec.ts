@@ -34,7 +34,8 @@ describe('BlockchainApiManager', () => {
     });
 
     it('should include the INFURA_API_KEY in the RPC URI for an Infura URI with API_KEY_PATH authentication', async () => {
-      const rpcUriValue = `${faker.internet.url()}infura${faker.string.sample()}`;
+      const rpcUriValue = `https://${faker.string.sample()}.infura.io/v3/`;
+      
       const chain = chainBuilder()
         .with(
           'rpcUri',
