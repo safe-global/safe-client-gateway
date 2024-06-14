@@ -28,6 +28,7 @@ import {
   Erc20Balance,
   NativeBalance,
 } from '@/domain/balances/entities/balance.entity';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
@@ -92,7 +93,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   }
 
   async getBalances(args: {
-    chainId: string;
+    chain: Chain;
     safeAddress: `0x${string}`;
     fiatCode: string;
   }): Promise<Balance[]> {
@@ -103,8 +104,12 @@ export class ZerionBalancesApi implements IBalancesApi {
       );
     }
 
-    const cacheDir = CacheRouter.getZerionBalancesCacheDir(args);
-    const chainName = this._getChainName(args.chainId);
+    const cacheDir = CacheRouter.getZerionBalancesCacheDir({
+      chainId: args.chain.chainId,
+      safeAddress: args.safeAddress,
+      fiatCode: args.fiatCode,
+    });
+    const chainName = this._getChainName(args.chain);
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
@@ -157,12 +162,15 @@ export class ZerionBalancesApi implements IBalancesApi {
    * Since this setup does not align well with the CGW API, it is needed to encode/decode these parameters.
    */
   async getCollectibles(args: {
-    chainId: string;
+    chain: Chain;
     safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<Collectible>> {
-    const cacheDir = CacheRouter.getZerionCollectiblesCacheDir(args);
+    const cacheDir = CacheRouter.getZerionCollectiblesCacheDir({
+      ...args,
+      chainId: args.chain.chainId,
+    });
     const cached = await this.cacheService.get(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
@@ -172,7 +180,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     } else {
       try {
         await this._checkRateLimit();
-        const chainName = this._getChainName(args.chainId);
+        const chainName = this._getChainName(args.chain);
         const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
         const pageAfter = this._encodeZerionPageOffset(args.offset);
         const networkRequest = {
@@ -276,12 +284,16 @@ export class ZerionBalancesApi implements IBalancesApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  private _getChainName(chainId: string): string {
-    const chainName = this.chainsConfiguration[Number(chainId)]?.chainName;
+  private _getChainName(chain: Chain): string {
+    const chainName =
+      chain.balancesProvider.chainName ??
+      this.chainsConfiguration[Number(chain.chainId)]?.chainName;
+
     if (!chainName)
       throw Error(
-        `Chain ${chainId} balances retrieval via Zerion is not configured`,
+        `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
       );
+
     return chainName;
   }
 

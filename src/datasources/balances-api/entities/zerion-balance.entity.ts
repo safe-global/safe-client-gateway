@@ -3,7 +3,7 @@
  * Reference documentation: https://developers.zerion.io/reference/listwalletpositions
  */
 
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { getAddress, isAddress } from 'viem';
 import { z } from 'zod';
 
 export type ZerionFungibleInfo = z.infer<typeof ZerionFungibleInfoSchema>;
@@ -22,7 +22,14 @@ export type ZerionBalances = z.infer<typeof ZerionBalancesSchema>;
 
 export const ZerionImplementationSchema = z.object({
   chain_id: z.string(),
-  address: AddressSchema.nullish().default(null),
+  // Note: AddressSchema can't be used here because this field can contain non-eth addresses.
+  address: z
+    .string()
+    .nullish()
+    .default(null)
+    .transform((value) =>
+      value !== null && isAddress(value) ? getAddress(value) : value,
+    ),
   decimals: z.number(),
 });
 

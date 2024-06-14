@@ -3,12 +3,13 @@ import { Page } from '@/domain/entities/page.entity';
 import { Module } from '@nestjs/common';
 import { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
 import { BalancesApiModule } from '@/datasources/balances-api/balances-api.module';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 
 export const ICollectiblesRepository = Symbol('ICollectiblesRepository');
 
 export interface ICollectiblesRepository {
   getCollectibles(args: {
-    chainId: string;
+    chain: Chain;
     safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;

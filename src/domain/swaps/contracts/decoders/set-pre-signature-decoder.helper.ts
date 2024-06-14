@@ -1,6 +1,6 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
-import { parseAbi, toFunctionSelector } from 'viem';
+import { parseAbi } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 export const abi = parseAbi([
@@ -9,21 +9,10 @@ export const abi = parseAbi([
 
 @Injectable()
 export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
-  private readonly setPreSignatureFunctionSelector: `0x${string}`;
-
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     super(abi);
-    this.setPreSignatureFunctionSelector = toFunctionSelector(abi[0]);
-  }
-
-  /**
-   * Checks if the provided transaction data is a setPreSignature call.
-   * @param data - the transaction data
-   */
-  isSetPreSignature(data: string): boolean {
-    return data.startsWith(this.setPreSignatureFunctionSelector);
   }
 
   /**
@@ -34,7 +23,7 @@ export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
    */
   getOrderUid(data: `0x${string}`): `0x${string}` | null {
     try {
-      if (!this.isSetPreSignature(data)) return null;
+      if (!this.helpers.isSetPreSignature(data)) return null;
       const { args } = this.decodeFunctionData({ data });
       return args[0];
     } catch (e) {

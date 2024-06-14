@@ -16,6 +16,7 @@ import { lockingRankBuilder } from '@/domain/community/entities/__tests__/lockin
 import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
+import { campaignActivityBuilder } from '@/domain/community/entities/__tests__/campaign-activity.builder';
 
 const networkService = {
   get: jest.fn(),
@@ -151,6 +152,137 @@ describe('LockingApi', () => {
       await expect(service.getCampaigns({})).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
       );
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getCampaignActivities', () => {
+    it('should get campaigns activities', async () => {
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const campaignActivityPage = pageBuilder()
+        .with('results', [
+          campaignActivityBuilder().with('holder', holder).build(),
+          campaignActivityBuilder().with('holder', holder).build(),
+        ])
+        .build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignActivityPage,
+        status: 200,
+      });
+
+      const result = await service.getCampaignActivities({
+        resourceId: campaign.resourceId,
+        holder,
+      });
+
+      expect(result).toEqual(campaignActivityPage);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+        networkRequest: {
+          params: {
+            holder: holder,
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+
+    it('should get campaigns activities for address', async () => {
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const campaignActivityPage = pageBuilder()
+        .with('results', [
+          campaignActivityBuilder().with('holder', holder).build(),
+          campaignActivityBuilder().with('holder', holder).build(),
+        ])
+        .build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignActivityPage,
+        status: 200,
+      });
+
+      const result = await service.getCampaignActivities({
+        resourceId: campaign.resourceId,
+        holder,
+      });
+
+      expect(result).toEqual(campaignActivityPage);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+        networkRequest: {
+          params: {
+            holder,
+            limit: undefined,
+            offset: undefined,
+          },
+        },
+      });
+    });
+
+    it('should forward pagination queries', async () => {
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const campaignActivityPage = pageBuilder()
+        .with('results', [
+          campaignActivityBuilder().with('holder', holder).build(),
+          campaignActivityBuilder().with('holder', holder).build(),
+        ])
+        .build();
+
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: campaignActivityPage,
+        status: 200,
+      });
+
+      await service.getCampaignActivities({
+        resourceId: campaign.resourceId,
+        holder,
+        limit,
+        offset,
+      });
+
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+        networkRequest: {
+          params: {
+            holder,
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    it('should forward error', async () => {
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(
+          `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities/${holder}`,
+        ),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(
+        service.getCampaignActivities({
+          resourceId: campaign.resourceId,
+          holder,
+        }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     });

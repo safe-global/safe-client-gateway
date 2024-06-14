@@ -7,7 +7,7 @@ export interface IBalancesApi {
   getBalances(args: {
     safeAddress: `0x${string}`;
     fiatCode: string;
-    chain?: Chain;
+    chain: Chain;
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance[]>;
@@ -19,7 +19,7 @@ export interface IBalancesApi {
 
   getCollectibles(args: {
     safeAddress: `0x${string}`;
-    chainId?: string;
+    chain: Chain;
     limit?: number;
     offset?: number;
     trusted?: boolean;

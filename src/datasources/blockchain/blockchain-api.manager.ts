@@ -8,6 +8,7 @@ import { Chain, PublicClient, createPublicClient, http } from 'viem';
 
 @Injectable()
 export class BlockchainApiManager implements IBlockchainApiManager {
+  private static readonly INFURA_URL_PATTERN = 'infura';
   private readonly blockchainApiMap: Record<string, PublicClient> = {};
   private readonly infuraApiKey: string;
 
@@ -59,8 +60,15 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     };
   }
 
+  /**
+   * Formats rpcUri to include the Infura API key if the rpcUri is an Infura URL
+   * and the authentication method is {@link RpcUriAuthentication.ApiKeyPath}.
+   * @param rpcUri rpcUri to format
+   * @returns Formatted rpcUri
+   */
   private formatRpcUri(rpcUri: DomainChain['rpcUri']): string {
-    return rpcUri.authentication === RpcUriAuthentication.ApiKeyPath
+    return rpcUri.authentication === RpcUriAuthentication.ApiKeyPath &&
+      rpcUri.value.includes(BlockchainApiManager.INFURA_URL_PATTERN)
       ? rpcUri.value + this.infuraApiKey
       : rpcUri.value;
   }

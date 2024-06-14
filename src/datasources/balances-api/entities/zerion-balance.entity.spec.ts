@@ -515,6 +515,16 @@ describe('Zerion Balance Entity schemas', () => {
       );
     });
 
+    // Note: this is needed as the implementation address field can contain non-eth addresses.
+    it('should allow any string as address value', () => {
+      const zerionImplementation = zerionImplementationBuilder().build();
+      zerionImplementation.address = faker.string.sample();
+
+      const result = ZerionImplementationSchema.safeParse(zerionImplementation);
+
+      expect(result.success).toBe(true);
+    });
+
     it('should not allow an invalid address value', () => {
       const zerionImplementation = zerionImplementationBuilder().build();
       // @ts-expect-error - address is expected to be a string
@@ -540,7 +550,6 @@ describe('Zerion Balance Entity schemas', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      // @ts-expect-error - address is expected to be a checksummed address
       zerionImplementation.address = nonChecksummedAddress;
 
       const result = ZerionImplementationSchema.safeParse(zerionImplementation);

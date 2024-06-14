@@ -149,7 +149,9 @@ export class SwapOrderHelper {
 
   private isSwapOrder(transaction: { data?: `0x${string}` }): boolean {
     if (!transaction.data) return false;
-    return this.setPreSignatureDecoder.isSetPreSignature(transaction.data);
+    return this.setPreSignatureDecoder.helpers.isSetPreSignature(
+      transaction.data,
+    );
   }
 
   /**

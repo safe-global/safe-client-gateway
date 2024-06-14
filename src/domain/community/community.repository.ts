@@ -19,6 +19,10 @@ import {
 } from '@/domain/community/entities/schemas/locking-rank.schema';
 import { ICommunityRepository } from '@/domain/community/community.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  CampaignActivity,
+  CampaignActivityPageSchema,
+} from '@/domain/community/entities/campaign-activity.entity';
 
 @Injectable()
 export class CommunityRepository implements ICommunityRepository {
@@ -38,6 +42,16 @@ export class CommunityRepository implements ICommunityRepository {
   }): Promise<Page<Campaign>> {
     const page = await this.lockingApi.getCampaigns(args);
     return CampaignPageSchema.parse(page);
+  }
+
+  async getCampaignActivities(args: {
+    resourceId: string;
+    holder?: `0x${string}`;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<CampaignActivity>> {
+    const page = await this.lockingApi.getCampaignActivities(args);
+    return CampaignActivityPageSchema.parse(page);
   }
 
   async getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank> {

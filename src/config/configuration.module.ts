@@ -46,6 +46,8 @@ export const RootConfigurationSchema = z.object({
   EMAIL_TEMPLATE_RECOVERY_TX: z.string(),
   EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: z.string(),
   EMAIL_TEMPLATE_VERIFICATION_CODE: z.string(),
+  INFURA_API_KEY: z.string(),
+  RELAY_PROVIDER_API_KEY_ARBITRUM_ONE: z.string(),
   RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: z.string(),
   RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
 });

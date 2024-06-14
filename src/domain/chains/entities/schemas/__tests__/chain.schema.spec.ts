@@ -1,3 +1,4 @@
+import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { gasPriceFixedEIP1559Builder } from '@/domain/chains/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceFixedBuilder } from '@/domain/chains/entities/__tests__/gas-price-fixed.builder';
@@ -8,6 +9,7 @@ import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builde
 import { themeBuilder } from '@/domain/chains/entities/__tests__/theme.builder';
 import {
   ChainSchema,
+  BalancesProviderSchema,
   GasPriceFixedEip1559Schema,
   GasPriceFixedSchema,
   GasPriceOracleSchema,
@@ -354,6 +356,86 @@ describe('Chain schemas', () => {
     });
   });
 
+  describe('BalancesProviderSchema', () => {
+    it('should validate a valid BalancesProvider', () => {
+      const balancesProvider = balancesProviderBuilder().build();
+
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should not validate an invalid balancesProvider chainName', () => {
+      const balancesProvider = balancesProviderBuilder().build();
+      // @ts-expect-error - chainName is expected to be a string
+      balancesProvider.chainName = faker.number.int();
+
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_type',
+            expected: 'string',
+            received: 'number',
+            path: ['chainName'],
+            message: 'Expected string, received number',
+          },
+        ]),
+      );
+    });
+
+    it('should default balancesProvider chainName to null', () => {
+      const balancesProvider = balancesProviderBuilder().build();
+      // @ts-expect-error - inferred types don't allow optional fields
+      delete balancesProvider.chainName;
+
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
+
+      expect(result.success && result.data.chainName).toStrictEqual(null);
+    });
+
+    it('should not validate an undefined balancesProvider enablement status', () => {
+      const balancesProvider = balancesProviderBuilder().build();
+      // @ts-expect-error - inferred types don't allow optional fields
+      delete balancesProvider.enabled;
+
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_type',
+            expected: 'boolean',
+            received: 'undefined',
+            path: ['enabled'],
+            message: 'Required',
+          },
+        ]),
+      );
+    });
+
+    it('should not validate an invalid balancesProvider enablement status', () => {
+      const balancesProvider = balancesProviderBuilder().build();
+      // @ts-expect-error - enabled is expected to be a boolean
+      balancesProvider.enabled = 'true';
+
+      const result = BalancesProviderSchema.safeParse(balancesProvider);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_type',
+            expected: 'boolean',
+            received: 'string',
+            path: ['enabled'],
+            message: 'Expected boolean, received string',
+          },
+        ]),
+      );
+    });
+  });
+
   describe('ChainSchema', () => {
     it('should validate a valid chain', () => {
       const chain = chainBuilder().build();
@@ -394,6 +476,34 @@ describe('Chain schemas', () => {
           {
             code: 'invalid_type',
             expected: 'string',
+            received: 'undefined',
+            path: [field],
+            message: 'Required',
+          },
+        ]),
+      );
+    });
+
+    it.each([
+      ['rpcUri' as const],
+      ['safeAppsRpcUri' as const],
+      ['publicRpcUri' as const],
+      ['blockExplorerUriTemplate' as const],
+      ['nativeCurrency' as const],
+      ['pricesProvider' as const],
+      ['balancesProvider' as const],
+      ['theme' as const],
+    ])('should not validate a chain without %s', (field) => {
+      const chain = chainBuilder().build();
+      delete chain[field];
+
+      const result = ChainSchema.safeParse(chain);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'invalid_type',
+            expected: 'object',
             received: 'undefined',
             path: [field],
             message: 'Required',
