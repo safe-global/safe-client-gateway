@@ -4,15 +4,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import postgres from 'postgres';
+import { Migration } from 'postgres-shift';
 
 const SQL_MIGRATION_FILE = 'index.sql';
 const JS_MIGRATION_FILE = 'index.js';
 
-function getMigrations(folder = path.join(process.cwd(), 'migrations')): Array<{
-  path: string;
-  migration_id: number;
-  name: string;
-}> {
+function getMigrations(
+  folder = path.join(process.cwd(), 'migrations'),
+): Array<Migration> {
   return fs
     .readdirSync(folder)
     .filter((file) => {

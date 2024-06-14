@@ -13,8 +13,8 @@ declare module 'postgres-shift' {
    * @see https://github.com/porsager/postgres-shift/blob/e7a4cb16d66c33c73f4f730b7d1de33b7757fea9/index.js
    */
 
-  type Migration = {
-    migration_id: string;
+  export type Migration = {
+    migration_id: number;
     name: string;
     path: string;
   };
