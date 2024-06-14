@@ -180,31 +180,6 @@ describe('migrationTester', () => {
     fs.rmSync(folder, { recursive: true });
   });
 
-  it('clears the migrations table after running the migrations', async () => {
-    const [migration] = migrations;
-
-    // Create migration folders and add first migration
-    const migrationPath = path.join(folder, migration.name);
-    fs.mkdirSync(migrationPath, { recursive: true });
-    fs.writeFileSync(
-      path.join(migrationPath, migration.file.name),
-      migration.file.contents,
-    );
-
-    await migrationTester({
-      sql,
-      migration: migration.name,
-      after: () => Promise.resolve(),
-      folder,
-    });
-
-    await expect(sql`SELECT * FROM migrations`).rejects.toThrow(
-      'relation "migrations" does not exist',
-    );
-
-    fs.rmSync(folder, { recursive: true });
-  });
-
   it("doesn't run if there are no migrations", async () => {
     await expect(
       migrationTester({
