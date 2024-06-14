@@ -84,7 +84,7 @@ describe('AuthController', () => {
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
 
-    blockchainApiManager.getBlockchainApi.mockImplementation(() => ({
+    blockchainApiManager.getApi.mockImplementation(() => ({
       verifySiweMessage: verifySiweMessageMock,
     }));
 

@@ -9,7 +9,7 @@ export class BlockchainRepository implements IBlockchainRepository {
     private readonly blockchainApiManager: IBlockchainApiManager,
   ) {}
 
-  clearClient(chainId: string): void {
-    this.blockchainApiManager.destroyBlockchainApi(chainId);
+  clearApi(chainId: string): void {
+    this.blockchainApiManager.destroyApi(chainId);
   }
 }

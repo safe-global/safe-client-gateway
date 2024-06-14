@@ -5,7 +5,7 @@ import { Module } from '@nestjs/common';
 export const IBlockchainRepository = Symbol('IBlockchainRepository');
 
 export interface IBlockchainRepository {
-  clearClient(chainId: string): void;
+  clearApi(chainId: string): void;
 }
 
 @Module({

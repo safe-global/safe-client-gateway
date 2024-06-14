@@ -17,9 +17,7 @@ export class EstimationsRepository implements IEstimationsRepository {
     address: `0x${string}`;
     getEstimationDto: GetEstimationDto;
   }): Promise<Estimation> {
-    const api = await this.transactionApiManager.getTransactionApi(
-      args.chainId,
-    );
+    const api = await this.transactionApiManager.getApi(args.chainId);
     const data = await api.getEstimation(args);
     return EstimationSchema.parse(data);
   }

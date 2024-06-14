@@ -134,9 +134,7 @@ export class SiweRepository implements ISiweRepository {
     }
 
     // Else, verify hash on-chain using ERC-6492 for smart contract accounts
-    const blockchainApi = await this.blockchainApiManager.getBlockchainApi(
-      args.chainId,
-    );
+    const blockchainApi = await this.blockchainApiManager.getApi(args.chainId);
     return blockchainApi.verifySiweMessage({
       message: args.message,
       signature: args.signature,

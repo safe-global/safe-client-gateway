@@ -2,14 +2,11 @@ import { BlockchainApiManager } from '@/datasources/blockchain/blockchain-api.ma
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { PublicClient } from 'viem';
 import { Module } from '@nestjs/common';
+import { IApiManager } from '@/domain/interfaces/api.manager.interface';
 
 export const IBlockchainApiManager = Symbol('IBlockchainApiManager');
 
-export interface IBlockchainApiManager {
-  getBlockchainApi(chainId: string): Promise<PublicClient>;
-
-  destroyBlockchainApi(chainId: string): void;
-}
+export interface IBlockchainApiManager extends IApiManager<PublicClient> {}
 
 @Module({
   imports: [ConfigApiModule],

@@ -48,15 +48,14 @@ export class BalancesApiManager implements IBalancesApiManager {
     this.zerionBalancesApi = zerionBalancesApi;
   }
 
-  async getBalancesApi(
+  async getApi(
     chainId: string,
     safeAddress: `0x${string}`,
   ): Promise<IBalancesApi> {
     if (this.zerionChainIds.includes(chainId)) {
       return this.zerionBalancesApi;
     }
-    const transactionApi =
-      await this.transactionApiManager.getTransactionApi(chainId);
+    const transactionApi = await this.transactionApiManager.getApi(chainId);
 
     if (!this.isCounterFactualBalancesEnabled) {
       return this._getSafeBalancesApi(chainId);
@@ -95,5 +94,11 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.coingeckoApi,
     );
     return this.safeBalancesApiMap[chainId];
+  }
+
+  destroyApi(chainId: string): void {
+    if (this.safeBalancesApiMap[chainId] !== undefined) {
+      delete this.safeBalancesApiMap[chainId];
+    }
   }
 }

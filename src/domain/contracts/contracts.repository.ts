@@ -15,9 +15,7 @@ export class ContractsRepository implements IContractsRepository {
     chainId: string;
     contractAddress: `0x${string}`;
   }): Promise<Contract> {
-    const api = await this.transactionApiManager.getTransactionApi(
-      args.chainId,
-    );
+    const api = await this.transactionApiManager.getApi(args.chainId);
     const data = await api.getContract(args.contractAddress);
     return ContractSchema.parse(data);
   }

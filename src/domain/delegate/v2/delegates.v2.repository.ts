@@ -21,8 +21,9 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>> {
-    const transactionService =
-      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
     const page = await transactionService.getDelegatesV2({
       safeAddress: args.safeAddress,
       delegate: args.delegate,
@@ -43,8 +44,9 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    const transactionService =
-      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
     await transactionService.postDelegateV2({
       safeAddress: args.safeAddress,
       delegate: args.delegate,
@@ -61,8 +63,9 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
     safeAddress: `0x${string}` | null;
     signature: string;
   }): Promise<unknown> {
-    const transactionService =
-      await this.transactionApiManager.getTransactionApi(args.chainId);
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
     return transactionService.deleteDelegateV2({
       delegate: args.delegate,
       delegator: args.delegator,

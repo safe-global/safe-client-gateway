@@ -22,13 +22,13 @@ describe('BlockchainApiManager', () => {
     target = new BlockchainApiManager(fakeConfigurationService, configApiMock);
   });
 
-  describe('getBlockchainApi', () => {
+  describe('getApi', () => {
     it('caches the API', async () => {
       const chain = chainBuilder().build();
       configApiMock.getChain.mockResolvedValue(chain);
 
-      const api = await target.getBlockchainApi(chain.chainId);
-      const cachedApi = await target.getBlockchainApi(chain.chainId);
+      const api = await target.getApi(chain.chainId);
+      const cachedApi = await target.getApi(chain.chainId);
 
       expect(api).toBe(cachedApi);
     });
@@ -46,7 +46,7 @@ describe('BlockchainApiManager', () => {
         .build();
       configApiMock.getChain.mockResolvedValue(chain);
 
-      const api = await target.getBlockchainApi(chain.chainId);
+      const api = await target.getApi(chain.chainId);
 
       expect(api.chain?.rpcUrls.default.http[0]).toContain(infuraApiKey);
     });
@@ -58,7 +58,7 @@ describe('BlockchainApiManager', () => {
         .build();
       configApiMock.getChain.mockResolvedValue(chain);
 
-      const api = await target.getBlockchainApi(chain.chainId);
+      const api = await target.getApi(chain.chainId);
 
       expect(api.chain?.rpcUrls.default.http[0]).not.toContain(infuraApiKey);
     });
@@ -67,20 +67,20 @@ describe('BlockchainApiManager', () => {
       const chain = chainBuilder().build();
       configApiMock.getChain.mockResolvedValue(chain);
 
-      const api = await target.getBlockchainApi(chain.chainId);
+      const api = await target.getApi(chain.chainId);
 
       expect(api.chain?.rpcUrls.default.http[0]).not.toContain(infuraApiKey);
     });
   });
 
-  describe('destroyBlockchainApi', () => {
-    it('destroys the API', async () => {
+  describe('destroyApi', () => {
+    it('clears the API', async () => {
       const chain = chainBuilder().build();
       configApiMock.getChain.mockResolvedValue(chain);
 
-      const api = await target.getBlockchainApi(chain.chainId);
-      target.destroyBlockchainApi(chain.chainId);
-      const cachedApi = await target.getBlockchainApi(chain.chainId);
+      const api = await target.getApi(chain.chainId);
+      target.destroyApi(chain.chainId);
+      const cachedApi = await target.getApi(chain.chainId);
 
       expect(api).not.toBe(cachedApi);
     });

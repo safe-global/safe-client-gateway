@@ -38,7 +38,7 @@ const httpErrorFactory = {
 } as jest.MockedObjectDeep<HttpErrorFactory>;
 
 const transactionApiManagerMock = {
-  getTransactionApi: jest.fn(),
+  getApi: jest.fn(),
 } as jest.MockedObjectDeep<ITransactionApiManager>;
 
 const transactionApiMock = {
@@ -77,7 +77,7 @@ beforeEach(() => {
 });
 
 describe('Balances API Manager Tests', () => {
-  describe('getBalancesApi checks', () => {
+  describe('getApi checks', () => {
     it('should return the Zerion API if the chainId is one of zerionBalancesChainIds', async () => {
       const manager = new BalancesApiManager(
         configurationService,
@@ -91,7 +91,7 @@ describe('Balances API Manager Tests', () => {
       );
       const safeAddress = getAddress(faker.finance.ethereumAddress());
 
-      const result = await manager.getBalancesApi(
+      const result = await manager.getApi(
         sample(ZERION_BALANCES_CHAIN_IDS) as string,
         safeAddress,
       );
@@ -111,12 +111,10 @@ describe('Balances API Manager Tests', () => {
         transactionApiManagerMock,
       );
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      transactionApiManagerMock.getTransactionApi.mockResolvedValue(
-        transactionApiMock,
-      );
+      transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
       transactionApiMock.isSafe.mockResolvedValue(false);
 
-      const result = await manager.getBalancesApi(
+      const result = await manager.getApi(
         faker.string.numeric({ exclude: ZERION_BALANCES_CHAIN_IDS }),
         safeAddress,
       );
@@ -169,13 +167,11 @@ describe('Balances API Manager Tests', () => {
         coingeckoApiMock,
         transactionApiManagerMock,
       );
-      transactionApiManagerMock.getTransactionApi.mockResolvedValue(
-        transactionApiMock,
-      );
+      transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
       transactionApiMock.isSafe.mockResolvedValue(true);
 
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const safeBalancesApi = await balancesApiManager.getBalancesApi(
+      const safeBalancesApi = await balancesApiManager.getApi(
         chain.chainId,
         safeAddress,
       );

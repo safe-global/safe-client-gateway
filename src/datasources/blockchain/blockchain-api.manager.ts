@@ -22,7 +22,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     );
   }
 
-  async getBlockchainApi(chainId: string): Promise<PublicClient> {
+  async getApi(chainId: string): Promise<PublicClient> {
     const blockchainApi = this.blockchainApiMap[chainId];
     if (blockchainApi) {
       return blockchainApi;
@@ -34,7 +34,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     return this.blockchainApiMap[chainId];
   }
 
-  destroyBlockchainApi(chainId: string): void {
+  destroyApi(chainId: string): void {
     if (this.blockchainApiMap?.[chainId]) {
       delete this.blockchainApiMap[chainId];
     }
