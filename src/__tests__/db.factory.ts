@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import configuration from '@/config/entities/__tests__/configuration';
 
-export function dbFactory() {
+export function dbFactory(): postgres.Sql {
   const config = configuration();
   const isCIContext = process.env.CI?.toLowerCase() === 'true';
 
