@@ -170,7 +170,9 @@ export class PostgresDatabaseMigrator {
       const file = await import(
         join(args.migration.path, PostgresDatabaseMigrator.JS_MIGRATION_FILE)
       );
-      await file.default(args.transaction);
+      (await file.default(args.transaction)) as {
+        default: (transaction: TransactionSql) => Promise<void>;
+      };
     } else {
       throw new Error(`No migration file found for ${args.migration.path}`);
     }

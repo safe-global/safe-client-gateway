@@ -50,7 +50,7 @@ describe('PostgresDatabaseMigrator tests', () => {
   let sql: postgres.Sql;
   let target: PostgresDatabaseMigrator;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     const config = configuration();
 
     const isCIContext = process.env.CI?.toLowerCase() === 'true';
@@ -188,7 +188,7 @@ describe('PostgresDatabaseMigrator tests', () => {
 
     it('throws if there is inconsistent numbering', async () => {
       // Omit second migration to create inconsistency
-      const [migration1, _, migration3] = migrations;
+      const [migration1, , migration3] = migrations;
 
       // Add inconsistent migration folders and file
       for (const { name, file } of [migration1, migration3]) {
@@ -324,7 +324,7 @@ describe('PostgresDatabaseMigrator tests', () => {
 
     it('throws if there is inconsistent numbering', async () => {
       // Omit second migration to create inconsistency
-      const [migration1, _, migration3] = migrations;
+      const [migration1, , migration3] = migrations;
 
       // Add inconsistent migration folders and file
       for (const { name, file } of [migration1, migration3]) {
