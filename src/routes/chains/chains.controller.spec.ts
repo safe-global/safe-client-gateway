@@ -120,6 +120,7 @@ describe('Chains Controller (Unit)', () => {
               ),
               disabledWallets: chainsResponse.results[0].disabledWallets,
               features: chainsResponse.results[0].features,
+              balancesProvider: chainsResponse.results[0].balancesProvider,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -143,6 +144,7 @@ describe('Chains Controller (Unit)', () => {
               ),
               disabledWallets: chainsResponse.results[1].disabledWallets,
               features: chainsResponse.results[1].features,
+              balancesProvider: chainsResponse.results[1].balancesProvider,
             },
           ],
         });
@@ -238,6 +240,7 @@ describe('Chains Controller (Unit)', () => {
         ensRegistryAddress: chainDomain.ensRegistryAddress
           ? getAddress(chainDomain.ensRegistryAddress)
           : chainDomain.ensRegistryAddress,
+        balancesProvider: chainDomain.balancesProvider,
       };
       networkService.get.mockResolvedValueOnce({
         data: chainDomain,

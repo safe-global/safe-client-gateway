@@ -185,6 +185,7 @@ describe('Balances API Manager Tests', () => {
       await safeBalancesApi.getBalances({
         safeAddress,
         fiatCode,
+        chain,
         trusted,
         excludeSpam,
       });
