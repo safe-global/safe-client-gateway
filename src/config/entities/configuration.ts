@@ -135,20 +135,21 @@ export default () => ({
     apiKey: process.env.EMAIL_API_KEY,
     fromEmail: process.env.EMAIL_API_FROM_EMAIL,
     fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
-    templates: {
-      recoveryTx: process.env.EMAIL_TEMPLATE_RECOVERY_TX,
-      unknownRecoveryTx: process.env.EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX,
-      verificationCode: process.env.EMAIL_TEMPLATE_VERIFICATION_CODE,
-    },
-    verificationCode: {
-      resendLockWindowMs: parseInt(
-        process.env.EMAIL_VERIFICATION_CODE_RESEND_LOCK_WINDOW_MS ??
-          `${30 * 1000}`,
-      ),
-      ttlMs: parseInt(
-        process.env.EMAIL_VERIFICATION_CODE_TTL_MS ?? `${5 * 60 * 1000}`,
-      ),
-    },
+    // TODO: Decide whether we reuse these when implementing the email service
+    // templates: {
+    //   recoveryTx: process.env.EMAIL_TEMPLATE_RECOVERY_TX,
+    //   unknownRecoveryTx: process.env.EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX,
+    //   verificationCode: process.env.EMAIL_TEMPLATE_VERIFICATION_CODE,
+    // },
+    // verificationCode: {
+    //   resendLockWindowMs: parseInt(
+    //     process.env.EMAIL_VERIFICATION_CODE_RESEND_LOCK_WINDOW_MS ??
+    //       `${30 * 1000}`,
+    //   ),
+    //   ttlMs: parseInt(
+    //     process.env.EMAIL_VERIFICATION_CODE_TTL_MS ?? `${5 * 60 * 1000}`,
+    //   ),
+    // },
   },
   expirationTimeInSeconds: {
     default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),

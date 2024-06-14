@@ -36,11 +36,9 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { RootModule } from '@/routes/root/root.module';
-import { EmailControllerModule } from '@/routes/email/email.controller.module';
 import { AlertsControllerModule } from '@/routes/alerts/alerts.controller.module';
 import { RecoveryModule } from '@/routes/recovery/recovery.module';
 import { RelayControllerModule } from '@/routes/relay/relay.controller.module';
-import { SubscriptionControllerModule } from '@/routes/subscriptions/subscription.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/routes/auth/auth.module';
@@ -76,13 +74,9 @@ export class AppModule implements NestModule {
         // TODO: delete/rename DelegatesModule when clients migration to v2 is completed.
         DelegatesModule,
         ...(isDelegatesV2Enabled ? [DelegatesV2Module] : []),
+        // Note: this feature will not work as expected until we reintegrate the email service
         ...(isEmailFeatureEnabled
-          ? [
-              AlertsControllerModule,
-              EmailControllerModule,
-              RecoveryModule,
-              SubscriptionControllerModule,
-            ]
+          ? [AlertsControllerModule, RecoveryModule]
           : []),
         EstimationsModule,
         HealthModule,

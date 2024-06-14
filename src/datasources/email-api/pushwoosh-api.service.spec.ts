@@ -3,7 +3,7 @@ import { PushwooshApi } from '@/datasources/email-api/pushwoosh-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
-import { CreateEmailMessageDto } from '@/domain/account/entities/create-email-message.dto.entity';
+import { CreateEmailMessageDto } from '@/domain/email/entities/create-email-message.dto.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 
