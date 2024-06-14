@@ -46,7 +46,7 @@ describe('BlockchainApiManager', () => {
         .build();
       configApiMock.getChain.mockResolvedValue(chain);
 
-      const api = await target.getBlockchainApi(chain.chainId);
+      const api = await target.getApi(chain.chainId);
 
       expect(api.chain?.rpcUrls.default.http[0]).toContain(infuraApiKey);
     });
@@ -58,7 +58,7 @@ describe('BlockchainApiManager', () => {
         .build();
       configApiMock.getChain.mockResolvedValue(chain);
 
-      const api = await target.getBlockchainApi(chain.chainId);
+      const api = await target.getApi(chain.chainId);
 
       expect(api.chain?.rpcUrls.default.http[0]).not.toContain(infuraApiKey);
     });
@@ -67,7 +67,7 @@ describe('BlockchainApiManager', () => {
       const chain = chainBuilder().build();
       configApiMock.getChain.mockResolvedValue(chain);
 
-      const api = await target.getBlockchainApi(chain.chainId);
+      const api = await target.getApi(chain.chainId);
 
       expect(api.chain?.rpcUrls.default.http[0]).not.toContain(infuraApiKey);
     });
