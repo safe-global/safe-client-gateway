@@ -13,12 +13,13 @@ const migrations: Array<{
     name: '00001_initial',
     file: {
       name: 'index.sql',
-      contents: `create table test (
+      contents: `drop table if exists test;
+                 create table test (
                    a text,
                    b int
                  );
 
-                 insert into test (a, b) values ('hello', 1);`,
+                 insert into test (a, b) values ('hello', 1337);`,
     },
   },
   {
@@ -31,7 +32,7 @@ const migrations: Array<{
                   \`
 
                   await sql\`
-                    insert into test (a, b, c) values ('hello', 9, \${new Date()})
+                    ${"insert into test (a, b, c) values ('world', 69420, ${new Date()}"})
                   \`
                 }`,
     },
@@ -76,7 +77,7 @@ describe('migrationTester', () => {
   });
 
   afterEach(async () => {
-    await sql`TRUNCATE TABLE test CASCADE`;
+    await sql`drop table if exists test`;
     fs.rmSync(folder, { recursive: true, force: true });
   });
 
@@ -104,7 +105,7 @@ describe('migrationTester', () => {
     expect(result1.after).toStrictEqual([
       {
         a: 'hello',
-        b: 1,
+        b: 1337,
       },
     ]);
 
@@ -128,13 +129,18 @@ describe('migrationTester', () => {
     expect(result2.before).toStrictEqual([
       {
         a: 'hello',
-        b: 1,
+        b: 1337,
       },
     ]);
     expect(result2.after).toStrictEqual([
       {
         a: 'hello',
-        b: 9,
+        b: 1337,
+        c: null,
+      },
+      {
+        a: 'world',
+        b: 69420,
         c: expect.any(Date),
       },
     ]);
@@ -159,7 +165,12 @@ describe('migrationTester', () => {
     expect(result3.before).toStrictEqual([
       {
         a: 'hello',
-        b: 9,
+        b: 1337,
+        c: null,
+      },
+      {
+        a: 'world',
+        b: 69420,
         c: expect.any(Date),
       },
     ]);
@@ -186,9 +197,9 @@ describe('migrationTester', () => {
       folder,
     });
 
-    const result = await sql`SELECT * FROM migrations`;
-
-    expect(result).toStrictEqual([]);
+    await expect(sql`SELECT * FROM migrations`).rejects.toThrow(
+      'relation "migrations" does not exist',
+    );
 
     fs.rmSync(folder, { recursive: true });
   });

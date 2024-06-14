@@ -30,10 +30,6 @@ function getMigrations(folder = path.join(process.cwd(), 'migrations')): Array<{
     });
 }
 
-async function clearMigrationsTable(sql: postgres.Sql): Promise<void> {
-  await sql`TRUNCATE TABLE migrations CASCADE;`;
-}
-
 export async function migrationTester(args: {
   migration: string;
   sql: postgres.Sql;
@@ -55,8 +51,6 @@ export async function migrationTester(args: {
     throw new Error('Migrations numbered inconsistency');
   }
 
-  await clearMigrationsTable(args.sql);
-
   let before: unknown;
 
   shift: for await (const migration of migrations) {
@@ -75,9 +69,9 @@ export async function migrationTester(args: {
 
     await args.sql.begin(async (transaction) => {
       if (isSql) {
-        await transaction.file(path.join(args.migration, SQL_MIGRATION_FILE));
+        await transaction.file(path.join(migration.path, SQL_MIGRATION_FILE));
       } else {
-        const file = await import(path.join(args.migration, JS_MIGRATION_FILE));
+        const file = await import(path.join(migration.path, JS_MIGRATION_FILE));
         await file.default(transaction);
       }
     });
@@ -88,8 +82,6 @@ export async function migrationTester(args: {
   }
 
   const after = await args.after(args.sql).catch(() => undefined);
-
-  await clearMigrationsTable(args.sql);
 
   return { before, after };
 }
