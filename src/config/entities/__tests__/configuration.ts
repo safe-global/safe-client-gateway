@@ -94,15 +94,6 @@ export default (): ReturnType<typeof configuration> => ({
     apiKey: faker.string.hexadecimal({ length: 32 }),
     fromEmail: faker.internet.email(),
     fromName: faker.person.fullName(),
-    templates: {
-      recoveryTx: faker.string.alphanumeric(),
-      unknownRecoveryTx: faker.string.alphanumeric(),
-      verificationCode: faker.string.alphanumeric(),
-    },
-    verificationCode: {
-      resendLockWindowMs: faker.number.int(),
-      ttlMs: faker.number.int(),
-    },
   },
   expirationTimeInSeconds: {
     default: faker.number.int(),

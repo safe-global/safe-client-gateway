@@ -25,8 +25,6 @@ import {
   toJson as lockingEventToJson,
 } from '@/domain/community/entities/__tests__/locking-event.builder';
 import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
-import { TestAccountDataSourceModule } from '@/datasources/account/__tests__/test.account.datasource.module';
-import { AccountDataSourceModule } from '@/datasources/account/account.datasource.module';
 import { getAddress } from 'viem';
 import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
@@ -56,8 +54,6 @@ describe('Community (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(AccountDataSourceModule)
-      .useModule(TestAccountDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
