@@ -9,27 +9,41 @@ describe('Migration 00001_accounts', () => {
   it('runs successfully', async () => {
     await sql`DROP TABLE IF EXISTS groups, accounts CASCADE;`;
 
-    const cb = async (sql: Sql) => {
-      const accounts = await sql`SELECT * FROM accounts`.catch(() => undefined);
-      const groups = await sql`SELECT * FROM groups`.catch(() => undefined);
-
-      return { accounts, groups };
-    };
-
     const result = await migrator.test({
       migration: '00001_accounts',
-      before: cb,
-      after: cb,
-    });
-
-    expect(result.before).toStrictEqual({
-      accounts: undefined,
-      groups: undefined,
+      after: async (sql: Sql) => {
+        return {
+          accounts: {
+            columns:
+              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts'`,
+            rows: await sql`SELECT * FROM accounts`,
+          },
+          groups: {
+            columns:
+              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'groups'`,
+            rows: await sql`SELECT * FROM groups`,
+          },
+        };
+      },
     });
 
     expect(result.after).toStrictEqual({
-      accounts: [],
-      groups: [],
+      accounts: {
+        columns: [
+          { column_name: 'id' },
+          { column_name: 'group_id' },
+          { column_name: 'address' },
+        ],
+        rows: [],
+      },
+      groups: {
+        columns: [
+          {
+            column_name: 'id',
+          },
+        ],
+        rows: [],
+      },
     });
 
     await sql.end();
