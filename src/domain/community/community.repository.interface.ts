@@ -3,6 +3,7 @@ import { Campaign } from '@/domain/community/entities/campaign.entity';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
+import { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
 
 export const ICommunityRepository = Symbol('ICommunityRepository');
 
@@ -13,6 +14,13 @@ export interface ICommunityRepository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Campaign>>;
+
+  getCampaignActivities(args: {
+    resourceId: string;
+    holder?: `0x${string}`;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<CampaignActivity>>;
 
   getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank>;
 

@@ -2,6 +2,7 @@ import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { CommunityService } from '@/routes/community/community.service';
+import { CampaignActivityPage } from '@/routes/community/entities/campaign-activity.page.entity';
 import { CampaignRank } from '@/routes/community/entities/campaign-rank.entity';
 import { CampaignRankPage } from '@/routes/community/entities/campaign-rank.page.entity';
 import { Campaign } from '@/routes/community/entities/campaign.entity';
@@ -11,7 +12,7 @@ import { LockingRank } from '@/routes/community/entities/locking-rank.entity';
 import { LockingRankPage } from '@/routes/community/entities/locking-rank.page.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('community')
@@ -42,6 +43,22 @@ export class CommunityController {
     @Param('resourceId') resourceId: string,
   ): Promise<Campaign> {
     return this.communityService.getCampaignById(resourceId);
+  }
+
+  @Get('/campaigns/:resourceId/activities')
+  async getCampaignActivities(
+    @Param('resourceId') resourceId: string,
+    @RouteUrlDecorator() routeUrl: URL,
+    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('holder', new ValidationPipe(AddressSchema.optional()))
+    holder?: `0x${string}`,
+  ): Promise<CampaignActivityPage> {
+    return this.communityService.getCampaignActivities({
+      resourceId,
+      holder,
+      routeUrl,
+      paginationData,
+    });
   }
 
   @ApiOkResponse({ type: CampaignRankPage })

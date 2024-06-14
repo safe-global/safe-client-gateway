@@ -40,6 +40,10 @@ import { Campaign } from '@/domain/community/entities/campaign.entity';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
 import { Server } from 'net';
+import {
+  campaignActivityBuilder,
+  toJson as campaignActivityToJson,
+} from '@/domain/community/entities/__tests__/campaign-activity.builder';
 
 describe('Community (Unit)', () => {
   let app: INestApplication<Server>;
@@ -271,6 +275,213 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/campaigns/${resourceId}`)
+        .expect(statusCode)
+        .expect({
+          message: errorMessage,
+          code: statusCode,
+        });
+    });
+  });
+
+  describe('GET /campaigns/:resourceId/activity', () => {
+    it('should get the campaign activity by campaign ID', async () => {
+      const campaign = campaignBuilder().build();
+      const campaignActivity = campaignActivityBuilder().build();
+      const campaignActivityPage = pageBuilder()
+        .with('results', [campaignActivity])
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
+            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/community/campaigns/${campaign.resourceId}/activities`)
+        .expect(200)
+        .expect({
+          count: 1,
+          next: null,
+          previous: null,
+          results: [campaignActivityToJson(campaignActivity)],
+        });
+    });
+
+    it('should get the campaign activity by campaign ID and holder', async () => {
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const campaignActivity = campaignActivityBuilder()
+        .with('holder', holder)
+        .build();
+      const campaignActivityPage = pageBuilder()
+        .with('results', [campaignActivity])
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
+            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/activities?holder=${holder}`,
+        )
+        .expect(200)
+        .expect({
+          count: 1,
+          next: null,
+          previous: null,
+          results: [campaignActivityToJson(campaignActivity)],
+        });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+        networkRequest: {
+          params: {
+            limit: 20,
+            offset: 0,
+            holder,
+          },
+        },
+      });
+    });
+
+    it('should forward the pagination parameters', async () => {
+      const limit = faker.number.int({ min: 1, max: 10 });
+      const offset = faker.number.int({ min: 1, max: 10 });
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const campaignActivity = campaignActivityBuilder()
+        .with('holder', holder)
+        .build();
+      const campaignActivityPage = pageBuilder()
+        .with('results', [campaignActivity])
+        .with('count', 1)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
+            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/activities?cursor=limit%3D${limit}%26offset%3D${offset}&holder=${holder}`,
+        )
+        .expect(200)
+        .expect({
+          count: 1,
+          next: null,
+          previous: null,
+          results: [campaignActivityToJson(campaignActivity)],
+        });
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+            holder,
+          },
+        },
+      });
+    });
+
+    it('should validate the holder query', async () => {
+      const campaign = campaignBuilder().build();
+      const holder = faker.string.alphanumeric();
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/activities?holder=${holder}`,
+        )
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid address',
+          path: [],
+        });
+    });
+
+    it('should validate the response', async () => {
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const invalidCampaignActivity = [{ invalid: 'campaignActivity' }];
+      const campaignActivityPage = pageBuilder()
+        .with('results', invalidCampaignActivity)
+        .with('count', invalidCampaignActivity.length)
+        .with('previous', null)
+        .with('next', null)
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
+            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/activities?holder=${holder}`,
+        )
+        .expect(500)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    it('should forward an error from the service', () => {
+      const campaign = campaignBuilder().build();
+      const holder = getAddress(faker.finance.ethereumAddress());
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const errorMessage = faker.word.words();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(
+                  `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`,
+                ),
+                {
+                  status: statusCode,
+                } as Response,
+                { message: errorMessage, status: statusCode },
+              ),
+            );
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      return request(app.getHttpServer())
+        .get(
+          `/v1/community/campaigns/${campaign.resourceId}/activities?holder${holder}`,
+        )
         .expect(statusCode)
         .expect({
           message: errorMessage,
