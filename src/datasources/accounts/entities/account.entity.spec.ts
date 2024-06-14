@@ -37,7 +37,7 @@ describe('AccountSchema', () => {
     'should not verify an Account with a string %s',
     (field) => {
       const account = accountBuilder().build();
-      // @ts-expect-error
+      // @ts-expect-error - should be integers
       account[field] = account[field].toString();
 
       const result = AccountSchema.safeParse(account);
@@ -70,7 +70,7 @@ describe('AccountSchema', () => {
 
   it('should checksum the address of an Account', () => {
     const account = accountBuilder().build();
-    // @ts-expect-error
+    // @ts-expect-error - address should be `0x${string}`
     account.address = account.address.toLowerCase();
 
     const result = AccountSchema.safeParse(account);

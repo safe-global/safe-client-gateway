@@ -29,7 +29,7 @@ describe('GroupSchema', () => {
 
   it('should not verify a Group with a string id', () => {
     const group = groupBuilder().build();
-    // @ts-expect-error
+    // @ts-expect-error - id should be an integer
     group.id = group.id.toString();
 
     const result = GroupSchema.safeParse(group);
