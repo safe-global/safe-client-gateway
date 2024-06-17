@@ -9,9 +9,9 @@ export class CampaignActivity implements DomainCampaignActivity {
   @ApiProperty({ type: String })
   endDate!: Date;
   @ApiProperty()
-  boost!: number;
+  boost!: string;
   @ApiProperty()
-  totalPoints!: number;
+  totalPoints!: string;
   @ApiProperty()
-  totalBoostedPoints!: number;
+  totalBoostedPoints!: string;
 }

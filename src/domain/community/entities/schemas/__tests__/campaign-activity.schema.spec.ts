@@ -44,7 +44,7 @@ describe('CampaignActivitySchema', () => {
     'totalBoostedPoints' as const,
   ])(`should validate a decimal %s`, (field) => {
     const campaignActivity = campaignActivityBuilder()
-      .with(field, faker.number.float())
+      .with(field, faker.number.int().toString())
       .build();
 
     const result = CampaignActivitySchema.safeParse(campaignActivity);
@@ -58,7 +58,7 @@ describe('CampaignActivitySchema', () => {
     'totalBoostedPoints' as const,
   ])(`should validate a float %s`, (field) => {
     const campaignActivity = campaignActivityBuilder()
-      .with(field, faker.number.float())
+      .with(field, faker.number.float().toString())
       .build();
 
     const result = CampaignActivitySchema.safeParse(campaignActivity);
@@ -92,24 +92,24 @@ describe('CampaignActivitySchema', () => {
         },
         {
           code: 'invalid_type',
-          expected: 'number',
-          received: 'nan',
+          expected: 'string',
+          received: 'undefined',
           path: ['boost'],
-          message: 'Expected number, received nan',
+          message: 'Required',
         },
         {
           code: 'invalid_type',
-          expected: 'number',
-          received: 'nan',
+          expected: 'string',
+          received: 'undefined',
           path: ['totalPoints'],
-          message: 'Expected number, received nan',
+          message: 'Required',
         },
         {
           code: 'invalid_type',
-          expected: 'number',
-          received: 'nan',
+          expected: 'string',
+          received: 'undefined',
           path: ['totalBoostedPoints'],
-          message: 'Expected number, received nan',
+          message: 'Required',
         },
       ]),
     );

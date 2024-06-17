@@ -8,9 +8,9 @@ export function campaignActivityBuilder(): IBuilder<CampaignActivity> {
     .with('holder', getAddress(faker.finance.ethereumAddress()))
     .with('startDate', faker.date.recent())
     .with('endDate', faker.date.future())
-    .with('boost', faker.number.float())
-    .with('totalPoints', faker.number.float())
-    .with('totalBoostedPoints', faker.number.float());
+    .with('boost', faker.string.numeric())
+    .with('totalPoints', faker.string.numeric())
+    .with('totalBoostedPoints', faker.string.numeric());
 }
 
 export function toJson(campaignActivity: CampaignActivity): unknown {
