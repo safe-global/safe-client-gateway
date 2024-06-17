@@ -85,9 +85,21 @@ export class PostgresDatabaseMigrator {
       args.folder ?? PostgresDatabaseMigrator.MIGRATIONS_FOLDER,
     );
 
+    // Find index of migration to test
+    const migrationIndex = migrations.findIndex((migration) => {
+      return migration.path.includes(args.migration);
+    });
+
+    if (migrationIndex === -1) {
+      throw new Error(`Migration ${args.migration} not found`);
+    }
+
+    // Get migrations up to the specified migration
+    const migrationsToTest = migrations.slice(0, migrationIndex + 1);
+
     let before: unknown;
 
-    shift: for await (const migration of migrations) {
+    for await (const migration of migrationsToTest) {
       const isMigrationBeingTested = migration.path.includes(args.migration);
 
       if (isMigrationBeingTested && args.before) {
@@ -97,11 +109,6 @@ export class PostgresDatabaseMigrator {
       await this.sql.begin((transaction) => {
         return this.run({ transaction, migration });
       });
-
-      if (isMigrationBeingTested) {
-        // Exit loop after testing migration
-        break shift;
-      }
     }
 
     const after = await args.after(this.sql).catch(() => undefined);

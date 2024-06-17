@@ -57,7 +57,7 @@ describe('PostgresDatabaseMigrator tests', () => {
 
   afterEach(async () => {
     // Drop example table after each test
-    await sql`drop table if exists tests`;
+    await sql`drop table if exists test`;
 
     // Close connection after each test
     await sql.end();
@@ -293,6 +293,23 @@ describe('PostgresDatabaseMigrator tests', () => {
       await expect(
         target.test({ migration: '', after: Promise.resolve, folder }),
       ).rejects.toThrow('No migrations found');
+
+      // Remove migrations folder
+      fs.rmSync(folder, { recursive: true });
+    });
+
+    it('throws if migration is not found', async () => {
+      // Create migration folders and files
+      for (const { name, file } of migrations) {
+        const migrationPath = path.join(folder, name);
+
+        fs.mkdirSync(migrationPath, { recursive: true });
+        fs.writeFileSync(path.join(migrationPath, file.name), file.contents);
+      }
+
+      await expect(
+        target.test({ migration: '69420_hax', after: Promise.resolve, folder }),
+      ).rejects.toThrow('Migration 69420_hax not found');
 
       // Remove migrations folder
       fs.rmSync(folder, { recursive: true });
