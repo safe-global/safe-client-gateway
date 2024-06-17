@@ -32,7 +32,7 @@
     "@nestjs/platform-express": "^10.3.9",
     "@nestjs/serve-static": "^4.0.2",
     "@nestjs/swagger": "^7.3.1",
-    "@safe-global/safe-deployments": "^1.36.0",
+    "@safe-global/safe-deployments": "^1.37.0",
     "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.4",
     "cookie-parser": "^1.4.6",
