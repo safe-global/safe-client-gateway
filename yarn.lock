@@ -1569,12 +1569,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@safe-global/safe-deployments@npm:^1.36.0":
-  version: 1.36.0
-  resolution: "@safe-global/safe-deployments@npm:1.36.0"
+"@safe-global/safe-deployments@npm:^1.37.0":
+  version: 1.37.0
+  resolution: "@safe-global/safe-deployments@npm:1.37.0"
   dependencies:
     semver: "npm:^7.6.0"
-  checksum: 10/dfcb6dc62d3c4a2c03d8aea099ac4f6155936a660c8456b88fe68867d5b8c3aca229f2583fae06cca5d1d33262dc8acfdb504ddeeccbf40bbdf600f52a819363
+  checksum: 10/99304d3b67d564ca014d8d2d2a0773319a53ccc89846c05464353699864f229f35615bcfc8e08f13acbd099b5670d54885309c02f914c7eda75b2cf93e145350
   languageName: node
   linkType: hard
 
@@ -7244,7 +7244,7 @@ __metadata:
     "@nestjs/serve-static": "npm:^4.0.2"
     "@nestjs/swagger": "npm:^7.3.1"
     "@nestjs/testing": "npm:^10.3.9"
-    "@safe-global/safe-deployments": "npm:^1.36.0"
+    "@safe-global/safe-deployments": "npm:^1.37.0"
     "@types/amqplib": "npm:^0"
     "@types/cookie-parser": "npm:^1.4.7"
     "@types/express": "npm:^4.17.21"
