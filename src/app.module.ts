@@ -44,6 +44,7 @@ import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-cont
 import { AuthModule } from '@/routes/auth/auth.module';
 import { TransactionsViewControllerModule } from '@/routes/transactions/transactions-view.controller';
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
+import { AccountsModule } from '@/routes/accounts/accounts.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -53,6 +54,7 @@ export class AppModule implements NestModule {
   static register(configFactory = configuration): DynamicModule {
     const {
       auth: isAuthFeatureEnabled,
+      accounts: isAccountsFeatureEnabled,
       email: isEmailFeatureEnabled,
       confirmationView: isConfirmationViewEnabled,
       delegatesV2: isDelegatesV2Enabled,
@@ -63,6 +65,7 @@ export class AppModule implements NestModule {
       imports: [
         // features
         AboutModule,
+        ...(isAccountsFeatureEnabled ? [AccountsModule] : []),
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         BalancesModule,
         CacheHooksModule,
