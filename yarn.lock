@@ -6791,20 +6791,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postgres-shift@npm:0.1.0":
-  version: 0.1.0
-  resolution: "postgres-shift@npm:0.1.0"
-  checksum: 10/1bfa9ac4479df2c0e2d8b0ecbc6e7b39c4ef990235c8200254fbd347bc08989cf0d078d378880656c14f5e20f18953a020d1ba58f85fc3973f99102aa455d0a1
-  languageName: node
-  linkType: hard
-
-"postgres-shift@patch:postgres-shift@npm%3A0.1.0#./.yarn/patches/postgres-shift-npm-0.1.0-9342b5f6f6.patch::locator=safe-client-gateway%40workspace%3A.":
-  version: 0.1.0
-  resolution: "postgres-shift@patch:postgres-shift@npm%3A0.1.0#./.yarn/patches/postgres-shift-npm-0.1.0-9342b5f6f6.patch::version=0.1.0&hash=5731ac&locator=safe-client-gateway%40workspace%3A."
-  checksum: 10/65263993b2f45da2e20d4df651bd8ede600702e53a67bcf81102990cf8f56bb0de9e5273301245226b0ebf301508ea75d0d976670427dd10672337230d848926
-  languageName: node
-  linkType: hard
-
 "postgres@npm:^3.4.4":
   version: 3.4.4
   resolution: "postgres@npm:3.4.4"
@@ -7279,7 +7265,6 @@ __metadata:
     lodash: "npm:^4.17.21"
     nestjs-cls: "npm:^4.3.0"
     postgres: "npm:^3.4.4"
-    postgres-shift: "npm:^0.1.0"
     prettier: "npm:^3.3.1"
     redis: "npm:^4.6.14"
     reflect-metadata: "npm:^0.2.2"

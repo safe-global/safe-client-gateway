@@ -1,37 +1,12 @@
-import configuration from '@/config/entities/__tests__/configuration';
+import { dbFactory } from '@/__tests__/db.factory';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import fs from 'node:fs';
-import path from 'node:path';
-import postgres from 'postgres';
-import shift from 'postgres-shift';
+import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { getAddress } from 'viem';
 
-const config = configuration();
-
-const isCIContext = process.env.CI?.toLowerCase() === 'true';
-
-const sql = postgres({
-  host: config.db.postgres.host,
-  port: parseInt(config.db.postgres.port),
-  db: config.db.postgres.database,
-  user: config.db.postgres.username,
-  password: config.db.postgres.password,
-  // If running on a CI context (e.g.: GitHub Actions),
-  // disable certificate pinning for the test execution
-  ssl:
-    isCIContext || !config.db.postgres.ssl.enabled
-      ? false
-      : {
-          requestCert: config.db.postgres.ssl.requestCert,
-          rejectUnauthorized: config.db.postgres.ssl.rejectUnauthorized,
-          ca: fs.readFileSync(
-            path.join(process.cwd(), 'db_config/test/server.crt'),
-            'utf8',
-          ),
-        },
-});
+const sql = dbFactory();
+const migrator = new PostgresDatabaseMigrator(sql);
 
 const mockLoggingService = {
   info: jest.fn(),
@@ -43,7 +18,7 @@ describe('AccountsDatasource tests', () => {
 
   // Run pending migrations before tests
   beforeAll(async () => {
-    await shift({ sql });
+    await migrator.migrate();
   });
 
   beforeEach(() => {

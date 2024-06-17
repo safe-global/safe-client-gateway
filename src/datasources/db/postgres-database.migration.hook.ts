@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import shift from 'postgres-shift';
 import postgres from 'postgres';
+import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 
 /**
  * The {@link PostgresDatabaseMigrationHook} is a Module Init hook meaning
@@ -16,6 +16,8 @@ export class PostgresDatabaseMigrationHook implements OnModuleInit {
 
   constructor(
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
+    @Inject(PostgresDatabaseMigrator)
+    private readonly migrator: PostgresDatabaseMigrator,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
@@ -29,7 +31,7 @@ export class PostgresDatabaseMigrationHook implements OnModuleInit {
       await this
         .sql`SELECT pg_advisory_lock(${PostgresDatabaseMigrationHook.LOCK_MAGIC_NUMBER})`;
       // Perform migration
-      await shift({ sql: this.sql });
+      await this.migrator.migrate();
       this.loggingService.info('Pending migrations executed');
     } catch (e) {
       // If there's an error performing a migration, we should throw the error
