@@ -6,9 +6,9 @@ export const CampaignActivitySchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   holder: AddressSchema,
-  boost: z.number(),
-  totalPoints: z.number(),
-  totalBoostedPoints: z.number(),
+  boost: z.coerce.number(),
+  totalPoints: z.coerce.number(),
+  totalBoostedPoints: z.coerce.number(),
 });
 
 export const CampaignActivityPageSchema = buildPageSchema(
