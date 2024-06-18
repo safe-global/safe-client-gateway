@@ -18,7 +18,7 @@ const swapsRepository = {
 const swapsRepositoryMock = jest.mocked(swapsRepository);
 
 const gpv2Decoder = {
-  getOrderUid: jest.fn(),
+  getOrderUidFromSetPreSignature: jest.fn(),
 } as jest.MockedObjectDeep<GPv2Decoder>;
 const gpv2DecoderMock = jest.mocked(gpv2Decoder);
 
@@ -77,7 +77,9 @@ describe('Swap Order Helper tests', () => {
         .with('buyToken', getAddress(buyToken.address))
         .with('sellToken', getAddress(sellToken.address))
         .build();
-      gpv2DecoderMock.getOrderUid.mockReturnValue(order.uid as `0x${string}`);
+      gpv2DecoderMock.getOrderUidFromSetPreSignature.mockReturnValue(
+        order.uid as `0x${string}`,
+      );
       swapsRepositoryMock.getOrder.mockResolvedValue(order);
       tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
         if (address === order.buyToken) return Promise.resolve(buyToken);

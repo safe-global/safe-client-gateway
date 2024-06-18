@@ -18,9 +18,8 @@ export class SwapOrderMapper {
     chainId: string,
     transaction: { data: `0x${string}` },
   ): Promise<SwapOrderTransactionInfo> {
-    const orderUid: `0x${string}` | null = this.gpv2Decoder.getOrderUid(
-      transaction.data,
-    );
+    const orderUid: `0x${string}` | null =
+      this.gpv2Decoder.getOrderUidFromSetPreSignature(transaction.data);
     if (!orderUid) {
       throw new Error('Order UID not found in transaction data');
     }

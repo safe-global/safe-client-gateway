@@ -63,9 +63,8 @@ export class TransactionsViewService {
     data: `0x${string}`;
     dataDecoded: DataDecoded;
   }): Promise<CowSwapConfirmationView> {
-    const orderUid: `0x${string}` | null = this.gpv2Decoder.getOrderUid(
-      args.data,
-    );
+    const orderUid: `0x${string}` | null =
+      this.gpv2Decoder.getOrderUidFromSetPreSignature(args.data);
     if (!orderUid) {
       throw new Error('Order UID not found in transaction data');
     }
