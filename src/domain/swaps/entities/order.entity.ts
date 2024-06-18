@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { FullAppDataSchema } from '@/domain/swaps/entities/full-app-data.entity';
 
 export type Order = z.infer<typeof OrderSchema>;
 
@@ -79,20 +80,5 @@ export const OrderSchema = z.object({
     .nullish()
     .default(null),
   executedSurplusFee: z.coerce.bigint().nullish().default(null),
-  fullAppData: z
-    .string()
-    .nullish()
-    .default(null)
-    .transform((jsonString, ctx) => {
-      try {
-        if (!jsonString) return null;
-        return JSON.parse(jsonString);
-      } catch (error) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Not a valid JSON payload',
-        });
-        return z.NEVER;
-      }
-    }),
+  fullAppData: FullAppDataSchema.shape.fullAppData,
 });
