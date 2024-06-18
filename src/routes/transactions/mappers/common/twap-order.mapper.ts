@@ -28,7 +28,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 
 @Injectable()
 export class TwapOrderMapper {
-  private maxNumberOfParts = 11;
+  private maxNumberOfParts: number;
 
   constructor(
     @Inject(IConfigurationService)
