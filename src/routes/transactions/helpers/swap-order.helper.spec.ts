@@ -6,7 +6,7 @@ import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { getAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { OrderStatus } from '@/domain/swaps/entities/order.entity';
+import { OrderKind, OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
@@ -204,7 +204,7 @@ describe('Swap Order Helper tests', () => {
         .with('status', status)
         .with('buyToken', getAddress(buyToken.address))
         .with('sellToken', getAddress(sellToken.address))
-        .with('kind', 'unknown')
+        .with('kind', OrderKind.Unknown)
         .build();
       swapsRepositoryMock.getOrder.mockResolvedValue(order);
       tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
