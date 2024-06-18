@@ -6,7 +6,7 @@ import { decodeAbiParameters, isAddressEqual, parseAbiParameters } from 'viem';
  * Taken from CoW SDK:
  *
  * @see https://github.com/cowprotocol/cow-sdk/blob/5aa61a03d2ed9921c5f95522866b2af0ceb1c24d/abi/ComposableCoW.json
- * 
+ *
  * TODO: We should locate this in @/abis/... but we will need to refactor the /scripts/generate-abis.js
  * to handle ABIs that are present (or alternatively install the @cowprotocol/contracts package and generate
  * the ABIs from there)
