@@ -1,7 +1,624 @@
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
-import ComposableCoW from '@/abis/composable-cow/ComposableCoW.abi';
 import { Injectable } from '@nestjs/common';
 import { decodeAbiParameters, isAddressEqual, parseAbiParameters } from 'viem';
+
+/**
+ * Taken from CoW SDK:
+ *
+ * @see https://github.com/cowprotocol/cow-sdk/blob/5aa61a03d2ed9921c5f95522866b2af0ceb1c24d/abi/ComposableCoW.json
+ * 
+ * TODO: We should locate this in @/abis/... but we will need to refactor the /scripts/generate-abis.js
+ * to handle ABIs that are present (or alternatively install the @cowprotocol/contracts package and generate
+ * the ABIs from there)
+ */
+export const ComposableCowAbi = [
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_settlement',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'constructor',
+  },
+  {
+    inputs: [],
+    name: 'InterfaceNotSupported',
+    type: 'error',
+  },
+  {
+    inputs: [],
+    name: 'InvalidHandler',
+    type: 'error',
+  },
+  {
+    inputs: [],
+    name: 'ProofNotAuthed',
+    type: 'error',
+  },
+  {
+    inputs: [],
+    name: 'SingleOrderNotAuthed',
+    type: 'error',
+  },
+  {
+    inputs: [],
+    name: 'SwapGuardRestricted',
+    type: 'error',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        components: [
+          {
+            internalType: 'contract IConditionalOrder',
+            name: 'handler',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'salt',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes',
+            name: 'staticInput',
+            type: 'bytes',
+          },
+        ],
+        indexed: false,
+        internalType: 'struct IConditionalOrder.ConditionalOrderParams',
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'ConditionalOrderCreated',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'bytes32',
+        name: 'root',
+        type: 'bytes32',
+      },
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'location',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bytes',
+            name: 'data',
+            type: 'bytes',
+          },
+        ],
+        indexed: false,
+        internalType: 'struct ComposableCoW.Proof',
+        name: 'proof',
+        type: 'tuple',
+      },
+    ],
+    name: 'MerkleRootSet',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'contract ISwapGuard',
+        name: 'swapGuard',
+        type: 'address',
+      },
+    ],
+    name: 'SwapGuardSet',
+    type: 'event',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32',
+      },
+    ],
+    name: 'cabinet',
+    outputs: [
+      {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: 'contract IConditionalOrder',
+            name: 'handler',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'salt',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes',
+            name: 'staticInput',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct IConditionalOrder.ConditionalOrderParams',
+        name: 'params',
+        type: 'tuple',
+      },
+      {
+        internalType: 'bool',
+        name: 'dispatch',
+        type: 'bool',
+      },
+    ],
+    name: 'create',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: 'contract IConditionalOrder',
+            name: 'handler',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'salt',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes',
+            name: 'staticInput',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct IConditionalOrder.ConditionalOrderParams',
+        name: 'params',
+        type: 'tuple',
+      },
+      {
+        internalType: 'contract IValueFactory',
+        name: 'factory',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes',
+        name: 'data',
+        type: 'bytes',
+      },
+      {
+        internalType: 'bool',
+        name: 'dispatch',
+        type: 'bool',
+      },
+    ],
+    name: 'createWithContext',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'domainSeparator',
+    outputs: [
+      {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'owner',
+        type: 'address',
+      },
+      {
+        components: [
+          {
+            internalType: 'contract IConditionalOrder',
+            name: 'handler',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'salt',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes',
+            name: 'staticInput',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct IConditionalOrder.ConditionalOrderParams',
+        name: 'params',
+        type: 'tuple',
+      },
+      {
+        internalType: 'bytes',
+        name: 'offchainInput',
+        type: 'bytes',
+      },
+      {
+        internalType: 'bytes32[]',
+        name: 'proof',
+        type: 'bytes32[]',
+      },
+    ],
+    name: 'getTradeableOrderWithSignature',
+    outputs: [
+      {
+        components: [
+          {
+            internalType: 'contract IERC20',
+            name: 'sellToken',
+            type: 'address',
+          },
+          {
+            internalType: 'contract IERC20',
+            name: 'buyToken',
+            type: 'address',
+          },
+          {
+            internalType: 'address',
+            name: 'receiver',
+            type: 'address',
+          },
+          {
+            internalType: 'uint256',
+            name: 'sellAmount',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint256',
+            name: 'buyAmount',
+            type: 'uint256',
+          },
+          {
+            internalType: 'uint32',
+            name: 'validTo',
+            type: 'uint32',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'appData',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'uint256',
+            name: 'feeAmount',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'kind',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bool',
+            name: 'partiallyFillable',
+            type: 'bool',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'sellTokenBalance',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'buyTokenBalance',
+            type: 'bytes32',
+          },
+        ],
+        internalType: 'struct GPv2Order.Data',
+        name: 'order',
+        type: 'tuple',
+      },
+      {
+        internalType: 'bytes',
+        name: 'signature',
+        type: 'bytes',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: 'contract IConditionalOrder',
+            name: 'handler',
+            type: 'address',
+          },
+          {
+            internalType: 'bytes32',
+            name: 'salt',
+            type: 'bytes32',
+          },
+          {
+            internalType: 'bytes',
+            name: 'staticInput',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct IConditionalOrder.ConditionalOrderParams',
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'hash',
+    outputs: [
+      {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32',
+      },
+    ],
+    stateMutability: 'pure',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract Safe',
+        name: 'safe',
+        type: 'address',
+      },
+      {
+        internalType: 'address',
+        name: 'sender',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes32',
+        name: '_hash',
+        type: 'bytes32',
+      },
+      {
+        internalType: 'bytes32',
+        name: '_domainSeparator',
+        type: 'bytes32',
+      },
+      {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32',
+      },
+      {
+        internalType: 'bytes',
+        name: 'encodeData',
+        type: 'bytes',
+      },
+      {
+        internalType: 'bytes',
+        name: 'payload',
+        type: 'bytes',
+      },
+    ],
+    name: 'isValidSafeSignature',
+    outputs: [
+      {
+        internalType: 'bytes4',
+        name: 'magic',
+        type: 'bytes4',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 'singleOrderHash',
+        type: 'bytes32',
+      },
+    ],
+    name: 'remove',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    name: 'roots',
+    outputs: [
+      {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 'root',
+        type: 'bytes32',
+      },
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'location',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bytes',
+            name: 'data',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct ComposableCoW.Proof',
+        name: 'proof',
+        type: 'tuple',
+      },
+    ],
+    name: 'setRoot',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'bytes32',
+        name: 'root',
+        type: 'bytes32',
+      },
+      {
+        components: [
+          {
+            internalType: 'uint256',
+            name: 'location',
+            type: 'uint256',
+          },
+          {
+            internalType: 'bytes',
+            name: 'data',
+            type: 'bytes',
+          },
+        ],
+        internalType: 'struct ComposableCoW.Proof',
+        name: 'proof',
+        type: 'tuple',
+      },
+      {
+        internalType: 'contract IValueFactory',
+        name: 'factory',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes',
+        name: 'data',
+        type: 'bytes',
+      },
+    ],
+    name: 'setRootWithContext',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'contract ISwapGuard',
+        name: 'swapGuard',
+        type: 'address',
+      },
+    ],
+    name: 'setSwapGuard',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+      {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32',
+      },
+    ],
+    name: 'singleOrders',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    name: 'swapGuards',
+    outputs: [
+      {
+        internalType: 'contract ISwapGuard',
+        name: '',
+        type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
 
 /**
  * Decoder for ComposableCow contract which focuses on decoding TWAP (`createWithContext`) orders
@@ -10,7 +627,7 @@ import { decodeAbiParameters, isAddressEqual, parseAbiParameters } from 'viem';
  * @see https://github.com/cowprotocol/cow-sdk/blob/5aa61a03d2ed9921c5f95522866b2af0ceb1c24d/src/composable/orderTypes/Twap.ts
  */
 @Injectable()
-export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCoW> {
+export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
   // Address of the TWAP handler contract
   private static readonly TwapHandlerAddress =
     '0x6cF1e9cA41f7611dEf408122793c358a3d11E5a5';
@@ -21,7 +638,7 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCoW> {
   );
 
   constructor() {
-    super(ComposableCoW);
+    super(ComposableCowAbi);
   }
 
   /**
