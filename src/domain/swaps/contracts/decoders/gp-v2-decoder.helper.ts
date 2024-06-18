@@ -8,7 +8,7 @@ export const abi = parseAbi([
 ]);
 
 @Injectable()
-export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
+export class GPv2Decoder extends AbiDecoder<typeof abi> {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
@@ -34,7 +34,7 @@ export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
 }
 
 @Module({
-  providers: [SetPreSignatureDecoder],
-  exports: [SetPreSignatureDecoder],
+  providers: [GPv2Decoder],
+  exports: [GPv2Decoder],
 })
-export class SetPreSignatureDecoderModule {}
+export class GPv2DecoderModule {}

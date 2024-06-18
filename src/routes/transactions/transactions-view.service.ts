@@ -7,7 +7,7 @@ import {
 import { Inject, Injectable } from '@nestjs/common';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -17,7 +17,7 @@ export class TransactionsViewService {
   constructor(
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: IDataDecodedRepository,
-    private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
+    private readonly gpv2Decoder: GPv2Decoder,
     private readonly swapOrderHelper: SwapOrderHelper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
@@ -63,8 +63,9 @@ export class TransactionsViewService {
     data: `0x${string}`;
     dataDecoded: DataDecoded;
   }): Promise<CowSwapConfirmationView> {
-    const orderUid: `0x${string}` | null =
-      this.setPreSignatureDecoder.getOrderUid(args.data);
+    const orderUid: `0x${string}` | null = this.gpv2Decoder.getOrderUid(
+      args.data,
+    );
     if (!orderUid) {
       throw new Error('Order UID not found in transaction data');
     }

@@ -29,7 +29,7 @@ import { TransferImitationMapper } from '@/routes/transactions/mappers/transfers
 import { TransactionsController } from '@/routes/transactions/transactions.controller';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
-import { SetPreSignatureDecoderModule } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { GPv2DecoderModule } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
 import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
@@ -47,7 +47,7 @@ import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.
     HumanDescriptionRepositoryModule,
     SafeRepositoryModule,
     SafeAppsRepositoryModule,
-    SetPreSignatureDecoderModule,
+    GPv2DecoderModule,
     SwapOrderMapperModule,
     SwapOrderHelperModule,
     TokenRepositoryModule,

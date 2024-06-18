@@ -1,6 +1,6 @@
 import { SwapsRepository } from '@/domain/swaps/swaps.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { faker } from '@faker-js/faker';
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
@@ -17,10 +17,10 @@ const swapsRepository = {
 } as jest.MockedObjectDeep<SwapsRepository>;
 const swapsRepositoryMock = jest.mocked(swapsRepository);
 
-const setPreSignatureDecoder = {
+const gpv2Decoder = {
   getOrderUid: jest.fn(),
-} as jest.MockedObjectDeep<SetPreSignatureDecoder>;
-const setPreSignatureDecoderMock = jest.mocked(setPreSignatureDecoder);
+} as jest.MockedObjectDeep<GPv2Decoder>;
+const gpv2DecoderMock = jest.mocked(gpv2Decoder);
 
 const tokenRepository = {
   getToken: jest.fn(),
@@ -57,7 +57,7 @@ describe('Swap Order Helper tests', () => {
 
     target = new SwapOrderHelper(
       multiSendDecoderMock,
-      setPreSignatureDecoderMock,
+      gpv2DecoderMock,
       tokenRepositoryMock,
       swapsRepositoryMock,
       configurationServiceMock,
@@ -77,9 +77,7 @@ describe('Swap Order Helper tests', () => {
         .with('buyToken', getAddress(buyToken.address))
         .with('sellToken', getAddress(sellToken.address))
         .build();
-      setPreSignatureDecoderMock.getOrderUid.mockReturnValue(
-        order.uid as `0x${string}`,
-      );
+      gpv2DecoderMock.getOrderUid.mockReturnValue(order.uid as `0x${string}`);
       swapsRepositoryMock.getOrder.mockResolvedValue(order);
       tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
         if (address === order.buyToken) return Promise.resolve(buyToken);
@@ -311,7 +309,7 @@ describe('Swap Order Helper tests', () => {
 
       target = new SwapOrderHelper(
         multiSendDecoderMock,
-        setPreSignatureDecoderMock,
+        gpv2DecoderMock,
         tokenRepositoryMock,
         swapsRepositoryMock,
         configurationServiceMock,
