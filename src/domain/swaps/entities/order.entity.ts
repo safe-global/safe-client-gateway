@@ -21,6 +21,25 @@ export enum OrderClass {
   Unknown = 'unknown',
 }
 
+export enum OrderKind {
+  Buy = 'buy',
+  Sell = 'sell',
+  Unknown = 'unknown',
+}
+
+export enum SellTokenBalance {
+  Erc20 = 'erc20',
+  Internal = 'internal',
+  External = 'external',
+  Unknown = 'unknown',
+}
+
+export enum BuyTokenBalance {
+  Erc20 = 'erc20',
+  Internal = 'internal',
+  Unknown = 'unknown',
+}
+
 export const OrderSchema = z.object({
   sellToken: AddressSchema,
   buyToken: AddressSchema,
@@ -30,12 +49,12 @@ export const OrderSchema = z.object({
   validTo: z.number(),
   appData: z.string(),
   feeAmount: z.coerce.bigint(),
-  kind: z.enum(['buy', 'sell', 'unknown']).catch('unknown'),
+  kind: z.nativeEnum(OrderKind).catch(OrderKind.Unknown),
   partiallyFillable: z.boolean(),
   sellTokenBalance: z
-    .enum(['erc20', 'internal', 'external', 'unknown'])
-    .catch('unknown'),
-  buyTokenBalance: z.enum(['erc20', 'internal', 'unknown']).catch('unknown'),
+    .nativeEnum(SellTokenBalance)
+    .catch(SellTokenBalance.Unknown),
+  buyTokenBalance: z.nativeEnum(BuyTokenBalance).catch(BuyTokenBalance.Unknown),
   signingScheme: z
     .enum(['eip712', 'ethsign', 'presign', 'eip1271', 'unknown'])
     .catch('unknown'),
