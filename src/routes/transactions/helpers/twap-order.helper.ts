@@ -73,6 +73,9 @@ export class TwapOrderHelper {
    * @param args.executionDate - date of the TWAP execution
    * @param args.chainId - chain ID of the TWAP
    * @returns array of {@link GPv2OrderParameters} that represent the TWAP order parts
+   *
+   * Implementation based on CoW Swap app
+   * @see https://github.com/cowprotocol/cowswap/blob/1cdfa24c6448e3ebf2c6e3c986cb5d7bfd269aa4/apps/cowswap-frontend/src/modules/twap/updaters/PartOrdersUpdater.tsx#L44
    */
   public generateTwapOrderParts(args: {
     twapStruct: TwapStruct;
