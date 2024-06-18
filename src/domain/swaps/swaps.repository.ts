@@ -35,7 +35,7 @@ export class SwapsRepository implements ISwapsRepository {
     appDataHash: `0x${string}`,
   ): Promise<FullAppData> {
     const api = this.swapsApiFactory.get(chainId);
-    const fullAppData = api.getFullAppData(appDataHash);
+    const fullAppData = await api.getFullAppData(appDataHash);
     return FullAppDataSchema.parse(fullAppData);
   }
 }
