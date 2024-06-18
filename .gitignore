@@ -51,4 +51,3 @@ data
 
 # ABIs
 /abis/*
-!/abis/composable-cow
