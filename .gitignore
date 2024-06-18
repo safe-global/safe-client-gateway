@@ -50,4 +50,5 @@ lerna-debug.log*
 data
 
 # ABIs
-/abis
+/abis/*
+!/abis/composable-cow
