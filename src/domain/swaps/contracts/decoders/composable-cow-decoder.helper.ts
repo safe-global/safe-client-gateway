@@ -52,6 +52,8 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCoW> {
    * @param data - transaction data to decode
    * @returns decoded parameters passed to `createWithContext`
    */
+  // Use inferred return type
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   private decodeCreateWithContext(data: `0x${string}`) {
     try {
       const decoded = this.decodeFunctionData({
