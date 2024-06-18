@@ -655,7 +655,9 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
    * @param data - the transaction data for the setPreSignature call
    * @returns {`0x${string}`} the order UID or null if the data does not represent a setPreSignature transaction
    */
-  public getOrderUid(data: `0x${string}`): `0x${string}` | null {
+  public getOrderUidFromSetPreSignature(
+    data: `0x${string}`,
+  ): `0x${string}` | null {
     if (!this.helpers.isSetPreSignature(data)) {
       return null;
     }
