@@ -39,8 +39,8 @@ export type TwapOrderInfo = {
   validUntil: number;
   sellAmount: string;
   buyAmount: string;
-  executedSellAmount: string;
-  executedBuyAmount: string;
+  executedSellAmount: string | null;
+  executedBuyAmount: string | null;
   sellToken: TokenInfo;
   buyToken: TokenInfo;
   receiver: `0x${string}`;
@@ -61,7 +61,9 @@ export class TwapOrderTransactionInfo
   @ApiProperty({ enum: [TransactionInfoType.TwapOrder] })
   override type = TransactionInfoType.TwapOrder;
 
-  @ApiProperty({ description: 'The TWAP status' })
+  @ApiProperty({
+    description: "The TWAP status, 'Unknown' if there are too many parts",
+  })
   orderStatus: OrderStatus;
 
   @ApiProperty({ enum: OrderKind })
@@ -83,15 +85,19 @@ export class TwapOrderTransactionInfo
   })
   buyAmount: string;
 
-  @ApiProperty({
-    description: 'The executed sell token raw amount (no decimals)',
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'The executed sell token raw amount (no decimals), or null if there are too many parts',
   })
-  executedSellAmount: string;
+  executedSellAmount: string | null;
 
-  @ApiProperty({
-    description: 'The executed buy token raw amount (no decimals)',
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'The executed buy token raw amount (no decimals), or null if there are too many parts',
   })
-  executedBuyAmount: string;
+  executedBuyAmount: string | null;
 
   @ApiProperty({ description: 'The sell token of the TWAP' })
   sellToken: TokenInfo;
@@ -153,8 +159,8 @@ export class TwapOrderTransactionInfo
     validUntil: number;
     sellAmount: string;
     buyAmount: string;
-    executedSellAmount: string;
-    executedBuyAmount: string;
+    executedSellAmount: string | null;
+    executedBuyAmount: string | null;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     receiver: `0x${string}`;
