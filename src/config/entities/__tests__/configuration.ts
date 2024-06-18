@@ -176,5 +176,6 @@ export default (): ReturnType<typeof configuration> => ({
     explorerBaseUri: faker.internet.url(),
     restrictApps: false,
     allowedApps: [],
+    maxNumberOfParts: faker.number.int(),
   },
 });
