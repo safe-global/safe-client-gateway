@@ -196,7 +196,7 @@ describe('PostgresDatabaseMigrator tests', () => {
       await expect(
         target.test({
           migration: migration1.name,
-          before: (sql) => sql`SELECT * FROM test`,
+          before: (sql) => sql`SELECT * FROM test`.catch(() => undefined),
           after: (sql) => sql`SELECT * FROM test`,
           folder,
         }),
@@ -265,7 +265,7 @@ describe('PostgresDatabaseMigrator tests', () => {
         target.test({
           migration: migration3.name,
           before: (sql) => sql`SELECT * FROM test`,
-          after: (sql) => sql`SELECT * FROM test`,
+          after: (sql) => sql`SELECT * FROM test`.catch(() => undefined),
           folder,
         }),
       ).resolves.toStrictEqual({
