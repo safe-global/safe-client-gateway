@@ -744,8 +744,7 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
     const numberFlags = Number(flag);
     const index = (numberFlags >> offset) & this.mask(options);
 
-    // TODO: This type casting should not be needed
-    const decoded = options[index] as unknown as Exclude<
+    const decoded = options[index] as Exclude<
       (typeof GPv2Decoder.FlagMasks)[K]['options'][number],
       undefined
     >;
