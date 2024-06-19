@@ -20,7 +20,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/set-pre-signature-encoder.builder';
+import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/gp-v2-encoder.builder';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { faker } from '@faker-js/faker';

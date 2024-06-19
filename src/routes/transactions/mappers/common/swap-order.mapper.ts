@@ -1,5 +1,5 @@
 import { Injectable, Module } from '@nestjs/common';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import {
@@ -10,7 +10,7 @@ import {
 @Injectable()
 export class SwapOrderMapper {
   constructor(
-    private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
+    private readonly gpv2Decoder: GPv2Decoder,
     private readonly swapOrderHelper: SwapOrderHelper,
   ) {}
 
@@ -19,7 +19,7 @@ export class SwapOrderMapper {
     transaction: { data: `0x${string}` },
   ): Promise<SwapOrderTransactionInfo> {
     const orderUid: `0x${string}` | null =
-      this.setPreSignatureDecoder.getOrderUid(transaction.data);
+      this.gpv2Decoder.getOrderUidFromSetPreSignature(transaction.data);
     if (!orderUid) {
       throw new Error('Order UID not found in transaction data');
     }
@@ -70,7 +70,7 @@ export class SwapOrderMapper {
 
 @Module({
   imports: [SwapOrderHelperModule],
-  providers: [SwapOrderMapper, SetPreSignatureDecoder],
+  providers: [SwapOrderMapper, GPv2Decoder],
   exports: [SwapOrderMapper],
 })
 export class SwapOrderMapperModule {}

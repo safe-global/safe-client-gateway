@@ -1,6 +1,6 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import {
   ITokenRepository,
   TokenRepositoryModule,
@@ -30,7 +30,7 @@ export class SwapOrderHelper {
 
   constructor(
     private readonly multiSendDecoder: MultiSendDecoder,
-    private readonly setPreSignatureDecoder: SetPreSignatureDecoder,
+    private readonly gpv2Decoder: GPv2Decoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
     @Inject(ISwapsRepository)
@@ -147,9 +147,7 @@ export class SwapOrderHelper {
 
   private isSwapOrder(transaction: { data?: `0x${string}` }): boolean {
     if (!transaction.data) return false;
-    return this.setPreSignatureDecoder.helpers.isSetPreSignature(
-      transaction.data,
-    );
+    return this.gpv2Decoder.helpers.isSetPreSignature(transaction.data);
   }
 
   /**
@@ -215,7 +213,7 @@ function allowedAppsFactory(
   providers: [
     SwapOrderHelper,
     MultiSendDecoder,
-    SetPreSignatureDecoder,
+    GPv2Decoder,
     {
       provide: 'SWAP_ALLOWED_APPS',
       useFactory: allowedAppsFactory,
