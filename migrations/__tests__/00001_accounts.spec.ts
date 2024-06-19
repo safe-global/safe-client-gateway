@@ -7,7 +7,7 @@ interface AccountRow {
   group_id: number;
   created_at: Date;
   updated_at: Date;
-  address: `0x${string};
+  address: `0x${string}`;
 }
 
 describe('Migration 00001_accounts', () => {
@@ -90,5 +90,35 @@ describe('Migration 00001_accounts', () => {
     );
 
     expect(updatedAt.getTime()).toBeGreaterThan(createdAt.getTime());
+  });
+
+  it('only updated_at should be updated on row changes', async () => {
+    await sql`DROP TABLE IF EXISTS groups, accounts CASCADE;`;
+
+    const result: {
+      before: unknown;
+      after: AccountRow[];
+    } = await migrator.test({
+      migration: '00001_accounts',
+      after: async (sql: Sql): Promise<AccountRow[]> => {
+        await sql`INSERT INTO groups (id) VALUES (1);`;
+        await sql`INSERT INTO accounts (id, group_id, address) VALUES (1, 1, '0x0000');`;
+        return await sql<AccountRow[]>`SELECT * FROM accounts`;
+      },
+    });
+
+    // created_at and updated_at should be the same after the row is created
+    const createdAt = new Date(result.after[0].created_at);
+    const updatedAt = new Date(result.after[0].updated_at);
+    expect(createdAt).toStrictEqual(updatedAt);
+
+    // only updated_at should be updated after the row is updated
+    await sql`UPDATE accounts set address = '0x0001' WHERE id = 1;`;
+    const afterUpdate = await sql<AccountRow[]>`SELECT * FROM accounts`;
+    const updatedAtAfterUpdate = new Date(afterUpdate[0].updated_at);
+    const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
+
+    expect(createdAtAfterUpdate).toStrictEqual(createdAt);
+    expect(updatedAtAfterUpdate.getTime()).toBeGreaterThan(createdAt.getTime());
   });
 });

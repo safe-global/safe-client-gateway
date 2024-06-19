@@ -3,4 +3,4 @@ import { z } from 'zod';
 
 export type Group = z.infer<typeof GroupSchema>;
 
-export const GroupSchema = RowSchema
+export const GroupSchema = RowSchema;
