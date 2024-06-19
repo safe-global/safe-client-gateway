@@ -64,7 +64,7 @@ export class TwapOrderMapper {
     );
 
     // Generate parts of the TWAP order
-    const _parts = this.twapOrderHelper.generateTwapOrderParts({
+    const twapParts = this.twapOrderHelper.generateTwapOrderParts({
       twapStruct,
       executionDate: transaction.executionDate,
       chainId,
@@ -72,19 +72,19 @@ export class TwapOrderMapper {
 
     // There can be up to uint256 parts in a TWAP order so we limit this
     // to avoid requesting too many orders
-    const hasAbundantParts = _parts.length > this.maxNumberOfParts;
+    const hasAbundantParts = twapParts.length > this.maxNumberOfParts;
 
-    const parts = hasAbundantParts
+    const partsToFetch = hasAbundantParts
       ? // We use the last part (and only one) to get the status of the entire
         // order and we only need one to get the token info
-        _parts.slice(-1)
-      : _parts;
+        twapParts.slice(-1)
+      : twapParts;
 
     const [{ fullAppData }, ...orders] = await Promise.all([
       // Decode hash of `appData`
       this.swapsRepository.getFullAppData(chainId, twapStruct.appData),
       // Fetch all order parts
-      ...parts.map((order) => {
+      ...partsToFetch.map((order) => {
         const orderUid = this.gpv2OrderHelper.computeOrderUid({
           chainId,
           owner: safeAddress,
@@ -112,7 +112,7 @@ export class TwapOrderMapper {
       orderStatus: this.getOrderStatus(orders),
       kind: OrderKind.Sell,
       class: OrderClass.Limit,
-      validUntil: Math.max(...parts.map((order) => order.validTo)),
+      validUntil: Math.max(...partsToFetch.map((order) => order.validTo)),
       sellAmount: sellAmount.toString(),
       buyAmount: buyAmount.toString(),
       executedSellAmount,
