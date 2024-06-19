@@ -24,17 +24,26 @@ import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class TwapOrderMapper {
+  private maxNumberOfParts: number;
+
   constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     private readonly swapOrderHelper: SwapOrderHelper,
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
     private readonly composableCowDecoder: ComposableCowDecoder,
     private readonly gpv2OrderHelper: GPv2OrderHelper,
     private readonly twapOrderHelper: TwapOrderHelper,
-  ) {}
+  ) {
+    this.maxNumberOfParts = this.configurationService.getOrThrow(
+      'swaps.maxNumberOfParts',
+    );
+  }
 
   /**
    * Maps a TWAP order from a given transaction
@@ -53,18 +62,29 @@ export class TwapOrderMapper {
     const twapStruct = this.composableCowDecoder.decodeTwapStruct(
       transaction.data,
     );
+
     // Generate parts of the TWAP order
-    const parts = this.twapOrderHelper.generateTwapOrderParts({
+    const twapParts = this.twapOrderHelper.generateTwapOrderParts({
       twapStruct,
       executionDate: transaction.executionDate,
       chainId,
     });
 
+    // There can be up to uint256 parts in a TWAP order so we limit this
+    // to avoid requesting too many orders
+    const hasAbundantParts = twapParts.length > this.maxNumberOfParts;
+
+    const partsToFetch = hasAbundantParts
+      ? // We use the last part (and only one) to get the status of the entire
+        // order and we only need one to get the token info
+        twapParts.slice(-1)
+      : twapParts;
+
     const [{ fullAppData }, ...orders] = await Promise.all([
       // Decode hash of `appData`
       this.swapsRepository.getFullAppData(chainId, twapStruct.appData),
       // Fetch all order parts
-      ...parts.map((order) => {
+      ...partsToFetch.map((order) => {
         const orderUid = this.gpv2OrderHelper.computeOrderUid({
           chainId,
           owner: safeAddress,
@@ -73,6 +93,12 @@ export class TwapOrderMapper {
         return this.swapOrderHelper.getOrder({ chainId, orderUid });
       }),
     ]);
+
+    const executedSellAmount: TwapOrderInfo['executedSellAmount'] =
+      hasAbundantParts ? null : this.getExecutedSellAmount(orders).toString();
+
+    const executedBuyAmount: TwapOrderInfo['executedBuyAmount'] =
+      hasAbundantParts ? null : this.getExecutedBuyAmount(orders).toString();
 
     // All orders have the same sellToken and buyToken
     const { sellToken, buyToken } = orders[0];
@@ -86,11 +112,11 @@ export class TwapOrderMapper {
       orderStatus: this.getOrderStatus(orders),
       kind: OrderKind.Sell,
       class: OrderClass.Limit,
-      validUntil: Math.max(...parts.map((order) => order.validTo)),
+      validUntil: Math.max(...partsToFetch.map((order) => order.validTo)),
       sellAmount: sellAmount.toString(),
       buyAmount: buyAmount.toString(),
-      executedSellAmount: this.getExecutedSellAmount(orders).toString(),
-      executedBuyAmount: this.getExecutedBuyAmount(orders).toString(),
+      executedSellAmount,
+      executedBuyAmount,
       sellToken: new TokenInfo({
         address: sellToken.address,
         decimals: sellToken.decimals,

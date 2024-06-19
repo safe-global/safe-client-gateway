@@ -256,5 +256,9 @@ export default () => ({
     // The app names should match the "App Code" of the metadata provided to CoW Swap.
     // See https://explorer.cow.fi/appdata?tab=encode
     allowedApps: process.env.SWAPS_ALLOWED_APPS?.split(',') || [],
+    // Upper limit of parts we will request from CoW for TWAP orders, after
+    // which we return base values for those orders
+    // Note: 11 is the average number of parts, confirmed by CoW
+    maxNumberOfParts: parseInt(process.env.BALANCES_TTL_SECONDS ?? `${11}`),
   },
 });
