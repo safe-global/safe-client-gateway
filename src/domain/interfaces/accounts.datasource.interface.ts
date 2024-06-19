@@ -1,4 +1,4 @@
-import { Account } from '@/datasources/accounts/entities/account.entity';
+import { Account } from '@/domain/accounts/entities/account.entity';
 
 export const IAccountsDatasource = Symbol('IAccountsDatasource');
 

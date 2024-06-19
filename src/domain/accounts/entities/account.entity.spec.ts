@@ -1,7 +1,7 @@
-import { accountBuilder } from '@/datasources/accounts/entities/__tests__/account.builder';
-import { AccountSchema } from '@/datasources/accounts/entities/account.entity';
-import { getAddress } from 'viem';
+import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.builder';
+import { AccountSchema } from '@/domain/accounts/entities/account.entity';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 
 describe('AccountSchema', () => {
   it('should verify an Account', () => {

@@ -1,5 +1,5 @@
-import { GroupSchema } from '@/datasources/accounts/entities/group.entity';
 import { RowSchema } from '@/datasources/db/entities/row.entity';
+import { GroupSchema } from '@/domain/accounts/entities/group.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 

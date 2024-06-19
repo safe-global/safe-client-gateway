@@ -1,6 +1,6 @@
-import { Account } from '@/datasources/accounts/entities/account.entity';
+import { Account } from '@/domain/accounts/entities/account.entity';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
   Inject,
