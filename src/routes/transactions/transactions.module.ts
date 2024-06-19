@@ -37,6 +37,8 @@ import { HumanDescriptionRepositoryModule } from '@/domain/human-description/hum
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
 import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.helper';
+import { TwapOrderMapperModule } from '@/routes/transactions/mappers/common/twap-order.mapper';
+import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.helper';
 
 @Module({
   controllers: [TransactionsController],
@@ -51,6 +53,8 @@ import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.
     SwapOrderMapperModule,
     SwapOrderHelperModule,
     TokenRepositoryModule,
+    TwapOrderMapperModule,
+    TwapOrderHelperModule,
   ],
   providers: [
     CreationTransactionMapper,
