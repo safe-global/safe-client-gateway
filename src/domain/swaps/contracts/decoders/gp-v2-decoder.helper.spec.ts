@@ -1,7 +1,7 @@
 import { Hex } from 'viem';
 import { faker } from '@faker-js/faker';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
-import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/set-pre-signature-encoder.builder';
+import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/gp-v2-encoder.builder';
 import { ILoggingService } from '@/logging/logging.interface';
 
 const loggingService = {
@@ -9,12 +9,12 @@ const loggingService = {
 } as jest.MockedObjectDeep<ILoggingService>;
 const loggingServiceMock = jest.mocked(loggingService);
 
-describe('SetPreSignatureDecoder', () => {
-  let target: SetPreSignatureDecoder;
+describe('GPv2Decoder', () => {
+  let target: GPv2Decoder;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    target = new SetPreSignatureDecoder(loggingServiceMock);
+    target = new GPv2Decoder(loggingServiceMock);
   });
 
   it('decodes a setPreSignature function call correctly', () => {

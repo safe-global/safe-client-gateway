@@ -4,7 +4,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
-import { SetPreSignatureDecoder } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { Order } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
@@ -39,11 +39,11 @@ const mockChainsRepository = {
 describe('TwapOrderMapper', () => {
   const configurationService = new FakeConfigurationService();
   const multiSendDecoder = new MultiSendDecoder();
-  const setPreSignatureDecoder = new SetPreSignatureDecoder(mockLoggingService);
+  const gpv2Decoder = new GPv2Decoder(mockLoggingService);
   const allowedApps = new Set<string>();
   const swapOrderHelper = new SwapOrderHelper(
     multiSendDecoder,
-    setPreSignatureDecoder,
+    gpv2Decoder,
     mockTokenRepository,
     mockSwapsRepository,
     mockConfigurationService,

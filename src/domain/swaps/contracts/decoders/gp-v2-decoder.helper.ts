@@ -8,7 +8,7 @@ export const abi = parseAbi([
 ]);
 
 @Injectable()
-export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
+export class GPv2Decoder extends AbiDecoder<typeof abi> {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
@@ -21,7 +21,7 @@ export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
    * @param data - the transaction data for the setPreSignature call
    * @returns {`0x${string}`} the order UID or null if the data does not represent a setPreSignature transaction
    */
-  getOrderUid(data: `0x${string}`): `0x${string}` | null {
+  getOrderUidFromSetPreSignature(data: `0x${string}`): `0x${string}` | null {
     try {
       if (!this.helpers.isSetPreSignature(data)) return null;
       const { args } = this.decodeFunctionData({ data });
@@ -34,7 +34,7 @@ export class SetPreSignatureDecoder extends AbiDecoder<typeof abi> {
 }
 
 @Module({
-  providers: [SetPreSignatureDecoder],
-  exports: [SetPreSignatureDecoder],
+  providers: [GPv2Decoder],
+  exports: [GPv2Decoder],
 })
-export class SetPreSignatureDecoderModule {}
+export class GPv2DecoderModule {}

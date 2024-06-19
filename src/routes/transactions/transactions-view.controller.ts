@@ -25,7 +25,7 @@ import {
   TransactionDataDto,
   TransactionDataDtoSchema,
 } from '@/routes/common/entities/transaction-data.dto.entity';
-import { SetPreSignatureDecoderModule } from '@/domain/swaps/contracts/decoders/set-pre-signature-decoder.helper';
+import { GPv2DecoderModule } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -70,7 +70,7 @@ export class TransactionsViewController {
 @Module({
   imports: [
     DataDecodedRepositoryModule,
-    SetPreSignatureDecoderModule,
+    GPv2DecoderModule,
     SwapOrderHelperModule,
   ],
   providers: [TransactionsViewService],
