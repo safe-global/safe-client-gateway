@@ -7,7 +7,7 @@ interface AccountRow {
   group_id: number;
   created_at: Date;
   updated_at: Date;
-  address: string;
+  address: `0x${string};
 }
 
 describe('Migration 00001_accounts', () => {
