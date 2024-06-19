@@ -61,9 +61,7 @@ export class TwapOrderTransactionInfo
   @ApiProperty({ enum: [TransactionInfoType.TwapOrder] })
   override type = TransactionInfoType.TwapOrder;
 
-  @ApiProperty({
-    description: "The TWAP status, 'Unknown' if there are too many parts",
-  })
+  @ApiProperty({ description: 'The TWAP status' })
   orderStatus: OrderStatus;
 
   @ApiProperty({ enum: OrderKind })
