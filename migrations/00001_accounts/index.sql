@@ -11,7 +11,7 @@ CREATE TABLE
 CREATE TABLE
     accounts (
         id SERIAL PRIMARY KEY,
-        group_id INTEGER REFERENCES groups (id),
+        group_id INTEGER REFERENCES groups (id) ON DELETE SET NULL,
         address CHARACTER VARYING(42) NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
