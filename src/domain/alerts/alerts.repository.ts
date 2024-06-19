@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Hex } from 'viem';
+import { Hex, isAddressEqual } from 'viem';
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
@@ -62,14 +62,15 @@ export class AlertsRepository implements IAlertsRepository {
         data: log.data as Hex,
         topics: log.topics as [Hex, Hex, Hex],
       });
-      const decodedTransactions = this._decodeTransactionAdded(
-        decodedEvent.args.data,
-      );
+
+      if (isAddressEqual(decodedEvent.args.to, safeAddress)) {
+        throw new Error('Alert is not for the Safe');
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const newSafeState = this._mapSafeSetup({
         safe,
-        decodedTransactions,
+        data: decodedEvent.args.data,
       });
 
       // TODO: Notify the user about the new Safe state
@@ -78,85 +79,63 @@ export class AlertsRepository implements IAlertsRepository {
     }
   }
 
-  private _decodeTransactionAdded(
-    data: Hex,
-  ): Array<ReturnType<typeof this._decodeRecoveryTransaction>> {
-    try {
-      return this.multiSendDecoder
-        .mapMultiSendTransactions(data)
-        .flatMap((multiSend) => {
-          return this._decodeRecoveryTransaction(multiSend.data);
-        });
-    } catch {
-      return [this._decodeRecoveryTransaction(data)];
-    }
-  }
+  private _mapSafeSetup(args: { safe: Safe; data: `0x${string}` }): Safe {
+    const newSafe = structuredClone(args.safe);
 
-  private _decodeRecoveryTransaction(
-    data: Hex,
-  ): ReturnType<typeof this.safeDecoder.decodeFunctionData> {
-    const decoded = this.safeDecoder.decodeFunctionData({ data });
-
-    const isRecoveryTransaction = [
-      'addOwnerWithThreshold',
-      'removeOwner',
-      'swapOwner',
-      'changeThreshold',
-    ].includes(decoded.functionName);
-
-    if (!isRecoveryTransaction) {
-      throw new Error('Unknown recovery transaction');
-    }
-
-    return decoded;
-  }
-
-  private _mapSafeSetup(args: {
-    safe: Safe;
-    decodedTransactions: Array<ReturnType<SafeDecoder['decodeFunctionData']>>;
-  }): Safe {
-    return args.decodedTransactions.reduce((newSafe, decodedTransaction) => {
-      switch (decodedTransaction.functionName) {
-        case 'addOwnerWithThreshold': {
-          const [ownerToAdd, newThreshold] = decodedTransaction.args;
-
-          newSafe.owners.push(ownerToAdd);
-          newSafe.threshold = Number(newThreshold);
-          break;
-        }
-        case 'removeOwner': {
-          const [, ownerToRemove, newThreshold] = decodedTransaction.args;
-
-          newSafe.owners = newSafe.owners.filter((owner) => {
-            return owner.toLowerCase() !== ownerToRemove.toLowerCase();
-          });
-          newSafe.threshold = Number(newThreshold);
-          break;
-        }
-        case 'swapOwner': {
-          const [, ownerToRemove, ownerToAdd] = decodedTransaction.args;
-
-          newSafe.owners = newSafe.owners.map((owner) => {
-            return owner.toLowerCase() === ownerToRemove.toLowerCase()
-              ? ownerToAdd
-              : owner;
-          });
-          break;
-        }
-        case 'changeThreshold': {
-          const [newThreshold] = decodedTransaction.args;
-
-          newSafe.threshold = Number(newThreshold);
-          break;
-        }
-        default: {
-          throw new Error(
-            `Unknown recovery transaction ${decodedTransaction?.functionName}`,
-          );
-        }
+    const transactions = ((): Array<`0x${string}`> => {
+      if (!this.multiSendDecoder.helpers.isMultiSend(args.data)) {
+        return [args.data];
       }
+      return this.multiSendDecoder
+        .mapMultiSendTransactions(args.data)
+        .map((transaction) => transaction.data);
+    })();
 
-      return newSafe;
-    }, structuredClone(args.safe));
+    for (const data of transactions) {
+      const addOwnerWithThreshold = this.safeDecoder.decodeFunctionData({
+        data,
+        functionName: 'addOwnerWithThreshold',
+      });
+      const removeOwner = this.safeDecoder.decodeFunctionData({
+        data,
+        functionName: 'removeOwner',
+      });
+      const swapOwner = this.safeDecoder.decodeFunctionData({
+        data,
+        functionName: 'swapOwner',
+      });
+      const changeThreshold = this.safeDecoder.decodeFunctionData({
+        data,
+        functionName: 'changeThreshold',
+      });
+
+      if (addOwnerWithThreshold) {
+        // Add new owner and set new threshold
+        const [ownerToAdd, newThreshold] = addOwnerWithThreshold;
+        newSafe.owners.push(ownerToAdd);
+        newSafe.threshold = Number(newThreshold);
+      } else if (removeOwner) {
+        // Remove specified owner and set new threshold
+        const [, ownerToRemove, newThreshold] = removeOwner;
+        newSafe.owners = newSafe.owners.filter((owner) => {
+          return isAddressEqual(owner, ownerToRemove);
+        });
+        newSafe.threshold = Number(newThreshold);
+      } else if (swapOwner) {
+        // Swap specified owner with new owner
+        const [, ownerToRemove, ownerToAdd] = swapOwner;
+        newSafe.owners = newSafe.owners.map((owner) => {
+          return isAddressEqual(owner, ownerToRemove) ? ownerToAdd : owner;
+        });
+      } else if (changeThreshold) {
+        // Set new threshold
+        const [newThreshold] = changeThreshold;
+        newSafe.threshold = Number(newThreshold);
+      } else {
+        throw new Error('Unknown transaction data');
+      }
+    }
+
+    return newSafe;
   }
 }

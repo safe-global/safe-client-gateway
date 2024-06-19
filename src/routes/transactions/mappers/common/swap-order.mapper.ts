@@ -34,7 +34,7 @@ export class SwapOrderMapper {
     safeAddress: `0x${string}`,
     transaction: { data: `0x${string}` },
   ): Promise<SwapOrderTransactionInfo> {
-    const order = this.gpv2Decoder.decodeOrderFromSettlement(transaction.data);
+    const order = this.gpv2Decoder.decodeOrderFromSettle(transaction.data);
     if (!order) {
       throw new Error('Order could not be decoded from transaction data');
     }

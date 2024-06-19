@@ -22,19 +22,18 @@ describe('SafeDecoder', () => {
       const args = setup.build();
       const data = setup.encode();
 
-      expect(target.decodeFunctionData({ data })).toEqual({
-        functionName: 'setup',
-        args: [
-          args.owners,
-          args.threshold,
-          args.to,
-          args.data,
-          args.fallbackHandler,
-          args.paymentToken,
-          args.payment,
-          args.paymentReceiver,
-        ],
-      });
+      expect(
+        target.decodeFunctionData({ data, functionName: 'setup' }),
+      ).toEqual([
+        args.owners,
+        args.threshold,
+        args.to,
+        args.data,
+        args.fallbackHandler,
+        args.paymentToken,
+        args.payment,
+        args.paymentReceiver,
+      ]);
     });
 
     it('decodes an addOwnerWithThreshold function call correctly', () => {
@@ -42,10 +41,12 @@ describe('SafeDecoder', () => {
       const args = addOwnerWithThreshold.build();
       const data = addOwnerWithThreshold.encode();
 
-      expect(target.decodeFunctionData({ data })).toEqual({
-        functionName: 'addOwnerWithThreshold',
-        args: [args.owner, args.threshold],
-      });
+      expect(
+        target.decodeFunctionData({
+          data,
+          functionName: 'addOwnerWithThreshold',
+        }),
+      ).toEqual([args.owner, args.threshold]);
     });
 
     it('decodes a removeOwner function call correctly', () => {
@@ -53,10 +54,9 @@ describe('SafeDecoder', () => {
       const args = removeOwner.build();
       const data = removeOwner.encode();
 
-      expect(target.decodeFunctionData({ data })).toEqual({
-        functionName: 'removeOwner',
-        args: [args.prevOwner, args.owner, args.threshold],
-      });
+      expect(
+        target.decodeFunctionData({ data, functionName: 'removeOwner' }),
+      ).toEqual([args.prevOwner, args.owner, args.threshold]);
     });
 
     it('decodes a swapOwner function call correctly', () => {
@@ -64,10 +64,9 @@ describe('SafeDecoder', () => {
       const args = swapOwner.build();
       const data = swapOwner.encode();
 
-      expect(target.decodeFunctionData({ data })).toEqual({
-        functionName: 'swapOwner',
-        args: [args.prevOwner, args.oldOwner, args.newOwner],
-      });
+      expect(
+        target.decodeFunctionData({ data, functionName: 'swapOwner' }),
+      ).toEqual([args.prevOwner, args.oldOwner, args.newOwner]);
     });
 
     it('decodes a changeThreshold function call correctly', () => {
@@ -75,10 +74,9 @@ describe('SafeDecoder', () => {
       const args = changeThreshold.build();
       const data = changeThreshold.encode();
 
-      expect(target.decodeFunctionData({ data })).toEqual({
-        functionName: 'changeThreshold',
-        args: [args.threshold],
-      });
+      expect(
+        target.decodeFunctionData({ data, functionName: 'changeThreshold' }),
+      ).toEqual([args.threshold]);
     });
 
     it('decodes an execTransaction function call correctly', () => {
@@ -86,21 +84,20 @@ describe('SafeDecoder', () => {
       const args = execTransaction.build();
       const data = execTransaction.encode();
 
-      expect(target.decodeFunctionData({ data })).toEqual({
-        functionName: 'execTransaction',
-        args: [
-          args.to,
-          args.value,
-          args.data,
-          args.operation,
-          args.safeTxGas,
-          args.baseGas,
-          args.gasPrice,
-          args.gasToken,
-          args.refundReceiver,
-          args.signatures,
-        ],
-      });
+      expect(
+        target.decodeFunctionData({ data, functionName: 'execTransaction' }),
+      ).toEqual([
+        args.to,
+        args.value,
+        args.data,
+        args.operation,
+        args.safeTxGas,
+        args.baseGas,
+        args.gasPrice,
+        args.gasToken,
+        args.refundReceiver,
+        args.signatures,
+      ]);
     });
   });
 

@@ -1,9 +1,10 @@
 import {
   Abi,
+  AbiStateMutability,
   ContractEventName,
+  ContractFunctionArgs,
   ContractFunctionName,
   DecodeEventLogParameters,
-  DecodeFunctionDataParameters,
   Hex,
   decodeEventLog as _decodeEventLog,
   decodeFunctionData as _decodeFunctionData,
@@ -44,7 +45,7 @@ export function _generateHelpers<TAbi extends Abi>(
 export abstract class AbiDecoder<TAbi extends Abi> {
   readonly helpers: Helpers<TAbi>;
 
-  protected constructor(private readonly abi: TAbi) {
+  protected constructor(readonly abi: TAbi) {
     this.helpers = _generateHelpers(abi);
   }
 
@@ -68,11 +69,25 @@ export abstract class AbiDecoder<TAbi extends Abi> {
     });
   }
 
-  // Use inferred types from viem
+  // Use inferred types
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  decodeFunctionData<TAbi extends Abi>(
-    args: Omit<DecodeFunctionDataParameters<TAbi>, 'abi'>,
-  ) {
-    return _decodeFunctionData({ ...args, abi: this.abi });
+  decodeFunctionData<
+    allFunctionNames extends ContractFunctionName<TAbi>,
+  >(args: { data: `0x${string}`; functionName: allFunctionNames }) {
+    try {
+      const decoded = _decodeFunctionData({ data: args.data, abi: this.abi });
+
+      if (decoded.functionName !== args.functionName) {
+        return null;
+      }
+
+      return decoded.args as ContractFunctionArgs<
+        TAbi,
+        AbiStateMutability,
+        allFunctionNames
+      >;
+    } catch {
+      return null;
+    }
   }
 }
