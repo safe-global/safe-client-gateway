@@ -90,7 +90,7 @@ export class TransactionsViewService {
       buyAmount: order.buyAmount.toString(),
       executedSellAmount: order.executedSellAmount.toString(),
       executedBuyAmount: order.executedBuyAmount.toString(),
-      explorerUrl: this.swapOrderHelper.getOrderExplorerUrl(order),
+      explorerUrl: this.swapOrderHelper.getOrderExplorerUrl(order).toString(),
       sellToken: new TokenInfo({
         address: sellToken.address,
         decimals: sellToken.decimals,

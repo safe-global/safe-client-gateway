@@ -18,7 +18,6 @@ import { HumanDescriptionMapper } from '@/routes/transactions/mappers/common/hum
 import { NativeCoinTransferMapper } from '@/routes/transactions/mappers/common/native-coin-transfer.mapper';
 import { SettingsChangeMapper } from '@/routes/transactions/mappers/common/settings-change.mapper';
 import { SwapOrderMapper } from '@/routes/transactions/mappers/common/swap-order.mapper';
-import { isHex } from 'viem';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
@@ -114,6 +113,12 @@ export class MultisigTransactionInfoMapper {
       if (twapOrder) {
         return twapOrder;
       }
+
+      // If the transaction is a TWAP-based swap order, we return it immediately
+      const twapSwapOrder = await this.mapTwapSwapOrder(chainId, transaction);
+      if (twapSwapOrder) {
+        return twapSwapOrder;
+      }
     }
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
@@ -200,6 +205,8 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
+  // TODO: Refactor mapSwapOrder, mapTwapOrder and mapTwapSwapOrder as they follow the same pattern
+
   /**
    * Maps a swap order transaction.
    * If the transaction is not a swap order, it returns null.
@@ -212,7 +219,7 @@ export class MultisigTransactionInfoMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<SwapOrderTransactionInfo | null> {
-    if (!transaction?.data || !isHex(transaction.data)) {
+    if (!transaction?.data) {
       return null;
     }
 
@@ -267,6 +274,34 @@ export class MultisigTransactionInfoMapper {
         {
           data: orderData,
           executionDate: transaction.executionDate,
+        },
+      );
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapTwapSwapOrder(
+    chainId: string,
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): Promise<SwapOrderTransactionInfo | null> {
+    if (!transaction?.data) {
+      return null;
+    }
+
+    const orderData = this.swapOrderHelper.findTwapSwapOrder(transaction.data);
+
+    if (!orderData) {
+      return null;
+    }
+
+    try {
+      return await this.swapOrderMapper.mapTwapSwapOrder(
+        chainId,
+        transaction.safe,
+        {
+          data: orderData,
         },
       );
     } catch (error) {

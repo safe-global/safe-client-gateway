@@ -92,7 +92,7 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
     type: String,
     description: 'The URL to the explorer page of the order',
   })
-  explorerUrl: URL;
+  explorerUrl: string;
 
   @ApiPropertyOptional({
     type: String,

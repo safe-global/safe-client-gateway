@@ -6,11 +6,13 @@ import {
   SwapOrderHelper,
   SwapOrderHelperModule,
 } from '@/routes/transactions/helpers/swap-order.helper';
+import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
 
 @Injectable()
 export class SwapOrderMapper {
   constructor(
     private readonly gpv2Decoder: GPv2Decoder,
+    private readonly gpv2OrderHelper: GPv2OrderHelper,
     private readonly swapOrderHelper: SwapOrderHelper,
   ) {}
 
@@ -24,10 +26,33 @@ export class SwapOrderMapper {
       throw new Error('Order UID not found in transaction data');
     }
 
-    const { order, sellToken, buyToken } = await this.swapOrderHelper.getOrder({
+    return await this.mapSwapOrderTransactionInfo({ chainId, orderUid });
+  }
+
+  async mapTwapSwapOrder(
+    chainId: string,
+    safeAddress: `0x${string}`,
+    transaction: { data: `0x${string}` },
+  ): Promise<SwapOrderTransactionInfo> {
+    const order = this.gpv2Decoder.decodeOrderFromSettlement(transaction.data);
+    if (!order) {
+      throw new Error('Order could not be decoded from transaction data');
+    }
+
+    const orderUid = this.gpv2OrderHelper.computeOrderUid({
       chainId,
-      orderUid,
+      owner: safeAddress,
+      order,
     });
+    return await this.mapSwapOrderTransactionInfo({ chainId, orderUid });
+  }
+
+  private async mapSwapOrderTransactionInfo(args: {
+    chainId: string;
+    orderUid: `0x${string}`;
+  }): Promise<SwapOrderTransactionInfo> {
+    const { order, sellToken, buyToken } =
+      await this.swapOrderHelper.getOrder(args);
 
     if (!this.swapOrderHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
@@ -59,7 +84,7 @@ export class SwapOrderMapper {
         symbol: buyToken.symbol,
         trusted: buyToken.trusted,
       }),
-      explorerUrl: this.swapOrderHelper.getOrderExplorerUrl(order),
+      explorerUrl: this.swapOrderHelper.getOrderExplorerUrl(order).toString(),
       executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
       receiver: order.receiver,
       owner: order.owner,
@@ -70,7 +95,7 @@ export class SwapOrderMapper {
 
 @Module({
   imports: [SwapOrderHelperModule],
-  providers: [SwapOrderMapper, GPv2Decoder],
+  providers: [SwapOrderMapper, GPv2Decoder, GPv2OrderHelper],
   exports: [SwapOrderMapper],
 })
 export class SwapOrderMapperModule {}
