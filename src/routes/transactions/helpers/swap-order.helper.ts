@@ -5,12 +5,9 @@ import {
   ITokenRepository,
   TokenRepositoryModule,
 } from '@/domain/tokens/token.repository.interface';
-import {
-  ISwapsRepository,
-  SwapsRepository,
-} from '@/domain/swaps/swaps.repository';
+import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Token, TokenType } from '@/domain/tokens/entities/token.entity';
-import { Order } from '@/domain/swaps/entities/order.entity';
+import { Order, OrderKind } from '@/domain/swaps/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import {
@@ -36,7 +33,8 @@ export class SwapOrderHelper {
     private readonly gpv2Decoder: GPv2Decoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
-    @Inject(ISwapsRepository) private readonly swapsRepository: SwapsRepository,
+    @Inject(ISwapsRepository)
+    private readonly swapsRepository: ISwapsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject('SWAP_ALLOWED_APPS') private readonly allowedApps: Set<string>,
@@ -97,7 +95,7 @@ export class SwapOrderHelper {
       args.orderUid,
     );
 
-    if (order.kind === 'unknown') throw new Error('Unknown order kind');
+    if (order.kind === OrderKind.Unknown) throw new Error('Unknown order kind');
 
     const [buyToken, sellToken] = await Promise.all([
       this.getToken({

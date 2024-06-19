@@ -597,7 +597,6 @@ export const GPv2Abi = [
   },
 ] as const;
 
-// TODO: Import this into GPv2OrderHelper
 export type GPv2OrderParameters = {
   sellToken: `0x${string}`;
   buyToken: `0x${string}`;
