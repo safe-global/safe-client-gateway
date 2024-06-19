@@ -657,21 +657,12 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
   public getOrderUidFromSetPreSignature(
     data: `0x${string}`,
   ): `0x${string}` | null {
-    if (!this.helpers.isSetPreSignature(data)) {
-      return null;
-    }
+    const decoded = this.decodeFunctionData({
+      data,
+      functionName: 'setPreSignature',
+    });
 
-    try {
-      const decoded = this.decodeFunctionData({ data });
-
-      if (decoded.functionName !== 'setPreSignature') {
-        throw new Error('Data is not of setPreSignature');
-      }
-
-      return decoded.args[0];
-    } catch (e) {
-      return null;
-    }
+    return decoded?.[0] ?? null;
   }
 
   /**
@@ -681,10 +672,13 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
    * @param tokens The list of token addresses as they appear in the settlement.
    * @returns The decoded {@link GPv2OrderParameters} or null if the trade is invalid.
    */
-  public decodeOrderFromSettlement(
+  public decodeOrderFromSettle(
     data: `0x${string}`,
   ): GPv2OrderParameters | null {
-    const decoded = this.decodeSettle(data);
+    const decoded = this.decodeFunctionData({
+      data,
+      functionName: 'settle',
+    });
 
     if (!decoded) {
       return null;
@@ -713,26 +707,6 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
       sellTokenBalance: this.decodeFlag('sellTokenBalance', trade.flags),
       buyTokenBalance: this.decodeFlag('buyTokenBalance', trade.flags),
     };
-  }
-
-  // Use inferred return type
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  private decodeSettle(data: `0x${string}`) {
-    if (!this.helpers.isSettle(data)) {
-      return null;
-    }
-
-    try {
-      const decoded = this.decodeFunctionData({ data });
-
-      if (decoded.functionName !== 'settle') {
-        throw new Error('Data is not of settle');
-      }
-
-      return decoded.args;
-    } catch (e) {
-      return null;
-    }
   }
 
   private decodeFlag<K extends keyof typeof GPv2Decoder.FlagMasks>(

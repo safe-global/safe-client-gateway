@@ -21,6 +21,15 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
     value: bigint;
     data: Hex;
   }> {
+    const multiSend = this.decodeFunctionData({
+      functionName: 'multiSend',
+      data: multiSendData,
+    });
+
+    if (!multiSend) {
+      throw new Error('Invalid multiSend data');
+    }
+
     const mapped: Array<{
       operation: number;
       to: Hex;
@@ -28,9 +37,7 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
       data: Hex;
     }> = [];
 
-    const multiSend = this.decodeFunctionData({ data: multiSendData });
-
-    const transactions = multiSend.args[0];
+    const transactions = multiSend[0];
     const transactionsSize = size(transactions);
 
     let cursor = 0;

@@ -15,15 +15,16 @@ describe('Erc20Decoder', () => {
     const args = transfer.build();
     const data = transfer.encode();
 
-    expect(target.decodeFunctionData({ data })).toEqual({
-      functionName: 'transfer',
-      args: [args.to, args.value],
-    });
+    expect(
+      target.decodeFunctionData({ data, functionName: 'transfer' }),
+    ).toEqual([args.to, args.value]);
   });
 
-  it('throws if the function call cannot be decoded', () => {
+  it('should return null if the function call cannot be decoded', () => {
     const data = faker.string.hexadecimal({ length: 138 }) as `0x${string}`;
 
-    expect(() => target.decodeFunctionData({ data })).toThrow();
+    expect(target.decodeFunctionData({ data, functionName: 'transfer' })).toBe(
+      null,
+    );
   });
 });

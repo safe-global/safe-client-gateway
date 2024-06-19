@@ -647,7 +647,10 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
    * @returns the decoded {@link TwapStruct}
    */
   decodeTwapStruct(data: `0x${string}`): TwapStruct {
-    const decoded = this.decodeCreateWithContext(data);
+    const decoded = this.decodeFunctionData({
+      data,
+      functionName: 'createWithContext',
+    });
 
     if (!decoded) {
       throw new Error('Unable to decode `createWithContext` data');
@@ -662,33 +665,6 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
     }
 
     return this.decodeConditionalOrderParams(params.staticInput);
-  }
-
-  /**
-   * Decode the `createWithContext` data to tuple of parameters
-   * @param data - transaction data to decode
-   * @returns decoded parameters passed to `createWithContext`
-   */
-  // Use inferred return type
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  private decodeCreateWithContext(data: `0x${string}`) {
-    if (!this.helpers.isCreateWithContext(data)) {
-      return null;
-    }
-
-    try {
-      const decoded = this.decodeFunctionData({
-        data,
-      });
-
-      if (decoded.functionName !== 'createWithContext') {
-        throw new Error('Data is not of createWithContext');
-      }
-
-      return decoded.args;
-    } catch {
-      return null;
-    }
   }
 
   /**
