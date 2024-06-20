@@ -43,6 +43,8 @@ describe('AccountsDatasource tests', () => {
         id: expect.any(Number),
         group_id: null,
         address,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
       });
     });
 
@@ -67,6 +69,8 @@ describe('AccountsDatasource tests', () => {
         id: expect.any(Number),
         group_id: null,
         address,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
       });
     });
 
