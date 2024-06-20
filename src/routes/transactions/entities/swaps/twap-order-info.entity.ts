@@ -33,7 +33,7 @@ type StartTime =
   | { startType: StartTimeValue.AtEpoch; epoch: number };
 
 export type TwapOrderInfo = {
-  orderStatus: OrderStatus;
+  status: OrderStatus;
   kind: OrderKind.Sell;
   class: OrderClass.Limit;
   validUntil: number;
@@ -61,8 +61,11 @@ export class TwapOrderTransactionInfo
   @ApiProperty({ enum: [TransactionInfoType.TwapOrder] })
   override type = TransactionInfoType.TwapOrder;
 
-  @ApiProperty({ description: 'The TWAP status' })
-  orderStatus: OrderStatus;
+  @ApiProperty({
+    description: 'The TWAP status',
+    enum: OrderStatus,
+  })
+  status: OrderStatus;
 
   @ApiProperty({ enum: OrderKind })
   kind: OrderKind.Sell;
@@ -172,7 +175,7 @@ export class TwapOrderTransactionInfo
     startTime: StartTime;
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
-    this.orderStatus = args.orderStatus;
+    this.status = args.orderStatus;
     this.kind = args.kind;
     this.class = args.class;
     this.validUntil = args.validUntil;
