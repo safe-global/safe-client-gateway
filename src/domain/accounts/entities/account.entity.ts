@@ -6,6 +6,6 @@ import { z } from 'zod';
 export type Account = z.infer<typeof AccountSchema>;
 
 export const AccountSchema = RowSchema.extend({
-  group_id: GroupSchema.shape.id,
+  group_id: GroupSchema.shape.id.nullable(),
   address: AddressSchema,
 });
