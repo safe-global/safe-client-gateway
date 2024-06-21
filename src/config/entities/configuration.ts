@@ -164,8 +164,7 @@ export default () => ({
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
     swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
     twapsDecoding: process.env.FF_TWAPS_DECODING?.toLowerCase() === 'true',
-    historyDebugLogs:
-      process.env.FF_HISTORY_DEBUG_LOGS?.toLowerCase() === 'true',
+    debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     imitationMapping:
       process.env.FF_IMITATION_MAPPING?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',

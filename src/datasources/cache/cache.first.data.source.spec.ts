@@ -32,7 +32,7 @@ describe('CacheFirstDataSource', () => {
     jest.useFakeTimers();
     fakeCacheService = new FakeCacheService();
     fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('features.historyDebugLogs', true);
+    fakeConfigurationService.set('features.debugLogs', true);
     cacheFirstDataSource = new CacheFirstDataSource(
       fakeCacheService,
       mockNetworkService,
