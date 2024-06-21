@@ -110,7 +110,7 @@ export default (): ReturnType<typeof configuration> => ({
     zerionBalancesChainIds: ['137'],
     swapsDecoding: true,
     twapsDecoding: true,
-    historyDebugLogs: false,
+    debugLogs: false,
     imitationMapping: false,
     auth: false,
     confirmationView: false,
