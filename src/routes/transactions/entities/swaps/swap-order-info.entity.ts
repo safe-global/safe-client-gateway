@@ -20,7 +20,7 @@ export interface OrderInfo {
   buyAmount: string;
   executedSellAmount: string;
   executedBuyAmount: string;
-  explorerUrl: URL;
+  explorerUrl: string;
   executedSurplusFee: string | null;
   receiver: string | null;
   owner: `0x${string}`;
@@ -84,7 +84,7 @@ export class SwapOrderTransactionInfo
     type: String,
     description: 'The URL to the explorer page of the order',
   })
-  explorerUrl: URL;
+  explorerUrl: string;
 
   @ApiPropertyOptional({
     type: String,
@@ -124,7 +124,7 @@ export class SwapOrderTransactionInfo
     executedBuyAmount: string;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
-    explorerUrl: URL;
+    explorerUrl: string;
     executedSurplusFee: string | null;
     receiver: string | null;
     owner: `0x${string}`;
