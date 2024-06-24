@@ -1,32 +1,6 @@
-import {
-  BuyTokenBalance,
-  OrderKind,
-  SellTokenBalance,
-} from '@/domain/swaps/entities/order.entity';
+import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { Injectable } from '@nestjs/common';
 import { TypedDataDomain, encodePacked, hashTypedData } from 'viem';
-
-/**
- * We can use generics to infer this from TwapOrderHelper.GPv2OrderTypeFields
- * but for readability we manually define it.
- *
- * Functions that infer this type (`hashOrder`) will still return type errors
- * if there is a mismatch between the inferred type and this.
- */
-export type GPv2OrderParameters = {
-  sellToken: `0x${string}`;
-  buyToken: `0x${string}`;
-  receiver: `0x${string}`;
-  sellAmount: bigint;
-  buyAmount: bigint;
-  validTo: number;
-  appData: `0x${string}`;
-  feeAmount: bigint;
-  kind: OrderKind;
-  partiallyFillable: boolean;
-  sellTokenBalance: SellTokenBalance;
-  buyTokenBalance: BuyTokenBalance;
-};
 
 @Injectable()
 export class GPv2OrderHelper {

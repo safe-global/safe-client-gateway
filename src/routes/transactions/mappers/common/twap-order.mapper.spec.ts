@@ -9,15 +9,16 @@ import { Order } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { ILoggingService } from '@/logging/logging.interface';
 import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { TwapOrderMapper } from '@/routes/transactions/mappers/common/twap-order.mapper';
+import { ILoggingService } from '@/logging/logging.interface';
 
-const mockLoggingService = {
+const loggingService = {
   debug: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
+const mockLoggingService = jest.mocked(loggingService);
 
 const mockTokenRepository = {
   getToken: jest.fn(),

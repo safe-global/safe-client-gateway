@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { encodeFunctionData, Hex, keccak256, toBytes } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import { IEncoder } from '@/__tests__/encoder-builder';
-import { abi } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import { GPv2Abi } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 
 type SetPreSignatureArgs = {
   orderUid: `0x${string}`;
@@ -17,7 +17,7 @@ class SetPreSignatureEncoder<T extends SetPreSignatureArgs>
     const args = this.build();
 
     return encodeFunctionData({
-      abi,
+      abi: GPv2Abi,
       functionName: 'setPreSignature',
       args: [args.orderUid, args.signed],
     });
