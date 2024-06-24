@@ -685,7 +685,7 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
    * @param tokens The list of token addresses as they appear in the settlement.
    * @returns The decoded {@link GPv2OrderParameters} or null if the trade is invalid.
    */
-  public decodeOrderFromSettlement(
+  public decodeOrderFromSettle(
     data: `0x${string}`,
   ): GPv2OrderParameters | null {
     const decoded = this.decodeSettle(data);
