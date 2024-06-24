@@ -164,8 +164,7 @@ export default () => ({
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
     swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
     twapsDecoding: process.env.FF_TWAPS_DECODING?.toLowerCase() === 'true',
-    historyDebugLogs:
-      process.env.FF_HISTORY_DEBUG_LOGS?.toLowerCase() === 'true',
+    debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     imitationMapping:
       process.env.FF_IMITATION_MAPPING?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
@@ -256,5 +255,9 @@ export default () => ({
     // The app names should match the "App Code" of the metadata provided to CoW Swap.
     // See https://explorer.cow.fi/appdata?tab=encode
     allowedApps: process.env.SWAPS_ALLOWED_APPS?.split(',') || [],
+    // Upper limit of parts we will request from CoW for TWAP orders, after
+    // which we return base values for those orders
+    // Note: 11 is the average number of parts, confirmed by CoW
+    maxNumberOfParts: parseInt(process.env.BALANCES_TTL_SECONDS ?? `${11}`),
   },
 });

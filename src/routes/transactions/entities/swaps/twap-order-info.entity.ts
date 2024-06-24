@@ -33,14 +33,14 @@ type StartTime =
   | { startType: StartTimeValue.AtEpoch; epoch: number };
 
 export type TwapOrderInfo = {
-  orderStatus: OrderStatus;
+  status: OrderStatus;
   kind: OrderKind.Sell;
   class: OrderClass.Limit;
   validUntil: number;
   sellAmount: string;
   buyAmount: string;
-  executedSellAmount: string;
-  executedBuyAmount: string;
+  executedSellAmount: string | null;
+  executedBuyAmount: string | null;
   sellToken: TokenInfo;
   buyToken: TokenInfo;
   receiver: `0x${string}`;
@@ -61,8 +61,11 @@ export class TwapOrderTransactionInfo
   @ApiProperty({ enum: [TransactionInfoType.TwapOrder] })
   override type = TransactionInfoType.TwapOrder;
 
-  @ApiProperty({ description: 'The TWAP status' })
-  orderStatus: OrderStatus;
+  @ApiProperty({
+    description: 'The TWAP status',
+    enum: OrderStatus,
+  })
+  status: OrderStatus;
 
   @ApiProperty({ enum: OrderKind })
   kind: OrderKind.Sell;
@@ -83,15 +86,19 @@ export class TwapOrderTransactionInfo
   })
   buyAmount: string;
 
-  @ApiProperty({
-    description: 'The executed sell token raw amount (no decimals)',
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'The executed sell token raw amount (no decimals), or null if there are too many parts',
   })
-  executedSellAmount: string;
+  executedSellAmount: string | null;
 
-  @ApiProperty({
-    description: 'The executed buy token raw amount (no decimals)',
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'The executed buy token raw amount (no decimals), or null if there are too many parts',
   })
-  executedBuyAmount: string;
+  executedBuyAmount: string | null;
 
   @ApiProperty({ description: 'The sell token of the TWAP' })
   sellToken: TokenInfo;
@@ -153,8 +160,8 @@ export class TwapOrderTransactionInfo
     validUntil: number;
     sellAmount: string;
     buyAmount: string;
-    executedSellAmount: string;
-    executedBuyAmount: string;
+    executedSellAmount: string | null;
+    executedBuyAmount: string | null;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     receiver: `0x${string}`;
@@ -168,7 +175,7 @@ export class TwapOrderTransactionInfo
     startTime: StartTime;
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
-    this.orderStatus = args.orderStatus;
+    this.status = args.orderStatus;
     this.kind = args.kind;
     this.class = args.class;
     this.validUntil = args.validUntil;

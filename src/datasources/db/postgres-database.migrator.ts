@@ -9,6 +9,11 @@ type Migration = {
   name: string;
 };
 
+type TestResult<BeforeType, AfterType> = {
+  before: BeforeType | undefined;
+  after: AfterType;
+};
+
 /**
  * Migrates a Postgres database using SQL and JavaScript files.
  *
@@ -51,7 +56,8 @@ export class PostgresDatabaseMigrator {
   }
 
   /**
-   * @private migrates up to/allows for querying before/after migration to test it.
+   * Migrates up to/allows for querying before/after migration to test it.
+   * Uses generics to allow the caller to specify the return type of the before/after functions.
    *
    * Note: each migration is ran in separate transaction to allow queries in between.
    *
@@ -72,15 +78,12 @@ export class PostgresDatabaseMigrator {
    * expect(result.after).toStrictEqual(expected);
    * ```
    */
-  async test(args: {
+  async test<BeforeType, AfterType>(args: {
     migration: string;
-    before?: (sql: Sql) => Promise<unknown>;
-    after: (sql: Sql) => Promise<unknown>;
+    before?: (sql: Sql) => Promise<BeforeType>;
+    after: (sql: Sql) => Promise<AfterType>;
     folder?: string;
-  }): Promise<{
-    before: unknown;
-    after: unknown;
-  }> {
+  }): Promise<TestResult<BeforeType, AfterType>> {
     const migrations = this.getMigrations(
       args.folder ?? PostgresDatabaseMigrator.MIGRATIONS_FOLDER,
     );
@@ -97,13 +100,15 @@ export class PostgresDatabaseMigrator {
     // Get migrations up to the specified migration
     const migrationsToTest = migrations.slice(0, migrationIndex + 1);
 
-    let before: unknown;
+    let before: BeforeType | undefined;
 
     for await (const migration of migrationsToTest) {
       const isMigrationBeingTested = migration.path.includes(args.migration);
 
       if (isMigrationBeingTested && args.before) {
-        before = await args.before(this.sql).catch(() => undefined);
+        before = await args.before(this.sql).catch((err) => {
+          throw Error(`Error running before function: ${err}`);
+        });
       }
 
       await this.sql.begin((transaction) => {
@@ -111,7 +116,9 @@ export class PostgresDatabaseMigrator {
       });
     }
 
-    const after = await args.after(this.sql).catch(() => undefined);
+    const after = await args.after(this.sql).catch((err) => {
+      throw Error(`Error running after function: ${err}`);
+    });
 
     return { before, after };
   }

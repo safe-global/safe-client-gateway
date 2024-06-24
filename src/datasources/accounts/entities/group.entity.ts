@@ -1,7 +1,6 @@
+import { RowSchema } from '@/datasources/db/entities/row.entity';
 import { z } from 'zod';
 
 export type Group = z.infer<typeof GroupSchema>;
 
-export const GroupSchema = z.object({
-  id: z.number().int(),
-});
+export const GroupSchema = RowSchema;

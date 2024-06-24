@@ -31,7 +31,7 @@ export function orderBuilder(): IBuilder<Order> {
       }),
     )
     .with('feeAmount', faker.number.bigInt({ min: 1 }))
-    .with('kind', faker.helpers.arrayElement([OrderKind.Buy, OrderKind.Buy]))
+    .with('kind', faker.helpers.arrayElement([OrderKind.Buy, OrderKind.Sell]))
     .with('partiallyFillable', faker.datatype.boolean())
     .with(
       'sellTokenBalance',
