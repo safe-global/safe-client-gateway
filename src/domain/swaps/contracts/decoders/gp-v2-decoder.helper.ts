@@ -1,5 +1,6 @@
-import { Injectable, Module } from '@nestjs/common';
+import { Inject, Injectable, Module } from '@nestjs/common';
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   BuyTokenBalance,
   OrderKind,
@@ -644,7 +645,9 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
     },
   } as const;
 
-  constructor() {
+  constructor(
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
+  ) {
     super(GPv2Abi);
   }
 
@@ -670,6 +673,7 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
 
       return decoded.args[0];
     } catch (e) {
+      this.loggingService.debug(e);
       return null;
     }
   }
@@ -731,10 +735,21 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
 
       return decoded.args;
     } catch (e) {
+      this.loggingService.debug(e);
       return null;
     }
   }
 
+  /**
+   * Decodes the specified bitfield flag.
+   *
+   * The following is taken from the CoW contracts:
+   * @see https://github.com/cowprotocol/contracts/blob/1465e69f6935b3ef9ce45d4878e44f0335ef8531/src/ts/settlement.ts#L213
+   *
+   * @param key - encoded key
+   * @param flag - order flag encoded as a bitfield
+   * @returns decoded key
+   */
   private decodeFlag<K extends keyof typeof GPv2Decoder.FlagMasks>(
     key: K,
     flag: bigint,
