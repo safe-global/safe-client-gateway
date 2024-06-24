@@ -2302,9 +2302,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"abitype@npm:1.0.0":
-  version: 1.0.0
-  resolution: "abitype@npm:1.0.0"
+"abitype@npm:1.0.4":
+  version: 1.0.4
+  resolution: "abitype@npm:1.0.4"
   peerDependencies:
     typescript: ">=5.0.4"
     zod: ^3 >=3.22.0
@@ -2313,7 +2313,7 @@ __metadata:
       optional: true
     zod:
       optional: true
-  checksum: 10/38c8d965c75c031854385f1c14da0410e271f1a8255332869a77a1ee836c4607420522c1f0077716c7ad7c4091f53c1b2681ed1d30b5161d1424fdb5a480f104
+  checksum: 10/816fcf4a7c2043f71707a97075b5df3ca0cb818b68e3df9ae393ed86631201da6e54f9b2ffb192f7c8e0229a97854881300422e33b4b876a38912d3e7ab37b9b
   languageName: node
   linkType: hard
 
@@ -7278,7 +7278,7 @@ __metadata:
     tsconfig-paths: "npm:4.2.0"
     typescript: "npm:^5.4.5"
     typescript-eslint: "npm:^7.13.0"
-    viem: "npm:^2.14.2"
+    viem: "npm:^2.16.2"
     winston: "npm:^3.13.0"
     zod: "npm:^3.23.8"
   languageName: unknown
@@ -8306,24 +8306,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^2.14.2":
-  version: 2.14.2
-  resolution: "viem@npm:2.14.2"
+"viem@npm:^2.16.2":
+  version: 2.16.2
+  resolution: "viem@npm:2.16.2"
   dependencies:
     "@adraffy/ens-normalize": "npm:1.10.0"
     "@noble/curves": "npm:1.2.0"
     "@noble/hashes": "npm:1.3.2"
     "@scure/bip32": "npm:1.3.2"
     "@scure/bip39": "npm:1.2.1"
-    abitype: "npm:1.0.0"
+    abitype: "npm:1.0.4"
     isows: "npm:1.0.4"
-    ws: "npm:8.13.0"
+    ws: "npm:8.17.1"
   peerDependencies:
     typescript: ">=5.0.4"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/41f2c7b3c242350867a06e2e0ab75a8e1b58cfef244d62a9c3301b5ff8cad75600992d7a0145aa221b2e271c2aeb7daf4c5f193ed7b5999e976fb42609da7f83
+  checksum: 10/fc6f61853f513ecced75b81e1489ad27fd64de94ddac3747378c7ed29af468da5f844a04760239193b6234a3c15d524e462e04642a8a3780f6422e880f6dc8be
   languageName: node
   linkType: hard
 
@@ -8523,9 +8523,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:8.13.0":
-  version: 8.13.0
-  resolution: "ws@npm:8.13.0"
+"ws@npm:8.17.1":
+  version: 8.17.1
+  resolution: "ws@npm:8.17.1"
   peerDependencies:
     bufferutil: ^4.0.1
     utf-8-validate: ">=5.0.2"
@@ -8534,7 +8534,7 @@ __metadata:
       optional: true
     utf-8-validate:
       optional: true
-  checksum: 10/1769532b6fdab9ff659f0b17810e7501831d34ecca23fd179ee64091dd93a51f42c59f6c7bb4c7a384b6c229aca8076fb312aa35626257c18081511ef62a161d
+  checksum: 10/4264ae92c0b3e59c7e309001e93079b26937aab181835fb7af79f906b22cd33b6196d96556dafb4e985742dd401e99139572242e9847661fdbc96556b9e6902d
   languageName: node
   linkType: hard
 
