@@ -1,7 +1,9 @@
 import { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
 import { Account as DomainAccount } from '@/domain/accounts/entities/account.entity';
+import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
 import { Account } from '@/routes/accounts/entities/account.entity';
-import { Inject, Injectable } from '@nestjs/common';
+import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class AccountsService {
@@ -10,9 +12,17 @@ export class AccountsService {
     private readonly accountsRepository: IAccountsRepository,
   ) {}
 
-  // TODO: auth
-  async createAccount(args: { address: `0x${string}` }): Promise<Account> {
-    const domainAccount = await this.accountsRepository.createAccount(args);
+  async createAccount(args: {
+    auth: AuthPayloadDto | undefined;
+    createAccountDto: CreateAccountDto;
+  }): Promise<Account> {
+    if (args.auth === undefined) {
+      throw new UnauthorizedException();
+    }
+    const domainAccount = await this.accountsRepository.createAccount({
+      auth: args.auth,
+      address: args.createAccountDto.address,
+    });
     return this.mapAccount(domainAccount);
   }
 

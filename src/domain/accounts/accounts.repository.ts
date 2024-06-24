@@ -3,8 +3,12 @@ import {
   Account,
   AccountSchema,
 } from '@/domain/accounts/entities/account.entity';
+import {
+  AuthPayload,
+  AuthPayloadDto,
+} from '@/domain/auth/entities/auth-payload.entity';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class AccountsRepository implements IAccountsRepository {
@@ -13,7 +17,15 @@ export class AccountsRepository implements IAccountsRepository {
     private readonly datasource: IAccountsDatasource,
   ) {}
 
-  async createAccount(args: { address: `0x${string}` }): Promise<Account> {
+  async createAccount(args: {
+    auth: AuthPayloadDto;
+    address: `0x${string}`;
+  }): Promise<Account> {
+    const authPayload = new AuthPayload(args.auth);
+    if (!authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+
     const account = await this.datasource.createAccount(args.address);
     return AccountSchema.parse(account);
   }
