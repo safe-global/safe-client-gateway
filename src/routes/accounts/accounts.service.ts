@@ -26,6 +26,19 @@ export class AccountsService {
     return this.mapAccount(domainAccount);
   }
 
+  async deleteAccount(args: {
+    auth: AuthPayloadDto | undefined;
+    address: `0x${string}`;
+  }): Promise<void> {
+    if (args.auth === undefined) {
+      throw new UnauthorizedException();
+    }
+    await this.accountsRepository.deleteAccount({
+      auth: args.auth,
+      address: args.address,
+    });
+  }
+
   private mapAccount(domainAccount: DomainAccount): Account {
     return new Account(
       domainAccount.id.toString(),

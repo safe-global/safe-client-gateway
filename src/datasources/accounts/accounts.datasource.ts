@@ -58,4 +58,15 @@ export class AccountsDatasource implements IAccountsDatasource {
 
     return account;
   }
+
+  async deleteAccount(address: `0x${string}`): Promise<void> {
+    const { count } = await this
+      .sql`DELETE FROM accounts WHERE address = ${address}`;
+
+    if (count === 0) {
+      this.loggingService.debug(
+        `No account found for address ${address} on deletion.`,
+      );
+    }
+  }
 }
