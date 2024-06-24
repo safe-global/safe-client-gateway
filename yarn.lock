@@ -1918,12 +1918,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.14.3":
-  version: 20.14.3
-  resolution: "@types/node@npm:20.14.3"
+"@types/node@npm:^20.14.8":
+  version: 20.14.8
+  resolution: "@types/node@npm:20.14.8"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 10/4ac40f26cde19536224c1b32c06e20c40f1163bdde617bda73561bb13070cd444c6a280f3f10a0eb621a4e341eb2d9a6f3a18193b715c17e70e5fa884b81ed1a
+  checksum: 10/73822f66f269ce865df7e2f586787ac7444bd1169fd265cbed1e851b72787f1170517c5b616e0308ec2fbc0934ec6403b0f28d4152acbb0486071aec41167d51
   languageName: node
   linkType: hard
 
@@ -7251,7 +7251,7 @@ __metadata:
     "@types/jest": "npm:29.5.12"
     "@types/jsonwebtoken": "npm:^9"
     "@types/lodash": "npm:^4.17.5"
-    "@types/node": "npm:^20.14.3"
+    "@types/node": "npm:^20.14.8"
     "@types/semver": "npm:^7.5.8"
     "@types/supertest": "npm:^6.0.2"
     amqp-connection-manager: "npm:^4.1.14"
