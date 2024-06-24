@@ -53,12 +53,22 @@ export class SwapOrderMapper {
     chainId: string;
     orderUid: `0x${string}`;
   }): Promise<SwapOrderTransactionInfo> {
-    const { order, sellToken, buyToken } =
-      await this.swapOrderHelper.getOrder(args);
+    const order = await this.swapOrderHelper.getOrder(args);
 
     if (!this.swapOrderHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
+
+    const [sellToken, buyToken] = await Promise.all([
+      this.swapOrderHelper.getToken({
+        address: order.sellToken,
+        chainId: args.chainId,
+      }),
+      this.swapOrderHelper.getToken({
+        address: order.buyToken,
+        chainId: args.chainId,
+      }),
+    ]);
 
     return new SwapOrderTransactionInfo({
       uid: order.uid,

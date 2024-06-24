@@ -14,6 +14,7 @@ import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { TwapOrderMapper } from '@/routes/transactions/mappers/common/twap-order.mapper';
 import { ILoggingService } from '@/logging/logging.interface';
+import { getAddress } from 'viem';
 
 const loggingService = {
   debug: jest.fn(),
@@ -58,7 +59,115 @@ describe('TwapOrderMapper', () => {
     composableCowDecoder,
   );
 
-  it('should map a TWAP order', async () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('should map a queued TWAP order', async () => {
+    const now = new Date();
+    jest.setSystemTime(now);
+
+    configurationService.set('swaps.maxNumberOfParts', 2);
+
+    // We instantiate in tests to be able to set maxNumberOfParts
+    const mapper = new TwapOrderMapper(
+      configurationService,
+      swapOrderHelper,
+      mockSwapsRepository,
+      composableCowDecoder,
+      gpv2OrderHelper,
+      twapOrderHelper,
+    );
+
+    // Taken from queued transaction of specified owner before execution
+    const chainId = '11155111';
+    const owner = '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381';
+    const data =
+      '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a50000000000000000000000000000000000000000000000000000001903c57a7700000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b140000000000000000000000000625afb445c3b6b7b929342a04a22599fd5dbb5900000000000000000000000031eac7f0141837b266de30f4dc9af15629bd538100000000000000000000000000000000000000000000000006f05b59d3b2000000000000000000000000000000000000000000000000000165e249251c2365980000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000023280000000000000000000000000000000000000000000000000000000000000000f7be7261f56698c258bf75f888d68a00c85b22fb21958b9009c719eb88aebda00000000000000000000000000000000000000000000000000000000000000000';
+
+    const buyToken = tokenBuilder()
+      .with('address', '0x0625aFB445C3B6B7B929342a04A22599fd5dBB59')
+      .build();
+    const sellToken = tokenBuilder()
+      .with('address', '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14')
+      .build();
+    const fullAppData = JSON.parse(fakeJson());
+
+    // Orders throw as they don't exist
+    mockSwapsRepository.getOrder.mockRejectedValue(
+      new Error('Order not found'),
+    );
+    mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+      // We only need mock part1 addresses as all parts use the same tokens
+      switch (address) {
+        case buyToken.address: {
+          return Promise.resolve(buyToken);
+        }
+        case sellToken.address: {
+          return Promise.resolve(sellToken);
+        }
+        default: {
+          return Promise.reject(new Error(`Token not found: ${address}`));
+        }
+      }
+    });
+    mockSwapsRepository.getFullAppData.mockResolvedValue({ fullAppData });
+
+    const result = await mapper.mapTwapOrder(chainId, owner, {
+      data,
+      executionDate: null,
+    });
+
+    expect(result).toEqual({
+      buyAmount: '51576509680023161648',
+      buyToken: {
+        address: buyToken.address,
+        decimals: buyToken.decimals,
+        logoUri: buyToken.logoUri,
+        name: buyToken.name,
+        symbol: buyToken.symbol,
+        trusted: buyToken.trusted,
+      },
+      class: 'limit',
+      durationOfPart: {
+        durationType: 'AUTO',
+      },
+      executedBuyAmount: '0',
+      executedSellAmount: '0',
+      fullAppData,
+      humanDescription: null,
+      kind: 'sell',
+      minPartLimit: '25788254840011580824',
+      numberOfParts: '2',
+      status: 'presignaturePending',
+      owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
+      partSellAmount: '500000000000000000',
+      receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
+      richDecodedInfo: null,
+      sellAmount: '1000000000000000000',
+      sellToken: {
+        address: sellToken.address,
+        decimals: sellToken.decimals,
+        logoUri: sellToken.logoUri,
+        name: sellToken.name,
+        symbol: sellToken.symbol,
+        trusted: sellToken.trusted,
+      },
+      startTime: {
+        startType: 'AT_MINING_TIME',
+      },
+      timeBetweenParts: 9000,
+      type: 'TwapOrder',
+      validUntil: Math.ceil(now.getTime() / 1_000) + 17999,
+    });
+  });
+
+  it('should map an executed TWAP order', async () => {
     configurationService.set('swaps.maxNumberOfParts', 2);
 
     // We instantiate in tests to be able to set maxNumberOfParts
@@ -161,8 +270,12 @@ describe('TwapOrderMapper', () => {
       interactions: { pre: [], post: [] },
     } as unknown as Order;
 
-    const buyToken = tokenBuilder().with('address', part1.buyToken).build();
-    const sellToken = tokenBuilder().with('address', part1.sellToken).build();
+    const buyToken = tokenBuilder()
+      .with('address', getAddress(part1.buyToken))
+      .build();
+    const sellToken = tokenBuilder()
+      .with('address', getAddress(part1.sellToken))
+      .build();
     const fullAppData = JSON.parse(fakeJson());
 
     mockSwapsRepository.getOrder
@@ -171,10 +284,10 @@ describe('TwapOrderMapper', () => {
     mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
-        case part1.buyToken: {
+        case buyToken.address: {
           return Promise.resolve(buyToken);
         }
-        case part1.sellToken: {
+        case sellToken.address: {
           return Promise.resolve(sellToken);
         }
         default: {
@@ -293,18 +406,22 @@ describe('TwapOrderMapper', () => {
       interactions: { pre: [], post: [] },
     } as unknown as Order;
 
-    const buyToken = tokenBuilder().with('address', part2.buyToken).build();
-    const sellToken = tokenBuilder().with('address', part2.sellToken).build();
+    const buyToken = tokenBuilder()
+      .with('address', getAddress(part2.buyToken))
+      .build();
+    const sellToken = tokenBuilder()
+      .with('address', getAddress(part2.sellToken))
+      .build();
     const fullAppData = JSON.parse(fakeJson());
 
     mockSwapsRepository.getOrder.mockResolvedValueOnce(part2);
     mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
-        case part2.buyToken: {
+        case buyToken.address: {
           return Promise.resolve(buyToken);
         }
-        case part2.sellToken: {
+        case sellToken.address: {
           return Promise.resolve(sellToken);
         }
         default: {

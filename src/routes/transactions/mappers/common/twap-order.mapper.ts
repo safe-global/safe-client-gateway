@@ -50,7 +50,7 @@ export class TwapOrderMapper {
   async mapTwapOrder(
     chainId: string,
     safeAddress: `0x${string}`,
-    transaction: { data: `0x${string}`; executionDate: Date },
+    transaction: { data: `0x${string}`; executionDate: Date | null },
   ): Promise<TwapOrderTransactionInfo> {
     // Decode `staticInput` of `createWithContextCall`
     const twapStruct = this.composableCowDecoder.decodeTwapStruct(
@@ -62,7 +62,7 @@ export class TwapOrderMapper {
     // Generate parts of the TWAP order
     const twapParts = this.twapOrderHelper.generateTwapOrderParts({
       twapStruct,
-      executionDate: transaction.executionDate,
+      executionDate: transaction.executionDate ?? new Date(),
       chainId,
     });
 
@@ -70,16 +70,18 @@ export class TwapOrderMapper {
     // to avoid requesting too many orders
     const hasAbundantParts = twapParts.length > this.maxNumberOfParts;
 
-    const partsToFetch = hasAbundantParts
-      ? // We use the last part (and only one) to get the status of the entire
-        // order and we only need one to get the token info
-        twapParts.slice(-1)
-      : twapParts;
+    // Fetch all order parts if the transaction has been executed, otherwise none
+    const partsToFetch = transaction.executionDate
+      ? hasAbundantParts
+        ? // We use the last part (and only one) to get the status of the entire
+          // order and we only need one to get the token info
+          twapParts.slice(-1)
+        : twapParts
+      : [];
 
     const [{ fullAppData }, ...orders] = await Promise.all([
       // Decode hash of `appData`
       this.swapsRepository.getFullAppData(chainId, twapStruct.appData),
-      // Fetch all order parts
       ...partsToFetch.map((order) => {
         const orderUid = this.gpv2OrderHelper.computeOrderUid({
           chainId,
@@ -98,14 +100,22 @@ export class TwapOrderMapper {
     const executedBuyAmount: TwapOrderInfo['executedBuyAmount'] =
       hasAbundantParts ? null : this.getExecutedBuyAmount(orders).toString();
 
-    // All orders have the same sellToken and buyToken
-    const { sellToken, buyToken } = orders[0];
+    const [sellToken, buyToken] = await Promise.all([
+      this.swapOrderHelper.getToken({
+        chainId,
+        address: twapStruct.sellToken,
+      }),
+      this.swapOrderHelper.getToken({
+        chainId,
+        address: twapStruct.buyToken,
+      }),
+    ]);
 
     return new TwapOrderTransactionInfo({
       status: this.getOrderStatus(orders),
       kind: twapOrderData.kind,
       class: twapOrderData.class,
-      validUntil: Math.max(...partsToFetch.map((order) => order.validTo)),
+      validUntil: Math.max(...twapParts.map((order) => order.validTo)),
       sellAmount: twapOrderData.sellAmount,
       buyAmount: twapOrderData.buyAmount,
       executedSellAmount,
@@ -141,6 +151,10 @@ export class TwapOrderMapper {
   private getOrderStatus(
     orders: Array<Awaited<ReturnType<typeof this.swapOrderHelper.getOrder>>>,
   ): OrderStatus {
+    if (orders.length === 0) {
+      return OrderStatus.PreSignaturePending;
+    }
+
     // If an order is fulfilled, cancelled or expired, the part is "complete"
     const completeStatuses = [
       OrderStatus.Fulfilled,
@@ -149,7 +163,7 @@ export class TwapOrderMapper {
     ];
 
     for (let i = 0; i < orders.length; i++) {
-      const { order } = orders[i];
+      const order = orders[i];
 
       // Return the status of the last part
       if (i === orders.length - 1) {
@@ -170,7 +184,7 @@ export class TwapOrderMapper {
   private getExecutedSellAmount(
     orders: Array<Awaited<ReturnType<typeof this.swapOrderHelper.getOrder>>>,
   ): number {
-    return orders.reduce((acc, { order }) => {
+    return orders.reduce((acc, order) => {
       return acc + Number(order.executedSellAmount);
     }, 0);
   }
@@ -178,7 +192,7 @@ export class TwapOrderMapper {
   private getExecutedBuyAmount(
     orders: Array<Awaited<ReturnType<typeof this.swapOrderHelper.getOrder>>>,
   ): number {
-    return orders.reduce((acc, { order }) => {
+    return orders.reduce((acc, order) => {
       return acc + Number(order.executedBuyAmount);
     }, 0);
   }
