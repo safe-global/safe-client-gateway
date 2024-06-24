@@ -95,10 +95,10 @@ export class TwapOrderMapper {
     // TODO: Handling of restricted Apps, calling `getToken` directly instead of multiple times in `getOrder` for sellToken and buyToken
 
     const executedSellAmount: TwapOrderInfo['executedSellAmount'] =
-      this.getExecutedSellAmount(orders).toString();
+      hasAbundantParts ? null : this.getExecutedSellAmount(orders).toString();
 
     const executedBuyAmount: TwapOrderInfo['executedBuyAmount'] =
-      this.getExecutedBuyAmount(orders).toString();
+      hasAbundantParts ? null : this.getExecutedBuyAmount(orders).toString();
 
     const [sellToken, buyToken] = await Promise.all([
       this.swapOrderHelper.getToken({
