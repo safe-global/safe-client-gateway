@@ -10,6 +10,12 @@ import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helpe
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { SwapOrderMapper } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import { faker } from '@faker-js/faker';
+import { ILoggingService } from '@/logging/logging.interface';
+
+const loggingService = {
+  debug: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+const mockLoggingService = jest.mocked(loggingService);
 
 const mockTokenRepository = {
   getToken: jest.fn(),
@@ -51,7 +57,7 @@ describe('SwapOrderMapper', () => {
       }
     });
 
-    const gpv2Decoder = new GPv2Decoder();
+    const gpv2Decoder = new GPv2Decoder(mockLoggingService);
     const gpv2OrderHelper = new GPv2OrderHelper();
     const multiSendDecoder = new MultiSendDecoder();
     const allowedApps = new Set<string>();

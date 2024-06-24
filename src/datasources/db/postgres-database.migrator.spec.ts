@@ -45,6 +45,8 @@ const migrations: Array<{
     },
   },
 ];
+type TestRow = { a: string; b: number };
+type ExtendedTestRow = { a: string; b: number; c: Date };
 
 describe('PostgresDatabaseMigrator tests', () => {
   let sql: postgres.Sql;
@@ -196,8 +198,9 @@ describe('PostgresDatabaseMigrator tests', () => {
       await expect(
         target.test({
           migration: migration1.name,
-          before: (sql) => sql`SELECT * FROM test`,
-          after: (sql) => sql`SELECT * FROM test`,
+          before: (sql) => sql`SELECT * FROM test`.catch(() => undefined),
+          after: (sql): Promise<TestRow[]> =>
+            sql<TestRow[]>`SELECT * FROM test`,
           folder,
         }),
       ).resolves.toStrictEqual({
@@ -227,8 +230,10 @@ describe('PostgresDatabaseMigrator tests', () => {
       await expect(
         target.test({
           migration: migration2.name,
-          before: (sql) => sql`SELECT * FROM test`,
-          after: (sql) => sql`SELECT * FROM test`,
+          before: (sql): Promise<TestRow[]> =>
+            sql<TestRow[]>`SELECT * FROM test`,
+          after: (sql): Promise<ExtendedTestRow[]> =>
+            sql<ExtendedTestRow[]>`SELECT * FROM test`,
           folder,
         }),
       ).resolves.toStrictEqual({
@@ -265,7 +270,7 @@ describe('PostgresDatabaseMigrator tests', () => {
         target.test({
           migration: migration3.name,
           before: (sql) => sql`SELECT * FROM test`,
-          after: (sql) => sql`SELECT * FROM test`,
+          after: (sql) => sql`SELECT * FROM test`.catch(() => undefined),
           folder,
         }),
       ).resolves.toStrictEqual({

@@ -21,6 +21,7 @@ import {
 } from '@/domain/safe/entities/transaction.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { isArray } from 'lodash';
+import { Safe } from '@/domain/safe/entities/safe.entity';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -33,7 +34,7 @@ import { isArray } from 'lodash';
  */
 @Injectable()
 export class CacheFirstDataSource {
-  private readonly isHistoryDebugLogsEnabled: boolean;
+  private readonly areDebugLogsEnabled: boolean;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -42,10 +43,8 @@ export class CacheFirstDataSource {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.isHistoryDebugLogsEnabled =
-      this.configurationService.getOrThrow<boolean>(
-        'features.historyDebugLogs',
-      );
+    this.areDebugLogsEnabled =
+      this.configurationService.getOrThrow<boolean>('features.debugLogs');
   }
 
   /**
@@ -132,13 +131,22 @@ export class CacheFirstDataSource {
 
       // TODO: transient logging for debugging
       if (
-        this.isHistoryDebugLogsEnabled &&
-        args.url.includes('all-transactions')
+        this.areDebugLogsEnabled &&
+        (args.url.includes('all-transactions') ||
+          args.url.includes('multisig-transactions'))
       ) {
         this.logTransactionsCacheWrite(
           startTimeMs,
           args.cacheDir,
           data as Page<Transaction>,
+        );
+      }
+
+      if (this.areDebugLogsEnabled && args.cacheDir.key.includes('_safe_')) {
+        this.logSafeMetadataCacheWrite(
+          startTimeMs,
+          args.cacheDir,
+          data as Safe,
         );
       }
     }
@@ -235,6 +243,26 @@ export class CacheFirstDataSource {
             };
           }
         }),
+    });
+  }
+
+  /**
+   * Logs the Safe metadata retrieved.
+   * NOTE: this is a debugging-only function.
+   * TODO: remove this function after debugging.
+   */
+  private logSafeMetadataCacheWrite(
+    requestStartTime: number,
+    cacheDir: CacheDir,
+    safe: Safe,
+  ): void {
+    this.loggingService.info({
+      type: 'cache_write',
+      cacheKey: cacheDir.key,
+      cacheField: cacheDir.field,
+      cacheWriteTime: new Date(),
+      requestStartTime: new Date(requestStartTime),
+      safe,
     });
   }
 }
