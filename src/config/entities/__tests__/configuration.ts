@@ -168,10 +168,10 @@ export default (): ReturnType<typeof configuration> => ({
   },
   swaps: {
     api: {
-      1: faker.internet.url(),
-      100: faker.internet.url(),
-      42161: faker.internet.url(),
-      11155111: faker.internet.url(),
+      1: faker.internet.url({ appendSlash: false }),
+      100: faker.internet.url({ appendSlash: false }),
+      42161: faker.internet.url({ appendSlash: false }),
+      11155111: faker.internet.url({ appendSlash: false }),
     },
     explorerBaseUri: faker.internet.url(),
     restrictApps: false,

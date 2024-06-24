@@ -6,8 +6,6 @@ import {
 } from '@/routes/transactions/helpers/swap-order.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import {
-  DurationType,
-  StartTimeValue,
   TwapOrderInfo,
   TwapOrderTransactionInfo,
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
@@ -15,11 +13,7 @@ import {
   TwapOrderHelper,
   TwapOrderHelperModule,
 } from '@/routes/transactions/helpers/twap-order.helper';
-import {
-  OrderClass,
-  OrderKind,
-  OrderStatus,
-} from '@/domain/swaps/entities/order.entity';
+import { OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
@@ -62,6 +56,8 @@ export class TwapOrderMapper {
     const twapStruct = this.composableCowDecoder.decodeTwapStruct(
       transaction.data,
     );
+    const twapOrderData =
+      this.twapOrderHelper.twapStructToPartialOrderInfo(twapStruct);
 
     // Generate parts of the TWAP order
     const twapParts = this.twapOrderHelper.generateTwapOrderParts({
@@ -94,6 +90,8 @@ export class TwapOrderMapper {
       }),
     ]);
 
+    // TODO: Handling of restricted Apps, calling `getToken` directly instead of multiple times in `getOrder` for sellToken and buyToken
+
     const executedSellAmount: TwapOrderInfo['executedSellAmount'] =
       hasAbundantParts ? null : this.getExecutedSellAmount(orders).toString();
 
@@ -103,18 +101,13 @@ export class TwapOrderMapper {
     // All orders have the same sellToken and buyToken
     const { sellToken, buyToken } = orders[0];
 
-    const { n: numberOfParts, partSellAmount, minPartLimit } = twapStruct;
-    const span = Number(twapStruct.span);
-    const sellAmount = partSellAmount * numberOfParts;
-    const buyAmount = minPartLimit * numberOfParts;
-
     return new TwapOrderTransactionInfo({
-      orderStatus: this.getOrderStatus(orders),
-      kind: OrderKind.Sell,
-      class: OrderClass.Limit,
+      status: this.getOrderStatus(orders),
+      kind: twapOrderData.kind,
+      class: twapOrderData.class,
       validUntil: Math.max(...partsToFetch.map((order) => order.validTo)),
-      sellAmount: sellAmount.toString(),
-      buyAmount: buyAmount.toString(),
+      sellAmount: twapOrderData.sellAmount,
+      buyAmount: twapOrderData.buyAmount,
       executedSellAmount,
       executedBuyAmount,
       sellToken: new TokenInfo({
@@ -136,12 +129,12 @@ export class TwapOrderMapper {
       receiver: twapStruct.receiver,
       owner: safeAddress,
       fullAppData,
-      numberOfParts: Number(numberOfParts),
-      partSellAmount: partSellAmount.toString(),
-      minPartLimit: minPartLimit.toString(),
-      timeBetweenParts: twapStruct.t.toString(),
-      durationOfPart: this.getDurationOfPart(span),
-      startTime: this.getStartTime({ span, startEpoch: Number(twapStruct.t0) }),
+      numberOfParts: twapOrderData.numberOfParts,
+      partSellAmount: twapStruct.partSellAmount.toString(),
+      minPartLimit: twapStruct.minPartLimit.toString(),
+      timeBetweenParts: twapOrderData.timeBetweenParts,
+      durationOfPart: twapOrderData.durationOfPart,
+      startTime: twapOrderData.startTime,
     });
   }
 
@@ -188,23 +181,6 @@ export class TwapOrderMapper {
     return orders.reduce((acc, { order }) => {
       return acc + Number(order.executedBuyAmount);
     }, 0);
-  }
-
-  private getDurationOfPart(span: number): TwapOrderInfo['durationOfPart'] {
-    if (span === 0) {
-      return { durationType: DurationType.Auto };
-    }
-    return { durationType: DurationType.LimitDuration, duration: span };
-  }
-
-  private getStartTime(args: {
-    span: number;
-    startEpoch: number;
-  }): TwapOrderInfo['startTime'] {
-    if (args.span === 0) {
-      return { startType: StartTimeValue.AtMiningTime };
-    }
-    return { startType: StartTimeValue.AtEpoch, epoch: args.startEpoch };
   }
 }
 

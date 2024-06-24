@@ -209,7 +209,7 @@ describe('TwapOrderMapper', () => {
       humanDescription: null,
       kind: 'sell',
       minPartLimit: '611289510998251134',
-      numberOfParts: 2,
+      numberOfParts: '2',
       status: 'fulfilled',
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '213586875483862141750',
@@ -227,7 +227,7 @@ describe('TwapOrderMapper', () => {
       startTime: {
         startType: 'AT_MINING_TIME',
       },
-      timeBetweenParts: '1800',
+      timeBetweenParts: 1800,
       type: 'TwapOrder',
       validUntil: 1718291639,
     });
@@ -339,7 +339,7 @@ describe('TwapOrderMapper', () => {
       humanDescription: null,
       kind: 'sell',
       minPartLimit: '611289510998251134',
-      numberOfParts: 2,
+      numberOfParts: '2',
       status: 'fulfilled',
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '213586875483862141750',
@@ -357,7 +357,7 @@ describe('TwapOrderMapper', () => {
       startTime: {
         startType: 'AT_MINING_TIME',
       },
-      timeBetweenParts: '1800',
+      timeBetweenParts: 1800,
       type: 'TwapOrder',
       validUntil: 1718291639,
     });
