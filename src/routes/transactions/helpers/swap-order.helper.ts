@@ -108,14 +108,10 @@ export class SwapOrderHelper {
       }),
     ]);
 
-    if (buyToken.decimals === null || sellToken.decimals === null) {
-      throw new Error('Invalid token decimals');
-    }
-
     return {
       order: { ...order, kind: order.kind },
-      buyToken: { ...buyToken, decimals: buyToken.decimals },
-      sellToken: { ...sellToken, decimals: sellToken.decimals },
+      buyToken,
+      sellToken,
     };
   }
 
@@ -160,15 +156,14 @@ export class SwapOrderHelper {
    *   - `chainId`: A string representing the ID of the blockchain chain.
    *   - `address`: A string representing the Ethereum address of the token, prefixed with '0x'.
    * @returns {Promise<Token>} A promise that resolves to a Token object containing the details
-   * of either the native currency or the specified token.
+   * of either the native currency or the specified token with mandatory decimals.
    * @throws {Error} Throws an error if the token data cannot be retrieved.
-   * @private
    * @async
    */
-  private async getToken(args: {
+  public async getToken(args: {
     chainId: string;
     address: `0x${string}`;
-  }): Promise<Token> {
+  }): Promise<Token & { decimals: NonNullable<Token['decimals']> }> {
     // We perform lower case comparison because the provided address (3rd party service)
     // might not be checksummed.
     if (
@@ -188,10 +183,16 @@ export class SwapOrderHelper {
         trusted: true,
       };
     } else {
-      return this.tokenRepository.getToken({
+      const token = await this.tokenRepository.getToken({
         chainId: args.chainId,
         address: args.address,
       });
+
+      if (token.decimals === null) {
+        throw new Error('Invalid token decimals');
+      }
+
+      return { ...token, decimals: token.decimals };
     }
   }
 }

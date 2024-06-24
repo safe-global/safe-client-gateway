@@ -29,6 +29,9 @@ import { GPv2DecoderModule } from '@/domain/swaps/contracts/decoders/gp-v2-decod
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.helper';
+import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
+import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 
 @ApiTags('transactions')
 @Controller({
@@ -62,6 +65,7 @@ export class TransactionsViewController {
   ): Promise<ConfirmationView> {
     return this.service.getTransactionConfirmationView({
       chainId,
+      safeAddress,
       transactionDataDto,
     });
   }
@@ -72,8 +76,10 @@ export class TransactionsViewController {
     DataDecodedRepositoryModule,
     GPv2DecoderModule,
     SwapOrderHelperModule,
+    TwapOrderHelperModule,
+    SwapsRepositoryModule,
   ],
-  providers: [TransactionsViewService],
+  providers: [TransactionsViewService, ComposableCowDecoder],
   controllers: [TransactionsViewController],
 })
 export class TransactionsViewControllerModule {}

@@ -24,11 +24,11 @@ export enum StartTimeValue {
   AtEpoch = 'AT_EPOCH',
 }
 
-type DurationOfPart =
+export type DurationOfPart =
   | { durationType: DurationType.Auto }
-  | { durationType: DurationType.LimitDuration; duration: number };
+  | { durationType: DurationType.LimitDuration; duration: string };
 
-type StartTime =
+export type StartTime =
   | { startType: StartTimeValue.AtMiningTime }
   | { startType: StartTimeValue.AtEpoch; epoch: number };
 
@@ -45,10 +45,10 @@ export type TwapOrderInfo = {
   buyToken: TokenInfo;
   receiver: `0x${string}`;
   owner: `0x${string}`;
-  numberOfParts: number;
+  numberOfParts: string;
   partSellAmount: string;
   minPartLimit: string;
-  timeBetweenParts: string;
+  timeBetweenParts: number;
   durationOfPart: DurationOfPart;
   startTime: StartTime;
 };
@@ -126,7 +126,7 @@ export class TwapOrderTransactionInfo
   @ApiProperty({
     description: 'The number of parts in the TWAP',
   })
-  numberOfParts: number;
+  numberOfParts: string;
 
   @ApiProperty({
     description: 'The amount of sellToken to sell in each part',
@@ -141,7 +141,7 @@ export class TwapOrderTransactionInfo
   @ApiProperty({
     description: 'The duration of the TWAP interval',
   })
-  timeBetweenParts: string;
+  timeBetweenParts: number;
 
   @ApiProperty({
     description: 'Whether the TWAP is valid for the entire interval or not',
@@ -154,7 +154,7 @@ export class TwapOrderTransactionInfo
   startTime: StartTime;
 
   constructor(args: {
-    orderStatus: OrderStatus;
+    status: OrderStatus;
     kind: OrderKind.Sell;
     class: OrderClass.Limit;
     validUntil: number;
@@ -167,15 +167,15 @@ export class TwapOrderTransactionInfo
     receiver: `0x${string}`;
     owner: `0x${string}`;
     fullAppData: Record<string, unknown> | null;
-    numberOfParts: number;
+    numberOfParts: string;
     partSellAmount: string;
     minPartLimit: string;
-    timeBetweenParts: string;
+    timeBetweenParts: number;
     durationOfPart: DurationOfPart;
     startTime: StartTime;
   }) {
     super(TransactionInfoType.SwapOrder, null, null);
-    this.status = args.orderStatus;
+    this.status = args.status;
     this.kind = args.kind;
     this.class = args.class;
     this.validUntil = args.validUntil;

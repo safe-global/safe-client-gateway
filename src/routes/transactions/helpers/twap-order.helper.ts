@@ -5,9 +5,17 @@ import {
 } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import {
   BuyTokenBalance,
+  OrderClass,
   OrderKind,
   SellTokenBalance,
 } from '@/domain/swaps/entities/order.entity';
+import {
+  DurationType,
+  StartTimeValue,
+  DurationOfPart,
+  StartTime,
+  TwapOrderInfo,
+} from '@/routes/transactions/entities/swaps/twap-order-info.entity';
 import { GPv2OrderParameters } from '@/routes/transactions/helpers/gp-v2-order.helper';
 import { Injectable, Module } from '@nestjs/common';
 import { isAddressEqual } from 'viem';
@@ -64,6 +72,58 @@ export class TwapOrderHelper {
       isAddressEqual(args.to, TwapOrderHelper.ComposableCowAddress) &&
       this.composableCowDecoder.helpers.isCreateWithContext(args.data)
     );
+  }
+
+  /**
+   * Maps values of {@link TwapStruct} to partial {@link TwapOrderInfo}
+   *
+   * @param struct - {@link TwapStruct} to map
+   * @returns partial mapping of {@link TwapOrderInfo}
+   */
+  public twapStructToPartialOrderInfo(
+    struct: TwapStruct,
+  ): Pick<
+    TwapOrderInfo,
+    | 'kind'
+    | 'class'
+    | 'sellAmount'
+    | 'buyAmount'
+    | 'startTime'
+    | 'numberOfParts'
+    | 'timeBetweenParts'
+    | 'durationOfPart'
+  > {
+    const {
+      n: numberOfParts,
+      partSellAmount,
+      minPartLimit,
+      t: timeBetweenParts,
+      t0: startEpoch,
+      span,
+    } = struct;
+
+    const sellAmount = partSellAmount * numberOfParts;
+    const buyAmount = minPartLimit * numberOfParts;
+
+    const isSpanZero = Number(span) === 0;
+    const durationOfPart: DurationOfPart = isSpanZero
+      ? { durationType: DurationType.Auto }
+      : { durationType: DurationType.LimitDuration, duration: span.toString() };
+
+    const startTime: StartTime = isSpanZero
+      ? { startType: StartTimeValue.AtMiningTime }
+      : { startType: StartTimeValue.AtEpoch, epoch: Number(startEpoch) };
+
+    return {
+      kind: OrderKind.Sell,
+      class: OrderClass.Limit,
+      sellAmount: sellAmount.toString(),
+      buyAmount: buyAmount.toString(),
+      startTime,
+      numberOfParts: numberOfParts.toString(),
+      timeBetweenParts: Number(timeBetweenParts),
+      durationOfPart,
+    };
   }
 
   /**
