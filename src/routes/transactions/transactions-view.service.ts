@@ -98,7 +98,7 @@ export class TransactionsViewService {
       throw new Error('Order UID not found in transaction data');
     }
 
-    const { order, sellToken, buyToken } = await this.swapOrderHelper.getOrder({
+    const order = await this.swapOrderHelper.getOrder({
       chainId: args.chainId,
       orderUid,
     });
@@ -106,6 +106,17 @@ export class TransactionsViewService {
     if (!this.swapOrderHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
+
+    const [sellToken, buyToken] = await Promise.all([
+      this.swapOrderHelper.getToken({
+        chainId: args.chainId,
+        address: order.sellToken,
+      }),
+      this.swapOrderHelper.getToken({
+        chainId: args.chainId,
+        address: order.buyToken,
+      }),
+    ]);
 
     return new CowSwapConfirmationView({
       method: args.dataDecoded.method,

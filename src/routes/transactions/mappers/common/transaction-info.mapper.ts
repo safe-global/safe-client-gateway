@@ -254,7 +254,7 @@ export class MultisigTransactionInfoMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<TwapOrderTransactionInfo | null> {
-    if (!transaction?.data || !transaction?.executionDate) {
+    if (!transaction?.data) {
       return null;
     }
 

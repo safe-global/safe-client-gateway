@@ -87,18 +87,12 @@ describe('Swap Order Helper tests', () => {
         return Promise.reject(new Error(`Token ${address} not found.`));
       });
 
-      const {
-        order: actualOrder,
-        sellToken: actualSellToken,
-        buyToken: actualBuyToken,
-      } = await target.getOrder({
+      const actual = await target.getOrder({
         chainId,
         orderUid: order.uid as `0x${string}`,
       });
 
-      expect(actualSellToken.address).toBe(actualOrder.sellToken);
-      expect(actualBuyToken.address).toBe(actualOrder.buyToken);
-      expect(actualOrder).toEqual({
+      expect(actual).toEqual({
         appData: order.appData,
         availableBalance: order.availableBalance,
         buyAmount: order.buyAmount,
@@ -134,25 +128,6 @@ describe('Swap Order Helper tests', () => {
         uid: order.uid,
         validTo: order.validTo,
       });
-
-      expect(actualSellToken).toStrictEqual({
-        address: sellToken.address,
-        decimals: sellToken.decimals,
-        logoUri: sellToken.logoUri,
-        name: sellToken.name,
-        symbol: sellToken.symbol,
-        trusted: sellToken.trusted,
-        type: sellToken.type,
-      });
-      expect(actualBuyToken).toStrictEqual({
-        address: buyToken.address,
-        decimals: buyToken.decimals,
-        logoUri: buyToken.logoUri,
-        name: buyToken.name,
-        symbol: buyToken.symbol,
-        trusted: buyToken.trusted,
-        type: buyToken.type,
-      });
     },
   );
 
@@ -169,49 +144,38 @@ describe('Swap Order Helper tests', () => {
       chainId,
       expect.any(String),
     );
-    expect(tokenRepositoryMock.getToken).toHaveBeenCalledTimes(0);
   });
 
   it('should throw if token data is not available', async () => {
     const chainId = faker.string.numeric();
-    const order = orderBuilder().build();
-    swapsRepositoryMock.getOrder.mockResolvedValue(order);
+    const tokenAddress = getAddress(faker.finance.ethereumAddress());
     tokenRepositoryMock.getToken.mockRejectedValue(
       new Error('Token not found'),
     );
 
     await expect(
-      target.getOrder({
+      target.getToken({
         chainId,
-        orderUid: order.uid as `0x${string}`,
+        address: tokenAddress,
       }),
     ).rejects.toThrow('Token not found');
 
-    expect(swapsRepositoryMock.getOrder).toHaveBeenCalledTimes(1);
-    expect(swapsRepositoryMock.getOrder).toHaveBeenCalledWith(
+    expect(tokenRepository.getToken).toHaveBeenCalledTimes(1);
+    expect(tokenRepository.getToken).toHaveBeenCalledWith({
       chainId,
-      order.uid,
-    );
+      address: tokenAddress,
+    });
   });
 
   it.each(Object.values(OrderStatus))(
     'should throw if %s order kind is unknown',
     async (status) => {
       const chainId = faker.string.numeric();
-      const buyToken = tokenBuilder().with('decimals', 0).build();
-      const sellToken = tokenBuilder().build();
       const order = orderBuilder()
         .with('status', status)
-        .with('buyToken', getAddress(buyToken.address))
-        .with('sellToken', getAddress(sellToken.address))
         .with('kind', OrderKind.Unknown)
         .build();
       swapsRepositoryMock.getOrder.mockResolvedValue(order);
-      tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
-        if (address === order.buyToken) return Promise.resolve(buyToken);
-        if (address === order.sellToken) return Promise.resolve(sellToken);
-        return Promise.reject(new Error(`Token ${address} not found.`));
-      });
 
       await expect(
         target.getOrder({
@@ -228,68 +192,19 @@ describe('Swap Order Helper tests', () => {
     },
   );
 
-  it('maps to native token if buy token is 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', async () => {
+  it('maps to native token if token is 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', async () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
-    const sellToken = tokenBuilder().build();
-    const order = orderBuilder()
-      .with(
-        'buyToken',
-        getAddress('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'),
-      )
-      .with('sellToken', getAddress(sellToken.address))
-      .build();
-    swapsRepositoryMock.getOrder.mockResolvedValue(order);
-    tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
-      if (address === order.sellToken) return Promise.resolve(sellToken);
-      return Promise.reject(new Error(`Token ${address} not found.`));
-    });
+    const tokenAddress = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
     chainsRepositoryMock.getChain.mockResolvedValue(chain);
 
-    const actual = await target.getOrder({
+    const actual = await target.getToken({
       chainId,
-      orderUid: order.uid as `0x${string}`,
+      address: tokenAddress,
     });
 
-    expect(chainsRepository.getChain).toHaveBeenCalledTimes(1);
-    expect(chainsRepository.getChain).toHaveBeenCalledWith(chainId);
-    expect(actual.buyToken).toStrictEqual({
-      address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-      decimals: chain.nativeCurrency.decimals,
-      logoUri: chain.nativeCurrency.logoUri,
-      name: chain.nativeCurrency.name,
-      symbol: chain.nativeCurrency.symbol,
-      type: 'NATIVE_TOKEN',
-      trusted: true,
-    });
-  });
-
-  it('maps to native token if sell token is 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', async () => {
-    const chainId = faker.string.numeric();
-    const chain = chainBuilder().with('chainId', chainId).build();
-    const buyToken = tokenBuilder().build();
-    const order = orderBuilder()
-      .with(
-        'sellToken',
-        getAddress('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'),
-      )
-      .with('buyToken', getAddress(buyToken.address))
-      .build();
-    swapsRepositoryMock.getOrder.mockResolvedValue(order);
-    tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
-      if (address === order.buyToken) return Promise.resolve(buyToken);
-      return Promise.reject(new Error(`Token ${address} not found.`));
-    });
-    chainsRepositoryMock.getChain.mockResolvedValue(chain);
-
-    const actual = await target.getOrder({
-      chainId,
-      orderUid: order.uid as `0x${string}`,
-    });
-
-    expect(chainsRepository.getChain).toHaveBeenCalledTimes(1);
-    expect(chainsRepository.getChain).toHaveBeenCalledWith(chainId);
-    expect(actual.sellToken).toStrictEqual({
+    expect(tokenRepository.getToken).not.toHaveBeenCalledTimes(1);
+    expect(actual).toStrictEqual({
       address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
       decimals: chain.nativeCurrency.decimals,
       logoUri: chain.nativeCurrency.logoUri,

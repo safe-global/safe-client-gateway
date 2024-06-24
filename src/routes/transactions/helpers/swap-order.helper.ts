@@ -103,19 +103,15 @@ export class SwapOrderHelper {
    * @param {string} args.orderUid - The unique identifier of the order, prefixed with '0x'.
    * @returns {Promise} A promise that resolves to an object containing the order and token details.
    *
-   * The returned object includes:
-   * - `order`: An object representing the order.
-   * - `sellToken`: The Token object with a mandatory `decimals` property
-   * - `buyToken`: Similar to `sellToken`, for the token being purchased in the order.
+   * The returned object represents the order.
    *
    * @throws {Error} Throws an error if the order `kind` is 'unknown'.
    * @throws {Error} Throws an error if either the sellToken or buyToken object has null decimals.
    */
-  async getOrder(args: { chainId: string; orderUid: `0x${string}` }): Promise<{
-    order: Order & { kind: Exclude<Order['kind'], 'unknown'> };
-    sellToken: Token & { decimals: number };
-    buyToken: Token & { decimals: number };
-  }> {
+  async getOrder(args: {
+    chainId: string;
+    orderUid: `0x${string}`;
+  }): Promise<Order & { kind: Exclude<Order['kind'], 'unknown'> }> {
     const order = await this.swapsRepository.getOrder(
       args.chainId,
       args.orderUid,
@@ -123,21 +119,9 @@ export class SwapOrderHelper {
 
     if (order.kind === OrderKind.Unknown) throw new Error('Unknown order kind');
 
-    const [buyToken, sellToken] = await Promise.all([
-      this.getToken({
-        chainId: args.chainId,
-        address: order.buyToken,
-      }),
-      this.getToken({
-        chainId: args.chainId,
-        address: order.sellToken,
-      }),
-    ]);
-
     return {
-      order: { ...order, kind: order.kind },
-      buyToken,
-      sellToken,
+      ...order,
+      kind: order.kind,
     };
   }
 
