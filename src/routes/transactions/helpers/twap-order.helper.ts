@@ -16,7 +16,7 @@ import {
   StartTime,
   TwapOrderInfo,
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
-import { GPv2OrderParameters } from '@/routes/transactions/helpers/gp-v2-order.helper';
+import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { Injectable, Module } from '@nestjs/common';
 import { isAddressEqual } from 'viem';
 
