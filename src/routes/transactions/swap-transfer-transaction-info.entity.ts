@@ -1,44 +1,41 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
+import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
+import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
 import {
-  ApiExtraModels,
-  ApiProperty,
-  ApiPropertyOptional,
-} from '@nestjs/swagger';
-import {
+  OrderStatus,
   OrderClass,
   OrderKind,
-  OrderStatus,
 } from '@/domain/swaps/entities/order.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+import {
+  TransferDirection,
+  TransferTransactionInfo,
+} from '@/routes/transactions/entities/transfer-transaction-info.entity';
 
-export interface OrderInfo {
-  uid: string;
-  status: OrderStatus;
-  kind: OrderKind;
-  orderClass: OrderClass;
-  validUntil: number;
-  sellAmount: string;
-  buyAmount: string;
-  executedSellAmount: string;
-  executedBuyAmount: string;
-  explorerUrl: string;
-  executedSurplusFee: string | null;
-  receiver: string | null;
-  owner: `0x${string}`;
-  fullAppData: Record<string, unknown> | null;
-}
-
-@ApiExtraModels(TokenInfo)
-export class SwapOrderTransactionInfo
+export class SwapTransferTransactionInfo
   extends TransactionInfo
-  implements OrderInfo
+  implements TransferTransactionInfo, SwapOrderTransactionInfo
 {
-  @ApiProperty({ enum: [TransactionInfoType.SwapOrder] })
-  override type = TransactionInfoType.SwapOrder;
+  // TransferTransactionInfo properties
+  @ApiProperty()
+  sender: AddressInfo;
 
+  @ApiProperty()
+  recipient: AddressInfo;
+
+  @ApiProperty()
+  direction: TransferDirection;
+
+  @ApiProperty()
+  transferInfo: Transfer;
+
+  // SwapOrderTransactionInfo properties
   @ApiProperty({ description: 'The order UID' })
   uid: string;
 
@@ -117,6 +114,14 @@ export class SwapOrderTransactionInfo
   fullAppData: Record<string, unknown> | null;
 
   constructor(args: {
+    // TransferTransactionInfo properties
+    sender: AddressInfo;
+    recipient: AddressInfo;
+    direction: TransferDirection;
+    transferInfo: Transfer;
+    humanDescription: string | null;
+    richDecodedInfo: RichDecodedInfo | null | undefined;
+    // SwapOrderTransactionInfo properties
     uid: string;
     orderStatus: OrderStatus;
     kind: OrderKind;
@@ -134,7 +139,17 @@ export class SwapOrderTransactionInfo
     owner: `0x${string}`;
     fullAppData: Record<string, unknown> | null;
   }) {
-    super(TransactionInfoType.SwapOrder, null, null);
+    // TransferTransactionInfo constructor
+    super(
+      TransactionInfoType.SwapTransfer,
+      args.humanDescription,
+      args.richDecodedInfo,
+    );
+    this.sender = args.sender;
+    this.recipient = args.recipient;
+    this.direction = args.direction;
+    this.transferInfo = args.transferInfo;
+    // SwapOrderTransactionInfo constructor
     this.uid = args.uid;
     this.status = args.orderStatus;
     this.kind = args.kind;

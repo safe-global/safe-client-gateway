@@ -11,13 +11,28 @@ import { Erc721Transfer } from '@/routes/transactions/entities/transfers/erc721-
 import { NativeCoinTransfer } from '@/routes/transactions/entities/transfers/native-coin-transfer.entity';
 import { getTransferDirection } from '@/routes/transactions/mappers/common/transfer-direction.helper';
 import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
 
 @Injectable()
 export class TransferInfoMapper {
+  private readonly isSwapsDecodingEnabled: boolean;
+  private readonly isTwapsDecodingEnabled: boolean;
+
   constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
+    private readonly swapTransferInfoMapper: SwapTransferInfoMapper,
     private readonly addressInfoHelper: AddressInfoHelper,
-  ) {}
+  ) {
+    this.isSwapsDecodingEnabled = this.configurationService.getOrThrow(
+      'features.swapsDecoding',
+    );
+    this.isTwapsDecodingEnabled = this.configurationService.getOrThrow(
+      'features.twapsDecoding',
+    );
+  }
 
   async mapTransferInfo(
     chainId: string,
@@ -25,23 +40,38 @@ export class TransferInfoMapper {
     safe: Safe,
   ): Promise<TransferTransactionInfo> {
     const { from, to } = domainTransfer;
-    const sender = await this.addressInfoHelper.getOrDefault(chainId, from, [
-      'TOKEN',
-      'CONTRACT',
-    ]);
 
-    const recipient = await this.addressInfoHelper.getOrDefault(chainId, to, [
-      'TOKEN',
-      'CONTRACT',
+    const [sender, recipient, transferInfo] = await Promise.all([
+      this.addressInfoHelper.getOrDefault(chainId, from, ['TOKEN', 'CONTRACT']),
+      this.addressInfoHelper.getOrDefault(chainId, to, ['TOKEN', 'CONTRACT']),
+      this.getTransferByType(chainId, domainTransfer),
     ]);
 
     const direction = getTransferDirection(safe.address, from, to);
+
+    if (this.isSwapsDecodingEnabled && this.isTwapsDecodingEnabled) {
+      // If the transaction is a swap-based transfer, we return it immediately
+      const swapTransfer =
+        await this.swapTransferInfoMapper.mapSwapTransferInfo({
+          sender,
+          recipient,
+          direction,
+          transferInfo,
+          chainId,
+          safeAddress: safe.address,
+          domainTransfer,
+        });
+
+      if (swapTransfer) {
+        return swapTransfer;
+      }
+    }
 
     return new TransferTransactionInfo(
       sender,
       recipient,
       direction,
-      await this.getTransferByType(chainId, domainTransfer),
+      transferInfo,
       null,
       null,
     );

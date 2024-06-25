@@ -4,11 +4,12 @@ import { TypedDataDomain, encodePacked, hashTypedData } from 'viem';
 
 @Injectable()
 export class GPv2OrderHelper {
+  public static readonly SettlementContractAddress =
+    '0x9008D19f58AAbD9eD0D60971565AA8510560ab41' as const;
+
   // Domain
   private static readonly DomainName = 'Gnosis Protocol' as const;
   private static readonly DomainVersion = 'v2' as const;
-  private static readonly DomainVerifyingContract =
-    '0x9008D19f58AAbD9eD0D60971565AA8510560ab41' as const;
 
   // Typed data
   private static readonly TypedDataPrimaryType = 'Order' as const;
@@ -87,7 +88,7 @@ export class GPv2OrderHelper {
       name: GPv2OrderHelper.DomainName,
       version: GPv2OrderHelper.DomainVersion,
       chainId: Number(chainId),
-      verifyingContract: GPv2OrderHelper.DomainVerifyingContract,
+      verifyingContract: GPv2OrderHelper.SettlementContractAddress,
     };
   }
 }

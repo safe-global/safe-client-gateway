@@ -34,6 +34,8 @@ export class TwapOrderHelper {
     private readonly composableCowDecoder: ComposableCowDecoder,
   ) {}
 
+  // TODO: Refactor findSwapOrder, findSwapTransfer and findTwapOrder to avoid code duplication
+
   /**
    * Finds a TWAP order in a given transaction, either directly called or in a MultiSend
    *

@@ -7,6 +7,7 @@ export enum TransactionInfoType {
   SettingsChange = 'SettingsChange',
   Transfer = 'Transfer',
   SwapOrder = 'SwapOrder',
+  SwapTransfer = 'SwapTransfer',
   TwapOrder = 'TwapOrder',
 }
 

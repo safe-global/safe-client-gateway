@@ -113,12 +113,6 @@ export class MultisigTransactionInfoMapper {
       if (twapOrder) {
         return twapOrder;
       }
-
-      // If the transaction is a TWAP-based swap order, we return it immediately
-      const twapSwapOrder = await this.mapTwapSwapOrder(chainId, transaction);
-      if (twapSwapOrder) {
-        return twapSwapOrder;
-      }
     }
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
@@ -274,34 +268,6 @@ export class MultisigTransactionInfoMapper {
         {
           data: orderData,
           executionDate: transaction.executionDate,
-        },
-      );
-    } catch (error) {
-      this.loggingService.warn(error);
-      return null;
-    }
-  }
-
-  private async mapTwapSwapOrder(
-    chainId: string,
-    transaction: MultisigTransaction | ModuleTransaction,
-  ): Promise<SwapOrderTransactionInfo | null> {
-    if (!transaction?.data) {
-      return null;
-    }
-
-    const orderData = this.swapOrderHelper.findTwapSwapOrder(transaction.data);
-
-    if (!orderData) {
-      return null;
-    }
-
-    try {
-      return await this.swapOrderMapper.mapTwapSwapOrder(
-        chainId,
-        transaction.safe,
-        {
-          data: orderData,
         },
       );
     } catch (error) {
