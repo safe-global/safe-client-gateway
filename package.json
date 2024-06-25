@@ -58,7 +58,7 @@
     "@types/jest": "29.5.12",
     "@types/jsonwebtoken": "^9",
     "@types/lodash": "^4.17.5",
-    "@types/node": "^20.14.3",
+    "@types/node": "^20.14.8",
     "@types/semver": "^7.5.8",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.5.0",
@@ -73,7 +73,7 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "^5.5.2",
-    "typescript-eslint": "^7.13.0"
+    "typescript-eslint": "^7.14.1"
   },
   "jest": {
     "moduleFileExtensions": [
