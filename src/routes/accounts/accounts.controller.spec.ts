@@ -5,7 +5,7 @@ import { TestAccountsDataSourceModule } from '@/datasources/accounts/__tests__/t
 import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
-import jwtConfiguration from '@/datasources/jwt/configuration/jwt.configuration';
+import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 import {
   JWT_CONFIGURATION_MODULE,
   JwtConfigurationModule,
@@ -120,6 +120,7 @@ describe('AccountsController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const accessToken = faker.string.sample();
 
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
       await request(app.getHttpServer())
         .post(`/v1/accounts`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -189,7 +190,7 @@ describe('AccountsController', () => {
     it('returns 403 if chain_id is not a valid chain ID', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('chain_id', faker.string.alphanumeric())
+        .with('chain_id', faker.lorem.sentence())
         .with('signer_address', address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
