@@ -8,6 +8,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
 import { getAddress, isAddressEqual } from 'viem';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
+import { Order } from '@/domain/swaps/entities/order.entity';
 
 @Injectable()
 export class SwapTransferInfoMapper {
@@ -17,6 +18,18 @@ export class SwapTransferInfoMapper {
     private readonly swapsRepository: ISwapsRepository,
   ) {}
 
+  /**
+   * Maps a swap transfer transaction info
+   *
+   * @param args.sender - {@link AddrssInfo} sender of the transfer
+   * @param args.recipient - {@link AddrssInfo} recipient of the transfer
+   * @param args.direction - {@link TransferDirection} direction of the transfer
+   * @param args.chainId - chain id of the transfer
+   * @param args.safeAddress - safe address of the transfer
+   * @param args.transferInfo - {@link TransferInfo} transfer info
+   * @param args.domainTransfer - {@link Transfer} domain transfer (used to find the order)
+   * @returns
+   */
   public async mapSwapTransferInfo(args: {
     sender: AddressInfo;
     recipient: AddressInfo;
@@ -26,6 +39,7 @@ export class SwapTransferInfoMapper {
     transferInfo: Transfer;
     domainTransfer: DomainTransfer;
   }): Promise<SwapTransferTransactionInfo | null> {
+    // If settlement contract is not interacted with, not a swap fulfillment
     if (
       !this.isSettlement(args.sender.value) &&
       !this.isSettlement(args.recipient.value)
@@ -33,12 +47,17 @@ export class SwapTransferInfoMapper {
       return null;
     }
 
-    // TODO: Handle orders that may have been executed within the same transaction
-    // by finding matching domainTransfer in orders
-    const [order] = await this.swapsRepository.getOrders(
+    const orders = await this.swapsRepository.getOrders(
       args.chainId,
       args.domainTransfer.transactionHash,
     );
+
+    // One transaction may contain multiple orders
+    const order = this.findOrderByTransfer(orders, args.domainTransfer);
+
+    if (!order) {
+      return null;
+    }
 
     const [sellToken, buyToken] = await Promise.all([
       this.swapOrderHelper.getToken({
@@ -84,5 +103,45 @@ export class SwapTransferInfoMapper {
       getAddress(address),
       GPv2OrderHelper.SettlementContractAddress,
     );
+  }
+
+  /**
+   * Finds a order by transfer by comparing the token address and value of the transfer
+   * with the order's sellToken and buyToken.
+   *
+   * @param orders
+   * @param transfer
+   * @returns the {@link Order} if found, otherwise `undefined`
+   */
+  private findOrderByTransfer(
+    orders: Array<Order>,
+    transfer: DomainTransfer,
+  ): Order | undefined {
+    return orders.find((order) => {
+      if (transfer.type === 'ERC721_TRANSFER') {
+        throw new Error('ERC721 transfers are not supported by swaps');
+      }
+
+      const isSender = transfer.from === order.owner;
+
+      const isValue = isSender
+        ? transfer.value === order.executedSellAmount.toString()
+        : transfer.value === order.executedBuyAmount.toString();
+
+      const isToken = ((): boolean => {
+        const tokenToCompare = isSender ? order.sellToken : order.buyToken;
+
+        if (transfer.type === 'ETHER_TRANSFER') {
+          return tokenToCompare === SwapOrderHelper.NATIVE_CURRENCY_ADDRESS;
+        }
+        if (transfer.type === 'ERC20_TRANSFER') {
+          return tokenToCompare === transfer.tokenAddress;
+        }
+
+        return false;
+      })();
+
+      return isValue && isToken;
+    });
   }
 }

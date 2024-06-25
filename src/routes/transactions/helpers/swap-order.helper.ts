@@ -19,7 +19,7 @@ import {
 export class SwapOrderHelper {
   // This is the Native Currency address considered by CoW Swap
   // https://docs.cow.fi/cow-protocol/reference/sdks/cow-sdk/modules#buy_eth_address
-  private static readonly NATIVE_CURRENCY_ADDRESS =
+  public static readonly NATIVE_CURRENCY_ADDRESS =
     '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
   private readonly restrictApps: boolean =
