@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
-import { Order, OrderSchema } from '@/domain/swaps/entities/order.entity';
+import {
+  Order,
+  OrderSchema,
+  OrdersSchema,
+} from '@/domain/swaps/entities/order.entity';
 import {
   FullAppData,
   FullAppDataSchema,
@@ -10,6 +14,8 @@ export const ISwapsRepository = Symbol('ISwapsRepository');
 
 export interface ISwapsRepository {
   getOrder(chainId: string, orderUid: `0x${string}`): Promise<Order>;
+
+  getOrders(chainId: string, txHash: string): Promise<Array<Order>>;
 
   getFullAppData(
     chainId: string,
@@ -28,6 +34,12 @@ export class SwapsRepository implements ISwapsRepository {
     const api = this.swapsApiFactory.get(chainId);
     const order = await api.getOrder(orderUid);
     return OrderSchema.parse(order);
+  }
+
+  async getOrders(chainId: string, txHash: string): Promise<Array<Order>> {
+    const api = this.swapsApiFactory.get(chainId);
+    const order = await api.getOrders(txHash);
+    return OrdersSchema.parse(order);
   }
 
   async getFullAppData(
