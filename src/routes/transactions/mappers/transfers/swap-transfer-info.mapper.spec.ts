@@ -106,6 +106,8 @@ describe('SwapTransferInfoMapper', () => {
     const order = orderBuilder()
       .with('from', getAddress(sender.value))
       .with('owner', safeAddress)
+      .with('buyToken', token.address)
+      .with('executedBuyAmount', BigInt(domainTransfer.value))
       .build();
     const explorerUrl = faker.internet.url({ appendSlash: true });
     mockSwapsRepository.getOrders.mockResolvedValue([order]);
@@ -185,6 +187,8 @@ describe('SwapTransferInfoMapper', () => {
     const order = orderBuilder()
       .with('from', getAddress(sender.value))
       .with('owner', safeAddress)
+      .with('buyToken', domainTransfer.tokenAddress)
+      .with('executedBuyAmount', BigInt(domainTransfer.value))
       .build();
     const explorerUrl = faker.internet.url({ appendSlash: true });
     mockSwapsRepository.getOrders.mockResolvedValue([order]);
@@ -331,6 +335,8 @@ describe('SwapTransferInfoMapper', () => {
     const domainTransfer = erc20TransferBuilder()
       .with('from', getAddress(sender.value))
       .with('to', getAddress(recipient.value))
+      .with('value', orders[0].executedSellAmount.toString())
+      .with('tokenAddress', orders[0].sellToken)
       .build();
     const token = tokenBuilder()
       .with('address', domainTransfer.tokenAddress)
