@@ -1,5 +1,5 @@
-import { groupBuilder } from '@/datasources/accounts/entities/__tests__/group.builder';
-import { GroupSchema } from '@/datasources/accounts/entities/group.entity';
+import { groupBuilder } from '@/domain/accounts/entities/__tests__/group.builder';
+import { GroupSchema } from '@/domain/accounts/entities/group.entity';
 import { faker } from '@faker-js/faker';
 
 describe('GroupSchema', () => {
