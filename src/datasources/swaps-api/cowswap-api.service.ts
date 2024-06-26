@@ -21,6 +21,16 @@ export class CowSwapApi implements ISwapsApi {
     }
   }
 
+  async getOrders(txHash: string): Promise<Array<Order>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/transactions/${txHash}/orders`;
+      const { data } = await this.networkService.get<Array<Order>>({ url });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async getFullAppData(appDataHash: `0x${string}`): Promise<FullAppData> {
     try {
       const url = `${this.baseUrl}/api/v1/app_data/${appDataHash}`;

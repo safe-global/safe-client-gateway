@@ -101,3 +101,5 @@ export const OrderSchema = z.object({
   executedSurplusFee: z.coerce.bigint().nullish().default(null),
   fullAppData: FullAppDataSchema.shape.fullAppData,
 });
+
+export const OrdersSchema = z.array(OrderSchema);
