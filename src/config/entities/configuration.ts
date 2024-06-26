@@ -34,7 +34,6 @@ export default () => ({
     ),
   },
   balances: {
-    balancesTtlSeconds: parseInt(process.env.BALANCES_TTL_SECONDS ?? `${300}`),
     providers: {
       safe: {
         prices: {
