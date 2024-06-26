@@ -258,6 +258,8 @@ export default () => ({
     // Upper limit of parts we will request from CoW for TWAP orders, after
     // which we return base values for those orders
     // Note: 11 is the average number of parts, confirmed by CoW
-    maxNumberOfParts: parseInt(process.env.BALANCES_TTL_SECONDS ?? `${11}`),
+    maxNumberOfParts: parseInt(
+      process.env.SWAPS_MAX_NUMBER_OF_PARTS ?? `${11}`,
+    ),
   },
 });
