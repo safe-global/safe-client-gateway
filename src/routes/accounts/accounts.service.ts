@@ -13,10 +13,10 @@ export class AccountsService {
   ) {}
 
   async createAccount(args: {
-    auth: AuthPayloadDto | undefined;
+    auth?: AuthPayloadDto;
     createAccountDto: CreateAccountDto;
   }): Promise<Account> {
-    if (args.auth === undefined) {
+    if (!args.auth) {
       throw new UnauthorizedException();
     }
     const domainAccount = await this.accountsRepository.createAccount({
