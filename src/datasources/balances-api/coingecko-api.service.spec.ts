@@ -634,9 +634,9 @@ describe('CoingeckoAPI', () => {
       JSON.stringify({ [thirdTokenAddress]: { [lowerCaseFiatCode]: null } }),
     );
     expect(mockCacheService.set.mock.calls[0][2]).toBeGreaterThanOrEqual(
-      (fakeConfigurationService.get(
+      fakeConfigurationService.get(
         'balances.providers.safe.prices.notFoundPriceTtlSeconds',
-      ) as number) - CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS,
+      ) as number,
     );
     expect(mockCacheService.set.mock.calls[0][2]).toBeLessThanOrEqual(
       (fakeConfigurationService.get(

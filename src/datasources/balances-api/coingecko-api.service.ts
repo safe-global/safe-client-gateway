@@ -16,7 +16,7 @@ import {
   NetworkService,
   INetworkService,
 } from '@/datasources/network/network.service.interface';
-import { difference, get } from 'lodash';
+import { difference, get, random } from 'lodash';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { asError } from '@/logging/utils';
@@ -35,7 +35,7 @@ export class CoingeckoApi implements IPricesApi {
   /**
    * Time range in seconds used to get a random value when calculating a TTL for not-found token prices.
    */
-  static readonly NOT_FOUND_TTL_RANGE_SECONDS: number = 60 * 60 * 24;
+  static readonly NOT_FOUND_TTL_RANGE_SECONDS: number = 600; // 10 minutes
   private readonly apiKey: string | undefined;
   private readonly baseUrl: string;
   private readonly defaultExpirationTimeInSeconds: number;
@@ -343,14 +343,13 @@ export class CoingeckoApi implements IPricesApi {
   }
 
   /**
-   * Gets a random integer value between (notFoundPriceTtlSeconds - notFoundTtlRangeSeconds)
-   * and (notFoundPriceTtlSeconds + notFoundTtlRangeSeconds).
+   * Gets a random integer value between notFoundPriceTtlSeconds and (notFoundPriceTtlSeconds + notFoundTtlRangeSeconds).
+   * The minimum result will be greater than notFoundTtlRangeSeconds to avoid having a negative TTL.
    */
   private _getRandomNotFoundTokenPriceTtl(): number {
-    const min =
-      this.notFoundPriceTtlSeconds - CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS;
-    const max =
-      this.notFoundPriceTtlSeconds + CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS;
-    return Math.floor(Math.random() * (max - min) + min);
+    return random(
+      this.notFoundPriceTtlSeconds,
+      this.notFoundPriceTtlSeconds + CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS,
+    );
   }
 }
