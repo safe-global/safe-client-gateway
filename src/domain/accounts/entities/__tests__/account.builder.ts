@@ -1,5 +1,5 @@
-import { IBuilder, Builder } from '@/__tests__/builder';
-import { Account } from '@/datasources/accounts/entities/account.entity';
+import { Builder, IBuilder } from '@/__tests__/builder';
+import { Account } from '@/domain/accounts/entities/account.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
