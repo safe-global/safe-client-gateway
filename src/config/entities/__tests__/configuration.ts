@@ -20,7 +20,6 @@ export default (): ReturnType<typeof configuration> => ({
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
   },
   balances: {
-    balancesTtlSeconds: faker.number.int(),
     providers: {
       safe: {
         prices: {
