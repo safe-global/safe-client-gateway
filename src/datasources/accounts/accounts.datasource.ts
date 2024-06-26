@@ -18,10 +18,9 @@ export class AccountsDatasource implements IAccountsDatasource {
   ) {}
 
   async createAccount(address: `0x${string}`): Promise<Account> {
-    const [account] = await this.sql<[Account]>`INSERT INTO
-                                                    accounts (address)
-                                                VALUES
-                                                    (${address}) RETURNING *`.catch(
+    const [account] = await this.sql<
+      [Account]
+    >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`.catch(
       (e) => {
         this.loggingService.warn(
           `Error creating account: ${asError(e).message}`,
@@ -38,19 +37,12 @@ export class AccountsDatasource implements IAccountsDatasource {
   }
 
   async getAccount(address: `0x${string}`): Promise<Account> {
-    const [account] = await this.sql<[Account]>`SELECT
-                                                    *
-                                                FROM
-                                                    accounts
-                                                WHERE
-                                                    address = ${address}`.catch(
-      (e) => {
-        this.loggingService.info(
-          `Error getting account: ${asError(e).message}`,
-        );
-        return [];
-      },
-    );
+    const [account] = await this.sql<
+      [Account]
+    >`SELECT * FROM accounts WHERE address = ${address}`.catch((e) => {
+      this.loggingService.info(`Error getting account: ${asError(e).message}`);
+      return [];
+    });
 
     if (!account) {
       throw new NotFoundException('Error getting account.');

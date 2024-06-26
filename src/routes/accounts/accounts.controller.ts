@@ -39,6 +39,7 @@ export class AccountsController {
 
   @Delete(':address')
   @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAccount(
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
     @Req() request: Request,

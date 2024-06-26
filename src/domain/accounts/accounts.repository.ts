@@ -38,7 +38,7 @@ export class AccountsRepository implements IAccountsRepository {
     if (!authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-
+    // TODO: trigger cascade deletion (keepData parameter)
     return this.datasource.deleteAccount(args.address);
   }
 }

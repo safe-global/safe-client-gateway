@@ -27,10 +27,10 @@ export class AccountsService {
   }
 
   async deleteAccount(args: {
-    auth: AuthPayloadDto | undefined;
+    auth?: AuthPayloadDto;
     address: `0x${string}`;
   }): Promise<void> {
-    if (args.auth === undefined) {
+    if (!args.auth) {
       throw new UnauthorizedException();
     }
     await this.accountsRepository.deleteAccount({
