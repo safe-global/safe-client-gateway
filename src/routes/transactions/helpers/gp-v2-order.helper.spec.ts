@@ -1,3 +1,4 @@
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
@@ -9,9 +10,14 @@ describe('GPv2OrderHelper', () => {
 
   const multiSendDecoder = new MultiSendDecoder();
   const composableCowDecoder = new ComposableCowDecoder();
+  const configurationService = new FakeConfigurationService();
+  const allowedApps = new Set<string>();
+  configurationService.set('swaps.restrictApps', false);
   const twapOrderHelper = new TwapOrderHelper(
+    configurationService,
     multiSendDecoder,
     composableCowDecoder,
+    allowedApps,
   );
 
   describe('computeOrderUid', () => {
