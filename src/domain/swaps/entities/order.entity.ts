@@ -5,6 +5,8 @@ import { FullAppDataSchema } from '@/domain/swaps/entities/full-app-data.entity'
 
 export type Order = z.infer<typeof OrderSchema>;
 
+export type KnownOrder = Order & { kind: Exclude<Order['kind'], 'unknown'> };
+
 export enum OrderStatus {
   PreSignaturePending = 'presignaturePending',
   Open = 'open',
