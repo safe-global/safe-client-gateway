@@ -79,7 +79,7 @@ export class TwapOrderMapper {
         : twapParts
       : [];
 
-    const [{ fullAppData }, ...orders] = await Promise.all([
+    const [fullAppData, ...orders] = await Promise.all([
       // Decode hash of `appData`
       this.swapsRepository.getFullAppData(chainId, twapStruct.appData),
       ...partsToFetch.map((order) => {
@@ -92,7 +92,10 @@ export class TwapOrderMapper {
       }),
     ]);
 
-    // TODO: Handling of restricted Apps, calling `getToken` directly instead of multiple times in `getOrder` for sellToken and buyToken
+    if (!this.twapOrderHelper.isAppAllowed(fullAppData)) {
+      throw new Error(`Unsupported App: ${fullAppData.fullAppData?.appCode}`);
+    }
+    // TODO: Calling `getToken` directly instead of multiple times in `getOrder` for sellToken and buyToken
 
     const executedSellAmount: TwapOrderInfo['executedSellAmount'] =
       hasAbundantParts ? null : this.getExecutedSellAmount(orders).toString();
@@ -138,7 +141,7 @@ export class TwapOrderMapper {
       }),
       receiver: twapStruct.receiver,
       owner: safeAddress,
-      fullAppData,
+      fullAppData: fullAppData.fullAppData,
       numberOfParts: twapOrderData.numberOfParts,
       partSellAmount: twapStruct.partSellAmount.toString(),
       minPartLimit: twapStruct.minPartLimit.toString(),

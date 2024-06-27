@@ -14,8 +14,6 @@ export class SwapOrderMapper {
     private readonly swapOrderHelper: SwapOrderHelper,
   ) {}
 
-  // TODO: Handling of restricted Apps of TWAP mapping
-
   async mapSwapOrder(
     chainId: string,
     transaction: { data: `0x${string}` },
