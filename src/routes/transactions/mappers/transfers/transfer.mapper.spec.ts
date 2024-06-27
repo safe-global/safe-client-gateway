@@ -1,3 +1,4 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
@@ -9,10 +10,15 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
+import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
 import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/transfer-info.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+
+const configurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -22,13 +28,20 @@ const tokenRepository = jest.mocked({
   getToken: jest.fn(),
 } as jest.MockedObjectDeep<TokenRepository>);
 
+const swapTransferInfoMapper = jest.mocked({
+  mapSwapTransferInfo: jest.fn(),
+} as jest.MockedObjectDeep<SwapTransferInfoMapper>);
+
 describe('Transfer mapper (Unit)', () => {
   let mapper: TransferMapper;
 
   beforeEach(() => {
     jest.resetAllMocks();
+
     const transferInfoMapper = new TransferInfoMapper(
+      configurationService,
       tokenRepository,
+      swapTransferInfoMapper,
       addressInfoHelper,
     );
     mapper = new TransferMapper(transferInfoMapper);

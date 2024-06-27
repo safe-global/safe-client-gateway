@@ -14,6 +14,7 @@ import { SettingsChangeTransaction } from '@/routes/transactions/entities/settin
 import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
+import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
 import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
 
 @ApiExtraModels(
@@ -24,6 +25,7 @@ import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/t
   ModuleExecutionInfo,
   MultisigExecutionInfo,
   SwapOrderTransactionInfo,
+  SwapTransferTransactionInfo,
   TwapOrderTransactionInfo,
 )
 export class Transaction {
@@ -41,6 +43,7 @@ export class Transaction {
       { $ref: getSchemaPath(CustomTransactionInfo) },
       { $ref: getSchemaPath(SettingsChangeTransaction) },
       { $ref: getSchemaPath(SwapOrderTransactionInfo) },
+      { $ref: getSchemaPath(SwapTransferTransactionInfo) },
       { $ref: getSchemaPath(TwapOrderTransactionInfo) },
       { $ref: getSchemaPath(TransferTransactionInfo) },
     ],

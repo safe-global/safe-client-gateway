@@ -68,8 +68,8 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   })
   status: OrderStatus;
 
-  @ApiProperty({ enum: ['buy', 'sell'] })
-  kind: 'buy' | 'sell';
+  @ApiProperty({ enum: Object.values(OrderKind) })
+  kind: OrderKind;
 
   @ApiProperty({
     enum: OrderClass,
