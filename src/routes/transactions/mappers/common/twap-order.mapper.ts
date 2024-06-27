@@ -13,12 +13,17 @@ import {
   TwapOrderHelper,
   TwapOrderHelperModule,
 } from '@/routes/transactions/helpers/twap-order.helper';
-import { OrderStatus } from '@/domain/swaps/entities/order.entity';
+import {
+  KnownOrder,
+  OrderKind,
+  OrderStatus,
+} from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap-order.mapper';
 import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class TwapOrderMapper {
@@ -27,6 +32,7 @@ export class TwapOrderMapper {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
     private readonly swapOrderHelper: SwapOrderHelper,
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
@@ -79,18 +85,31 @@ export class TwapOrderMapper {
         : twapParts
       : [];
 
-    const [{ fullAppData }, ...orders] = await Promise.all([
-      // Decode hash of `appData`
-      this.swapsRepository.getFullAppData(chainId, twapStruct.appData),
-      ...partsToFetch.map((order) => {
-        const orderUid = this.gpv2OrderHelper.computeOrderUid({
-          chainId,
-          owner: safeAddress,
-          order,
-        });
-        return this.swapOrderHelper.getOrder({ chainId, orderUid });
-      }),
-    ]);
+    const { fullAppData } = await this.swapsRepository.getFullAppData(
+      chainId,
+      twapStruct.appData,
+    );
+
+    const orders: Array<KnownOrder> = [];
+
+    for (const part of partsToFetch) {
+      const orderUid = this.gpv2OrderHelper.computeOrderUid({
+        chainId,
+        owner: safeAddress,
+        order: part,
+      });
+
+      try {
+        const order = await this.swapsRepository.getOrder(chainId, orderUid);
+        if (order.kind === OrderKind.Buy || order.kind === OrderKind.Sell) {
+          orders.push(order as KnownOrder);
+        }
+      } catch (err) {
+        this.loggingService.warn(
+          `Error getting orderUid ${orderUid} from SwapsRepository`,
+        );
+      }
+    }
 
     // TODO: Handling of restricted Apps, calling `getToken` directly instead of multiple times in `getOrder` for sellToken and buyToken
 
@@ -181,17 +200,13 @@ export class TwapOrderMapper {
     return OrderStatus.Unknown;
   }
 
-  private getExecutedSellAmount(
-    orders: Array<Awaited<ReturnType<typeof this.swapOrderHelper.getOrder>>>,
-  ): number {
+  private getExecutedSellAmount(orders: Array<KnownOrder>): number {
     return orders.reduce((acc, order) => {
       return acc + Number(order.executedSellAmount);
     }, 0);
   }
 
-  private getExecutedBuyAmount(
-    orders: Array<Awaited<ReturnType<typeof this.swapOrderHelper.getOrder>>>,
-  ): number {
+  private getExecutedBuyAmount(orders: Array<KnownOrder>): number {
     return orders.reduce((acc, order) => {
       return acc + Number(order.executedBuyAmount);
     }, 0);
