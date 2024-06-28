@@ -56,9 +56,7 @@ export class AccountsDatasource implements IAccountsDatasource {
       .sql`DELETE FROM accounts WHERE address = ${address}`;
 
     if (count === 0) {
-      this.loggingService.debug(
-        `No account found for address ${address} on deletion.`,
-      );
+      this.loggingService.debug(`Error deleting account ${address}: not found`);
     }
   }
 }
