@@ -23,7 +23,10 @@ export default () => ({
         ? parseInt(process.env.AMQP_PREFETCH)
         : 100,
   },
-  applicationPort: process.env.APPLICATION_PORT || '3000',
+  application: {
+    env: process.env.CGW_ENV || 'production',
+    port: process.env.APPLICATION_PORT || '3000',
+  },
   auth: {
     token: process.env.AUTH_TOKEN,
     nonceTtlSeconds: parseInt(
