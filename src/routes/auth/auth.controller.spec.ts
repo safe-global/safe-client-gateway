@@ -51,6 +51,10 @@ describe('AuthController', () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      application: {
+        ...defaultConfiguration.application,
+        env: 'production',
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,

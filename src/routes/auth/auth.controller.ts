@@ -1,10 +1,19 @@
-import { Body, Controller, Get, Post, HttpCode, Res } from '@nestjs/common';
-import { ApiExcludeController } from '@nestjs/swagger';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AuthService } from '@/routes/auth/auth.service';
-import { SiweDtoSchema, SiweDto } from '@/routes/auth/entities/siwe.dto.entity';
-import { Response } from 'express';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import { AuthService } from '@/routes/auth/auth.service';
+import { SiweDto, SiweDtoSchema } from '@/routes/auth/entities/siwe.dto.entity';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Post,
+  Res,
+} from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
+import { Response } from 'express';
 
 /**
  * The AuthController is responsible for handling authentication:
@@ -19,8 +28,16 @@ import { getMillisecondsUntil } from '@/domain/common/utils/time';
 @ApiExcludeController()
 export class AuthController {
   static readonly ACCESS_TOKEN_COOKIE_NAME = 'access_token';
+  private readonly cgwEnv: string;
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+    private readonly authService: AuthService,
+  ) {
+    this.cgwEnv =
+      this.configurationService.getOrThrow<string>('application.env');
+  }
 
   @Get('nonce')
   async getNonce(): Promise<{
@@ -42,7 +59,7 @@ export class AuthController {
     res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       httpOnly: true,
       secure: true,
-      sameSite: 'lax',
+      sameSite: this.cgwEnv === 'production' ? 'lax' : 'none',
       path: '/',
       // Extract maxAge from token as it may slightly differ to SiWe message
       maxAge: this.getMaxAge(accessToken),
