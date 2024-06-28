@@ -29,4 +29,16 @@ export class AccountsRepository implements IAccountsRepository {
     const account = await this.datasource.createAccount(args.address);
     return AccountSchema.parse(account);
   }
+
+  async deleteAccount(args: {
+    auth: AuthPayloadDto;
+    address: `0x${string}`;
+  }): Promise<void> {
+    const authPayload = new AuthPayload(args.auth);
+    if (!authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+    // TODO: trigger a cascade deletion of the account-associated data.
+    return this.datasource.deleteAccount(args.address);
+  }
 }

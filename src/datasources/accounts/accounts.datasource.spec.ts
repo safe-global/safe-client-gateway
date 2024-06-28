@@ -9,6 +9,7 @@ const sql = dbFactory();
 const migrator = new PostgresDatabaseMigrator(sql);
 
 const mockLoggingService = {
+  debug: jest.fn(),
   info: jest.fn(),
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
@@ -80,6 +81,25 @@ describe('AccountsDatasource tests', () => {
       await expect(target.getAccount(address)).rejects.toThrow(
         'Error getting account.',
       );
+    });
+  });
+
+  describe('deleteAccount', () => {
+    it('deletes an account successfully', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      await target.createAccount(address);
+
+      await expect(target.deleteAccount(address)).resolves.not.toThrow();
+
+      expect(mockLoggingService.debug).not.toHaveBeenCalled();
+    });
+
+    it('does not throws if no account is found', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await expect(target.deleteAccount(address)).resolves.not.toThrow();
+
+      expect(mockLoggingService.debug).toHaveBeenCalledTimes(1);
     });
   });
 });

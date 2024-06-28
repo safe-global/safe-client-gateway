@@ -3,12 +3,15 @@ import { Account } from '@/routes/accounts/entities/account.entity';
 import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
 import { CreateAccountDtoSchema } from '@/routes/accounts/entities/schemas/create-account.dto.schema';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Req,
   UseGuards,
@@ -32,5 +35,16 @@ export class AccountsController {
   ): Promise<Account> {
     const auth = request.accessToken;
     return this.accountsService.createAccount({ auth, createAccountDto });
+  }
+
+  @Delete(':address')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAccount(
+    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Req() request: Request,
+  ): Promise<void> {
+    const auth = request.accessToken;
+    return this.accountsService.deleteAccount({ auth, address });
   }
 }

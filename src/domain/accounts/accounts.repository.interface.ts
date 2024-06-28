@@ -11,6 +11,11 @@ export interface IAccountsRepository {
     auth: AuthPayloadDto;
     address: `0x${string}`;
   }): Promise<Account>;
+
+  deleteAccount(args: {
+    auth: AuthPayloadDto;
+    address: `0x${string}`;
+  }): Promise<void>;
 }
 
 @Module({

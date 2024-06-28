@@ -18,10 +18,9 @@ export class AccountsDatasource implements IAccountsDatasource {
   ) {}
 
   async createAccount(address: `0x${string}`): Promise<Account> {
-    const [account] = await this.sql<[Account]>`INSERT INTO
-                                                    accounts (address)
-                                                VALUES
-                                                    (${address}) RETURNING *`.catch(
+    const [account] = await this.sql<
+      [Account]
+    >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`.catch(
       (e) => {
         this.loggingService.warn(
           `Error creating account: ${asError(e).message}`,
@@ -38,24 +37,26 @@ export class AccountsDatasource implements IAccountsDatasource {
   }
 
   async getAccount(address: `0x${string}`): Promise<Account> {
-    const [account] = await this.sql<[Account]>`SELECT
-                                                    *
-                                                FROM
-                                                    accounts
-                                                WHERE
-                                                    address = ${address}`.catch(
-      (e) => {
-        this.loggingService.info(
-          `Error getting account: ${asError(e).message}`,
-        );
-        return [];
-      },
-    );
+    const [account] = await this.sql<
+      [Account]
+    >`SELECT * FROM accounts WHERE address = ${address}`.catch((e) => {
+      this.loggingService.info(`Error getting account: ${asError(e).message}`);
+      return [];
+    });
 
     if (!account) {
       throw new NotFoundException('Error getting account.');
     }
 
     return account;
+  }
+
+  async deleteAccount(address: `0x${string}`): Promise<void> {
+    const { count } = await this
+      .sql`DELETE FROM accounts WHERE address = ${address}`;
+
+    if (count === 0) {
+      this.loggingService.debug(`Error deleting account ${address}: not found`);
+    }
   }
 }
