@@ -44,25 +44,9 @@ describe('AuthController', () => {
   let blockchainApiManager: FakeBlockchainApiManager;
   let maxValidityPeriodInMs: number;
 
-  beforeEach(async () => {
-    jest.useFakeTimers();
-    jest.resetAllMocks();
-
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      application: {
-        ...defaultConfiguration.application,
-        env: 'production',
-      },
-      features: {
-        ...defaultConfiguration.features,
-        auth: true,
-      },
-    });
-
+  async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
+      imports: [AppModule.register(config)],
     })
       .overrideModule(JWT_CONFIGURATION_MODULE)
       .useModule(JwtConfigurationModule.register(jwtConfiguration))
@@ -95,6 +79,26 @@ describe('AuthController', () => {
     app = await new TestAppProvider().provide(moduleFixture);
 
     await app.init();
+  }
+
+  beforeEach(async () => {
+    jest.useFakeTimers();
+    jest.resetAllMocks();
+
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): typeof defaultConfiguration => ({
+      ...defaultConfiguration,
+      application: {
+        ...defaultConfiguration.application,
+        env: 'production',
+      },
+      features: {
+        ...defaultConfiguration.features,
+        auth: true,
+      },
+    });
+
+    await initApp(testConfiguration);
   });
 
   afterAll(async () => {
@@ -218,6 +222,74 @@ describe('AuthController', () => {
         });
       // Verified on-chain as could not verify EOA
       expect(verifySiweMessageMock).toHaveBeenCalledTimes(1);
+      // Nonce deleted
+      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+    });
+
+    it('should set SameSite=none if application.env is not production', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        application: {
+          ...defaultConfiguration.application,
+          env: 'staging',
+        },
+        features: {
+          ...defaultConfiguration.features,
+          auth: true,
+        },
+      });
+
+      await initApp(testConfiguration);
+
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
+      });
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+      const maxAge = getSecondsUntil(expirationTime);
+      // jsonwebtoken sets expiration based on timespans, not exact dates
+      // meaning we cannot use expirationTime directly
+      const expires = new Date(Date.now() + maxAge * 1_000);
+
+      await expect(cacheService.get(cacheDir)).resolves.toBe(
+        nonceResponse.body.nonce,
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/verify')
+        .send({
+          message,
+          signature,
+        })
+        .expect(200)
+        .expect(({ headers }) => {
+          const setCookie = headers['set-cookie'];
+          const setCookieRegExp = new RegExp(
+            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expires.toUTCString()}; HttpOnly; Secure; SameSite=None`,
+          );
+
+          expect(setCookie).toHaveLength;
+          expect(setCookie[0]).toMatch(setCookieRegExp);
+        });
+      // Verified off-chain as EOA
+      expect(verifySiweMessageMock).not.toHaveBeenCalled();
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
