@@ -8,7 +8,7 @@ async function bootstrap(): Promise<void> {
   const configurationService: IConfigurationService =
     app.get<IConfigurationService>(IConfigurationService);
   const applicationPort: string =
-    configurationService.getOrThrow('applicationPort');
+    configurationService.getOrThrow('application.port');
 
   await app.listen(applicationPort);
 }

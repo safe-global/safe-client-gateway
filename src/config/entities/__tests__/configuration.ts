@@ -13,7 +13,10 @@ export default (): ReturnType<typeof configuration> => ({
     queue: faker.string.sample(),
     prefetch: faker.number.int(),
   },
-  applicationPort: faker.internet.port().toString(),
+  application: {
+    env: faker.string.sample(),
+    port: faker.internet.port().toString(),
+  },
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
     nonceTtlSeconds: faker.number.int(),
