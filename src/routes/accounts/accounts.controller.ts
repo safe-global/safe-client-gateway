@@ -9,6 +9,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -35,6 +36,17 @@ export class AccountsController {
   ): Promise<Account> {
     const auth = request.accessToken;
     return this.accountsService.createAccount({ auth, createAccountDto });
+  }
+
+  @ApiOkResponse({ type: Account })
+  @Get(':address')
+  @UseGuards(AuthGuard)
+  async getAccount(
+    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Req() request: Request,
+  ): Promise<Account> {
+    const auth = request.accessToken;
+    return this.accountsService.getAccount({ auth, address });
   }
 
   @Delete(':address')

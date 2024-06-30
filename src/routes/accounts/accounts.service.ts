@@ -26,6 +26,20 @@ export class AccountsService {
     return this.mapAccount(domainAccount);
   }
 
+  async getAccount(args: {
+    auth?: AuthPayloadDto;
+    address: `0x${string}`;
+  }): Promise<Account> {
+    if (!args.auth) {
+      throw new UnauthorizedException();
+    }
+    const domainAccount = await this.accountsRepository.getAccount({
+      auth: args.auth,
+      address: args.address,
+    });
+    return this.mapAccount(domainAccount);
+  }
+
   async deleteAccount(args: {
     auth?: AuthPayloadDto;
     address: `0x${string}`;
