@@ -12,6 +12,11 @@ export interface IAccountsRepository {
     address: `0x${string}`;
   }): Promise<Account>;
 
+  getAccount(args: {
+    auth: AuthPayloadDto;
+    address: `0x${string}`;
+  }): Promise<Account>;
+
   deleteAccount(args: {
     auth: AuthPayloadDto;
     address: `0x${string}`;

@@ -21,12 +21,19 @@ export class AccountsRepository implements IAccountsRepository {
     auth: AuthPayloadDto;
     address: `0x${string}`;
   }): Promise<Account> {
-    const authPayload = new AuthPayload(args.auth);
-    if (!authPayload.isForSigner(args.address)) {
-      throw new UnauthorizedException();
-    }
+    const { auth, address } = args;
+    this.checkAuth(auth, address);
+    const account = await this.datasource.createAccount(address);
+    return AccountSchema.parse(account);
+  }
 
-    const account = await this.datasource.createAccount(args.address);
+  async getAccount(args: {
+    auth: AuthPayloadDto;
+    address: `0x${string}`;
+  }): Promise<Account> {
+    const { auth, address } = args;
+    this.checkAuth(auth, address);
+    const account = await this.datasource.getAccount(address);
     return AccountSchema.parse(account);
   }
 
@@ -34,11 +41,16 @@ export class AccountsRepository implements IAccountsRepository {
     auth: AuthPayloadDto;
     address: `0x${string}`;
   }): Promise<void> {
-    const authPayload = new AuthPayload(args.auth);
-    if (!authPayload.isForSigner(args.address)) {
+    const { auth, address } = args;
+    this.checkAuth(auth, address);
+    // TODO: trigger a cascade deletion of the account-associated data.
+    return this.datasource.deleteAccount(address);
+  }
+
+  private checkAuth(auth: AuthPayloadDto, address: `0x${string}`): void {
+    const authPayload = new AuthPayload(auth);
+    if (!authPayload.isForSigner(address)) {
       throw new UnauthorizedException();
     }
-    // TODO: trigger a cascade deletion of the account-associated data.
-    return this.datasource.deleteAccount(args.address);
   }
 }
