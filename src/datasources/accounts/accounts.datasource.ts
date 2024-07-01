@@ -1,3 +1,4 @@
+import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -58,5 +59,9 @@ export class AccountsDatasource implements IAccountsDatasource {
     if (count === 0) {
       this.loggingService.debug(`Error deleting account ${address}: not found`);
     }
+  }
+
+  async getDataTypes(): Promise<AccountDataType[]> {
+    return this.sql<[AccountDataType]>`SELECT * FROM account_data_types`;
   }
 }

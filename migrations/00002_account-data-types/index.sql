@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS account_data_types CASCADE;
+
 CREATE TABLE account_data_types (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

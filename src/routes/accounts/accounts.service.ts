@@ -1,6 +1,8 @@
 import { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
 import { Account as DomainAccount } from '@/domain/accounts/entities/account.entity';
+import { AccountDataType as DomainAccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
+import { AccountDataType } from '@/routes/accounts/entities/account-data-type.entity';
 import { Account } from '@/routes/accounts/entities/account.entity';
 import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
@@ -53,11 +55,26 @@ export class AccountsService {
     });
   }
 
+  async getDataTypes(): Promise<AccountDataType[]> {
+    const domainDataTypes = await this.accountsRepository.getDataTypes();
+    return domainDataTypes.map((domainDataType) =>
+      this.mapDataType(domainDataType),
+    );
+  }
+
   private mapAccount(domainAccount: DomainAccount): Account {
     return new Account(
       domainAccount.id.toString(),
       domainAccount.group_id?.toString() ?? null,
       domainAccount.address,
+    );
+  }
+
+  private mapDataType(domainDataType: DomainAccountDataType): AccountDataType {
+    return new AccountDataType(
+      domainDataType.id.toString(),
+      domainDataType.name,
+      domainDataType.description?.toString() ?? null,
     );
   }
 }

@@ -1,4 +1,5 @@
 import { AccountsService } from '@/routes/accounts/accounts.service';
+import { AccountDataType } from '@/routes/accounts/entities/account-data-type.entity';
 import { Account } from '@/routes/accounts/entities/account.entity';
 import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
 import { CreateAccountDtoSchema } from '@/routes/accounts/entities/schemas/create-account.dto.schema';
@@ -58,5 +59,11 @@ export class AccountsController {
   ): Promise<void> {
     const auth = request.accessToken;
     return this.accountsService.deleteAccount({ auth, address });
+  }
+
+  @ApiOkResponse({ type: AccountDataType, isArray: true })
+  @Get('data-types')
+  async getDataTypes(): Promise<AccountDataType[]> {
+    return this.accountsService.getDataTypes();
   }
 }

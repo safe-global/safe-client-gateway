@@ -1,4 +1,5 @@
 import { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
+import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import {
   Account,
   AccountSchema,
@@ -45,6 +46,11 @@ export class AccountsRepository implements IAccountsRepository {
     this.checkAuth(auth, address);
     // TODO: trigger a cascade deletion of the account-associated data.
     return this.datasource.deleteAccount(address);
+  }
+
+  async getDataTypes(): Promise<AccountDataType[]> {
+    // TODO: add caching with clearing mechanism.
+    return this.datasource.getDataTypes();
   }
 
   private checkAuth(auth: AuthPayloadDto, address: `0x${string}`): void {
