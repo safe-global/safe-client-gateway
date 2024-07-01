@@ -111,13 +111,6 @@ describe('AccountSchema', () => {
       },
       {
         code: 'invalid_type',
-        expected: 'number',
-        message: 'Required',
-        path: ['group_id'],
-        received: 'undefined',
-      },
-      {
-        code: 'invalid_type',
         expected: 'string',
         message: 'Required',
         path: ['address'],
