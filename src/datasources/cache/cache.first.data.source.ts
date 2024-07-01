@@ -225,6 +225,8 @@ export class CacheFirstDataSource {
             return {
               txType: 'multisig',
               safeTxHash: transaction.safeTxHash,
+              confirmations: transaction.confirmations,
+              confirmationRequired: transaction.confirmationsRequired,
             };
           } else if (isEthereumTransaction(transaction)) {
             return {
