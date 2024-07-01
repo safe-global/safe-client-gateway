@@ -15,6 +15,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
 import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.builder';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -40,9 +41,7 @@ describe('AccountsController', () => {
   let jwtService: IJwtService;
   let accountDataSource: jest.MockedObjectDeep<IAccountsDatasource>;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
-    jest.useFakeTimers();
+  beforeAll(async () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -74,6 +73,11 @@ describe('AccountsController', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
@@ -546,5 +550,38 @@ describe('AccountsController', () => {
     });
   });
 
-  // TODO: Add AccountDataTypes tests
+  describe('Get Data Types', () => {
+    it('should return the data types', async () => {
+      const dataTypes = [
+        accountDataTypeBuilder().build(),
+        accountDataTypeBuilder().build(),
+      ];
+      accountDataSource.getDataTypes.mockResolvedValue(dataTypes);
+      const expected = dataTypes.map((dataType) => ({
+        dataTypeId: dataType.id.toString(),
+        name: dataType.name,
+        description: dataType.description,
+        isActive: dataType.is_active,
+      }));
+
+      await request(app.getHttpServer())
+        .get(`/v1/accounts/data-types`)
+        .expect(200)
+        .expect(expected);
+
+      expect(accountDataSource.getDataTypes).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate errors', async () => {
+      accountDataSource.getDataTypes.mockImplementation(() => {
+        throw new Error('test error');
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/accounts/data-types`)
+        .expect(500);
+
+      expect(accountDataSource.getDataTypes).toHaveBeenCalledTimes(1);
+    });
+  });
 });

@@ -39,6 +39,12 @@ export class AccountsController {
     return this.accountsService.createAccount({ auth, createAccountDto });
   }
 
+  @ApiOkResponse({ type: AccountDataType, isArray: true })
+  @Get('data-types')
+  async getDataTypes(): Promise<AccountDataType[]> {
+    return this.accountsService.getDataTypes();
+  }
+
   @ApiOkResponse({ type: Account })
   @Get(':address')
   @UseGuards(AuthGuard)
@@ -59,11 +65,5 @@ export class AccountsController {
   ): Promise<void> {
     const auth = request.accessToken;
     return this.accountsService.deleteAccount({ auth, address });
-  }
-
-  @ApiOkResponse({ type: AccountDataType, isArray: true })
-  @Get('data-types')
-  async getDataTypes(): Promise<AccountDataType[]> {
-    return this.accountsService.getDataTypes();
   }
 }

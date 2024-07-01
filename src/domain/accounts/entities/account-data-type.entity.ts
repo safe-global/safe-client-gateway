@@ -6,4 +6,5 @@ export type AccountDataType = z.infer<typeof AccountDataTypeSchema>;
 export const AccountDataTypeSchema = RowSchema.extend({
   name: z.string(),
   description: z.string().nullish().default(null),
+  is_active: z.boolean().default(true),
 });

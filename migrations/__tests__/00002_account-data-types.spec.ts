@@ -8,6 +8,7 @@ interface AccountDataTypeRow {
   updated_at: Date;
   name: string;
   description: string;
+  is_active: boolean;
 }
 
 describe('Migration 00002_account-data-types', () => {
@@ -36,14 +37,40 @@ describe('Migration 00002_account-data-types', () => {
 
     expect(result.after).toStrictEqual({
       account_data_types: {
-        columns: [
+        columns: expect.arrayContaining([
           { column_name: 'id' },
           { column_name: 'created_at' },
           { column_name: 'updated_at' },
           { column_name: 'name' },
           { column_name: 'description' },
+          { column_name: 'is_active' },
+        ]),
+        rows: [
+          {
+            created_at: expect.any(Date),
+            description: 'Counterfactual Safes',
+            id: expect.any(Number),
+            is_active: true,
+            name: 'CounterfactualSafes',
+            updated_at: expect.any(Date),
+          },
+          {
+            created_at: expect.any(Date),
+            description: 'Address Book',
+            id: expect.any(Number),
+            is_active: true,
+            name: 'AddressBook',
+            updated_at: expect.any(Date),
+          },
+          {
+            created_at: expect.any(Date),
+            description: 'Watchlist',
+            id: expect.any(Number),
+            is_active: true,
+            name: 'Watchlist',
+            updated_at: expect.any(Date),
+          },
         ],
-        rows: [],
       },
     });
   });
@@ -55,12 +82,16 @@ describe('Migration 00002_account-data-types', () => {
       await migrator.test({
         migration: '00002_account-data-types',
         after: async (sql: Sql): Promise<AccountDataTypeRow[]> => {
-          await sql`INSERT INTO account_data_types (id, name) VALUES (1, 'accountDataTypeTestName');`;
+          await sql`INSERT INTO account_data_types (name) VALUES ('accountDataTypeTestName');`;
           return await sql<
             AccountDataTypeRow[]
           >`SELECT * FROM account_data_types`;
         },
       });
+
+    expect(result.after[3].name).toBe('accountDataTypeTestName');
+    expect(result.after[3].description).toBeNull();
+    expect(result.after[3].is_active).toBe(true);
 
     // created_at and updated_at should be the same after the row is created
     const createdAt = new Date(result.after[0].created_at);

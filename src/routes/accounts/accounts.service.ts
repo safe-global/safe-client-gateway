@@ -75,6 +75,7 @@ export class AccountsService {
       domainDataType.id.toString(),
       domainDataType.name,
       domainDataType.description?.toString() ?? null,
+      domainDataType.is_active,
     );
   }
 }
