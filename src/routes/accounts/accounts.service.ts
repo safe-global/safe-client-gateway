@@ -5,7 +5,9 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { AccountDataType } from '@/routes/accounts/entities/account-data-type.entity';
 import { Account } from '@/routes/accounts/entities/account.entity';
 import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { UpsertAccountDataSettingsDto } from '@/routes/accounts/entities/upsert-account-data-settings.dto.entity';
+import { AccountDataSetting } from '@/routes/accounts/entities/account-data-setting.entity';
 
 @Injectable()
 export class AccountsService {
@@ -51,6 +53,29 @@ export class AccountsService {
     return domainDataTypes.map((domainDataType) =>
       this.mapDataType(domainDataType),
     );
+  }
+
+  async upsertAccountDataSettings(args: {
+    auth?: AuthPayloadDto;
+    upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
+  }): Promise<AccountDataSetting[]> {
+    if (!args.auth) {
+      throw new UnauthorizedException();
+    }
+
+    const domainAccountDataSettings =
+      await this.accountsRepository.upsertAccountDataSettings({
+        auth: args.auth,
+        upsertAccountDataSettings:
+          args.upsertAccountDataSettingsDto.accountDataSettings.map(
+            (accountDataSetting) => {
+              return new AccountDataSetting(
+                accountDataSetting.id,
+                accountDataSetting.enabled,
+              );
+            },
+          ),
+      });
   }
 
   private mapAccount(domainAccount: DomainAccount): Account {

@@ -1,5 +1,6 @@
 import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
 import { AccountsRepository } from '@/domain/accounts/accounts.repository';
+import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
@@ -24,6 +25,11 @@ export interface IAccountsRepository {
   }): Promise<void>;
 
   getDataTypes(): Promise<AccountDataType[]>;
+
+  upsertAccountDataSettings(args: {
+    auth: AuthPayloadDto;
+    upsertAccountDataSettings: UpsertAccountDataSettingsDto[];
+  }): Promise<AccountDataSetting[]>;
 }
 
 @Module({

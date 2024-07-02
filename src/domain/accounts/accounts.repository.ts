@@ -1,4 +1,5 @@
 import { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
+import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import {
   Account,
@@ -51,5 +52,20 @@ export class AccountsRepository implements IAccountsRepository {
   async getDataTypes(): Promise<AccountDataType[]> {
     // TODO: add caching with clearing mechanism.
     return this.datasource.getDataTypes();
+  }
+
+  upsertAccountDataSettings(args: {
+    auth: AuthPayloadDto;
+    upsertAccountDataSettings: UpsertAccountDataSettingsDto[];
+  }): Promise<AccountDataSetting[]> {
+    console.log(args);
+    throw new Error('Method not implemented.');
+  }
+
+  private checkAuth(auth: AuthPayloadDto, address: `0x${string}`): void {
+    const authPayload = new AuthPayload(auth);
+    if (!authPayload.isForSigner(address)) {
+      throw new UnauthorizedException();
+    }
   }
 }

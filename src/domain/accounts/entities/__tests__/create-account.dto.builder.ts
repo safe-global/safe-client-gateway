@@ -1,5 +1,5 @@
-import { IBuilder, Builder } from '@/__tests__/builder';
-import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
+import { Builder, IBuilder } from '@/__tests__/builder';
+import { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
