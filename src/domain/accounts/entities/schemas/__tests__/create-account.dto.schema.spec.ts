@@ -1,5 +1,5 @@
-import { createAccountDtoBuilder } from '@/routes/accounts/entities/__tests__/create-account.dto.builder';
-import { CreateAccountDtoSchema } from '@/routes/accounts/entities/schemas/create-account.dto.schema';
+import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/create-account.dto.builder';
+import { CreateAccountDtoSchema } from '@/domain/accounts/entities/schemas/create-account.dto.schema';
 import { ZodError } from 'zod';
 
 describe('CreateAccountDtoSchema', () => {
