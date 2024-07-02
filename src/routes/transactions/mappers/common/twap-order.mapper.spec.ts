@@ -319,8 +319,8 @@ describe('TwapOrderMapper', () => {
       durationOfPart: {
         durationType: 'AUTO',
       },
-      executedBuyAmount: '1379444631694674400',
-      executedSellAmount: '427173750967724300000',
+      executedBuyAmount: '1379444631694674612',
+      executedSellAmount: '427173750967724283500',
       executedSurplusFee: '222222222',
       fullAppData,
       humanDescription: null,
