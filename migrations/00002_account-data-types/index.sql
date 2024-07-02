@@ -14,7 +14,7 @@ BEFORE UPDATE ON account_data_types
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
-INSERT INTO account_data_types (name, description) VALUES
-    ('CounterfactualSafes', 'Counterfactual Safes'), 
-    ('AddressBook', 'Address Book'),
-    ('Watchlist', 'Watchlist');
+INSERT INTO account_data_types (name, description, is_active) VALUES
+    ('CounterfactualSafes', 'Counterfactual Safes', true), 
+    ('AddressBook', 'Address Book', false),
+    ('Watchlist', 'Watchlist', false);
