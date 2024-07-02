@@ -5,6 +5,7 @@ const accountsDatasource = {
   createAccount: jest.fn(),
   deleteAccount: jest.fn(),
   getAccount: jest.fn(),
+  getDataTypes: jest.fn(),
 } as jest.MockedObjectDeep<IAccountsDatasource>;
 
 @Module({
