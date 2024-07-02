@@ -204,22 +204,22 @@ export class TwapOrderMapper {
     return OrderStatus.Unknown;
   }
 
-  private getExecutedSellAmount(orders: Array<KnownOrder>): number {
+  private getExecutedSellAmount(orders: Array<KnownOrder>): bigint {
     return orders.reduce((acc, order) => {
-      return acc + Number(order.executedSellAmount);
-    }, 0);
+      return acc + BigInt(order.executedSellAmount);
+    }, BigInt(0));
   }
 
-  private getExecutedBuyAmount(orders: Array<KnownOrder>): number {
+  private getExecutedBuyAmount(orders: Array<KnownOrder>): bigint {
     return orders.reduce((acc, order) => {
-      return acc + Number(order.executedBuyAmount);
-    }, 0);
+      return acc + BigInt(order.executedBuyAmount);
+    }, BigInt(0));
   }
 
-  private getExecutedSurplusFee(orders: Array<KnownOrder>): number {
+  private getExecutedSurplusFee(orders: Array<KnownOrder>): bigint {
     return orders.reduce((acc, order) => {
-      return acc + Number(order.executedSurplusFee);
-    }, 0);
+      return acc + BigInt(order.executedSurplusFee ?? BigInt(0));
+    }, BigInt(0));
   }
 }
 
