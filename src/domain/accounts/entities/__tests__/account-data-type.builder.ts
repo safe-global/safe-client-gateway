@@ -7,6 +7,7 @@ export function accountDataTypeBuilder(): IBuilder<AccountDataType> {
     .with('id', faker.number.int())
     .with('name', faker.lorem.slug())
     .with('description', faker.lorem.slug())
+    .with('is_active', faker.datatype.boolean())
     .with('created_at', faker.date.recent())
     .with('updated_at', faker.date.recent());
 }

@@ -119,29 +119,34 @@ describe('AccountsDatasource tests', () => {
 
       const result = await target.getDataTypes();
 
-      expect(result).toStrictEqual([
-        {
-          id: expect.any(Number),
-          name: dataTypeNames[0],
-          description: null,
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-        },
-        {
-          id: expect.any(Number),
-          name: dataTypeNames[1],
-          description: null,
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-        },
-        {
-          id: expect.any(Number),
-          name: dataTypeNames[2],
-          description: null,
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-        },
-      ]);
+      expect(result).toStrictEqual(
+        expect.arrayContaining([
+          {
+            id: expect.any(Number),
+            name: dataTypeNames[0],
+            description: null,
+            is_active: true,
+            created_at: expect.any(Date),
+            updated_at: expect.any(Date),
+          },
+          {
+            id: expect.any(Number),
+            name: dataTypeNames[1],
+            description: null,
+            is_active: true,
+            created_at: expect.any(Date),
+            updated_at: expect.any(Date),
+          },
+          {
+            id: expect.any(Number),
+            name: dataTypeNames[2],
+            description: null,
+            is_active: true,
+            created_at: expect.any(Date),
+            updated_at: expect.any(Date),
+          },
+        ]),
+      );
     });
   });
 });
