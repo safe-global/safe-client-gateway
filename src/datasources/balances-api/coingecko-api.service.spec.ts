@@ -9,6 +9,7 @@ import { INetworkService } from '@/datasources/network/network.service.interface
 import { sortBy } from 'lodash';
 import { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
@@ -26,6 +27,7 @@ const mockNetworkService = jest.mocked({
 
 const mockLoggingService = {
   debug: jest.fn(),
+  error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
 describe('CoingeckoAPI', () => {
@@ -143,6 +145,32 @@ describe('CoingeckoAPI', () => {
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: defaultExpirationTimeInSeconds,
     });
+  });
+
+  it('should return an empty array and log error if pricesProvider.chainName is not defined', async () => {
+    const chain = chainBuilder()
+      .with(
+        'pricesProvider',
+        pricesProviderBuilder().with('chainName', null).build(),
+      )
+      .build();
+    const tokenAddresses = [
+      faker.finance.ethereumAddress(),
+      faker.finance.ethereumAddress(),
+    ];
+    const fiatCode = faker.finance.currencyCode();
+
+    const result = await service.getTokenPrices({
+      chain,
+      tokenAddresses,
+      fiatCode,
+    });
+
+    expect(result).toStrictEqual([]);
+    expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
+    expect(mockLoggingService.error).toHaveBeenCalledWith(
+      `Error getting token prices: Error: pricesProvider.chainName is not defined `,
+    );
   });
 
   it('should return and cache one token price (using an API key)', async () => {
@@ -706,5 +734,23 @@ describe('CoingeckoAPI', () => {
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: nativeCoinPricesTtlSeconds,
     });
+  });
+
+  it('should return null and log error if pricesProvider.nativeCoin is not defined', async () => {
+    const chain = chainBuilder()
+      .with(
+        'pricesProvider',
+        pricesProviderBuilder().with('nativeCoin', null).build(),
+      )
+      .build();
+    const fiatCode = faker.finance.currencyCode();
+
+    const result = await service.getNativeCoinPrice({ chain, fiatCode });
+
+    expect(result).toBeNull();
+    expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
+    expect(mockLoggingService.error).toHaveBeenCalledWith(
+      `Error getting native coin price: Error: pricesProvider.nativeCoinId is not defined `,
+    );
   });
 });

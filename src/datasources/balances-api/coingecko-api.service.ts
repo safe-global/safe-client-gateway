@@ -116,8 +116,11 @@ export class CoingeckoApi implements IPricesApi {
     fiatCode: string;
   }): Promise<number | null> {
     try {
-      const lowerCaseFiatCode = args.fiatCode.toLowerCase();
       const nativeCoinId = args.chain.pricesProvider.nativeCoin;
+      if (nativeCoinId == null) {
+        throw new DataSourceError('pricesProvider.nativeCoinId is not defined');
+      }
+      const lowerCaseFiatCode = args.fiatCode.toLowerCase();
       const cacheDir = CacheRouter.getNativeCoinPriceCacheDir({
         nativeCoinId,
         fiatCode: lowerCaseFiatCode,
@@ -145,7 +148,7 @@ export class CoingeckoApi implements IPricesApi {
       // Error at this level are logged out, but not thrown to the upper layers.
       // The service won't throw an error if a single coin price retrieval fails.
       this.loggingService.error(
-        `Error while getting native coin price: ${asError(error)} `,
+        `Error getting native coin price: ${asError(error)} `,
       );
       return null;
     }
@@ -166,11 +169,14 @@ export class CoingeckoApi implements IPricesApi {
     fiatCode: string;
   }): Promise<AssetPrice[]> {
     try {
+      const chainName = args.chain.pricesProvider.chainName;
+      if (chainName == null) {
+        throw new DataSourceError('pricesProvider.chainName is not defined');
+      }
       const lowerCaseFiatCode = args.fiatCode.toLowerCase();
       const lowerCaseTokenAddresses = args.tokenAddresses.map((address) =>
         address.toLowerCase(),
       );
-      const chainName = args.chain.pricesProvider.chainName;
       const pricesFromCache = await this._getTokenPricesFromCache({
         chainName,
         tokenAddresses: lowerCaseTokenAddresses,
@@ -193,7 +199,7 @@ export class CoingeckoApi implements IPricesApi {
       // Error at this level are logged out, but not thrown to the upper layers.
       // The service won't throw an error if a single token price retrieval fails.
       this.loggingService.error(
-        `Error while getting token prices: ${asError(error)} `,
+        `Error getting token prices: ${asError(error)} `,
       );
       return [];
     }
@@ -219,7 +225,7 @@ export class CoingeckoApi implements IPricesApi {
       return result.map((item) => item.toUpperCase());
     } catch (error) {
       this.loggingService.error(
-        `CoinGecko error while getting fiat codes: ${asError(error)} `,
+        `CoinGecko error getting fiat codes: ${asError(error)} `,
       );
       return [];
     }

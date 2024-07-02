@@ -55,8 +55,8 @@ export const GasPriceSchema = z.array(
 );
 
 export const PricesProviderSchema = z.object({
-  chainName: z.string(),
-  nativeCoin: z.string(),
+  chainName: z.string().nullish().default(null),
+  nativeCoin: z.string().nullish().default(null),
 });
 
 export const BalancesProviderSchema = z.object({
