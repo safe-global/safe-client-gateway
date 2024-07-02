@@ -41,6 +41,7 @@ export type TwapOrderInfo = {
   buyAmount: string;
   executedSellAmount: string | null;
   executedBuyAmount: string | null;
+  executedSurplusFee: string | null;
   sellToken: TokenInfo;
   buyToken: TokenInfo;
   receiver: `0x${string}`;
@@ -99,6 +100,13 @@ export class TwapOrderTransactionInfo
       'The executed buy token raw amount (no decimals), or null if there are too many parts',
   })
   executedBuyAmount: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'The executed surplus fee raw amount (no decimals), or null if there are too many parts',
+  })
+  executedSurplusFee: string | null;
 
   @ApiProperty({ description: 'The sell token of the TWAP' })
   sellToken: TokenInfo;
@@ -162,6 +170,7 @@ export class TwapOrderTransactionInfo
     buyAmount: string;
     executedSellAmount: string | null;
     executedBuyAmount: string | null;
+    executedSurplusFee: string | null;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     receiver: `0x${string}`;
@@ -183,6 +192,7 @@ export class TwapOrderTransactionInfo
     this.buyAmount = args.buyAmount;
     this.executedSellAmount = args.executedSellAmount;
     this.executedBuyAmount = args.executedBuyAmount;
+    this.executedSurplusFee = args.executedSurplusFee;
     this.sellToken = args.sellToken;
     this.buyToken = args.buyToken;
     this.receiver = args.receiver;

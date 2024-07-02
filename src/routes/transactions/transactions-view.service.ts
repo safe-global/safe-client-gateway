@@ -198,6 +198,7 @@ export class TransactionsViewService {
       buyAmount: twapOrderData.buyAmount,
       executedSellAmount: '0',
       executedBuyAmount: '0',
+      executedSurplusFee: '0',
       sellToken: new TokenInfo({
         address: sellToken.address,
         decimals: sellToken.decimals,

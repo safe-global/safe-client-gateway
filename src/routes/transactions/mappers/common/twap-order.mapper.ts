@@ -119,6 +119,9 @@ export class TwapOrderMapper {
     const executedBuyAmount: TwapOrderInfo['executedBuyAmount'] =
       hasAbundantParts ? null : this.getExecutedBuyAmount(orders).toString();
 
+    const executedSurplusFee: TwapOrderInfo['executedSurplusFee'] =
+      hasAbundantParts ? null : this.getExecutedSurplusFee(orders).toString();
+
     const [sellToken, buyToken] = await Promise.all([
       this.swapOrderHelper.getToken({
         chainId,
@@ -139,6 +142,7 @@ export class TwapOrderMapper {
       buyAmount: twapOrderData.buyAmount,
       executedSellAmount,
       executedBuyAmount,
+      executedSurplusFee,
       sellToken: new TokenInfo({
         address: sellToken.address,
         decimals: sellToken.decimals,
@@ -209,6 +213,12 @@ export class TwapOrderMapper {
   private getExecutedBuyAmount(orders: Array<KnownOrder>): number {
     return orders.reduce((acc, order) => {
       return acc + Number(order.executedBuyAmount);
+    }, 0);
+  }
+
+  private getExecutedSurplusFee(orders: Array<KnownOrder>): number {
+    return orders.reduce((acc, order) => {
+      return acc + Number(order.executedSurplusFee);
     }, 0);
   }
 }
