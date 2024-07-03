@@ -28,7 +28,7 @@ export interface IAccountsRepository {
 
   upsertAccountDataSettings(args: {
     auth: AuthPayloadDto;
-    upsertAccountDataSettings: UpsertAccountDataSettingsDto[];
+    upsertAccountDataSettings: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]>;
 }
 

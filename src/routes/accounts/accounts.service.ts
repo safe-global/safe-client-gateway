@@ -1,13 +1,15 @@
 import { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
-import { Account as DomainAccount } from '@/domain/accounts/entities/account.entity';
+import { AccountDataSetting as DomainAccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType as DomainAccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { Account as DomainAccount } from '@/domain/accounts/entities/account.entity';
+import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
+import { AccountDataSetting } from '@/routes/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/routes/accounts/entities/account-data-type.entity';
 import { Account } from '@/routes/accounts/entities/account.entity';
 import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UpsertAccountDataSettingsDto } from '@/routes/accounts/entities/upsert-account-data-settings.dto.entity';
-import { AccountDataSetting } from '@/routes/accounts/entities/account-data-setting.entity';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class AccountsService {
@@ -66,16 +68,17 @@ export class AccountsService {
     const domainAccountDataSettings =
       await this.accountsRepository.upsertAccountDataSettings({
         auth: args.auth,
-        upsertAccountDataSettings:
-          args.upsertAccountDataSettingsDto.accountDataSettings.map(
-            (accountDataSetting) => {
-              return new AccountDataSetting(
-                accountDataSetting.id,
-                accountDataSetting.enabled,
-              );
-            },
-          ),
+        upsertAccountDataSettings: {
+          accountDataSettings:
+            args.upsertAccountDataSettingsDto.accountDataSettings,
+        },
       });
+
+    const dataTypes = await this.accountsRepository.getDataTypes();
+
+    return domainAccountDataSettings.map((domainAccountDataSetting) =>
+      this.mapDataSetting(dataTypes, domainAccountDataSetting),
+    );
   }
 
   private mapAccount(domainAccount: DomainAccount): Account {
@@ -93,5 +96,24 @@ export class AccountsService {
       domainDataType.description?.toString() ?? null,
       domainDataType.is_active,
     );
+  }
+
+  private mapDataSetting(
+    dataTypes: DomainAccountDataType[],
+    domainAccountDataSetting: DomainAccountDataSetting,
+  ): AccountDataSetting {
+    const dataType = dataTypes.find(
+      (dt) => dt.id === domainAccountDataSetting.account_data_type_id,
+    );
+
+    if (!dataType) {
+      throw new Error('Data type not found');
+    }
+
+    return {
+      dataTypeName: dataType.name,
+      dataTypeDescription: dataType.description,
+      enabled: domainAccountDataSetting.enabled,
+    };
   }
 }

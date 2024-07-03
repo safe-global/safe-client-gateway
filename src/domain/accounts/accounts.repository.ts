@@ -56,8 +56,9 @@ export class AccountsRepository implements IAccountsRepository {
 
   upsertAccountDataSettings(args: {
     auth: AuthPayloadDto;
-    upsertAccountDataSettings: UpsertAccountDataSettingsDto[];
+    upsertAccountDataSettings: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]> {
+    // TODO: check the data type is active.
     console.log(args);
     throw new Error('Method not implemented.');
   }
