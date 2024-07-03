@@ -172,9 +172,17 @@ export class TransactionsViewService {
       chainId: args.chainId,
     });
 
-    const [fullAppData, buyToken, sellToken] = await Promise.all([
-      // Decode hash of `appData`
-      this.swapsRepository.getFullAppData(args.chainId, twapStruct.appData),
+    // Decode hash of `appData`
+    const fullAppData = await this.swapsRepository.getFullAppData(
+      args.chainId,
+      twapStruct.appData,
+    );
+
+    if (!this.twapOrderHelper.isAppAllowed(fullAppData)) {
+      throw new Error(`Unsupported App: ${fullAppData.fullAppData?.appCode}`);
+    }
+
+    const [buyToken, sellToken] = await Promise.all([
       this.swapOrderHelper.getToken({
         chainId: args.chainId,
         address: twapStruct.buyToken,
@@ -183,14 +191,7 @@ export class TransactionsViewService {
         chainId: args.chainId,
         address: twapStruct.sellToken,
       }),
-    ]).catch((error) => {
-      this.loggingService.error(error);
-      throw new Error('Error fetching full app data');
-    });
-
-    if (!this.twapOrderHelper.isAppAllowed(fullAppData)) {
-      throw new Error(`Unsupported App: ${fullAppData.fullAppData?.appCode}`);
-    }
+    ]);
 
     return new CowSwapTwapConfirmationView({
       method: args.dataDecoded.method,
