@@ -1,31 +1,32 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { faker } from '@faker-js/faker';
-import configuration from '@/config/entities/__tests__/configuration';
+import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { NetworkModule } from '@/datasources/network/network.module';
 import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { NetworkModule } from '@/datasources/network/network.module';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
-import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import { balanceBuilder } from '@/domain/balances/entities/__tests__/balance.builder';
+import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { faker } from '@faker-js/faker';
+import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Server } from 'net';
+import request from 'supertest';
+import { getAddress } from 'viem';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -103,7 +104,7 @@ describe('Balances Controller (Unit)', () => {
         .getOrThrow('balances.providers.safe.prices.apiKey');
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProvider.nativeCoin]: {
+        [chain.pricesProvider.nativeCoin!]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -304,7 +305,7 @@ describe('Balances Controller (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProvider.nativeCoin]: {
+        [chain.pricesProvider.nativeCoin!]: {
           [currency.toLowerCase()]: 1536.75,
         },
       };
@@ -354,6 +355,154 @@ describe('Balances Controller (Unit)', () => {
               balance: '3000000000000000000',
               fiatBalance: '4610.25',
               fiatConversion: '1536.75',
+            },
+          ],
+        });
+    });
+
+    it(`should map the native coin price to 0 when pricesProvider.nativeCoin is not set`, async () => {
+      const chain = chainBuilder()
+        .with('chainId', '10')
+        .with(
+          'pricesProvider',
+          pricesProviderBuilder().with('nativeCoin', null).build(),
+        )
+        .build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const transactionApiBalancesResponse = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '3000000000000000000')
+          .with('token', null)
+          .build(),
+      ];
+      const currency = faker.finance.currencyCode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({
+              data: safeBuilder().build(),
+              status: 200,
+            });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({
+              data: transactionApiBalancesResponse,
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${
+            chain.chainId
+          }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
+        )
+        .expect(200)
+        .expect({
+          fiatTotal: '0',
+          items: [
+            {
+              tokenInfo: {
+                type: 'NATIVE_TOKEN',
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                symbol: chain.nativeCurrency.symbol,
+                name: chain.nativeCurrency.name,
+                logoUri: chain.nativeCurrency.logoUri,
+              },
+              balance: '3000000000000000000',
+              fiatBalance: '0',
+              fiatConversion: '0',
+            },
+          ],
+        });
+    });
+
+    it(`should map ERC20 tokens price to 0 when pricesProvider.chainName is not set`, async () => {
+      const chain = chainBuilder()
+        .with('chainId', '10')
+        .with(
+          'pricesProvider',
+          pricesProviderBuilder().with('chainName', null).build(),
+        )
+        .build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const transactionApiBalancesResponse = [
+        balanceBuilder()
+          .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+        balanceBuilder()
+          .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
+          .with('balance', '3000000000000000000')
+          .with('token', balanceTokenBuilder().with('decimals', 17).build())
+          .build(),
+      ];
+      const currency = faker.finance.currencyCode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: chain, status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({
+              data: safeBuilder().build(),
+              status: 200,
+            });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`:
+            return Promise.resolve({
+              data: transactionApiBalancesResponse,
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${
+            chain.chainId
+          }/safes/${safeAddress}/balances/${currency.toUpperCase()}`,
+        )
+        .expect(200)
+        .expect({
+          fiatTotal: '0',
+          items: [
+            {
+              tokenInfo: {
+                type: 'ERC20',
+                address: transactionApiBalancesResponse[0].tokenAddress
+                  ? getAddress(transactionApiBalancesResponse[0].tokenAddress)
+                  : transactionApiBalancesResponse[0].tokenAddress,
+                decimals: 17,
+                symbol: transactionApiBalancesResponse[0].token?.symbol,
+                name: transactionApiBalancesResponse[0].token?.name,
+                logoUri: transactionApiBalancesResponse[0].token?.logoUri,
+              },
+              balance: '3000000000000000000',
+              fiatBalance: '0',
+              fiatConversion: '0',
+            },
+            {
+              tokenInfo: {
+                type: 'ERC20',
+                address: transactionApiBalancesResponse[1].tokenAddress
+                  ? getAddress(transactionApiBalancesResponse[1].tokenAddress)
+                  : transactionApiBalancesResponse[1].tokenAddress,
+                decimals: 17,
+                symbol: transactionApiBalancesResponse[1].token?.symbol,
+                name: transactionApiBalancesResponse[1].token?.name,
+                logoUri: transactionApiBalancesResponse[1].token?.logoUri,
+              },
+              balance: '3000000000000000000',
+              fiatBalance: '0',
+              fiatConversion: '0',
             },
           ],
         });
