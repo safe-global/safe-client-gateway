@@ -46,6 +46,9 @@ export class TransactionsViewService {
       args.transactionDataDto.data,
     );
 
+    this.loggingService.info(JSON.stringify(dataDecoded));
+    this.loggingService.info(JSON.stringify(swapOrderData));
+
     const twapSwapOrderData = args.transactionDataDto.to
       ? this.twapOrderHelper.findTwapOrder({
           to: args.transactionDataDto.to,
@@ -92,6 +95,7 @@ export class TransactionsViewService {
     data: `0x${string}`;
     dataDecoded: DataDecoded;
   }): Promise<CowSwapConfirmationView> {
+    this.loggingService.info('getSwapOrderConfirmationView');
     const orderUid: `0x${string}` | null =
       this.gpv2Decoder.getOrderUidFromSetPreSignature(args.data);
     if (!orderUid) {
@@ -107,6 +111,8 @@ export class TransactionsViewService {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
 
+    this.loggingService.info('tokens retrieval');
+
     const [sellToken, buyToken] = await Promise.all([
       this.swapOrderHelper.getToken({
         chainId: args.chainId,
@@ -117,6 +123,8 @@ export class TransactionsViewService {
         address: order.buyToken,
       }),
     ]);
+
+    this.loggingService.info('CowSwapConfirmationView instantiation');
 
     return new CowSwapConfirmationView({
       method: args.dataDecoded.method,
