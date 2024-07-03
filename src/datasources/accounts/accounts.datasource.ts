@@ -1,5 +1,7 @@
+import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
+import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
@@ -63,5 +65,34 @@ export class AccountsDatasource implements IAccountsDatasource {
 
   async getDataTypes(): Promise<AccountDataType[]> {
     return this.sql<[AccountDataType]>`SELECT * FROM account_data_types`;
+  }
+
+  async upsertAccountDataSettings(
+    address: `0x${string}`,
+    upsertAccountDataSettings: UpsertAccountDataSettingsDto,
+  ): Promise<AccountDataSetting[]> {
+    const account = await this.getAccount(address);
+    const dataTypes = await this.getDataTypes();
+    const { accountDataSettings } = upsertAccountDataSettings;
+
+    const result = [];
+    for (const ads of accountDataSettings) {
+      const dataType = dataTypes.find((dt) => dt.name === ads.dataTypeName);
+      if (!dataType) {
+        throw new UnprocessableEntityException('Invalid data type');
+      }
+      const [inserted] = await this.sql<[AccountDataSetting]>`
+        INSERT INTO account_data_settings (account_id, account_data_type_id, enabled)
+        VALUES (${account.id}, ${dataType.id}, ${ads.enabled})
+        RETURNING *
+      `.catch((e) => {
+        throw new UnprocessableEntityException(
+          `Error updating data settings: ${asError(e).message}`,
+        );
+      });
+      result.push(inserted);
+    }
+
+    return result;
   }
 }

@@ -57,6 +57,7 @@ export class AccountsController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard)
   async upsertAccountDataSettings(
+    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
     @Body(new ValidationPipe(UpsertAccountDataSettingsDtoSchema))
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto,
     @Req() request: Request,
@@ -64,6 +65,7 @@ export class AccountsController {
     const auth = request.accessToken;
     return this.accountsService.upsertAccountDataSettings({
       auth,
+      address,
       upsertAccountDataSettingsDto,
     });
   }

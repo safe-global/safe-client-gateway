@@ -584,4 +584,142 @@ describe('AccountsController', () => {
       expect(accountDataSource.getDataTypes).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe.skip('Upsert account data settings', () => {
+    it('should delete an account', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      accountDataSource.createAccount.mockResolvedValue(account);
+      accountDataSource.deleteAccount.mockResolvedValue();
+
+      await request(app.getHttpServer())
+        .post(`/v1/accounts`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ address: address.toLowerCase() })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+
+      expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(1);
+      // Check the address was checksummed
+      expect(accountDataSource.deleteAccount).toHaveBeenCalledWith(address);
+    });
+
+    it('Returns 403 if no token is present', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}`)
+        .send({ address })
+        .expect(403);
+    });
+
+    it('returns 403 if token is not a valid JWT', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const accessToken = faker.string.sample();
+
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ address })
+        .expect(403);
+    });
+
+    it('returns 403 is token it not yet valid', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto, {
+        notBefore: getSecondsUntil(faker.date.future()),
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ address })
+        .expect(403);
+    });
+
+    it('returns 403 if token has expired', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto, { expiresIn: 0 });
+      jest.advanceTimersByTime(1_000);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ address })
+        .expect(403);
+    });
+
+    it('returns 403 if signer_address is not a valid Ethereum address', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', faker.string.hexadecimal() as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ address })
+        .expect(403);
+    });
+
+    it('returns 403 if chain_id is not a valid chain ID', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', faker.lorem.sentence())
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ address })
+        .expect(403);
+    });
+
+    it('should propagate errors', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      accountDataSource.deleteAccount.mockImplementation(() => {
+        throw new Error('test error');
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ address: address.toLowerCase() })
+        .expect(500);
+
+      expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(1);
+    });
+  });
 });

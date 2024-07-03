@@ -59,6 +59,7 @@ export class AccountsService {
 
   async upsertAccountDataSettings(args: {
     auth?: AuthPayloadDto;
+    address: `0x${string}`;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]> {
     if (!args.auth) {
@@ -68,6 +69,7 @@ export class AccountsService {
     const domainAccountDataSettings =
       await this.accountsRepository.upsertAccountDataSettings({
         auth: args.auth,
+        address: args.address,
         upsertAccountDataSettings: {
           accountDataSettings:
             args.upsertAccountDataSettingsDto.accountDataSettings,
