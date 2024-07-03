@@ -500,6 +500,7 @@ describe('TwapOrderMapper', () => {
     // We instantiate in tests to be able to set maxNumberOfParts
     const mapper = new TwapOrderMapper(
       configurationService,
+      loggingService,
       swapOrderHelper,
       mockSwapsRepository,
       composableCowDecoder,
@@ -546,6 +547,7 @@ describe('TwapOrderMapper', () => {
     // We instantiate in tests to be able to set maxNumberOfParts
     const mapper = new TwapOrderMapper(
       configurationService,
+      loggingService,
       swapOrderHelper,
       mockSwapsRepository,
       composableCowDecoder,
@@ -592,6 +594,7 @@ describe('TwapOrderMapper', () => {
     // We instantiate in tests to be able to set maxNumberOfParts
     const mapper = new TwapOrderMapper(
       configurationService,
+      loggingService,
       swapOrderHelper,
       mockSwapsRepository,
       composableCowDecoder,
@@ -661,6 +664,7 @@ describe('TwapOrderMapper', () => {
       },
       executedBuyAmount: '0',
       executedSellAmount: '0',
+      executedSurplusFee: '0',
       fullAppData,
       humanDescription: null,
       kind: 'sell',
