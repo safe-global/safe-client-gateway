@@ -16,6 +16,7 @@ import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper
 import { OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { asError } from '@/logging/utils';
 
 @Injectable({})
 export class TransactionsViewService {
@@ -82,7 +83,7 @@ export class TransactionsViewService {
         throw new Error('No swap order data found');
       }
     } catch (error) {
-      this.loggingService.warn(error);
+      this.loggingService.warn(asError(error).message);
       return new BaselineConfirmationView({
         method: dataDecoded.method,
         parameters: dataDecoded.parameters,
@@ -106,6 +107,8 @@ export class TransactionsViewService {
       chainId: args.chainId,
       orderUid,
     });
+
+    this.loggingService.info(JSON.stringify(order.kind));
 
     if (!this.swapOrderHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
