@@ -2,24 +2,24 @@ import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.dataso
 import { AccountsRepository } from '@/domain/accounts/accounts.repository';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
-import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Module } from '@nestjs/common';
 
 export const IAccountsRepository = Symbol('IAccountsRepository');
 
 export interface IAccountsRepository {
   createAccount(args: {
-    auth: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
   }): Promise<Account>;
 
   getAccount(args: {
-    auth: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
   }): Promise<Account>;
 
   deleteAccount(args: {
-    auth: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
   }): Promise<void>;
 

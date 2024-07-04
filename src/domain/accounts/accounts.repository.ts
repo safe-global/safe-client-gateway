@@ -4,10 +4,7 @@ import {
   Account,
   AccountSchema,
 } from '@/domain/accounts/entities/account.entity';
-import {
-  AuthPayload,
-  AuthPayloadDto,
-} from '@/domain/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 
@@ -19,44 +16,40 @@ export class AccountsRepository implements IAccountsRepository {
   ) {}
 
   async createAccount(args: {
-    auth: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
   }): Promise<Account> {
-    const { auth, address } = args;
-    this.checkAuth(auth, address);
-    const account = await this.datasource.createAccount(address);
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+    const account = await this.datasource.createAccount(args.address);
     return AccountSchema.parse(account);
   }
 
   async getAccount(args: {
-    auth: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
   }): Promise<Account> {
-    const { auth, address } = args;
-    this.checkAuth(auth, address);
-    const account = await this.datasource.getAccount(address);
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+    const account = await this.datasource.getAccount(args.address);
     return AccountSchema.parse(account);
   }
 
   async deleteAccount(args: {
-    auth: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
   }): Promise<void> {
-    const { auth, address } = args;
-    this.checkAuth(auth, address);
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
     // TODO: trigger a cascade deletion of the account-associated data.
-    return this.datasource.deleteAccount(address);
+    return this.datasource.deleteAccount(args.address);
   }
 
   async getDataTypes(): Promise<AccountDataType[]> {
     // TODO: add caching with clearing mechanism.
     return this.datasource.getDataTypes();
-  }
-
-  private checkAuth(auth: AuthPayloadDto, address: `0x${string}`): void {
-    const authPayload = new AuthPayload(auth);
-    if (!authPayload.isForSigner(address)) {
-      throw new UnauthorizedException();
-    }
   }
 }
