@@ -168,3 +168,9 @@ export class SwapTransferTransactionInfo
     this.fullAppData = args.fullAppData;
   }
 }
+
+export function isSwapTransferTransactionInfo(
+  txInfo: TransactionInfo,
+): txInfo is TransferTransactionInfo {
+  return txInfo.type === TransactionInfoType.SwapTransfer;
+}
