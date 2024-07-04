@@ -199,8 +199,6 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
-  // TODO: Refactor mapSwapOrder, mapTwapOrder and mapTwapSwapOrder as they follow the same pattern
-
   /**
    * Maps a swap order transaction.
    * If the transaction is not a swap order, it returns null.
