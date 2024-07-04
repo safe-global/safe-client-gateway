@@ -1,3 +1,4 @@
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { AccountsService } from '@/routes/accounts/accounts.service';
 import { AccountDataType } from '@/routes/accounts/entities/account-data-type.entity';
 import { Account } from '@/routes/accounts/entities/account.entity';
@@ -15,11 +16,10 @@ import {
   HttpStatus,
   Param,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { Auth } from '@/routes/auth/decorators/auth.decorator';
 
 @ApiTags('accounts')
 @Controller({ path: 'accounts', version: '1' })
@@ -33,10 +33,12 @@ export class AccountsController {
   async createAccount(
     @Body(new ValidationPipe(CreateAccountDtoSchema))
     createAccountDto: CreateAccountDto,
-    @Req() request: Request,
+    @Auth() authPayload: AuthPayload,
   ): Promise<Account> {
-    const auth = request.accessToken;
-    return this.accountsService.createAccount({ auth, createAccountDto });
+    return this.accountsService.createAccount({
+      authPayload,
+      createAccountDto,
+    });
   }
 
   @ApiOkResponse({ type: AccountDataType, isArray: true })
@@ -50,10 +52,9 @@ export class AccountsController {
   @UseGuards(AuthGuard)
   async getAccount(
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
-    @Req() request: Request,
+    @Auth() authPayload: AuthPayload,
   ): Promise<Account> {
-    const auth = request.accessToken;
-    return this.accountsService.getAccount({ auth, address });
+    return this.accountsService.getAccount({ authPayload, address });
   }
 
   @Delete(':address')
@@ -61,9 +62,8 @@ export class AccountsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAccount(
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
-    @Req() request: Request,
+    @Auth() authPayload: AuthPayload,
   ): Promise<void> {
-    const auth = request.accessToken;
-    return this.accountsService.deleteAccount({ auth, address });
+    return this.accountsService.deleteAccount({ authPayload, address });
   }
 }
