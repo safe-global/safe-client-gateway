@@ -111,8 +111,6 @@ export class TwapOrderMapper {
       }
     }
 
-    // TODO: Handling of restricted Apps, calling `getToken` directly instead of multiple times in `getOrder` for sellToken and buyToken
-
     const executedSellAmount: TwapOrderInfo['executedSellAmount'] =
       hasAbundantParts ? null : this.getExecutedSellAmount(orders).toString();
 
