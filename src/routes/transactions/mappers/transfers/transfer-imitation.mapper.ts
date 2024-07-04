@@ -6,6 +6,7 @@ import {
   TransferTransactionInfo,
 } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
+import { isSwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
 import { Inject } from '@nestjs/common';
 import { formatUnits } from 'viem';
 
@@ -65,7 +66,10 @@ export class TransferImitationMapper {
       const txInfo = item.transaction.txInfo;
       // Only transfers can be imitated, of which we are only interested in ERC20s
       if (
-        !isTransferTransactionInfo(txInfo) ||
+        !(
+          isTransferTransactionInfo(txInfo) ||
+          isSwapTransferTransactionInfo(txInfo)
+        ) ||
         !isErc20Transfer(txInfo.transferInfo)
       ) {
         mappedTransactions.unshift(item);
@@ -103,7 +107,10 @@ export class TransferImitationMapper {
       const isImitation = prevItems.some((prevItem) => {
         const prevTxInfo = prevItem.transaction.txInfo;
         if (
-          !isTransferTransactionInfo(prevTxInfo) ||
+          !(
+            isTransferTransactionInfo(prevTxInfo) ||
+            isSwapTransferTransactionInfo(prevTxInfo)
+          ) ||
           !isErc20Transfer(prevTxInfo.transferInfo) ||
           // Do not compare against previously identified imitations
           prevTxInfo.transferInfo.imitation
