@@ -14,7 +14,7 @@ export default (): ReturnType<typeof configuration> => ({
     prefetch: faker.number.int(),
   },
   application: {
-    env: faker.string.sample(),
+    isProduction: faker.datatype.boolean(),
     port: faker.internet.port().toString(),
   },
   auth: {

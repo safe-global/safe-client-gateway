@@ -31,15 +31,16 @@ export class AuthController {
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_LAX = 'lax';
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_NONE = 'none';
   static readonly CGW_ENV_PRODUCTION = 'production';
-  private readonly cgwEnv: string;
+  private readonly isProduction: boolean;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly authService: AuthService,
   ) {
-    this.cgwEnv =
-      this.configurationService.getOrThrow<string>('application.env');
+    this.isProduction = this.configurationService.getOrThrow<boolean>(
+      'application.isProduction',
+    );
   }
 
   @Get('nonce')
@@ -58,12 +59,11 @@ export class AuthController {
     siweDto: SiweDto,
   ): Promise<void> {
     const { accessToken } = await this.authService.getAccessToken(siweDto);
-    const isProduction = this.cgwEnv === AuthController.CGW_ENV_PRODUCTION;
 
     res.cookie(AuthController.ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       httpOnly: true,
       secure: true,
-      sameSite: isProduction
+      sameSite: this.isProduction
         ? AuthController.ACCESS_TOKEN_COOKIE_SAME_SITE_LAX
         : AuthController.ACCESS_TOKEN_COOKIE_SAME_SITE_NONE,
       path: '/',
