@@ -79,11 +79,12 @@ export class AccountsDatasource implements IAccountsDatasource {
     for (const ads of accountDataSettings) {
       const dataType = dataTypes.find((dt) => dt.name === ads.dataTypeName);
       if (!dataType) {
-        throw new UnprocessableEntityException('Invalid data type');
+        throw new UnprocessableEntityException('Invalid data type.');
       }
       const [inserted] = await this.sql<[AccountDataSetting]>`
         INSERT INTO account_data_settings (account_id, account_data_type_id, enabled)
         VALUES (${account.id}, ${dataType.id}, ${ads.enabled})
+        ON CONFLICT (account_id, account_data_type_id) DO UPDATE SET enabled = EXCLUDED.enabled
         RETURNING *
       `.catch((e) => {
         throw new UnprocessableEntityException(

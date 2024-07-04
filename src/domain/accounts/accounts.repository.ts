@@ -60,20 +60,13 @@ export class AccountsRepository implements IAccountsRepository {
     address: `0x${string}`;
     upsertAccountDataSettings: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]> {
-    const { upsertAccountDataSettings } = args;
+    const { address, upsertAccountDataSettings } = args;
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    const dataTypes = await this.datasource.getDataTypes();
-    const dataTypeNames = dataTypes.map((dt) => dt.name);
-    if (
-      upsertAccountDataSettings.accountDataSettings.some(
-        (ads) => !dataTypeNames.includes(ads.dataTypeName),
-      )
-    ) {
-      throw new Error('Invalid data type');
-    }
-
-    throw new Error('Method not implemented.');
+    return await this.datasource.upsertAccountDataSettings(
+      address,
+      upsertAccountDataSettings,
+    );
   }
 }

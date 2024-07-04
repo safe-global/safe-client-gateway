@@ -32,13 +32,15 @@ describe('Migration 00003_account-data-settings', () => {
   const sql = dbFactory();
   const migrator = new PostgresDatabaseMigrator(sql);
 
+  beforeAll(async () => {
+    await sql`DROP TABLE IF EXISTS account_data_types, account_data_settings CASCADE;`;
+  });
+
   afterAll(async () => {
     await sql.end();
   });
 
   it('runs successfully', async () => {
-    await sql`DROP TABLE IF EXISTS account_data_settings CASCADE;`;
-
     const result = await migrator.test({
       migration: '00003_account-data-settings',
       after: async (sql: Sql) => {
@@ -66,7 +68,6 @@ describe('Migration 00003_account-data-settings', () => {
   });
 
   it('should add one AccountDataSettings and update its row timestamps', async () => {
-    await sql`DROP TABLE IF EXISTS account_data_settings CASCADE;`;
     const accountAddress = faker.finance.ethereumAddress();
     const dataTypeName = faker.lorem.word();
     await sql`INSERT INTO accounts (address) VALUES (${accountAddress});`;
