@@ -101,6 +101,16 @@ export class TwapOrderMapper {
 
       try {
         const order = await this.swapsRepository.getOrder(chainId, orderUid);
+        const partFullAppData = await this.swapsRepository.getFullAppData(
+          chainId,
+          part.appData,
+        );
+        if (!this.twapOrderHelper.isAppAllowed(partFullAppData)) {
+          throw new Error(
+            `Unsupported App: ${partFullAppData.fullAppData?.appCode}`,
+          );
+        }
+
         if (order.kind === OrderKind.Buy || order.kind === OrderKind.Sell) {
           orders.push(order as KnownOrder);
         }
