@@ -105,7 +105,7 @@ export class TwapOrderMapper {
           chainId,
           part.appData,
         );
-        if (!this.twapOrderHelper.isAppAllowed(partFullAppData)) {
+        if (!this.twapOrderHelper.isAppAllowed(order)) {
           throw new Error(
             `Unsupported App: ${partFullAppData.fullAppData?.appCode}`,
           );
