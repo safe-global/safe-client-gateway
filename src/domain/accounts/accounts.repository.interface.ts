@@ -3,6 +3,7 @@ import { AccountsRepository } from '@/domain/accounts/accounts.repository';
 import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
+import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Module } from '@nestjs/common';
 
@@ -27,7 +28,7 @@ export interface IAccountsRepository {
   getDataTypes(): Promise<AccountDataType[]>;
 
   upsertAccountDataSettings(args: {
-    auth: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
     upsertAccountDataSettings: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]>;

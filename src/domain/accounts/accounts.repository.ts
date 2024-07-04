@@ -5,6 +5,7 @@ import {
   Account,
   AccountSchema,
 } from '@/domain/accounts/entities/account.entity';
+import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
@@ -55,12 +56,14 @@ export class AccountsRepository implements IAccountsRepository {
   }
 
   async upsertAccountDataSettings(args: {
-    auth: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
     upsertAccountDataSettings: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]> {
-    const { auth, address, upsertAccountDataSettings } = args;
-    this.checkAuth(auth, address);
+    const { upsertAccountDataSettings } = args;
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
     const dataTypes = await this.datasource.getDataTypes();
     const dataTypeNames = dataTypes.map((dt) => dt.name);
     if (
@@ -72,12 +75,5 @@ export class AccountsRepository implements IAccountsRepository {
     }
 
     throw new Error('Method not implemented.');
-  }
-
-  private checkAuth(auth: AuthPayloadDto, address: `0x${string}`): void {
-    const authPayload = new AuthPayload(auth);
-    if (!authPayload.isForSigner(address)) {
-      throw new UnauthorizedException();
-    }
   }
 }

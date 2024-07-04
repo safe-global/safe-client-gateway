@@ -1,12 +1,13 @@
+import { CreateAccountDtoSchema } from '@/domain/accounts/entities/schemas/create-account.dto.schema';
+import { UpsertAccountDataSettingsDtoSchema } from '@/domain/accounts/entities/schemas/upsert-account-data-settings.dto.schema';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { AccountsService } from '@/routes/accounts/accounts.service';
 import { AccountDataSetting } from '@/routes/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/routes/accounts/entities/account-data-type.entity';
 import { Account } from '@/routes/accounts/entities/account.entity';
 import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
-import { CreateAccountDtoSchema } from '@/domain/accounts/entities/schemas/create-account.dto.schema';
-import { UpsertAccountDataSettingsDtoSchema } from '@/domain/accounts/entities/schemas/upsert-account-data-settings.dto.schema';
 import { UpsertAccountDataSettingsDto } from '@/routes/accounts/entities/upsert-account-data-settings.dto.entity';
+import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -20,11 +21,9 @@ import {
   Param,
   Post,
   Put,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Auth } from '@/routes/auth/decorators/auth.decorator';
 
 @ApiTags('accounts')
 @Controller({ path: 'accounts', version: '1' })
@@ -57,14 +56,13 @@ export class AccountsController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard)
   async upsertAccountDataSettings(
+    @Auth() authPayload: AuthPayload,
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
     @Body(new ValidationPipe(UpsertAccountDataSettingsDtoSchema))
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto,
-    @Req() request: Request,
   ): Promise<AccountDataSetting[]> {
-    const auth = request.accessToken;
     return this.accountsService.upsertAccountDataSettings({
-      auth,
+      authPayload,
       address,
       upsertAccountDataSettingsDto,
     });

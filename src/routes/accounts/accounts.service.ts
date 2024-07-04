@@ -1,15 +1,14 @@
 import { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
 import { AccountDataSetting as DomainAccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType as DomainAccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
-import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Account as DomainAccount } from '@/domain/accounts/entities/account.entity';
-import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { AccountDataSetting } from '@/routes/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/routes/accounts/entities/account-data-type.entity';
 import { Account } from '@/routes/accounts/entities/account.entity';
 import { CreateAccountDto } from '@/routes/accounts/entities/create-account.dto.entity';
 import { UpsertAccountDataSettingsDto } from '@/routes/accounts/entities/upsert-account-data-settings.dto.entity';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AccountsService {
@@ -58,17 +57,13 @@ export class AccountsService {
   }
 
   async upsertAccountDataSettings(args: {
-    auth?: AuthPayloadDto;
+    authPayload: AuthPayload;
     address: `0x${string}`;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]> {
-    if (!args.auth) {
-      throw new UnauthorizedException();
-    }
-
     const domainAccountDataSettings =
       await this.accountsRepository.upsertAccountDataSettings({
-        auth: args.auth,
+        authPayload: args.authPayload,
         address: args.address,
         upsertAccountDataSettings: {
           accountDataSettings:
