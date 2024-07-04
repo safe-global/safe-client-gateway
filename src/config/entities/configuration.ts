@@ -24,7 +24,7 @@ export default () => ({
         : 100,
   },
   application: {
-    env: process.env.CGW_ENV || 'production',
+    isProduction: process.env.CGW_ENV === 'production',
     port: process.env.APPLICATION_PORT || '3000',
   },
   auth: {

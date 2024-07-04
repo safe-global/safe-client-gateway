@@ -90,7 +90,7 @@ describe('AuthController', () => {
       ...defaultConfiguration,
       application: {
         ...defaultConfiguration.application,
-        env: 'production',
+        isProduction: true,
       },
       features: {
         ...defaultConfiguration.features,
@@ -232,7 +232,7 @@ describe('AuthController', () => {
         ...defaultConfiguration,
         application: {
           ...defaultConfiguration.application,
-          env: 'staging',
+          isProduction: false,
         },
         features: {
           ...defaultConfiguration.features,
