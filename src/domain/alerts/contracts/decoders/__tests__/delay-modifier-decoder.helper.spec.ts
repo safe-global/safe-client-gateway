@@ -15,15 +15,16 @@ describe('DelayModifierDecoder', () => {
     const transactionAddedEvent = transactionAddedEventBuilder();
     const { data, topics } = transactionAddedEvent.encode();
 
-    expect(target.decodeEventLog({ data, topics })).toEqual({
-      eventName: 'TransactionAdded',
-      args: transactionAddedEvent.build(),
-    });
+    expect(target.decodeEventLog.TransactionAdded({ data, topics })).toEqual(
+      transactionAddedEvent.build(),
+    );
   });
 
-  it('throws if the event cannot be decoded', () => {
+  it('returns null if the event cannot be decoded', () => {
     const data = toHex(faker.string.hexadecimal({ length: 514 }));
 
-    expect(() => target.decodeEventLog({ data, topics: [] })).toThrow();
+    expect(
+      target.decodeEventLog.TransactionAdded({ data, topics: [] }),
+    ).toEqual(null);
   });
 });

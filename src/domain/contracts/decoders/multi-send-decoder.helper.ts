@@ -28,9 +28,13 @@ export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {
       data: Hex;
     }> = [];
 
-    const multiSend = this.decodeFunctionData({ data: multiSendData });
+    const multiSend = this.decodeFunctionData.multiSend(multiSendData);
 
-    const transactions = multiSend.args[0];
+    if (!multiSend) {
+      throw new Error('Unable to decode `multiSend` data');
+    }
+
+    const transactions = multiSend[0];
     const transactionsSize = size(transactions);
 
     let cursor = 0;

@@ -43,7 +43,7 @@ const mockChainsRepository = {
 describe('TwapOrderMapper', () => {
   const configurationService = new FakeConfigurationService();
   const multiSendDecoder = new MultiSendDecoder();
-  const gpv2Decoder = new GPv2Decoder(mockLoggingService);
+  const gpv2Decoder = new GPv2Decoder();
   const allowedApps = new Set<string>();
   const swapOrderHelper = new SwapOrderHelper(
     multiSendDecoder,

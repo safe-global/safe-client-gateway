@@ -1,6 +1,5 @@
-import { Inject, Injectable, Module } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   BuyTokenBalance,
   OrderKind,
@@ -645,9 +644,7 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
     },
   } as const;
 
-  constructor(
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {
+  constructor() {
     super(GPv2Abi);
   }
 
@@ -660,22 +657,13 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
   public getOrderUidFromSetPreSignature(
     data: `0x${string}`,
   ): `0x${string}` | null {
-    if (!this.helpers.isSetPreSignature(data)) {
+    const decoded = this.decodeFunctionData.setPreSignature(data);
+
+    if (!decoded) {
       return null;
     }
 
-    try {
-      const decoded = this.decodeFunctionData({ data });
-
-      if (decoded.functionName !== 'setPreSignature') {
-        throw new Error('Data is not of setPreSignature');
-      }
-
-      return decoded.args[0];
-    } catch (e) {
-      this.loggingService.debug(e);
-      return null;
-    }
+    return decoded[0];
   }
 
   /**
@@ -688,7 +676,7 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
   public decodeOrderFromSettle(
     data: `0x${string}`,
   ): GPv2OrderParameters | null {
-    const decoded = this.decodeSettle(data);
+    const decoded = this.decodeFunctionData.settle(data);
 
     if (!decoded) {
       return null;
@@ -717,27 +705,6 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
       sellTokenBalance: this.decodeFlag('sellTokenBalance', trade.flags),
       buyTokenBalance: this.decodeFlag('buyTokenBalance', trade.flags),
     };
-  }
-
-  // Use inferred return type
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  private decodeSettle(data: `0x${string}`) {
-    if (!this.helpers.isSettle(data)) {
-      return null;
-    }
-
-    try {
-      const decoded = this.decodeFunctionData({ data });
-
-      if (decoded.functionName !== 'settle') {
-        throw new Error('Data is not of settle');
-      }
-
-      return decoded.args;
-    } catch (e) {
-      this.loggingService.debug(e);
-      return null;
-    }
   }
 
   /**

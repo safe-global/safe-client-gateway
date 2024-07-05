@@ -15,19 +15,16 @@ describe('ProxyFactoryDecoder', () => {
     const data = createProxyWithNonce.encode();
 
     const expectedArgs = createProxyWithNonce.build();
-    expect(target.decodeFunctionData({ data })).toEqual({
-      functionName: 'createProxyWithNonce',
-      args: [
-        expectedArgs.singleton,
-        expectedArgs.initializer,
-        expectedArgs.saltNonce,
-      ],
-    });
+    expect(target.decodeFunctionData.createProxyWithNonce(data)).toEqual([
+      expectedArgs.singleton,
+      expectedArgs.initializer,
+      expectedArgs.saltNonce,
+    ]);
   });
 
-  it('throws if the function call cannot be decoded', () => {
+  it('returns null if the function call cannot be decoded', () => {
     const data = faker.string.hexadecimal({ length: 138 }) as `0x${string}`;
 
-    expect(() => target.decodeFunctionData({ data })).toThrow();
+    expect(target.decodeFunctionData.createProxyWithNonce(data)).toEqual(null);
   });
 });
