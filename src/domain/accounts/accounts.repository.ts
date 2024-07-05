@@ -64,6 +64,10 @@ export class AccountsRepository implements IAccountsRepository {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
+    if (upsertAccountDataSettings.accountDataSettings.length === 0) {
+      return [];
+    }
+
     return this.datasource.upsertAccountDataSettings(
       address,
       upsertAccountDataSettings,

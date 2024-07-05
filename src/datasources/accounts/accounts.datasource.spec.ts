@@ -21,9 +21,6 @@ describe('AccountsDatasource tests', () => {
   // Run pending migrations before tests
   beforeAll(async () => {
     await migrator.migrate();
-  });
-
-  beforeEach(() => {
     target = new AccountsDatasource(sql, mockLoggingService);
   });
 
@@ -277,6 +274,23 @@ describe('AccountsDatasource tests', () => {
       await expect(
         target.upsertAccountDataSettings(address, upsertAccountDataSettingsDto),
       ).rejects.toThrow('Invalid data type.');
+    });
+
+    it('throws an error if an inactive data type is provided', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const upsertAccountDataSettingsDto =
+        upsertAccountDataSettingsDtoBuilder().build();
+      const { accountDataSettings } = upsertAccountDataSettingsDto;
+      await target.createAccount(address);
+      const dataTypes = accountDataSettings.map((ads) => ({
+        name: ads.dataTypeName,
+        is_active: false,
+      }));
+      await sql`INSERT INTO account_data_types ${sql(dataTypes, 'name', 'is_active')} returning *`;
+
+      await expect(
+        target.upsertAccountDataSettings(address, upsertAccountDataSettingsDto),
+      ).rejects.toThrow(`Data type ${dataTypes[0].name} is inactive.`);
     });
   });
 });

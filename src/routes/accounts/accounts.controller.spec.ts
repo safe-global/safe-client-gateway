@@ -587,7 +587,7 @@ describe('AccountsController', () => {
     });
   });
 
-  describe.only('Upsert account data settings', () => {
+  describe('Upsert account data settings', () => {
     it('should upsert data settings for an account', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
@@ -634,14 +634,26 @@ describe('AccountsController', () => {
       );
     });
 
-    it.todo('should accept a empty array of data settings');
-    it.todo(
-      'should fail if the data types for the data settings does not exist',
-    );
-    it.todo(
-      'should fail if the data types for the data settings are not active',
-    );
-    it.todo('should fail if the account does not exist');
+    it('should accept a empty array of data settings', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .put(`/v1/accounts/${address}/data-settings`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ accountDataSettings: [] })
+        .expect(200)
+        .expect([]);
+
+      expect(
+        accountDataSource.upsertAccountDataSettings,
+      ).not.toHaveBeenCalled();
+    });
 
     it('Returns 403 if no token is present', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
@@ -745,7 +757,7 @@ describe('AccountsController', () => {
       await request(app.getHttpServer())
         .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ accountDataSettings: [] })
+        .send(upsertAccountDataSettingsDtoBuilder().build())
         .expect(500);
 
       expect(accountDataSource.upsertAccountDataSettings).toHaveBeenCalledTimes(

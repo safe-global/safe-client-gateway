@@ -81,6 +81,11 @@ export class AccountsDatasource implements IAccountsDatasource {
       if (!dataType) {
         throw new UnprocessableEntityException('Invalid data type.');
       }
+      if (!dataType.is_active) {
+        throw new UnprocessableEntityException(
+          `Data type ${dataType.name} is inactive.`,
+        );
+      }
       const [inserted] = await this.sql<[AccountDataSetting]>`
         INSERT INTO account_data_settings (account_id, account_data_type_id, enabled)
         VALUES (${account.id}, ${dataType.id}, ${ads.enabled})
