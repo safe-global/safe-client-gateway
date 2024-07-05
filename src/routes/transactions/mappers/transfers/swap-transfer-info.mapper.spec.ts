@@ -26,6 +26,7 @@ const mockSwapsRepository = jest.mocked({
 const mockLoggingService = jest.mocked({
   debug: jest.fn(),
   error: jest.fn(),
+  warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
 describe('SwapTransferInfoMapper', () => {
