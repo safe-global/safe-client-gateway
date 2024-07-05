@@ -9,7 +9,6 @@ import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer
 import { getAddress, isAddressEqual } from 'viem';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Order } from '@/domain/swaps/entities/order.entity';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class SwapTransferInfoMapper {
@@ -17,7 +16,6 @@ export class SwapTransferInfoMapper {
     private readonly swapOrderHelper: SwapOrderHelper,
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -40,13 +38,15 @@ export class SwapTransferInfoMapper {
     safeAddress: `0x${string}`;
     transferInfo: Transfer;
     domainTransfer: DomainTransfer;
-  }): Promise<SwapTransferTransactionInfo | null> {
+  }): Promise<SwapTransferTransactionInfo> {
     // If settlement contract is not interacted with, not a swap fulfillment
+    // TODO: Also check data is of `settle` call as otherwise _any_ call
+    // to settlement contract could be considered a swap fulfillment
     if (
       !this.isSettlement(args.sender.value) &&
       !this.isSettlement(args.recipient.value)
     ) {
-      return null;
+      throw new Error('Neither sender nor receiver are settlement contract');
     }
 
     const orders = await this.swapsRepository.getOrders(
@@ -58,16 +58,11 @@ export class SwapTransferInfoMapper {
     const order = this.findOrderByTransfer(orders, args.domainTransfer);
 
     if (!order) {
-      return null;
+      throw new Error('Transfer not found in order');
     }
 
-    // TODO: Refactor with confirmation view, swaps and TWAPs
     if (!this.swapOrderHelper.isAppAllowed(order)) {
-      this.loggingService.warn(
-        `Unsupported App: ${order.fullAppData?.appCode}`,
-      );
-      // Don't throw in order to fallback to "standard" transfer mapping
-      return null;
+      throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
 
     const [sellToken, buyToken] = await Promise.all([

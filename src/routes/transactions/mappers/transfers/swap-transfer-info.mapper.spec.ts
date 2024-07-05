@@ -3,7 +3,6 @@ import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { OrdersSchema } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { ILoggingService } from '@/logging/logging.interface';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import { TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
@@ -23,12 +22,6 @@ const mockSwapsRepository = jest.mocked({
   getOrders: jest.fn(),
 } as jest.MockedObjectDeep<ISwapsRepository>);
 
-const mockLoggingService = jest.mocked({
-  debug: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
-
 describe('SwapTransferInfoMapper', () => {
   let target: SwapTransferInfoMapper;
 
@@ -40,11 +33,10 @@ describe('SwapTransferInfoMapper', () => {
     target = new SwapTransferInfoMapper(
       mockSwapOrderHelper,
       mockSwapsRepository,
-      mockLoggingService,
     );
   });
 
-  it('it returns null if nether the sender and recipient are from the GPv2Settlement contract', async () => {
+  it('it throws if nether the sender and recipient are from the GPv2Settlement contract', async () => {
     const sender = addressInfoBuilder().build();
     const recipient = addressInfoBuilder().build();
     const direction = faker.helpers.arrayElement(
@@ -71,17 +63,17 @@ describe('SwapTransferInfoMapper', () => {
     const order = orderBuilder().with('from', getAddress(sender.value)).build();
     mockSwapsRepository.getOrders.mockResolvedValue([order]);
 
-    const actual = await target.mapSwapTransferInfo({
-      sender,
-      recipient,
-      direction,
-      chainId,
-      safeAddress,
-      transferInfo,
-      domainTransfer,
-    });
-
-    expect(actual).toBe(null);
+    await expect(
+      target.mapSwapTransferInfo({
+        sender,
+        recipient,
+        direction,
+        chainId,
+        safeAddress,
+        transferInfo,
+        domainTransfer,
+      }),
+    ).rejects.toThrow('Neither sender nor receiver are settlement contract');
   });
 
   it('maps the SwapTransferTransactionInfo if the sender is the GPv2Settlement contract', async () => {
@@ -409,7 +401,7 @@ describe('SwapTransferInfoMapper', () => {
     });
   });
 
-  it('should return null if the app is not allowed', async () => {
+  it('should throw if the app is not allowed', async () => {
     /**
      * https://api.cow.fi/mainnet/api/v1/transactions/0x22fe458f3a70aaf83d42af2040f3b98404526b4ca588624e158c4b1f287ced8c/orders
      */
@@ -529,16 +521,16 @@ describe('SwapTransferInfoMapper', () => {
     );
     mockSwapOrderHelper.isAppAllowed.mockReturnValue(false);
 
-    const actual = await target.mapSwapTransferInfo({
-      sender,
-      recipient,
-      direction,
-      chainId,
-      safeAddress,
-      transferInfo,
-      domainTransfer,
-    });
-
-    expect(actual).toEqual(null);
+    await expect(
+      target.mapSwapTransferInfo({
+        sender,
+        recipient,
+        direction,
+        chainId,
+        safeAddress,
+        transferInfo,
+        domainTransfer,
+      }),
+    ).rejects.toThrow('Unsupported App: CoW Swap');
   });
 });
