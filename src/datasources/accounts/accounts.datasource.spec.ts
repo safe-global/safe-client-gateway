@@ -21,6 +21,9 @@ describe('AccountsDatasource tests', () => {
   // Run pending migrations before tests
   beforeAll(async () => {
     await migrator.migrate();
+  });
+
+  beforeEach(() => {
     target = new AccountsDatasource(sql, mockLoggingService);
   });
 
