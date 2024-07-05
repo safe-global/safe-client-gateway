@@ -9,6 +9,7 @@ import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer
 import { getAddress, isAddressEqual } from 'viem';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Order } from '@/domain/swaps/entities/order.entity';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class SwapTransferInfoMapper {
@@ -16,6 +17,7 @@ export class SwapTransferInfoMapper {
     private readonly swapOrderHelper: SwapOrderHelper,
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -61,7 +63,11 @@ export class SwapTransferInfoMapper {
 
     // TODO: Refactor with confirmation view, swaps and TWAPs
     if (!this.swapOrderHelper.isAppAllowed(order)) {
-      throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
+      this.loggingService.error(
+        `Unsupported App: ${order.fullAppData?.appCode}`,
+      );
+      // Don't throw in order to fallback to "standard" transfer mapping
+      return null;
     }
 
     const [sellToken, buyToken] = await Promise.all([
