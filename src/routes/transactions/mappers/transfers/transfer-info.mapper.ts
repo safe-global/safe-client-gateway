@@ -16,7 +16,7 @@ import { getTransferDirection } from '@/routes/transactions/mappers/common/trans
 import { Transfer } from '@/routes/transactions/entities/transfers/transfer.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
-import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
+import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
@@ -45,7 +45,7 @@ export class TransferInfoMapper {
     chainId: string,
     domainTransfer: DomainTransfer,
     safe: Safe,
-  ): Promise<SwapOrderTransactionInfo | TransferTransactionInfo> {
+  ): Promise<SwapTransferTransactionInfo | TransferTransactionInfo> {
     const { from, to } = domainTransfer;
 
     const [sender, recipient, transferInfo] = await Promise.all([
@@ -103,7 +103,7 @@ export class TransferInfoMapper {
     safeAddress: `0x${string}`;
     transferInfo: Transfer;
     domainTransfer: DomainTransfer;
-  }): Promise<SwapOrderTransactionInfo | null> {
+  }): Promise<SwapTransferTransactionInfo | null> {
     try {
       return await this.swapTransferInfoMapper.mapSwapTransferInfo(args);
     } catch (error) {
