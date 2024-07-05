@@ -1,4 +1,3 @@
-import { UpsertAccountDataSettingsDtoSchema } from '@/domain/accounts/entities/schemas/upsert-account-data-settings.dto.schema';
 import { z } from 'zod';
 
 export class UpsertAccountDataSettingsDto
@@ -13,3 +12,12 @@ export class UpsertAccountDataSettingsDto
     this.accountDataSettings = props.accountDataSettings;
   }
 }
+
+export const UpsertAccountDataSettingDtoSchema = z.object({
+  dataTypeName: z.string(),
+  enabled: z.boolean(),
+});
+
+export const UpsertAccountDataSettingsDtoSchema = z.object({
+  accountDataSettings: z.array(UpsertAccountDataSettingDtoSchema),
+});

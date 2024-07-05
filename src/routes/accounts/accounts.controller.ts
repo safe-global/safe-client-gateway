@@ -1,5 +1,5 @@
 import { CreateAccountDtoSchema } from '@/domain/accounts/entities/schemas/create-account.dto.schema';
-import { UpsertAccountDataSettingsDtoSchema } from '@/domain/accounts/entities/schemas/upsert-account-data-settings.dto.schema';
+import { UpsertAccountDataSettingsDtoSchema } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { AccountsService } from '@/routes/accounts/accounts.service';
 import { AccountDataSetting } from '@/routes/accounts/entities/account-data-setting.entity';
