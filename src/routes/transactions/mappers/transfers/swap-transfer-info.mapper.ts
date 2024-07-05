@@ -63,7 +63,7 @@ export class SwapTransferInfoMapper {
 
     // TODO: Refactor with confirmation view, swaps and TWAPs
     if (!this.swapOrderHelper.isAppAllowed(order)) {
-      this.loggingService.error(
+      this.loggingService.warn(
         `Unsupported App: ${order.fullAppData?.appCode}`,
       );
       // Don't throw in order to fallback to "standard" transfer mapping
