@@ -67,6 +67,17 @@ export class AccountsDatasource implements IAccountsDatasource {
     return this.sql<[AccountDataType]>`SELECT * FROM account_data_types`;
   }
 
+  /**
+   * Adds or updates the existing account data settings for a given address/account.
+   * Requirements:
+   * - The account must exist.
+   * - The data type must exist.
+   * - The data type must be active.
+   *
+   * @param address - account address.
+   * @param upsertAccountDataSettings {@link UpsertAccountDataSettingsDto} object.
+   * @returns {Array<AccountDataSetting>} inserted account data settings.
+   */
   async upsertAccountDataSettings(
     address: `0x${string}`,
     upsertAccountDataSettings: UpsertAccountDataSettingsDto,
