@@ -15,8 +15,10 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { accountDataSettingBuilder } from '@/domain/accounts/entities/__tests__/account-data-setting.builder';
 import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
 import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.builder';
+import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { getSecondsUntil } from '@/domain/common/utils/time';
@@ -585,8 +587,8 @@ describe('AccountsController', () => {
     });
   });
 
-  describe.skip('Upsert account data settings', () => {
-    it('should delete an account', async () => {
+  describe.only('Upsert account data settings', () => {
+    it('should upsert data settings for an account', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
@@ -595,30 +597,57 @@ describe('AccountsController', () => {
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const account = accountBuilder().build();
+      const dataTypes = [
+        accountDataTypeBuilder().build(),
+        accountDataTypeBuilder().build(),
+      ];
+      const domainAccountDataSettings = [
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', dataTypes[0].id)
+          .build(),
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', dataTypes[1].id)
+          .build(),
+      ];
+      const upsertAccountDataSettingsDto =
+        upsertAccountDataSettingsDtoBuilder().build();
       accountDataSource.createAccount.mockResolvedValue(account);
-      accountDataSource.deleteAccount.mockResolvedValue();
+      accountDataSource.getDataTypes.mockResolvedValue(dataTypes);
+      accountDataSource.upsertAccountDataSettings.mockResolvedValue(
+        domainAccountDataSettings,
+      );
 
       await request(app.getHttpServer())
-        .post(`/v1/accounts`)
+        .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ address: address.toLowerCase() })
-        .expect(201);
+        .send(upsertAccountDataSettingsDto)
+        .expect(200);
 
-      await request(app.getHttpServer())
-        .delete(`/v1/accounts/${address}`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(204);
-
-      expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(1);
-      // Check the address was checksummed
-      expect(accountDataSource.deleteAccount).toHaveBeenCalledWith(address);
+      expect(accountDataSource.upsertAccountDataSettings).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(accountDataSource.upsertAccountDataSettings).toHaveBeenCalledWith(
+        address,
+        upsertAccountDataSettingsDto,
+      );
     });
+
+    it.todo('should accept a empty array of data settings');
+    it.todo(
+      'should fail if the data types for the data settings does not exist',
+    );
+    it.todo(
+      'should fail if the data types for the data settings are not active',
+    );
+    it.todo('should fail if the account does not exist');
 
     it('Returns 403 if no token is present', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
-        .delete(`/v1/accounts/${address}`)
+        .put(`/v1/accounts/${address}/data-settings`)
         .send({ address })
         .expect(403);
     });
@@ -629,7 +658,7 @@ describe('AccountsController', () => {
 
       expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
       await request(app.getHttpServer())
-        .delete(`/v1/accounts/${address}`)
+        .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ address })
         .expect(403);
@@ -647,7 +676,7 @@ describe('AccountsController', () => {
       });
 
       await request(app.getHttpServer())
-        .delete(`/v1/accounts/${address}`)
+        .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ address })
         .expect(403);
@@ -664,7 +693,7 @@ describe('AccountsController', () => {
       jest.advanceTimersByTime(1_000);
 
       await request(app.getHttpServer())
-        .delete(`/v1/accounts/${address}`)
+        .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ address })
         .expect(403);
@@ -680,7 +709,7 @@ describe('AccountsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .delete(`/v1/accounts/${address}`)
+        .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ address })
         .expect(403);
@@ -695,7 +724,7 @@ describe('AccountsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .delete(`/v1/accounts/${address}`)
+        .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ address })
         .expect(403);
@@ -709,17 +738,19 @@ describe('AccountsController', () => {
         .with('signer_address', address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      accountDataSource.deleteAccount.mockImplementation(() => {
+      accountDataSource.upsertAccountDataSettings.mockImplementation(() => {
         throw new Error('test error');
       });
 
       await request(app.getHttpServer())
-        .delete(`/v1/accounts/${address}`)
+        .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ address: address.toLowerCase() })
+        .send({ accountDataSettings: [] })
         .expect(500);
 
-      expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(1);
+      expect(accountDataSource.upsertAccountDataSettings).toHaveBeenCalledTimes(
+        1,
+      );
     });
   });
 });

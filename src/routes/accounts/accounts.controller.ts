@@ -53,7 +53,6 @@ export class AccountsController {
 
   @ApiOkResponse({ type: AccountDataSetting, isArray: true })
   @Put(':address/data-settings')
-  @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard)
   async upsertAccountDataSettings(
     @Auth() authPayload: AuthPayload,
