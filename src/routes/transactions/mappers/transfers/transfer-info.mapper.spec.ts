@@ -18,6 +18,7 @@ import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/tran
 import { getAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
+import { ILoggingService } from '@/logging/logging.interface';
 
 const configurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -36,6 +37,10 @@ const tokenRepository = jest.mocked({
   getToken: jest.fn(),
 } as jest.MockedObjectDeep<TokenRepository>);
 
+const mockLoggingService = jest.mocked({
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>);
+
 describe('Transfer Info mapper (Unit)', () => {
   let mapper: TransferInfoMapper;
 
@@ -46,6 +51,7 @@ describe('Transfer Info mapper (Unit)', () => {
       tokenRepository,
       swapTransferInfoMapper,
       addressInfoHelper,
+      mockLoggingService,
     );
   });
 
@@ -63,6 +69,9 @@ describe('Transfer Info mapper (Unit)', () => {
     const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
 
     expect(actual).toBeInstanceOf(TransferTransactionInfo);
+    if (!(actual instanceof TransferTransactionInfo)) {
+      throw new Error('Not a TransferTransactionInfo instance');
+    }
     expect(actual.transferInfo).toBeInstanceOf(Erc20Transfer);
     expect(actual).toEqual(
       expect.objectContaining({
@@ -96,6 +105,9 @@ describe('Transfer Info mapper (Unit)', () => {
     const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
 
     expect(actual).toBeInstanceOf(TransferTransactionInfo);
+    if (!(actual instanceof TransferTransactionInfo)) {
+      throw new Error('Not a TransferTransactionInfo instance');
+    }
     expect(actual.transferInfo).toBeInstanceOf(Erc721Transfer);
     expect(actual).toEqual(
       expect.objectContaining({
@@ -126,6 +138,9 @@ describe('Transfer Info mapper (Unit)', () => {
     const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
 
     expect(actual).toBeInstanceOf(TransferTransactionInfo);
+    if (!(actual instanceof TransferTransactionInfo)) {
+      throw new Error('Not a TransferTransactionInfo instance');
+    }
     expect(actual.transferInfo).toBeInstanceOf(NativeCoinTransfer);
     expect(actual).toEqual(
       expect.objectContaining({
