@@ -72,6 +72,16 @@ export class TwapOrderMapper {
       chainId,
     });
 
+    const fullAppData = await this.swapsRepository.getFullAppData(
+      chainId,
+      twapStruct.appData,
+    );
+
+    // TODO: Refactor with confirmation view, swaps and TWAPs
+    if (!this.twapOrderHelper.isAppAllowed(fullAppData)) {
+      throw new Error(`Unsupported App: ${fullAppData.fullAppData?.appCode}`);
+    }
+
     // There can be up to uint256 parts in a TWAP order so we limit this
     // to avoid requesting too many orders
     const hasAbundantParts = twapParts.length > this.maxNumberOfParts;
@@ -85,42 +95,44 @@ export class TwapOrderMapper {
         : twapParts
       : [];
 
-    const fullAppData = await this.swapsRepository.getFullAppData(
-      chainId,
-      twapStruct.appData,
-    );
-
     const orders: Array<KnownOrder> = [];
 
     for (const part of partsToFetch) {
+      const partFullAppData = await this.swapsRepository.getFullAppData(
+        chainId,
+        part.appData,
+      );
+
+      // TODO: Refactor with confirmation view, swaps and TWAPs
+      if (!this.twapOrderHelper.isAppAllowed(partFullAppData)) {
+        throw new Error(
+          `Unsupported App: ${partFullAppData.fullAppData?.appCode}`,
+        );
+      }
+
       const orderUid = this.gpv2OrderHelper.computeOrderUid({
         chainId,
         owner: safeAddress,
         order: part,
       });
-
-      try {
-        const order = await this.swapsRepository.getOrder(chainId, orderUid);
-        if (!this.twapOrderHelper.isAppAllowed(order)) {
-          throw new Error(
-            `Unsupported App: ${order.fullAppData?.appCode}`,
+      const order = await this.swapsRepository
+        .getOrder(chainId, orderUid)
+        .catch(() => {
+          this.loggingService.warn(
+            `Error getting orderUid ${orderUid} from SwapsRepository`,
           );
-        }
+        });
 
-        if (order.kind === OrderKind.Buy || order.kind === OrderKind.Sell) {
-          orders.push(order as KnownOrder);
-        }
-      } catch (err) {
-        this.loggingService.warn(
-          `Error getting orderUid ${orderUid} from SwapsRepository`,
-        );
+      if (!order || order.kind == OrderKind.Unknown) {
+        continue;
       }
-    }
 
-    if (!this.twapOrderHelper.isAppAllowed(fullAppData)) {
-      throw new Error(`Unsupported App: ${fullAppData.fullAppData?.appCode}`);
+      if (!this.swapOrderHelper.isAppAllowed(order)) {
+        throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
+      }
+
+      orders.push(order as KnownOrder);
     }
-    // TODO: Calling `getToken` directly instead of multiple times in `getOrder` for sellToken and buyToken
 
     const executedSellAmount: TwapOrderInfo['executedSellAmount'] =
       hasAbundantParts ? null : this.getExecutedSellAmount(orders).toString();

@@ -25,6 +25,7 @@ export class SwapOrderMapper {
     }
     const order = await this.swapOrderHelper.getOrder({ chainId, orderUid });
 
+    // TODO: Refactor with confirmation view, swaps and TWAPs
     if (!this.swapOrderHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }

@@ -59,6 +59,11 @@ export class SwapTransferInfoMapper {
       return null;
     }
 
+    // TODO: Refactor with confirmation view, swaps and TWAPs
+    if (!this.swapOrderHelper.isAppAllowed(order)) {
+      throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
+    }
+
     const [sellToken, buyToken] = await Promise.all([
       this.swapOrderHelper.getToken({
         address: order.sellToken,

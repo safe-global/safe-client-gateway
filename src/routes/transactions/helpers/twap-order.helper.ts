@@ -183,6 +183,7 @@ export class TwapOrderHelper {
    * @param fullAppData - object to which we should verify the app data with
    * @returns true if the app is allowed, false otherwise.
    */
+  // TODO: Refactor with confirmation view, swaps and TWAPs
   public isAppAllowed(fullAppData: FullAppData): boolean {
     if (!this.restrictApps) return true;
     const appCode = fullAppData.fullAppData?.appCode;

@@ -103,6 +103,7 @@ export class TransactionsViewService {
       orderUid,
     });
 
+    // TODO: Refactor with confirmation view, swaps and TWAPs
     if (!this.swapOrderHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
@@ -178,6 +179,7 @@ export class TransactionsViewService {
       twapStruct.appData,
     );
 
+    // TODO: Refactor with confirmation view, swaps and TWAPs
     if (!this.twapOrderHelper.isAppAllowed(fullAppData)) {
       throw new Error(`Unsupported App: ${fullAppData.fullAppData?.appCode}`);
     }
