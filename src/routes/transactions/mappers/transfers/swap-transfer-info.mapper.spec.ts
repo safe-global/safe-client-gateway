@@ -3,6 +3,7 @@ import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { OrdersSchema } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import { ILoggingService } from '@/logging/logging.interface';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import { TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
@@ -22,6 +23,12 @@ const mockSwapsRepository = jest.mocked({
   getOrders: jest.fn(),
 } as jest.MockedObjectDeep<ISwapsRepository>);
 
+const mockLoggingService = jest.mocked({
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>);
+
 describe('SwapTransferInfoMapper', () => {
   let target: SwapTransferInfoMapper;
 
@@ -33,6 +40,7 @@ describe('SwapTransferInfoMapper', () => {
     target = new SwapTransferInfoMapper(
       mockSwapOrderHelper,
       mockSwapsRepository,
+      mockLoggingService,
     );
   });
 
@@ -401,7 +409,7 @@ describe('SwapTransferInfoMapper', () => {
     });
   });
 
-  it('should throw if the app is not allowed', async () => {
+  it('should return null if the app is not allowed', async () => {
     /**
      * https://api.cow.fi/mainnet/api/v1/transactions/0x22fe458f3a70aaf83d42af2040f3b98404526b4ca588624e158c4b1f287ced8c/orders
      */
@@ -521,16 +529,16 @@ describe('SwapTransferInfoMapper', () => {
     );
     mockSwapOrderHelper.isAppAllowed.mockReturnValue(false);
 
-    await expect(
-      target.mapSwapTransferInfo({
-        sender,
-        recipient,
-        direction,
-        chainId,
-        safeAddress,
-        transferInfo,
-        domainTransfer,
-      }),
-    ).rejects.toThrow('Unsupported App: CoW Swap');
+    const actual = await target.mapSwapTransferInfo({
+      sender,
+      recipient,
+      direction,
+      chainId,
+      safeAddress,
+      transferInfo,
+      domainTransfer,
+    });
+
+    expect(actual).toEqual(null);
   });
 });
