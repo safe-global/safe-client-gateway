@@ -1,6 +1,7 @@
-import { dbFactory } from '@/__tests__/db.factory';
+import { TestDbFactory } from '@/__tests__/db.factory';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
-import { Sql } from 'postgres';
+import { faker } from '@faker-js/faker';
+import postgres, { Sql } from 'postgres';
 
 interface AccountDataTypeRow {
   id: number;
@@ -12,11 +13,18 @@ interface AccountDataTypeRow {
 }
 
 describe('Migration 00002_account-data-types', () => {
-  const sql = dbFactory();
-  const migrator = new PostgresDatabaseMigrator(sql);
+  let sql: postgres.Sql;
+  let migrator: PostgresDatabaseMigrator;
+  const testDbFactory = new TestDbFactory();
+
+  beforeAll(async () => {
+    sql = await testDbFactory.createTestDatabase(faker.string.uuid());
+    migrator = new PostgresDatabaseMigrator(sql);
+  });
 
   afterAll(async () => {
-    await sql.end();
+    await testDbFactory.dropTestDatabase(sql);
+    await testDbFactory.close();
   });
 
   it('runs successfully', async () => {
