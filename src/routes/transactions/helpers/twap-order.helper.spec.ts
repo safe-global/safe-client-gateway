@@ -1,3 +1,4 @@
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
@@ -20,7 +21,15 @@ describe('TwapOrderHelper', () => {
 
   const multiSendDecoder = new MultiSendDecoder();
   const composableCowDecoder = new ComposableCowDecoder();
-  const target = new TwapOrderHelper(multiSendDecoder, composableCowDecoder);
+  const configurationService = new FakeConfigurationService();
+  const allowedApps = new Set<string>();
+  configurationService.set('swaps.restrictApps', false);
+  const target = new TwapOrderHelper(
+    configurationService,
+    multiSendDecoder,
+    composableCowDecoder,
+    allowedApps,
+  );
 
   describe('findTwapOrder', () => {
     describe('direct createWithContext call', () => {

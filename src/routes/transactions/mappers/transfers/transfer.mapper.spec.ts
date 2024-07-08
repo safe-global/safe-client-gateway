@@ -11,6 +11,7 @@ import {
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenType } from '@/domain/tokens/entities/token.entity';
 import { TokenRepository } from '@/domain/tokens/token.repository';
+import { ILoggingService } from '@/logging/logging.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
@@ -44,6 +45,10 @@ const swapTransferInfoMapper = jest.mocked({
   mapSwapTransferInfo: jest.fn(),
 } as jest.MockedObjectDeep<SwapTransferInfoMapper>);
 
+const mockLoggingService = jest.mocked({
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>);
+
 describe('Transfer mapper (Unit)', () => {
   let mapper: TransferMapper;
 
@@ -55,6 +60,7 @@ describe('Transfer mapper (Unit)', () => {
       tokenRepository,
       swapTransferInfoMapper,
       addressInfoHelper,
+      mockLoggingService,
     );
     mapper = new TransferMapper(transferInfoMapper);
   });
@@ -111,7 +117,9 @@ describe('Transfer mapper (Unit)', () => {
         const token = tokenBuilder()
           .with('address', getAddress(transfer.tokenAddress))
           .build();
-        swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue(null);
+        swapTransferInfoMapper.mapSwapTransferInfo.mockRejectedValue(
+          'Not settlement',
+        );
         addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
         tokenRepository.getToken.mockResolvedValue(token);
 
@@ -153,7 +161,9 @@ describe('Transfer mapper (Unit)', () => {
             .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
-          swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue(null);
+          swapTransferInfoMapper.mapSwapTransferInfo.mockRejectedValue(
+            'Not settlement',
+          );
           addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
           tokenRepository.getToken.mockResolvedValue(token);
 
@@ -646,7 +656,9 @@ describe('Transfer mapper (Unit)', () => {
       const untrustedErc20TransferWithoutValue = erc20TransferBuilder()
         .with('value', '0')
         .build();
-      swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue(null);
+      swapTransferInfoMapper.mapSwapTransferInfo.mockRejectedValue(
+        'Not settlement',
+      );
       addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
       tokenRepository.getToken
         .mockResolvedValueOnce(erc721Token)
