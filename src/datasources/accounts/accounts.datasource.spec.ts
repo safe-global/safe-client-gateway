@@ -1,12 +1,10 @@
-import { dbFactory } from '@/__tests__/db.factory';
+import { TestDbFactory } from '@/__tests__/db.factory';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
+import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import postgres from 'postgres';
 import { getAddress } from 'viem';
-
-const sql = dbFactory();
-const migrator = new PostgresDatabaseMigrator(sql);
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -16,13 +14,14 @@ const mockLoggingService = {
 
 describe('AccountsDatasource tests', () => {
   let target: AccountsDatasource;
+  let migrator: PostgresDatabaseMigrator;
+  let sql: postgres.Sql;
+  const testDbFactory = new TestDbFactory();
 
-  // Run pending migrations before tests
   beforeAll(async () => {
+    sql = await testDbFactory.createTestDatabase(faker.string.uuid());
+    migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
-  });
-
-  beforeEach(() => {
     target = new AccountsDatasource(sql, mockLoggingService);
   });
 
@@ -31,7 +30,7 @@ describe('AccountsDatasource tests', () => {
   });
 
   afterAll(async () => {
-    await sql.end();
+    await testDbFactory.destroyTestDatabase(sql);
   });
 
   describe('createAccount', () => {
