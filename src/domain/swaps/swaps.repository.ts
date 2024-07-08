@@ -21,8 +21,6 @@ export interface ISwapsRepository {
     chainId: string,
     appDataHash: `0x${string}`,
   ): Promise<FullAppData>;
-
-  clearApi(chainId: string): void;
 }
 
 @Injectable()
@@ -51,9 +49,5 @@ export class SwapsRepository implements ISwapsRepository {
     const api = await this.swapsApiFactory.getApi(chainId);
     const fullAppData = await api.getFullAppData(appDataHash);
     return FullAppDataSchema.parse(fullAppData);
-  }
-
-  clearApi(chainId: string): void {
-    this.swapsApiFactory.destroyApi(chainId);
   }
 }
