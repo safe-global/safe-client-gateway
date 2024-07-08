@@ -1,7 +1,7 @@
-import { dbFactory } from '@/__tests__/db.factory';
+import { TestDbFactory } from '@/__tests__/db.factory';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { faker } from '@faker-js/faker';
-import { Sql } from 'postgres';
+import postgres from 'postgres';
 
 interface AccountRow {
   id: number;
@@ -29,21 +29,24 @@ interface AccountDataSettingsRow {
 }
 
 describe('Migration 00003_account-data-settings', () => {
-  const sql = dbFactory();
-  const migrator = new PostgresDatabaseMigrator(sql);
+  let sql: postgres.Sql;
+  let migrator: PostgresDatabaseMigrator;
+  const testDbFactory = new TestDbFactory();
 
   beforeAll(async () => {
-    await sql`DROP TABLE IF EXISTS account_data_types, account_data_settings CASCADE;`;
+    sql = await testDbFactory.createTestDatabase(faker.string.uuid());
+    migrator = new PostgresDatabaseMigrator(sql);
   });
 
   afterAll(async () => {
-    await sql.end();
+    await testDbFactory.dropTestDatabase(sql);
+    await testDbFactory.close();
   });
 
   it('runs successfully', async () => {
     const result = await migrator.test({
       migration: '00003_account-data-settings',
-      after: async (sql: Sql) => {
+      after: async (sql: postgres.Sql) => {
         return {
           account_data_types: {
             columns:
@@ -82,7 +85,7 @@ describe('Migration 00003_account-data-settings', () => {
     const result: { before: unknown; after: AccountDataSettingsRow[] } =
       await migrator.test({
         migration: '00003_account-data-settings',
-        after: async (sql: Sql): Promise<AccountDataSettingsRow[]> => {
+        after: async (sql: postgres.Sql): Promise<AccountDataSettingsRow[]> => {
           await sql`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRow.id}, ${accountDataTypeRow.id});`;
           return await sql<
             AccountDataSettingsRow[]

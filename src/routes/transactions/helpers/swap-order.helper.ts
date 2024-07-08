@@ -7,7 +7,11 @@ import {
 } from '@/domain/tokens/token.repository.interface';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Token, TokenType } from '@/domain/tokens/entities/token.entity';
-import { Order, OrderKind } from '@/domain/swaps/entities/order.entity';
+import {
+  KnownOrder,
+  Order,
+  OrderKind,
+} from '@/domain/swaps/entities/order.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import {
@@ -87,7 +91,7 @@ export class SwapOrderHelper {
   async getOrder(args: {
     chainId: string;
     orderUid: `0x${string}`;
-  }): Promise<Order & { kind: Exclude<Order['kind'], 'unknown'> }> {
+  }): Promise<KnownOrder> {
     const order = await this.swapsRepository.getOrder(
       args.chainId,
       args.orderUid,
@@ -119,6 +123,7 @@ export class SwapOrderHelper {
    * @param order - the order to which we should verify the app data with
    * @returns true if the app is allowed, false otherwise.
    */
+  // TODO: Refactor with confirmation view, swaps and TWAPs
   isAppAllowed(order: Order): boolean {
     if (!this.restrictApps) return true;
     const appCode = order.fullAppData?.appCode;

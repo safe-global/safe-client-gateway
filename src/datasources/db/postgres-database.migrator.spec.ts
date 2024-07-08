@@ -1,8 +1,9 @@
-import { dbFactory } from '@/__tests__/db.factory';
-import postgres from 'postgres';
-import path from 'node:path';
-import fs from 'node:fs';
+import { TestDbFactory } from '@/__tests__/db.factory';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { faker } from '@faker-js/faker';
+import fs from 'node:fs';
+import path from 'node:path';
+import postgres from 'postgres';
 
 const folder = path.join(__dirname, 'migrations');
 const migrations: Array<{
@@ -51,19 +52,19 @@ type ExtendedTestRow = { a: string; b: number; c: Date };
 describe('PostgresDatabaseMigrator tests', () => {
   let sql: postgres.Sql;
   let target: PostgresDatabaseMigrator;
+  const testDbFactory = new TestDbFactory();
 
-  beforeEach(() => {
-    sql = dbFactory();
+  beforeAll(async () => {
+    sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     target = new PostgresDatabaseMigrator(sql);
   });
 
-  afterEach(async () => {
-    // Drop example table after each test
-    await sql`drop table if exists test`;
+  afterAll(async () => {
+    await testDbFactory.dropTestDatabase(sql);
+    await testDbFactory.close();
+  });
 
-    // Close connection after each test
-    await sql.end();
-
+  afterEach(() => {
     // Remove migrations folder after each test
     fs.rmSync(folder, { recursive: true, force: true });
   });

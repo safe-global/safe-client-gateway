@@ -14,8 +14,6 @@ export class SwapOrderMapper {
     private readonly swapOrderHelper: SwapOrderHelper,
   ) {}
 
-  // TODO: Handling of restricted Apps of TWAP mapping
-
   async mapSwapOrder(
     chainId: string,
     transaction: { data: `0x${string}` },
@@ -27,6 +25,7 @@ export class SwapOrderMapper {
     }
     const order = await this.swapOrderHelper.getOrder({ chainId, orderUid });
 
+    // TODO: Refactor with confirmation view, swaps and TWAPs
     if (!this.swapOrderHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
