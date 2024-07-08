@@ -184,7 +184,7 @@ describe('AccountsDatasource tests', () => {
       );
     });
 
-    it('updates existent account data settings successfully', async () => {
+    it('updates existing account data settings successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const upsertAccountDataSettingsDto =
         upsertAccountDataSettingsDtoBuilder().build();
