@@ -23,8 +23,7 @@ describe('Migration 00002_account-data-types', () => {
   });
 
   afterAll(async () => {
-    await testDbFactory.dropTestDatabase(sql);
-    await testDbFactory.close();
+    await testDbFactory.destroyTestDatabase(sql);
   });
 
   it('runs successfully', async () => {

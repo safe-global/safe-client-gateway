@@ -30,8 +30,7 @@ describe('AccountsDatasource tests', () => {
   });
 
   afterAll(async () => {
-    await testDbFactory.dropTestDatabase(sql);
-    await testDbFactory.close();
+    await testDbFactory.destroyTestDatabase(sql);
   });
 
   describe('createAccount', () => {
