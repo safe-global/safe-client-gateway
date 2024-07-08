@@ -64,6 +64,7 @@ export class AccountsDatasource implements IAccountsDatasource {
   }
 
   async getDataTypes(): Promise<AccountDataType[]> {
+    // TODO: add caching with clearing mechanism.
     return this.sql<[AccountDataType]>`SELECT * FROM account_data_types`;
   }
 
@@ -91,16 +92,15 @@ export class AccountsDatasource implements IAccountsDatasource {
     address: `0x${string}`,
     upsertAccountDataSettings: UpsertAccountDataSettingsDto,
   ): Promise<AccountDataSetting[]> {
-    const account = await this.getAccount(address);
-    const dataTypes = await this.getDataTypes();
     const { accountDataSettings } = upsertAccountDataSettings;
+    await this.checkDataTypes(accountDataSettings);
+    const account = await this.getAccount(address);
     await this.sql.begin(async (sql) => {
       return Promise.all(
-        accountDataSettings.map(async (ads) => {
-          const dataType = this.getDataType(dataTypes, ads.dataTypeName);
+        accountDataSettings.map(async (accountDataSetting) => {
           return sql`
             INSERT INTO account_data_settings (account_id, account_data_type_id, enabled)
-            VALUES (${account.id}, ${dataType.id}, ${ads.enabled})
+            VALUES (${account.id}, ${accountDataSetting.id}, ${accountDataSetting.enabled})
             ON CONFLICT (account_id, account_data_type_id) DO UPDATE SET enabled = EXCLUDED.enabled
           `.catch((e) => {
             throw new UnprocessableEntityException(
@@ -114,19 +114,26 @@ export class AccountsDatasource implements IAccountsDatasource {
     return this.getAccountDataSettings(address);
   }
 
-  private getDataType(
-    dataTypes: AccountDataType[],
-    name: string,
-  ): AccountDataType {
-    const dataType = dataTypes.find((dt) => dt.name === name);
-    if (!dataType) {
-      throw new UnprocessableEntityException('Invalid data type.');
-    }
-    if (!dataType.is_active) {
+  private getActiveDataTypes(): Promise<AccountDataType[]> {
+    // TODO: add caching with clearing mechanism.
+    return this.sql<[AccountDataType]>`
+      SELECT * FROM account_data_types WHERE is_active = true
+    `;
+  }
+
+  private async checkDataTypes(
+    accountDataSettings: UpsertAccountDataSettingsDto['accountDataSettings'],
+  ): Promise<void> {
+    const activeDataTypes = await this.getActiveDataTypes();
+    const activeDataTypeIds = activeDataTypes.map((ads) => ads.id);
+    if (
+      !accountDataSettings
+        .map((ads) => ads.id)
+        .every((id) => activeDataTypeIds.includes(Number(id)))
+    ) {
       throw new UnprocessableEntityException(
-        `Data type ${dataType.name} is inactive.`,
+        `Data types not found or not active.`,
       );
     }
-    return dataType;
   }
 }

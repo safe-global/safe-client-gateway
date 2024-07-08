@@ -61,17 +61,17 @@ export class AccountsService {
     address: `0x${string}`;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]> {
-    const domainAccountDataSettings =
-      await this.accountsRepository.upsertAccountDataSettings({
+    const [domainAccountDataSettings, dataTypes] = await Promise.all([
+      this.accountsRepository.upsertAccountDataSettings({
         authPayload: args.authPayload,
         address: args.address,
         upsertAccountDataSettings: {
           accountDataSettings:
             args.upsertAccountDataSettingsDto.accountDataSettings,
         },
-      });
-
-    const dataTypes = await this.accountsRepository.getDataTypes();
+      }),
+      this.accountsRepository.getDataTypes(),
+    ]);
 
     return domainAccountDataSettings.map((domainAccountDataSetting) =>
       this.mapDataSetting(dataTypes, domainAccountDataSetting),

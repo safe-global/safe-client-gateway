@@ -51,7 +51,6 @@ export class AccountsRepository implements IAccountsRepository {
   }
 
   async getDataTypes(): Promise<AccountDataType[]> {
-    // TODO: add caching with clearing mechanism.
     return this.datasource.getDataTypes();
   }
 

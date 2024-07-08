@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 class UpsertAccountDataSettingDto {
   @ApiProperty()
-  dataTypeName!: string;
+  id!: string;
   @ApiProperty()
   enabled!: boolean;
 }

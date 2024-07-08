@@ -73,44 +73,51 @@ describe('Migration 00003_account-data-settings', () => {
   it('should add one AccountDataSettings and update its row timestamps', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
     const dataTypeName = faker.lorem.word();
-    await sql`INSERT INTO accounts (address) VALUES (${accountAddress});`;
-    const [accountRow] = await sql<
-      AccountRow[]
-    >`SELECT * FROM accounts WHERE address = ${accountAddress};`;
-    await sql`INSERT INTO account_data_types (name) VALUES (${dataTypeName});`;
-    const [accountDataTypeRow] = await sql<
-      AccountDataTypeRow[]
-    >`SELECT * FROM account_data_types WHERE name = ${dataTypeName}`;
+    let accountRows: AccountRow[] = [];
+    let accountDataTypeRows: AccountDataTypeRow[] = [];
 
-    const result: { before: unknown; after: AccountDataSettingsRow[] } =
-      await migrator.test({
-        migration: '00003_account-data-settings',
-        after: async (sql: postgres.Sql): Promise<AccountDataSettingsRow[]> => {
-          await sql`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRow.id}, ${accountDataTypeRow.id});`;
-          return await sql<
-            AccountDataSettingsRow[]
-          >`SELECT * FROM account_data_settings`;
-        },
-      });
+    const {
+      after: accountDataSettingRows,
+    }: { after: AccountDataSettingsRow[] } = await migrator.test({
+      migration: '00003_account-data-settings',
+      after: async (sql: postgres.Sql): Promise<AccountDataSettingsRow[]> => {
+        accountRows = await sql<
+          AccountRow[]
+        >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
+        accountDataTypeRows = await sql<
+          AccountDataTypeRow[]
+        >`INSERT INTO account_data_types (name) VALUES (${dataTypeName}) RETURNING *;`;
+        return sql<
+          AccountDataSettingsRow[]
+        >`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRows[0].id}, ${accountDataTypeRows[0].id}) RETURNING *;`;
+      },
+    });
 
-    expect(result.after[0].account_id).toBe(accountRow.id);
-    expect(result.after[0].account_data_type_id).toBe(accountDataTypeRow.id);
-    expect(result.after[0].enabled).toBe(false);
+    expect(accountDataSettingRows[0]).toMatchObject({
+      account_id: accountRows[0].id,
+      account_data_type_id: accountDataTypeRows[0].id,
+      enabled: false,
+      created_at: expect.any(Date),
+      updated_at: expect.any(Date),
+    });
 
     // created_at and updated_at should be the same after the row is created
-    const createdAt = new Date(result.after[0].created_at);
-    const updatedAt = new Date(result.after[0].updated_at);
+    const createdAt = new Date(accountDataSettingRows[0].created_at);
+    const updatedAt = new Date(accountDataSettingRows[0].updated_at);
     expect(createdAt).toBeInstanceOf(Date);
     expect(createdAt).toStrictEqual(updatedAt);
 
     // only updated_at should be updated after the row is updated
-    await sql`UPDATE account_data_settings set enabled = true WHERE account_id = ${result.after[0].account_id} AND account_data_type_id = ${result.after[0].account_data_type_id};`;
     const afterUpdate = await sql<
       AccountDataTypeRow[]
-    >`SELECT * FROM account_data_settings WHERE account_id = ${result.after[0].account_id} AND account_data_type_id = ${result.after[0].account_data_type_id}`;
+    >`UPDATE account_data_settings
+      SET enabled = true
+      WHERE account_id = ${accountDataSettingRows[0].account_id}
+        AND account_data_type_id = ${accountDataSettingRows[0].account_data_type_id}
+      RETURNING *;`;
+
     const updatedAtAfterUpdate = new Date(afterUpdate[0].updated_at);
     const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
-
     expect(createdAtAfterUpdate).toStrictEqual(createdAt);
     expect(updatedAtAfterUpdate.getTime()).toBeGreaterThan(createdAt.getTime());
   });

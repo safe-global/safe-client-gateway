@@ -1,10 +1,11 @@
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 
 export class UpsertAccountDataSettingsDto
   implements z.infer<typeof UpsertAccountDataSettingsDtoSchema>
 {
   accountDataSettings: {
-    dataTypeName: string;
+    id: string;
     enabled: boolean;
   }[];
 
@@ -14,7 +15,7 @@ export class UpsertAccountDataSettingsDto
 }
 
 export const UpsertAccountDataSettingDtoSchema = z.object({
-  dataTypeName: z.string(),
+  id: NumericStringSchema,
   enabled: z.boolean(),
 });
 
