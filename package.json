@@ -25,14 +25,14 @@
     "test:all:cov": "jest --coverage --config ./test/jest-all.json"
   },
   "dependencies": {
-    "@nestjs/cli": "^10.3.2",
+    "@nestjs/cli": "^10.4.2",
     "@nestjs/common": "^10.3.10",
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.3.10",
     "@nestjs/platform-express": "^10.3.10",
     "@nestjs/serve-static": "^4.0.2",
     "@nestjs/swagger": "^7.3.1",
-    "@safe-global/safe-deployments": "^1.37.0",
+    "@safe-global/safe-deployments": "^1.37.1",
     "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.4",
     "cookie-parser": "^1.4.6",
@@ -44,7 +44,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "semver": "^7.6.2",
-    "viem": "^2.16.5",
+    "viem": "^2.17.3",
     "winston": "^3.13.0",
     "zod": "^3.23.8"
   },
