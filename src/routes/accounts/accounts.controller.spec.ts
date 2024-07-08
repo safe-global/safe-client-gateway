@@ -760,7 +760,7 @@ describe('AccountsController', () => {
         .send(upsertAccountDataSettingsDtoBuilder().build())
         .expect(500)
         .expect({
-          statusCode: 500,
+          code: 500,
           message: 'Internal server error',
         });
 
