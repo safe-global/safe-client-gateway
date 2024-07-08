@@ -1,3 +1,8 @@
+import {
+  conditionalOrderParamsBuilder,
+  createWithContextEncoder,
+  staticInputEncoder,
+} from '@/domain/swaps/contracts/__tests__/encoders/composable-cow-encoder.builder';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 
 describe('ComposableCowDecoder', () => {
@@ -5,26 +10,29 @@ describe('ComposableCowDecoder', () => {
 
   describe('decodeTwapStruct', () => {
     it('should decode a createWithContext call', () => {
-      const data =
-        '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a500000000000000000000000000000000000000000000000000000019011f294a00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b1400000000000000000000000031eac7f0141837b266de30f4dc9af15629bd538100000000000000000000000000000000000000000000000b941d039eed310b36000000000000000000000000000000000000000000000000087bbc924df9167e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000007080000000000000000000000000000000000000000000000000000000000000000f7be7261f56698c258bf75f888d68a00c85b22fb21958b9009c719eb88aebda00000000000000000000000000000000000000000000000000000000000000000';
+      const staticInput = staticInputEncoder();
+      const conditionalOrderParams = conditionalOrderParamsBuilder()
+        .with('staticInput', staticInput.encode())
+        // TWAP handler address
+        .with('handler', '0x6cF1e9cA41f7611dEf408122793c358a3d11E5a5')
+        .build();
+      const createWithContext = createWithContextEncoder().with(
+        'params',
+        conditionalOrderParams,
+      );
+      const data = createWithContext.encode();
 
       const result = target.decodeTwapStruct(data);
 
-      expect(result).toStrictEqual({
-        appData:
-          '0xf7be7261f56698c258bf75f888d68a00c85b22fb21958b9009c719eb88aebda0',
-        buyToken: '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14',
-        minPartLimit: BigInt('611289510998251134'),
-        n: BigInt('2'),
-        partSellAmount: BigInt('213586875483862141750'),
-        receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-        sellToken: '0xbe72E441BF55620febc26715db68d3494213D8Cb',
-        span: BigInt('0'),
-        t: BigInt('1800'),
-        t0: BigInt('0'),
-      });
+      expect(result).toStrictEqual(staticInput.build());
     });
 
-    it.todo('should throw if TWAP handler is invalid');
+    it('should throw if TWAP handler is invalid', () => {
+      const data = createWithContextEncoder().encode();
+
+      expect(() => target.decodeTwapStruct(data)).toThrow(
+        'Invalid TWAP handler',
+      );
+    });
   });
 });
