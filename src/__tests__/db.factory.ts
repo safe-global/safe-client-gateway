@@ -49,11 +49,11 @@ export class TestDbFactory {
       db: dbName,
       user: username,
       password,
-      ssl: sslEnabled && {
+      ssl: sslEnabled ? {
         requestCert: ssl.requestCert,
         rejectUnauthorized: ssl.rejectUnauthorized,
         ca: fs.readFileSync(TestDbFactory.TEST_CERTIFICATE_PATH, 'utf8'),
-      },
+      } : false,
     });
   }
 }
