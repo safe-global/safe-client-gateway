@@ -1552,14 +1552,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@redis/client@npm:1.5.16":
-  version: 1.5.16
-  resolution: "@redis/client@npm:1.5.16"
+"@redis/client@npm:1.5.17":
+  version: 1.5.17
+  resolution: "@redis/client@npm:1.5.17"
   dependencies:
     cluster-key-slot: "npm:1.1.2"
     generic-pool: "npm:3.9.0"
     yallist: "npm:4.0.0"
-  checksum: 10/54bd45dcdb980e9682fc9aaad36607a34b6c05ebc733fc9a132db33ce77b3ff63c229d8d8b43ce2d7db115f31ff2fefcbcc7dceeaa1fc88c03e7c8012e456adf
+  checksum: 10/f7c3b978829b7151363545c81844cf75ecdb7bddf667f60d3bc4598e4fb3e957ebae6f2ed6b4bfb54038be6342bbe1789fd40e8193f6d49ac8861af279fecec8
   languageName: node
   linkType: hard
 
@@ -7015,17 +7015,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"redis@npm:^4.6.14":
-  version: 4.6.14
-  resolution: "redis@npm:4.6.14"
+"redis@npm:^4.6.15":
+  version: 4.6.15
+  resolution: "redis@npm:4.6.15"
   dependencies:
     "@redis/bloom": "npm:1.2.0"
-    "@redis/client": "npm:1.5.16"
+    "@redis/client": "npm:1.5.17"
     "@redis/graph": "npm:1.1.1"
     "@redis/json": "npm:1.0.6"
     "@redis/search": "npm:1.1.6"
     "@redis/time-series": "npm:1.0.5"
-  checksum: 10/5a00d678ea39a2e2fdaa961b593873e21677922b72671b00ab0feda3469506bc89c13221e56b1c00994504538ea45dd7ed6cde5d8be8da308a26f5d2424d0f85
+  checksum: 10/72f74fc80c89a8251e997b2c55bd05f5556191adeafe806ea17842ece5d2f80be31a76e161a9f0badcc5c35924044d642de66d3fc27215525f7332e9862e56d3
   languageName: node
   linkType: hard
 
@@ -7246,7 +7246,7 @@ __metadata:
     nestjs-cls: "npm:^4.3.0"
     postgres: "npm:^3.4.4"
     prettier: "npm:^3.3.2"
-    redis: "npm:^4.6.14"
+    redis: "npm:^4.6.15"
     reflect-metadata: "npm:^0.2.2"
     rxjs: "npm:^7.8.1"
     semver: "npm:^7.6.2"
