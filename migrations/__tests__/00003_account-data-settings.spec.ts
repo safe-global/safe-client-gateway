@@ -2,6 +2,7 @@ import { TestDbFactory } from '@/__tests__/db.factory';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { faker } from '@faker-js/faker';
 import postgres from 'postgres';
+import { getAddress } from 'viem';
 
 interface AccountRow {
   id: number;
@@ -39,8 +40,7 @@ describe('Migration 00003_account-data-settings', () => {
   });
 
   afterAll(async () => {
-    await testDbFactory.dropTestDatabase(sql);
-    await testDbFactory.close();
+    await testDbFactory.destroyTestDatabase(sql);
   });
 
   it('runs successfully', async () => {
