@@ -1,5 +1,5 @@
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 
 @Injectable()
 export class TransactionDataFinder {
@@ -36,3 +36,10 @@ export class TransactionDataFinder {
     return null;
   }
 }
+
+@Module({
+  imports: [],
+  providers: [TransactionDataFinder, MultiSendDecoder],
+  exports: [TransactionDataFinder],
+})
+export class TransactionDataFinderModule {}

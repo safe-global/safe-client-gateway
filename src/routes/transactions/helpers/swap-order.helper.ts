@@ -1,5 +1,8 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
-import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
+import {
+  TransactionDataFinder,
+  TransactionDataFinderModule,
+} from '@/routes/transactions/helpers/transaction-data-finder.helper';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import {
   ITokenRepository,
@@ -183,10 +186,10 @@ function allowedAppsFactory(
     ChainsRepositoryModule,
     SwapsRepositoryModule,
     TokenRepositoryModule,
+    TransactionDataFinderModule,
   ],
   providers: [
     SwapOrderHelper,
-    TransactionDataFinder,
     GPv2Decoder,
     {
       provide: 'SWAP_ALLOWED_APPS',

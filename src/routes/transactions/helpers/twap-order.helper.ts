@@ -1,4 +1,7 @@
-import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
+import {
+  TransactionDataFinder,
+  TransactionDataFinderModule,
+} from '@/routes/transactions/helpers/transaction-data-finder.helper';
 import {
   ComposableCowDecoder,
   TwapStruct,
@@ -194,10 +197,9 @@ function allowedAppsFactory(
 }
 
 @Module({
-  imports: [],
+  imports: [TransactionDataFinderModule],
   providers: [
     ComposableCowDecoder,
-    TransactionDataFinder,
     TwapOrderHelper,
     {
       provide: 'SWAP_ALLOWED_APPS',
