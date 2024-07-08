@@ -71,7 +71,7 @@ describe('Migration 00003_account-data-settings', () => {
   });
 
   it('should add one AccountDataSettings and update its row timestamps', async () => {
-    const accountAddress = faker.finance.ethereumAddress();
+    const accountAddress = getAddress(faker.finance.ethereumAddress());
     const dataTypeName = faker.lorem.word();
     await sql`INSERT INTO accounts (address) VALUES (${accountAddress});`;
     const [accountRow] = await sql<
