@@ -34,8 +34,16 @@ describe('GPv2Decoder', () => {
     expect(() => target.decodeFunctionData({ data })).toThrow();
   });
 
-  // TODO: Add test - should've been added in first swaps integration
-  it.todo('gets orderUid from setPreSignature function call');
+  it('gets orderUid from setPreSignature function call', () => {
+    const setPreSignature = setPreSignatureEncoder();
+    const args = setPreSignature.build();
+
+    const orderUid = target.getOrderUidFromSetPreSignature(
+      setPreSignature.encode(),
+    );
+
+    expect(orderUid).toBe(args.orderUid);
+  });
 
   it('should decode an order from a settle function call', () => {
     /**

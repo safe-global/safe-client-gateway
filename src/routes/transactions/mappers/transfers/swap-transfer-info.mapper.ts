@@ -38,13 +38,15 @@ export class SwapTransferInfoMapper {
     safeAddress: `0x${string}`;
     transferInfo: Transfer;
     domainTransfer: DomainTransfer;
-  }): Promise<SwapTransferTransactionInfo | null> {
+  }): Promise<SwapTransferTransactionInfo> {
     // If settlement contract is not interacted with, not a swap fulfillment
+    // TODO: Also check data is of `settle` call as otherwise _any_ call
+    // to settlement contract could be considered a swap fulfillment
     if (
       !this.isSettlement(args.sender.value) &&
       !this.isSettlement(args.recipient.value)
     ) {
-      return null;
+      throw new Error('Neither sender nor receiver are settlement contract');
     }
 
     const orders = await this.swapsRepository.getOrders(
@@ -56,7 +58,11 @@ export class SwapTransferInfoMapper {
     const order = this.findOrderByTransfer(orders, args.domainTransfer);
 
     if (!order) {
-      return null;
+      throw new Error('Transfer not found in order');
+    }
+
+    if (!this.swapOrderHelper.isAppAllowed(order)) {
+      throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
 
     const [sellToken, buyToken] = await Promise.all([
