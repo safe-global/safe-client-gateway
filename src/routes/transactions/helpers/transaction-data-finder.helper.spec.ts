@@ -24,6 +24,7 @@ describe('TransactionDataFinder', () => {
         args: [getAddress(faker.finance.ethereumAddress()), BigInt(0)],
       }),
     };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => true;
 
     const result = target.findTransactionData(isTransactionData, transaction);
@@ -65,6 +66,7 @@ describe('TransactionDataFinder', () => {
         args: [getAddress(faker.finance.ethereumAddress()), BigInt(0)],
       }),
     };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => false;
 
     const result = target.findTransactionData(isTransactionData, transaction);
