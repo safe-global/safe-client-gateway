@@ -67,6 +67,15 @@ export class AccountsDatasource implements IAccountsDatasource {
     return this.sql<[AccountDataType]>`SELECT * FROM account_data_types`;
   }
 
+  async getAccountDataSettings(
+    address: `0x${string}`,
+  ): Promise<AccountDataSetting[]> {
+    const account = await this.getAccount(address);
+    return this.sql<[AccountDataSetting]>`
+      SELECT * FROM account_data_settings WHERE account_id = ${account.id}
+    `;
+  }
+
   /**
    * Adds or updates the existing account data settings for a given address/account.
    * Requirements:
@@ -85,31 +94,39 @@ export class AccountsDatasource implements IAccountsDatasource {
     const account = await this.getAccount(address);
     const dataTypes = await this.getDataTypes();
     const { accountDataSettings } = upsertAccountDataSettings;
+    await this.sql.begin(async (sql) => {
+      return Promise.all(
+        accountDataSettings.map(async (ads) => {
+          const dataType = this.getDataType(dataTypes, ads.dataTypeName);
+          return sql`
+            INSERT INTO account_data_settings (account_id, account_data_type_id, enabled)
+            VALUES (${account.id}, ${dataType.id}, ${ads.enabled})
+            ON CONFLICT (account_id, account_data_type_id) DO UPDATE SET enabled = EXCLUDED.enabled
+          `.catch((e) => {
+            throw new UnprocessableEntityException(
+              `Error updating data settings: ${asError(e).message}`,
+            );
+          });
+        }),
+      );
+    });
 
-    const result = [];
-    for (const ads of accountDataSettings) {
-      const dataType = dataTypes.find((dt) => dt.name === ads.dataTypeName);
-      if (!dataType) {
-        throw new UnprocessableEntityException('Invalid data type.');
-      }
-      if (!dataType.is_active) {
-        throw new UnprocessableEntityException(
-          `Data type ${dataType.name} is inactive.`,
-        );
-      }
-      const [inserted] = await this.sql<[AccountDataSetting]>`
-        INSERT INTO account_data_settings (account_id, account_data_type_id, enabled)
-        VALUES (${account.id}, ${dataType.id}, ${ads.enabled})
-        ON CONFLICT (account_id, account_data_type_id) DO UPDATE SET enabled = EXCLUDED.enabled
-        RETURNING *
-      `.catch((e) => {
-        throw new UnprocessableEntityException(
-          `Error updating data settings: ${asError(e).message}`,
-        );
-      });
-      result.push(inserted);
+    return this.getAccountDataSettings(address);
+  }
+
+  private getDataType(
+    dataTypes: AccountDataType[],
+    name: string,
+  ): AccountDataType {
+    const dataType = dataTypes.find((dt) => dt.name === name);
+    if (!dataType) {
+      throw new UnprocessableEntityException('Invalid data type.');
     }
-
-    return result;
+    if (!dataType.is_active) {
+      throw new UnprocessableEntityException(
+        `Data type ${dataType.name} is inactive.`,
+      );
+    }
+    return dataType;
   }
 }

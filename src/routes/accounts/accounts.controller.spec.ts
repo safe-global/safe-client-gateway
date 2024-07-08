@@ -742,7 +742,7 @@ describe('AccountsController', () => {
         .expect(403);
     });
 
-    it('should propagate errors', async () => {
+    it('should throw an error if the datasource fails', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
@@ -758,7 +758,11 @@ describe('AccountsController', () => {
         .put(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(upsertAccountDataSettingsDtoBuilder().build())
-        .expect(500);
+        .expect(500)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
 
       expect(accountDataSource.upsertAccountDataSettings).toHaveBeenCalledTimes(
         1,
