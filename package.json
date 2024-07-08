@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@nestjs/schematics": "^10.1.1",
+    "@nestjs/schematics": "^10.1.2",
     "@nestjs/testing": "^10.3.10",
     "@types/amqplib": "^0",
     "@types/cookie-parser": "^1.4.7",
