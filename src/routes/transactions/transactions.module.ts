@@ -42,6 +42,7 @@ import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { TwapOrderMapperModule } from '@/routes/transactions/mappers/common/twap-order.mapper';
 import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.helper';
 import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
+import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.helper';
 
 @Module({
   controllers: [TransactionsController],
@@ -53,6 +54,7 @@ import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/
     SafeRepositoryModule,
     SafeAppsRepositoryModule,
     GPv2DecoderModule,
+    SwapAppsHelperModule,
     SwapOrderMapperModule,
     SwapOrderHelperModule,
     SwapsRepositoryModule,

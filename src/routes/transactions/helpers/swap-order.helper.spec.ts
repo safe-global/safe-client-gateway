@@ -44,14 +44,11 @@ const chainsRepositoryMock = jest.mocked(chainsRepository);
 describe('Swap Order Helper tests', () => {
   let target: SwapOrderHelper;
   const explorerBaseUrl = faker.internet.url();
-  const restrictApps = false;
-  const allowedApps = [faker.company.buzzNoun()];
 
   beforeEach(() => {
     jest.resetAllMocks();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'swaps.explorerBaseUri') return explorerBaseUrl;
-      if (key === 'swaps.restrictApps') return restrictApps;
       throw new Error(`Key ${key} not found.`);
     });
 
@@ -61,7 +58,6 @@ describe('Swap Order Helper tests', () => {
       tokenRepositoryMock,
       swapsRepositoryMock,
       configurationServiceMock,
-      new Set(allowedApps),
       chainsRepositoryMock,
     );
   });
@@ -212,45 +208,6 @@ describe('Swap Order Helper tests', () => {
       symbol: chain.nativeCurrency.symbol,
       type: 'NATIVE_TOKEN',
       trusted: true,
-    });
-  });
-
-  describe('Allowed Apps', () => {
-    beforeEach(() => {
-      jest.resetAllMocks();
-      configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'swaps.explorerBaseUri') return explorerBaseUrl;
-        if (key === 'swaps.restrictApps') return true;
-        throw new Error(`Key ${key} not found.`);
-      });
-
-      target = new SwapOrderHelper(
-        transactionDataFinderMock,
-        gpv2DecoderMock,
-        tokenRepositoryMock,
-        swapsRepositoryMock,
-        configurationServiceMock,
-        new Set(allowedApps),
-        chainsRepositoryMock,
-      );
-    });
-
-    it('should not allow app not in allowedApp', () => {
-      const order = orderBuilder().build();
-
-      const actual = target.isAppAllowed(order);
-
-      expect(actual).toBe(false);
-    });
-
-    it('should allow app in allowedApps', () => {
-      const order = orderBuilder()
-        .with('fullAppData', { appCode: allowedApps[0] })
-        .build();
-
-      const actual = target.isAppAllowed(order);
-
-      expect(actual).toBe(true);
     });
   });
 });

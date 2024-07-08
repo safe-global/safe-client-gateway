@@ -6,12 +6,17 @@ import {
   SwapOrderHelper,
   SwapOrderHelperModule,
 } from '@/routes/transactions/helpers/swap-order.helper';
+import {
+  SwapAppsHelper,
+  SwapAppsHelperModule,
+} from '@/routes/transactions/helpers/swap-apps.helper';
 
 @Injectable()
 export class SwapOrderMapper {
   constructor(
     private readonly gpv2Decoder: GPv2Decoder,
     private readonly swapOrderHelper: SwapOrderHelper,
+    private readonly swapAppsHelper: SwapAppsHelper,
   ) {}
 
   async mapSwapOrder(
@@ -25,8 +30,7 @@ export class SwapOrderMapper {
     }
     const order = await this.swapOrderHelper.getOrder({ chainId, orderUid });
 
-    // TODO: Refactor with confirmation view, swaps and TWAPs
-    if (!this.swapOrderHelper.isAppAllowed(order)) {
+    if (!this.swapAppsHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
 
@@ -77,7 +81,7 @@ export class SwapOrderMapper {
 }
 
 @Module({
-  imports: [SwapOrderHelperModule],
+  imports: [SwapOrderHelperModule, SwapAppsHelperModule],
   providers: [SwapOrderMapper, GPv2Decoder],
   exports: [SwapOrderMapper],
 })
