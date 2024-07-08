@@ -21,6 +21,8 @@ export interface ISwapsRepository {
     chainId: string,
     appDataHash: `0x${string}`,
   ): Promise<FullAppData>;
+
+  clearApi(chainId: string): void;
 }
 
 @Injectable()
@@ -31,13 +33,13 @@ export class SwapsRepository implements ISwapsRepository {
   ) {}
 
   async getOrder(chainId: string, orderUid: `0x${string}`): Promise<Order> {
-    const api = this.swapsApiFactory.get(chainId);
+    const api = await this.swapsApiFactory.getApi(chainId);
     const order = await api.getOrder(orderUid);
     return OrderSchema.parse(order);
   }
 
   async getOrders(chainId: string, txHash: string): Promise<Array<Order>> {
-    const api = this.swapsApiFactory.get(chainId);
+    const api = await this.swapsApiFactory.getApi(chainId);
     const order = await api.getOrders(txHash);
     return OrdersSchema.parse(order);
   }
@@ -46,8 +48,12 @@ export class SwapsRepository implements ISwapsRepository {
     chainId: string,
     appDataHash: `0x${string}`,
   ): Promise<FullAppData> {
-    const api = this.swapsApiFactory.get(chainId);
+    const api = await this.swapsApiFactory.getApi(chainId);
     const fullAppData = await api.getFullAppData(appDataHash);
     return FullAppDataSchema.parse(fullAppData);
+  }
+
+  clearApi(chainId: string): void {
+    this.swapsApiFactory.destroyApi(chainId);
   }
 }

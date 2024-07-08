@@ -10,6 +10,7 @@ import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
 import { BlockchainRepositoryModule } from '@/domain/blockchain/blockchain.repository.interface';
+import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { BlockchainRepositoryModule } from '@/domain/blockchain/blockchain.repos
     MessagesRepositoryModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
+    SwapsRepositoryModule,
     TransactionsRepositoryModule,
     QueuesRepositoryModule,
   ],
