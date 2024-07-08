@@ -28,7 +28,6 @@ import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manage
 import { safeCreatedEventBuilder } from '@/routes/cache-hooks/entities/__tests__/safe-created.build';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
-import { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication<Server>;
@@ -37,7 +36,6 @@ describe('Post Hook Events (Unit)', () => {
   let fakeCacheService: FakeCacheService;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: IConfigurationService;
-  let swapsApiFactory: ISwapsApiFactory;
   let blockchainApiManager: IBlockchainApiManager;
   let transactionApiManager: ITransactionApiManager;
   let balancesApiManager: IBalancesApiManager;
@@ -63,7 +61,6 @@ describe('Post Hook Events (Unit)', () => {
       IBlockchainApiManager,
     );
     transactionApiManager = moduleFixture.get(ITransactionApiManager);
-    swapsApiFactory = moduleFixture.get(ISwapsApiFactory);
     balancesApiManager = moduleFixture.get(IBalancesApiManager);
     authToken = configurationService.getOrThrow('auth.token');
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
@@ -871,43 +868,6 @@ describe('Post Hook Events (Unit)', () => {
       .expect(202);
 
     await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
-  });
-
-  it.each([
-    {
-      type: 'CHAIN_UPDATE',
-    },
-  ])('$type clears the swaps API', async (payload) => {
-    const swapsApi =
-      configurationService.getOrThrow<
-        ReturnType<typeof configuration>['swaps']['api']
-      >('swaps.api');
-    const chainId = faker.helpers.arrayElement(Object.keys(swapsApi));
-    const data = {
-      chainId: chainId,
-      ...payload,
-    };
-    networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
-          return Promise.resolve({
-            data: chainBuilder().with('chainId', chainId).build(),
-            status: 200,
-          });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
-      }
-    });
-    const api = await swapsApiFactory.getApi(chainId);
-
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(202);
-
-    const newApi = await swapsApiFactory.getApi(chainId);
-    expect(api).not.toBe(newApi);
   });
 
   it.each([

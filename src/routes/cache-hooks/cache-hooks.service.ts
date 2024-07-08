@@ -5,7 +5,6 @@ import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repo
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { ITransactionsRepository } from '@/domain/transactions/transactions.repository.interface';
 import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
@@ -36,8 +35,6 @@ export class CacheHooksService implements OnModuleInit {
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    @Inject(ISwapsRepository)
-    private readonly swapsRepository: ISwapsRepository,
     @Inject(ITransactionsRepository)
     private readonly transactionsRepository: ITransactionsRepository,
     @Inject(LoggingService)
@@ -325,7 +322,6 @@ export class CacheHooksService implements OnModuleInit {
       case EventType.CHAIN_UPDATE:
         promises.push(
           this.chainsRepository.clearChain(event.chainId).then(() => {
-            this.swapsRepository.clearApi(event.chainId);
             // RPC may have changed
             this.blockchainRepository.clearApi(event.chainId);
             // Transaction Service may have changed
