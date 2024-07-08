@@ -14,8 +14,7 @@ describe('Migrations', () => {
   });
 
   afterAll(async () => {
-    await testDbFactory.dropTestDatabase(sql);
-    await testDbFactory.close();
+    await testDbFactory.destroyTestDatabase(sql);
   });
 
   it('run successfully', async () => {
