@@ -16,6 +16,7 @@ import { TwapOrderMapper } from '@/routes/transactions/mappers/common/twap-order
 import { ILoggingService } from '@/logging/logging.interface';
 import { getAddress } from 'viem';
 import { fullAppDataBuilder } from '@/domain/swaps/entities/__tests__/full-app-data.builder';
+import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
 
 const loggingService = {
   debug: jest.fn(),
@@ -43,10 +44,11 @@ const mockChainsRepository = {
 describe('TwapOrderMapper', () => {
   const configurationService = new FakeConfigurationService();
   const multiSendDecoder = new MultiSendDecoder();
+  const transactionDataFinder = new TransactionDataFinder(multiSendDecoder);
   const gpv2Decoder = new GPv2Decoder(mockLoggingService);
   const allowedApps = new Set<string>();
   const swapOrderHelper = new SwapOrderHelper(
-    multiSendDecoder,
+    transactionDataFinder,
     gpv2Decoder,
     mockTokenRepository,
     mockSwapsRepository,
@@ -59,7 +61,7 @@ describe('TwapOrderMapper', () => {
   configurationService.set('swaps.restrictApps', false);
   const twapOrderHelper = new TwapOrderHelper(
     configurationService,
-    multiSendDecoder,
+    transactionDataFinder,
     composableCowDecoder,
     allowedApps,
   );
@@ -508,7 +510,7 @@ describe('TwapOrderMapper', () => {
       gpv2OrderHelper,
       new TwapOrderHelper(
         configurationService,
-        multiSendDecoder,
+        transactionDataFinder,
         composableCowDecoder,
         allowedApps,
       ),
@@ -555,7 +557,7 @@ describe('TwapOrderMapper', () => {
       gpv2OrderHelper,
       new TwapOrderHelper(
         configurationService,
-        multiSendDecoder,
+        transactionDataFinder,
         composableCowDecoder,
         new Set(['app1', 'app2']),
       ),
@@ -599,7 +601,7 @@ describe('TwapOrderMapper', () => {
       gpv2OrderHelper,
       new TwapOrderHelper(
         configurationService,
-        multiSendDecoder,
+        transactionDataFinder,
         composableCowDecoder,
         allowedApps,
       ),
@@ -701,7 +703,7 @@ describe('TwapOrderMapper', () => {
       gpv2OrderHelper,
       new TwapOrderHelper(
         configurationService,
-        multiSendDecoder,
+        transactionDataFinder,
         composableCowDecoder,
         new Set(['Safe Wallet Swaps']),
       ),
@@ -810,7 +812,7 @@ describe('TwapOrderMapper', () => {
       gpv2OrderHelper,
       new TwapOrderHelper(
         configurationService,
-        multiSendDecoder,
+        transactionDataFinder,
         composableCowDecoder,
         new Set(['app1', 'app2']),
       ),

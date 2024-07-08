@@ -1,5 +1,5 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import {
   ITokenRepository,
@@ -33,7 +33,7 @@ export class SwapOrderHelper {
     this.configurationService.getOrThrow('swaps.explorerBaseUri');
 
   constructor(
-    private readonly multiSendDecoder: MultiSendDecoder,
+    private readonly transactionDataFinder: TransactionDataFinder,
     private readonly gpv2Decoder: GPv2Decoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
@@ -46,8 +46,6 @@ export class SwapOrderHelper {
     private readonly chainsRepository: IChainsRepository,
   ) {}
 
-  // TODO: Refactor findSwapOrder, findSwapTransfer and findTwapOrder to avoid code duplication
-
   /**
    * Finds the swap order in the transaction data.
    * The swap order can be in the transaction data directly or in the data of a Multisend transaction.
@@ -57,22 +55,11 @@ export class SwapOrderHelper {
    * @returns The swap order if found, otherwise null
    */
   public findSwapOrder(data: `0x${string}`): `0x${string}` | null {
-    // The swap order can be in the transaction data directly
-    if (this.isSwapOrder({ data })) {
-      return data;
-    }
-    // or in the data of a multisend transaction
-    if (this.multiSendDecoder.helpers.isMultiSend(data)) {
-      const transactions = this.multiSendDecoder.mapMultiSendTransactions(data);
-      // TODO If we can build a sorted hash map of the transactions, we can avoid iterating all of them
-      //  as we know the pattern of a Swap Order.
-      for (const transaction of transactions) {
-        if (this.isSwapOrder(transaction)) {
-          return transaction.data;
-        }
-      }
-    }
-    return null;
+    return this.transactionDataFinder.findTransactionData(
+      (transaction) =>
+        this.gpv2Decoder.helpers.isSetPreSignature(transaction.data),
+      { data },
+    );
   }
 
   /**
@@ -130,11 +117,6 @@ export class SwapOrderHelper {
     return (
       !!appCode && typeof appCode === 'string' && this.allowedApps.has(appCode)
     );
-  }
-
-  private isSwapOrder(transaction: { data?: `0x${string}` }): boolean {
-    if (!transaction.data) return false;
-    return this.gpv2Decoder.helpers.isSetPreSignature(transaction.data);
   }
 
   /**
@@ -204,7 +186,7 @@ function allowedAppsFactory(
   ],
   providers: [
     SwapOrderHelper,
-    MultiSendDecoder,
+    TransactionDataFinder,
     GPv2Decoder,
     {
       provide: 'SWAP_ALLOWED_APPS',

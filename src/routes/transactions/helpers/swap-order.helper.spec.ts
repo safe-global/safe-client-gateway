@@ -8,7 +8,7 @@ import { getAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { OrderKind, OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 
@@ -33,8 +33,8 @@ const configurationService = {
 } as jest.MockedObjectDeep<IConfigurationService>;
 const configurationServiceMock = jest.mocked(configurationService);
 
-const multiSendDecoder = {} as jest.Mocked<MultiSendDecoder>;
-const multiSendDecoderMock = jest.mocked(multiSendDecoder);
+const transactionDataFinder = {} as jest.Mocked<TransactionDataFinder>;
+const transactionDataFinderMock = jest.mocked(transactionDataFinder);
 
 const chainsRepository = {
   getChain: jest.fn(),
@@ -56,7 +56,7 @@ describe('Swap Order Helper tests', () => {
     });
 
     target = new SwapOrderHelper(
-      multiSendDecoderMock,
+      transactionDataFinderMock,
       gpv2DecoderMock,
       tokenRepositoryMock,
       swapsRepositoryMock,
@@ -225,7 +225,7 @@ describe('Swap Order Helper tests', () => {
       });
 
       target = new SwapOrderHelper(
-        multiSendDecoderMock,
+        transactionDataFinderMock,
         gpv2DecoderMock,
         tokenRepositoryMock,
         swapsRepositoryMock,
