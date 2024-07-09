@@ -27,6 +27,11 @@ export interface IAccountsRepository {
 
   getDataTypes(): Promise<AccountDataType[]>;
 
+  getAccountDataSettings(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<AccountDataSetting[]>;
+
   upsertAccountDataSettings(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
