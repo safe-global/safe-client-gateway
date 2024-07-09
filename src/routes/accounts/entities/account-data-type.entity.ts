@@ -16,7 +16,7 @@ export class AccountDataType {
     description: string | null,
     isActive: boolean,
   ) {
-    this.dataTypeId = dataTypeId;
+    this.dataTypeId = dataTypeId; // TODO: rename as 'id'
     this.name = name;
     this.description = description;
     this.isActive = isActive;
