@@ -1,9 +1,18 @@
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import {
+  staticInputEncoder,
+  conditionalOrderParamsBuilder,
+  createWithContextEncoder,
+} from '@/domain/swaps/contracts/__tests__/encoders/composable-cow-encoder.builder';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { faker } from '@faker-js/faker';
-import { zeroAddress } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 describe('TwapOrderHelper', () => {
   const ComposableCowAddress = '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74';
 
@@ -65,11 +74,33 @@ describe('TwapOrderHelper', () => {
         );
       });
 
-      // TODO: Encode a batched call with a transaction to an unofficial ComposableCoW contract
-      it.skip('should not find order to an unofficial ComposableCoW contract', () => {
+      it('should not find order to an unofficial ComposableCoW contract', () => {
+        const staticInput = staticInputEncoder();
+        const conditionalOrderParams = conditionalOrderParamsBuilder()
+          .with('staticInput', staticInput.encode())
+          // TWAP handler address
+          .with('handler', '0x6cF1e9cA41f7611dEf408122793c358a3d11E5a5')
+          .build();
+        const createWithContext = createWithContextEncoder().with(
+          'params',
+          conditionalOrderParams,
+        );
+        const transactions = multiSendTransactionsEncoder([
+          {
+            operation: 0,
+            data: createWithContext.encode(),
+            // Not official ComposableCoW address
+            to: getAddress(faker.finance.ethereumAddress()),
+            value: BigInt(0),
+          },
+        ]);
+        const data = multiSendEncoder()
+          .with('transactions', transactions)
+          .encode();
+
         const result = target.findTwapOrder({
           to: zeroAddress, // MultiSend decoder does not check officiality of address
-          data: batchedCalldata,
+          data,
         });
 
         expect(result).toBe(null);
