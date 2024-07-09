@@ -42,8 +42,8 @@ const mockChainsRepository = {
 
 describe('TwapOrderMapper', () => {
   const configurationService = new FakeConfigurationService();
-  const multiSendDecoder = new MultiSendDecoder();
-  const gpv2Decoder = new GPv2Decoder();
+  const multiSendDecoder = new MultiSendDecoder(loggingService);
+  const gpv2Decoder = new GPv2Decoder(loggingService);
   const allowedApps = new Set<string>();
   const swapOrderHelper = new SwapOrderHelper(
     multiSendDecoder,
@@ -54,7 +54,7 @@ describe('TwapOrderMapper', () => {
     allowedApps,
     mockChainsRepository,
   );
-  const composableCowDecoder = new ComposableCowDecoder();
+  const composableCowDecoder = new ComposableCowDecoder(loggingService);
   const gpv2OrderHelper = new GPv2OrderHelper();
   configurationService.set('swaps.restrictApps', false);
   const twapOrderHelper = new TwapOrderHelper(

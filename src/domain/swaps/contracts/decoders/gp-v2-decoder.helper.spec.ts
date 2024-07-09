@@ -2,13 +2,18 @@ import { Hex } from 'viem';
 import { faker } from '@faker-js/faker';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/gp-v2-encoder.builder';
+import { ILoggingService } from '@/logging/logging.interface';
+
+const mockLoggingService = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('GPv2Decoder', () => {
   let target: GPv2Decoder;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    target = new GPv2Decoder();
+    target = new GPv2Decoder(mockLoggingService);
   });
 
   it('decodes a setPreSignature function call correctly', () => {
@@ -22,10 +27,19 @@ describe('GPv2Decoder', () => {
     ]);
   });
 
-  it('returns null if the function call cannot be decoded', () => {
+  it('throws if the incorrect function call was decoded', () => {
+    const encoder = setPreSignatureEncoder();
+    const data = encoder.encode();
+
+    expect(() => target.decodeFunctionData.authenticator(data)).toThrow(
+      new Error('Function data matches setPreSignature, not authenticator'),
+    );
+  });
+
+  it('throws if if the function call cannot be decoded', () => {
     const data = faker.string.hexadecimal({ length: 138 }) as Hex;
 
-    expect(target.decodeFunctionData.setPreSignature(data)).toEqual(null);
+    expect(() => target.decodeFunctionData.setPreSignature(data)).toThrow();
   });
 
   it('gets orderUid from setPreSignature function call', () => {

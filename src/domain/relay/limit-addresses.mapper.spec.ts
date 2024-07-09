@@ -38,6 +38,7 @@ import {
 import { getAddress } from 'viem';
 import configuration from '@/config/entities/configuration';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
+import { ILoggingService } from '@/logging/logging.interface';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -66,16 +67,20 @@ const mockSafeRepository = jest.mocked({
   getSafe: jest.fn(),
 } as jest.MockedObjectDeep<ISafeRepository>);
 
+const mockLoggingService = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+
 describe('LimitAddressesMapper', () => {
   let target: LimitAddressesMapper;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const erc20Decoder = new Erc20Decoder();
-    const safeDecoder = new SafeDecoder();
-    const multiSendDecoder = new MultiSendDecoder();
-    const proxyFactoryDecoder = new ProxyFactoryDecoder();
+    const erc20Decoder = new Erc20Decoder(mockLoggingService);
+    const safeDecoder = new SafeDecoder(mockLoggingService);
+    const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
+    const proxyFactoryDecoder = new ProxyFactoryDecoder(mockLoggingService);
 
     target = new LimitAddressesMapper(
       mockSafeRepository,

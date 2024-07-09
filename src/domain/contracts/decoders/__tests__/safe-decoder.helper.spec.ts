@@ -7,13 +7,18 @@ import {
   setupEncoder,
   swapOwnerEncoder,
 } from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
+import { ILoggingService } from '@/logging/logging.interface';
+
+const mockLoggingService = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('SafeDecoder', () => {
   let target: SafeDecoder;
 
   beforeEach(() => {
     jest.resetAllMocks();
-    target = new SafeDecoder();
+    target = new SafeDecoder(mockLoggingService);
   });
 
   describe('decodeFunctionData', () => {

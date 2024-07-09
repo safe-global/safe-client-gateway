@@ -1,5 +1,6 @@
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
-import { Injectable } from '@nestjs/common';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { Inject, Injectable } from '@nestjs/common';
 import { decodeAbiParameters, isAddressEqual, parseAbiParameters } from 'viem';
 
 /**
@@ -637,8 +638,10 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
     'address sellToken, address buyToken, address receiver, uint256 partSellAmount, uint256 minPartLimit, uint256 t0, uint256 n, uint256 t, uint256 span, bytes32 appData',
   );
 
-  constructor() {
-    super(ComposableCowAbi);
+  constructor(
+    @Inject(LoggingService) readonly loggingService: ILoggingService,
+  ) {
+    super(loggingService, ComposableCowAbi);
   }
 
   /**
@@ -648,10 +651,6 @@ export class ComposableCowDecoder extends AbiDecoder<typeof ComposableCowAbi> {
    */
   decodeTwapStruct(data: `0x${string}`): TwapStruct {
     const decoded = this.decodeFunctionData.createWithContext(data);
-
-    if (!decoded) {
-      throw new Error('Unable to decode `createWithContext` data');
-    }
 
     const [params] = decoded;
 

@@ -1,15 +1,19 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { ILoggingService } from '@/logging/logging.interface';
 import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { zeroAddress } from 'viem';
 
+const mockLoggingService = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 describe('GPv2OrderHelper', () => {
   const target = new GPv2OrderHelper();
 
-  const multiSendDecoder = new MultiSendDecoder();
-  const composableCowDecoder = new ComposableCowDecoder();
+  const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
+  const composableCowDecoder = new ComposableCowDecoder(mockLoggingService);
   const configurationService = new FakeConfigurationService();
   const allowedApps = new Set<string>();
   configurationService.set('swaps.restrictApps', false);

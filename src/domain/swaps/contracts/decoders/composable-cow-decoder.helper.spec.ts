@@ -1,7 +1,12 @@
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { ILoggingService } from '@/logging/logging.interface';
+
+const mockLoggingService = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('ComposableCowDecoder', () => {
-  const target = new ComposableCowDecoder();
+  const target = new ComposableCowDecoder(mockLoggingService);
 
   describe('decodeTwapStruct', () => {
     it('should decode a createWithContext call', () => {

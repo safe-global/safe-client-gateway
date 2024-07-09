@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Hex, isAddressEqual } from 'viem';
+import { decodeFunctionData, Hex, isAddressEqual } from 'viem';
 import { IAlertsRepository } from '@/domain/alerts/alerts.repository.interface';
 import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
 import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
@@ -64,7 +64,7 @@ export class AlertsRepository implements IAlertsRepository {
           topics: log.topics as [Hex, Hex, Hex],
         });
 
-      if (!decodedEvent || isAddressEqual(decodedEvent.to, safeAddress)) {
+      if (!isAddressEqual(decodedEvent.to, safeAddress)) {
         throw new Error('Alert is not for the Safe');
       }
 
@@ -93,37 +93,46 @@ export class AlertsRepository implements IAlertsRepository {
     })();
 
     for (const data of transactions) {
-      const addOwnerWithThreshold =
-        this.safeDecoder.decodeFunctionData.addOwnerWithThreshold(data);
-      const removeOwner = this.safeDecoder.decodeFunctionData.removeOwner(data);
-      const swapOwner = this.safeDecoder.decodeFunctionData.swapOwner(data);
-      const changeThreshold =
-        this.safeDecoder.decodeFunctionData.changeThreshold(data);
+      const decodedTransaction = decodeFunctionData({
+        abi: this.safeDecoder.abi,
+        data,
+      });
 
-      if (addOwnerWithThreshold) {
-        // Add new owner and set new threshold
-        const [ownerToAdd, newThreshold] = addOwnerWithThreshold;
-        newSafe.owners.push(ownerToAdd);
-        newSafe.threshold = Number(newThreshold);
-      } else if (removeOwner) {
-        // Remove specified owner and set new threshold
-        const [, ownerToRemove, newThreshold] = removeOwner;
-        newSafe.owners = newSafe.owners.filter((owner) => {
-          return isAddressEqual(owner, ownerToRemove);
-        });
-        newSafe.threshold = Number(newThreshold);
-      } else if (swapOwner) {
-        // Swap specified owner with new owner
-        const [, ownerToRemove, ownerToAdd] = swapOwner;
-        newSafe.owners = newSafe.owners.map((owner) => {
-          return isAddressEqual(owner, ownerToRemove) ? ownerToAdd : owner;
-        });
-      } else if (changeThreshold) {
-        // Set new threshold
-        const [newThreshold] = changeThreshold;
-        newSafe.threshold = Number(newThreshold);
-      } else {
-        throw new Error('Unknown transaction data');
+      switch (decodedTransaction.functionName) {
+        case 'addOwnerWithThreshold': {
+          // Add new owner and set new threshold
+          const [ownerToAdd, newThreshold] = decodedTransaction.args;
+          newSafe.owners.push(ownerToAdd);
+          newSafe.threshold = Number(newThreshold);
+          break;
+        }
+        case 'removeOwner': {
+          // Remove specified owner and set new threshold
+          const [, ownerToRemove, newThreshold] = decodedTransaction.args;
+          newSafe.owners = newSafe.owners.filter((owner) => {
+            return isAddressEqual(owner, ownerToRemove);
+          });
+          newSafe.threshold = Number(newThreshold);
+          break;
+        }
+        case 'swapOwner': {
+          // Swap specified owner with new owner
+          const [, ownerToRemove, ownerToAdd] = decodedTransaction.args;
+          newSafe.owners = newSafe.owners.map((owner) => {
+            return isAddressEqual(owner, ownerToRemove) ? ownerToAdd : owner;
+          });
+          break;
+        }
+        case 'changeThreshold': {
+          // Set new threshold
+          const [newThreshold] = decodedTransaction.args;
+          newSafe.threshold = Number(newThreshold);
+          break;
+        }
+        default:
+          throw new Error(
+            `Unknown recovery transaction ${decodedTransaction.functionName}`,
+          );
       }
     }
 

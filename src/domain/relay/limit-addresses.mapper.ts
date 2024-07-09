@@ -156,31 +156,28 @@ export class LimitAddressesMapper {
     value: bigint;
     data: `0x${string}`;
   } | null {
-    const safeDecodedData =
-      this.safeDecoder.decodeFunctionData.execTransaction(data);
+    try {
+      const safeDecodedData =
+        this.safeDecoder.decodeFunctionData.execTransaction(data);
 
-    if (!safeDecodedData) {
+      return {
+        to: safeDecodedData[0],
+        value: safeDecodedData[1],
+        data: safeDecodedData[2],
+      };
+    } catch {
       return null;
     }
-
-    return {
-      to: safeDecodedData[0],
-      value: safeDecodedData[1],
-      data: safeDecodedData[2],
-    };
   }
 
   private isValidErc20Transfer(args: {
     to: `0x${string}`;
     data: `0x${string}`;
   }): boolean {
+    // Can throw but called after this.erc20Decoder.helpers.isTransfer
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData.transfer(
       args.data,
     );
-
-    if (!erc20DecodedData) {
-      return false;
-    }
 
     const [to] = erc20DecodedData;
     // to 'self' (the Safe) is not allowed
@@ -191,13 +188,10 @@ export class LimitAddressesMapper {
     to: `0x${string}`;
     data: `0x${string}`;
   }): boolean {
+    // Can throw but called after this.erc20Decoder.helpers.isTransferFrom
     const erc20DecodedData = this.erc20Decoder.decodeFunctionData.transferFrom(
       args.data,
     );
-
-    if (!erc20DecodedData) {
-      return false;
-    }
 
     const [sender, recipient] = erc20DecodedData;
     // to 'self' (the Safe) or from sender to sender as recipient is not allowed
@@ -295,16 +289,18 @@ export class LimitAddressesMapper {
     chainId: string;
     data: `0x${string}`;
   }): boolean {
-    const decoded =
-      this.proxyFactoryDecoder.decodeFunctionData.createProxyWithNonce(
-        args.data,
-      );
+    let singleton: `0x${string}` | null = null;
 
-    if (!decoded) {
+    try {
+      const decoded =
+        this.proxyFactoryDecoder.decodeFunctionData.createProxyWithNonce(
+          args.data,
+        );
+
+      singleton = decoded[0];
+    } catch (e) {
       return false;
     }
-
-    const singleton = decoded[0];
 
     const safeL1Deployment = getSafeSingletonDeployment({
       version: args.version,
@@ -326,21 +322,12 @@ export class LimitAddressesMapper {
   private getOwnersFromCreateProxyWithNonce(
     data: `0x${string}`,
   ): readonly `0x${string}`[] {
+    // Can throw but called after this.isValidCreateProxyWithNonceCall
     const decodedProxyFactory =
       this.proxyFactoryDecoder.decodeFunctionData.createProxyWithNonce(data);
 
-    if (!decodedProxyFactory) {
-      // Should never happen but check is needed to satisfy TypeScript
-      throw Error('Not a createProxyWithNonce call');
-    }
-
     const initializer = decodedProxyFactory[1];
     const decodedSafe = this.safeDecoder.decodeFunctionData.setup(initializer);
-
-    if (!decodedSafe) {
-      // No custom error thrown, as caller subsequently throws InvalidTransferError
-      throw Error('Not a setup call');
-    }
 
     return decodedSafe[0];
   }

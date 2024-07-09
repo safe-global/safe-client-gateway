@@ -1,10 +1,11 @@
-import { Injectable, Module } from '@nestjs/common';
+import { Inject, Injectable, Module } from '@nestjs/common';
 import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
 import {
   BuyTokenBalance,
   OrderKind,
   SellTokenBalance,
 } from '@/domain/swaps/entities/order.entity';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 
 /**
  * Taken from CoW contracts:
@@ -644,8 +645,10 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
     },
   } as const;
 
-  constructor() {
-    super(GPv2Abi);
+  constructor(
+    @Inject(LoggingService) readonly loggingService: ILoggingService,
+  ) {
+    super(loggingService, GPv2Abi);
   }
 
   /**
