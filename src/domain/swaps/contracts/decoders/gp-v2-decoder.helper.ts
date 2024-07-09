@@ -660,11 +660,11 @@ export class GPv2Decoder extends AbiDecoder<typeof GPv2Abi> {
   public getOrderUidFromSetPreSignature(
     data: `0x${string}`,
   ): `0x${string}` | null {
-    const decoded = this.decodeFunctionData.setPreSignature(data);
-
-    if (!decoded) {
+    if (!this.helpers.isSetPreSignature(data)) {
       return null;
     }
+
+    const decoded = this.decodeFunctionData.setPreSignature(data);
 
     return decoded[0];
   }
