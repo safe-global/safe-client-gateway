@@ -72,7 +72,7 @@ describe('Migration 00003_account-data-settings', () => {
 
   it('should add one AccountDataSettings and update its row timestamps', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
-    const dataTypeName = faker.lorem.word();
+    const name = faker.lorem.word();
     let accountRows: AccountRow[] = [];
     let accountDataTypeRows: AccountDataTypeRow[] = [];
 
@@ -86,7 +86,7 @@ describe('Migration 00003_account-data-settings', () => {
         >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
         accountDataTypeRows = await sql<
           AccountDataTypeRow[]
-        >`INSERT INTO account_data_types (name) VALUES (${dataTypeName}) RETURNING *;`;
+        >`INSERT INTO account_data_types (name) VALUES (${name}) RETURNING *;`;
         return sql<
           AccountDataSettingsRow[]
         >`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRows[0].id}, ${accountDataTypeRows[0].id}) RETURNING *;`;

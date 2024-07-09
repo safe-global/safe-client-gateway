@@ -95,8 +95,8 @@ export class AccountsDatasource implements IAccountsDatasource {
     const { accountDataSettings } = upsertAccountDataSettings;
     await this.checkDataTypes(accountDataSettings);
     const account = await this.getAccount(address);
-    await this.sql.begin(async (sql) => {
-      return Promise.all(
+    return this.sql.begin(async (sql) => {
+      await Promise.all(
         accountDataSettings.map(async (accountDataSetting) => {
           return sql`
             INSERT INTO account_data_settings (account_id, account_data_type_id, enabled)
@@ -109,9 +109,9 @@ export class AccountsDatasource implements IAccountsDatasource {
           });
         }),
       );
+      return sql<[AccountDataSetting]>`
+        SELECT * FROM account_data_settings WHERE account_id = ${account.id}`;
     });
-
-    return this.getAccountDataSettings(address);
   }
 
   private getActiveDataTypes(): Promise<AccountDataType[]> {
@@ -127,9 +127,9 @@ export class AccountsDatasource implements IAccountsDatasource {
     const activeDataTypes = await this.getActiveDataTypes();
     const activeDataTypeIds = activeDataTypes.map((ads) => ads.id);
     if (
-      !accountDataSettings
-        .map((ads) => ads.id)
-        .every((id) => activeDataTypeIds.includes(Number(id)))
+      !accountDataSettings.every((ads) =>
+        activeDataTypeIds.includes(Number(ads.id)),
+      )
     ) {
       throw new UnprocessableEntityException(
         `Data types not found or not active.`,

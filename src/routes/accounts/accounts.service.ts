@@ -108,8 +108,8 @@ export class AccountsService {
     }
 
     return {
-      dataTypeName: dataType.name,
-      dataTypeDescription: dataType.description,
+      name: dataType.name,
+      description: dataType.description,
       enabled: domainAccountDataSetting.enabled,
     };
   }
