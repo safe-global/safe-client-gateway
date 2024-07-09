@@ -20,9 +20,9 @@ export class SwapsApiFactory implements ISwapsApiFactory {
     private readonly configurationService: IConfigurationService,
   ) {}
 
-  get(chainId: string): ISwapsApi {
+  getApi(chainId: string): Promise<ISwapsApi> {
     if (this.apis[chainId]) {
-      return this.apis[chainId];
+      return Promise.resolve(this.apis[chainId]);
     }
 
     const baseUrl = this.configurationService.getOrThrow<string>(
@@ -34,6 +34,12 @@ export class SwapsApiFactory implements ISwapsApiFactory {
       this.networkService,
       this.httpErrorFactory,
     );
-    return this.apis[chainId];
+    return Promise.resolve(this.apis[chainId]);
+  }
+
+  destroyApi(chainId: string): void {
+    if (this.apis[chainId] !== undefined) {
+      delete this.apis[chainId];
+    }
   }
 }
