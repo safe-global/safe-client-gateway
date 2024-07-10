@@ -1,4 +1,7 @@
-import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import {
+  TransactionDataFinder,
+  TransactionDataFinderModule,
+} from '@/routes/transactions/helpers/transaction-data-finder.helper';
 import {
   ComposableCowDecoder,
   TwapStruct,
@@ -36,15 +39,13 @@ export class TwapOrderHelper {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    private readonly multiSendDecoder: MultiSendDecoder,
+    private readonly transactionDataFinder: TransactionDataFinder,
     private readonly composableCowDecoder: ComposableCowDecoder,
     @Inject('SWAP_ALLOWED_APPS') private readonly allowedApps: Set<string>,
   ) {
     this.restrictApps =
       this.configurationService.getOrThrow<boolean>('swaps.restrictApps');
   }
-
-  // TODO: Refactor findSwapOrder, findSwapTransfer and findTwapOrder to avoid code duplication
 
   /**
    * Finds a TWAP order in a given transaction, either directly called or in a MultiSend
@@ -57,33 +58,13 @@ export class TwapOrderHelper {
     to: `0x${string}`;
     data: `0x${string}`;
   }): `0x${string}` | null {
-    if (this.isTwapOrder(args)) {
-      return args.data;
-    }
-
-    if (this.multiSendDecoder.helpers.isMultiSend(args.data)) {
-      const transactions = this.multiSendDecoder.mapMultiSendTransactions(
-        args.data,
+    return this.transactionDataFinder.findTransactionData(({ to, data }) => {
+      return (
+        !!to &&
+        isAddressEqual(to, TwapOrderHelper.ComposableCowAddress) &&
+        this.composableCowDecoder.helpers.isCreateWithContext(data)
       );
-
-      for (const transaction of transactions) {
-        if (this.isTwapOrder(transaction)) {
-          return transaction.data;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private isTwapOrder(args: {
-    to: `0x${string}`;
-    data: `0x${string}`;
-  }): boolean {
-    return (
-      isAddressEqual(args.to, TwapOrderHelper.ComposableCowAddress) &&
-      this.composableCowDecoder.helpers.isCreateWithContext(args.data)
-    );
+    }, args);
   }
 
   /**
@@ -216,10 +197,9 @@ function allowedAppsFactory(
 }
 
 @Module({
-  imports: [],
+  imports: [TransactionDataFinderModule],
   providers: [
     ComposableCowDecoder,
-    MultiSendDecoder,
     TwapOrderHelper,
     {
       provide: 'SWAP_ALLOWED_APPS',
