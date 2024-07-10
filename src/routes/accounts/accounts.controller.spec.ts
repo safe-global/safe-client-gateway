@@ -560,7 +560,7 @@ describe('AccountsController', () => {
       ];
       accountDataSource.getDataTypes.mockResolvedValue(dataTypes);
       const expected = dataTypes.map((dataType) => ({
-        dataTypeId: dataType.id.toString(),
+        id: dataType.id.toString(),
         name: dataType.name,
         description: dataType.description,
         isActive: dataType.is_active,
