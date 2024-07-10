@@ -41,12 +41,17 @@ export class SwapTransferInfoMapper {
     transferInfo: Transfer;
     domainTransfer: DomainTransfer;
   }): Promise<SwapTransferTransactionInfo> {
-    // If settlement contract is not interacted with, not a swap fulfillment
-    // TODO: Also check data is of `settle` call as otherwise _any_ call
-    // to settlement contract could be considered a swap fulfillment
+    /**
+     * If settlement contract is interacted with, it may be a swap transfer (`settle` call).
+     * Ideally we should check the transaction `data` to confirm that it has the signature
+     * but we don't always access to it, e.g. when directly getting incoming transfers.
+     *
+     * In this instance, getting the order will throw if it is not a `settle` call and it will
+     * be mapped as a "standard" transfer so we can safely ignore the signature check.
+     */
     if (
-      !this.isSettlement(args.sender.value) &&
-      !this.isSettlement(args.recipient.value)
+      !this.isSettlementContract(args.sender.value) &&
+      !this.isSettlementContract(args.recipient.value)
     ) {
       throw new Error('Neither sender nor receiver are settlement contract');
     }
@@ -106,7 +111,7 @@ export class SwapTransferInfoMapper {
     });
   }
 
-  private isSettlement(address: string): boolean {
+  private isSettlementContract(address: string): boolean {
     return isAddressEqual(
       getAddress(address),
       GPv2OrderHelper.SettlementContractAddress,

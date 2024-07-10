@@ -1,10 +1,7 @@
-import { CreateAccountDtoSchema } from '@/routes/accounts/entities/schemas/create-account.dto.schema';
+import { CreateAccountDto as DomainCreateAccountDto } from '@/domain/accounts/entities/create-account.dto.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { z } from 'zod';
 
-export class CreateAccountDto
-  implements z.infer<typeof CreateAccountDtoSchema>
-{
+export class CreateAccountDto implements DomainCreateAccountDto {
   @ApiProperty()
   address!: `0x${string}`;
 }

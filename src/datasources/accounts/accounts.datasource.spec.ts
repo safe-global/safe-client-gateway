@@ -1,6 +1,9 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
+import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
+import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import postgres from 'postgres';
@@ -146,6 +149,243 @@ describe('AccountsDatasource tests', () => {
           },
         ]),
       );
+    });
+  });
+
+  describe('getAccountDataSettings', () => {
+    it('should get the account data settings successfully', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const account = await target.createAccount(address);
+      const accountDataTypes = Array.from(
+        { length: faker.number.int({ min: 1, max: 4 }) },
+        () => accountDataTypeBuilder().with('is_active', true).build(),
+      );
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const accountDataSettingRows = insertedDataTypes.map((dataType) => ({
+        account_id: account.id,
+        account_data_type_id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      await sql`
+        INSERT INTO account_data_settings 
+        ${sql(accountDataSettingRows, 'account_id', 'account_data_type_id', 'enabled')} returning *`;
+
+      const actual = await target.getAccountDataSettings(address);
+
+      const expected = accountDataSettingRows.map((accountDataSettingRow) => ({
+        account_id: account.id,
+        account_data_type_id: accountDataSettingRow.account_data_type_id,
+        enabled: accountDataSettingRow.enabled,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      }));
+
+      expect(actual).toStrictEqual(expect.arrayContaining(expected));
+    });
+
+    it('should omit account data settings which data type is not active', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const account = await target.createAccount(address);
+      const accountDataTypes = Array.from(
+        { length: faker.number.int({ min: 1, max: 4 }) },
+        () => accountDataTypeBuilder().with('is_active', true).build(),
+      );
+      accountDataTypes.push(
+        accountDataTypeBuilder().with('is_active', false).build(),
+      );
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const [inactiveDataType] = await sql<
+        AccountDataType[]
+      >`SELECT * FROM account_data_types WHERE is_active IS FALSE`;
+      const accountDataSettingRows = insertedDataTypes.map((dataType) => ({
+        account_id: account.id,
+        account_data_type_id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      await sql`
+        INSERT INTO account_data_settings 
+        ${sql(accountDataSettingRows, 'account_id', 'account_data_type_id', 'enabled')} returning *`;
+
+      const actual = await target.getAccountDataSettings(address);
+
+      const expected = accountDataSettingRows
+        .map((accountDataSettingRow) => ({
+          account_id: account.id,
+          account_data_type_id: accountDataSettingRow.account_data_type_id,
+          enabled: accountDataSettingRow.enabled,
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        }))
+        .filter((ads) => ads.account_data_type_id !== inactiveDataType.id);
+
+      expect(actual).toStrictEqual(expect.arrayContaining(expected));
+    });
+  });
+
+  describe('upsertAccountDataSettings', () => {
+    it('adds account data settings successfully', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const account = await target.createAccount(address);
+      const accountDataTypes = Array.from(
+        { length: faker.number.int({ min: 1, max: 4 }) },
+        () => accountDataTypeBuilder().with('is_active', true).build(),
+      );
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const accountDataSettings = insertedDataTypes.map((dataType) => ({
+        id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
+        .with('accountDataSettings', accountDataSettings)
+        .build();
+
+      const actual = await target.upsertAccountDataSettings(
+        address,
+        upsertAccountDataSettingsDto,
+      );
+
+      const expected = accountDataSettings.map((accountDataSetting) => ({
+        account_id: account.id,
+        account_data_type_id: accountDataSetting.id,
+        enabled: accountDataSetting.enabled,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      }));
+
+      expect(actual).toStrictEqual(expect.arrayContaining(expected));
+    });
+
+    it('updates existing account data settings successfully', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const account = await target.createAccount(address);
+      const accountDataTypes = Array.from(
+        { length: faker.number.int({ min: 1, max: 4 }) },
+        () => accountDataTypeBuilder().with('is_active', true).build(),
+      );
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const accountDataSettings = insertedDataTypes.map((dataType) => ({
+        id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
+        .with('accountDataSettings', accountDataSettings)
+        .build();
+
+      const beforeUpdate = await target.upsertAccountDataSettings(
+        address,
+        upsertAccountDataSettingsDto,
+      );
+
+      expect(beforeUpdate).toStrictEqual(
+        expect.arrayContaining(
+          accountDataSettings.map((accountDataSetting) => ({
+            account_id: account.id,
+            account_data_type_id: accountDataSetting.id,
+            enabled: accountDataSetting.enabled,
+            created_at: expect.any(Date),
+            updated_at: expect.any(Date),
+          })),
+        ),
+      );
+
+      const accountDataSettings2 = accountDataSettings.map((ads) => ({
+        ...ads,
+        enabled: !ads.enabled,
+      }));
+      const upsertAccountDataSettingsDto2 =
+        upsertAccountDataSettingsDtoBuilder()
+          .with('accountDataSettings', accountDataSettings2)
+          .build();
+
+      const afterUpdate = await target.upsertAccountDataSettings(
+        address,
+        upsertAccountDataSettingsDto2,
+      );
+
+      expect(afterUpdate).toStrictEqual(
+        expect.arrayContaining(
+          accountDataSettings.map((accountDataSetting) => ({
+            account_id: account.id,
+            account_data_type_id: accountDataSetting.id,
+            enabled: !accountDataSetting.enabled, // 'enabled' row was updated
+            created_at: expect.any(Date),
+            updated_at: expect.any(Date),
+          })),
+        ),
+      );
+    });
+
+    it('throws an error if the account does not exist', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const accountDataTypes = Array.from(
+        { length: faker.number.int({ min: 1, max: 4 }) },
+        () => accountDataTypeBuilder().with('is_active', true).build(),
+      );
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const accountDataSettings = insertedDataTypes.map((dataType) => ({
+        id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
+        .with('accountDataSettings', accountDataSettings)
+        .build();
+
+      await expect(
+        target.upsertAccountDataSettings(address, upsertAccountDataSettingsDto),
+      ).rejects.toThrow('Error getting account.');
+    });
+
+    it('throws an error if a non-existent data type is provided', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      await target.createAccount(address);
+      const accountDataTypes = Array.from(
+        { length: faker.number.int({ min: 1, max: 4 }) },
+        () => accountDataTypeBuilder().with('is_active', true).build(),
+      );
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const accountDataSettings = insertedDataTypes.map((dataType) => ({
+        id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
+        .with('accountDataSettings', accountDataSettings)
+        .build();
+      upsertAccountDataSettingsDto.accountDataSettings.push({
+        id: faker.string.numeric(5),
+        enabled: faker.datatype.boolean(),
+      });
+
+      await expect(
+        target.upsertAccountDataSettings(address, upsertAccountDataSettingsDto),
+      ).rejects.toThrow('Data types not found or not active.');
+    });
+
+    it('throws an error if an inactive data type is provided', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      await target.createAccount(address);
+      const accountDataTypes = [
+        accountDataTypeBuilder().with('is_active', false).build(),
+        accountDataTypeBuilder().build(),
+      ];
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const accountDataSettings = insertedDataTypes.map((dataType) => ({
+        id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
+        .with('accountDataSettings', accountDataSettings)
+        .build();
+
+      await expect(
+        target.upsertAccountDataSettings(address, upsertAccountDataSettingsDto),
+      ).rejects.toThrow(`Data types not found or not active.`);
     });
   });
 });
