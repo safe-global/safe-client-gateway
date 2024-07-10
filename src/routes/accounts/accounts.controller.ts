@@ -52,6 +52,19 @@ export class AccountsController {
   }
 
   @ApiOkResponse({ type: AccountDataSetting, isArray: true })
+  @Get(':address/data-settings')
+  @UseGuards(AuthGuard)
+  async getAccountDataSettings(
+    @Auth() authPayload: AuthPayload,
+    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+  ): Promise<AccountDataSetting[]> {
+    return this.accountsService.getAccountDataSettings({
+      authPayload,
+      address,
+    });
+  }
+
+  @ApiOkResponse({ type: AccountDataSetting, isArray: true })
   @Put(':address/data-settings')
   @UseGuards(AuthGuard)
   async upsertAccountDataSettings(

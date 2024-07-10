@@ -73,7 +73,9 @@ export class AccountsDatasource implements IAccountsDatasource {
   ): Promise<AccountDataSetting[]> {
     const account = await this.getAccount(address);
     return this.sql<[AccountDataSetting]>`
-      SELECT * FROM account_data_settings WHERE account_id = ${account.id}
+      SELECT ads.* FROM account_data_settings ads INNER JOIN account_data_types adt
+        ON ads.account_data_type_id = adt.id
+      WHERE ads.account_id = ${account.id} AND adt.is_active IS TRUE;
     `;
   }
 
@@ -117,7 +119,7 @@ export class AccountsDatasource implements IAccountsDatasource {
   private getActiveDataTypes(): Promise<AccountDataType[]> {
     // TODO: add caching with clearing mechanism.
     return this.sql<[AccountDataType]>`
-      SELECT * FROM account_data_types WHERE is_active = true
+      SELECT * FROM account_data_types WHERE is_active IS TRUE;
     `;
   }
 

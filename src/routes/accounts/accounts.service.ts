@@ -56,6 +56,23 @@ export class AccountsService {
     );
   }
 
+  async getAccountDataSettings(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<AccountDataSetting[]> {
+    const [domainAccountDataSettings, dataTypes] = await Promise.all([
+      this.accountsRepository.getAccountDataSettings({
+        authPayload: args.authPayload,
+        address: args.address,
+      }),
+      this.accountsRepository.getDataTypes(),
+    ]);
+
+    return domainAccountDataSettings.map((domainAccountDataSetting) =>
+      this.mapDataSetting(dataTypes, domainAccountDataSetting),
+    );
+  }
+
   async upsertAccountDataSettings(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;

@@ -54,6 +54,17 @@ export class AccountsRepository implements IAccountsRepository {
     return this.datasource.getDataTypes();
   }
 
+  async getAccountDataSettings(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<AccountDataSetting[]> {
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+
+    return this.datasource.getAccountDataSettings(args.address);
+  }
+
   async upsertAccountDataSettings(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
