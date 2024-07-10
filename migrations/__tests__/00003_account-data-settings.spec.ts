@@ -121,4 +121,64 @@ describe('Migration 00003_account-data-settings', () => {
     expect(createdAtAfterUpdate).toStrictEqual(createdAt);
     expect(updatedAtAfterUpdate.getTime()).toBeGreaterThan(createdAt.getTime());
   });
+
+  it('should trigger a cascade delete when the referenced account is deleted', async () => {
+    const accountAddress = getAddress(faker.finance.ethereumAddress());
+    const name = faker.lorem.word();
+    let accountRows: AccountRow[] = [];
+    let accountDataTypeRows: AccountDataTypeRow[] = [];
+
+    const {
+      after: accountDataSettingRows,
+    }: { after: AccountDataSettingsRow[] } = await migrator.test({
+      migration: '00003_account-data-settings',
+      after: async (sql: postgres.Sql): Promise<AccountDataSettingsRow[]> => {
+        accountRows = await sql<
+          AccountRow[]
+        >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
+        accountDataTypeRows = await sql<
+          AccountDataTypeRow[]
+        >`INSERT INTO account_data_types (name) VALUES (${name}) RETURNING *;`;
+        await sql<
+          AccountDataSettingsRow[]
+        >`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRows[0].id}, ${accountDataTypeRows[0].id}) RETURNING *;`;
+        await sql`DELETE FROM accounts WHERE id = ${accountRows[0].id};`;
+        return sql<
+          AccountDataSettingsRow[]
+        >`SELECT * FROM account_data_settings WHERE account_id = ${accountRows[0].id}`;
+      },
+    });
+
+    expect(accountDataSettingRows).toHaveLength(0);
+  });
+
+  it('should trigger a cascade delete when the referenced data type is deleted', async () => {
+    const accountAddress = getAddress(faker.finance.ethereumAddress());
+    const name = faker.lorem.word();
+    let accountRows: AccountRow[] = [];
+    let accountDataTypeRows: AccountDataTypeRow[] = [];
+
+    const {
+      after: accountDataSettingRows,
+    }: { after: AccountDataSettingsRow[] } = await migrator.test({
+      migration: '00003_account-data-settings',
+      after: async (sql: postgres.Sql): Promise<AccountDataSettingsRow[]> => {
+        accountRows = await sql<
+          AccountRow[]
+        >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
+        accountDataTypeRows = await sql<
+          AccountDataTypeRow[]
+        >`INSERT INTO account_data_types (name) VALUES (${name}) RETURNING *;`;
+        await sql<
+          AccountDataSettingsRow[]
+        >`INSERT INTO account_data_settings (account_id, account_data_type_id) VALUES (${accountRows[0].id}, ${accountDataTypeRows[0].id}) RETURNING *;`;
+        await sql`DELETE FROM account_data_types WHERE id = ${accountDataTypeRows[0].id};`;
+        return sql<
+          AccountDataSettingsRow[]
+        >`SELECT * FROM account_data_settings WHERE account_id = ${accountRows[0].id}`;
+      },
+    });
+
+    expect(accountDataSettingRows).toHaveLength(0);
+  });
 });

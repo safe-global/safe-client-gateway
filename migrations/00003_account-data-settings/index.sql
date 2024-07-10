@@ -7,8 +7,8 @@ CREATE TABLE account_data_settings (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     PRIMARY KEY (account_id, account_data_type_id),
-    FOREIGN KEY (account_id) REFERENCES accounts(id),
-    FOREIGN KEY (account_data_type_id) REFERENCES account_data_types(id)
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY (account_data_type_id) REFERENCES account_data_types(id) ON DELETE CASCADE
 );
 
 CREATE OR REPLACE TRIGGER update_account_data_settings_updated_at
