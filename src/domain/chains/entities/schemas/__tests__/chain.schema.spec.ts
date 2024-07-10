@@ -1,5 +1,6 @@
 import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { contractAddressesBuilder } from '@/domain/chains/entities/__tests__/contract-addresses.builder';
 import { gasPriceFixedEIP1559Builder } from '@/domain/chains/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceFixedBuilder } from '@/domain/chains/entities/__tests__/gas-price-fixed.builder';
 import { gasPriceOracleBuilder } from '@/domain/chains/entities/__tests__/gas-price-oracle.builder';
@@ -18,8 +19,10 @@ import {
   PricesProviderSchema,
   RpcUriSchema,
   ThemeSchema,
+  ContractAddressesSchema,
 } from '@/domain/chains/entities/schemas/chain.schema';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { ZodError } from 'zod';
 
 describe('Chain schemas', () => {
@@ -433,6 +436,51 @@ describe('Chain schemas', () => {
           },
         ]),
       );
+    });
+  });
+
+  describe('ContractAddressesSchema', () => {
+    it('should validate a valid ContractAddresses', () => {
+      const contractAddresses = contractAddressesBuilder().build();
+
+      const result = ContractAddressesSchema.safeParse(contractAddresses);
+
+      expect(result.success).toBe(true);
+    });
+
+    [
+      'safeSingletonAddress' as const,
+      'safeProxyFactoryAddress' as const,
+      'multiSendAddress' as const,
+      'multiSendCallOnlyAddress' as const,
+      'fallbackHandlerAddress' as const,
+      'signMessageLibAddress' as const,
+      'createCallAddress' as const,
+      'simulateTxAccessorAddress' as const,
+    ].forEach((field) => {
+      it(`should checksum the ${field}`, () => {
+        const contractAddresses = contractAddressesBuilder()
+          .with(
+            field,
+            faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
+          )
+          .build();
+
+        const result = ContractAddressesSchema.safeParse(contractAddresses);
+
+        expect(result.success && result.data[field]).toBe(
+          getAddress(contractAddresses[field]!),
+        );
+      });
+
+      it(`should allow undefined ${field} and default to null`, () => {
+        const contractAddresses = contractAddressesBuilder().build();
+        delete contractAddresses[field];
+
+        const result = ContractAddressesSchema.safeParse(contractAddresses);
+
+        expect(result.success && result.data[field]).toBe(null);
+      });
     });
   });
 

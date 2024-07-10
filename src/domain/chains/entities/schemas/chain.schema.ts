@@ -64,6 +64,17 @@ export const BalancesProviderSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const ContractAddressesSchema = z.object({
+  safeSingletonAddress: AddressSchema.nullish().default(null),
+  safeProxyFactoryAddress: AddressSchema.nullish().default(null),
+  multiSendAddress: AddressSchema.nullish().default(null),
+  multiSendCallOnlyAddress: AddressSchema.nullish().default(null),
+  fallbackHandlerAddress: AddressSchema.nullish().default(null),
+  signMessageLibAddress: AddressSchema.nullish().default(null),
+  createCallAddress: AddressSchema.nullish().default(null),
+  simulateTxAccessorAddress: AddressSchema.nullish().default(null),
+});
+
 export const ChainSchema = z.object({
   chainId: z.string(),
   chainName: z.string(),
@@ -76,6 +87,7 @@ export const ChainSchema = z.object({
   safeAppsRpcUri: RpcUriSchema,
   publicRpcUri: RpcUriSchema,
   blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
+  contractAddresses: ContractAddressesSchema,
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
   balancesProvider: BalancesProviderSchema,
