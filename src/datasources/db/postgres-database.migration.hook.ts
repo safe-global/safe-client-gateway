@@ -25,7 +25,7 @@ export class PostgresDatabaseMigrationHook implements OnModuleInit {
     private readonly configurationService: IConfigurationService,
   ) {
     this.runMigrations = this.configurationService.getOrThrow<boolean>(
-      'features.runMigrations',
+      'application.runMigrations',
     );
   }
 

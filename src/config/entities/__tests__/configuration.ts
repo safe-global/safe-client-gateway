@@ -15,6 +15,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   application: {
     isProduction: faker.datatype.boolean(),
+    runMigrations: true,
     port: faker.internet.port().toString(),
   },
   auth: {
@@ -107,7 +108,6 @@ export default (): ReturnType<typeof configuration> => ({
   },
   express: { jsonLimit: '1mb' },
   features: {
-    runMigrations: true,
     richFragments: true,
     email: false,
     zerionBalancesChainIds: ['137'],
