@@ -29,9 +29,6 @@ export class SwapOrderHelper {
   public static readonly NATIVE_CURRENCY_ADDRESS =
     '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
-  private readonly restrictApps: boolean =
-    this.configurationService.getOrThrow('swaps.restrictApps');
-
   private readonly swapsExplorerBaseUri: string =
     this.configurationService.getOrThrow('swaps.explorerBaseUri');
 
@@ -44,7 +41,6 @@ export class SwapOrderHelper {
     private readonly swapsRepository: ISwapsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject('SWAP_ALLOWED_APPS') private readonly allowedApps: Set<string>,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
   ) {}
@@ -108,21 +104,6 @@ export class SwapOrderHelper {
   }
 
   /**
-   * Checks if the app associated with an order is allowed.
-   *
-   * @param order - the order to which we should verify the app data with
-   * @returns true if the app is allowed, false otherwise.
-   */
-  // TODO: Refactor with confirmation view, swaps and TWAPs
-  isAppAllowed(order: Order): boolean {
-    if (!this.restrictApps) return true;
-    const appCode = order.fullAppData?.appCode;
-    return (
-      !!appCode && typeof appCode === 'string' && this.allowedApps.has(appCode)
-    );
-  }
-
-  /**
    * Retrieves a token object based on the provided Ethereum chain ID and token address.
    * If the specified address is the placeholder for the native currency of the chain,
    * it fetches the chain's native currency details from the {@link IChainsRepository}.
@@ -173,14 +154,6 @@ export class SwapOrderHelper {
   }
 }
 
-function allowedAppsFactory(
-  configurationService: IConfigurationService,
-): Set<string> {
-  const allowedApps =
-    configurationService.getOrThrow<string[]>('swaps.allowedApps');
-  return new Set(allowedApps);
-}
-
 @Module({
   imports: [
     ChainsRepositoryModule,
@@ -188,15 +161,7 @@ function allowedAppsFactory(
     TokenRepositoryModule,
     TransactionDataFinderModule,
   ],
-  providers: [
-    SwapOrderHelper,
-    GPv2Decoder,
-    {
-      provide: 'SWAP_ALLOWED_APPS',
-      useFactory: allowedAppsFactory,
-      inject: [IConfigurationService],
-    },
-  ],
+  providers: [SwapOrderHelper, GPv2Decoder],
   exports: [SwapOrderHelper],
 })
 export class SwapOrderHelperModule {}

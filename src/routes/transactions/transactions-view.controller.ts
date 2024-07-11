@@ -32,6 +32,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.helper';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.helper';
 
 @ApiTags('transactions')
 @Controller({
@@ -78,6 +79,7 @@ export class TransactionsViewController {
     SwapOrderHelperModule,
     TwapOrderHelperModule,
     SwapsRepositoryModule,
+    SwapAppsHelperModule,
   ],
   providers: [TransactionsViewService, ComposableCowDecoder],
   controllers: [TransactionsViewController],

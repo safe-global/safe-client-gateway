@@ -24,6 +24,10 @@ import { SwapOrderMapperModule } from '@/routes/transactions/mappers/common/swap
 import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  SwapAppsHelper,
+  SwapAppsHelperModule,
+} from '@/routes/transactions/helpers/swap-apps.helper';
 
 @Injectable()
 export class TwapOrderMapper {
@@ -39,6 +43,7 @@ export class TwapOrderMapper {
     private readonly composableCowDecoder: ComposableCowDecoder,
     private readonly gpv2OrderHelper: GPv2OrderHelper,
     private readonly twapOrderHelper: TwapOrderHelper,
+    private readonly swapAppsHelper: SwapAppsHelper,
   ) {
     this.maxNumberOfParts = this.configurationService.getOrThrow(
       'swaps.maxNumberOfParts',
@@ -77,8 +82,7 @@ export class TwapOrderMapper {
       twapStruct.appData,
     );
 
-    // TODO: Refactor with confirmation view, swaps and TWAPs
-    if (!this.twapOrderHelper.isAppAllowed(fullAppData)) {
+    if (!this.swapAppsHelper.isAppAllowed(fullAppData)) {
       throw new Error(`Unsupported App: ${fullAppData.fullAppData?.appCode}`);
     }
 
@@ -103,8 +107,7 @@ export class TwapOrderMapper {
         part.appData,
       );
 
-      // TODO: Refactor with confirmation view, swaps and TWAPs
-      if (!this.twapOrderHelper.isAppAllowed(partFullAppData)) {
+      if (!this.swapAppsHelper.isAppAllowed(partFullAppData)) {
         throw new Error(
           `Unsupported App: ${partFullAppData.fullAppData?.appCode}`,
         );
@@ -127,7 +130,7 @@ export class TwapOrderMapper {
         continue;
       }
 
-      if (!this.swapOrderHelper.isAppAllowed(order)) {
+      if (!this.swapAppsHelper.isAppAllowed(order)) {
         throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
       }
 
@@ -250,6 +253,7 @@ export class TwapOrderMapper {
     SwapsRepositoryModule,
     SwapOrderMapperModule,
     TwapOrderHelperModule,
+    SwapAppsHelperModule,
   ],
   providers: [ComposableCowDecoder, GPv2OrderHelper, TwapOrderMapper],
   exports: [TwapOrderMapper],

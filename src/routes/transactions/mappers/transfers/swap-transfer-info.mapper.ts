@@ -9,6 +9,7 @@ import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer
 import { getAddress, isAddressEqual } from 'viem';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { Order } from '@/domain/swaps/entities/order.entity';
+import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
 
 @Injectable()
 export class SwapTransferInfoMapper {
@@ -16,6 +17,7 @@ export class SwapTransferInfoMapper {
     private readonly swapOrderHelper: SwapOrderHelper,
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
+    private readonly swapAppsHelper: SwapAppsHelper,
   ) {}
 
   /**
@@ -66,7 +68,7 @@ export class SwapTransferInfoMapper {
       throw new Error('Transfer not found in order');
     }
 
-    if (!this.swapOrderHelper.isAppAllowed(order)) {
+    if (!this.swapAppsHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
 

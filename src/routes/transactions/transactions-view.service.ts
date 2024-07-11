@@ -16,6 +16,7 @@ import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper
 import { OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
 
 @Injectable({})
 export class TransactionsViewService {
@@ -29,6 +30,7 @@ export class TransactionsViewService {
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
     private readonly composableCowDecoder: ComposableCowDecoder,
+    private readonly swapAppsHelper: SwapAppsHelper,
   ) {}
 
   async getTransactionConfirmationView(args: {
@@ -103,8 +105,7 @@ export class TransactionsViewService {
       orderUid,
     });
 
-    // TODO: Refactor with confirmation view, swaps and TWAPs
-    if (!this.swapOrderHelper.isAppAllowed(order)) {
+    if (!this.swapAppsHelper.isAppAllowed(order)) {
       throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
     }
 
@@ -179,8 +180,7 @@ export class TransactionsViewService {
       twapStruct.appData,
     );
 
-    // TODO: Refactor with confirmation view, swaps and TWAPs
-    if (!this.twapOrderHelper.isAppAllowed(fullAppData)) {
+    if (!this.swapAppsHelper.isAppAllowed(fullAppData)) {
       throw new Error(`Unsupported App: ${fullAppData.fullAppData?.appCode}`);
     }
 

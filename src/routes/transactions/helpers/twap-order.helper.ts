@@ -20,10 +20,8 @@ import {
   TwapOrderInfo,
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
 import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
-import { Inject, Injectable, Module } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import { isAddressEqual } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { FullAppData } from '@/domain/swaps/entities/full-app-data.entity';
 
 /**
  *
@@ -34,18 +32,10 @@ export class TwapOrderHelper {
   private static readonly ComposableCowAddress =
     '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74' as const;
 
-  private readonly restrictApps: boolean;
-
   constructor(
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     private readonly transactionDataFinder: TransactionDataFinder,
     private readonly composableCowDecoder: ComposableCowDecoder,
-    @Inject('SWAP_ALLOWED_APPS') private readonly allowedApps: Set<string>,
-  ) {
-    this.restrictApps =
-      this.configurationService.getOrThrow<boolean>('swaps.restrictApps');
-  }
+  ) {}
 
   /**
    * Finds a TWAP order in a given transaction, either directly called or in a MultiSend
@@ -158,21 +148,6 @@ export class TwapOrderHelper {
     });
   }
 
-  /**
-   * Checks if the app associated contained in fullAppData is allowed.
-   *
-   * @param fullAppData - object to which we should verify the app data with
-   * @returns true if the app is allowed, false otherwise.
-   */
-  // TODO: Refactor with confirmation view, swaps and TWAPs
-  public isAppAllowed(fullAppData: FullAppData): boolean {
-    if (!this.restrictApps) return true;
-    const appCode = fullAppData.fullAppData?.appCode;
-    return (
-      !!appCode && typeof appCode === 'string' && this.allowedApps.has(appCode)
-    );
-  }
-
   private calculateValidTo(args: {
     part: number;
     startTime: number;
@@ -188,25 +163,9 @@ export class TwapOrderHelper {
   }
 }
 
-function allowedAppsFactory(
-  configurationService: IConfigurationService,
-): Set<string> {
-  const allowedApps =
-    configurationService.getOrThrow<string[]>('swaps.allowedApps');
-  return new Set(allowedApps);
-}
-
 @Module({
   imports: [TransactionDataFinderModule],
-  providers: [
-    ComposableCowDecoder,
-    TwapOrderHelper,
-    {
-      provide: 'SWAP_ALLOWED_APPS',
-      useFactory: allowedAppsFactory,
-      inject: [IConfigurationService],
-    },
-  ],
+  providers: [ComposableCowDecoder, TwapOrderHelper],
   exports: [TwapOrderHelper],
 })
 export class TwapOrderHelperModule {}

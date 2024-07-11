@@ -6,6 +6,7 @@ import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import { TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
+import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { getTransferDirection } from '@/routes/transactions/mappers/common/transfer-direction.helper';
 import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
@@ -15,12 +16,15 @@ import { getAddress } from 'viem';
 const mockSwapOrderHelper = jest.mocked({
   getToken: jest.fn(),
   getOrderExplorerUrl: jest.fn(),
-  isAppAllowed: jest.fn(),
 } as jest.MockedObjectDeep<SwapOrderHelper>);
 
 const mockSwapsRepository = jest.mocked({
   getOrders: jest.fn(),
 } as jest.MockedObjectDeep<ISwapsRepository>);
+
+const mockSwapAppsHelper = jest.mocked({
+  isAppAllowed: jest.fn(),
+} as jest.MockedObjectDeep<SwapAppsHelper>);
 
 describe('SwapTransferInfoMapper', () => {
   let target: SwapTransferInfoMapper;
@@ -33,6 +37,7 @@ describe('SwapTransferInfoMapper', () => {
     target = new SwapTransferInfoMapper(
       mockSwapOrderHelper,
       mockSwapsRepository,
+      mockSwapAppsHelper,
     );
   });
 
@@ -119,7 +124,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
     );
-    mockSwapOrderHelper.isAppAllowed.mockReturnValue(true);
+    mockSwapAppsHelper.isAppAllowed.mockReturnValue(true);
 
     const actual = await target.mapSwapTransferInfo({
       sender,
@@ -201,7 +206,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
     );
-    mockSwapOrderHelper.isAppAllowed.mockReturnValue(true);
+    mockSwapAppsHelper.isAppAllowed.mockReturnValue(true);
 
     const actual = await target.mapSwapTransferInfo({
       sender,
@@ -362,7 +367,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
     );
-    mockSwapOrderHelper.isAppAllowed.mockReturnValue(true);
+    mockSwapAppsHelper.isAppAllowed.mockReturnValue(true);
 
     const actual = await target.mapSwapTransferInfo({
       sender,
@@ -519,7 +524,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
     );
-    mockSwapOrderHelper.isAppAllowed.mockReturnValue(false);
+    mockSwapAppsHelper.isAppAllowed.mockReturnValue(false);
 
     await expect(
       target.mapSwapTransferInfo({

@@ -17,6 +17,7 @@ import { ILoggingService } from '@/logging/logging.interface';
 import { getAddress } from 'viem';
 import { fullAppDataBuilder } from '@/domain/swaps/entities/__tests__/full-app-data.builder';
 import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
+import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
 
 const loggingService = {
   debug: jest.fn(),
@@ -53,17 +54,14 @@ describe('TwapOrderMapper', () => {
     mockTokenRepository,
     mockSwapsRepository,
     mockConfigurationService,
-    allowedApps,
     mockChainsRepository,
   );
   const composableCowDecoder = new ComposableCowDecoder();
   const gpv2OrderHelper = new GPv2OrderHelper();
   configurationService.set('swaps.restrictApps', false);
   const twapOrderHelper = new TwapOrderHelper(
-    configurationService,
     transactionDataFinder,
     composableCowDecoder,
-    allowedApps,
   );
 
   beforeEach(() => {
@@ -90,6 +88,7 @@ describe('TwapOrderMapper', () => {
       composableCowDecoder,
       gpv2OrderHelper,
       twapOrderHelper,
+      new SwapAppsHelper(configurationService, allowedApps),
     );
 
     // Taken from queued transaction of specified owner before execution
@@ -188,6 +187,7 @@ describe('TwapOrderMapper', () => {
       composableCowDecoder,
       gpv2OrderHelper,
       twapOrderHelper,
+      new SwapAppsHelper(configurationService, allowedApps),
     );
 
     /**
@@ -369,6 +369,7 @@ describe('TwapOrderMapper', () => {
       composableCowDecoder,
       gpv2OrderHelper,
       twapOrderHelper,
+      new SwapAppsHelper(configurationService, allowedApps),
     );
 
     /**
@@ -508,12 +509,8 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(
-        configurationService,
-        transactionDataFinder,
-        composableCowDecoder,
-        allowedApps,
-      ),
+      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new SwapAppsHelper(configurationService, allowedApps),
     );
 
     // Taken from queued transaction of specified owner before execution
@@ -555,12 +552,8 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(
-        configurationService,
-        transactionDataFinder,
-        composableCowDecoder,
-        new Set(['app1', 'app2']),
-      ),
+      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new SwapAppsHelper(configurationService, new Set(['app1', 'app2'])),
     );
 
     // Taken from queued transaction of specified owner before execution
@@ -599,12 +592,8 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(
-        configurationService,
-        transactionDataFinder,
-        composableCowDecoder,
-        allowedApps,
-      ),
+      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new SwapAppsHelper(configurationService, allowedApps),
     );
 
     /**
@@ -701,12 +690,8 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(
-        configurationService,
-        transactionDataFinder,
-        composableCowDecoder,
-        new Set(['Safe Wallet Swaps']),
-      ),
+      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new SwapAppsHelper(configurationService, new Set(['Safe Wallet Swaps'])),
     );
 
     /**
@@ -810,12 +795,8 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(
-        configurationService,
-        transactionDataFinder,
-        composableCowDecoder,
-        new Set(['app1', 'app2']),
-      ),
+      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new SwapAppsHelper(configurationService, new Set(['app1', 'app2'])),
     );
 
     // Taken from queued transaction of specified owner before execution

@@ -33,13 +33,10 @@ describe('TwapOrderHelper', () => {
   const transactionDataFinder = new TransactionDataFinder(multiSendDecoder);
   const composableCowDecoder = new ComposableCowDecoder();
   const configurationService = new FakeConfigurationService();
-  const allowedApps = new Set<string>();
   configurationService.set('swaps.restrictApps', false);
   const target = new TwapOrderHelper(
-    configurationService,
     transactionDataFinder,
     composableCowDecoder,
-    allowedApps,
   );
 
   describe('findTwapOrder', () => {
