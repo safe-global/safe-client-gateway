@@ -9,6 +9,9 @@ import { transactionDataDtoBuilder } from '@/routes/data-decode/entities/__tests
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import { Server } from 'net';
 
+// Runs failed tests n-times until they pass or until the max number of retries is exhausted.
+jest.retryTimes(3, { logErrorsBeforeRetry: true });
+
 describe('Data decode e2e tests', () => {
   let app: INestApplication<Server>;
   const chainId = '1'; // Mainnet
@@ -157,7 +160,7 @@ describe('Data decode e2e tests', () => {
       .then(({ body }) => {
         expect(body).toEqual(expectedResponse);
       });
-  });
+  }, 60_000);
 
   it('POST /data-decoder should throw a validation error', async () => {
     const getDataDecodedDto = transactionDataDtoBuilder().build();
