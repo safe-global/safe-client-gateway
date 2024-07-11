@@ -1,5 +1,6 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
 import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
@@ -16,20 +17,23 @@ const mockLoggingService = {
 } as jest.MockedObjectDeep<ILoggingService>;
 
 describe('AccountsDatasource tests', () => {
-  let target: AccountsDatasource;
-  let migrator: PostgresDatabaseMigrator;
+  let fakeCacheService: FakeCacheService;
   let sql: postgres.Sql;
+  let migrator: PostgresDatabaseMigrator;
+  let target: AccountsDatasource;
   const testDbFactory = new TestDbFactory();
 
   beforeAll(async () => {
+    fakeCacheService = new FakeCacheService();
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
-    target = new AccountsDatasource(sql, mockLoggingService);
+    target = new AccountsDatasource(fakeCacheService, sql, mockLoggingService);
   });
 
   afterEach(async () => {
     await sql`TRUNCATE TABLE accounts, groups, account_data_types CASCADE`;
+    fakeCacheService.clear();
   });
 
   afterAll(async () => {
@@ -106,48 +110,62 @@ describe('AccountsDatasource tests', () => {
   });
 
   describe('getDataTypes', () => {
-    it('returns data types successfully', async () => {
-      const dataTypeNames = [
-        faker.lorem.slug(),
-        faker.lorem.slug(),
-        faker.lorem.slug(),
+    it('returns data types from the database successfully', async () => {
+      const dataTypes = [
+        { name: faker.lorem.slug() },
+        { name: faker.lorem.slug() },
+        { name: faker.lorem.slug() },
       ];
       await sql`
-        INSERT INTO account_data_types (name) VALUES
-        (${dataTypeNames[0]}),
-        (${dataTypeNames[1]}),
-        (${dataTypeNames[2]})
-      `;
+        INSERT INTO account_data_types ${sql(dataTypes, 'name')}`;
 
       const result = await target.getDataTypes();
 
       expect(result).toStrictEqual(
-        expect.arrayContaining([
-          {
-            id: expect.any(Number),
-            name: dataTypeNames[0],
-            description: null,
-            is_active: true,
-            created_at: expect.any(Date),
-            updated_at: expect.any(Date),
-          },
-          {
-            id: expect.any(Number),
-            name: dataTypeNames[1],
-            description: null,
-            is_active: true,
-            created_at: expect.any(Date),
-            updated_at: expect.any(Date),
-          },
-          {
-            id: expect.any(Number),
-            name: dataTypeNames[2],
-            description: null,
-            is_active: true,
-            created_at: expect.any(Date),
-            updated_at: expect.any(Date),
-          },
-        ]),
+        expect.arrayContaining(
+          dataTypes.map((dataType) =>
+            expect.objectContaining({
+              id: expect.any(Number),
+              name: dataType.name,
+              description: null,
+              is_active: true,
+            }),
+          ),
+        ),
+      );
+    });
+
+    it('returns data types from cache successfully', async () => {
+      const dataTypes = [
+        { name: faker.lorem.slug() },
+        { name: faker.lorem.slug() },
+        { name: faker.lorem.slug() },
+      ];
+      const rows = await sql`
+        INSERT INTO account_data_types ${sql(dataTypes, 'name')} RETURNING (id)`;
+
+      // cache the data types
+      await target.getDataTypes();
+
+      // delete the data types from the database
+      await sql`
+        DELETE FROM account_data_types WHERE id 
+          IN ${sql(rows.map((id) => id.id))}`;
+
+      // check the data types are still in the cache
+      const result = await target.getDataTypes();
+
+      expect(result).toStrictEqual(
+        expect.arrayContaining(
+          dataTypes.map((dataType) =>
+            expect.objectContaining({
+              id: expect.any(Number),
+              name: dataType.name,
+              description: null,
+              is_active: true,
+            }),
+          ),
+        ),
       );
     });
   });

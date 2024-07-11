@@ -1,3 +1,8 @@
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
@@ -15,7 +20,10 @@ import postgres from 'postgres';
 
 @Injectable()
 export class AccountsDatasource implements IAccountsDatasource {
+  private static readonly MAX_TTL = 2147483647;
+
   constructor(
+    @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
@@ -64,8 +72,21 @@ export class AccountsDatasource implements IAccountsDatasource {
   }
 
   async getDataTypes(): Promise<AccountDataType[]> {
-    // TODO: add caching with clearing mechanism.
-    return this.sql<[AccountDataType]>`SELECT * FROM account_data_types`;
+    const { key, field } = CacheRouter.getAccountDataTypesCacheDir();
+    const cached = await this.cacheService.get({ key, field });
+    if (cached != null) {
+      this.loggingService.debug({ type: 'cache_hit', key, field });
+      return JSON.parse(cached);
+    }
+    const result = await this.sql<
+      [AccountDataType]
+    >`SELECT * FROM account_data_types`;
+    await this.cacheService.set(
+      { key, field },
+      JSON.stringify(result),
+      AccountsDatasource.MAX_TTL,
+    );
+    return result;
   }
 
   async getAccountDataSettings(
