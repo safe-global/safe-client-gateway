@@ -31,7 +31,7 @@ import { get } from 'lodash';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
-  private static readonly INDEFINITE_EXPIRATION_TIME = -1;
+  private static readonly MAX_TTL = 2147483647;
 
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
@@ -199,7 +199,7 @@ export class TransactionApi implements ITransactionApi {
       JSON.stringify(isSafe),
       isSafe
         ? // We can indefinitely cache this as an address cannot "un-Safe" itself
-          TransactionApi.INDEFINITE_EXPIRATION_TIME
+          TransactionApi.MAX_TTL
         : this.defaultExpirationTimeInSeconds,
     );
 
