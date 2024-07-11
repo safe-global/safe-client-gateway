@@ -8,9 +8,7 @@ import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity'
 import { transactionDataDtoBuilder } from '@/routes/data-decode/entities/__tests__/transaction-data.dto.builder';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import { Server } from 'net';
-
-// Runs failed tests n-times until they pass or until the max number of retries is exhausted.
-jest.retryTimes(3, { logErrorsBeforeRetry: true });
+import { retry } from '@/__tests__/util/retry';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication<Server>;
@@ -153,14 +151,16 @@ describe('Data decode e2e tests', () => {
       ],
     };
 
-    await request(app.getHttpServer())
-      .post(`/v1/chains/${chainId}/data-decoder`)
-      .send(getDataDecodedDto)
-      .expect(200)
-      .then(({ body }) => {
-        expect(body).toEqual(expectedResponse);
-      });
-  }, 60_000);
+    await retry(async () => {
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/data-decoder`)
+        .send(getDataDecodedDto)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body).toEqual(expectedResponse);
+        });
+    }, 5); // retry 5 times before failing
+  });
 
   it('POST /data-decoder should throw a validation error', async () => {
     const getDataDecodedDto = transactionDataDtoBuilder().build();
