@@ -15,6 +15,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   application: {
     isProduction: faker.datatype.boolean(),
+    runMigrations: true,
     port: faker.internet.port().toString(),
   },
   auth: {

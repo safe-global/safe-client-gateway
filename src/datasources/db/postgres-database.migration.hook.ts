@@ -2,6 +2,7 @@ import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import postgres from 'postgres';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 /**
  * The {@link PostgresDatabaseMigrationHook} is a Module Init hook meaning
@@ -13,15 +14,26 @@ import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.mig
 @Injectable({})
 export class PostgresDatabaseMigrationHook implements OnModuleInit {
   private static LOCK_MAGIC_NUMBER = 132;
+  private readonly runMigrations: boolean;
 
   constructor(
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
     @Inject(PostgresDatabaseMigrator)
     private readonly migrator: PostgresDatabaseMigrator,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.runMigrations = this.configurationService.getOrThrow<boolean>(
+      'application.runMigrations',
+    );
+  }
 
   async onModuleInit(): Promise<void> {
+    if (!this.runMigrations) {
+      return this.loggingService.info('Database migrations are disabled');
+    }
+
     this.loggingService.info('Checking migrations');
     try {
       // Acquire lock to perform a migration.

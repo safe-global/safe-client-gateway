@@ -25,6 +25,9 @@ export default () => ({
   },
   application: {
     isProduction: process.env.CGW_ENV === 'production',
+    // Enables/disables the execution of migrations on startup.
+    // Defaults to true.
+    runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() !== 'false',
     port: process.env.APPLICATION_PORT || '3000',
   },
   auth: {
