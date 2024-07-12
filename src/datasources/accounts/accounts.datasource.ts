@@ -16,17 +16,34 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  OnModuleInit,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
 
 @Injectable()
-export class AccountsDatasource implements IAccountsDatasource {
+export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
+
+  /**
+   * Function executed when the module is initialized.
+   * It deletes the cache for persistent keys.
+   */
+  async onModuleInit(): Promise<void> {
+    const persistentCacheDirs = [
+      CacheRouter.getActiveAccountDataTypesCacheDir(),
+      CacheRouter.getAccountDataTypesCacheDir(),
+    ];
+    await Promise.all(
+      persistentCacheDirs.map(async (cacheDir) => {
+        await this.cacheService.deleteByKey(cacheDir.key);
+      }),
+    );
+  }
 
   async createAccount(address: `0x${string}`): Promise<Account> {
     const [account] = await this.sql<
@@ -75,7 +92,6 @@ export class AccountsDatasource implements IAccountsDatasource {
   }
 
   getActiveDataTypes(): Promise<AccountDataType[]> {
-    // TODO: clear on OnModuleInit
     const cacheDir = CacheRouter.getActiveAccountDataTypesCacheDir();
     return this.getFromCacheOrExecuteAndCache<AccountDataType[]>(
       cacheDir,
@@ -87,7 +103,6 @@ export class AccountsDatasource implements IAccountsDatasource {
   }
 
   async getDataTypes(): Promise<AccountDataType[]> {
-    // TODO: clear on OnModuleInit
     const cacheDir = CacheRouter.getAccountDataTypesCacheDir();
     return this.getFromCacheOrExecuteAndCache<AccountDataType[]>(
       cacheDir,
@@ -171,7 +186,6 @@ export class AccountsDatasource implements IAccountsDatasource {
       this.loggingService.debug({ type: 'cache_hit', key, field });
       return JSON.parse(cached);
     }
-
     this.loggingService.debug({ type: 'cache_miss', key, field });
     const result = await query;
     if (result.count > 0) {
