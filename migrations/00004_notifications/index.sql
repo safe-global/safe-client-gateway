@@ -67,7 +67,7 @@ CREATE TABLE notification_medium_configurations(
     id SERIAL PRIMARY KEY,
     notification_subscription_id INT NOT NULL,
     notification_medium_id INT NOT NULL,
-    medium_token VARCHAR(255) NOT NULL,
+    cloud_messaging_token VARCHAR(255) NOT NULL,
     enabled BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
