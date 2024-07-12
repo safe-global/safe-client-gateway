@@ -163,15 +163,6 @@ export class SanctionedAddressesIndexer {
           return [];
         });
 
-      const isInsufficientLogs = BigInt(pageEvents.length) < pageSize;
-      const isLastPage = block + pageSize > latestBlock;
-
-      if (isInsufficientLogs && !isLastPage) {
-        throw new Error(
-          `RPC returned insufficient logs (${pageEvents.length}/${pageSize.toString()})! There is likely an \`eth_Logs\` restriction on chain ${chainId}`,
-        );
-      }
-
       events.push(...pageEvents);
     }
 
