@@ -7,6 +7,7 @@ import { fakeJson } from '@/__tests__/faker';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import { MAX_TTL } from '@/datasources/cache/constants';
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
@@ -172,5 +173,23 @@ describe('RedisCacheService', () => {
     const ttl = await redisClient.ttl(key);
     expect(ttl).toBeGreaterThan(0);
     expect(ttl).toBeLessThanOrEqual(expireTime);
+  });
+
+  it('stores a key for MAX_TTL seconds', async () => {
+    const key = faker.string.alphanumeric();
+    const value = faker.string.sample();
+
+    try {
+      await redisCacheService.set(new CacheDir(key, ''), value, MAX_TTL);
+    } catch (err) {
+      console.error(err);
+      throw new Error('Should not throw');
+    }
+
+    const storedValue = await redisClient.hGet(key, '');
+    const ttl = await redisClient.ttl(key);
+    expect(storedValue).toEqual(value);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
   });
 });

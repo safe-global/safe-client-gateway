@@ -2,6 +2,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { MAX_TTL } from '@/datasources/cache/constants';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { INetworkService } from '@/datasources/network/network.service.interface';
@@ -31,7 +32,6 @@ import { get } from 'lodash';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
-  private static readonly MAX_TTL = 2147483647;
 
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
@@ -197,10 +197,8 @@ export class TransactionApi implements ITransactionApi {
     await this.cacheService.set(
       cacheDir,
       JSON.stringify(isSafe),
-      isSafe
-        ? // We can indefinitely cache this as an address cannot "un-Safe" itself
-          TransactionApi.MAX_TTL
-        : this.defaultExpirationTimeInSeconds,
+      // We can indefinitely cache this as an address cannot "un-Safe" itself
+      isSafe ? MAX_TTL : this.defaultExpirationTimeInSeconds,
     );
 
     return isSafe;

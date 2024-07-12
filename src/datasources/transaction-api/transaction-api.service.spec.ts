@@ -59,7 +59,6 @@ describe('TransactionApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
   let httpErrorFactory: HttpErrorFactory;
   let service: TransactionApi;
-  const maxTtl = 2147483647;
   let defaultExpirationTimeInSeconds: number;
   let notFoundExpireTimeSeconds: number;
   let ownersTtlSeconds: number;
@@ -353,7 +352,11 @@ describe('TransactionApi', () => {
         url: `${baseUrl}/api/v1/safes/${safe.address}`,
       });
       expect(cacheService.set).toHaveBeenCalledTimes(1);
-      expect(cacheService.set).toHaveBeenCalledWith(cacheDir, 'true', maxTtl);
+      expect(cacheService.set).toHaveBeenCalledWith(
+        cacheDir,
+        'true',
+        Number.MAX_SAFE_INTEGER - 1,
+      );
     });
 
     it('should return the cached value', async () => {
