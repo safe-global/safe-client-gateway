@@ -347,6 +347,58 @@ describe('Migration 00004_notifications', () => {
     );
   });
 
+  it('should not allow a cloud_messaging_token to exist if the notification_medium is not PUSH_NOTIFICATION', async () => {
+    await migrator.test({
+      migration: '00004_notifications',
+      after: async (sql) => {
+        await sql.begin(async (transaction) => {
+          // Add medium that does not support cloud_messaging_token
+          await transaction`INSERT INTO notification_mediums(name)
+                                    VALUES ('NOT_PUSH_NOTIFICATIONS')`;
+          // Create account
+          await transaction`INSERT INTO accounts (address)
+                                    VALUES ('0x69');`;
+          // Add notification subscription to account
+          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
+                                VALUES (1, 1, 1, '0x420')`;
+        });
+      },
+    });
+
+    // Get NOT_PUSH_NOTIFICATIONS notification medium
+    const [notPushNotifications] = await sql<
+      Array<NotificationMediumsRow>
+    >`SELECT * FROM notification_mediums WHERE name = 'NOT_PUSH_NOTIFICATIONS'`;
+
+    // Try to enable a non-PUSH_NOTIFICATIONS medium with a cloud_messaging_token
+    await expect(sql`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, enabled, cloud_messaging_token)
+                      VALUES (1, ${notPushNotifications.id}, true, '69420')`).rejects.toThrow(
+      'cloud_messaging_token can only be set for PUSH_NOTIFICATIONS of notification_mediums',
+    );
+  });
+
+  it('should require a cloud_messaging_token to be set when the notification_medium is PUSH_NOTIFICATION', async () => {
+    await migrator.test({
+      migration: '00004_notifications',
+      after: async (sql) => {
+        await sql.begin(async (transaction) => {
+          // Create account
+          await transaction`INSERT INTO accounts (address)
+                                    VALUES ('0x69');`;
+          // Add notification subscription to account
+          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
+                                VALUES (1, 1, 1, '0x420')`;
+        });
+      },
+    });
+
+    // Try to enable PUSH_NOTIFICATIONS without a cloud_messaging_token
+    await expect(sql`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, enabled)
+                      VALUES (1, 1, true)`).rejects.toThrow(
+      'cloud_messaging_token is required for PUSH_NOTIFICATIONS of notification_mediums',
+    );
+  });
+
   it('should delete the subscription and configuration if the account is deleted', async () => {
     const result = await migrator.test({
       migration: '00004_notifications',
@@ -542,58 +594,6 @@ describe('Migration 00004_notifications', () => {
       ],
       notification_medium_configurations: [],
     });
-  });
-
-  it('should not allow a cloud_messaging_token to exist if the notification_medium is not PUSH_NOTIFICATION', async () => {
-    await migrator.test({
-      migration: '00004_notifications',
-      after: async (sql) => {
-        await sql.begin(async (transaction) => {
-          // Add medium that does not support cloud_messaging_token
-          await transaction`INSERT INTO notification_mediums(name)
-                                    VALUES ('NOT_PUSH_NOTIFICATIONS')`;
-          // Create account
-          await transaction`INSERT INTO accounts (address)
-                                    VALUES ('0x69');`;
-          // Add notification subscription to account
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                VALUES (1, 1, 1, '0x420')`;
-        });
-      },
-    });
-
-    // Get NOT_PUSH_NOTIFICATIONS notification medium
-    const notPushNotifications =
-      await sql`SELECT * FROM notification_mediums WHERE name = 'NOT_PUSH_NOTIFICATIONS'`;
-    const notPushNotificationsId = notPushNotifications[0].id as string;
-
-    // Try to enable a non-PUSH_NOTIFICATIONS medium with a cloud_messaging_token
-    await expect(sql`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, enabled, cloud_messaging_token)
-                      VALUES (1, ${notPushNotificationsId}, true, '69420')`).rejects.toThrow(
-      'cloud_messaging_token can only be set for PUSH_NOTIFICATIONS of notification_mediums',
-    );
-  });
-
-  it('should require a cloud_messaging_token to be set when the notification_medium is PUSH_NOTIFICATION', async () => {
-    await migrator.test({
-      migration: '00004_notifications',
-      after: async (sql) => {
-        await sql.begin(async (transaction) => {
-          // Create account
-          await transaction`INSERT INTO accounts (address)
-                                    VALUES ('0x69');`;
-          // Add notification subscription to account
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                VALUES (1, 1, 1, '0x420')`;
-        });
-      },
-    });
-
-    // Try to enable PUSH_NOTIFICATIONS without a cloud_messaging_token
-    await expect(sql`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, enabled)
-                      VALUES (1, 1, true)`).rejects.toThrow(
-      'cloud_messaging_token is required for PUSH_NOTIFICATIONS of notification_mediums',
-    );
   });
 
   it('should delete the notification_medium_configuration if the notification_medium is deleted', async () => {
