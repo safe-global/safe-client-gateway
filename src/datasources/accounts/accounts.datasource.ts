@@ -48,12 +48,12 @@ export class AccountsDatasource implements IAccountsDatasource {
   }
 
   async getAccount(address: `0x${string}`): Promise<Account> {
-    const [account] = await this.sql<
-      [Account]
-    >`SELECT * FROM accounts WHERE address = ${address}`.catch((e) => {
-      this.loggingService.info(`Error getting account: ${asError(e).message}`);
-      return [];
-    });
+    const cacheDir = CacheRouter.getAccountCacheDir(address);
+    const [account] = await this.getFromCacheOrExecuteAndCache<Account[]>(
+      cacheDir,
+      this.sql<Account[]>`SELECT * FROM accounts WHERE address = ${address}`,
+      MAX_TTL,
+    );
 
     if (!account) {
       throw new NotFoundException('Error getting account.');
@@ -66,12 +66,28 @@ export class AccountsDatasource implements IAccountsDatasource {
     const { count } = await this
       .sql`DELETE FROM accounts WHERE address = ${address}`;
 
+    const { key } = CacheRouter.getAccountCacheDir(address);
+    await this.cacheService.deleteByKey(key);
+
     if (count === 0) {
       this.loggingService.debug(`Error deleting account ${address}: not found`);
     }
   }
 
+  getActiveDataTypes(): Promise<AccountDataType[]> {
+    // TODO: clear on OnModuleInit
+    const cacheDir = CacheRouter.getActiveAccountDataTypesCacheDir();
+    return this.getFromCacheOrExecuteAndCache<AccountDataType[]>(
+      cacheDir,
+      this.sql<
+        AccountDataType[]
+      >`SELECT * FROM account_data_types WHERE is_active IS TRUE`,
+      MAX_TTL,
+    );
+  }
+
   async getDataTypes(): Promise<AccountDataType[]> {
+    // TODO: clear on OnModuleInit
     const cacheDir = CacheRouter.getAccountDataTypesCacheDir();
     return this.getFromCacheOrExecuteAndCache<AccountDataType[]>(
       cacheDir,
@@ -128,13 +144,6 @@ export class AccountsDatasource implements IAccountsDatasource {
     });
   }
 
-  private getActiveDataTypes(): Promise<AccountDataType[]> {
-    // TODO: add caching with clearing mechanism.
-    return this.sql<[AccountDataType]>`
-      SELECT * FROM account_data_types WHERE is_active IS TRUE;
-    `;
-  }
-
   private async checkDataTypes(
     accountDataSettings: UpsertAccountDataSettingsDto['accountDataSettings'],
   ): Promise<void> {
@@ -165,7 +174,9 @@ export class AccountsDatasource implements IAccountsDatasource {
 
     this.loggingService.debug({ type: 'cache_miss', key, field });
     const result = await query;
-    await this.cacheService.set(cacheDir, JSON.stringify(result), ttl);
+    if (result.count > 0) {
+      await this.cacheService.set(cacheDir, JSON.stringify(result), ttl);
+    }
     return result;
   }
 }

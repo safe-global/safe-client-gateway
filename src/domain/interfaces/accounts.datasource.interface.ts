@@ -12,6 +12,8 @@ export interface IAccountsDatasource {
 
   deleteAccount(address: `0x${string}`): Promise<void>;
 
+  getActiveDataTypes(): Promise<AccountDataType[]>;
+
   getDataTypes(): Promise<AccountDataType[]>;
 
   getAccountDataSettings(address: `0x${string}`): Promise<AccountDataSetting[]>;

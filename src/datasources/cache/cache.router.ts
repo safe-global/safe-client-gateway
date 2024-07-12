@@ -1,6 +1,9 @@
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class CacheRouter {
+  private static readonly ACCOUNT_KEY = 'account';
+  private static readonly ACTIVE_ACCOUNT_DATA_TYPES_KEY =
+    'active_account_data_types';
   private static readonly ACCOUNT_DATA_TYPES_KEY = 'account_data_types';
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
   private static readonly AUTH_NONCE_KEY = 'auth_nonce';
@@ -490,6 +493,14 @@ export class CacheRouter {
 
   static getPriceFiatCodesCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.SAFE_FIAT_CODES_KEY, '');
+  }
+
+  static getAccountCacheDir(address: `0x${string}`): CacheDir {
+    return new CacheDir(`${CacheRouter.ACCOUNT_KEY}_${address}`, '');
+  }
+
+  static getActiveAccountDataTypesCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.ACTIVE_ACCOUNT_DATA_TYPES_KEY, '');
   }
 
   static getAccountDataTypesCacheDir(): CacheDir {

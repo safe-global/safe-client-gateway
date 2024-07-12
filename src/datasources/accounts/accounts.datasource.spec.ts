@@ -34,6 +34,7 @@ describe('AccountsDatasource tests', () => {
   afterEach(async () => {
     await sql`TRUNCATE TABLE accounts, groups, account_data_types CASCADE`;
     fakeCacheService.clear();
+    jest.clearAllMocks();
   });
 
   afterAll(async () => {
@@ -81,6 +82,57 @@ describe('AccountsDatasource tests', () => {
       });
     });
 
+    it('returns an account from cache', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      await target.createAccount(address);
+
+      // cache the account
+      await target.getAccount(address);
+
+      // delete the account from the database
+      await sql`DELETE FROM accounts WHERE address = ${address}`;
+
+      // check the account is still in the cache
+      const result = await target.getAccount(address);
+
+      expect(result).toStrictEqual(
+        expect.objectContaining({
+          id: expect.any(Number),
+          group_id: null,
+          address,
+        }),
+      );
+    });
+
+    it('should not cache if the account is not found', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      // should not cache the account
+      await expect(target.getAccount(address)).rejects.toThrow();
+
+      // insert the account into the database
+      await sql`INSERT INTO accounts (address) VALUES (${address})`;
+
+      // check the account is returned from the database
+      const result = await target.getAccount(address);
+
+      expect(result).toStrictEqual(
+        expect.objectContaining({
+          id: expect.any(Number),
+          group_id: null,
+          address,
+        }),
+      );
+      expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
+      // TODO: add types to ILoggingService
+      expect(
+        (mockLoggingService.debug.mock.calls[0][0] as { type: string }).type,
+      ).toBe('cache_miss');
+      expect(
+        (mockLoggingService.debug.mock.calls[1][0] as { type: string }).type,
+      ).toBe('cache_miss');
+    });
+
     it('throws if no account is found', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
@@ -107,10 +159,33 @@ describe('AccountsDatasource tests', () => {
 
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(1);
     });
+
+    it('should clear the cache on account deletion', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      await target.createAccount(address);
+      // cache the account
+      await target.getAccount(address);
+      // get the account from the cache
+      await target.getAccount(address);
+      await expect(target.deleteAccount(address)).resolves.not.toThrow();
+
+      // the account is deleted from the database and the cache
+      await expect(target.getAccount(address)).rejects.toThrow();
+
+      expect(
+        (mockLoggingService.debug.mock.calls[0][0] as { type: string }).type,
+      ).toBe('cache_miss');
+      expect(
+        (mockLoggingService.debug.mock.calls[1][0] as { type: string }).type,
+      ).toBe('cache_hit');
+      expect(
+        (mockLoggingService.debug.mock.calls[2][0] as { type: string }).type,
+      ).toBe('cache_miss');
+    });
   });
 
   describe('getDataTypes', () => {
-    it('returns data types from the database successfully', async () => {
+    it('returns all data types from the database successfully', async () => {
       const dataTypes = [
         { name: faker.lorem.slug() },
         { name: faker.lorem.slug() },
@@ -135,7 +210,7 @@ describe('AccountsDatasource tests', () => {
       );
     });
 
-    it('returns data types from cache successfully', async () => {
+    it('returns all data types from cache successfully', async () => {
       const dataTypes = [
         { name: faker.lorem.slug() },
         { name: faker.lorem.slug() },
@@ -154,6 +229,65 @@ describe('AccountsDatasource tests', () => {
 
       // check the data types are still in the cache
       const result = await target.getDataTypes();
+
+      expect(result).toStrictEqual(
+        expect.arrayContaining(
+          dataTypes.map((dataType) =>
+            expect.objectContaining({
+              id: expect.any(Number),
+              name: dataType.name,
+              description: null,
+              is_active: true,
+            }),
+          ),
+        ),
+      );
+    });
+
+    it('returns active data types from the database successfully', async () => {
+      const dataTypes = [
+        { name: faker.lorem.slug() },
+        { name: faker.lorem.slug() },
+        { name: faker.lorem.slug() },
+      ];
+      await sql`
+        INSERT INTO account_data_types ${sql(dataTypes, 'name')}`;
+
+      const result = await target.getActiveDataTypes();
+
+      expect(result).toStrictEqual(
+        expect.arrayContaining(
+          dataTypes.map((dataType) =>
+            expect.objectContaining({
+              id: expect.any(Number),
+              name: dataType.name,
+              description: null,
+              is_active: true,
+            }),
+          ),
+        ),
+      );
+    });
+
+    it('returns active data types from cache successfully', async () => {
+      const dataTypes = [
+        { name: faker.lorem.slug() },
+        { name: faker.lorem.slug() },
+        { name: faker.lorem.slug() },
+      ];
+      const rows = await sql`
+        INSERT INTO account_data_types ${sql(dataTypes, 'name')} RETURNING (id)`;
+
+      // cache the data types
+      await target.getActiveDataTypes();
+
+      // delete the data types from the database
+      await sql`
+        DELETE FROM account_data_types WHERE id 
+          IN ${sql(rows.map((id) => id.id))}`;
+
+      // check the data types are still in the cache
+      const result = await target.getActiveDataTypes();
 
       expect(result).toStrictEqual(
         expect.arrayContaining(
