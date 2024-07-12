@@ -84,26 +84,26 @@ export class SanctionedAddressesIndexer {
 
   // TODO: Store addresses with block indexed until (for continuation) - concatenated across all chains?
   async getSanctionedAddresses(chainId: string): Promise<Array<`0x${string}`>> {
-    const events = await this.getAllSanctionEvents(chainId);
+    const events = await this.getAllSanctionedEvents(chainId);
 
     // Parse events, accordingly populating a sanctioned addresses Set
-    const blockedAddresses = events.reduce((acc, event) => {
+    const sanctionedAddresses = events.reduce((acc, event) => {
       for (const address of event.args.addrs) {
         if (event.eventName === 'SanctionedAddressesAdded') {
           acc.add(address);
         } else if (event.eventName === 'SanctionedAddressesRemoved') {
           acc.delete(address);
         } else {
-          throw new Error('Unexpected log when fetching blocked addresses');
+          throw new Error('Unexpected log when fetching sanctioned addresses');
         }
       }
       return acc;
     }, new Set<`0x${string}`>());
 
-    return Array.from(blockedAddresses);
+    return Array.from(sanctionedAddresses);
   }
 
-  private async getAllSanctionEvents(
+  private async getAllSanctionedEvents(
     chainId: string,
   ): Promise<
     GetContractEventsReturnType<
