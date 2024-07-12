@@ -82,7 +82,7 @@ export class SanctionedAddressesIndexer {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
-  // TODO: Store addresses with block indexed until, for continuation purposes
+  // TODO: Store addresses with block indexed until (for continuation) - concatenated across all chains?
   async getSanctionedAddresses(chainId: string): Promise<Array<`0x${string}`>> {
     const events = await this.getAllSanctionEvents(chainId);
 
