@@ -66,6 +66,12 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         throw new UnprocessableEntityException('Error creating account.');
       },
     );
+    const cacheDir = CacheRouter.getAccountCacheDir(address);
+    await this.cacheService.set(
+      cacheDir,
+      JSON.stringify([account]),
+      this.defaultExpirationTimeInSeconds,
+    );
     return account;
   }
 

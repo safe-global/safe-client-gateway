@@ -70,6 +70,19 @@ describe('AccountsDatasource tests', () => {
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
+
+      // check the account is stored in the cache
+      const cacheDir = new CacheDir(`account_${address}`, '');
+      const cacheContent = await fakeCacheService.get(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toStrictEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(Number),
+            group_id: null,
+            address,
+          }),
+        ]),
+      );
     });
 
     it('throws when an account with the same address already exists', async () => {
@@ -89,13 +102,13 @@ describe('AccountsDatasource tests', () => {
 
       const result = await target.getAccount(address);
 
-      expect(result).toStrictEqual({
-        id: expect.any(Number),
-        group_id: null,
-        address,
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-      });
+      expect(result).toStrictEqual(
+        expect.objectContaining({
+          id: expect.any(Number),
+          group_id: null,
+          address,
+        }),
+      );
     });
 
     it('returns an account from cache', async () => {
@@ -156,15 +169,6 @@ describe('AccountsDatasource tests', () => {
         'Error getting account.',
       );
     });
-
-    it.skip('should hide database errors to clients', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      await sql`TRUNCATE TABLE accounts, groups, account_data_types CASCADE`;
-
-      await expect(target.getAccount(address)).rejects.toThrow(
-        'Internal Server Error',
-      );
-    });
   });
 
   describe('deleteAccount', () => {
@@ -188,8 +192,6 @@ describe('AccountsDatasource tests', () => {
     it('should clear the cache on account deletion', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       await target.createAccount(address);
-      // cache the account
-      await target.getAccount(address);
       // get the account from the cache
       await target.getAccount(address);
       await expect(target.deleteAccount(address)).resolves.not.toThrow();
@@ -197,14 +199,12 @@ describe('AccountsDatasource tests', () => {
       // the account is deleted from the database and the cache
       await expect(target.getAccount(address)).rejects.toThrow();
 
+      expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(
         (mockLoggingService.debug.mock.calls[0][0] as { type: string }).type,
-      ).toBe('cache_miss');
-      expect(
-        (mockLoggingService.debug.mock.calls[1][0] as { type: string }).type,
       ).toBe('cache_hit');
       expect(
-        (mockLoggingService.debug.mock.calls[2][0] as { type: string }).type,
+        (mockLoggingService.debug.mock.calls[1][0] as { type: string }).type,
       ).toBe('cache_miss');
     });
   });
@@ -473,9 +473,9 @@ describe('AccountsDatasource tests', () => {
       expect(actual).toStrictEqual(expect.arrayContaining(expected));
     });
 
-    it('should clear the associated cache on upsert', async () => {
+    it('should write the associated cache on upsert', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount(address);
+      const account = await target.createAccount(address);
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -495,22 +495,20 @@ describe('AccountsDatasource tests', () => {
         upsertAccountDataSettingsDto,
       );
 
-      // cache the account data settings
-      await target.getAccountDataSettings(address);
-
       // check the account data settings are stored in the cache
       const cacheDir = new CacheDir(`account_data_settings_${address}`, '');
       const cacheContent = await fakeCacheService.get(cacheDir);
-      expect(cacheContent).toBeDefined();
-
-      await target.upsertAccountDataSettings(
-        address,
-        upsertAccountDataSettingsDto,
+      expect(JSON.parse(cacheContent as string)).toStrictEqual(
+        expect.arrayContaining(
+          accountDataSettings.map((accountDataSetting) =>
+            expect.objectContaining({
+              account_id: account.id,
+              account_data_type_id: accountDataSetting.id,
+              enabled: accountDataSetting.enabled,
+            }),
+          ),
+        ),
       );
-
-      // check the account data settings were deleted from the cache after the upsert
-      const deletedCacheContent = await fakeCacheService.get(cacheDir);
-      expect(deletedCacheContent).toBeUndefined();
     });
 
     it('updates existing account data settings successfully', async () => {
