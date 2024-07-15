@@ -73,6 +73,7 @@ export const ContractAddressesSchema = z.object({
   signMessageLibAddress: AddressSchema.nullish().default(null),
   createCallAddress: AddressSchema.nullish().default(null),
   simulateTxAccessorAddress: AddressSchema.nullish().default(null),
+  safeWebAuthnSignerFactoryAddress: AddressSchema.nullish().default(null),
 });
 
 export const ChainSchema = z.object({

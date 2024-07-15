@@ -21,5 +21,9 @@ export function contractAddressesBuilder(): IBuilder<ContractAddresses> {
     .with(
       'simulateTxAccessorAddress',
       getAddress(faker.finance.ethereumAddress()),
+    )
+    .with(
+      'safeWebAuthnSignerFactoryAddress',
+      getAddress(faker.finance.ethereumAddress()),
     );
 }

@@ -457,6 +457,7 @@ describe('Chain schemas', () => {
       'signMessageLibAddress' as const,
       'createCallAddress' as const,
       'simulateTxAccessorAddress' as const,
+      'safeWebAuthnSignerFactoryAddress' as const,
     ].forEach((field) => {
       it(`should checksum the ${field}`, () => {
         const contractAddresses = contractAddressesBuilder()
