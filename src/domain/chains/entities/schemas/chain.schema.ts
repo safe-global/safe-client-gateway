@@ -64,17 +64,30 @@ export const BalancesProviderSchema = z.object({
   enabled: z.boolean(),
 });
 
-export const ContractAddressesSchema = z.object({
-  safeSingletonAddress: AddressSchema.nullish().default(null),
-  safeProxyFactoryAddress: AddressSchema.nullish().default(null),
-  multiSendAddress: AddressSchema.nullish().default(null),
-  multiSendCallOnlyAddress: AddressSchema.nullish().default(null),
-  fallbackHandlerAddress: AddressSchema.nullish().default(null),
-  signMessageLibAddress: AddressSchema.nullish().default(null),
-  createCallAddress: AddressSchema.nullish().default(null),
-  simulateTxAccessorAddress: AddressSchema.nullish().default(null),
-  safeWebAuthnSignerFactoryAddress: AddressSchema.nullish().default(null),
-});
+export const ContractAddressesSchema = z
+  .object({
+    safeSingletonAddress: AddressSchema.nullish().default(null),
+    safeProxyFactoryAddress: AddressSchema.nullish().default(null),
+    multiSendAddress: AddressSchema.nullish().default(null),
+    multiSendCallOnlyAddress: AddressSchema.nullish().default(null),
+    fallbackHandlerAddress: AddressSchema.nullish().default(null),
+    signMessageLibAddress: AddressSchema.nullish().default(null),
+    createCallAddress: AddressSchema.nullish().default(null),
+    simulateTxAccessorAddress: AddressSchema.nullish().default(null),
+    safeWebAuthnSignerFactoryAddress: AddressSchema.nullish().default(null),
+  })
+  // TODO: Remove catch after deployed and all chain caches include the `contractAddresses` field
+  .catch({
+    safeSingletonAddress: null,
+    safeProxyFactoryAddress: null,
+    multiSendAddress: null,
+    multiSendCallOnlyAddress: null,
+    fallbackHandlerAddress: null,
+    signMessageLibAddress: null,
+    createCallAddress: null,
+    simulateTxAccessorAddress: null,
+    safeWebAuthnSignerFactoryAddress: null,
+  });
 
 export const ChainSchema = z.object({
   chainId: z.string(),
