@@ -1,6 +1,8 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
 import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
@@ -12,9 +14,14 @@ import { getAddress } from 'viem';
 
 const mockLoggingService = {
   debug: jest.fn(),
+  error: jest.fn(),
   info: jest.fn(),
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
+
+const mockConfigurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
 
 describe('AccountsDatasource tests', () => {
   let fakeCacheService: FakeCacheService;
@@ -28,7 +35,16 @@ describe('AccountsDatasource tests', () => {
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
-    target = new AccountsDatasource(fakeCacheService, sql, mockLoggingService);
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'expirationTimeInSeconds.default') return faker.number.int();
+    });
+
+    target = new AccountsDatasource(
+      fakeCacheService,
+      sql,
+      mockLoggingService,
+      mockConfigurationService,
+    );
   });
 
   afterEach(async () => {
@@ -138,6 +154,15 @@ describe('AccountsDatasource tests', () => {
 
       await expect(target.getAccount(address)).rejects.toThrow(
         'Error getting account.',
+      );
+    });
+
+    it.skip('should hide database errors to clients', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      await sql`TRUNCATE TABLE accounts, groups, account_data_types CASCADE`;
+
+      await expect(target.getAccount(address)).rejects.toThrow(
+        'Internal Server Error',
       );
     });
   });
@@ -336,6 +361,44 @@ describe('AccountsDatasource tests', () => {
       expect(actual).toStrictEqual(expect.arrayContaining(expected));
     });
 
+    it('should get the account data settings from cache', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const account = await target.createAccount(address);
+      const accountDataTypes = Array.from(
+        { length: faker.number.int({ min: 1, max: 4 }) },
+        () => accountDataTypeBuilder().with('is_active', true).build(),
+      );
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const accountDataSettingRows = insertedDataTypes.map((dataType) => ({
+        account_id: account.id,
+        account_data_type_id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      await sql`
+        INSERT INTO account_data_settings
+        ${sql(accountDataSettingRows, 'account_id', 'account_data_type_id', 'enabled')} returning *`;
+
+      // cache the account data settings
+      await target.getAccountDataSettings(address);
+
+      // delete the account data settings
+      await sql`DELETE FROM account_data_settings`;
+
+      // check the account data settings are still in the cache
+      const actual = await target.getAccountDataSettings(address);
+
+      const expected = accountDataSettingRows.map((accountDataSettingRow) =>
+        expect.objectContaining({
+          account_id: account.id,
+          account_data_type_id: accountDataSettingRow.account_data_type_id,
+          enabled: accountDataSettingRow.enabled,
+        }),
+      );
+
+      expect(actual).toStrictEqual(expect.arrayContaining(expected));
+    });
+
     it('should omit account data settings which data type is not active', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const account = await target.createAccount(address);
@@ -408,6 +471,46 @@ describe('AccountsDatasource tests', () => {
       }));
 
       expect(actual).toStrictEqual(expect.arrayContaining(expected));
+    });
+
+    it('should clear the associated cache on upsert', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      await target.createAccount(address);
+      const accountDataTypes = Array.from(
+        { length: faker.number.int({ min: 1, max: 4 }) },
+        () => accountDataTypeBuilder().with('is_active', true).build(),
+      );
+      const insertedDataTypes =
+        await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
+      const accountDataSettings = insertedDataTypes.map((dataType) => ({
+        id: dataType.id,
+        enabled: faker.datatype.boolean(),
+      }));
+      const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
+        .with('accountDataSettings', accountDataSettings)
+        .build();
+
+      await target.upsertAccountDataSettings(
+        address,
+        upsertAccountDataSettingsDto,
+      );
+
+      // cache the account data settings
+      await target.getAccountDataSettings(address);
+
+      // check the account data settings are stored in the cache
+      const cacheDir = new CacheDir(`account_data_settings_${address}`, '');
+      const cacheContent = await fakeCacheService.get(cacheDir);
+      expect(cacheContent).toBeDefined();
+
+      await target.upsertAccountDataSettings(
+        address,
+        upsertAccountDataSettingsDto,
+      );
+
+      // check the account data settings were deleted from the cache after the upsert
+      const deletedCacheContent = await fakeCacheService.get(cacheDir);
+      expect(deletedCacheContent).toBeUndefined();
     });
 
     it('updates existing account data settings successfully', async () => {

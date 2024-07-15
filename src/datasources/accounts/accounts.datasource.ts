@@ -1,3 +1,4 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -15,6 +16,7 @@ import { asError } from '@/logging/utils';
 import {
   Inject,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   OnModuleInit,
   UnprocessableEntityException,
@@ -23,11 +25,20 @@ import postgres from 'postgres';
 
 @Injectable()
 export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
+  private readonly defaultExpirationTimeInSeconds: number;
+
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+  }
 
   /**
    * Function executed when the module is initialized.
@@ -46,21 +57,15 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   }
 
   async createAccount(address: `0x${string}`): Promise<Account> {
-    const [account] = await this.sql<
-      [Account]
-    >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`.catch(
+    const [account] = await this.sql<[Account]>`
+      INSERT INTO accounts (address) VALUES (${address}) RETURNING *`.catch(
       (e) => {
         this.loggingService.warn(
           `Error creating account: ${asError(e).message}`,
         );
-        return [];
+        throw new UnprocessableEntityException('Error creating account.');
       },
     );
-
-    if (!account) {
-      throw new UnprocessableEntityException('Error creating account.');
-    }
-
     return account;
   }
 
@@ -69,7 +74,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     const [account] = await this.getFromCacheOrExecuteAndCache<Account[]>(
       cacheDir,
       this.sql<Account[]>`SELECT * FROM accounts WHERE address = ${address}`,
-      MAX_TTL,
+      this.defaultExpirationTimeInSeconds,
     );
 
     if (!account) {
@@ -115,11 +120,15 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     address: `0x${string}`,
   ): Promise<AccountDataSetting[]> {
     const account = await this.getAccount(address);
-    return this.sql<[AccountDataSetting]>`
-      SELECT ads.* FROM account_data_settings ads INNER JOIN account_data_types adt
-        ON ads.account_data_type_id = adt.id
-      WHERE ads.account_id = ${account.id} AND adt.is_active IS TRUE;
-    `;
+    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
+    return this.getFromCacheOrExecuteAndCache<AccountDataSetting[]>(
+      cacheDir,
+      this.sql<AccountDataSetting[]>`
+        SELECT ads.* FROM account_data_settings ads INNER JOIN account_data_types adt
+          ON ads.account_data_type_id = adt.id
+        WHERE ads.account_id = ${account.id} AND adt.is_active IS TRUE;`,
+      this.defaultExpirationTimeInSeconds,
+    );
   }
 
   /**
@@ -140,7 +149,8 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     const { accountDataSettings } = upsertAccountDataSettings;
     await this.checkDataTypes(accountDataSettings);
     const account = await this.getAccount(address);
-    return this.sql.begin(async (sql) => {
+
+    const result = await this.sql.begin(async (sql) => {
       await Promise.all(
         accountDataSettings.map(async (accountDataSetting) => {
           return sql`
@@ -157,6 +167,14 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       return sql<[AccountDataSetting]>`
         SELECT * FROM account_data_settings WHERE account_id = ${account.id}`;
     });
+
+    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
+    await this.cacheService.set(
+      cacheDir,
+      JSON.stringify(result),
+      this.defaultExpirationTimeInSeconds,
+    );
+    return result;
   }
 
   private async checkDataTypes(
@@ -175,6 +193,16 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     }
   }
 
+  /**
+   * Returns the content from cache or executes the query and caches the result.
+   * If the specified {@link CacheDir} is empty, the query is executed and the result is cached.
+   * If the specified {@link CacheDir} is not empty, the pointed content is returned.
+   *
+   * @param cacheDir {@link CacheDir} to use for caching
+   * @param query query to execute
+   * @param ttl time to live for the cache
+   * @returns content from cache or query result
+   */
   private async getFromCacheOrExecuteAndCache<T extends postgres.MaybeRow[]>(
     cacheDir: CacheDir,
     query: postgres.PendingQuery<T>,
@@ -187,7 +215,13 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       return JSON.parse(cached);
     }
     this.loggingService.debug({ type: 'cache_miss', key, field });
-    const result = await query;
+
+    // log & hide database errors
+    const result = await query.catch((e) => {
+      this.loggingService.error(asError(e).message);
+      throw new InternalServerErrorException();
+    });
+
     if (result.count > 0) {
       await this.cacheService.set(cacheDir, JSON.stringify(result), ttl);
     }
