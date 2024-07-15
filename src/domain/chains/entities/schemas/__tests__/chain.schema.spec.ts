@@ -483,6 +483,47 @@ describe('Chain schemas', () => {
         expect(result.success && result.data[field]).toBe(null);
       });
     });
+
+    // TODO: Remove after deployed and all chain caches include the `contractAddresses` field
+    describe('should default all contract addresses to null if the chain cache does not contain contractAddresses', () => {
+      it('on a ContractAddresses level', () => {
+        const contractAddresses = undefined;
+
+        const result = ContractAddressesSchema.safeParse(contractAddresses);
+
+        expect(result.success && result.data).toStrictEqual({
+          safeSingletonAddress: null,
+          safeProxyFactoryAddress: null,
+          multiSendAddress: null,
+          multiSendCallOnlyAddress: null,
+          fallbackHandlerAddress: null,
+          signMessageLibAddress: null,
+          createCallAddress: null,
+          simulateTxAccessorAddress: null,
+          safeWebAuthnSignerFactoryAddress: null,
+        });
+      });
+
+      it('on a Chain level', () => {
+        const chain = chainBuilder().build();
+        // @ts-expect-error - pre-inclusion of `contractAddresses` field
+        delete chain.contractAddresses;
+
+        const result = ChainSchema.safeParse(chain);
+
+        expect(result.success && result.data.contractAddresses).toStrictEqual({
+          safeSingletonAddress: null,
+          safeProxyFactoryAddress: null,
+          multiSendAddress: null,
+          multiSendCallOnlyAddress: null,
+          fallbackHandlerAddress: null,
+          signMessageLibAddress: null,
+          createCallAddress: null,
+          simulateTxAccessorAddress: null,
+          safeWebAuthnSignerFactoryAddress: null,
+        });
+      });
+    });
   });
 
   describe('ChainSchema', () => {
