@@ -61,18 +61,14 @@ describe('GroupSchema', () => {
         received: 'undefined',
       },
       {
-        code: 'invalid_type',
-        expected: 'date',
-        message: 'Required',
+        code: 'invalid_date',
+        message: 'Invalid date',
         path: ['created_at'],
-        received: 'undefined',
       },
       {
-        code: 'invalid_type',
-        expected: 'date',
-        message: 'Required',
+        code: 'invalid_date',
+        message: 'Invalid date',
         path: ['updated_at'],
-        received: 'undefined',
       },
     ]);
   });
