@@ -9,6 +9,7 @@ export class CacheRouter {
   private static readonly CONTRACT_KEY = 'contract';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
   private static readonly DELEGATES_KEY = 'delegates';
+  private static readonly FIREBASE_OAUTH2_TOKEN_KEY = 'firebase_oauth2_token';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
@@ -183,6 +184,10 @@ export class CacheRouter {
       `${args.chainId}_${CacheRouter.DELEGATES_KEY}_${args.safeAddress}`,
       `${args.delegate}_${args.delegator}_${args.label}_${args.limit}_${args.offset}`,
     );
+  }
+
+  static getFirebaseOAuth2TokenCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.FIREBASE_OAUTH2_TOKEN_KEY, '');
   }
 
   static getTransferCacheDir(args: {
