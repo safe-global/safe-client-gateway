@@ -45,14 +45,8 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
    * It deletes the cache for persistent keys.
    */
   async onModuleInit(): Promise<void> {
-    const persistentCacheDirs = [
-      CacheRouter.getActiveAccountDataTypesCacheDir(),
-      CacheRouter.getAccountDataTypesCacheDir(),
-    ];
-    await Promise.all(
-      persistentCacheDirs.map(async (cacheDir) => {
-        await this.cacheService.deleteByKey(cacheDir.key);
-      }),
+    await this.cacheService.deleteByKey(
+      CacheRouter.getAccountDataTypesCacheDir().key,
     );
   }
 
@@ -103,17 +97,6 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       const { key } = CacheRouter.getAccountCacheDir(address);
       await this.cacheService.deleteByKey(key);
     }
-  }
-
-  getActiveDataTypes(): Promise<AccountDataType[]> {
-    const cacheDir = CacheRouter.getActiveAccountDataTypesCacheDir();
-    return this.getFromCacheOrExecuteAndCache<AccountDataType[]>(
-      cacheDir,
-      this.sql<
-        AccountDataType[]
-      >`SELECT * FROM account_data_types WHERE is_active IS TRUE`,
-      MAX_TTL,
-    );
   }
 
   async getDataTypes(): Promise<AccountDataType[]> {
@@ -189,8 +172,10 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   private async checkDataTypes(
     accountDataSettings: UpsertAccountDataSettingsDto['accountDataSettings'],
   ): Promise<void> {
-    const activeDataTypes = await this.getActiveDataTypes();
-    const activeDataTypeIds = activeDataTypes.map((ads) => ads.id);
+    const dataTypes = await this.getDataTypes();
+    const activeDataTypeIds = dataTypes
+      .filter((dt) => dt.is_active)
+      .map((ads) => ads.id);
     if (
       !accountDataSettings.every((ads) =>
         activeDataTypeIds.includes(Number(ads.id)),
