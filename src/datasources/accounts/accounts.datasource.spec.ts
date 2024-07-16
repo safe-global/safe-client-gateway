@@ -115,13 +115,6 @@ describe('AccountsDatasource tests', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       await target.createAccount(address);
 
-      // cache the account
-      await target.getAccount(address);
-
-      // delete the account from the database
-      await sql`DELETE FROM accounts WHERE address = ${address}`;
-
-      // check the account is still in the cache
       const result = await target.getAccount(address);
 
       expect(result).toStrictEqual(
@@ -131,6 +124,23 @@ describe('AccountsDatasource tests', () => {
           address,
         }),
       );
+      const cacheDir = new CacheDir(`account_${address}`, '');
+      const cacheContent = await fakeCacheService.get(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toStrictEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(Number),
+            group_id: null,
+            address,
+          }),
+        ]),
+      );
+      expect(mockLoggingService.debug).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'cache_hit',
+        key: `account_${address}`,
+        field: '',
+      });
     });
 
     it('should not cache if the account is not found', async () => {
@@ -244,18 +254,10 @@ describe('AccountsDatasource tests', () => {
         { name: faker.lorem.slug() },
         { name: faker.lorem.slug() },
       ];
-      const rows = await sql`
+      await sql`
         INSERT INTO account_data_types ${sql(dataTypes, 'name')} RETURNING (id)`;
-
-      // cache the data types
       await target.getDataTypes();
 
-      // delete the data types from the database
-      await sql`
-        DELETE FROM account_data_types WHERE id 
-          IN ${sql(rows.map((id) => id.id))}`;
-
-      // get the data types from the cache
       const result = await target.getDataTypes();
 
       expect(result).toStrictEqual(
@@ -270,7 +272,20 @@ describe('AccountsDatasource tests', () => {
           ),
         ),
       );
-
+      const cacheDir = new CacheDir('account_data_types', '');
+      const cacheContent = await fakeCacheService.get(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toStrictEqual(
+        expect.arrayContaining(
+          dataTypes.map((dataType) =>
+            expect.objectContaining({
+              id: expect.any(Number),
+              name: dataType.name,
+              description: null,
+              is_active: true,
+            }),
+          ),
+        ),
+      );
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'cache_miss',
@@ -334,14 +349,9 @@ describe('AccountsDatasource tests', () => {
       await sql`
         INSERT INTO account_data_settings
         ${sql(accountDataSettingRows, 'account_id', 'account_data_type_id', 'enabled')} returning *`;
-
-      // cache the account data settings
       await target.getAccountDataSettings(address);
 
-      // delete the account data settings
-      await sql`DELETE FROM account_data_settings`;
-
-      // check the account data settings are still in the cache
+      // check the account data settings are in the cache
       const actual = await target.getAccountDataSettings(address);
 
       const expected = accountDataSettingRows.map((accountDataSettingRow) =>
@@ -353,6 +363,33 @@ describe('AccountsDatasource tests', () => {
       );
 
       expect(actual).toStrictEqual(expect.arrayContaining(expected));
+      const cacheContent = await fakeCacheService.get(
+        new CacheDir(`account_data_settings_${address}`, ''),
+      );
+      expect(JSON.parse(cacheContent as string)).toStrictEqual(
+        expect.arrayContaining(expected),
+      );
+      expect(mockLoggingService.debug).toHaveBeenCalledTimes(4);
+      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'cache_hit',
+        key: `account_${address}`,
+        field: '',
+      });
+      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'cache_miss',
+        key: `account_data_settings_${address}`,
+        field: '',
+      });
+      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(3, {
+        type: 'cache_hit',
+        key: `account_${address}`,
+        field: '',
+      });
+      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(4, {
+        type: 'cache_hit',
+        key: `account_data_settings_${address}`,
+        field: '',
+      });
     });
 
     it('should omit account data settings which data type is not active', async () => {
