@@ -42,8 +42,20 @@ function fetchClientFactory(
       throw new NetworkRequestError(urlObject, error);
     }
 
-    // We validate data so don't need worry about casting `null` response
-    const data = (await response.json().catch(() => null)) as T;
+    const data = await (async (): Promise<T> => {
+      const contentType = response.headers?.get('content-type');
+
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          return (await response.json()) as T;
+        } else {
+          return (await response.text()) as T;
+        }
+      } catch {
+        // We validate data so don't need worry about casting `null` response
+        return null as T;
+      }
+    })();
 
     if (!response.ok) {
       throw new NetworkResponseError(urlObject, response, data);

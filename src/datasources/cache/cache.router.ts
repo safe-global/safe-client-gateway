@@ -25,6 +25,7 @@ export class CacheRouter {
   private static readonly SAFE_EXISTS_KEY = 'safe_exists';
   private static readonly SAFE_FIAT_CODES_KEY = 'safe_fiat_codes';
   private static readonly SAFE_KEY = 'safe';
+  private static readonly SANCTIONED_ADDRESSES_KEY = 'sanctioned_addresses';
   private static readonly SINGLETONS_KEY = 'singletons';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
@@ -489,5 +490,9 @@ export class CacheRouter {
 
   static getPriceFiatCodesCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.SAFE_FIAT_CODES_KEY, '');
+  }
+
+  static getSanctionedAddressesCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.SANCTIONED_ADDRESSES_KEY, '');
   }
 }

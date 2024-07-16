@@ -25,6 +25,7 @@ import { OwnersModule } from '@/routes/owners/owners.module';
 import { AboutModule } from '@/routes/about/about.module';
 import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { SafesModule } from '@/routes/safes/safes.module';
+import { SanctionedAddressesModule } from '@/routes/sanctioned-addresses/sanctioned-addresses.modules';
 import { NotificationsModule } from '@/routes/notifications/notifications.module';
 import { EstimationsModule } from '@/routes/estimations/estimations.module';
 import { MessagesModule } from '@/routes/messages/messages.module';
@@ -90,6 +91,7 @@ export class AppModule implements NestModule {
         RootModule,
         SafeAppsModule,
         SafesModule,
+        SanctionedAddressesModule,
         TransactionsModule,
         ...(isConfirmationViewEnabled
           ? [TransactionsViewControllerModule]
