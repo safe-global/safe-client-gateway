@@ -91,14 +91,17 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   }
 
   async deleteAccount(address: `0x${string}`): Promise<void> {
-    const { count } = await this
-      .sql`DELETE FROM accounts WHERE address = ${address}`;
-
-    const { key } = CacheRouter.getAccountCacheDir(address);
-    await this.cacheService.deleteByKey(key);
-
-    if (count === 0) {
-      this.loggingService.debug(`Error deleting account ${address}: not found`);
+    try {
+      const { count } = await this
+        .sql`DELETE FROM accounts WHERE address = ${address}`;
+      if (count === 0) {
+        this.loggingService.debug(
+          `Error deleting account ${address}: not found`,
+        );
+      }
+    } finally {
+      const { key } = CacheRouter.getAccountCacheDir(address);
+      await this.cacheService.deleteByKey(key);
     }
   }
 
