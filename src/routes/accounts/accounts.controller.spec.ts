@@ -21,7 +21,6 @@ import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.bui
 import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { getSecondsUntil } from '@/domain/common/utils/time';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -145,8 +144,9 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, {
-        notBefore: getSecondsUntil(faker.date.future()),
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        nbf: faker.date.future(),
       });
 
       await request(app.getHttpServer())
@@ -165,7 +165,10 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, { expiresIn: 0 });
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        exp: new Date(),
+      });
       jest.advanceTimersByTime(1_000);
 
       await request(app.getHttpServer())
@@ -330,8 +333,9 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, {
-        notBefore: getSecondsUntil(faker.date.future()),
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        nbf: faker.date.future(),
       });
 
       await request(app.getHttpServer())
@@ -349,7 +353,10 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, { expiresIn: 0 });
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        exp: new Date(),
+      });
       jest.advanceTimersByTime(1_000);
 
       await request(app.getHttpServer())
@@ -471,8 +478,9 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, {
-        notBefore: getSecondsUntil(faker.date.future()),
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        nbf: faker.date.future(),
       });
 
       await request(app.getHttpServer())
@@ -489,7 +497,10 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, { expiresIn: 0 });
+      const accessToken = jwtService.sign({
+        authPayloadDto,
+        exp: new Date(),
+      });
       jest.advanceTimersByTime(1_000);
 
       await request(app.getHttpServer())
@@ -682,8 +693,9 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, {
-        notBefore: getSecondsUntil(faker.date.future()),
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        nbf: faker.date.future(),
       });
 
       await request(app.getHttpServer())
@@ -700,7 +712,10 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, { expiresIn: 0 });
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        exp: new Date(),
+      });
       jest.advanceTimersByTime(1_000);
 
       await request(app.getHttpServer())
@@ -837,8 +852,9 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, {
-        notBefore: getSecondsUntil(faker.date.future()),
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        nbf: faker.date.future(),
       });
 
       await request(app.getHttpServer())
@@ -855,7 +871,10 @@ describe('AccountsController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign(authPayloadDto, { expiresIn: 0 });
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        exp: new Date(),
+      });
       jest.advanceTimersByTime(1_000);
 
       await request(app.getHttpServer())
@@ -873,7 +892,6 @@ describe('AccountsController', () => {
         .with('signer_address', faker.string.hexadecimal() as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-
       await request(app.getHttpServer())
         .get(`/v1/accounts/${address}/data-settings`)
         .set('Cookie', [`access_token=${accessToken}`])

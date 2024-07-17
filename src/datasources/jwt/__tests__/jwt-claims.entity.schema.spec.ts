@@ -1,4 +1,5 @@
 import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
+import { toSecondsTimestamp } from '@/domain/common/utils/time';
 import { faker } from '@faker-js/faker';
 
 describe('JwtClaimsSchema', () => {
@@ -23,4 +24,19 @@ describe('JwtClaimsSchema', () => {
 
     expect(result.success).toBe(true);
   });
+
+  it.each(['exp' as const, 'nbf' as const, 'iat' as const])(
+    'should transform %s seconds to Date',
+    (field) => {
+      // As claim is in second, coerced date does not have ms
+      const date = new Date(faker.date.recent().setMilliseconds(0));
+      const seconds = toSecondsTimestamp(date);
+
+      const result = JwtClaimsSchema.safeParse({
+        [field]: seconds,
+      });
+
+      expect(result.success && result.data[field]).toStrictEqual(date);
+    },
+  );
 });
