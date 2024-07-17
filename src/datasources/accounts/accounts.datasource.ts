@@ -147,7 +147,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         accountDataSettings.map(async (accountDataSetting) => {
           return sql`
             INSERT INTO account_data_settings (account_id, account_data_type_id, enabled)
-            VALUES (${account.id}, ${accountDataSetting.id}, ${accountDataSetting.enabled})
+            VALUES (${account.id}, ${accountDataSetting.dataTypeId}, ${accountDataSetting.enabled})
             ON CONFLICT (account_id, account_data_type_id) DO UPDATE SET enabled = EXCLUDED.enabled
           `.catch((e) => {
             throw new UnprocessableEntityException(
@@ -178,7 +178,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       .map((ads) => ads.id);
     if (
       !accountDataSettings.every((ads) =>
-        activeDataTypeIds.includes(Number(ads.id)),
+        activeDataTypeIds.includes(Number(ads.dataTypeId)),
       )
     ) {
       throw new UnprocessableEntityException(

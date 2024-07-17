@@ -6,7 +6,7 @@ export function upsertAccountDataSettingsDtoBuilder(): IBuilder<UpsertAccountDat
   return new Builder<UpsertAccountDataSettingsDto>().with(
     'accountDataSettings',
     Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () => ({
-      id: faker.string.numeric(),
+      dataTypeId: faker.string.numeric(),
       enabled: faker.datatype.boolean(),
     })),
   );

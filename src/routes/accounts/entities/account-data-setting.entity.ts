@@ -1,16 +1,13 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class AccountDataSetting {
   @ApiProperty()
-  name: string;
-  @ApiPropertyOptional({ type: String, nullable: true })
-  description: string | null;
+  dataTypeId: string;
   @ApiProperty()
   enabled: boolean;
 
-  constructor(name: string, description: string | null, enabled: boolean) {
-    this.name = name;
-    this.description = description;
+  constructor(dataTypeId: string, enabled: boolean) {
+    this.dataTypeId = dataTypeId;
     this.enabled = enabled;
   }
 }

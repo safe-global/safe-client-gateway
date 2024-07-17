@@ -443,7 +443,7 @@ describe('AccountsDatasource tests', () => {
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
       const accountDataSettings = insertedDataTypes.map((dataType) => ({
-        id: dataType.id,
+        dataTypeId: dataType.id,
         enabled: faker.datatype.boolean(),
       }));
       const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
@@ -457,7 +457,7 @@ describe('AccountsDatasource tests', () => {
 
       const expected = accountDataSettings.map((accountDataSetting) => ({
         account_id: account.id,
-        account_data_type_id: accountDataSetting.id,
+        account_data_type_id: accountDataSetting.dataTypeId,
         enabled: accountDataSetting.enabled,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
@@ -476,7 +476,7 @@ describe('AccountsDatasource tests', () => {
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
       const accountDataSettings = insertedDataTypes.map((dataType) => ({
-        id: dataType.id,
+        dataTypeId: dataType.id,
         enabled: faker.datatype.boolean(),
       }));
       const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
@@ -496,7 +496,7 @@ describe('AccountsDatasource tests', () => {
           accountDataSettings.map((accountDataSetting) =>
             expect.objectContaining({
               account_id: account.id,
-              account_data_type_id: accountDataSetting.id,
+              account_data_type_id: accountDataSetting.dataTypeId,
               enabled: accountDataSetting.enabled,
             }),
           ),
@@ -514,7 +514,7 @@ describe('AccountsDatasource tests', () => {
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
       const accountDataSettings = insertedDataTypes.map((dataType) => ({
-        id: dataType.id,
+        dataTypeId: dataType.id,
         enabled: faker.datatype.boolean(),
       }));
       const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
@@ -530,7 +530,7 @@ describe('AccountsDatasource tests', () => {
         expect.arrayContaining(
           accountDataSettings.map((accountDataSetting) => ({
             account_id: account.id,
-            account_data_type_id: accountDataSetting.id,
+            account_data_type_id: accountDataSetting.dataTypeId,
             enabled: accountDataSetting.enabled,
             created_at: expect.any(Date),
             updated_at: expect.any(Date),
@@ -556,7 +556,7 @@ describe('AccountsDatasource tests', () => {
         expect.arrayContaining(
           accountDataSettings.map((accountDataSetting) => ({
             account_id: account.id,
-            account_data_type_id: accountDataSetting.id,
+            account_data_type_id: accountDataSetting.dataTypeId,
             enabled: !accountDataSetting.enabled, // 'enabled' row was updated
             created_at: expect.any(Date),
             updated_at: expect.any(Date),
@@ -574,7 +574,7 @@ describe('AccountsDatasource tests', () => {
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
       const accountDataSettings = insertedDataTypes.map((dataType) => ({
-        id: dataType.id,
+        dataTypeId: dataType.id,
         enabled: faker.datatype.boolean(),
       }));
       const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
@@ -596,14 +596,14 @@ describe('AccountsDatasource tests', () => {
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
       const accountDataSettings = insertedDataTypes.map((dataType) => ({
-        id: dataType.id,
+        dataTypeId: dataType.id,
         enabled: faker.datatype.boolean(),
       }));
       const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
         .with('accountDataSettings', accountDataSettings)
         .build();
       upsertAccountDataSettingsDto.accountDataSettings.push({
-        id: faker.string.numeric(5),
+        dataTypeId: faker.string.numeric(5),
         enabled: faker.datatype.boolean(),
       });
 
@@ -622,7 +622,7 @@ describe('AccountsDatasource tests', () => {
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
       const accountDataSettings = insertedDataTypes.map((dataType) => ({
-        id: dataType.id,
+        dataTypeId: dataType.id,
         enabled: faker.datatype.boolean(),
       }));
       const upsertAccountDataSettingsDto = upsertAccountDataSettingsDtoBuilder()
