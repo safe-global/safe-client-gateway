@@ -68,6 +68,7 @@ CREATE TABLE notification_medium_configurations(
     notification_subscription_id INT NOT NULL,
     notification_medium_id INT NOT NULL,
     cloud_messaging_token VARCHAR(255) NOT NULL,
+    device_uuid UUID DEFAULT gen_random_uuid(),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     FOREIGN KEY (notification_subscription_id) REFERENCES notification_subscriptions(id) ON DELETE CASCADE,

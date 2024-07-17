@@ -27,6 +27,7 @@ type NotificationMediumConfigurationsRow = {
   id: number;
   notification_subscription_id: number;
   notification_medium_id: number;
+  device_uuid: `${string}-${string}-${string}-${string}-${string}`;
   cloud_messaging_token: string;
   created_at: Date;
   updated_at: Date;
@@ -171,6 +172,7 @@ describe('Migration 00004_notifications', () => {
           { column_name: 'notification_subscription_id' },
           { column_name: 'notification_medium_id' },
           { column_name: 'id' },
+          { column_name: 'device_uuid' },
           { column_name: 'cloud_messaging_token' },
         ]),
         rows: [],
@@ -279,6 +281,7 @@ describe('Migration 00004_notifications', () => {
         { column_name: 'id' },
         { column_name: 'notification_subscription_id' },
         { column_name: 'notification_medium_id' },
+        { column_name: 'device_uuid' },
         { column_name: 'cloud_messaging_token' },
         { column_name: 'created_at' },
         { column_name: 'updated_at' },
@@ -288,6 +291,7 @@ describe('Migration 00004_notifications', () => {
           id: 1,
           notification_subscription_id: 1,
           notification_medium_id: 1,
+          device_uuid: expect.any(String),
           cloud_messaging_token: '69420',
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
@@ -306,6 +310,7 @@ describe('Migration 00004_notifications', () => {
         id: 1,
         notification_subscription_id: 1,
         notification_medium_id: 1,
+        device_uuid: expect.any(String),
         cloud_messaging_token: '1337',
         // created_at should have remained the same
         created_at: afterInsert.after.rows[0].created_at,
