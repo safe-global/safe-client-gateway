@@ -125,8 +125,7 @@ export class AccountsService {
     }
 
     return {
-      name: dataType.name,
-      description: dataType.description,
+      dataTypeId: dataType.id.toString(),
       enabled: domainAccountDataSetting.enabled,
     };
   }
