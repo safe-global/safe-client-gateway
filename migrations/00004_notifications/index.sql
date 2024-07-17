@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS notification_types,
     notification_subscriptions,
-    notification_mediums,
-    notification_medium_configurations CASCADE;
+    notification_channels,
+    notification_channel_configurations CASCADE;
 
 --------------------------------------------
 -- Notification types, e.g.INCOMING_TOKEN --
@@ -49,34 +49,34 @@ CREATE OR REPLACE TRIGGER update_notification_subscriptions_updated_at
 EXECUTE FUNCTION update_updated_at_column();
 
 ---------------------------------------------------
--- Notification mediums, e.g. PUSH_NOTIFICATIONS --
+-- Notification channels, e.g. PUSH_NOTIFICATIONS --
 ---------------------------------------------------
-CREATE TABLE notification_mediums(
+CREATE TABLE notification_channels(
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 
--- Add PUSH_NOTIFICATIONS as a notification medium
-INSERT INTO notification_mediums (name) VALUES
+-- Add PUSH_NOTIFICATIONS as a notification channel
+INSERT INTO notification_channels (name) VALUES
     ('PUSH_NOTIFICATIONS');
 
 ----------------------------------------------------------------
--- Configuration for a given notification subscription/medium --
+-- Configuration for a given notification subscription/channel --
 ----------------------------------------------------------------
-CREATE TABLE notification_medium_configurations(
+CREATE TABLE notification_channel_configurations(
     id SERIAL PRIMARY KEY,
     notification_subscription_id INT NOT NULL,
-    notification_medium_id INT NOT NULL,
+    notification_channel_id INT NOT NULL,
     cloud_messaging_token VARCHAR(255) NOT NULL,
     device_uuid UUID DEFAULT gen_random_uuid(),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     FOREIGN KEY (notification_subscription_id) REFERENCES notification_subscriptions(id) ON DELETE CASCADE,
-    FOREIGN KEY (notification_medium_id) REFERENCES notification_mediums(id) ON DELETE CASCADE
+    FOREIGN KEY (notification_channel_id) REFERENCES notification_channels(id) ON DELETE CASCADE
 );
 
--- Update updated_at when a notification medium is updated
-CREATE OR REPLACE TRIGGER update_notification_medium_configurations_updated_at
-    BEFORE UPDATE ON notification_medium_configurations
+-- Update updated_at when a notification channel is updated
+CREATE OR REPLACE TRIGGER update_notification_channel_configurations_updated_at
+    BEFORE UPDATE ON notification_channel_configurations
     FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();

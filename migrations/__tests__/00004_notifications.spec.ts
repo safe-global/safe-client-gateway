@@ -18,15 +18,15 @@ type NotificationSubscriptionsRow = {
   updated_at: Date;
 };
 
-type NotificationMediumsRow = {
+type NotificationChannelsRow = {
   id: number;
   name: string;
 };
 
-type NotificationMediumConfigurationsRow = {
+type NotificationChannelConfigurationsRow = {
   id: number;
   notification_subscription_id: number;
-  notification_medium_id: number;
+  notification_channel_id: number;
   device_uuid: `${string}-${string}-${string}-${string}-${string}`;
   cloud_messaging_token: string;
   created_at: Date;
@@ -66,19 +66,19 @@ describe('Migration 00004_notifications', () => {
               Array<NotificationSubscriptionsRow>
             >`SELECT * FROM notification_subscriptions`,
           },
-          notification_mediums: {
+          notification_channels: {
             columns:
-              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_mediums'`,
+              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_channels'`,
             rows: await sql<
-              Array<NotificationMediumsRow>
-            >`SELECT * FROM notification_mediums`,
+              Array<NotificationChannelsRow>
+            >`SELECT * FROM notification_channels`,
           },
-          notification_medium_configurations: {
+          notification_channel_configurations: {
             columns:
-              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_medium_configurations'`,
+              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_channel_configurations'`,
             rows: await sql<
-              Array<NotificationMediumConfigurationsRow>
-            >`SELECT * FROM notification_medium_configurations`,
+              Array<NotificationChannelConfigurationsRow>
+            >`SELECT * FROM notification_channel_configurations`,
           },
         };
       },
@@ -153,7 +153,7 @@ describe('Migration 00004_notifications', () => {
           },
         ],
       },
-      notification_mediums: {
+      notification_channels: {
         columns: expect.arrayContaining([
           { column_name: 'id' },
           { column_name: 'name' },
@@ -165,12 +165,12 @@ describe('Migration 00004_notifications', () => {
           },
         ],
       },
-      notification_medium_configurations: {
+      notification_channel_configurations: {
         columns: expect.arrayContaining([
           { column_name: 'updated_at' },
           { column_name: 'created_at' },
           { column_name: 'notification_subscription_id' },
-          { column_name: 'notification_medium_id' },
+          { column_name: 'notification_channel_id' },
           { column_name: 'id' },
           { column_name: 'device_uuid' },
           { column_name: 'cloud_messaging_token' },
@@ -250,7 +250,7 @@ describe('Migration 00004_notifications', () => {
     );
   });
 
-  it('should upsert the row timestamps of notification_medium_configurations on insertion/update', async () => {
+  it('should upsert the row timestamps of notification_channel_configurations on insertion/update', async () => {
     const afterInsert = await migrator.test({
       migration: '00004_notifications',
       after: async (sql: postgres.Sql) => {
@@ -261,17 +261,17 @@ describe('Migration 00004_notifications', () => {
           // Add notification subscription to account
           await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
                                 VALUES (1, 1, 1, '0x420')`;
-          // Enable notification medium
-          await transaction`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, cloud_messaging_token)
+          // Enable notification channel
+          await transaction`INSERT INTO notification_channel_configurations (notification_subscription_id, notification_channel_id, cloud_messaging_token)
                                 VALUES (1, 1, '69420')`;
         });
 
         return {
           columns:
-            await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_medium_configurations'`,
+            await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_channel_configurations'`,
           rows: await sql<
-            Array<NotificationMediumConfigurationsRow>
-          >`SELECT * FROM notification_medium_configurations`,
+            Array<NotificationChannelConfigurationsRow>
+          >`SELECT * FROM notification_channel_configurations`,
         };
       },
     });
@@ -280,7 +280,7 @@ describe('Migration 00004_notifications', () => {
       columns: expect.arrayContaining([
         { column_name: 'id' },
         { column_name: 'notification_subscription_id' },
-        { column_name: 'notification_medium_id' },
+        { column_name: 'notification_channel_id' },
         { column_name: 'device_uuid' },
         { column_name: 'cloud_messaging_token' },
         { column_name: 'created_at' },
@@ -290,7 +290,7 @@ describe('Migration 00004_notifications', () => {
         {
           id: 1,
           notification_subscription_id: 1,
-          notification_medium_id: 1,
+          notification_channel_id: 1,
           device_uuid: expect.any(String),
           cloud_messaging_token: '69420',
           created_at: expect.any(Date),
@@ -300,8 +300,8 @@ describe('Migration 00004_notifications', () => {
     });
 
     const afterUpdate = await sql<
-      Array<NotificationMediumConfigurationsRow>
-    >`UPDATE notification_medium_configurations
+      Array<NotificationChannelConfigurationsRow>
+    >`UPDATE notification_channel_configurations
                 SET cloud_messaging_token = '1337'
                 WHERE id = 1 RETURNING *`;
 
@@ -309,7 +309,7 @@ describe('Migration 00004_notifications', () => {
       {
         id: 1,
         notification_subscription_id: 1,
-        notification_medium_id: 1,
+        notification_channel_id: 1,
         device_uuid: expect.any(String),
         cloud_messaging_token: '1337',
         // created_at should have remained the same
@@ -374,12 +374,12 @@ describe('Migration 00004_notifications', () => {
           notification_subscriptions: await sql<
             Array<NotificationSubscriptionsRow>
           >`SELECT * FROM notification_subscriptions`,
-          notification_mediums: await sql<
-            Array<NotificationMediumsRow>
-          >`SELECT * FROM notification_mediums`,
-          notification_medium_configurations: await sql<
-            Array<NotificationMediumConfigurationsRow>
-          >`SELECT * FROM notification_medium_configurations`,
+          notification_channels: await sql<
+            Array<NotificationChannelsRow>
+          >`SELECT * FROM notification_channels`,
+          notification_channel_configurations: await sql<
+            Array<NotificationChannelConfigurationsRow>
+          >`SELECT * FROM notification_channel_configurations`,
         };
       },
     });
@@ -437,13 +437,13 @@ describe('Migration 00004_notifications', () => {
       ],
       // No subscriptions should exist
       notification_subscriptions: [],
-      notification_mediums: [
+      notification_channels: [
         {
           id: 1,
           name: 'PUSH_NOTIFICATIONS',
         },
       ],
-      notification_medium_configurations: [],
+      notification_channel_configurations: [],
     });
   });
 
@@ -474,12 +474,12 @@ describe('Migration 00004_notifications', () => {
           notification_subscriptions: await sql<
             Array<NotificationSubscriptionsRow>
           >`SELECT * FROM notification_subscriptions`,
-          notification_mediums: await sql<
-            Array<NotificationMediumsRow>
-          >`SELECT * FROM notification_mediums`,
-          notification_medium_configurations: await sql<
-            Array<NotificationMediumConfigurationsRow>
-          >`SELECT * FROM notification_medium_configurations`,
+          notification_channels: await sql<
+            Array<NotificationChannelsRow>
+          >`SELECT * FROM notification_channels`,
+          notification_channel_configurations: await sql<
+            Array<NotificationChannelConfigurationsRow>
+          >`SELECT * FROM notification_channel_configurations`,
         };
       },
     });
@@ -534,17 +534,17 @@ describe('Migration 00004_notifications', () => {
       ],
       // No subscriptions should exist
       notification_subscriptions: [],
-      notification_mediums: [
+      notification_channels: [
         {
           id: 1,
           name: 'PUSH_NOTIFICATIONS',
         },
       ],
-      notification_medium_configurations: [],
+      notification_channel_configurations: [],
     });
   });
 
-  it('should delete the notification_medium_configuration if the notification_medium is deleted', async () => {
+  it('should delete the notification_channel_configuration if the notification_channel is deleted', async () => {
     const result = await migrator.test({
       migration: '00004_notifications',
       after: async (sql) => {
@@ -560,13 +560,13 @@ describe('Migration 00004_notifications', () => {
           await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
                                         VALUES (1, 3, 1, '0x420')`;
 
-          // Enable notification medium
-          await transaction`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, cloud_messaging_token)
+          // Enable notification channel
+          await transaction`INSERT INTO notification_channel_configurations (notification_subscription_id, notification_channel_id, cloud_messaging_token)
                                         VALUES (1, 1, '69420')`;
         });
 
-        // Delete PUSH_NOTIFICATIONS notification medium
-        await sql`DELETE FROM notification_mediums WHERE name = 'PUSH_NOTIFICATIONS'`;
+        // Delete PUSH_NOTIFICATIONS notification channel
+        await sql`DELETE FROM notification_channels WHERE name = 'PUSH_NOTIFICATIONS'`;
 
         return {
           notification_types: await sql<
@@ -575,12 +575,12 @@ describe('Migration 00004_notifications', () => {
           notification_subscriptions: await sql<
             Array<NotificationSubscriptionsRow>
           >`SELECT * FROM notification_subscriptions`,
-          notification_mediums: await sql<
-            Array<NotificationMediumsRow>
-          >`SELECT * FROM notification_mediums`,
-          notification_medium_configurations: await sql<
-            Array<NotificationMediumConfigurationsRow>
-          >`SELECT * FROM notification_medium_configurations`,
+          notification_channels: await sql<
+            Array<NotificationChannelsRow>
+          >`SELECT * FROM notification_channels`,
+          notification_channel_configurations: await sql<
+            Array<NotificationChannelConfigurationsRow>
+          >`SELECT * FROM notification_channel_configurations`,
         };
       },
     });
@@ -665,9 +665,9 @@ describe('Migration 00004_notifications', () => {
           updated_at: expect.any(Date),
         },
       ],
-      notification_mediums: [],
+      notification_channels: [],
       // No configurations should exist
-      notification_medium_configurations: [],
+      notification_channel_configurations: [],
     });
   });
 });
