@@ -20,6 +20,7 @@ import jwt from 'jsonwebtoken';
 export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
   private static readonly OAuth2TokenUrl =
     'https://oauth2.googleapis.com/token';
+  private static readonly OAuth2TokenTtlBufferInSeconds = 5;
   private static readonly Scope =
     'https://www.googleapis.com/auth/firebase.messaging';
 
@@ -116,7 +117,13 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
     });
 
     // Token cached according to issuance
-    await this.cacheService.set(cacheDir, data.access_token, data.expires_in);
+    await this.cacheService.set(
+      cacheDir,
+      data.access_token,
+      // Buffer ensures token is not cached beyond expiration if caching took time
+      data.expires_in -
+        FirebaseCloudMessagingApiService.OAuth2TokenTtlBufferInSeconds,
+    );
 
     return data.access_token;
   }
