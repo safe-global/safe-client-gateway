@@ -27,7 +27,6 @@ type NotificationMediumConfigurationsRow = {
   id: number;
   notification_subscription_id: number;
   notification_medium_id: number;
-  enabled: boolean;
   cloud_messaging_token: string;
   created_at: Date;
   updated_at: Date;
@@ -172,7 +171,6 @@ describe('Migration 00004_notifications', () => {
           { column_name: 'notification_subscription_id' },
           { column_name: 'notification_medium_id' },
           { column_name: 'id' },
-          { column_name: 'enabled' },
           { column_name: 'cloud_messaging_token' },
         ]),
         rows: [],
@@ -262,8 +260,8 @@ describe('Migration 00004_notifications', () => {
           await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
                                 VALUES (1, 1, 1, '0x420')`;
           // Enable notification medium
-          await transaction`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, enabled, cloud_messaging_token)
-                                VALUES (1, 1, true, '69420')`;
+          await transaction`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, cloud_messaging_token)
+                                VALUES (1, 1, '69420')`;
         });
 
         return {
@@ -281,7 +279,6 @@ describe('Migration 00004_notifications', () => {
         { column_name: 'id' },
         { column_name: 'notification_subscription_id' },
         { column_name: 'notification_medium_id' },
-        { column_name: 'enabled' },
         { column_name: 'cloud_messaging_token' },
         { column_name: 'created_at' },
         { column_name: 'updated_at' },
@@ -291,7 +288,6 @@ describe('Migration 00004_notifications', () => {
           id: 1,
           notification_subscription_id: 1,
           notification_medium_id: 1,
-          enabled: true,
           cloud_messaging_token: '69420',
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
@@ -310,7 +306,6 @@ describe('Migration 00004_notifications', () => {
         id: 1,
         notification_subscription_id: 1,
         notification_medium_id: 1,
-        enabled: true,
         cloud_messaging_token: '1337',
         // created_at should have remained the same
         created_at: afterInsert.after.rows[0].created_at,
@@ -344,58 +339,6 @@ describe('Migration 00004_notifications', () => {
     >`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
                                     VALUES (1, 1, 1, '0x420')`).rejects.toThrow(
       'duplicate key value violates unique constraint "notification_subscriptions_account_id_chain_id_safe_address_key"',
-    );
-  });
-
-  it('should not allow a cloud_messaging_token to exist if the notification_medium is not PUSH_NOTIFICATION', async () => {
-    await migrator.test({
-      migration: '00004_notifications',
-      after: async (sql) => {
-        await sql.begin(async (transaction) => {
-          // Add medium that does not support cloud_messaging_token
-          await transaction`INSERT INTO notification_mediums(name)
-                                    VALUES ('NOT_PUSH_NOTIFICATIONS')`;
-          // Create account
-          await transaction`INSERT INTO accounts (address)
-                                    VALUES ('0x69');`;
-          // Add notification subscription to account
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                VALUES (1, 1, 1, '0x420')`;
-        });
-      },
-    });
-
-    // Get NOT_PUSH_NOTIFICATIONS notification medium
-    const [notPushNotifications] = await sql<
-      Array<NotificationMediumsRow>
-    >`SELECT * FROM notification_mediums WHERE name = 'NOT_PUSH_NOTIFICATIONS'`;
-
-    // Try to enable a non-PUSH_NOTIFICATIONS medium with a cloud_messaging_token
-    await expect(sql`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, enabled, cloud_messaging_token)
-                      VALUES (1, ${notPushNotifications.id}, true, '69420')`).rejects.toThrow(
-      'cloud_messaging_token can only be set for PUSH_NOTIFICATIONS of notification_mediums',
-    );
-  });
-
-  it('should require a cloud_messaging_token to be set when the notification_medium is PUSH_NOTIFICATION', async () => {
-    await migrator.test({
-      migration: '00004_notifications',
-      after: async (sql) => {
-        await sql.begin(async (transaction) => {
-          // Create account
-          await transaction`INSERT INTO accounts (address)
-                                    VALUES ('0x69');`;
-          // Add notification subscription to account
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                VALUES (1, 1, 1, '0x420')`;
-        });
-      },
-    });
-
-    // Try to enable PUSH_NOTIFICATIONS without a cloud_messaging_token
-    await expect(sql`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, enabled)
-                      VALUES (1, 1, true)`).rejects.toThrow(
-      'cloud_messaging_token is required for PUSH_NOTIFICATIONS of notification_mediums',
     );
   });
 
@@ -613,8 +556,8 @@ describe('Migration 00004_notifications', () => {
                                         VALUES (1, 3, 1, '0x420')`;
 
           // Enable notification medium
-          await transaction`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, enabled, cloud_messaging_token)
-                                        VALUES (1, 1, true, '69420')`;
+          await transaction`INSERT INTO notification_medium_configurations (notification_subscription_id, notification_medium_id, cloud_messaging_token)
+                                        VALUES (1, 1, '69420')`;
         });
 
         // Delete PUSH_NOTIFICATIONS notification medium
