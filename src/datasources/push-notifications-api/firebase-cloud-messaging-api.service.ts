@@ -84,6 +84,7 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
        * TODO: Error handling based on `error.details[i].reason`, e.g.
        * - expired OAuth2 token
        * - stale FCM token
+       * - don't expose the error to clients, logging on domain level
        */
       throw this.httpErrorFactory.from(error);
     }
