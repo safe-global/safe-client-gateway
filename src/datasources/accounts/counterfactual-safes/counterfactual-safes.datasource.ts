@@ -10,7 +10,7 @@ import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-sa
 import { Account } from '@/domain/accounts/entities/account.entity';
 import { ICounterfactualSafesDatasource } from '@/domain/interfaces/counterfactual-safes.datasource.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import postgres from 'postgres';
 
 @Injectable()
@@ -60,6 +60,11 @@ export class CounterfactualSafesDatasource
         SELECT * FROM counterfactual_safes WHERE id = ${id}`,
       this.defaultExpirationTimeInSeconds,
     );
+
+    if (!counterfactualSafe) {
+      throw new NotFoundException('Error getting Counterfactual Safe.');
+    }
+
     return counterfactualSafe;
   }
 
@@ -77,6 +82,48 @@ export class CounterfactualSafesDatasource
         SELECT * FROM counterfactual_safes WHERE account_id = ${account.id}`,
       this.defaultExpirationTimeInSeconds,
     );
+  }
+
+  async deleteCounterfactualSafe(account: Account, id: string): Promise<void> {
+    try {
+      const { count } = await this
+        .sql`DELETE FROM counterfactual_safes WHERE id = ${id}`;
+      if (count === 0) {
+        this.loggingService.debug(
+          `Error deleting Counterfactual Safe ${id}: not found`,
+        );
+      }
+    } finally {
+      await Promise.all([
+        this.cacheService.deleteByKey(
+          CacheRouter.getCounterfactualSafeCacheDir(id).key,
+        ),
+        this.cacheService.deleteByKey(
+          CacheRouter.getCounterfactualSafesCacheDir(account.address).key,
+        ),
+      ]);
+    }
+  }
+
+  async deleteCounterfactualSafesForAccount(account: Account): Promise<void> {
+    let deleted: CounterfactualSafe[] = [];
+    try {
+      const rows = await this.sql<
+        CounterfactualSafe[]
+      >`DELETE FROM counterfactual_safes WHERE account_id = ${account.id} RETURNING *`;
+      deleted = rows;
+    } finally {
+      await this.cacheService.deleteByKey(
+        CacheRouter.getCounterfactualSafesCacheDir(account.address).key,
+      );
+      await Promise.all(
+        deleted.map((row) => {
+          return this.cacheService.deleteByKey(
+            CacheRouter.getCounterfactualSafeCacheDir(row.id.toString()).key,
+          );
+        }),
+      );
+    }
   }
 
   private mapCreationDtoToRow(

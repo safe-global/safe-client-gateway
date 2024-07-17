@@ -181,4 +181,56 @@ describe('Migration 00004_counterfactual-safes', () => {
 
     expect(counterfactualSafesRows).toHaveLength(0);
   });
+
+  it('should throw an error if the unique(chain_id, predicted_address) constraint is violated', async () => {
+    const accountAddress = getAddress(faker.finance.ethereumAddress());
+    let accountRows: AccountRow[] = [];
+
+    await migrator.test({
+      migration: '00004_counterfactual-safes',
+      after: async (sql: postgres.Sql) => {
+        accountRows = await sql<
+          AccountRow[]
+        >`INSERT INTO accounts (address) VALUES (${accountAddress}) RETURNING *;`;
+        const predicted_address = getAddress(faker.finance.ethereumAddress());
+        const chain_id = faker.string.numeric();
+        await sql<
+          CounterfactualSafesRow[]
+        >`INSERT INTO counterfactual_safes ${sql([
+          {
+            chain_id,
+            creator: accountAddress,
+            fallback_handler: getAddress(faker.finance.ethereumAddress()),
+            owners: [
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+            predicted_address,
+            salt_nonce: faker.string.numeric(),
+            singleton_address: getAddress(faker.finance.ethereumAddress()),
+            threshold: faker.number.int({ min: 1, max: 10 }),
+            account_id: accountRows[0].id,
+          },
+        ])} RETURNING *`;
+        await expect(
+          sql`INSERT INTO counterfactual_safes ${sql([
+            {
+              chain_id,
+              creator: accountAddress,
+              fallback_handler: getAddress(faker.finance.ethereumAddress()),
+              owners: [
+                getAddress(faker.finance.ethereumAddress()),
+                getAddress(faker.finance.ethereumAddress()),
+              ],
+              predicted_address,
+              salt_nonce: faker.string.numeric(),
+              singleton_address: getAddress(faker.finance.ethereumAddress()),
+              threshold: faker.number.int({ min: 1, max: 10 }),
+              account_id: accountRows[0].id,
+            },
+          ])} RETURNING *`,
+        ).rejects.toThrow('duplicate key value violates unique constraint');
+      },
+    });
+  });
 });

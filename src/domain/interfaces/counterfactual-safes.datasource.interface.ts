@@ -18,6 +18,7 @@ export interface ICounterfactualSafesDatasource {
     account: Account,
   ): Promise<CounterfactualSafe[]>;
 
-  // TODO: implement CF Safes deletion
-  // (clear cache for both individual and per-address CFs)
+  deleteCounterfactualSafe(account: Account, id: string): Promise<void>;
+
+  deleteCounterfactualSafesForAccount(account: Account): Promise<void>;
 }
