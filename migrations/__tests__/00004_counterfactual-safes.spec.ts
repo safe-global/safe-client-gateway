@@ -171,7 +171,7 @@ describe('Migration 00004_counterfactual-safes', () => {
             threshold: faker.number.int({ min: 1, max: 10 }),
             account_id: accountRows[0].id,
           },
-        ])} RETURNING *`;
+        ])}`;
         await sql`DELETE FROM accounts WHERE id = ${accountRows[0].id};`;
         return sql<
           CounterfactualSafesRow[]
@@ -211,7 +211,7 @@ describe('Migration 00004_counterfactual-safes', () => {
             threshold: faker.number.int({ min: 1, max: 10 }),
             account_id: accountRows[0].id,
           },
-        ])} RETURNING *`;
+        ])}`;
         await expect(
           sql`INSERT INTO counterfactual_safes ${sql([
             {
@@ -228,7 +228,7 @@ describe('Migration 00004_counterfactual-safes', () => {
               threshold: faker.number.int({ min: 1, max: 10 }),
               account_id: accountRows[0].id,
             },
-          ])} RETURNING *`,
+          ])}`,
         ).rejects.toThrow('duplicate key value violates unique constraint');
       },
     });

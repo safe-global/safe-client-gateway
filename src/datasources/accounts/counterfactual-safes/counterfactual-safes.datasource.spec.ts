@@ -157,7 +157,7 @@ describe('CounterfactualSafesDatasource tests', () => {
       expect(actual).toStrictEqual(counterfactualSafe);
     });
 
-    it('returns a counterfactualSafe from cache', async () => {
+    it('returns a counterfactual safe from cache', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const [account] = await sql<
         Account[]
@@ -218,7 +218,64 @@ describe('CounterfactualSafesDatasource tests', () => {
     });
   });
 
-  // TODO: tests for getCounterfactualSafesForAccount
+  describe('getCounterfactualSafesForAccount', () => {
+    it('should get the counterfactual safes for an account', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const [account] = await sql<
+        Account[]
+      >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
+      const counterfactualSafes = await Promise.all([
+        target.createCounterfactualSafe(
+          account,
+          createCounterfactualSafeDtoBuilder().with('chainId', '1').build(),
+        ),
+        target.createCounterfactualSafe(
+          account,
+          createCounterfactualSafeDtoBuilder().with('chainId', '2').build(),
+        ),
+      ]);
+
+      const actual = await target.getCounterfactualSafesForAccount(account);
+      expect(actual).toStrictEqual(expect.arrayContaining(counterfactualSafes));
+    });
+
+    it('should get the counterfactual safes for an account from cache', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const [account] = await sql<
+        Account[]
+      >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
+      const counterfactualSafes = await Promise.all([
+        target.createCounterfactualSafe(
+          account,
+          createCounterfactualSafeDtoBuilder().with('chainId', '1').build(),
+        ),
+        target.createCounterfactualSafe(
+          account,
+          createCounterfactualSafeDtoBuilder().with('chainId', '2').build(),
+        ),
+      ]);
+
+      // first call is not cached
+      const actual = await target.getCounterfactualSafesForAccount(account);
+      await target.getCounterfactualSafesForAccount(account);
+
+      expect(actual).toStrictEqual(expect.arrayContaining(counterfactualSafes));
+      const cacheDir = new CacheDir(`counterfactual_safes_${address}`, '');
+      const cacheContent = await fakeCacheService.get(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toHaveLength(2);
+      expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
+      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'cache_miss',
+        key: `counterfactual_safes_${account.address}`,
+        field: '',
+      });
+      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'cache_hit',
+        key: `counterfactual_safes_${account.address}`,
+        field: '',
+      });
+    });
+  });
 
   describe('deleteCounterfactualSafe', () => {
     it('deletes a counterfactualSafe successfully', async () => {

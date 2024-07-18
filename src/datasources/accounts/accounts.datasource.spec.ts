@@ -2,6 +2,7 @@ import { TestDbFactory } from '@/__tests__/db.factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { MAX_TTL } from '@/datasources/cache/constants';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
@@ -200,13 +201,42 @@ describe('AccountsDatasource tests', () => {
         }),
       );
 
+      // store settings and counterfactual safes in the cache
+      const accountDataSettingsCacheDir = new CacheDir(
+        `account_data_settings_${address}`,
+        '',
+      );
+      await fakeCacheService.set(
+        accountDataSettingsCacheDir,
+        faker.string.alpha(),
+        MAX_TTL,
+      );
+      const counterfactualSafesCacheDir = new CacheDir(
+        `counterfactual_safes_${address}`,
+        '',
+      );
+      await fakeCacheService.set(
+        counterfactualSafesCacheDir,
+        faker.string.alpha(),
+        MAX_TTL,
+      );
+
       // the account is deleted from the database and the cache
       await expect(target.deleteAccount(address)).resolves.not.toThrow();
       await expect(target.getAccount(address)).rejects.toThrow();
-      const cached = await fakeCacheService.get(
-        new CacheDir(`account_${address}`, ''),
-      );
+      const accountCacheDir = new CacheDir(`account_${address}`, '');
+      const cached = await fakeCacheService.get(accountCacheDir);
       expect(cached).toBeUndefined();
+
+      // the settings and counterfactual safes are deleted from the cache
+      const accountDataSettingsCached = await fakeCacheService.get(
+        accountDataSettingsCacheDir,
+      );
+      expect(accountDataSettingsCached).toBeUndefined();
+      const counterfactualSafesCached = await fakeCacheService.get(
+        counterfactualSafesCacheDir,
+      );
+      expect(counterfactualSafesCached).toBeUndefined();
 
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {

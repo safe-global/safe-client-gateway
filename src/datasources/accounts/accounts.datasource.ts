@@ -95,8 +95,12 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         );
       }
     } finally {
-      const { key } = CacheRouter.getAccountCacheDir(address);
-      await this.cacheService.deleteByKey(key);
+      const keys = [
+        CacheRouter.getAccountCacheDir(address).key,
+        CacheRouter.getAccountDataSettingsCacheDir(address).key,
+        CacheRouter.getCounterfactualSafesCacheDir(address).key,
+      ];
+      await Promise.all(keys.map((key) => this.cacheService.deleteByKey(key)));
     }
   }
 
