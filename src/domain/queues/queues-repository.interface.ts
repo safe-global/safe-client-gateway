@@ -10,6 +10,7 @@ export interface IQueuesRepository extends OnModuleInit {
    * Subscribes to {@link Event}s.
    *
    * @param onEvent - Callback to be executed when an {@link Event} is received.
+   * @returns {Promise<unknown>} A Promise that resolves when the subscription is successful.
    */
   onEvent(listener: (event: Event) => Promise<unknown>): void;
 }

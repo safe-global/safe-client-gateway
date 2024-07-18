@@ -29,7 +29,9 @@ export class QueuesRepository implements IQueuesRepository {
         try {
           const content = JSON.parse(msg.content.toString());
           const event = WebHookSchema.parse(content);
-          await Promise.all(this.listeners.map((listener) => listener(event)));
+          await Promise.allSettled(
+            this.listeners.map((listener) => listener(event)),
+          );
         } catch (err) {
           this.loggingService.error(err);
         }

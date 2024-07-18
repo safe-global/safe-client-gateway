@@ -40,7 +40,7 @@ export class CacheHooksService implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
-    this.queuesRepository.onEvent(this.onEvent);
+    this.queuesRepository.onEvent((event) => this.onEvent(event));
   }
 
   async onEvent(event: Event): Promise<void[]> {
