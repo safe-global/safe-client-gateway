@@ -216,6 +216,18 @@ export default () => ({
       maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${10}`),
     },
   },
+  pushNotifications: {
+    baseUri:
+      process.env.PUSH_NOTIFICATIONS_API_BASE_URI ||
+      'https://fcm.googleapis.com/v1/projects',
+    project: process.env.PUSH_NOTIFICATIONS_API_PROJECT,
+    serviceAccount: {
+      clientEmail:
+        process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL,
+      privateKey:
+        process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY,
+    },
+  },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
