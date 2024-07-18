@@ -146,6 +146,14 @@ export default (): ReturnType<typeof configuration> => ({
   owners: {
     ownersTtlSeconds: faker.number.int(),
   },
+  pushNotifications: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    project: faker.word.noun(),
+    serviceAccount: {
+      clientEmail: faker.internet.email(),
+      privateKey: faker.string.alphanumeric(),
+    },
+  },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
