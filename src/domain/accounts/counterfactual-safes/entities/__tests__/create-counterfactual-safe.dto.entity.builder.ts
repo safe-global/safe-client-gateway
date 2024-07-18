@@ -5,14 +5,14 @@ import { getAddress } from 'viem';
 
 export function createCounterfactualSafeDtoBuilder(): IBuilder<CreateCounterfactualSafeDto> {
   return new Builder<CreateCounterfactualSafeDto>()
-    .with('chainId', faker.string.numeric())
-    .with('fallbackHandler', getAddress(faker.finance.ethereumAddress()))
+    .with('chain_id', faker.string.numeric())
+    .with('fallback_handler', getAddress(faker.finance.ethereumAddress()))
     .with('owners', [
       getAddress(faker.finance.ethereumAddress()),
       getAddress(faker.finance.ethereumAddress()),
     ])
-    .with('predictedAddress', getAddress(faker.finance.ethereumAddress()))
-    .with('saltNonce', faker.string.uuid())
-    .with('singletonAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('predicted_address', getAddress(faker.finance.ethereumAddress()))
+    .with('salt_nonce', faker.string.uuid())
+    .with('singleton_address', getAddress(faker.finance.ethereumAddress()))
     .with('threshold', faker.number.int({ min: 1, max: 10 }));
 }

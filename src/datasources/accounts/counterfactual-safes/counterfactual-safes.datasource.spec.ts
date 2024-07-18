@@ -74,13 +74,13 @@ describe('CounterfactualSafesDatasource tests', () => {
       expect(actual).toStrictEqual(
         expect.objectContaining({
           id: expect.any(Number),
-          chain_id: createCounterfactualSafeDto.chainId,
+          chain_id: createCounterfactualSafeDto.chain_id,
           creator: account.address,
-          fallback_handler: createCounterfactualSafeDto.fallbackHandler,
+          fallback_handler: createCounterfactualSafeDto.fallback_handler,
           owners: createCounterfactualSafeDto.owners,
-          predicted_address: createCounterfactualSafeDto.predictedAddress,
-          salt_nonce: createCounterfactualSafeDto.saltNonce,
-          singleton_address: createCounterfactualSafeDto.singletonAddress,
+          predicted_address: createCounterfactualSafeDto.predicted_address,
+          salt_nonce: createCounterfactualSafeDto.salt_nonce,
+          singleton_address: createCounterfactualSafeDto.singleton_address,
           threshold: createCounterfactualSafeDto.threshold,
           account_id: account.id,
         }),
@@ -229,11 +229,11 @@ describe('CounterfactualSafesDatasource tests', () => {
       const counterfactualSafes = await Promise.all([
         target.createCounterfactualSafe(
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '1').build(),
+          createCounterfactualSafeDtoBuilder().with('chain_id', '1').build(),
         ),
         target.createCounterfactualSafe(
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '2').build(),
+          createCounterfactualSafeDtoBuilder().with('chain_id', '2').build(),
         ),
       ]);
 
@@ -249,11 +249,11 @@ describe('CounterfactualSafesDatasource tests', () => {
       const counterfactualSafes = await Promise.all([
         target.createCounterfactualSafe(
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '1').build(),
+          createCounterfactualSafeDtoBuilder().with('chain_id', '1').build(),
         ),
         target.createCounterfactualSafe(
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '2').build(),
+          createCounterfactualSafeDtoBuilder().with('chain_id', '2').build(),
         ),
       ]);
 
@@ -361,11 +361,11 @@ describe('CounterfactualSafesDatasource tests', () => {
       const counterfactualSafes = await Promise.all([
         target.createCounterfactualSafe(
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '1').build(),
+          createCounterfactualSafeDtoBuilder().with('chain_id', '1').build(),
         ),
         target.createCounterfactualSafe(
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '2').build(),
+          createCounterfactualSafeDtoBuilder().with('chain_id', '2').build(),
         ),
       ]);
 
