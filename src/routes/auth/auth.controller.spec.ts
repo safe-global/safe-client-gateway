@@ -127,6 +127,9 @@ describe('AuthController', () => {
 
   describe('POST /v1/auth/verify', () => {
     it('should verify a signer', async () => {
+      // Fix "now" as it is otherwise to precisely expect expiration/maxAge
+      jest.setSystemTime(0);
+
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const nonceResponse = await request(app.getHttpServer()).get(
@@ -149,9 +152,6 @@ describe('AuthController', () => {
         message,
       });
       const maxAge = getSecondsUntil(expirationTime);
-      // jsonwebtoken sets expiration based on timespans, not exact dates
-      // meaning we cannot use expirationTime directly
-      const expires = new Date(Date.now() + maxAge * 1_000);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
@@ -166,7 +166,7 @@ describe('AuthController', () => {
         .expect(({ headers }) => {
           const setCookie = headers['set-cookie'];
           const setCookieRegExp = new RegExp(
-            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expires.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
+            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
           );
 
           expect(setCookie).toHaveLength;
@@ -179,6 +179,9 @@ describe('AuthController', () => {
     });
 
     it('should verify a smart contract signer', async () => {
+      // Fix "now" as it is otherwise to precisely expect expiration/maxAge
+      jest.setSystemTime(0);
+
       const nonceResponse = await request(app.getHttpServer()).get(
         '/v1/auth/nonce',
       );
@@ -197,9 +200,6 @@ describe('AuthController', () => {
       const signature = faker.string.hexadecimal({ length: 132 });
       verifySiweMessageMock.mockResolvedValue(true);
       const maxAge = getSecondsUntil(expirationTime);
-      // jsonwebtoken sets expiration based on timespans, not exact dates
-      // meaning we cannot use expirationTime directly
-      const expires = new Date(Date.now() + maxAge * 1_000);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
@@ -214,7 +214,7 @@ describe('AuthController', () => {
         .expect(({ headers }) => {
           const setCookie = headers['set-cookie'];
           const setCookieRegExp = new RegExp(
-            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expires.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
+            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
           );
 
           expect(setCookie).toHaveLength;
@@ -227,6 +227,9 @@ describe('AuthController', () => {
     });
 
     it('should set SameSite=none if application.env is not production', async () => {
+      // Fix "now" as it is otherwise to precisely expect expiration/maxAge
+      jest.setSystemTime(0);
+
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
         ...defaultConfiguration,
@@ -264,9 +267,6 @@ describe('AuthController', () => {
         message,
       });
       const maxAge = getSecondsUntil(expirationTime);
-      // jsonwebtoken sets expiration based on timespans, not exact dates
-      // meaning we cannot use expirationTime directly
-      const expires = new Date(Date.now() + maxAge * 1_000);
 
       await expect(cacheService.get(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
@@ -282,7 +282,7 @@ describe('AuthController', () => {
         .expect(({ headers }) => {
           const setCookie = headers['set-cookie'];
           const setCookieRegExp = new RegExp(
-            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expires.toUTCString()}; HttpOnly; Secure; SameSite=None`,
+            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=None`,
           );
 
           expect(setCookie).toHaveLength;

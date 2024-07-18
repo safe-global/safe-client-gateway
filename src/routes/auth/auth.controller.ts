@@ -83,6 +83,6 @@ export class AuthController {
    */
   private getMaxAge(accessToken: string): number | undefined {
     const { exp } = this.authService.getTokenPayloadWithClaims(accessToken);
-    return exp ? getMillisecondsUntil(new Date(exp * 1_000)) : undefined;
+    return exp ? getMillisecondsUntil(exp) : undefined;
   }
 }

@@ -2,7 +2,6 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { SiweDto } from '@/routes/auth/entities/siwe.dto.entity';
 import { ISiweRepository } from '@/domain/siwe/siwe.repository.interface';
 import { IAuthRepository } from '@/domain/auth/auth.repository.interface';
-import { getSecondsUntil } from '@/domain/common/utils/time';
 import {
   AuthPayloadDto,
   AuthPayloadDtoSchema,
@@ -45,10 +44,10 @@ export class AuthService {
 
     const accessToken = this.authRepository.signToken(payload, {
       ...(notBefore && {
-        notBefore: getSecondsUntil(new Date(notBefore)),
+        nbf: new Date(notBefore),
       }),
       ...(expirationTime && {
-        expiresIn: getSecondsUntil(new Date(expirationTime)),
+        exp: new Date(expirationTime),
       }),
     });
 
