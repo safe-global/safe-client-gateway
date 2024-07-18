@@ -59,9 +59,9 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
    * @param fcmToken - device's FCM token
    * @param notification - notification payload
    */
-  async enqueueNotification<T extends Record<string, unknown>>(
+  async enqueueNotification(
     fcmToken: string,
-    notification: FirebaseNotification<T>,
+    notification: FirebaseNotification,
   ): Promise<void> {
     const url = `${this.baseUrl}/${this.project}/messages:send`;
     try {
