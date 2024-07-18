@@ -5,7 +5,7 @@ export class UpsertAccountDataSettingsDto
   implements z.infer<typeof UpsertAccountDataSettingsDtoSchema>
 {
   accountDataSettings: {
-    id: string;
+    dataTypeId: string;
     enabled: boolean;
   }[];
 
@@ -15,7 +15,7 @@ export class UpsertAccountDataSettingsDto
 }
 
 export const UpsertAccountDataSettingDtoSchema = z.object({
-  id: NumericStringSchema,
+  dataTypeId: NumericStringSchema,
   enabled: z.boolean(),
 });
 

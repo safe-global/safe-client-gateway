@@ -82,30 +82,26 @@ describe('AccountDataTypeSchema', () => {
       {
         code: 'invalid_type',
         expected: 'number',
-        message: 'Required',
+        received: 'undefined',
         path: ['id'],
-        received: 'undefined',
+        message: 'Required',
       },
       {
-        code: 'invalid_type',
-        expected: 'date',
-        message: 'Required',
+        code: 'invalid_date',
         path: ['created_at'],
-        received: 'undefined',
+        message: 'Invalid date',
       },
       {
-        code: 'invalid_type',
-        expected: 'date',
-        message: 'Required',
+        code: 'invalid_date',
         path: ['updated_at'],
-        received: 'undefined',
+        message: 'Invalid date',
       },
       {
         code: 'invalid_type',
         expected: 'string',
-        message: 'Required',
-        path: ['name'],
         received: 'undefined',
+        path: ['name'],
+        message: 'Required',
       },
     ]);
   });
