@@ -1,22 +1,17 @@
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { QueuesRepository } from '@/domain/queues/queues-repository';
-import { Module } from '@nestjs/common';
-import { ConsumeMessage } from 'amqplib';
+import { Module, OnModuleInit } from '@nestjs/common';
+import { Event } from '@/routes/cache-hooks/entities/event.entity';
 
 export const IQueuesRepository = Symbol('IQueuesRepository');
 
-export interface IQueuesRepository {
+export interface IQueuesRepository extends OnModuleInit {
   /**
-   * Subscribes to messages from the specified queue.
+   * Subscribes to {@link Event}s.
    *
-   * @param queueName - The name of the queue to subscribe to.
-   * @param fn - The callback function to be executed when a new message is received.
-   * @returns {Promise<void>} A Promise that resolves when the subscription is successful.
+   * @param onEvent - Callback to be executed when an {@link Event} is received.
    */
-  subscribe(
-    queueName: string,
-    fn: (msg: ConsumeMessage) => Promise<void>,
-  ): Promise<void>;
+  onEvent(listener: (event: Event) => Promise<unknown>): void;
 }
 
 @Module({

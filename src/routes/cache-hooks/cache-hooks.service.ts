@@ -9,16 +9,12 @@ import { ITransactionsRepository } from '@/domain/transactions/transactions.repo
 import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IQueuesRepository } from '@/domain/queues/queues-repository.interface';
-import { ConsumeMessage } from 'amqplib';
-import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
 import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository.interface';
 
 @Injectable()
 export class CacheHooksService implements OnModuleInit {
   private static readonly HOOK_TYPE = 'hook';
-  private readonly queueName: string;
 
   constructor(
     @Inject(IBalancesRepository)
@@ -41,25 +37,10 @@ export class CacheHooksService implements OnModuleInit {
     private readonly loggingService: ILoggingService,
     @Inject(IQueuesRepository)
     private readonly queuesRepository: IQueuesRepository,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
-  ) {
-    this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
-  }
+  ) {}
 
-  onModuleInit(): Promise<void> {
-    return this.queuesRepository.subscribe(
-      this.queueName,
-      async (msg: ConsumeMessage) => {
-        try {
-          const content = JSON.parse(msg.content.toString());
-          const event: Event = WebHookSchema.parse(content);
-          await this.onEvent(event);
-        } catch (err) {
-          this.loggingService.error(err);
-        }
-      },
-    );
+  onModuleInit(): void {
+    this.queuesRepository.onEvent(this.onEvent);
   }
 
   async onEvent(event: Event): Promise<void[]> {
