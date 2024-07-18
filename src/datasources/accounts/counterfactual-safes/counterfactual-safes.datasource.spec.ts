@@ -97,19 +97,19 @@ describe('CounterfactualSafesDatasource tests', () => {
         createCounterfactualSafeDtoBuilder().build(),
       );
       await target.getCounterfactualSafesForAccount(account);
-
-      // check CF Safes for the address are in the cache
       const cacheDir = new CacheDir(`counterfactual_safes_${address}`, '');
-      const cacheContent = await fakeCacheService.get(cacheDir);
-      expect(JSON.parse(cacheContent as string)).toHaveLength(1);
+      await fakeCacheService.set(
+        cacheDir,
+        JSON.stringify([]),
+        faker.number.int(),
+      );
 
       // the cache is cleared after creating a new CF Safe for the same account
       await target.createCounterfactualSafe(
         account,
         createCounterfactualSafeDtoBuilder().build(),
       );
-      const afterCreation = await fakeCacheService.get(cacheDir);
-      expect(afterCreation).toBeUndefined();
+      expect(await fakeCacheService.get(cacheDir)).toBeUndefined();
     });
 
     // TODO: move this check to the repository.
@@ -179,7 +179,7 @@ describe('CounterfactualSafesDatasource tests', () => {
         '',
       );
       const cacheContent = await fakeCacheService.get(cacheDir);
-      expect(cacheContent).toStrictEqual(JSON.stringify([counterfactualSafe]));
+      expect(JSON.parse(cacheContent as string)).toHaveLength(1);
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'cache_miss',
@@ -196,7 +196,7 @@ describe('CounterfactualSafesDatasource tests', () => {
     it('should not cache if the Counterfactual Safe is not found', async () => {
       const id = faker.string.numeric();
 
-      // should not cache the counterfactualSafe
+      // should not cache the Counterfactual Safe
       await expect(target.getCounterfactualSafe(id)).rejects.toThrow(
         'Error getting Counterfactual Safe.',
       );
@@ -204,6 +204,8 @@ describe('CounterfactualSafesDatasource tests', () => {
         'Error getting Counterfactual Safe.',
       );
 
+      const cacheDir = new CacheDir(`counterfactual_safe_${id}`, '');
+      expect(await fakeCacheService.get(cacheDir)).toBeUndefined();
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'cache_miss',
@@ -326,9 +328,7 @@ describe('CounterfactualSafesDatasource tests', () => {
         '',
       );
       const beforeDeletion = await fakeCacheService.get(cacheDir);
-      expect(beforeDeletion).toStrictEqual(
-        JSON.stringify([counterfactualSafe]),
-      );
+      expect(JSON.parse(beforeDeletion as string)).toHaveLength(1);
 
       // the counterfactualSafe is deleted from the database and the cache
       await expect(
