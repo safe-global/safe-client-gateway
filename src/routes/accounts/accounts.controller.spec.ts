@@ -256,7 +256,7 @@ describe('AccountsController', () => {
       const account = accountBuilder().with('group_id', null).build();
       accountDataSource.getAccount.mockResolvedValue(account);
       const expected: Account = {
-        accountId: account.id.toString(),
+        id: account.id.toString(),
         groupId: null,
         address: account.address,
       };
@@ -284,7 +284,7 @@ describe('AccountsController', () => {
       const account = accountBuilder().with('group_id', groupId).build();
       accountDataSource.getAccount.mockResolvedValue(account);
       const expected: Account = {
-        accountId: account.id.toString(),
+        id: account.id.toString(),
         groupId: groupId.toString(),
         address: account.address,
       };
