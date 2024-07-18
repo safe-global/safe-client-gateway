@@ -1,10 +1,10 @@
-import { fakeJson } from '@/__tests__/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { INetworkService } from '@/datasources/network/network.service.interface';
+import { firebaseNotificationBuilder } from '@/datasources/push-notifications-api/__tests__/firebase-notification.builder';
 import { FirebaseCloudMessagingApiService } from '@/datasources/push-notifications-api/firebase-cloud-messaging-api.service';
 import { faker } from '@faker-js/faker';
 
@@ -71,11 +71,7 @@ describe('FirebaseCloudMessagingApiService', () => {
     const oauth2Token = faker.string.alphanumeric();
     const oauth2TokenExpiresIn = faker.number.int();
     const fcmToken = faker.string.alphanumeric();
-    const notification = {
-      title: faker.lorem.sentence(),
-      body: faker.lorem.sentence(),
-      data: JSON.parse(fakeJson()),
-    };
+    const notification = firebaseNotificationBuilder().build();
     mockJwtService.sign.mockReturnValue(oauth2AssertionJwt);
     mockNetworkService.post.mockResolvedValueOnce({
       status: 200,
@@ -129,11 +125,7 @@ describe('FirebaseCloudMessagingApiService', () => {
       oauth2TokenExpiresIn,
     );
     const fcmToken = faker.string.alphanumeric();
-    const notification = {
-      title: faker.lorem.sentence(),
-      body: faker.lorem.sentence(),
-      data: JSON.parse(fakeJson()),
-    };
+    const notification = firebaseNotificationBuilder().build();
 
     await expect(
       target.enqueueNotification(fcmToken, notification),
