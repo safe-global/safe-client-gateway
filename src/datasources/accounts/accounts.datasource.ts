@@ -49,9 +49,9 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     );
   }
 
-  async createAccount(address: `0x${string}`): Promise<Account> {
+  async createAccount(args: { address: `0x${string}` }): Promise<Account> {
     const [account] = await this.sql<[Account]>`
-      INSERT INTO accounts (address) VALUES (${address}) RETURNING *`.catch(
+      INSERT INTO accounts (address) VALUES (${args.address}) RETURNING *`.catch(
       (e) => {
         this.loggingService.warn(
           `Error creating account: ${asError(e).message}`,
@@ -59,7 +59,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         throw new UnprocessableEntityException('Error creating account.');
       },
     );
-    const cacheDir = CacheRouter.getAccountCacheDir(address);
+    const cacheDir = CacheRouter.getAccountCacheDir(args.address);
     await this.cacheService.set(
       cacheDir,
       JSON.stringify([account]),
@@ -68,13 +68,15 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     return account;
   }
 
-  async getAccount(address: `0x${string}`): Promise<Account> {
-    const cacheDir = CacheRouter.getAccountCacheDir(address);
+  async getAccount(args: { address: `0x${string}` }): Promise<Account> {
+    const cacheDir = CacheRouter.getAccountCacheDir(args.address);
     const [account] = await getFromCacheOrExecuteAndCache<Account[]>(
       this.loggingService,
       this.cacheService,
       cacheDir,
-      this.sql<Account[]>`SELECT * FROM accounts WHERE address = ${address}`,
+      this.sql<
+        Account[]
+      >`SELECT * FROM accounts WHERE address = ${args.address}`,
       this.defaultExpirationTimeInSeconds,
     );
 
@@ -85,20 +87,20 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     return account;
   }
 
-  async deleteAccount(address: `0x${string}`): Promise<void> {
+  async deleteAccount(args: { address: `0x${string}` }): Promise<void> {
     try {
       const { count } = await this
-        .sql`DELETE FROM accounts WHERE address = ${address}`;
+        .sql`DELETE FROM accounts WHERE address = ${args.address}`;
       if (count === 0) {
         this.loggingService.debug(
-          `Error deleting account ${address}: not found`,
+          `Error deleting account ${args.address}: not found`,
         );
       }
     } finally {
       const keys = [
-        CacheRouter.getAccountCacheDir(address).key,
-        CacheRouter.getAccountDataSettingsCacheDir(address).key,
-        CacheRouter.getCounterfactualSafesCacheDir(address).key,
+        CacheRouter.getAccountCacheDir(args.address).key,
+        CacheRouter.getAccountDataSettingsCacheDir(args.address).key,
+        CacheRouter.getCounterfactualSafesCacheDir(args.address).key,
       ];
       await Promise.all(keys.map((key) => this.cacheService.deleteByKey(key)));
     }
@@ -115,11 +117,11 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     );
   }
 
-  async getAccountDataSettings(
-    address: `0x${string}`,
-  ): Promise<AccountDataSetting[]> {
-    const account = await this.getAccount(address);
-    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
+  async getAccountDataSettings(args: {
+    address: `0x${string}`;
+  }): Promise<AccountDataSetting[]> {
+    const account = await this.getAccount(args);
+    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(args.address);
     return getFromCacheOrExecuteAndCache<AccountDataSetting[]>(
       this.loggingService,
       this.cacheService,
@@ -143,13 +145,13 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
    * @param upsertAccountDataSettings {@link UpsertAccountDataSettingsDto} object.
    * @returns {Array<AccountDataSetting>} inserted account data settings.
    */
-  async upsertAccountDataSettings(
-    address: `0x${string}`,
-    upsertAccountDataSettings: UpsertAccountDataSettingsDto,
-  ): Promise<AccountDataSetting[]> {
-    const { accountDataSettings } = upsertAccountDataSettings;
+  async upsertAccountDataSettings(args: {
+    address: `0x${string}`;
+    upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
+  }): Promise<AccountDataSetting[]> {
+    const { accountDataSettings } = args.upsertAccountDataSettingsDto;
     await this.checkDataTypes(accountDataSettings);
-    const account = await this.getAccount(address);
+    const account = await this.getAccount({ address: args.address });
 
     const result = await this.sql.begin(async (sql) => {
       await Promise.all(
@@ -169,7 +171,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         SELECT * FROM account_data_settings WHERE account_id = ${account.id}`;
     });
 
-    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
+    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(args.address);
     await this.cacheService.set(
       cacheDir,
       JSON.stringify(result),
