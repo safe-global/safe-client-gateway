@@ -28,7 +28,7 @@ export const CreateCounterfactualSafeDtoSchema = z.object({
   fallback_handler: AddressSchema,
   owners: z.array(AddressSchema),
   predicted_address: AddressSchema,
-  salt_nonce: z.string(),
+  salt_nonce: HexSchema,
   singleton_address: AddressSchema,
   threshold: z.number().int().gte(1),
 });
