@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
@@ -14,9 +14,10 @@ import { IQueuesRepository } from '@/domain/queues/queues-repository.interface';
 import { ConsumeMessage } from 'amqplib';
 import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
 import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository.interface';
+import { IHooksRepository } from '@/domain/hooks/hooks.repository.interface';
 
 @Injectable()
-export class HooksRepository implements OnModuleInit {
+export class HooksRepository implements IHooksRepository {
   private static readonly HOOK_TYPE = 'hook';
   private readonly queueName: string;
 

@@ -1,13 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Event } from '@/routes/cache-hooks/entities/event.entity';
-import { HooksRepository } from '@/domain/hooks/hooks.repository';
 import { IHooksRepository } from '@/domain/hooks/hooks.repository.interface';
 
 @Injectable()
-export class CacheHooksService implements IHooksRepository {
+export class CacheHooksService {
   constructor(
     @Inject(IHooksRepository)
-    private readonly hooksRepository: HooksRepository,
+    private readonly hooksRepository: IHooksRepository,
   ) {}
 
   async onEvent(event: Event): Promise<unknown> {
