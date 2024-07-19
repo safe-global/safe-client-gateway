@@ -12,7 +12,7 @@ export function createCounterfactualSafeDtoBuilder(): IBuilder<CreateCounterfact
       getAddress(faker.finance.ethereumAddress()),
     ])
     .with('predicted_address', getAddress(faker.finance.ethereumAddress()))
-    .with('salt_nonce', faker.string.uuid())
+    .with('salt_nonce', faker.string.hexadecimal())
     .with('singleton_address', getAddress(faker.finance.ethereumAddress()))
     .with('threshold', faker.number.int({ min: 1, max: 10 }));
 }
