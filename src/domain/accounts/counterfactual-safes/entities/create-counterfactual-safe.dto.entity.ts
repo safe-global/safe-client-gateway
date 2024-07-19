@@ -4,31 +4,31 @@ import { z } from 'zod';
 export class CreateCounterfactualSafeDto
   implements z.infer<typeof CreateCounterfactualSafeDtoSchema>
 {
-  chain_id: string;
-  fallback_handler: `0x${string}`;
+  chainId: string;
+  fallbackHandler: `0x${string}`;
   owners: `0x${string}`[];
-  predicted_address: `0x${string}`;
-  salt_nonce: string;
-  singleton_address: `0x${string}`;
+  predictedAddress: `0x${string}`;
+  saltNonce: string;
+  singletonAddress: `0x${string}`;
   threshold: number;
 
   constructor(props: CreateCounterfactualSafeDto) {
-    this.chain_id = props.chain_id;
-    this.fallback_handler = props.fallback_handler;
+    this.chainId = props.chainId;
+    this.fallbackHandler = props.fallbackHandler;
     this.owners = props.owners;
-    this.predicted_address = props.predicted_address;
-    this.salt_nonce = props.salt_nonce;
-    this.singleton_address = props.singleton_address;
+    this.predictedAddress = props.predictedAddress;
+    this.saltNonce = props.saltNonce;
+    this.singletonAddress = props.singletonAddress;
     this.threshold = props.threshold;
   }
 }
 
 export const CreateCounterfactualSafeDtoSchema = z.object({
-  chain_id: z.string(),
-  fallback_handler: AddressSchema,
+  chainId: z.string(),
+  fallbackHandler: AddressSchema,
   owners: z.array(AddressSchema).min(1),
-  predicted_address: AddressSchema,
-  salt_nonce: z.string(),
-  singleton_address: AddressSchema,
+  predictedAddress: AddressSchema,
+  saltNonce: z.string(),
+  singletonAddress: AddressSchema,
   threshold: z.number().int().gte(1),
 });

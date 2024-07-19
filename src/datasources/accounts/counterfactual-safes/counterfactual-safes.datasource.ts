@@ -132,13 +132,13 @@ export class CounterfactualSafesDatasource
   ): Partial<CounterfactualSafe> {
     return {
       account_id: account.id,
-      chain_id: createCounterfactualSafeDto.chain_id,
+      chain_id: createCounterfactualSafeDto.chainId,
       creator: account.address,
-      fallback_handler: createCounterfactualSafeDto.fallback_handler,
+      fallback_handler: createCounterfactualSafeDto.fallbackHandler,
       owners: createCounterfactualSafeDto.owners,
-      predicted_address: createCounterfactualSafeDto.predicted_address,
-      salt_nonce: createCounterfactualSafeDto.salt_nonce,
-      singleton_address: createCounterfactualSafeDto.singleton_address,
+      predicted_address: createCounterfactualSafeDto.predictedAddress,
+      salt_nonce: createCounterfactualSafeDto.saltNonce,
+      singleton_address: createCounterfactualSafeDto.singletonAddress,
       threshold: createCounterfactualSafeDto.threshold,
     };
   }
