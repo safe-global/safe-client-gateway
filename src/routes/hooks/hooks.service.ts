@@ -3,7 +3,7 @@ import { Event } from '@/routes/hooks/entities/event.entity';
 import { IHooksRepository } from '@/domain/hooks/hooks.repository.interface';
 
 @Injectable()
-export class CacheHooksService {
+export class HooksService {
   constructor(
     @Inject(IHooksRepository)
     private readonly hooksRepository: IHooksRepository,
