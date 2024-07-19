@@ -17,12 +17,12 @@ interface CounterfactualSafesRow {
   updated_at: Date;
   id: number;
   chain_id: string;
-  creator: string;
-  fallback_handler: string;
-  owners: string[];
-  predicted_address: string;
+  creator:`0x${string}`;
+  fallback_handler: `0x${string}`;
+  owners: `0x${string}`[];
+  predicted_address: `0x${string}`;
   salt_nonce: string;
-  singleton_address: string;
+  singleton_address: `0x${string}`;
   threshold: number;
   account_id: number;
 }
