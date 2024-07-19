@@ -6,13 +6,16 @@ import { IMessagesRepository } from '@/domain/messages/messages.repository.inter
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { ITransactionsRepository } from '@/domain/transactions/transactions.repository.interface';
-import { EventType } from '@/routes/cache-hooks/entities/event-type.entity';
+import {
+  TransactionEventType,
+  ConfigEventType,
+} from '@/routes/hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { Event } from '@/routes/cache-hooks/entities/event.entity';
+import { Event } from '@/routes/hooks/entities/event.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IQueuesRepository } from '@/domain/queues/queues-repository.interface';
 import { ConsumeMessage } from 'amqplib';
-import { WebHookSchema } from '@/routes/cache-hooks/entities/schemas/web-hook.schema';
+import { EventSchema } from '@/routes/hooks/entities/schemas/event.schema';
 import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository.interface';
 import { IHooksRepository } from '@/domain/hooks/hooks.repository.interface';
 
@@ -54,7 +57,7 @@ export class HooksRepository implements IHooksRepository {
       async (msg: ConsumeMessage) => {
         try {
           const content = JSON.parse(msg.content.toString());
-          const event: Event = WebHookSchema.parse(content);
+          const event: Event = EventSchema.parse(content);
           await this.onEvent(event);
         } catch (err) {
           this.loggingService.error(err);
@@ -75,7 +78,7 @@ export class HooksRepository implements IHooksRepository {
       // A new pending multisig transaction affects:
       // queued transactions – clear multisig transactions
       // the pending transaction – clear multisig transaction
-      case EventType.PENDING_MULTISIG_TRANSACTION:
+      case TransactionEventType.PENDING_MULTISIG_TRANSACTION:
         promises.push(
           this.safeRepository.clearMultisigTransactions({
             chainId: event.chainId,
@@ -90,7 +93,7 @@ export class HooksRepository implements IHooksRepository {
       // A deleted multisig transaction affects:
       // queued transactions – clear multisig transactions
       // the pending transaction – clear multisig transaction
-      case EventType.DELETED_MULTISIG_TRANSACTION:
+      case TransactionEventType.DELETED_MULTISIG_TRANSACTION:
         promises.push(
           this.safeRepository.clearMultisigTransactions({
             chainId: event.chainId,
@@ -106,7 +109,7 @@ export class HooksRepository implements IHooksRepository {
       // - the list of all executed transactions for the safe
       // - the list of module transactions for the safe
       // - the safe configuration
-      case EventType.MODULE_TRANSACTION:
+      case TransactionEventType.MODULE_TRANSACTION:
         promises.push(
           this.safeRepository.clearAllExecutedTransactions({
             chainId: event.chainId,
@@ -129,7 +132,7 @@ export class HooksRepository implements IHooksRepository {
       // - queued transactions and history – clear multisig transactions
       // - the transaction executed – clear multisig transaction
       // - the safe configuration - clear safe info
-      case EventType.EXECUTED_MULTISIG_TRANSACTION:
+      case TransactionEventType.EXECUTED_MULTISIG_TRANSACTION:
         promises.push(
           this.collectiblesRepository.clearCollectibles({
             chainId: event.chainId,
@@ -160,7 +163,7 @@ export class HooksRepository implements IHooksRepository {
       // A new confirmation for a pending transaction affects:
       // - queued transactions – clear multisig transactions
       // - the pending transaction – clear multisig transaction
-      case EventType.NEW_CONFIRMATION:
+      case TransactionEventType.NEW_CONFIRMATION:
         promises.push(
           this.safeRepository.clearMultisigTransactions({
             chainId: event.chainId,
@@ -176,7 +179,7 @@ export class HooksRepository implements IHooksRepository {
       // - the balance of the safe - clear safe balance
       // - the list of all executed transactions (including transfers) for the safe
       // - the incoming transfers for that safe
-      case EventType.INCOMING_ETHER:
+      case TransactionEventType.INCOMING_ETHER:
         promises.push(
           this.balancesRepository.clearBalances({
             chainId: event.chainId,
@@ -205,7 +208,7 @@ export class HooksRepository implements IHooksRepository {
       // - the list of all executed transactions for the safe
       // - queued transactions and history – clear multisig transactions
       // - the transfers for that safe
-      case EventType.OUTGOING_ETHER:
+      case TransactionEventType.OUTGOING_ETHER:
         promises.push(
           this.balancesRepository.clearBalances({
             chainId: event.chainId,
@@ -232,7 +235,7 @@ export class HooksRepository implements IHooksRepository {
       // - queued transactions and history – clear multisig transactions
       // - the transfers for that safe
       // - the incoming transfers for that safe
-      case EventType.INCOMING_TOKEN:
+      case TransactionEventType.INCOMING_TOKEN:
         promises.push(
           this.balancesRepository.clearBalances({
             chainId: event.chainId,
@@ -266,7 +269,7 @@ export class HooksRepository implements IHooksRepository {
       // - the list of all executed transactions (including transfers) for the safe
       // - queued transactions and history – clear multisig transactions
       // - the transfers for that safe
-      case EventType.OUTGOING_TOKEN:
+      case TransactionEventType.OUTGOING_TOKEN:
         promises.push(
           this.balancesRepository.clearBalances({
             chainId: event.chainId,
@@ -292,7 +295,7 @@ export class HooksRepository implements IHooksRepository {
         break;
       // A message created affects:
       // - the messages associated to the Safe
-      case EventType.MESSAGE_CREATED:
+      case TransactionEventType.MESSAGE_CREATED:
         promises.push(
           this.messagesRepository.clearMessagesBySafe({
             chainId: event.chainId,
@@ -303,7 +306,7 @@ export class HooksRepository implements IHooksRepository {
       // A new message confirmation affects:
       // - the message itself
       // - the messages associated to the Safe
-      case EventType.MESSAGE_CONFIRMATION:
+      case TransactionEventType.MESSAGE_CONFIRMATION:
         promises.push(
           this.messagesRepository.clearMessagesByHash({
             chainId: event.chainId,
@@ -315,7 +318,7 @@ export class HooksRepository implements IHooksRepository {
           }),
         );
         break;
-      case EventType.CHAIN_UPDATE:
+      case ConfigEventType.CHAIN_UPDATE:
         promises.push(
           this.chainsRepository.clearChain(event.chainId).then(() => {
             // RPC may have changed
@@ -326,10 +329,10 @@ export class HooksRepository implements IHooksRepository {
           }),
         );
         break;
-      case EventType.SAFE_APPS_UPDATE:
+      case ConfigEventType.SAFE_APPS_UPDATE:
         promises.push(this.safeAppsRepository.clearSafeApps(event.chainId));
         break;
-      case EventType.SAFE_CREATED:
+      case TransactionEventType.SAFE_CREATED:
         promises.push(this.safeRepository.clearIsSafe(event));
         break;
     }
@@ -338,28 +341,28 @@ export class HooksRepository implements IHooksRepository {
 
   private onEventLog(event: Event): void {
     switch (event.type) {
-      case EventType.PENDING_MULTISIG_TRANSACTION:
-      case EventType.DELETED_MULTISIG_TRANSACTION:
-      case EventType.EXECUTED_MULTISIG_TRANSACTION:
-      case EventType.NEW_CONFIRMATION:
+      case TransactionEventType.PENDING_MULTISIG_TRANSACTION:
+      case TransactionEventType.DELETED_MULTISIG_TRANSACTION:
+      case TransactionEventType.EXECUTED_MULTISIG_TRANSACTION:
+      case TransactionEventType.NEW_CONFIRMATION:
         this._logSafeTxEvent(event);
         break;
-      case EventType.MODULE_TRANSACTION:
-      case EventType.INCOMING_ETHER:
-      case EventType.OUTGOING_ETHER:
-      case EventType.INCOMING_TOKEN:
-      case EventType.OUTGOING_TOKEN:
+      case TransactionEventType.MODULE_TRANSACTION:
+      case TransactionEventType.INCOMING_ETHER:
+      case TransactionEventType.OUTGOING_ETHER:
+      case TransactionEventType.INCOMING_TOKEN:
+      case TransactionEventType.OUTGOING_TOKEN:
         this._logTxEvent(event);
         break;
-      case EventType.MESSAGE_CREATED:
-      case EventType.MESSAGE_CONFIRMATION:
+      case TransactionEventType.MESSAGE_CREATED:
+      case TransactionEventType.MESSAGE_CONFIRMATION:
         this._logMessageEvent(event);
         break;
-      case EventType.CHAIN_UPDATE:
-      case EventType.SAFE_APPS_UPDATE:
+      case ConfigEventType.CHAIN_UPDATE:
+      case ConfigEventType.SAFE_APPS_UPDATE:
         this._logEvent(event);
         break;
-      case EventType.SAFE_CREATED:
+      case TransactionEventType.SAFE_CREATED:
         break;
     }
   }
