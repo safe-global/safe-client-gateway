@@ -10,8 +10,8 @@ export interface IAuthRepository {
   signToken<T extends AuthPayloadDto>(
     payload: T,
     options?: {
-      expiresIn?: number;
-      notBefore?: number;
+      exp?: Date;
+      nbf?: Date;
     },
   ): string;
 

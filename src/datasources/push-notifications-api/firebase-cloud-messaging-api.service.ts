@@ -12,9 +12,7 @@ import {
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
-
-// TODO: Refactor to use JwtService
-import jwt from 'jsonwebtoken';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 
 @Injectable()
 export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
@@ -36,6 +34,8 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
     private readonly configurationService: IConfigurationService,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
+    @Inject(IJwtService)
+    private readonly jwtService: IJwtService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.baseUrl = this.configurationService.getOrThrow<string>(
@@ -59,9 +59,9 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
    * @param fcmToken - device's FCM token
    * @param notification - notification payload
    */
-  async enqueueNotification<T extends Record<string, unknown>>(
+  async enqueueNotification(
     fcmToken: string,
-    notification: FirebaseNotification<T>,
+    notification: FirebaseNotification,
   ): Promise<void> {
     const url = `${this.baseUrl}/${this.project}/messages:send`;
     try {
@@ -134,16 +134,20 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
    * @returns - signed JWT assertion
    */
   private getAssertion(): string {
-    const issuedAt = Math.floor(Date.now() / 1_000);
+    const now = new Date();
+
     const payload = {
+      alg: 'RS256',
       iss: this.clientEmail,
       scope: FirebaseCloudMessagingApiService.Scope,
       aud: FirebaseCloudMessagingApiService.OAuth2TokenUrl,
-      iat: issuedAt,
+      iat: now,
       // Maximum expiration time is 1 hour
-      exp: issuedAt + 60 * 60,
+      exp: new Date(now.getTime() + 60 * 60 * 1_000),
     };
 
-    return jwt.sign(payload, this.privateKey, { algorithm: 'RS256' });
+    return this.jwtService.sign(payload, {
+      secretOrPrivateKey: this.privateKey,
+    });
   }
 }
