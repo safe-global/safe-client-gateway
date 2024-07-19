@@ -30,5 +30,5 @@ export const CreateCounterfactualSafeDtoSchema = z.object({
   predicted_address: AddressSchema,
   salt_nonce: z.string(),
   singleton_address: AddressSchema,
-  threshold: z.number().int().gte(0),
+  threshold: z.number().int().gte(1),
 });
