@@ -9,10 +9,10 @@ export const CounterfactualSafeSchema = RowSchema.extend({
   chain_id: z.string(),
   creator: AddressSchema,
   fallback_handler: AddressSchema,
-  owners: z.array(AddressSchema),
+  owners: z.array(AddressSchema).min(1),
   predicted_address: AddressSchema,
-  salt_nonce: HexSchema,
+  salt_nonce: z.string(),
   singleton_address: AddressSchema,
-  threshold: z.number().int().gte(0),
+  threshold: z.number().int().gte(1),
   account_id: AccountSchema.shape.id,
 });

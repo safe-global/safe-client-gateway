@@ -17,7 +17,7 @@ interface CounterfactualSafesRow {
   updated_at: Date;
   id: number;
   chain_id: string;
-  creator:`0x${string}`;
+  creator: `0x${string}`;
   fallback_handler: `0x${string}`;
   owners: `0x${string}`[];
   predicted_address: `0x${string}`;
