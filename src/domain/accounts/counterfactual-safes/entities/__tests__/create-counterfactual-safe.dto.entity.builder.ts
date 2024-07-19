@@ -5,7 +5,7 @@ import { getAddress } from 'viem';
 
 export function createCounterfactualSafeDtoBuilder(): IBuilder<CreateCounterfactualSafeDto> {
   return new Builder<CreateCounterfactualSafeDto>()
-    .with('chainId', faker.string.numeric())
+    .with('chainId', faker.string.numeric({ length: 6 }))
     .with('fallbackHandler', getAddress(faker.finance.ethereumAddress()))
     .with('owners', [
       getAddress(faker.finance.ethereumAddress()),

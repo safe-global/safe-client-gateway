@@ -12,13 +12,20 @@ export interface ICounterfactualSafesDatasource {
     createCounterfactualSafeDto: CreateCounterfactualSafeDto,
   ): Promise<CounterfactualSafe>;
 
-  getCounterfactualSafe(id: string): Promise<CounterfactualSafe>;
+  getCounterfactualSafe(
+    chainId: string,
+    predictedAddress: `0x${string}`,
+  ): Promise<CounterfactualSafe>;
 
   getCounterfactualSafesForAccount(
     account: Account,
   ): Promise<CounterfactualSafe[]>;
 
-  deleteCounterfactualSafe(account: Account, id: string): Promise<void>;
+  deleteCounterfactualSafe(
+    account: Account,
+    chainId: string,
+    predictedAddress: `0x${string}`,
+  ): Promise<void>;
 
   deleteCounterfactualSafesForAccount(account: Account): Promise<void>;
 }

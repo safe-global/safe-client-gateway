@@ -516,8 +516,14 @@ export class CacheRouter {
     );
   }
 
-  static getCounterfactualSafeCacheDir(id: string): CacheDir {
-    return new CacheDir(`${CacheRouter.COUNTERFACTUAL_SAFE_KEY}_${id}`, '');
+  static getCounterfactualSafeCacheDir(
+    chainId: string,
+    predictedAddress: `0x${string}`,
+  ): CacheDir {
+    return new CacheDir(
+      `${chainId}_${CacheRouter.COUNTERFACTUAL_SAFE_KEY}_${predictedAddress}`,
+      '',
+    );
   }
 
   static getCounterfactualSafesCacheDir(address: `0x${string}`): CacheDir {
