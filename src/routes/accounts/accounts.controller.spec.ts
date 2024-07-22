@@ -3,6 +3,8 @@ import { AppModule } from '@/app.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestAccountsDataSourceModule } from '@/datasources/accounts/__tests__/test.accounts.datasource.module';
 import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
+import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
@@ -68,6 +70,8 @@ describe('AccountsController', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     accountDataSource = moduleFixture.get(IAccountsDatasource);

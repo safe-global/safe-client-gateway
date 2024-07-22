@@ -28,6 +28,8 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
 import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
+import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Zerion Collectibles Controller', () => {
   let app: INestApplication<Server>;
@@ -50,6 +52,8 @@ describe('Zerion Collectibles Controller', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

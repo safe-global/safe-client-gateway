@@ -19,6 +19,8 @@ import {
   QueueReadiness,
 } from '@/domain/interfaces/queue-readiness.interface';
 import { Server } from 'net';
+import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Health Controller tests', () => {
   let app: INestApplication<Server>;
@@ -39,6 +41,8 @@ describe('Health Controller tests', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);

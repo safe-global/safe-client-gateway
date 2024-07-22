@@ -33,6 +33,8 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
 import { getAddress } from 'viem';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -62,6 +64,8 @@ describe('Collectibles Controller (Unit)', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

@@ -476,6 +476,7 @@ export class TransactionApi implements ITransactionApi {
     to?: string;
     value?: string;
     tokenAddress?: string;
+    txHash?: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<Transfer>> {
@@ -498,6 +499,7 @@ export class TransactionApi implements ITransactionApi {
             token_address: args.tokenAddress,
             limit: args.limit,
             offset: args.offset,
+            transaction_hash: args.txHash,
           },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,

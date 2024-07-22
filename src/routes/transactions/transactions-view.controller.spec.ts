@@ -26,6 +26,8 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { faker } from '@faker-js/faker';
 import { Server } from 'net';
 import { getAddress } from 'viem';
+import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
 
 describe('TransactionsViewController tests', () => {
   let app: INestApplication<Server>;
@@ -63,6 +65,8 @@ describe('TransactionsViewController tests', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

@@ -1,7 +1,7 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
-import { upsertSubscriptionsDtoBuilder } from '@/datasources/accounts/notifications/__tests__/upsert-subscriptions.dto.entity.builder';
+import { upsertSubscriptionsDtoBuilder } from '@/domain/notifications/entities-v2/__tests__/upsert-subscriptions.dto.entity.builder';
 import { NotificationsDatasource } from '@/datasources/accounts/notifications/notifications.datasource';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';

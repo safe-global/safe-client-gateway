@@ -46,6 +46,8 @@ import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoder
 import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Server } from 'net';
+import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
   let app: INestApplication<Server>;
@@ -85,6 +87,8 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

@@ -34,6 +34,8 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
 import { sample } from 'lodash';
 import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
+import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Balances Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -78,6 +80,8 @@ describe('Balances Controller (Unit)', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     configurationService = moduleFixture.get(IConfigurationService);
