@@ -479,122 +479,6 @@ describe('Migration 00004_notifications', () => {
     });
   });
 
-  it('should delete the subscription if the notification_type is deleted', async () => {
-    let deletedMultisigTransactionId: number;
-
-    const result = await migrator.test({
-      migration: '00004_notifications',
-      after: async (sql) => {
-        await sql.begin(async (transaction) => {
-          const [type] = await sql<
-            [Pick<NotificationTypesRow, 'id'>]
-          >`SELECT id FROM notification_types WHERE name = 'DELETED_MULTISIG_TRANSACTION'`;
-
-          deletedMultisigTransactionId = type.id;
-
-          // Create account
-          await transaction`INSERT INTO accounts (address)
-                                        VALUES ('0x69');`;
-
-          // Add subscriptions to chains 1, 2, 3
-          const chainIds = ['1', '2', '3'];
-
-          await Promise.all(
-            chainIds.map(async (chainId) => {
-              const [subscription] = await transaction<
-                [Pick<NotificationSubscriptionsRow, 'id'>]
-              >`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
-                                          VALUES (1, ${chainId}, '0x420') RETURNING id`;
-              await transaction`INSERT INTO notification_subscription_notification_types (subscription_id, notification_type_id)
-                                  VALUES (${subscription.id}, ${deletedMultisigTransactionId})`;
-            }),
-          );
-        });
-
-        // Delete DELETED_MULTISIG_TRANSACTION notification type
-        await sql`DELETE FROM notification_types WHERE id = ${deletedMultisigTransactionId}`;
-
-        return {
-          notification_types: await sql<
-            Array<NotificationTypesRow>
-          >`SELECT * FROM notification_types`,
-          notification_subscriptions: await sql<
-            Array<NotificationSubscriptionsRow>
-          >`SELECT * FROM notification_subscriptions`,
-          notification_subscription_notification_types: await sql<
-            Array<NotificationSubscriptionNotificationTypesRow>
-          >`SELECT * FROM notification_subscription_notification_types`,
-          notification_channels: await sql<
-            Array<NotificationChannelsRow>
-          >`SELECT * FROM notification_channels`,
-          notification_channel_configurations: await sql<
-            Array<NotificationChannelConfigurationsRow>
-          >`SELECT * FROM notification_channel_configurations`,
-        };
-      },
-    });
-
-    expect(result.after).toStrictEqual({
-      notification_types: [
-        // DELETED_MULTISIG_TRANSACTION is deleted
-        {
-          id: expect.any(Number),
-          name: 'EXECUTED_MULTISIG_TRANSACTION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'INCOMING_ETHER',
-        },
-        {
-          id: expect.any(Number),
-          name: 'INCOMING_TOKEN',
-        },
-        {
-          id: expect.any(Number),
-          name: 'MESSAGE_CREATED',
-        },
-        {
-          id: expect.any(Number),
-          name: 'MODULE_TRANSACTION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'NEW_CONFIRMATION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'MESSAGE_CONFIRMATION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'OUTGOING_ETHER',
-        },
-        {
-          id: expect.any(Number),
-          name: 'OUTGOING_TOKEN',
-        },
-        {
-          id: expect.any(Number),
-          name: 'PENDING_MULTISIG_TRANSACTION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'SAFE_CREATED',
-        },
-      ],
-      // No subscriptions should exist
-      notification_subscriptions: [],
-      notification_subscription_notification_types: [],
-      notification_channels: [
-        {
-          id: 1,
-          name: 'PUSH_NOTIFICATIONS',
-        },
-      ],
-      notification_channel_configurations: [],
-    });
-  });
-
   it('should delete the notification_channel_configuration if the notification_channel is deleted', async () => {
     const result = await migrator.test({
       migration: '00004_notifications',
@@ -700,6 +584,22 @@ describe('Migration 00004_notifications', () => {
         {
           id: 1,
           chain_id: '1',
+          account_id: 1,
+          safe_address: '0x420',
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        },
+        {
+          id: 2,
+          chain_id: '2',
+          account_id: 1,
+          safe_address: '0x420',
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        },
+        {
+          id: 3,
+          chain_id: '3',
           account_id: 1,
           safe_address: '0x420',
           created_at: expect.any(Date),

@@ -74,7 +74,6 @@ INSERT INTO notification_channels (name) VALUES
 ----------------------------------------------------------------
 CREATE TABLE notification_channel_configurations(
     id SERIAL PRIMARY KEY,
-    -- TODO: Does this need this ID, it could be the same across subs
     notification_subscription_id INT NOT NULL,
     notification_channel_id INT NOT NULL,
     cloud_messaging_token VARCHAR(255) NOT NULL,
