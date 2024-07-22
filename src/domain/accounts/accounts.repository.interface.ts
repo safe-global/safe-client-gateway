@@ -35,7 +35,7 @@ export interface IAccountsRepository {
   upsertAccountDataSettings(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
-    upsertAccountDataSettings: UpsertAccountDataSettingsDto;
+    upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]>;
 }
 
