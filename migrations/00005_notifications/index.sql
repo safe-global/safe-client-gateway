@@ -12,20 +12,14 @@ CREATE TABLE notification_types(
     name VARCHAR(255) NOT NULL UNIQUE
 );
 
--- TODO: Confirm these types
 INSERT INTO notification_types (name) VALUES
+    ('CONFIRMATION_REQUEST'), -- PENDING_MULTISIG_TRANSACTION
     ('DELETED_MULTISIG_TRANSACTION'),
     ('EXECUTED_MULTISIG_TRANSACTION'),
     ('INCOMING_ETHER'),
     ('INCOMING_TOKEN'),
-    ('MESSAGE_CREATED'),
-    ('MODULE_TRANSACTION'),
-    ('NEW_CONFIRMATION'),
-    ('MESSAGE_CONFIRMATION'),
-    ('OUTGOING_ETHER'),
-    ('OUTGOING_TOKEN'),
-    ('PENDING_MULTISIG_TRANSACTION'),
-    ('SAFE_CREATED');
+    ('MESSAGE_CONFIRMATION_REQUEST'), -- MESSAGE_CREATED
+    ('MODULE_TRANSACTION');
 
 ----------------------------------------------------------------------
 -- Chain-specific Safe notification preferences for a given account --

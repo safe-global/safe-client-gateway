@@ -38,7 +38,7 @@ type NotificationChannelConfigurationsRow = {
   updated_at: Date;
 };
 
-describe('Migration 00004_notifications', () => {
+describe('Migration 00005_notifications', () => {
   let sql: postgres.Sql;
   let migrator: PostgresDatabaseMigrator;
   const testDbFactory = new TestDbFactory();
@@ -54,7 +54,7 @@ describe('Migration 00004_notifications', () => {
 
   it('runs successfully', async () => {
     const result = await migrator.test({
-      migration: '00004_notifications',
+      migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
         return {
           notification_types: {
@@ -124,6 +124,10 @@ describe('Migration 00004_notifications', () => {
         rows: [
           {
             id: expect.any(Number),
+            name: 'CONFIRMATION_REQUEST',
+          },
+          {
+            id: expect.any(Number),
             name: 'DELETED_MULTISIG_TRANSACTION',
           },
           {
@@ -140,35 +144,11 @@ describe('Migration 00004_notifications', () => {
           },
           {
             id: expect.any(Number),
-            name: 'MESSAGE_CREATED',
+            name: 'MESSAGE_CONFIRMATION_REQUEST',
           },
           {
             id: expect.any(Number),
             name: 'MODULE_TRANSACTION',
-          },
-          {
-            id: expect.any(Number),
-            name: 'NEW_CONFIRMATION',
-          },
-          {
-            id: expect.any(Number),
-            name: 'MESSAGE_CONFIRMATION',
-          },
-          {
-            id: expect.any(Number),
-            name: 'OUTGOING_ETHER',
-          },
-          {
-            id: expect.any(Number),
-            name: 'OUTGOING_TOKEN',
-          },
-          {
-            id: expect.any(Number),
-            name: 'PENDING_MULTISIG_TRANSACTION',
-          },
-          {
-            id: expect.any(Number),
-            name: 'SAFE_CREATED',
           },
         ],
       },
@@ -201,7 +181,7 @@ describe('Migration 00004_notifications', () => {
 
   it('should upsert the row timestamps of notification_subscriptions on insertion/update', async () => {
     const afterInsert = await migrator.test({
-      migration: '00004_notifications',
+      migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
         await sql.begin(async (transaction) => {
           // Create account
@@ -268,7 +248,7 @@ describe('Migration 00004_notifications', () => {
 
   it('should upsert the row timestamps of notification_channel_configurations on insertion/update', async () => {
     const afterInsert = await migrator.test({
-      migration: '00004_notifications',
+      migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
         await sql.begin(async (transaction) => {
           // Create account
@@ -350,7 +330,7 @@ describe('Migration 00004_notifications', () => {
 
   it('should prevent duplicate subscriptions in notification_subscriptions', async () => {
     await migrator.test({
-      migration: '00004_notifications',
+      migration: '00005_notifications',
       after: async (sql) => {
         await sql.begin(async (transaction) => {
           // Create account
@@ -374,7 +354,7 @@ describe('Migration 00004_notifications', () => {
 
   it('should delete the subscription and configuration if the account is deleted', async () => {
     const result = await migrator.test({
-      migration: '00004_notifications',
+      migration: '00005_notifications',
       after: async (sql) => {
         await sql.begin(async (transaction) => {
           // Create account
@@ -419,6 +399,10 @@ describe('Migration 00004_notifications', () => {
       notification_types: [
         {
           id: expect.any(Number),
+          name: 'CONFIRMATION_REQUEST',
+        },
+        {
+          id: expect.any(Number),
           name: 'DELETED_MULTISIG_TRANSACTION',
         },
         {
@@ -435,35 +419,11 @@ describe('Migration 00004_notifications', () => {
         },
         {
           id: expect.any(Number),
-          name: 'MESSAGE_CREATED',
+          name: 'MESSAGE_CONFIRMATION_REQUEST',
         },
         {
           id: expect.any(Number),
           name: 'MODULE_TRANSACTION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'NEW_CONFIRMATION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'MESSAGE_CONFIRMATION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'OUTGOING_ETHER',
-        },
-        {
-          id: expect.any(Number),
-          name: 'OUTGOING_TOKEN',
-        },
-        {
-          id: expect.any(Number),
-          name: 'PENDING_MULTISIG_TRANSACTION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'SAFE_CREATED',
         },
       ],
       // No subscriptions should exist
@@ -481,7 +441,7 @@ describe('Migration 00004_notifications', () => {
 
   it('should delete the notification_channel_configuration if the notification_channel is deleted', async () => {
     const result = await migrator.test({
-      migration: '00004_notifications',
+      migration: '00005_notifications',
       after: async (sql) => {
         await sql.begin(async (transaction) => {
           // Create account
@@ -533,6 +493,10 @@ describe('Migration 00004_notifications', () => {
       notification_types: [
         {
           id: expect.any(Number),
+          name: 'CONFIRMATION_REQUEST',
+        },
+        {
+          id: expect.any(Number),
           name: 'DELETED_MULTISIG_TRANSACTION',
         },
         {
@@ -549,35 +513,11 @@ describe('Migration 00004_notifications', () => {
         },
         {
           id: expect.any(Number),
-          name: 'MESSAGE_CREATED',
+          name: 'MESSAGE_CONFIRMATION_REQUEST',
         },
         {
           id: expect.any(Number),
           name: 'MODULE_TRANSACTION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'NEW_CONFIRMATION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'MESSAGE_CONFIRMATION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'OUTGOING_ETHER',
-        },
-        {
-          id: expect.any(Number),
-          name: 'OUTGOING_TOKEN',
-        },
-        {
-          id: expect.any(Number),
-          name: 'PENDING_MULTISIG_TRANSACTION',
-        },
-        {
-          id: expect.any(Number),
-          name: 'SAFE_CREATED',
         },
       ],
       notification_subscriptions: [

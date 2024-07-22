@@ -46,7 +46,6 @@ export class AccountsRepository implements IAccountsRepository {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    // TODO: trigger a cascade deletion of the account-associated data.
     return this.datasource.deleteAccount(args.address);
   }
 
@@ -68,19 +67,19 @@ export class AccountsRepository implements IAccountsRepository {
   async upsertAccountDataSettings(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
-    upsertAccountDataSettings: UpsertAccountDataSettingsDto;
+    upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
   }): Promise<AccountDataSetting[]> {
-    const { address, upsertAccountDataSettings } = args;
+    const { address, upsertAccountDataSettingsDto } = args;
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    if (upsertAccountDataSettings.accountDataSettings.length === 0) {
+    if (upsertAccountDataSettingsDto.accountDataSettings.length === 0) {
       return [];
     }
 
-    return this.datasource.upsertAccountDataSettings(
+    return this.datasource.upsertAccountDataSettings({
       address,
-      upsertAccountDataSettings,
-    );
+      upsertAccountDataSettingsDto,
+    });
   }
 }

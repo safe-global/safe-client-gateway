@@ -638,10 +638,10 @@ describe('AccountsController', () => {
       expect(accountDataSource.upsertAccountDataSettings).toHaveBeenCalledTimes(
         1,
       );
-      expect(accountDataSource.upsertAccountDataSettings).toHaveBeenCalledWith(
+      expect(accountDataSource.upsertAccountDataSettings).toHaveBeenCalledWith({
         address,
         upsertAccountDataSettingsDto,
-      );
+      });
     });
 
     it('should accept a empty array of data settings', async () => {
