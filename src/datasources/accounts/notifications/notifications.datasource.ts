@@ -81,15 +81,11 @@ export class NotificationsDatasource implements INotificationsDatasource {
           });
 
           // Set new notification type preferences
-          return await Promise.all(
-            safe.notificationTypes.map((notificationType) => {
-              return this.insertSubscriptionType({
-                sql,
-                subscriptionId: subscription.id,
-                notificationType,
-              });
-            }),
-          );
+          return this.insertSubscriptionTypes({
+            sql,
+            subscriptionId: subscription.id,
+            notificationTypes: safe.notificationTypes,
+          });
         }),
       );
     });
@@ -203,23 +199,24 @@ export class NotificationsDatasource implements INotificationsDatasource {
     });
   }
 
-  private async insertSubscriptionType(args: {
+  private async insertSubscriptionTypes(args: {
     sql: postgres.TransactionSql;
     subscriptionId: number;
-    // TODO: Accept array?
-    notificationType: DomainNotificationType;
+    notificationTypes: Array<DomainNotificationType>;
   }): Promise<void> {
-    await args.sql`INSERT INTO notification_subscription_notification_types (subscription_id, notification_type_id)
-      VALUES (${args.subscriptionId}, (SELECT id FROM notification_types WHERE name = ${args.notificationType}))`.catch(
-      (e) => {
-        this.loggingService.info(
-          `Error inserting subscription notification type: ${asError(e).message}`,
-        );
-        throw new UnprocessableEntityException(
-          'Error inserting subscription notification type',
-        );
-      },
-    );
+    await args.sql`
+      INSERT INTO notification_subscription_notification_types (subscription_id, notification_type_id)
+      SELECT ${args.subscriptionId}, nt.id 
+      FROM UNNEST(${args.notificationTypes}::text[]) AS nt_name
+      JOIN notification_types nt ON nt.name = nt_name
+    `.catch((e) => {
+      this.loggingService.info(
+        `Error inserting subscription notification types: ${asError(e).message}`,
+      );
+      throw new UnprocessableEntityException(
+        'Error inserting subscription notification types',
+      );
+    });
   }
 
   /**

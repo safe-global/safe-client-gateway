@@ -1,7 +1,9 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
 import { upsertSubscriptionsDtoBuilder } from '@/datasources/accounts/notifications/__tests__/upsert-subscriptions.dto.entity.builder';
 import { NotificationsDatasource } from '@/datasources/accounts/notifications/notifications.datasource';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { NotificationChannel } from '@/domain/notifications/entities-v2/notification-channel.entity';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
@@ -18,18 +20,32 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
+const mockConfigurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
+
 describe('NotificationsDatasource', () => {
+  let fakeCacheService: FakeCacheService;
   let accountsDatasource: AccountsDatasource;
-  let target: NotificationsDatasource;
   let migrator: PostgresDatabaseMigrator;
   let sql: postgres.Sql;
   const testDbFactory = new TestDbFactory();
+  let target: NotificationsDatasource;
 
   beforeAll(async () => {
+    fakeCacheService = new FakeCacheService();
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
-    accountsDatasource = new AccountsDatasource(sql, mockLoggingService);
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'expirationTimeInSeconds.default') return faker.number.int();
+    });
+    accountsDatasource = new AccountsDatasource(
+      fakeCacheService,
+      sql,
+      mockLoggingService,
+      mockConfigurationService,
+    );
     target = new NotificationsDatasource(
       sql,
       mockLoggingService,
