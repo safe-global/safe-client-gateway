@@ -19,6 +19,7 @@ import { NotificationSubscription } from '@/datasources/accounts/notifications/e
 import { NotificationChannelConfig } from '@/datasources/accounts/notifications/entities/notification-channel-config.entity';
 import { NotificationType } from '@/datasources/accounts/notifications/entities/notification-type.entity';
 
+// TODO: Add caching
 @Injectable()
 export class NotificationsDatasource implements INotificationsDatasource {
   constructor(
@@ -176,7 +177,6 @@ export class NotificationsDatasource implements INotificationsDatasource {
       return [];
     });
 
-    console.log({ config });
     if (!config) {
       throw new UnprocessableEntityException(
         'Error inserting channel configuration',
@@ -206,7 +206,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
   private async insertSubscriptionType(args: {
     sql: postgres.TransactionSql;
     subscriptionId: number;
-    // TODO: Accept array
+    // TODO: Accept array?
     notificationType: DomainNotificationType;
   }): Promise<void> {
     await args.sql`INSERT INTO notification_subscription_notification_types (subscription_id, notification_type_id)
