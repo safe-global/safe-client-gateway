@@ -16,8 +16,8 @@ export interface IAccountsDatasource {
 
   getAccountDataSettings(address: `0x${string}`): Promise<AccountDataSetting[]>;
 
-  upsertAccountDataSettings(
-    address: `0x${string}`,
-    upsertAccountDataSettings: UpsertAccountDataSettingsDto,
-  ): Promise<AccountDataSetting[]>;
+  upsertAccountDataSettings(args: {
+    address: `0x${string}`;
+    upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
+  }): Promise<AccountDataSetting[]>;
 }

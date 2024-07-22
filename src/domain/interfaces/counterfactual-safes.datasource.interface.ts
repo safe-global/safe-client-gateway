@@ -7,25 +7,25 @@ export const ICounterfactualSafesDatasource = Symbol(
 );
 
 export interface ICounterfactualSafesDatasource {
-  createCounterfactualSafe(
-    account: Account,
-    createCounterfactualSafeDto: CreateCounterfactualSafeDto,
-  ): Promise<CounterfactualSafe>;
+  createCounterfactualSafe(args: {
+    account: Account;
+    createCounterfactualSafeDto: CreateCounterfactualSafeDto;
+  }): Promise<CounterfactualSafe>;
 
-  getCounterfactualSafe(
-    chainId: string,
-    predictedAddress: `0x${string}`,
-  ): Promise<CounterfactualSafe>;
+  getCounterfactualSafe(args: {
+    chainId: string;
+    predictedAddress: `0x${string}`;
+  }): Promise<CounterfactualSafe>;
 
   getCounterfactualSafesForAccount(
     account: Account,
   ): Promise<CounterfactualSafe[]>;
 
-  deleteCounterfactualSafe(
-    account: Account,
-    chainId: string,
-    predictedAddress: `0x${string}`,
-  ): Promise<void>;
+  deleteCounterfactualSafe(args: {
+    account: Account;
+    chainId: string;
+    predictedAddress: `0x${string}`;
+  }): Promise<void>;
 
   deleteCounterfactualSafesForAccount(account: Account): Promise<void>;
 }

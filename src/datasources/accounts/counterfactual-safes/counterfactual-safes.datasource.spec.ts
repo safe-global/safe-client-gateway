@@ -66,10 +66,10 @@ describe('CounterfactualSafesDatasource tests', () => {
       const createCounterfactualSafeDto =
         createCounterfactualSafeDtoBuilder().build();
 
-      const actual = await target.createCounterfactualSafe(
+      const actual = await target.createCounterfactualSafe({
         account,
         createCounterfactualSafeDto,
-      );
+      });
       expect(actual).toStrictEqual(
         expect.objectContaining({
           id: expect.any(Number),
@@ -91,10 +91,11 @@ describe('CounterfactualSafesDatasource tests', () => {
       const [account] = await sql<
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
-      await target.createCounterfactualSafe(
+      await target.createCounterfactualSafe({
         account,
-        createCounterfactualSafeDtoBuilder().build(),
-      );
+        createCounterfactualSafeDto:
+          createCounterfactualSafeDtoBuilder().build(),
+      });
       await target.getCounterfactualSafesForAccount(account);
       const cacheDir = new CacheDir(`counterfactual_safes_${address}`, '');
       await fakeCacheService.set(
@@ -104,10 +105,11 @@ describe('CounterfactualSafesDatasource tests', () => {
       );
 
       // the cache is cleared after creating a new CF Safe for the same account
-      await target.createCounterfactualSafe(
+      await target.createCounterfactualSafe({
         account,
-        createCounterfactualSafeDtoBuilder().build(),
-      );
+        createCounterfactualSafeDto:
+          createCounterfactualSafeDtoBuilder().build(),
+      });
       expect(await fakeCacheService.get(cacheDir)).toBeUndefined();
     });
   });
@@ -118,15 +120,16 @@ describe('CounterfactualSafesDatasource tests', () => {
       const [account] = await sql<
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
-      const counterfactualSafe = await target.createCounterfactualSafe(
+      const counterfactualSafe = await target.createCounterfactualSafe({
         account,
-        createCounterfactualSafeDtoBuilder().build(),
-      );
+        createCounterfactualSafeDto:
+          createCounterfactualSafeDtoBuilder().build(),
+      });
 
-      const actual = await target.getCounterfactualSafe(
-        counterfactualSafe.chain_id,
-        counterfactualSafe.predicted_address,
-      );
+      const actual = await target.getCounterfactualSafe({
+        chainId: counterfactualSafe.chain_id,
+        predictedAddress: counterfactualSafe.predicted_address,
+      });
       expect(actual).toStrictEqual(counterfactualSafe);
     });
 
@@ -135,20 +138,21 @@ describe('CounterfactualSafesDatasource tests', () => {
       const [account] = await sql<
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
-      const counterfactualSafe = await target.createCounterfactualSafe(
+      const counterfactualSafe = await target.createCounterfactualSafe({
         account,
-        createCounterfactualSafeDtoBuilder().build(),
-      );
+        createCounterfactualSafeDto:
+          createCounterfactualSafeDtoBuilder().build(),
+      });
 
       // first call is not cached
-      const actual = await target.getCounterfactualSafe(
-        counterfactualSafe.chain_id,
-        counterfactualSafe.predicted_address,
-      );
-      await target.getCounterfactualSafe(
-        counterfactualSafe.chain_id,
-        counterfactualSafe.predicted_address,
-      );
+      const actual = await target.getCounterfactualSafe({
+        chainId: counterfactualSafe.chain_id,
+        predictedAddress: counterfactualSafe.predicted_address,
+      });
+      await target.getCounterfactualSafe({
+        chainId: counterfactualSafe.chain_id,
+        predictedAddress: counterfactualSafe.predicted_address,
+      });
 
       expect(actual).toStrictEqual(counterfactualSafe);
       const cacheDir = new CacheDir(
@@ -175,16 +179,16 @@ describe('CounterfactualSafesDatasource tests', () => {
 
       // should not cache the Counterfactual Safe
       await expect(
-        target.getCounterfactualSafe(
-          counterfactualSafe.chainId,
-          counterfactualSafe.predictedAddress,
-        ),
+        target.getCounterfactualSafe({
+          chainId: counterfactualSafe.chainId,
+          predictedAddress: counterfactualSafe.predictedAddress,
+        }),
       ).rejects.toThrow('Error getting Counterfactual Safe.');
       await expect(
-        target.getCounterfactualSafe(
-          counterfactualSafe.chainId,
-          counterfactualSafe.predictedAddress,
-        ),
+        target.getCounterfactualSafe({
+          chainId: counterfactualSafe.chainId,
+          predictedAddress: counterfactualSafe.predictedAddress,
+        }),
       ).rejects.toThrow('Error getting Counterfactual Safe.');
 
       const cacheDir = new CacheDir(
@@ -213,14 +217,18 @@ describe('CounterfactualSafesDatasource tests', () => {
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
       const counterfactualSafes = await Promise.all([
-        target.createCounterfactualSafe(
+        target.createCounterfactualSafe({
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '1').build(),
-        ),
-        target.createCounterfactualSafe(
+          createCounterfactualSafeDto: createCounterfactualSafeDtoBuilder()
+            .with('chainId', '1')
+            .build(),
+        }),
+        target.createCounterfactualSafe({
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '2').build(),
-        ),
+          createCounterfactualSafeDto: createCounterfactualSafeDtoBuilder()
+            .with('chainId', '2')
+            .build(),
+        }),
       ]);
 
       const actual = await target.getCounterfactualSafesForAccount(account);
@@ -233,14 +241,18 @@ describe('CounterfactualSafesDatasource tests', () => {
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
       const counterfactualSafes = await Promise.all([
-        target.createCounterfactualSafe(
+        target.createCounterfactualSafe({
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '1').build(),
-        ),
-        target.createCounterfactualSafe(
+          createCounterfactualSafeDto: createCounterfactualSafeDtoBuilder()
+            .with('chainId', '1')
+            .build(),
+        }),
+        target.createCounterfactualSafe({
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '2').build(),
-        ),
+          createCounterfactualSafeDto: createCounterfactualSafeDtoBuilder()
+            .with('chainId', '2')
+            .build(),
+        }),
       ]);
 
       // first call is not cached
@@ -271,17 +283,18 @@ describe('CounterfactualSafesDatasource tests', () => {
       const [account] = await sql<
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
-      const counterfactualSafe = await target.createCounterfactualSafe(
+      const counterfactualSafe = await target.createCounterfactualSafe({
         account,
-        createCounterfactualSafeDtoBuilder().build(),
-      );
+        createCounterfactualSafeDto:
+          createCounterfactualSafeDtoBuilder().build(),
+      });
 
       await expect(
-        target.deleteCounterfactualSafe(
+        target.deleteCounterfactualSafe({
           account,
-          counterfactualSafe.chain_id,
-          counterfactualSafe.predicted_address,
-        ),
+          chainId: counterfactualSafe.chain_id,
+          predictedAddress: counterfactualSafe.predicted_address,
+        }),
       ).resolves.not.toThrow();
 
       expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -289,11 +302,11 @@ describe('CounterfactualSafesDatasource tests', () => {
 
     it('should not throw if no Counterfactual Safe is found', async () => {
       await expect(
-        target.deleteCounterfactualSafe(
-          accountBuilder().build(),
-          faker.string.numeric({ length: 6 }),
-          getAddress(faker.finance.ethereumAddress()),
-        ),
+        target.deleteCounterfactualSafe({
+          account: accountBuilder().build(),
+          chainId: faker.string.numeric({ length: 6 }),
+          predictedAddress: getAddress(faker.finance.ethereumAddress()),
+        }),
       ).resolves.not.toThrow();
 
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(1);
@@ -304,16 +317,17 @@ describe('CounterfactualSafesDatasource tests', () => {
       const [account] = await sql<
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
-      const counterfactualSafe = await target.createCounterfactualSafe(
+      const counterfactualSafe = await target.createCounterfactualSafe({
         account,
-        createCounterfactualSafeDtoBuilder().build(),
-      );
+        createCounterfactualSafeDto:
+          createCounterfactualSafeDtoBuilder().build(),
+      });
 
       // the Counterfactual Safe is cached
-      await target.getCounterfactualSafe(
-        counterfactualSafe.chain_id,
-        counterfactualSafe.predicted_address,
-      );
+      await target.getCounterfactualSafe({
+        chainId: counterfactualSafe.chain_id,
+        predictedAddress: counterfactualSafe.predicted_address,
+      });
       const cacheDir = new CacheDir(
         `${counterfactualSafe.chain_id}_counterfactual_safe_${counterfactualSafe.predicted_address}`,
         '',
@@ -323,17 +337,17 @@ describe('CounterfactualSafesDatasource tests', () => {
 
       // the counterfactualSafe is deleted from the database and the cache
       await expect(
-        target.deleteCounterfactualSafe(
+        target.deleteCounterfactualSafe({
           account,
-          counterfactualSafe.chain_id,
-          counterfactualSafe.predicted_address,
-        ),
+          chainId: counterfactualSafe.chain_id,
+          predictedAddress: counterfactualSafe.predicted_address,
+        }),
       ).resolves.not.toThrow();
       await expect(
-        target.getCounterfactualSafe(
-          counterfactualSafe.chain_id,
-          counterfactualSafe.predicted_address,
-        ),
+        target.getCounterfactualSafe({
+          chainId: counterfactualSafe.chain_id,
+          predictedAddress: counterfactualSafe.predicted_address,
+        }),
       ).rejects.toThrow();
 
       const afterDeletion = await fakeCacheService.get(cacheDir);
@@ -354,14 +368,18 @@ describe('CounterfactualSafesDatasource tests', () => {
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
       const counterfactualSafes = await Promise.all([
-        target.createCounterfactualSafe(
+        target.createCounterfactualSafe({
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '1').build(),
-        ),
-        target.createCounterfactualSafe(
+          createCounterfactualSafeDto: createCounterfactualSafeDtoBuilder()
+            .with('chainId', '1')
+            .build(),
+        }),
+        target.createCounterfactualSafe({
           account,
-          createCounterfactualSafeDtoBuilder().with('chainId', '2').build(),
-        ),
+          createCounterfactualSafeDto: createCounterfactualSafeDtoBuilder()
+            .with('chainId', '2')
+            .build(),
+        }),
       ]);
 
       // store data in the cache dirs

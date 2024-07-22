@@ -35,26 +35,28 @@ export class CounterfactualSafesDatasource
   // TODO: the repository calling this function should:
   // - check the AccountDataSettings to see if counterfactual-safes is enabled.
   // - check the AccountDataType to see if it's active.
-  async createCounterfactualSafe(
-    account: Account,
-    createCounterfactualSafeDto: CreateCounterfactualSafeDto,
-  ): Promise<CounterfactualSafe> {
+  async createCounterfactualSafe(args: {
+    account: Account;
+    createCounterfactualSafeDto: CreateCounterfactualSafeDto;
+  }): Promise<CounterfactualSafe> {
     const [counterfactualSafe] = await this.sql<CounterfactualSafe[]>`
       INSERT INTO counterfactual_safes 
-      ${this.sql([this.mapCreationDtoToRow(account, createCounterfactualSafeDto)])}
+      ${this.sql([this.mapCreationDtoToRow(args.account, args.createCounterfactualSafeDto)])}
       RETURNING *`;
-    const { key } = CacheRouter.getCounterfactualSafesCacheDir(account.address);
+    const { key } = CacheRouter.getCounterfactualSafesCacheDir(
+      args.account.address,
+    );
     await this.cacheService.deleteByKey(key);
     return counterfactualSafe;
   }
 
-  async getCounterfactualSafe(
-    chainId: string,
-    predictedAddress: `0x${string}`,
-  ): Promise<CounterfactualSafe> {
+  async getCounterfactualSafe(args: {
+    chainId: string;
+    predictedAddress: `0x${string}`;
+  }): Promise<CounterfactualSafe> {
     const cacheDir = CacheRouter.getCounterfactualSafeCacheDir(
-      chainId,
-      predictedAddress,
+      args.chainId,
+      args.predictedAddress,
     );
     const [counterfactualSafe] = await getFromCacheOrExecuteAndCache<
       CounterfactualSafe[]
@@ -63,7 +65,7 @@ export class CounterfactualSafesDatasource
       this.cacheService,
       cacheDir,
       this.sql<CounterfactualSafe[]>`
-        SELECT * FROM counterfactual_safes WHERE chain_id = ${chainId} AND predicted_address = ${predictedAddress}`,
+        SELECT * FROM counterfactual_safes WHERE chain_id = ${args.chainId} AND predicted_address = ${args.predictedAddress}`,
       this.defaultExpirationTimeInSeconds,
     );
 
@@ -90,27 +92,29 @@ export class CounterfactualSafesDatasource
     );
   }
 
-  async deleteCounterfactualSafe(
-    account: Account,
-    chainId: string,
-    predictedAddress: `0x${string}`,
-  ): Promise<void> {
+  async deleteCounterfactualSafe(args: {
+    account: Account;
+    chainId: string;
+    predictedAddress: `0x${string}`;
+  }): Promise<void> {
     try {
       const { count } = await this
-        .sql`DELETE FROM counterfactual_safes WHERE chain_id = ${chainId} AND predicted_address = ${predictedAddress} AND account_id = ${account.id}`;
+        .sql`DELETE FROM counterfactual_safes WHERE chain_id = ${args.chainId} AND predicted_address = ${args.predictedAddress} AND account_id = ${args.account.id}`;
       if (count === 0) {
         this.loggingService.debug(
-          `Error deleting Counterfactual Safe (${chainId}, ${predictedAddress}): not found`,
+          `Error deleting Counterfactual Safe (${args.chainId}, ${args.predictedAddress}): not found`,
         );
       }
     } finally {
       await Promise.all([
         this.cacheService.deleteByKey(
-          CacheRouter.getCounterfactualSafeCacheDir(chainId, predictedAddress)
-            .key,
+          CacheRouter.getCounterfactualSafeCacheDir(
+            args.chainId,
+            args.predictedAddress,
+          ).key,
         ),
         this.cacheService.deleteByKey(
-          CacheRouter.getCounterfactualSafesCacheDir(account.address).key,
+          CacheRouter.getCounterfactualSafesCacheDir(args.account.address).key,
         ),
       ]);
     }

@@ -82,7 +82,7 @@ export class AccountsService {
       this.accountsRepository.upsertAccountDataSettings({
         authPayload: args.authPayload,
         address: args.address,
-        upsertAccountDataSettings: {
+        upsertAccountDataSettingsDto: {
           accountDataSettings:
             args.upsertAccountDataSettingsDto.accountDataSettings,
         },

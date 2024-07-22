@@ -480,10 +480,10 @@ describe('AccountsDatasource tests', () => {
         .with('accountDataSettings', accountDataSettings)
         .build();
 
-      const actual = await target.upsertAccountDataSettings(
+      const actual = await target.upsertAccountDataSettings({
         address,
         upsertAccountDataSettingsDto,
-      );
+      });
 
       const expected = accountDataSettings.map((accountDataSetting) => ({
         account_id: account.id,
@@ -513,10 +513,10 @@ describe('AccountsDatasource tests', () => {
         .with('accountDataSettings', accountDataSettings)
         .build();
 
-      await target.upsertAccountDataSettings(
+      await target.upsertAccountDataSettings({
         address,
         upsertAccountDataSettingsDto,
-      );
+      });
 
       // check the account data settings are stored in the cache
       const cacheDir = new CacheDir(`account_data_settings_${address}`, '');
@@ -551,10 +551,10 @@ describe('AccountsDatasource tests', () => {
         .with('accountDataSettings', accountDataSettings)
         .build();
 
-      const beforeUpdate = await target.upsertAccountDataSettings(
+      const beforeUpdate = await target.upsertAccountDataSettings({
         address,
         upsertAccountDataSettingsDto,
-      );
+      });
 
       expect(beforeUpdate).toStrictEqual(
         expect.arrayContaining(
@@ -577,10 +577,10 @@ describe('AccountsDatasource tests', () => {
           .with('accountDataSettings', accountDataSettings2)
           .build();
 
-      const afterUpdate = await target.upsertAccountDataSettings(
+      const afterUpdate = await target.upsertAccountDataSettings({
         address,
-        upsertAccountDataSettingsDto2,
-      );
+        upsertAccountDataSettingsDto: upsertAccountDataSettingsDto2,
+      });
 
       expect(afterUpdate).toStrictEqual(
         expect.arrayContaining(
@@ -612,7 +612,10 @@ describe('AccountsDatasource tests', () => {
         .build();
 
       await expect(
-        target.upsertAccountDataSettings(address, upsertAccountDataSettingsDto),
+        target.upsertAccountDataSettings({
+          address,
+          upsertAccountDataSettingsDto,
+        }),
       ).rejects.toThrow('Error getting account.');
     });
 
@@ -638,7 +641,10 @@ describe('AccountsDatasource tests', () => {
       });
 
       await expect(
-        target.upsertAccountDataSettings(address, upsertAccountDataSettingsDto),
+        target.upsertAccountDataSettings({
+          address,
+          upsertAccountDataSettingsDto,
+        }),
       ).rejects.toThrow('Data types not found or not active.');
     });
 
@@ -660,7 +666,10 @@ describe('AccountsDatasource tests', () => {
         .build();
 
       await expect(
-        target.upsertAccountDataSettings(address, upsertAccountDataSettingsDto),
+        target.upsertAccountDataSettings({
+          address,
+          upsertAccountDataSettingsDto,
+        }),
       ).rejects.toThrow(`Data types not found or not active.`);
     });
   });

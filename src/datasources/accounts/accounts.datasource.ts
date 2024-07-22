@@ -143,13 +143,13 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
    * @param upsertAccountDataSettings {@link UpsertAccountDataSettingsDto} object.
    * @returns {Array<AccountDataSetting>} inserted account data settings.
    */
-  async upsertAccountDataSettings(
-    address: `0x${string}`,
-    upsertAccountDataSettings: UpsertAccountDataSettingsDto,
-  ): Promise<AccountDataSetting[]> {
-    const { accountDataSettings } = upsertAccountDataSettings;
+  async upsertAccountDataSettings(args: {
+    address: `0x${string}`;
+    upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
+  }): Promise<AccountDataSetting[]> {
+    const { accountDataSettings } = args.upsertAccountDataSettingsDto;
     await this.checkDataTypes(accountDataSettings);
-    const account = await this.getAccount(address);
+    const account = await this.getAccount(args.address);
 
     const result = await this.sql.begin(async (sql) => {
       await Promise.all(
@@ -169,7 +169,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         SELECT * FROM account_data_settings WHERE account_id = ${account.id}`;
     });
 
-    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
+    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(args.address);
     await this.cacheService.set(
       cacheDir,
       JSON.stringify(result),
