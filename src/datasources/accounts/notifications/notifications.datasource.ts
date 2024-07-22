@@ -18,6 +18,7 @@ import { NotificationChannel } from '@/datasources/accounts/notifications/entiti
 import { NotificationSubscription } from '@/datasources/accounts/notifications/entities/notification-subscription.entity';
 import { NotificationChannelConfig } from '@/datasources/accounts/notifications/entities/notification-channel-config.entity';
 import { NotificationType } from '@/datasources/accounts/notifications/entities/notification-type.entity';
+import { Account } from '@/domain/accounts/entities/account.entity';
 
 // TODO: Add caching
 @Injectable()
@@ -323,30 +324,42 @@ export class NotificationsDatasource implements INotificationsDatasource {
   }
 
   /**
-   * Gets cloud messaging tokens for the given Safe.
+   * Gets subscribers and their cloud messaging tokens for the given Safe.
    *
    * @param args.chainId Chain ID
    * @param args.safeAddress Safe address
    *
-   * @returns List of cloud messaging tokens for the Safe
+   * @returns List of subscribers/tokens for given Safe
    */
-  async getCloudMessagingTokensBySafe(args: {
+  async getSubscribersWithTokensBySafe(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-  }): Promise<Array<NotificationChannelConfig['cloud_messaging_token']>> {
+  }): Promise<
+    Array<{
+      subscriber: `0x${string}`;
+      cloudMessagingToken: string;
+    }>
+  > {
     return this.sql.begin(async (sql) => {
       const subscriptions = await this.getSafeSubscriptions({
         sql,
         chainId: args.chainId,
         safeAddress: args.safeAddress,
       });
-      const subscriptionIds = subscriptions.map((row) => row.id);
 
-      const configurations = await this.getChannelConfigs({
-        sql,
-        subscriptionIds,
-      });
-      return configurations.map((row) => row.cloud_messaging_token);
+      return Promise.all(
+        subscriptions.map(async (subscription) => {
+          const [account, config] = await Promise.all([
+            this.getAccountById({ sql, accountId: subscription.account_id }),
+            this.getChannelConfig({ sql, subscriptionId: subscription.id }),
+          ]);
+
+          return {
+            subscriber: account.address,
+            cloudMessagingToken: config.cloud_messaging_token,
+          };
+        }),
+      );
     });
   }
 
@@ -373,26 +386,46 @@ export class NotificationsDatasource implements INotificationsDatasource {
     return subscriptions;
   }
 
-  private async getChannelConfigs(args: {
+  private async getAccountById(args: {
     sql: postgres.TransactionSql;
-    subscriptionIds: Array<number>;
-  }): Promise<Array<NotificationChannelConfig>> {
-    const configs = await args.sql<Array<NotificationChannelConfig>>`
-      SELECT cloud_messaging_token 
+    accountId: number;
+  }): Promise<Account> {
+    const [account] = await args.sql<[Account]>`
+      SELECT *
+      FROM accounts
+      WHERE id = ${args.accountId}
+    `.catch((e) => {
+      this.loggingService.info(`Error getting account: ${asError(e).message}`);
+      return [];
+    });
+
+    if (!account) {
+      throw new NotFoundException('Error getting account');
+    }
+
+    return account;
+  }
+
+  private async getChannelConfig(args: {
+    sql: postgres.TransactionSql;
+    subscriptionId: number;
+  }): Promise<NotificationChannelConfig> {
+    const [config] = await args.sql<[NotificationChannelConfig]>`
+      SELECT * 
       FROM notification_channel_configurations 
-      WHERE notification_subscription_id = ANY(${args.subscriptionIds});
+      WHERE notification_subscription_id = ${args.subscriptionId};
     `.catch((e) => {
       this.loggingService.info(
-        `Error getting channel configurations: ${asError(e).message}`,
+        `Error getting channel configuration: ${asError(e).message}`,
       );
       return [];
     });
 
-    if (configs.length === 0) {
-      throw new NotFoundException('Error getting channel configurations');
+    if (!config) {
+      throw new NotFoundException('Error getting channel configuration');
     }
 
-    return configs;
+    return config;
   }
 
   /**

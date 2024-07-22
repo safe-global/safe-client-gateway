@@ -285,8 +285,8 @@ describe('NotificationsDatasource', () => {
     });
   });
 
-  describe('getCloudMessagingTokensBySafe', () => {
-    it('should get the cloud messaging tokens subscribed to a Safe', async () => {
+  describe('getSubscribersWithTokensBySafe', () => {
+    it('should get the subscribers with cloud messaging token for a Safe', async () => {
       const deviceUuid = faker.string.uuid() as Uuid;
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
         .with('deviceUuid', deviceUuid)
@@ -297,11 +297,16 @@ describe('NotificationsDatasource', () => {
       await Promise.all(
         upsertSubscriptionsDto.safes.map((safe) => {
           return expect(
-            target.getCloudMessagingTokensBySafe({
+            target.getSubscribersWithTokensBySafe({
               chainId: safe.chainId,
               safeAddress: safe.address,
             }),
-          ).resolves.toEqual([upsertSubscriptionsDto.cloudMessagingToken]);
+          ).resolves.toEqual([
+            {
+              subscriber: upsertSubscriptionsDto.account,
+              cloudMessagingToken: upsertSubscriptionsDto.cloudMessagingToken,
+            },
+          ]);
         }),
       );
     });
