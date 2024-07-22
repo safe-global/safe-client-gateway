@@ -14,7 +14,7 @@ CREATE TABLE counterfactual_safes (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     account_id INTEGER NOT NULL,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
-    CONSTRAINT unique_chain_address UNIQUE (chain_id, predicted_address)
+    CONSTRAINT unique_chain_address UNIQUE (account_id, chain_id, predicted_address)
 );
 
 CREATE OR REPLACE TRIGGER update_counterfactual_safes_updated_at
