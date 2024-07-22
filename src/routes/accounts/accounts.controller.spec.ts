@@ -109,7 +109,7 @@ describe('AccountsController', () => {
 
       expect(accountDataSource.createAccount).toHaveBeenCalledTimes(1);
       // Check the address was checksummed
-      expect(accountDataSource.createAccount).toHaveBeenCalledWith({ address });
+      expect(accountDataSource.createAccount).toHaveBeenCalledWith(address);
     });
 
     it('Returns 403 if no token is present', async () => {
@@ -272,7 +272,7 @@ describe('AccountsController', () => {
 
       expect(accountDataSource.getAccount).toHaveBeenCalledTimes(1);
       // Check the address was checksummed
-      expect(accountDataSource.getAccount).toHaveBeenCalledWith({ address });
+      expect(accountDataSource.getAccount).toHaveBeenCalledWith(address);
     });
 
     it('should get a group account', async () => {
@@ -300,7 +300,7 @@ describe('AccountsController', () => {
 
       expect(accountDataSource.getAccount).toHaveBeenCalledTimes(1);
       // Check the address was checksummed
-      expect(accountDataSource.getAccount).toHaveBeenCalledWith({ address });
+      expect(accountDataSource.getAccount).toHaveBeenCalledWith(address);
     });
 
     it('Returns 403 if no token is present', async () => {
@@ -447,7 +447,7 @@ describe('AccountsController', () => {
 
       expect(accountDataSource.deleteAccount).toHaveBeenCalledTimes(1);
       // Check the address was checksummed
-      expect(accountDataSource.deleteAccount).toHaveBeenCalledWith({ address });
+      expect(accountDataSource.deleteAccount).toHaveBeenCalledWith(address);
     });
 
     it('Returns 403 if no token is present', async () => {
@@ -819,9 +819,9 @@ describe('AccountsController', () => {
         .expect(200);
 
       expect(accountDataSource.getAccountDataSettings).toHaveBeenCalledTimes(1);
-      expect(accountDataSource.getAccountDataSettings).toHaveBeenCalledWith({
+      expect(accountDataSource.getAccountDataSettings).toHaveBeenCalledWith(
         address,
-      });
+      );
     });
 
     it('Returns 403 if no token is present', async () => {

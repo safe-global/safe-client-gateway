@@ -49,9 +49,9 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     );
   }
 
-  async createAccount(args: { address: `0x${string}` }): Promise<Account> {
+  async createAccount(address: `0x${string}`): Promise<Account> {
     const [account] = await this.sql<[Account]>`
-      INSERT INTO accounts (address) VALUES (${args.address}) RETURNING *`.catch(
+      INSERT INTO accounts (address) VALUES (${address}) RETURNING *`.catch(
       (e) => {
         this.loggingService.warn(
           `Error creating account: ${asError(e).message}`,
@@ -59,7 +59,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         throw new UnprocessableEntityException('Error creating account.');
       },
     );
-    const cacheDir = CacheRouter.getAccountCacheDir(args.address);
+    const cacheDir = CacheRouter.getAccountCacheDir(address);
     await this.cacheService.set(
       cacheDir,
       JSON.stringify([account]),
@@ -68,15 +68,13 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     return account;
   }
 
-  async getAccount(args: { address: `0x${string}` }): Promise<Account> {
-    const cacheDir = CacheRouter.getAccountCacheDir(args.address);
+  async getAccount(address: `0x${string}`): Promise<Account> {
+    const cacheDir = CacheRouter.getAccountCacheDir(address);
     const [account] = await getFromCacheOrExecuteAndCache<Account[]>(
       this.loggingService,
       this.cacheService,
       cacheDir,
-      this.sql<
-        Account[]
-      >`SELECT * FROM accounts WHERE address = ${args.address}`,
+      this.sql<Account[]>`SELECT * FROM accounts WHERE address = ${address}`,
       this.defaultExpirationTimeInSeconds,
     );
 
@@ -87,20 +85,20 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     return account;
   }
 
-  async deleteAccount(args: { address: `0x${string}` }): Promise<void> {
+  async deleteAccount(address: `0x${string}`): Promise<void> {
     try {
       const { count } = await this
-        .sql`DELETE FROM accounts WHERE address = ${args.address}`;
+        .sql`DELETE FROM accounts WHERE address = ${address}`;
       if (count === 0) {
         this.loggingService.debug(
-          `Error deleting account ${args.address}: not found`,
+          `Error deleting account ${address}: not found`,
         );
       }
     } finally {
       const keys = [
-        CacheRouter.getAccountCacheDir(args.address).key,
-        CacheRouter.getAccountDataSettingsCacheDir(args.address).key,
-        CacheRouter.getCounterfactualSafesCacheDir(args.address).key,
+        CacheRouter.getAccountCacheDir(address).key,
+        CacheRouter.getAccountDataSettingsCacheDir(address).key,
+        CacheRouter.getCounterfactualSafesCacheDir(address).key,
       ];
       await Promise.all(keys.map((key) => this.cacheService.deleteByKey(key)));
     }
@@ -117,11 +115,11 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     );
   }
 
-  async getAccountDataSettings(args: {
-    address: `0x${string}`;
-  }): Promise<AccountDataSetting[]> {
-    const account = await this.getAccount(args);
-    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(args.address);
+  async getAccountDataSettings(
+    address: `0x${string}`,
+  ): Promise<AccountDataSetting[]> {
+    const account = await this.getAccount(address);
+    const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
     return getFromCacheOrExecuteAndCache<AccountDataSetting[]>(
       this.loggingService,
       this.cacheService,
@@ -151,7 +149,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   }): Promise<AccountDataSetting[]> {
     const { accountDataSettings } = args.upsertAccountDataSettingsDto;
     await this.checkDataTypes(accountDataSettings);
-    const account = await this.getAccount({ address: args.address });
+    const account = await this.getAccount(args.address);
 
     const result = await this.sql.begin(async (sql) => {
       await Promise.all(

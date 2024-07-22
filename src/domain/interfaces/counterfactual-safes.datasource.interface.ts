@@ -17,9 +17,9 @@ export interface ICounterfactualSafesDatasource {
     predictedAddress: `0x${string}`;
   }): Promise<CounterfactualSafe>;
 
-  getCounterfactualSafesForAccount(args: {
-    account: Account;
-  }): Promise<CounterfactualSafe[]>;
+  getCounterfactualSafesForAccount(
+    account: Account,
+  ): Promise<CounterfactualSafe[]>;
 
   deleteCounterfactualSafe(args: {
     account: Account;
@@ -27,7 +27,5 @@ export interface ICounterfactualSafesDatasource {
     predictedAddress: `0x${string}`;
   }): Promise<void>;
 
-  deleteCounterfactualSafesForAccount(args: {
-    account: Account;
-  }): Promise<void>;
+  deleteCounterfactualSafesForAccount(account: Account): Promise<void>;
 }

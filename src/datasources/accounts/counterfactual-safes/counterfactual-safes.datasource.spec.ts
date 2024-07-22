@@ -97,7 +97,7 @@ describe('CounterfactualSafesDatasource tests', () => {
         createCounterfactualSafeDto:
           createCounterfactualSafeDtoBuilder().build(),
       });
-      await target.getCounterfactualSafesForAccount({ account });
+      await target.getCounterfactualSafesForAccount(account);
       const cacheDir = new CacheDir(`counterfactual_safes_${address}`, '');
       await fakeCacheService.set(
         cacheDir,
@@ -260,7 +260,7 @@ describe('CounterfactualSafesDatasource tests', () => {
         }),
       ]);
 
-      const actual = await target.getCounterfactualSafesForAccount({ account });
+      const actual = await target.getCounterfactualSafesForAccount(account);
       expect(actual).toStrictEqual(expect.arrayContaining(counterfactualSafes));
     });
 
@@ -285,8 +285,8 @@ describe('CounterfactualSafesDatasource tests', () => {
       ]);
 
       // first call is not cached
-      const actual = await target.getCounterfactualSafesForAccount({ account });
-      await target.getCounterfactualSafesForAccount({ account });
+      const actual = await target.getCounterfactualSafesForAccount(account);
+      await target.getCounterfactualSafesForAccount(account);
 
       expect(actual).toStrictEqual(expect.arrayContaining(counterfactualSafes));
       const cacheDir = new CacheDir(`counterfactual_safes_${address}`, '');
@@ -428,11 +428,11 @@ describe('CounterfactualSafesDatasource tests', () => {
       ];
 
       await expect(
-        target.deleteCounterfactualSafesForAccount({ account }),
+        target.deleteCounterfactualSafesForAccount(account),
       ).resolves.not.toThrow();
 
       // database is cleared
-      const actual = await target.getCounterfactualSafesForAccount({ account });
+      const actual = await target.getCounterfactualSafesForAccount(account);
       expect(actual).toHaveLength(0);
       // cache is cleared
       expect(

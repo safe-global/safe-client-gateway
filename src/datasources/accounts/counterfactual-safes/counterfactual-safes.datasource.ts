@@ -76,18 +76,18 @@ export class CounterfactualSafesDatasource
     return counterfactualSafe;
   }
 
-  getCounterfactualSafesForAccount(args: {
-    account: Account;
-  }): Promise<CounterfactualSafe[]> {
+  getCounterfactualSafesForAccount(
+    account: Account,
+  ): Promise<CounterfactualSafe[]> {
     const cacheDir = CacheRouter.getCounterfactualSafesCacheDir(
-      args.account.address,
+      account.address,
     );
     return getFromCacheOrExecuteAndCache<CounterfactualSafe[]>(
       this.loggingService,
       this.cacheService,
       cacheDir,
       this.sql<CounterfactualSafe[]>`
-        SELECT * FROM counterfactual_safes WHERE account_id = ${args.account.id}`,
+        SELECT * FROM counterfactual_safes WHERE account_id = ${account.id}`,
       this.defaultExpirationTimeInSeconds,
     );
   }
@@ -120,18 +120,16 @@ export class CounterfactualSafesDatasource
     }
   }
 
-  async deleteCounterfactualSafesForAccount(args: {
-    account: Account;
-  }): Promise<void> {
+  async deleteCounterfactualSafesForAccount(account: Account): Promise<void> {
     let deleted: CounterfactualSafe[] = [];
     try {
       const rows = await this.sql<
         CounterfactualSafe[]
-      >`DELETE FROM counterfactual_safes WHERE account_id = ${args.account.id} RETURNING *`;
+      >`DELETE FROM counterfactual_safes WHERE account_id = ${account.id} RETURNING *`;
       deleted = rows;
     } finally {
       await this.cacheService.deleteByKey(
-        CacheRouter.getCounterfactualSafesCacheDir(args.account.address).key,
+        CacheRouter.getCounterfactualSafesCacheDir(account.address).key,
       );
       await Promise.all(
         deleted.map((row) => {

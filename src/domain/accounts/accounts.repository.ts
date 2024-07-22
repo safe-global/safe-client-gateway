@@ -24,9 +24,7 @@ export class AccountsRepository implements IAccountsRepository {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    const account = await this.datasource.createAccount({
-      address: args.address,
-    });
+    const account = await this.datasource.createAccount(args.address);
     return AccountSchema.parse(account);
   }
 
@@ -37,7 +35,7 @@ export class AccountsRepository implements IAccountsRepository {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    const account = await this.datasource.getAccount({ address: args.address });
+    const account = await this.datasource.getAccount(args.address);
     return AccountSchema.parse(account);
   }
 
@@ -48,7 +46,7 @@ export class AccountsRepository implements IAccountsRepository {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    return this.datasource.deleteAccount({ address: args.address });
+    return this.datasource.deleteAccount(args.address);
   }
 
   async getDataTypes(): Promise<AccountDataType[]> {
@@ -63,7 +61,7 @@ export class AccountsRepository implements IAccountsRepository {
       throw new UnauthorizedException();
     }
 
-    return this.datasource.getAccountDataSettings({ address: args.address });
+    return this.datasource.getAccountDataSettings(args.address);
   }
 
   async upsertAccountDataSettings(args: {

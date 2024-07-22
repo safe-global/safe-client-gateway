@@ -6,17 +6,15 @@ import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-
 export const IAccountsDatasource = Symbol('IAccountsDatasource');
 
 export interface IAccountsDatasource {
-  createAccount(args: { address: `0x${string}` }): Promise<Account>;
+  createAccount(address: `0x${string}`): Promise<Account>;
 
-  getAccount(args: { address: `0x${string}` }): Promise<Account>;
+  getAccount(address: `0x${string}`): Promise<Account>;
 
-  deleteAccount(args: { address: `0x${string}` }): Promise<void>;
+  deleteAccount(address: `0x${string}`): Promise<void>;
 
   getDataTypes(): Promise<AccountDataType[]>;
 
-  getAccountDataSettings(args: {
-    address: `0x${string}`;
-  }): Promise<AccountDataSetting[]>;
+  getAccountDataSettings(address: `0x${string}`): Promise<AccountDataSetting[]>;
 
   upsertAccountDataSettings(args: {
     address: `0x${string}`;

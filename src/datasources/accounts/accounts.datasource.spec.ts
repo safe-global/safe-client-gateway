@@ -62,7 +62,7 @@ describe('AccountsDatasource tests', () => {
     it('creates an account successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
-      const result = await target.createAccount({ address });
+      const result = await target.createAccount(address);
 
       expect(result).toStrictEqual({
         id: expect.any(Number),
@@ -88,9 +88,9 @@ describe('AccountsDatasource tests', () => {
 
     it('throws when an account with the same address already exists', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount({ address });
+      await target.createAccount(address);
 
-      await expect(target.createAccount({ address })).rejects.toThrow(
+      await expect(target.createAccount(address)).rejects.toThrow(
         'Error creating account.',
       );
     });
@@ -99,9 +99,9 @@ describe('AccountsDatasource tests', () => {
   describe('getAccount', () => {
     it('returns an account successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount({ address });
+      await target.createAccount(address);
 
-      const result = await target.getAccount({ address });
+      const result = await target.getAccount(address);
 
       expect(result).toStrictEqual(
         expect.objectContaining({
@@ -114,9 +114,9 @@ describe('AccountsDatasource tests', () => {
 
     it('returns an account from cache', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount({ address });
+      await target.createAccount(address);
 
-      const result = await target.getAccount({ address });
+      const result = await target.getAccount(address);
 
       expect(result).toStrictEqual(
         expect.objectContaining({
@@ -148,10 +148,10 @@ describe('AccountsDatasource tests', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       // should not cache the account
-      await expect(target.getAccount({ address })).rejects.toThrow(
+      await expect(target.getAccount(address)).rejects.toThrow(
         'Error getting account.',
       );
-      await expect(target.getAccount({ address })).rejects.toThrow(
+      await expect(target.getAccount(address)).rejects.toThrow(
         'Error getting account.',
       );
 
@@ -172,9 +172,9 @@ describe('AccountsDatasource tests', () => {
   describe('deleteAccount', () => {
     it('deletes an account successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount({ address });
+      await target.createAccount(address);
 
-      await expect(target.deleteAccount({ address })).resolves.not.toThrow();
+      await expect(target.deleteAccount(address)).resolves.not.toThrow();
 
       expect(mockLoggingService.debug).not.toHaveBeenCalled();
     });
@@ -182,17 +182,17 @@ describe('AccountsDatasource tests', () => {
     it('does not throws if no account is found', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
-      await expect(target.deleteAccount({ address })).resolves.not.toThrow();
+      await expect(target.deleteAccount(address)).resolves.not.toThrow();
 
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(1);
     });
 
     it('should clear the cache on account deletion', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount({ address });
+      await target.createAccount(address);
 
       // get the account from the cache
-      const beforeDeletion = await target.getAccount({ address });
+      const beforeDeletion = await target.getAccount(address);
       expect(beforeDeletion).toStrictEqual(
         expect.objectContaining({
           id: expect.any(Number),
@@ -222,8 +222,8 @@ describe('AccountsDatasource tests', () => {
       );
 
       // the account is deleted from the database and the cache
-      await expect(target.deleteAccount({ address })).resolves.not.toThrow();
-      await expect(target.getAccount({ address })).rejects.toThrow();
+      await expect(target.deleteAccount(address)).resolves.not.toThrow();
+      await expect(target.getAccount(address)).rejects.toThrow();
       const accountCacheDir = new CacheDir(`account_${address}`, '');
       const cached = await fakeCacheService.get(accountCacheDir);
       expect(cached).toBeUndefined();
@@ -333,7 +333,7 @@ describe('AccountsDatasource tests', () => {
   describe('getAccountDataSettings', () => {
     it('should get the account data settings successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount({ address });
+      const account = await target.createAccount(address);
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -349,7 +349,7 @@ describe('AccountsDatasource tests', () => {
         INSERT INTO account_data_settings 
         ${sql(accountDataSettingRows, 'account_id', 'account_data_type_id', 'enabled')} returning *`;
 
-      const actual = await target.getAccountDataSettings({ address });
+      const actual = await target.getAccountDataSettings(address);
 
       const expected = accountDataSettingRows.map((accountDataSettingRow) => ({
         account_id: account.id,
@@ -364,7 +364,7 @@ describe('AccountsDatasource tests', () => {
 
     it('should get the account data settings from cache', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount({ address });
+      const account = await target.createAccount(address);
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -379,10 +379,10 @@ describe('AccountsDatasource tests', () => {
       await sql`
         INSERT INTO account_data_settings
         ${sql(accountDataSettingRows, 'account_id', 'account_data_type_id', 'enabled')} returning *`;
-      await target.getAccountDataSettings({ address });
+      await target.getAccountDataSettings(address);
 
       // check the account data settings are in the cache
-      const actual = await target.getAccountDataSettings({ address });
+      const actual = await target.getAccountDataSettings(address);
 
       const expected = accountDataSettingRows.map((accountDataSettingRow) =>
         expect.objectContaining({
@@ -424,7 +424,7 @@ describe('AccountsDatasource tests', () => {
 
     it('should omit account data settings which data type is not active', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount({ address });
+      const account = await target.createAccount(address);
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -446,7 +446,7 @@ describe('AccountsDatasource tests', () => {
         INSERT INTO account_data_settings 
         ${sql(accountDataSettingRows, 'account_id', 'account_data_type_id', 'enabled')} returning *`;
 
-      const actual = await target.getAccountDataSettings({ address });
+      const actual = await target.getAccountDataSettings(address);
 
       const expected = accountDataSettingRows
         .map((accountDataSettingRow) => ({
@@ -465,7 +465,7 @@ describe('AccountsDatasource tests', () => {
   describe('upsertAccountDataSettings', () => {
     it('adds account data settings successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount({ address });
+      const account = await target.createAccount(address);
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -498,7 +498,7 @@ describe('AccountsDatasource tests', () => {
 
     it('should write the associated cache on upsert', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount({ address });
+      const account = await target.createAccount(address);
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -536,7 +536,7 @@ describe('AccountsDatasource tests', () => {
 
     it('updates existing account data settings successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount({ address });
+      const account = await target.createAccount(address);
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -621,7 +621,7 @@ describe('AccountsDatasource tests', () => {
 
     it('throws an error if a non-existent data type is provided', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount({ address });
+      await target.createAccount(address);
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -650,7 +650,7 @@ describe('AccountsDatasource tests', () => {
 
     it('throws an error if an inactive data type is provided', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount({ address });
+      await target.createAccount(address);
       const accountDataTypes = [
         accountDataTypeBuilder().with('is_active', false).build(),
         accountDataTypeBuilder().build(),
