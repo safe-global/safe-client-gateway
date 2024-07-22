@@ -11,11 +11,16 @@ type NotificationTypesRow = {
 type NotificationSubscriptionsRow = {
   id: number;
   account_id: number;
-  notification_type_id: number;
-  chain_id: number;
-  safe_address: string;
+  chain_id: string;
+  safe_address: `0x${string}`;
   created_at: Date;
   updated_at: Date;
+};
+
+type NotificationSubscriptionNotificationTypesRow = {
+  id: number;
+  subscription_id: number;
+  notification_type_id: number;
 };
 
 type NotificationChannelsRow = {
@@ -66,6 +71,13 @@ describe('Migration 00004_notifications', () => {
               Array<NotificationSubscriptionsRow>
             >`SELECT * FROM notification_subscriptions`,
           },
+          notification_subscription_notification_types: {
+            columns:
+              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_subscription_notification_types'`,
+            rows: await sql<
+              Array<NotificationChannelsRow>
+            >`SELECT * FROM notification_subscription_notification_types`,
+          },
           notification_channels: {
             columns:
               await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_channels'`,
@@ -90,10 +102,17 @@ describe('Migration 00004_notifications', () => {
           { column_name: 'id' },
           { column_name: 'account_id' },
           { column_name: 'chain_id' },
-          { column_name: 'notification_type_id' },
           { column_name: 'safe_address' },
           { column_name: 'created_at' },
           { column_name: 'updated_at' },
+        ]),
+        rows: [],
+      },
+      notification_subscription_notification_types: {
+        columns: expect.arrayContaining([
+          { column_name: 'id' },
+          { column_name: 'subscription_id' },
+          { column_name: 'notification_type_id' },
         ]),
         rows: [],
       },
@@ -189,8 +208,8 @@ describe('Migration 00004_notifications', () => {
           await transaction`INSERT INTO accounts (address)
                                 VALUES ('0x69');`;
           // Add notification subscription to account
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                VALUES (1, 1, 1, '0x420')`;
+          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
+                                VALUES (1, 1, '0x420')`;
         });
 
         return {
@@ -208,7 +227,6 @@ describe('Migration 00004_notifications', () => {
         { column_name: 'id' },
         { column_name: 'account_id' },
         { column_name: 'chain_id' },
-        { column_name: 'notification_type_id' },
         { column_name: 'safe_address' },
         { column_name: 'created_at' },
         { column_name: 'updated_at' },
@@ -216,9 +234,8 @@ describe('Migration 00004_notifications', () => {
       rows: [
         {
           id: 1,
-          chain_id: 1,
+          chain_id: '1',
           account_id: 1,
-          notification_type_id: 1,
           safe_address: '0x420',
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
@@ -235,9 +252,8 @@ describe('Migration 00004_notifications', () => {
     expect(afterUpdate).toStrictEqual([
       {
         id: 1,
-        chain_id: 1,
+        chain_id: '1',
         account_id: 1,
-        notification_type_id: 1,
         safe_address: '0x69',
         // created_at should have remained the same
         created_at: afterInsert.after.rows[0].created_at,
@@ -259,11 +275,17 @@ describe('Migration 00004_notifications', () => {
           await transaction`INSERT INTO accounts (address)
                                 VALUES ('0x69');`;
           // Add notification subscription to account
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                VALUES (1, 1, 1, '0x420')`;
+          const [subscription] = await transaction<
+            [Pick<NotificationSubscriptionsRow, 'id'>]
+          >`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
+                                VALUES (1, 1, '0x420') RETURNING id`;
+          // Add notification preference
+          await transaction`INSERT INTO notification_subscription_notification_types (subscription_id, notification_type_id)
+                                VALUES(${subscription.id}, 1)`;
+
           // Enable notification channel
-          await transaction`INSERT INTO notification_channel_configurations (notification_subscription_id, notification_channel_id, cloud_messaging_token)
-                                VALUES (1, 1, '69420')`;
+          await transaction`INSERT INTO notification_channel_configurations (notification_subscription_id, notification_channel_id, cloud_messaging_token, device_uuid, device_type)
+                                VALUES (1, 1, '69420', ${crypto.randomUUID()}, 'WEB')`;
         });
 
         return {
@@ -282,6 +304,7 @@ describe('Migration 00004_notifications', () => {
         { column_name: 'notification_subscription_id' },
         { column_name: 'notification_channel_id' },
         { column_name: 'device_uuid' },
+        { column_name: 'device_type' },
         { column_name: 'cloud_messaging_token' },
         { column_name: 'created_at' },
         { column_name: 'updated_at' },
@@ -292,6 +315,7 @@ describe('Migration 00004_notifications', () => {
           notification_subscription_id: 1,
           notification_channel_id: 1,
           device_uuid: expect.any(String),
+          device_type: 'WEB',
           cloud_messaging_token: '69420',
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
@@ -311,6 +335,7 @@ describe('Migration 00004_notifications', () => {
         notification_subscription_id: 1,
         notification_channel_id: 1,
         device_uuid: expect.any(String),
+        device_type: 'WEB',
         cloud_messaging_token: '1337',
         // created_at should have remained the same
         created_at: afterInsert.after.rows[0].created_at,
@@ -332,8 +357,8 @@ describe('Migration 00004_notifications', () => {
           await transaction`INSERT INTO accounts (address)
                                     VALUES ('0x69');`;
           // Add notification subscription to account
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                    VALUES (1, 1, 1, '0x420')`;
+          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
+                                    VALUES (1, 1,'0x420')`;
         });
       },
     });
@@ -341,8 +366,8 @@ describe('Migration 00004_notifications', () => {
     // Try to add the same subscription again
     await expect(sql<
       Array<NotificationSubscriptionsRow>
-    >`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                    VALUES (1, 1, 1, '0x420')`).rejects.toThrow(
+    >`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
+                                    VALUES (1, 1, '0x420')`).rejects.toThrow(
       'duplicate key value violates unique constraint "notification_subscriptions_account_id_chain_id_safe_address_key"',
     );
   });
@@ -355,13 +380,16 @@ describe('Migration 00004_notifications', () => {
           // Create account
           await transaction`INSERT INTO accounts (address)
                                         VALUES ('0x69');`;
-          // Add notification subscription to account on chains 1, 2, 3
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 1, 1, '0x420')`;
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 2, 1, '0x420')`;
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 3, 1, '0x420')`;
+
+          // Add subscriptions to chains 1, 2, 3
+          const chainIds = ['1', '2', '3'];
+
+          await Promise.all(
+            chainIds.map((chainId) => {
+              return transaction`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
+                                        VALUES (1, ${chainId}, '0x420')`;
+            }),
+          );
         });
 
         // Delete account
@@ -374,6 +402,9 @@ describe('Migration 00004_notifications', () => {
           notification_subscriptions: await sql<
             Array<NotificationSubscriptionsRow>
           >`SELECT * FROM notification_subscriptions`,
+          notification_subscription_notification_types: await sql<
+            Array<NotificationSubscriptionNotificationTypesRow>
+          >`SELECT * FROM notification_subscription_notification_types`,
           notification_channels: await sql<
             Array<NotificationChannelsRow>
           >`SELECT * FROM notification_channels`,
@@ -437,6 +468,7 @@ describe('Migration 00004_notifications', () => {
       ],
       // No subscriptions should exist
       notification_subscriptions: [],
+      notification_subscription_notification_types: [],
       notification_channels: [
         {
           id: 1,
@@ -448,24 +480,39 @@ describe('Migration 00004_notifications', () => {
   });
 
   it('should delete the subscription if the notification_type is deleted', async () => {
+    let deletedMultisigTransactionId: number;
+
     const result = await migrator.test({
       migration: '00004_notifications',
       after: async (sql) => {
         await sql.begin(async (transaction) => {
+          const [type] = await sql<
+            [Pick<NotificationTypesRow, 'id'>]
+          >`SELECT id FROM notification_types WHERE name = 'DELETED_MULTISIG_TRANSACTION'`;
+
+          deletedMultisigTransactionId = type.id;
+
           // Create account
           await transaction`INSERT INTO accounts (address)
                                         VALUES ('0x69');`;
-          // Add notification subscription to account on chains 1, 2, 3
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 1, 1, '0x420')`;
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 2, 1, '0x420')`;
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 3, 1, '0x420')`;
+
+          // Add subscriptions to chains 1, 2, 3
+          const chainIds = ['1', '2', '3'];
+
+          await Promise.all(
+            chainIds.map(async (chainId) => {
+              const [subscription] = await transaction<
+                [Pick<NotificationSubscriptionsRow, 'id'>]
+              >`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
+                                          VALUES (1, ${chainId}, '0x420') RETURNING id`;
+              await transaction`INSERT INTO notification_subscription_notification_types (subscription_id, notification_type_id)
+                                  VALUES (${subscription.id}, ${deletedMultisigTransactionId})`;
+            }),
+          );
         });
 
         // Delete DELETED_MULTISIG_TRANSACTION notification type
-        await sql`DELETE FROM notification_types WHERE name = 'DELETED_MULTISIG_TRANSACTION'`;
+        await sql`DELETE FROM notification_types WHERE id = ${deletedMultisigTransactionId}`;
 
         return {
           notification_types: await sql<
@@ -474,6 +521,9 @@ describe('Migration 00004_notifications', () => {
           notification_subscriptions: await sql<
             Array<NotificationSubscriptionsRow>
           >`SELECT * FROM notification_subscriptions`,
+          notification_subscription_notification_types: await sql<
+            Array<NotificationSubscriptionNotificationTypesRow>
+          >`SELECT * FROM notification_subscription_notification_types`,
           notification_channels: await sql<
             Array<NotificationChannelsRow>
           >`SELECT * FROM notification_channels`,
@@ -534,6 +584,7 @@ describe('Migration 00004_notifications', () => {
       ],
       // No subscriptions should exist
       notification_subscriptions: [],
+      notification_subscription_notification_types: [],
       notification_channels: [
         {
           id: 1,
@@ -552,21 +603,27 @@ describe('Migration 00004_notifications', () => {
           // Create account
           await transaction`INSERT INTO accounts (address)
                                         VALUES ('0x69');`;
-          // Add notification subscription to account on chains 1, 2, 3
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 1, 1, '0x420')`;
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 2, 1, '0x420')`;
-          await transaction`INSERT INTO notification_subscriptions (account_id, chain_id, notification_type_id, safe_address)
-                                        VALUES (1, 3, 1, '0x420')`;
+
+          // Add subscriptions to chains 1, 2, 3
+          const chainIds = ['1', '2', '3'];
+
+          await Promise.all(
+            chainIds.map((chainId) => {
+              return transaction`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
+                                        VALUES (1, ${chainId}, '0x420')`;
+            }),
+          );
 
           // Enable notification channel
-          await transaction`INSERT INTO notification_channel_configurations (notification_subscription_id, notification_channel_id, cloud_messaging_token)
-                                        VALUES (1, 1, '69420')`;
+          await transaction`INSERT INTO notification_channel_configurations (notification_subscription_id, notification_channel_id, cloud_messaging_token, device_uuid, device_type)
+                                        VALUES (1, 1, '69420', ${crypto.randomUUID()}, 'WEB')`;
         });
 
+        const [channel] = await sql<
+          [Pick<NotificationChannelsRow, 'id'>]
+        >`SELECT id FROM notification_channels WHERE name = 'PUSH_NOTIFICATIONS'`;
         // Delete PUSH_NOTIFICATIONS notification channel
-        await sql`DELETE FROM notification_channels WHERE name = 'PUSH_NOTIFICATIONS'`;
+        await sql`DELETE FROM notification_channels WHERE id = ${channel.id}`;
 
         return {
           notification_types: await sql<
@@ -575,6 +632,9 @@ describe('Migration 00004_notifications', () => {
           notification_subscriptions: await sql<
             Array<NotificationSubscriptionsRow>
           >`SELECT * FROM notification_subscriptions`,
+          notification_subscription_notification_types: await sql<
+            Array<NotificationSubscriptionNotificationTypesRow>
+          >`SELECT * FROM notification_subscription_notification_types`,
           notification_channels: await sql<
             Array<NotificationChannelsRow>
           >`SELECT * FROM notification_channels`,
@@ -639,32 +699,14 @@ describe('Migration 00004_notifications', () => {
       notification_subscriptions: [
         {
           id: 1,
-          chain_id: 1,
+          chain_id: '1',
           account_id: 1,
-          notification_type_id: 1,
-          safe_address: '0x420',
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-        },
-        {
-          id: 2,
-          chain_id: 2,
-          account_id: 1,
-          notification_type_id: 1,
-          safe_address: '0x420',
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-        },
-        {
-          id: 3,
-          chain_id: 3,
-          account_id: 1,
-          notification_type_id: 1,
           safe_address: '0x420',
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
         },
       ],
+      notification_subscription_notification_types: [],
       notification_channels: [],
       // No configurations should exist
       notification_channel_configurations: [],
