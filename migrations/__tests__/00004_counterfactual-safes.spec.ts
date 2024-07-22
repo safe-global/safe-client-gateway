@@ -182,7 +182,7 @@ describe('Migration 00004_counterfactual-safes', () => {
     expect(counterfactualSafesRows).toHaveLength(0);
   });
 
-  it('should throw an error if the unique(chain_id, predicted_address) constraint is violated', async () => {
+  it('should throw an error if the unique(account_id, chain_id, predicted_address) constraint is violated', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
     let accountRows: AccountRow[] = [];
 
