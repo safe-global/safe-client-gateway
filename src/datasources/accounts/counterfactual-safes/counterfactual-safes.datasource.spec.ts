@@ -6,7 +6,6 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { createCounterfactualSafeDtoBuilder } from '@/domain/accounts/counterfactual-safes/entities/__tests__/create-counterfactual-safe.dto.entity.builder';
 import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.builder';
-import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
@@ -110,33 +109,6 @@ describe('CounterfactualSafesDatasource tests', () => {
         createCounterfactualSafeDtoBuilder().build(),
       );
       expect(await fakeCacheService.get(cacheDir)).toBeUndefined();
-    });
-
-    // TODO: move this check to the repository.
-    it.skip('should throw if the counterfactual-safes storage setting is disabled', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      const [account] = await sql<
-        Account[]
-      >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
-      const [counterfactualSafesDataType] = await sql<
-        AccountDataType[]
-      >`SELECT * FROM account_data_types WHERE name = 'CounterfactualSafes'`;
-      await sql`
-        INSERT INTO account_data_settings
-        ${sql([
-          {
-            account_id: account.id,
-            account_data_type_id: counterfactualSafesDataType.id,
-            enabled: false,
-          },
-        ])}`;
-
-      expect(
-        await target.createCounterfactualSafe(
-          account,
-          createCounterfactualSafeDtoBuilder().build(),
-        ),
-      ).toThrow();
     });
   });
 
