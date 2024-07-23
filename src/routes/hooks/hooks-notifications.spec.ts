@@ -59,7 +59,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
   let authToken: string;
   let safeConfigUrl: string;
 
-  beforeAll(async () => {
+  async function initApp(): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
@@ -86,10 +86,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
 
     await app.init();
-  });
+  }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.resetAllMocks();
+    await initApp();
   });
 
   afterAll(async () => {
@@ -468,7 +469,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       ) {
         return Promise.resolve({
           status: 200,
-          data: multisigTransaction,
+          data: pageBuilder().with('results', [multisigTransaction]).build(),
         });
       } else {
         return Promise.reject(`No matching rule for url: ${url}`);
