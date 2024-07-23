@@ -1,10 +1,11 @@
-import { Test } from '@nestjs/testing';
-import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import postgres from 'postgres';
+import { Test } from '@nestjs/testing';
 import { join } from 'path';
+import postgres from 'postgres';
 
 describe('PostgresDatabaseModule tests', () => {
   let sql: postgres.Sql;
@@ -34,6 +35,7 @@ describe('PostgresDatabaseModule tests', () => {
         PostgresDatabaseModule,
         ConfigurationModule.register(testConfiguration),
         TestLoggingModule,
+        TestCacheModule,
       ],
     }).compile();
 
