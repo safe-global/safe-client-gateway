@@ -42,8 +42,6 @@ import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
-import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
-import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -64,8 +62,6 @@ describe('Safes Controller (Unit)', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
-      .overrideModule(NotificationsDatasourceModule)
-      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

@@ -35,8 +35,6 @@ import {
   IBlockchainApiManager,
 } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { TestBlockchainApiManagerModule } from '@/datasources/blockchain/__tests__/test.blockchain-api.manager';
-import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
-import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
 
 const verifySiweMessageMock = jest.fn();
 
@@ -64,8 +62,6 @@ describe('AuthController', () => {
       .useModule(TestEmailApiModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
-      .overrideModule(NotificationsDatasourceModule)
-      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     cacheService = moduleFixture.get(CacheService);

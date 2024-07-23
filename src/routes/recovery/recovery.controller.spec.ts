@@ -42,8 +42,6 @@ import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-pay
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { getAddress } from 'viem';
 import { Server } from 'net';
-import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
-import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication<Server>;
@@ -84,8 +82,6 @@ describe('Recovery (Unit)', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
-      .overrideModule(NotificationsDatasourceModule)
-      .useModule(TestNotificationsDatasourceModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

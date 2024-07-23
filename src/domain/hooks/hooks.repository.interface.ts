@@ -1,3 +1,4 @@
+import configuration from '@/config/entities/configuration';
 import { BalancesRepositoryModule } from '@/domain/balances/balances.repository.interface';
 import { BlockchainRepositoryModule } from '@/domain/blockchain/blockchain.repository.interface';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
@@ -25,7 +26,7 @@ export interface IHooksRepository {
     ChainsRepositoryModule,
     CollectiblesRepositoryModule,
     MessagesRepositoryModule,
-    NotificationsRepositoryV2Module,
+    NotificationsRepositoryV2Module.forRoot(configuration),
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
     TransactionsRepositoryModule,

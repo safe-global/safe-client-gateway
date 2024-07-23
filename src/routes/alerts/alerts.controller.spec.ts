@@ -55,8 +55,6 @@ import {
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
-import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
-import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -120,8 +118,6 @@ describe('Alerts (Unit)', () => {
         .useModule(TestEmailApiModule)
         .overrideModule(QueuesApiModule)
         .useModule(TestQueuesApiModule)
-        .overrideModule(NotificationsDatasourceModule)
-        .useModule(TestNotificationsDatasourceModule)
         .compile();
 
       configurationService = moduleFixture.get(IConfigurationService);
@@ -889,8 +885,6 @@ describe('Alerts (Unit)', () => {
           .useModule(TestNetworkModule)
           .overrideModule(QueuesApiModule)
           .useModule(TestQueuesApiModule)
-          .overrideModule(NotificationsDatasourceModule)
-          .useModule(TestNotificationsDatasourceModule)
           .compile();
 
         app = moduleFixture.createNestApplication();

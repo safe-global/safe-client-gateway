@@ -59,9 +59,20 @@ describe('Post Hook Events for Notifications (Unit)', () => {
   let authToken: string;
   let safeConfigUrl: string;
 
+  const defaultConfiguration = configuration();
+  const testConfiguration = (): ReturnType<typeof configuration> => {
+    return {
+      ...defaultConfiguration,
+      features: {
+        ...defaultConfiguration.features,
+        pushNotifications: true,
+      },
+    };
+  };
+
   async function initApp(): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
