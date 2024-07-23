@@ -3,6 +3,7 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
@@ -13,8 +14,7 @@ import {
 import postgres from 'postgres';
 
 @Injectable()
-// TODO: add/implement interface
-export class CachedQueryResolver {
+export class CachedQueryResolver implements ICachedQueryResolver {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(CacheService) private readonly cacheService: ICacheService,

@@ -6,6 +6,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
+import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
 import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
@@ -29,6 +30,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
+    @Inject(ICachedQueryResolver)
     private readonly cachedQueryResolver: CachedQueryResolver,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)

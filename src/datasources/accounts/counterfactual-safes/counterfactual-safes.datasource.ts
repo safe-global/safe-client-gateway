@@ -5,6 +5,7 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
+import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
 import { CounterfactualSafe } from '@/domain/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
 import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
@@ -22,6 +23,7 @@ export class CounterfactualSafesDatasource
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
+    @Inject(ICachedQueryResolver)
     private readonly cachedQueryResolver: CachedQueryResolver,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)

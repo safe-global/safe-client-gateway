@@ -5,6 +5,8 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { PostgresDatabaseMigrationHook } from '@/datasources/db/postgres-database.migration.hook';
 import fs from 'fs';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
+import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 
 function dbFactory(configurationService: IConfigurationService): postgres.Sql {
   const caPath = configurationService.get<string>('db.postgres.ssl.caPath');
@@ -48,9 +50,13 @@ function migratorFactory(sql: postgres.Sql): PostgresDatabaseMigrator {
       useFactory: migratorFactory,
       inject: ['DB_INSTANCE'],
     },
+    {
+      provide: ICachedQueryResolver,
+      useClass: CachedQueryResolver,
+    },
     PostgresDatabaseShutdownHook,
     PostgresDatabaseMigrationHook,
   ],
-  exports: ['DB_INSTANCE'],
+  exports: ['DB_INSTANCE', ICachedQueryResolver],
 })
 export class PostgresDatabaseModule {}
