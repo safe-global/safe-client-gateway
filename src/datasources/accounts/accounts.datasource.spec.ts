@@ -4,6 +4,7 @@ import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
 import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
@@ -43,6 +44,7 @@ describe('AccountsDatasource tests', () => {
     target = new AccountsDatasource(
       fakeCacheService,
       sql,
+      new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockLoggingService,
       mockConfigurationService,
     );
