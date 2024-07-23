@@ -192,36 +192,22 @@ describe('Migration 00005_notifications', () => {
                                 VALUES (1, 1, '0x420')`;
         });
 
-        return {
-          columns:
-            await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_subscriptions'`,
-          rows: await sql<
-            Array<NotificationSubscriptionsRow>
-          >`SELECT * FROM notification_subscriptions`,
-        };
+        return await sql<
+          Array<NotificationSubscriptionsRow>
+        >`SELECT * FROM notification_subscriptions`;
       },
     });
 
-    expect(afterInsert.after).toStrictEqual({
-      columns: expect.arrayContaining([
-        { column_name: 'id' },
-        { column_name: 'account_id' },
-        { column_name: 'chain_id' },
-        { column_name: 'safe_address' },
-        { column_name: 'created_at' },
-        { column_name: 'updated_at' },
-      ]),
-      rows: [
-        {
-          id: 1,
-          chain_id: '1',
-          account_id: 1,
-          safe_address: '0x420',
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-        },
-      ],
-    });
+    expect(afterInsert.after).toStrictEqual([
+      {
+        id: 1,
+        chain_id: '1',
+        account_id: 1,
+        safe_address: '0x420',
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      },
+    ]);
 
     const afterUpdate = await sql<
       Array<NotificationSubscriptionsRow>
@@ -236,12 +222,12 @@ describe('Migration 00005_notifications', () => {
         account_id: 1,
         safe_address: '0x69',
         // created_at should have remained the same
-        created_at: afterInsert.after.rows[0].created_at,
+        created_at: afterInsert.after[0].created_at,
         updated_at: expect.any(Date),
       },
     ]);
     // updated_at should have updated
-    expect(afterInsert.after.rows[0].updated_at).not.toEqual(
+    expect(afterInsert.after[0].updated_at).not.toEqual(
       afterUpdate[0].updated_at,
     );
   });
@@ -268,40 +254,24 @@ describe('Migration 00005_notifications', () => {
                                 VALUES (1, 1, '69420', ${crypto.randomUUID()}, 'WEB')`;
         });
 
-        return {
-          columns:
-            await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_channel_configurations'`,
-          rows: await sql<
-            Array<NotificationChannelConfigurationsRow>
-          >`SELECT * FROM notification_channel_configurations`,
-        };
+        return await sql<
+          Array<NotificationChannelConfigurationsRow>
+        >`SELECT * FROM notification_channel_configurations`;
       },
     });
 
-    expect(afterInsert.after).toStrictEqual({
-      columns: expect.arrayContaining([
-        { column_name: 'id' },
-        { column_name: 'notification_subscription_id' },
-        { column_name: 'notification_channel_id' },
-        { column_name: 'device_uuid' },
-        { column_name: 'device_type' },
-        { column_name: 'cloud_messaging_token' },
-        { column_name: 'created_at' },
-        { column_name: 'updated_at' },
-      ]),
-      rows: [
-        {
-          id: 1,
-          notification_subscription_id: 1,
-          notification_channel_id: 1,
-          device_uuid: expect.any(String),
-          device_type: 'WEB',
-          cloud_messaging_token: '69420',
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-        },
-      ],
-    });
+    expect(afterInsert.after).toStrictEqual([
+      {
+        id: 1,
+        notification_subscription_id: 1,
+        notification_channel_id: 1,
+        device_uuid: expect.any(String),
+        device_type: 'WEB',
+        cloud_messaging_token: '69420',
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      },
+    ]);
 
     const afterUpdate = await sql<
       Array<NotificationChannelConfigurationsRow>
@@ -318,13 +288,51 @@ describe('Migration 00005_notifications', () => {
         device_type: 'WEB',
         cloud_messaging_token: '1337',
         // created_at should have remained the same
-        created_at: afterInsert.after.rows[0].created_at,
+        created_at: afterInsert.after[0].created_at,
         updated_at: expect.any(Date),
       },
     ]);
     // updated_at should have updated
-    expect(afterInsert.after.rows[0].updated_at).not.toEqual(
+    expect(afterInsert.after[0].updated_at).not.toEqual(
       afterUpdate[0].updated_at,
+    );
+  });
+
+  it('should only allow ANDROID, IOS and WEB as device_type in notification_channel_configurations', async () => {
+    await migrator.test({
+      migration: '00005_notifications',
+      after: async (sql: postgres.Sql) => {
+        await sql.begin(async (transaction) => {
+          // Create account
+          await transaction`INSERT INTO accounts (address)
+                                VALUES ('0x69');`;
+          // Add notification subscription to account
+          await transaction<
+            [Pick<NotificationSubscriptionsRow, 'id'>]
+          >`INSERT INTO notification_subscriptions (account_id, chain_id, safe_address)
+                                VALUES (1, 1, '0x420')`;
+        });
+
+        return await sql<
+          Array<NotificationChannelConfigurationsRow>
+        >`SELECT * FROM notification_channel_configurations`;
+      },
+    });
+
+    const deviceTypes = ['ANDROID', 'IOS', 'WEB'];
+    const invalidDeviceType = faker.string.alpha().toUpperCase();
+
+    await expect(
+      Promise.all(
+        deviceTypes.map((deviceType) => {
+          return sql`INSERT INTO notification_channel_configurations (notification_subscription_id, notification_channel_id, cloud_messaging_token, device_uuid, device_type)
+                                    VALUES (1, 1, '69420', ${crypto.randomUUID()}, ${deviceType})`;
+        }),
+      ),
+    ).resolves.not.toThrow();
+    await expect(sql`INSERT INTO notification_channel_configurations (notification_subscription_id, notification_channel_id, cloud_messaging_token, device_uuid, device_type)
+                                    VALUES (1, 1, '69420', ${crypto.randomUUID()}, ${invalidDeviceType})`).rejects.toThrow(
+      'new row for relation "notification_channel_configurations" violates check constraint "notification_channel_configurations_device_type_check"',
     );
   });
 
