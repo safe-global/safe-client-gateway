@@ -39,6 +39,7 @@ import {
 export class HooksRepository implements IHooksRepository {
   private static readonly HOOK_TYPE = 'hook';
   private readonly queueName: string;
+  private readonly isPushNotificationsEnabled: boolean;
 
   constructor(
     @Inject(IBalancesRepository)
@@ -67,6 +68,10 @@ export class HooksRepository implements IHooksRepository {
     private readonly notificationsRepository: INotificationsRepositoryV2,
   ) {
     this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
+    this.isPushNotificationsEnabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.pushNotifications',
+      );
   }
 
   onModuleInit(): Promise<void> {
@@ -87,7 +92,9 @@ export class HooksRepository implements IHooksRepository {
   async onEvent(event: Event): Promise<unknown> {
     return Promise.allSettled([
       this.onEventClearCache(event),
-      this.onEventEnqueueNotifications(event),
+      ...(this.isPushNotificationsEnabled
+        ? [this.onEventEnqueueNotifications(event)]
+        : []),
     ]).finally(() => {
       this.onEventLog(event);
     });
