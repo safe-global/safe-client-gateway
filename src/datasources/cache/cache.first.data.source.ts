@@ -35,6 +35,7 @@ import { Safe } from '@/domain/safe/entities/safe.entity';
 @Injectable()
 export class CacheFirstDataSource {
   private readonly areDebugLogsEnabled: boolean;
+  private readonly areConfigHooksDebugLogsEnabled: boolean;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -45,6 +46,10 @@ export class CacheFirstDataSource {
   ) {
     this.areDebugLogsEnabled =
       this.configurationService.getOrThrow<boolean>('features.debugLogs');
+    this.areConfigHooksDebugLogsEnabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.configHooksDebugLogs',
+      );
   }
 
   /**
@@ -148,6 +153,13 @@ export class CacheFirstDataSource {
           args.cacheDir,
           data as Safe,
         );
+      }
+
+      if (
+        this.areConfigHooksDebugLogsEnabled &&
+        args.cacheDir.key.includes('chain')
+      ) {
+        this.logChainUpdateCacheWrite(startTimeMs, args.cacheDir, data);
       }
     }
     return data;
@@ -265,6 +277,26 @@ export class CacheFirstDataSource {
       cacheWriteTime: new Date(),
       requestStartTime: new Date(requestStartTime),
       safe,
+    });
+  }
+
+  /**
+   * Logs the chain/chains retrieved.
+   * NOTE: this is a debugging-only function.
+   * TODO: remove this function after debugging.
+   */
+  private logChainUpdateCacheWrite(
+    requestStartTime: number,
+    cacheDir: CacheDir,
+    data: unknown,
+  ): void {
+    this.loggingService.info({
+      type: 'cache_write',
+      cacheKey: cacheDir.key,
+      cacheField: cacheDir.field,
+      cacheWriteTime: new Date(),
+      requestStartTime: new Date(requestStartTime),
+      data,
     });
   }
 }

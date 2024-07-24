@@ -33,6 +33,7 @@ describe('CacheFirstDataSource', () => {
     fakeCacheService = new FakeCacheService();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('features.debugLogs', true);
+    fakeConfigurationService.set('features.configHooksDebugLogs', false);
     cacheFirstDataSource = new CacheFirstDataSource(
       fakeCacheService,
       mockNetworkService,
