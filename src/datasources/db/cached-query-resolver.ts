@@ -21,7 +21,7 @@ export class CachedQueryResolver implements ICachedQueryResolver {
   ) {}
 
   /**
-   * Returns the content from cache or executes the query and caches the result.
+   * Returns the content from cache or executes the query, caches the result and returns it.
    * If the specified {@link CacheDir} is empty, the query is executed and the result is cached.
    * If the specified {@link CacheDir} is not empty, the pointed content is returned.
    *
