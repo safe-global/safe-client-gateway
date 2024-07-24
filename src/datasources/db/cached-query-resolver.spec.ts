@@ -3,15 +3,17 @@ import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.servi
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
+import { InternalServerErrorException } from '@nestjs/common';
 import postgres, { MaybeRow } from 'postgres';
 
 const mockLoggingService = jest.mocked({
   debug: jest.fn(),
+  error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
-const mockQuery = jest.mocked({ catch: jest.fn() } as jest.MockedObjectDeep<
-  postgres.PendingQuery<MaybeRow[]>
->);
+const mockQuery = jest.mocked({
+  execute: jest.fn(),
+} as jest.MockedObjectDeep<postgres.PendingQuery<MaybeRow[]>>);
 
 describe('CachedQueryResolver', () => {
   let fakeCacheService: FakeCacheService;
@@ -46,14 +48,15 @@ describe('CachedQueryResolver', () => {
         key: 'key',
         field: 'field',
       });
-      expect(mockQuery.catch).not.toHaveBeenCalled();
+      const cacheContent = await fakeCacheService.get(cacheDir);
+      expect(cacheContent).toBe(JSON.stringify(value));
     });
 
     it('should execute the query and cache the result if the cache is empty', async () => {
       const cacheDir = { key: 'key', field: 'field' };
       const ttl = faker.number.int({ min: 1, max: 1000 });
       const dbResult = { ...JSON.parse(fakeJson()), count: 1 };
-      mockQuery.catch.mockResolvedValue(dbResult);
+      mockQuery.execute.mockImplementation(() => dbResult);
 
       const actual = await target.get({
         cacheDir,
@@ -69,6 +72,25 @@ describe('CachedQueryResolver', () => {
       });
       const cacheContent = await fakeCacheService.get(cacheDir);
       expect(cacheContent).toBe(JSON.stringify(dbResult));
+    });
+
+    it('should log the error and throw a generic error if the query fails', async () => {
+      const cacheDir = { key: 'key', field: 'field' };
+      const ttl = faker.number.int({ min: 1, max: 1000 });
+      const error = new Error('error');
+      mockQuery.execute.mockRejectedValue(error);
+
+      await expect(
+        target.get({
+          cacheDir,
+          query: mockQuery,
+          ttl,
+        }),
+      ).rejects.toThrow(
+        new InternalServerErrorException('Internal Server Error'),
+      );
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith('error');
     });
   });
 });

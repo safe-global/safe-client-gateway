@@ -75,9 +75,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     const cacheDir = CacheRouter.getAccountCacheDir(address);
     const [account] = await this.cachedQueryResolver.get<Account[]>({
       cacheDir,
-      query: this.sql<
-        Account[]
-      >`SELECT * FROM accounts WHERE address = ${address}`,
+      query: this.sql`SELECT * FROM accounts WHERE address = ${address}`,
       ttl: this.defaultExpirationTimeInSeconds,
     });
 
@@ -111,7 +109,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     const cacheDir = CacheRouter.getAccountDataTypesCacheDir();
     return this.cachedQueryResolver.get<AccountDataType[]>({
       cacheDir,
-      query: this.sql<AccountDataType[]>`SELECT * FROM account_data_types`,
+      query: this.sql`SELECT * FROM account_data_types`,
       ttl: MAX_TTL,
     });
   }
@@ -123,9 +121,9 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
     return this.cachedQueryResolver.get<AccountDataSetting[]>({
       cacheDir,
-      query: this.sql<AccountDataSetting[]>`
-        SELECT ads.* FROM account_data_settings ads INNER JOIN account_data_types adt
-          ON ads.account_data_type_id = adt.id
+      query: this.sql`
+        SELECT ads.* FROM account_data_settings ads
+          INNER JOIN account_data_types adt ON ads.account_data_type_id = adt.id
         WHERE ads.account_id = ${account.id} AND adt.is_active IS TRUE;`,
       ttl: this.defaultExpirationTimeInSeconds,
     });

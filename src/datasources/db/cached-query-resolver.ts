@@ -43,19 +43,20 @@ export class CachedQueryResolver implements ICachedQueryResolver {
     }
     this.loggingService.debug({ type: 'cache_miss', key, field });
 
-    // log & hide database errors
-    const result = await args.query.catch((e) => {
-      this.loggingService.error(asError(e).message);
+    try {
+      const result = await args.query.execute();
+      if (result.count > 0) {
+        await this.cacheService.set(
+          args.cacheDir,
+          JSON.stringify(result),
+          args.ttl,
+        );
+      }
+      return result;
+    } catch (err) {
+      // log & hide database errors
+      this.loggingService.error(asError(err).message);
       throw new InternalServerErrorException();
-    });
-
-    if (result.count > 0) {
-      await this.cacheService.set(
-        args.cacheDir,
-        JSON.stringify(result),
-        args.ttl,
-      );
     }
-    return result;
   }
 }
