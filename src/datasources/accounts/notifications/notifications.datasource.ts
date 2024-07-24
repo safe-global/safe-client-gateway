@@ -163,7 +163,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
         cloud_messaging_token: string;
       }>
     >`
-      SELECT a.address, nd.device_uuid, nd.cloud_messaging_token
+      SELECT a.address, pnd.device_uuid, pnd.cloud_messaging_token
       FROM notification_subscriptions ns
       JOIN accounts a ON ns.account_id = a.id
       JOIN push_notification_devices pnd ON ns.push_notification_device_id = pnd.id
