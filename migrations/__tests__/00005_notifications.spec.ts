@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 import postgres from 'postgres';
 import { getAddress } from 'viem';
 
-type NotificationDevicesRow = {
+type PushNotificationDevicesRow = {
   id: number;
   account_id: number;
   device_type: 'ANDROID' | 'IOS' | 'WEB';
@@ -14,11 +14,6 @@ type NotificationDevicesRow = {
   cloud_messaging_token: string;
   created_at: Date;
   updated_at: Date;
-};
-
-type NotificationChannelsRow = {
-  id: number;
-  name: 'PUSH_NOTIFICATIONS';
 };
 
 type NotificationTypesRow = {
@@ -36,10 +31,9 @@ type NotificationTypesRow = {
 type NotificationSubscriptionsRow = {
   id: number;
   account_id: number;
-  device_id: NotificationDevicesRow['id'];
+  push_notification_device_id: PushNotificationDevicesRow['id'];
   chain_id: string;
   safe_address: `0x${string}`;
-  notification_channel_id: NotificationChannelsRow['id'];
   created_at: Date;
   updated_at: Date;
 };
@@ -69,19 +63,12 @@ describe('Migration 00005_notifications', () => {
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
         return {
-          notification_devices: {
+          push_notification_devices: {
             columns:
-              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_devices'`,
+              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'push_notification_devices'`,
             rows: await sql<
-              Array<NotificationDevicesRow>
-            >`SELECT * FROM notification_devices`,
-          },
-          notification_channels: {
-            columns:
-              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'notification_channels'`,
-            rows: await sql<
-              Array<NotificationChannelsRow>
-            >`SELECT * FROM notification_channels`,
+              Array<PushNotificationDevicesRow>
+            >`SELECT * FROM push_notification_devices`,
           },
           notification_types: {
             columns:
@@ -109,7 +96,7 @@ describe('Migration 00005_notifications', () => {
     });
 
     expect(result.after).toStrictEqual({
-      notification_devices: {
+      push_notification_devices: {
         columns: expect.arrayContaining([
           { column_name: 'id' },
           { column_name: 'device_type' },
@@ -119,18 +106,6 @@ describe('Migration 00005_notifications', () => {
           { column_name: 'updated_at' },
         ]),
         rows: [],
-      },
-      notification_channels: {
-        columns: expect.arrayContaining([
-          { column_name: 'id' },
-          { column_name: 'name' },
-        ]),
-        rows: [
-          {
-            id: expect.any(Number),
-            name: 'PUSH_NOTIFICATIONS',
-          },
-        ],
       },
       notification_types: {
         columns: expect.arrayContaining([
@@ -172,10 +147,9 @@ describe('Migration 00005_notifications', () => {
         columns: expect.arrayContaining([
           { column_name: 'id' },
           { column_name: 'account_id' },
-          { column_name: 'device_id' },
+          { column_name: 'push_notification_device_id' },
           { column_name: 'chain_id' },
           { column_name: 'safe_address' },
-          { column_name: 'notification_channel_id' },
           { column_name: 'created_at' },
           { column_name: 'updated_at' },
         ]),
@@ -192,7 +166,7 @@ describe('Migration 00005_notifications', () => {
     });
   });
 
-  it('should upsert the updated_at timestamp in notification_devices', async () => {
+  it('should upsert the updated_at timestamp in push_notification_devices', async () => {
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
     const deviceUuid = faker.string.uuid() as Uuid;
     const cloudMessagingToken = faker.string.alphanumeric();
@@ -201,8 +175,8 @@ describe('Migration 00005_notifications', () => {
       after: async (sql: postgres.Sql) => {
         // Create device
         return sql<
-          [NotificationDevicesRow]
-        >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`;
+          [PushNotificationDevicesRow]
+        >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`;
       },
     });
 
@@ -220,8 +194,8 @@ describe('Migration 00005_notifications', () => {
     const newDeviceUuid = faker.string.uuid() as Uuid;
     // Update device with new device_uuid
     const afterUpdate = await sql<
-      [NotificationDevicesRow]
-    >`UPDATE notification_devices SET device_uuid = ${newDeviceUuid} WHERE device_uuid = ${deviceUuid} RETURNING *`;
+      [PushNotificationDevicesRow]
+    >`UPDATE push_notification_devices SET device_uuid = ${newDeviceUuid} WHERE device_uuid = ${deviceUuid} RETURNING *`;
 
     expect(afterUpdate).toStrictEqual([
       {
@@ -240,7 +214,7 @@ describe('Migration 00005_notifications', () => {
     );
   });
 
-  it('should only allow an ANDROID, IOS, or WEB as device_type in notification_devices', async () => {
+  it('should only allow an ANDROID, IOS, or WEB as device_type in push_notification_devices', async () => {
     const deviceType = faker.lorem.word() as DeviceType;
     const deviceUuid = faker.string.uuid() as Uuid;
     const cloudMessagingToken = faker.string.alphanumeric();
@@ -251,13 +225,13 @@ describe('Migration 00005_notifications', () => {
 
     // Create device with invalid device_type
     await expect(
-      sql`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken})`,
+      sql`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken})`,
     ).rejects.toThrow(
-      'new row for relation "notification_devices" violates check constraint "notification_devices_device_type_check"',
+      'new row for relation "push_notification_devices" violates check constraint "push_notification_devices_device_type_check"',
     );
   });
 
-  it('should not allow a duplicate device_uuid in notification_devices', async () => {
+  it('should not allow a duplicate device_uuid in push_notification_devices', async () => {
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
     const deviceUuid = faker.string.uuid() as Uuid;
     const cloudMessagingToken = faker.string.alphanumeric();
@@ -266,139 +240,16 @@ describe('Migration 00005_notifications', () => {
       after: async (sql: postgres.Sql) => {
         // Create device
         return sql<
-          [NotificationDevicesRow]
-        >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`;
+          [PushNotificationDevicesRow]
+        >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`;
       },
     });
 
     // Create device with duplicate device_uuid
     await expect(
-      sql`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken})`,
+      sql`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken})`,
     ).rejects.toThrow(
-      'duplicate key value violates unique constraint "notification_devices_device_uuid_key"',
-    );
-  });
-
-  it('should delete orphaned devices if there are no subscriptions associated with them', async () => {
-    const address = getAddress(faker.finance.ethereumAddress());
-    const safeAddress = getAddress(faker.finance.ethereumAddress());
-    const chainId = faker.string.numeric();
-    const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
-    const cloudMessagingToken = faker.string.alphanumeric();
-    const afterMigration = await migrator.test({
-      migration: '00005_notifications',
-      after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [account]] = await Promise.all([
-          // Create device
-          sql<
-            [NotificationDevicesRow]
-          >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-          // Get all notification channels
-          sql<
-            Array<NotificationChannelsRow>
-          >`SELECT * FROM notification_channels`,
-          // Create account
-          sql<
-            [
-              {
-                id: number;
-              },
-            ]
-          >`INSERT INTO accounts (address) VALUES (${address}) RETURNING id`,
-        ]);
-        // Create subscription
-        const [subscription] = await sql<
-          [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
-        return { device, subscription };
-      },
-    });
-
-    // Delete subscription
-    await sql`DELETE FROM notification_subscriptions WHERE id = ${afterMigration.after.subscription.id}`;
-
-    // Assert that device was deleted
-    await expect(
-      sql`SELECT * FROM notification_devices WHERE id = ${afterMigration.after.device.id}`,
-    ).resolves.toStrictEqual([]);
-  });
-
-  it('should not delete devices if there are remaining subscriptions associated with them', async () => {
-    const address = getAddress(faker.finance.ethereumAddress());
-    const safeAddress1 = getAddress(faker.finance.ethereumAddress());
-    const safeAddress2 = getAddress(faker.finance.ethereumAddress());
-    const chainId = faker.string.numeric();
-    const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
-    const cloudMessagingToken = faker.string.alphanumeric();
-    const afterMigration = await migrator.test({
-      migration: '00005_notifications',
-      after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [account]] = await Promise.all([
-          // Create device
-          sql<
-            [NotificationDevicesRow]
-          >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-          // Get all notification channels
-          sql<
-            Array<NotificationChannelsRow>
-          >`SELECT * FROM notification_channels`,
-          // Create account
-          sql<
-            [
-              {
-                id: number;
-              },
-            ]
-          >`INSERT INTO accounts (address) VALUES (${address}) RETURNING id`,
-        ]);
-        // Create first subscription
-        await sql<
-          [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress1}, ${channel.id}) RETURNING *`;
-        // Create second subscription
-        const [subscription2] = await sql<
-          [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress2}, ${channel.id}) RETURNING *`;
-        return { device, subscription2 };
-      },
-    });
-
-    // Delete subscription
-    await sql`DELETE FROM notification_subscriptions WHERE id = ${afterMigration.after.subscription2.id}`;
-
-    // Assert that device was deleted
-    await expect(
-      sql`SELECT * FROM notification_devices WHERE id = ${afterMigration.after.device.id}`,
-    ).resolves.toStrictEqual([
-      {
-        id: 1,
-        device_type: deviceType,
-        device_uuid: deviceUuid,
-        cloud_messaging_token: cloudMessagingToken,
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-      },
-    ]);
-  });
-
-  it("shouldn't allow a duplicate name in notification_channels", async () => {
-    const afterMigration = await migrator.test({
-      migration: '00005_notifications',
-      after: (sql: postgres.Sql) => {
-        // Get all notification channels
-        return sql<
-          Array<NotificationChannelsRow>
-        >`SELECT * FROM notification_channels`;
-      },
-    });
-
-    // Create channel with duplicate name
-    await expect(
-      sql`INSERT INTO notification_channels (name) VALUES (${afterMigration.after[0].name})`,
-    ).rejects.toThrow(
-      'duplicate key value violates unique constraint "notification_channels_name_key"',
+      'duplicate key value violates unique constraint "push_notification_devices_device_uuid_key"',
     );
   });
 
@@ -431,15 +282,12 @@ describe('Migration 00005_notifications', () => {
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [account]] = await Promise.all([
+        const [[device], [account]] = await Promise.all([
           // Create device
           sql<
-            [NotificationDevicesRow]
-          >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-          // Get all notification channels
-          sql<
-            Array<NotificationChannelsRow>
-          >`SELECT * FROM notification_channels`,
+            [PushNotificationDevicesRow]
+          >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
+          // Create account
           sql<
             [
               {
@@ -451,7 +299,7 @@ describe('Migration 00005_notifications', () => {
         // Create subscription
         const [subscription] = await sql<
           [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
+        >`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}) RETURNING *`;
         return { account, subscription };
       },
     });
@@ -474,15 +322,11 @@ describe('Migration 00005_notifications', () => {
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [account]] = await Promise.all([
+        const [[device], [account]] = await Promise.all([
           // Create device
           sql<
-            [NotificationDevicesRow]
-          >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-          // Get all notification channels
-          sql<
-            Array<NotificationChannelsRow>
-          >`SELECT * FROM notification_channels`,
+            [PushNotificationDevicesRow]
+          >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
           // Create account
           sql<
             [
@@ -495,13 +339,13 @@ describe('Migration 00005_notifications', () => {
         // Create subscription
         const [subscription] = await sql<
           [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
+        >`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}) RETURNING *`;
 
         return { device, subscription };
       },
     });
     // Delete device
-    await sql`DELETE FROM notification_devices WHERE id = ${afterMigration.after.device.id}`;
+    await sql`DELETE FROM push_notification_devices WHERE id = ${afterMigration.after.device.id}`;
 
     // Assert that subscription was deleted
     await expect(
@@ -509,7 +353,7 @@ describe('Migration 00005_notifications', () => {
     ).resolves.toStrictEqual([]);
   });
 
-  it('should delete the subscription if the channel is deleted', async () => {
+  it('should delete the subscription if the device is deleted', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
@@ -519,15 +363,11 @@ describe('Migration 00005_notifications', () => {
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [account]] = await Promise.all([
+        const [[device], [account]] = await Promise.all([
           // Create device
           sql<
-            [NotificationDevicesRow]
-          >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-          // Get all notification channels
-          sql<
-            Array<NotificationChannelsRow>
-          >`SELECT * FROM notification_channels`,
+            [PushNotificationDevicesRow]
+          >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
           // Create account
           sql<
             [
@@ -540,12 +380,12 @@ describe('Migration 00005_notifications', () => {
         // Create subscription
         const [subscription] = await sql<
           [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
-        return { channel, subscription };
+        >`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}) RETURNING *`;
+        return { device, subscription };
       },
     });
     // Delete channel
-    await sql`DELETE FROM notification_channels WHERE id = ${afterMigration.after.channel.id}`;
+    await sql`DELETE FROM push_notification_devices WHERE id = ${afterMigration.after.device.id}`;
 
     // Assert that subscription was deleted
     await expect(
@@ -553,7 +393,7 @@ describe('Migration 00005_notifications', () => {
     ).resolves.toStrictEqual([]);
   });
 
-  it('should prevent duplicate subscriptions (account, chain, Safe, device and channel) in notification_subscriptions', async () => {
+  it('should prevent duplicate subscriptions (account, chain, Safe address and device) in notification_subscriptions', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
@@ -563,15 +403,12 @@ describe('Migration 00005_notifications', () => {
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [account]] = await Promise.all([
+        const [[device], [account]] = await Promise.all([
           // Create device
           sql<
-            [NotificationDevicesRow]
-          >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-          // Get all notification channels
-          sql<
-            Array<NotificationChannelsRow>
-          >`SELECT * FROM notification_channels`,
+            [PushNotificationDevicesRow]
+          >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
+          // Create account
           sql<
             [
               {
@@ -583,13 +420,13 @@ describe('Migration 00005_notifications', () => {
         // Create subscription
         return sql<
           [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
+        >`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}) RETURNING *`;
       },
     });
 
     // Create duplicate subscription
     await expect(
-      sql`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${afterMigration.after[0].account_id}, ${afterMigration.after[0].device_id}, ${chainId}, ${safeAddress}, ${afterMigration.after[0].notification_channel_id})`,
+      sql`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${afterMigration.after[0].account_id}, ${afterMigration.after[0].push_notification_device_id}, ${chainId}, ${safeAddress})`,
     ).rejects.toThrow(
       'duplicate key value violates unique constraint "notification_subscriptions_account_id_chain_id_safe_address_key"',
     );
@@ -605,15 +442,11 @@ describe('Migration 00005_notifications', () => {
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [account]] = await Promise.all([
+        const [[device], [account]] = await Promise.all([
           // Create device
           sql<
-            [NotificationDevicesRow]
-          >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-          // Get all notification channels
-          sql<
-            Array<NotificationChannelsRow>
-          >`SELECT * FROM notification_channels`,
+            [PushNotificationDevicesRow]
+          >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
           // Create account
           sql<
             [
@@ -626,7 +459,7 @@ describe('Migration 00005_notifications', () => {
         // Create subscription
         return sql<
           [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
+        >`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}) RETURNING *`;
       },
     });
 
@@ -634,10 +467,9 @@ describe('Migration 00005_notifications', () => {
       {
         id: 1,
         account_id: 1,
-        device_id: 1,
+        push_notification_device_id: 1,
         chain_id: chainId,
         safe_address: safeAddress,
-        notification_channel_id: 1,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       },
@@ -646,18 +478,17 @@ describe('Migration 00005_notifications', () => {
     const newSafeAddress = getAddress(faker.finance.ethereumAddress());
     // Update subscription with new safe_address
     const afterUpdate = await sql<
-      [NotificationDevicesRow]
+      [PushNotificationDevicesRow]
     >`UPDATE notification_subscriptions SET safe_address = ${newSafeAddress} WHERE id = ${afterMigration.after[0].id} RETURNING *`;
 
     expect(afterUpdate).toStrictEqual([
       {
         id: afterMigration.after[0].id,
         account_id: afterMigration.after[0].account_id,
-        device_id: afterMigration.after[0].device_id,
+        push_notification_device_id:
+          afterMigration.after[0].push_notification_device_id,
         chain_id: afterMigration.after[0].chain_id,
         safe_address: newSafeAddress,
-        notification_channel_id:
-          afterMigration.after[0].notification_channel_id,
         // created_at should have remained the same
         created_at: afterMigration.after[0].created_at,
         updated_at: expect.any(Date),
@@ -679,30 +510,25 @@ describe('Migration 00005_notifications', () => {
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [notificationType], [account]] =
-          await Promise.all([
-            // Create device
-            sql<
-              [NotificationDevicesRow]
-            >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-            // Get all notification channels
-            sql<
-              Array<NotificationChannelsRow>
-            >`SELECT * FROM notification_channels`,
-            // Get all notification types
-            sql<Array<NotificationTypesRow>>`SELECT * FROM notification_types`,
-            sql<
-              [
-                {
-                  id: number;
-                },
-              ]
-            >`INSERT INTO accounts (address) VALUES (${address}) RETURNING id`,
-          ]);
+        const [[device], [notificationType], [account]] = await Promise.all([
+          // Create device
+          sql<
+            [PushNotificationDevicesRow]
+          >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
+          // Get all notification types
+          sql<Array<NotificationTypesRow>>`SELECT * FROM notification_types`,
+          sql<
+            [
+              {
+                id: number;
+              },
+            ]
+          >`INSERT INTO accounts (address) VALUES (${address}) RETURNING id`,
+        ]);
         // Create subscription
         const [subscription] = await sql<
           [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
+        >`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}) RETURNING *`;
         // Subscribe to notification type
         const [subscribedNotificationType] = await sql<
           [NotificationSubscriptionNotificationTypesRow]
@@ -729,31 +555,26 @@ describe('Migration 00005_notifications', () => {
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [notificationType], [account]] =
-          await Promise.all([
-            // Create device
-            sql<
-              [NotificationDevicesRow]
-            >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-            // Get all notification channels
-            sql<
-              Array<NotificationChannelsRow>
-            >`SELECT * FROM notification_channels`,
-            // Get all notification types
-            sql<Array<NotificationTypesRow>>`SELECT * FROM notification_types`,
-            // Create account
-            sql<
-              [
-                {
-                  id: number;
-                },
-              ]
-            >`INSERT INTO accounts (address) VALUES (${address}) RETURNING id`,
-          ]);
+        const [[device], [notificationType], [account]] = await Promise.all([
+          // Create device
+          sql<
+            [PushNotificationDevicesRow]
+          >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
+          // Get all notification types
+          sql<Array<NotificationTypesRow>>`SELECT * FROM notification_types`,
+          // Create account
+          sql<
+            [
+              {
+                id: number;
+              },
+            ]
+          >`INSERT INTO accounts (address) VALUES (${address}) RETURNING id`,
+        ]);
         // Create subscription
         const [subscription] = await sql<
           [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
+        >`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}) RETURNING *`;
         // Subscribe to notification type
         const [subscribedNotificationType] = await sql<
           [NotificationSubscriptionNotificationTypesRow]
@@ -780,31 +601,26 @@ describe('Migration 00005_notifications', () => {
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
       after: async (sql: postgres.Sql) => {
-        const [[device], [channel], [notificationType], [account]] =
-          await Promise.all([
-            // Create device
-            sql<
-              [NotificationDevicesRow]
-            >`INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
-            // Get all notification channels
-            sql<
-              Array<NotificationChannelsRow>
-            >`SELECT * FROM notification_channels`,
-            // Get all notification types
-            sql<Array<NotificationTypesRow>>`SELECT * FROM notification_types`,
-            // Create account
-            sql<
-              [
-                {
-                  id: number;
-                },
-              ]
-            >`INSERT INTO accounts (address) VALUES (${address}) RETURNING id`,
-          ]);
+        const [[device], [notificationType], [account]] = await Promise.all([
+          // Create device
+          sql<
+            [PushNotificationDevicesRow]
+          >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`,
+          // Get all notification types
+          sql<Array<NotificationTypesRow>>`SELECT * FROM notification_types`,
+          // Create account
+          sql<
+            [
+              {
+                id: number;
+              },
+            ]
+          >`INSERT INTO accounts (address) VALUES (${address}) RETURNING id`,
+        ]);
         // Create subscription
         const [subscription] = await sql<
           [NotificationSubscriptionsRow]
-        >`INSERT INTO notification_subscriptions (account_id, device_id, chain_id, safe_address, notification_channel_id) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}, ${channel.id}) RETURNING *`;
+        >`INSERT INTO notification_subscriptions (account_id, push_notification_device_id, chain_id, safe_address) VALUES (${account.id}, ${device.id}, ${chainId}, ${safeAddress}) RETURNING *`;
         // Subscribe to notification type
         return sql<
           [NotificationSubscriptionNotificationTypesRow]

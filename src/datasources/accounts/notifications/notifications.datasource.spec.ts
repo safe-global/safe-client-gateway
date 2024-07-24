@@ -5,7 +5,6 @@ import { upsertSubscriptionsDtoBuilder } from '@/datasources/accounts/notificati
 import { NotificationsDatasource } from '@/datasources/accounts/notifications/notifications.datasource';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
-import { NotificationChannel } from '@/domain/notifications/entities-v2/notification-channel.entity';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
 import { ILoggingService } from '@/logging/logging.interface';
@@ -53,8 +52,8 @@ describe('NotificationsDatasource', () => {
   });
 
   afterEach(async () => {
-    // Don't truncate notification_channels or notification_types as they have predefined rows
-    await sql`TRUNCATE TABLE accounts, notification_devices, notification_subscriptions, notification_subscription_notification_types RESTART IDENTITY CASCADE`;
+    // Don't truncate notification_types as it has predefined rows
+    await sql`TRUNCATE TABLE accounts, push_notification_devices, notification_subscriptions, notification_subscription_notification_types RESTART IDENTITY CASCADE`;
   });
 
   afterAll(async () => {
@@ -75,8 +74,7 @@ describe('NotificationsDatasource', () => {
       // Ensure correct database structure
       await Promise.all([
         sql`SELECT * FROM accounts`,
-        sql`SELECT * FROM notification_devices`,
-        sql`SELECT * FROM notification_channels`,
+        sql`SELECT * FROM push_notification_devices`,
         sql`SELECT * FROM notification_types`,
         sql`SELECT * FROM notification_subscriptions`,
         sql`SELECT * FROM notification_subscription_notification_types`,
@@ -84,7 +82,6 @@ describe('NotificationsDatasource', () => {
         ([
           accounts,
           devices,
-          channels,
           types,
           subscriptions,
           subscribedNotifications,
@@ -108,12 +105,6 @@ describe('NotificationsDatasource', () => {
               updated_at: expect.any(Date),
             },
           ]);
-          expect(channels).toStrictEqual([
-            {
-              id: 1,
-              name: NotificationChannel.PUSH_NOTIFICATIONS,
-            },
-          ]);
           expect(types).toStrictEqual(
             Object.values(NotificationType).map((type) => {
               return {
@@ -127,10 +118,9 @@ describe('NotificationsDatasource', () => {
               return {
                 id: i + 1,
                 account_id: accounts[0].id,
-                device_id: devices[0].id,
+                push_notification_device_id: devices[0].id,
                 chain_id: safe.chainId,
                 safe_address: safe.address,
-                notification_channel_id: 1,
                 created_at: expect.any(Date),
                 updated_at: expect.any(Date),
               };
@@ -154,29 +144,28 @@ describe('NotificationsDatasource', () => {
       );
     });
 
-    it('should always update the cloud messaging token', async () => {
+    it('should always update the deviceType/cloudMessagingToken', async () => {
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-      const newCloudMessagingToken =
-        upsertSubscriptionsDtoBuilder().build().cloudMessagingToken;
+      const secondSubscriptionsDto = upsertSubscriptionsDtoBuilder()
+        .with('account', upsertSubscriptionsDto.account)
+        .with('deviceUuid', upsertSubscriptionsDto.deviceUuid)
+        .build();
       await accountsDatasource.createAccount(upsertSubscriptionsDto.account);
       await target.upsertSubscriptions(upsertSubscriptionsDto);
 
       // Insert should not throw despite it being the same device UUID
       await expect(
-        target.upsertSubscriptions({
-          ...upsertSubscriptionsDto,
-          cloudMessagingToken: newCloudMessagingToken,
-        }),
+        target.upsertSubscriptions(secondSubscriptionsDto),
       ).resolves.not.toThrow();
       // Device UUID should have updated
       await expect(
-        sql`SELECT * FROM notification_devices`,
+        sql`SELECT * FROM push_notification_devices`,
       ).resolves.toStrictEqual([
         {
           id: 1,
-          device_type: upsertSubscriptionsDto.deviceType,
+          device_type: secondSubscriptionsDto.deviceType,
           device_uuid: expect.any(String),
-          cloud_messaging_token: newCloudMessagingToken,
+          cloud_messaging_token: secondSubscriptionsDto.cloudMessagingToken,
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
         },
@@ -245,8 +234,7 @@ describe('NotificationsDatasource', () => {
       // Ensure correct database structure
       await Promise.all([
         sql`SELECT * FROM accounts`,
-        sql`SELECT * FROM notification_devices`,
-        sql`SELECT * FROM notification_channels`,
+        sql`SELECT * FROM push_notification_devices`,
         sql`SELECT * FROM notification_types`,
         sql`SELECT * FROM notification_subscriptions`,
         sql`SELECT * FROM notification_subscription_notification_types`,
@@ -254,7 +242,6 @@ describe('NotificationsDatasource', () => {
         ([
           accounts,
           devices,
-          channels,
           types,
           subscriptions,
           subscribedNotifications,
@@ -286,12 +273,6 @@ describe('NotificationsDatasource', () => {
               updated_at: expect.any(Date),
             },
           ]);
-          expect(channels).toStrictEqual([
-            {
-              id: 1,
-              name: NotificationChannel.PUSH_NOTIFICATIONS,
-            },
-          ]);
           expect(types).toStrictEqual(
             Object.values(NotificationType).map((type) => {
               return {
@@ -306,10 +287,9 @@ describe('NotificationsDatasource', () => {
                 return {
                   id: i + 1,
                   account_id: accounts[0].id,
-                  device_id: devices[0].id,
+                  push_notification_device_id: devices[0].id,
                   chain_id: safe.chainId,
                   safe_address: safe.address,
-                  notification_channel_id: 1,
                   created_at: expect.any(Date),
                   updated_at: expect.any(Date),
                 };
@@ -319,10 +299,9 @@ describe('NotificationsDatasource', () => {
                   return {
                     id: upsertSubscriptionsDto.safes.length + i + 1,
                     account_id: accounts[0].id,
-                    device_id: devices[1].id,
+                    push_notification_device_id: devices[1].id,
                     chain_id: safe.chainId,
                     safe_address: safe.address,
-                    notification_channel_id: 1,
                     created_at: expect.any(Date),
                     updated_at: expect.any(Date),
                   };
@@ -365,10 +344,10 @@ describe('NotificationsDatasource', () => {
   describe('getSafeSubscription', () => {
     it('should return a subscription for a Safe', async () => {
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-      const safe = upsertSubscriptionsDto.safes[0];
       await accountsDatasource.createAccount(upsertSubscriptionsDto.account);
       await target.upsertSubscriptions(upsertSubscriptionsDto);
 
+      const safe = upsertSubscriptionsDto.safes[0];
       await expect(
         target.getSafeSubscription({
           account: upsertSubscriptionsDto.account,
@@ -386,7 +365,6 @@ describe('NotificationsDatasource', () => {
       const secondUpsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
         .with('safes', upsertSubscriptionsDto.safes)
         .build();
-      const safe = upsertSubscriptionsDto.safes[0];
       await accountsDatasource.createAccount(upsertSubscriptionsDto.account);
       await accountsDatasource.createAccount(
         secondUpsertSubscriptionsDto.account,
@@ -394,6 +372,7 @@ describe('NotificationsDatasource', () => {
       await target.upsertSubscriptions(upsertSubscriptionsDto);
       await target.upsertSubscriptions(secondUpsertSubscriptionsDto);
 
+      const safe = upsertSubscriptionsDto.safes[0];
       await expect(
         target.getSubscribersWithTokensBySafe({
           chainId: safe.chainId,
@@ -413,14 +392,24 @@ describe('NotificationsDatasource', () => {
   });
 
   describe('deleteSubscription', () => {
-    it('should delete a subscription', async () => {
-      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-      const safe = upsertSubscriptionsDto.safes[0];
+    it('should delete a subscription and orphaned device', async () => {
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
+        .with('safes', [
+          {
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+            notificationTypes: faker.helpers.arrayElements(
+              Object.values(NotificationType),
+            ),
+          },
+        ])
+        .build();
       const account = await accountsDatasource.createAccount(
         upsertSubscriptionsDto.account,
       );
       await target.upsertSubscriptions(upsertSubscriptionsDto);
 
+      const safe = upsertSubscriptionsDto.safes[0];
       await target.deleteSubscription({
         account: upsertSubscriptionsDto.account,
         deviceUuid: upsertSubscriptionsDto.deviceUuid!,
@@ -430,6 +419,9 @@ describe('NotificationsDatasource', () => {
 
       await expect(
         sql`SELECT * FROM notification_subscriptions WHERE account_id = ${account.id} AND chain_id = ${safe.chainId} AND safe_address = ${safe.address}`,
+      ).resolves.toStrictEqual([]);
+      await expect(
+        sql`SELECT * FROM push_notification_devices WHERE device_uuid = ${upsertSubscriptionsDto.deviceUuid!}`,
       ).resolves.toStrictEqual([]);
     });
 
@@ -450,11 +442,11 @@ describe('NotificationsDatasource', () => {
         ...upsertSubscriptionsDto,
         deviceUuid: secondDeviceUuid,
       };
-      const safe = upsertSubscriptionsDto.safes[0];
       await accountsDatasource.createAccount(upsertSubscriptionsDto.account);
       await target.upsertSubscriptions(upsertSubscriptionsDto);
       await target.upsertSubscriptions(secondUpsertSubscriptionsDto);
 
+      const safe = upsertSubscriptionsDto.safes[0];
       await target.deleteSubscription({
         account: upsertSubscriptionsDto.account,
         deviceUuid: upsertSubscriptionsDto.deviceUuid!,
@@ -469,10 +461,54 @@ describe('NotificationsDatasource', () => {
         {
           id: 2,
           account_id: 1,
-          device_id: 2,
+          push_notification_device_id: 2,
           chain_id: safe.chainId,
           safe_address: safe.address,
-          notification_channel_id: 1,
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        },
+      ]);
+    });
+
+    it('should not delete devices with other subscriptions', async () => {
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
+        .with('safes', [
+          {
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+            notificationTypes: faker.helpers.arrayElements(
+              Object.values(NotificationType),
+            ),
+          },
+          {
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+            notificationTypes: faker.helpers.arrayElements(
+              Object.values(NotificationType),
+            ),
+          },
+        ])
+        .build();
+      await accountsDatasource.createAccount(upsertSubscriptionsDto.account);
+      await target.upsertSubscriptions(upsertSubscriptionsDto);
+
+      const safe = upsertSubscriptionsDto.safes[0];
+      await target.deleteSubscription({
+        account: upsertSubscriptionsDto.account,
+        deviceUuid: upsertSubscriptionsDto.deviceUuid!,
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+      });
+
+      // Device should not have been deleted
+      await expect(
+        sql`SELECT * FROM push_notification_devices`,
+      ).resolves.toStrictEqual([
+        {
+          id: 1,
+          device_type: upsertSubscriptionsDto.deviceType,
+          device_uuid: upsertSubscriptionsDto.deviceUuid,
+          cloud_messaging_token: upsertSubscriptionsDto.cloudMessagingToken,
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
         },

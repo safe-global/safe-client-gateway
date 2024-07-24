@@ -11,7 +11,6 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
-import { NotificationChannel as DomainNotificationChannel } from '@/domain/notifications/entities-v2/notification-channel.entity';
 import { UpsertSubscriptionsDto } from '@/datasources/accounts/notifications/entities/upsert-subscriptions.dto.entity';
 
 @Injectable()
@@ -38,30 +37,23 @@ export class NotificationsDatasource implements INotificationsDatasource {
    * @returns Device UUID
    */
   async upsertSubscriptions(
-    args: UpsertSubscriptionsDto,
+    upsertSubscriptionsDto: UpsertSubscriptionsDto,
   ): Promise<{ deviceUuid: Uuid }> {
-    const account = await this.accountsDatasource.getAccount(args.account);
-    const deviceUuid = args.deviceUuid ?? crypto.randomUUID();
+    const account = await this.accountsDatasource.getAccount(
+      upsertSubscriptionsDto.account,
+    );
+    const deviceUuid = upsertSubscriptionsDto.deviceUuid ?? crypto.randomUUID();
 
     await this.sql.begin(async (sql) => {
-      // Get the push notifications channel
-      const [channel] = await sql<[{ id: number }]>`
-        SELECT id FROM notification_channels
-        WHERE name = ${DomainNotificationChannel.PUSH_NOTIFICATIONS}
-      `.catch((e) => {
-        const error = 'Error getting channel';
-        this.loggingService.info(`${error}: ${asError(e).message}`);
-        throw new NotFoundException(error);
-      });
-
-      // Insert (or update the cloud messaging token of) a device
+      // Insert (or update the type/cloud messaging token of) a device
       const [device] = await sql<[{ id: number }]>`
-        INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token)
-        VALUES (${args.deviceType}, ${deviceUuid}, ${args.cloudMessagingToken})
+        INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token)
+        VALUES (${upsertSubscriptionsDto.deviceType}, ${deviceUuid}, ${upsertSubscriptionsDto.cloudMessagingToken})
         ON CONFLICT (device_uuid)
         DO UPDATE SET
           cloud_messaging_token = EXCLUDED.cloud_messaging_token,
-          -- Throws if updated_at is not set
+          device_type = EXCLUDED.device_type,
+          -- If updated_at is not set ON CONFLICT, an error is thrown meaning nothing is returned
           updated_at = NOW()
         RETURNING id
       `.catch((e) => {
@@ -72,14 +64,14 @@ export class NotificationsDatasource implements INotificationsDatasource {
 
       // For each Safe, upsert the subscription and overwrite the subscribed-to notification types
       await Promise.all(
-        args.safes.map(async (safe) => {
+        upsertSubscriptionsDto.safes.map(async (safe) => {
           try {
             // 1. Upsert subscription
             const [subscription] = await sql<[{ id: number }]>`
-              INSERT INTO notification_subscriptions (account_id, chain_id, safe_address, device_id, notification_channel_id)
-              VALUES (${account.id}, ${safe.chainId}, ${safe.address}, ${device.id}, ${channel.id})
-              ON CONFLICT (account_id, chain_id, safe_address, device_id, notification_channel_id)
-                -- A field must be set to return the id
+              INSERT INTO notification_subscriptions (account_id, chain_id, safe_address, push_notification_device_id)
+              VALUES (${account.id}, ${safe.chainId}, ${safe.address}, ${device.id})
+              ON CONFLICT (account_id, chain_id, safe_address, push_notification_device_id)
+                -- If no value is set ON CONFLICT, an error is thrown meaning nothing is returned
                 DO UPDATE SET updated_at = NOW()
               RETURNING id
             `;
@@ -130,13 +122,13 @@ export class NotificationsDatasource implements INotificationsDatasource {
     >`
       SELECT nt.name 
       FROM notification_subscriptions ns
-      JOIN notification_devices nd ON ns.device_id = nd.id
+      JOIN push_notification_devices pnd ON ns.push_notification_device_id = pnd.id
       JOIN notification_subscription_notification_types nsnt ON ns.id = nsnt.notification_subscription_id
       JOIN notification_types nt ON nsnt.notification_type_id = nt.id
       WHERE ns.account_id = ${account.id}
         AND ns.chain_id = ${args.chainId}
         AND ns.safe_address = ${args.safeAddress}
-        AND nd.device_uuid = ${args.deviceUuid}
+        AND pnd.device_uuid = ${args.deviceUuid}
     `.catch((e) => {
       const error = 'Error getting subscription or notification types';
       this.loggingService.info(`${error}: ${asError(e).message}`);
@@ -166,10 +158,10 @@ export class NotificationsDatasource implements INotificationsDatasource {
     const subscribers = await this.sql<
       Array<{ address: `0x${string}`; cloud_messaging_token: string }>
     >`
-      SELECT a.address, nd.cloud_messaging_token
+      SELECT a.address, pnd.cloud_messaging_token
       FROM notification_subscriptions ns
       JOIN accounts a ON ns.account_id = a.id
-      JOIN notification_devices nd ON ns.device_id = nd.id
+      JOIN push_notification_devices pnd ON ns.push_notification_device_id = pnd.id
       WHERE ns.chain_id = ${args.chainId}
         AND ns.safe_address = ${args.safeAddress}
     `.catch((e) => {
@@ -200,19 +192,43 @@ export class NotificationsDatasource implements INotificationsDatasource {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void> {
-    await this.sql`
-      DELETE FROM notification_subscriptions ns
-      USING accounts a, notification_devices nd
-      WHERE ns.account_id = a.id
-        AND ns.device_id = nd.id
-        AND a.address = ${args.account}
-        AND nd.device_uuid = ${args.deviceUuid}
-        AND ns.chain_id = ${args.chainId}
-        AND ns.safe_address = ${args.safeAddress}
-    `.catch((e) => {
-      const error = 'Error deleting subscription';
-      this.loggingService.info(`${error}: ${asError(e).message}`);
-      throw new UnprocessableEntityException(error);
+    await this.sql.begin(async (sql) => {
+      try {
+        // 1. Delete the subscription and return device ID
+        const [deletedSubscription] = await sql<
+          [{ push_notification_device_id: number }]
+        >`
+          DELETE FROM notification_subscriptions ns
+          USING accounts a, push_notification_devices pnd
+          WHERE ns.account_id = a.id
+            AND ns.push_notification_device_id = pnd.id
+            AND a.address = ${args.account}
+            AND pnd.device_uuid = ${args.deviceUuid}
+            AND ns.chain_id = ${args.chainId}
+            AND ns.safe_address = ${args.safeAddress}
+          RETURNING ns.push_notification_device_id;
+        `;
+
+        // 2. Check if there any remaining subscriptions for device
+        const remainingSubscriptions = await sql`
+          SELECT 1
+          FROM notification_subscriptions
+          WHERE push_notification_device_id = ${deletedSubscription.push_notification_device_id}
+        `;
+
+        // 3. If no subscriptions, delete orphaned device
+        if (remainingSubscriptions.length === 0) {
+          // Note: we can't use this.deleteDevice here as we are in a transaction
+          await sql`
+            DELETE FROM push_notification_devices
+            WHERE device_uuid = ${args.deviceUuid}
+          `;
+        }
+      } catch (e) {
+        const error = 'Error deleting subscription';
+        this.loggingService.info(`${error}: ${asError(e).message}`);
+        throw new NotFoundException(error);
+      }
     });
   }
 
@@ -223,7 +239,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
    */
   async deleteDevice(deviceUuid: Uuid): Promise<void> {
     await this.sql`
-      DELETE FROM notification_devices
+      DELETE FROM push_notification_devices
       WHERE device_uuid = ${deviceUuid}
     `.catch((e) => {
       const error = 'Error deleting device';

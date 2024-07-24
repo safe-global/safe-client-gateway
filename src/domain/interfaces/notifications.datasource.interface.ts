@@ -5,7 +5,7 @@ import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
 export const INotificationsDatasource = Symbol('INotificationsDatasource');
 
 export interface INotificationsDatasource {
-  upsertSubscriptions(args: UpsertSubscriptionsDto): Promise<{
+  upsertSubscriptions(upsertSubscriptionsDto: UpsertSubscriptionsDto): Promise<{
     deviceUuid: Uuid;
   }>;
 
