@@ -5,13 +5,11 @@ DROP TABLE IF EXISTS notification_devices, notification_channels, notification_t
 ---------------------------------------------------
 CREATE TABLE notification_devices (
     id SERIAL PRIMARY KEY,
-    account_id INT NOT NULL,
     device_type VARCHAR(255) CHECK (device_type IN ('ANDROID', 'IOS', 'WEB')) NOT NULL,
     device_uuid UUID NOT NULL UNIQUE,
     cloud_messaging_token VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- Update updated_at when device is updated to track validity of token
@@ -24,6 +22,17 @@ CREATE TABLE notification_channels (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE
 );
+
+-- Function to delete orphaned devices (called at bottom as depends on notification_subscriptions)
+CREATE OR REPLACE FUNCTION delete_orphaned_devices()
+RETURNS TRIGGER AS $$
+BEGIN
+    DELETE FROM notification_devices
+    WHERE id NOT IN (SELECT device_id FROM notification_subscriptions);
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
 
 ----------------------------------------------------
 -- Notification channels, e.g. PUSH_NOTIFICATIONS --
@@ -81,3 +90,9 @@ CREATE TABLE notification_subscription_notification_types (
     FOREIGN KEY (notification_type_id) REFERENCES notification_types(id) ON DELETE CASCADE,
     UNIQUE(notification_subscription_id, notification_type_id)
 );
+
+-- Delete orphaned devices after a subscription is deleted
+CREATE TRIGGER after_delete_notification_subscriptions
+AFTER DELETE ON notification_subscriptions
+FOR EACH ROW
+EXECUTE FUNCTION delete_orphaned_devices();

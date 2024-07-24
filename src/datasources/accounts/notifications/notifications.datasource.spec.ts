@@ -101,7 +101,6 @@ describe('NotificationsDatasource', () => {
           expect(devices).toStrictEqual([
             {
               id: 1,
-              account_id: accounts[0].id,
               device_type: upsertSubscriptionsDto.deviceType,
               device_uuid: actual.deviceUuid,
               cloud_messaging_token: upsertSubscriptionsDto.cloudMessagingToken,
@@ -175,7 +174,6 @@ describe('NotificationsDatasource', () => {
       ).resolves.toStrictEqual([
         {
           id: 1,
-          account_id: 1,
           device_type: upsertSubscriptionsDto.deviceType,
           device_uuid: expect.any(String),
           cloud_messaging_token: newCloudMessagingToken,
@@ -273,7 +271,6 @@ describe('NotificationsDatasource', () => {
           expect(devices).toStrictEqual([
             {
               id: 1,
-              account_id: accounts[0].id,
               device_type: upsertSubscriptionsDto.deviceType,
               device_uuid: upsertSubscriptionsDto.deviceUuid,
               cloud_messaging_token: upsertSubscriptionsDto.cloudMessagingToken,
@@ -282,7 +279,6 @@ describe('NotificationsDatasource', () => {
             },
             {
               id: 2,
-              account_id: accounts[0].id,
               device_type: upsertSubscriptionsDto.deviceType,
               device_uuid: secondDeviceUuid,
               cloud_messaging_token: upsertSubscriptionsDto.cloudMessagingToken,

@@ -56,8 +56,8 @@ export class NotificationsDatasource implements INotificationsDatasource {
 
       // Insert (or update the cloud messaging token of) a device
       const [device] = await sql<[{ id: number }]>`
-        INSERT INTO notification_devices (account_id, device_type, device_uuid, cloud_messaging_token)
-        VALUES (${account.id}, ${args.deviceType}, ${deviceUuid}, ${args.cloudMessagingToken})
+        INSERT INTO notification_devices (device_type, device_uuid, cloud_messaging_token)
+        VALUES (${args.deviceType}, ${deviceUuid}, ${args.cloudMessagingToken})
         ON CONFLICT (device_uuid)
         DO UPDATE SET
           cloud_messaging_token = EXCLUDED.cloud_messaging_token,
