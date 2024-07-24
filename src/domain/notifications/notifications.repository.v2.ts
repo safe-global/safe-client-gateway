@@ -99,6 +99,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
 
   deleteSubscription(args: {
     account: `0x${string}`;
+    deviceUuid: Uuid;
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void> {

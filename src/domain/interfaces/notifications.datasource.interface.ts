@@ -26,16 +26,6 @@ export interface INotificationsDatasource {
     }>
   >;
 
-  getSubscribersWithTokensBySafe(args: {
-    chainId: string;
-    safeAddress: `0x${string}`;
-  }): Promise<
-    Array<{
-      subscriber: `0x${string}`;
-      cloudMessagingToken: string;
-    }>
-  >;
-
   deleteSubscription(args: {
     account: `0x${string}`;
     deviceUuid: Uuid;
