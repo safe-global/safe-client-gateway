@@ -10,7 +10,7 @@ import { NotificationType } from '@/domain/notifications/entities-v2/notificatio
 export function upsertSubscriptionsDtoBuilder(): IBuilder<UpsertSubscriptionsDto> {
   return new Builder<UpsertSubscriptionsDto>()
     .with('account', getAddress(faker.finance.ethereumAddress()))
-    .with('cloudMessagingToken', faker.string.alphanumeric())
+    .with('cloudMessagingToken', faker.string.alphanumeric({ length: 10 }))
     .with('deviceType', faker.helpers.arrayElement(Object.values(DeviceType)))
     .with('deviceUuid', faker.string.uuid() as Uuid)
     .with(

@@ -12,13 +12,24 @@ export interface INotificationsDatasource {
   getSafeSubscription(args: {
     account: `0x${string}`;
     deviceUuid: Uuid;
-    chainId: `0x${string}`;
+    chainId: string;
     safeAddress: `0x${string}`;
-  }): Promise<Record<NotificationType, boolean>>;
+  }): Promise<Array<NotificationType>>;
+
+  getSubscribersWithTokensBySafe(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<
+    Array<{
+      subscriber: `0x${string}`;
+      cloudMessagingToken: string;
+    }>
+  >;
 
   deleteSubscription(args: {
     account: `0x${string}`;
-    chainId: `0x${string}`;
+    deviceUuid: Uuid;
+    chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void>;
 
