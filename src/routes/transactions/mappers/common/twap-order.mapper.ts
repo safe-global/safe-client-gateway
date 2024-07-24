@@ -28,6 +28,7 @@ import {
   SwapAppsHelper,
   SwapAppsHelperModule,
 } from '@/routes/transactions/helpers/swap-apps.helper';
+import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 
 @Injectable()
 export class TwapOrderMapper {
@@ -99,52 +100,28 @@ export class TwapOrderMapper {
         : twapParts
       : [];
 
-    const orders: Array<KnownOrder> = [];
+    const orders = await this.getOrdersForParts({
+      partsToFetch,
+      chainId,
+      safeAddress,
+    });
 
-    for (const part of partsToFetch) {
-      const partFullAppData = await this.swapsRepository.getFullAppData(
-        chainId,
-        part.appData,
-      );
-
-      if (!this.swapAppsHelper.isAppAllowed(partFullAppData)) {
-        throw new Error(
-          `Unsupported App: ${partFullAppData.fullAppData?.appCode}`,
-        );
-      }
-
-      const orderUid = this.gpv2OrderHelper.computeOrderUid({
-        chainId,
-        owner: safeAddress,
-        order: part,
-      });
-      const order = await this.swapsRepository
-        .getOrder(chainId, orderUid)
-        .catch(() => {
-          this.loggingService.warn(
-            `Error getting orderUid ${orderUid} from SwapsRepository`,
-          );
-        });
-
-      if (!order || order.kind == OrderKind.Unknown) {
-        continue;
-      }
-
-      if (!this.swapAppsHelper.isAppAllowed(order)) {
-        throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
-      }
-
-      orders.push(order as KnownOrder);
-    }
+    const status = !orders ? OrderStatus.Unknown : this.getOrderStatus(orders);
 
     const executedSellAmount: TwapOrderInfo['executedSellAmount'] =
-      hasAbundantParts ? null : this.getExecutedSellAmount(orders).toString();
+      hasAbundantParts || !orders
+        ? null
+        : this.getExecutedSellAmount(orders).toString();
 
     const executedBuyAmount: TwapOrderInfo['executedBuyAmount'] =
-      hasAbundantParts ? null : this.getExecutedBuyAmount(orders).toString();
+      hasAbundantParts || !orders
+        ? null
+        : this.getExecutedBuyAmount(orders).toString();
 
     const executedSurplusFee: TwapOrderInfo['executedSurplusFee'] =
-      hasAbundantParts ? null : this.getExecutedSurplusFee(orders).toString();
+      hasAbundantParts || !orders
+        ? null
+        : this.getExecutedSurplusFee(orders).toString();
 
     const [sellToken, buyToken] = await Promise.all([
       this.swapOrderHelper.getToken({
@@ -158,7 +135,7 @@ export class TwapOrderMapper {
     ]);
 
     return new TwapOrderTransactionInfo({
-      status: this.getOrderStatus(orders),
+      status,
       kind: twapOrderData.kind,
       class: twapOrderData.class,
       validUntil: Math.max(...twapParts.map((order) => order.validTo)),
@@ -193,6 +170,53 @@ export class TwapOrderMapper {
       durationOfPart: twapOrderData.durationOfPart,
       startTime: twapOrderData.startTime,
     });
+  }
+
+  private async getOrdersForParts(args: {
+    partsToFetch: Array<GPv2OrderParameters>;
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<Array<KnownOrder> | null> {
+    const orders: Array<KnownOrder> = [];
+
+    for (const part of args.partsToFetch) {
+      const partFullAppData = await this.swapsRepository.getFullAppData(
+        args.chainId,
+        part.appData,
+      );
+
+      if (!this.swapAppsHelper.isAppAllowed(partFullAppData)) {
+        throw new Error(
+          `Unsupported App: ${partFullAppData.fullAppData?.appCode}`,
+        );
+      }
+
+      const orderUid = this.gpv2OrderHelper.computeOrderUid({
+        chainId: args.chainId,
+        owner: args.safeAddress,
+        order: part,
+      });
+      const order = await this.swapsRepository
+        .getOrder(args.chainId, orderUid)
+        .catch(() => {
+          this.loggingService.warn(
+            `Error getting orderUid ${orderUid} from SwapsRepository`,
+          );
+        });
+
+      if (!order || order.kind == OrderKind.Unknown) {
+        // Without every order it's not possible to determine status or executed amounts/fees
+        return null;
+      }
+
+      if (!this.swapAppsHelper.isAppAllowed(order)) {
+        throw new Error(`Unsupported App: ${order.fullAppData?.appCode}`);
+      }
+
+      orders.push(order as KnownOrder);
+    }
+
+    return orders;
   }
 
   private getOrderStatus(
