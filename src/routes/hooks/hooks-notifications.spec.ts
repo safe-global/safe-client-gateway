@@ -50,7 +50,6 @@ import { messageBuilder } from '@/domain/messages/entities/__tests__/message.bui
 import { messageCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/message-created.builder';
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
-import { NotificationsRepositoryV2Module } from '@/domain/notifications/notifications.repository.v2.interface';
 
 describe('Post Hook Events for Notifications (Unit)', () => {
   let app: INestApplication<Server>;
@@ -166,7 +165,6 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       );
     });
   });
-
   it.each(
     [
       incomingEtherEventBuilder().build(),
@@ -678,7 +676,48 @@ describe('Post Hook Events for Notifications (Unit)', () => {
     expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
   });
 
-  it.todo('should cleanup unregistered tokens');
+  it('should cleanup unregistered tokens', async () => {
+    // Events that are notified "as is" for simplicity
+    const event = faker.helpers.arrayElement([
+      deletedMultisigTransactionEventBuilder().build(),
+      executedTransactionEventBuilder().build(),
+      moduleTransactionEventBuilder().build(),
+    ]);
+    const subscribers = Array.from(
+      {
+        length: faker.number.int({ min: 2, max: 5 }),
+      },
+      () => ({
+        subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as Uuid,
+        cloudMessagingToken: faker.string.alphanumeric(),
+      }),
+    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
+
+    pushNotificationsApi.enqueueNotification
+      // Specific error regarding unregistered/stale tokens
+      // @see https://firebase.google.com/docs/cloud-messaging/send-message#rest
+      .mockRejectedValueOnce({
+        code: 404,
+        message: faker.lorem.words(),
+        status: 'UNREGISTERED',
+        details: [],
+      })
+      .mockResolvedValue();
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(event)
+      .expect(202);
+
+    expect(notificationsDatasource.deleteDevice).toHaveBeenCalledTimes(1);
+    expect(notificationsDatasource.deleteDevice).toHaveBeenNthCalledWith(
+      1,
+      subscribers[0].deviceUuid,
+    );
+  });
 
   it('should not fail to send all notifications if one throws', async () => {
     const events = [

@@ -381,10 +381,12 @@ describe('NotificationsDatasource', () => {
       ).resolves.toStrictEqual([
         {
           subscriber: upsertSubscriptionsDto.account,
+          deviceUuid: upsertSubscriptionsDto.deviceUuid!,
           cloudMessagingToken: upsertSubscriptionsDto.cloudMessagingToken,
         },
         {
           subscriber: secondUpsertSubscriptionsDto.account,
+          deviceUuid: secondUpsertSubscriptionsDto.deviceUuid!,
           cloudMessagingToken: secondUpsertSubscriptionsDto.cloudMessagingToken,
         },
       ]);

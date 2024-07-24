@@ -1,9 +1,11 @@
-import configuration from '@/config/entities/configuration';
 import { BalancesRepositoryModule } from '@/domain/balances/balances.repository.interface';
 import { BlockchainRepositoryModule } from '@/domain/blockchain/blockchain.repository.interface';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { CollectiblesRepositoryModule } from '@/domain/collectibles/collectibles.repository.interface';
-import { HooksRepository } from '@/domain/hooks/hooks.repository';
+import {
+  HooksRepository,
+  HooksRepositoryWithNotifications,
+} from '@/domain/hooks/hooks.repository';
 import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.interface';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/notifications.repository.v2.interface';
 import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
@@ -26,7 +28,30 @@ export interface IHooksRepository {
     ChainsRepositoryModule,
     CollectiblesRepositoryModule,
     MessagesRepositoryModule,
-    NotificationsRepositoryV2Module.forRoot(configuration),
+    NotificationsRepositoryV2Module,
+    SafeAppsRepositoryModule,
+    SafeRepositoryModule,
+    TransactionsRepositoryModule,
+    QueuesRepositoryModule,
+  ],
+  providers: [
+    { provide: IHooksRepository, useClass: HooksRepositoryWithNotifications },
+  ],
+  exports: [IHooksRepository],
+})
+export class HooksRepositoryWithNotificationsModule {}
+
+// TODO: Remove after notifications FF is enables
+// Note: trying to convert this into a dynamic module proved to be too complex
+// due to config injection issues from the ConfigurationService so this is a
+// temporary solution
+@Module({
+  imports: [
+    BalancesRepositoryModule,
+    BlockchainRepositoryModule,
+    ChainsRepositoryModule,
+    CollectiblesRepositoryModule,
+    MessagesRepositoryModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
     TransactionsRepositoryModule,

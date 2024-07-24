@@ -12,9 +12,9 @@ import {
 } from '@nestjs/common';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
-import { asError } from '@/logging/utils';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification.entity';
+import { get } from 'lodash';
 
 @Injectable()
 export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
@@ -42,7 +42,8 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
    *
    * @see https://firebase.google.com/docs/cloud-messaging/send-message#rest
    */
-  static readonly UnregisteredErrorMessage = 'UNREGISTERED';
+  static readonly UnregisteredErrorCode = 404;
+  static readonly UnregisteredErrorStatus = 'UNREGISTERED';
 
   constructor(
     @Inject(IPushNotificationsApi)
@@ -63,7 +64,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     notification: FirebaseNotification;
   }): Promise<void> {
     try {
-      return this.pushNotificationsApi.enqueueNotification(
+      await this.pushNotificationsApi.enqueueNotification(
         args.token,
         args.notification,
       );
@@ -77,10 +78,13 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     }
   }
 
-  private isTokenUnregistered(e: unknown): boolean {
-    return (
-      asError(e).message === NotificationsRepositoryV2.UnregisteredErrorMessage
-    );
+  private isTokenUnregistered(error: unknown): boolean {
+    const isNotFound =
+      get(error, 'code') === NotificationsRepositoryV2.UnregisteredErrorCode;
+    const isUnregistered =
+      get(error, 'status') ===
+      NotificationsRepositoryV2.UnregisteredErrorStatus;
+    return isNotFound && isUnregistered;
   }
 
   async upsertSubscriptions(args: UpsertSubscriptionsDto): Promise<{
