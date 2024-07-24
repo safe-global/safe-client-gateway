@@ -139,26 +139,31 @@ export class NotificationsDatasource implements INotificationsDatasource {
   }
 
   /**
-   * Gets subscribers and their cloud messaging tokens for the given Safe.
+   * Gets subscribers and their device UUID/cloud messaging tokens for the given Safe.
    *
    * @param args.chainId Chain ID
    * @param args.safeAddress Safe address
    *
    * @returns List of subscribers/tokens for given Safe
    */
-  async getSubscribersWithTokensBySafe(args: {
+  async getSubscribersBySafe(args: {
     chainId: string;
     safeAddress: string;
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
+      deviceUuid: Uuid;
       cloudMessagingToken: string;
     }>
   > {
     const subscribers = await this.sql<
-      Array<{ address: `0x${string}`; cloud_messaging_token: string }>
+      Array<{
+        address: `0x${string}`;
+        device_uuid: Uuid;
+        cloud_messaging_token: string;
+      }>
     >`
-      SELECT a.address, pnd.cloud_messaging_token
+      SELECT a.address, nd.device_uuid, nd.cloud_messaging_token
       FROM notification_subscriptions ns
       JOIN accounts a ON ns.account_id = a.id
       JOIN push_notification_devices pnd ON ns.push_notification_device_id = pnd.id
@@ -173,6 +178,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
     return subscribers.map((subscriber) => {
       return {
         subscriber: subscriber.address,
+        deviceUuid: subscriber.device_uuid,
         cloudMessagingToken: subscriber.cloud_messaging_token,
       };
     });

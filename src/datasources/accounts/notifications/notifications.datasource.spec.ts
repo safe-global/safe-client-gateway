@@ -374,7 +374,7 @@ describe('NotificationsDatasource', () => {
 
       const safe = upsertSubscriptionsDto.safes[0];
       await expect(
-        target.getSubscribersWithTokensBySafe({
+        target.getSubscribersBySafe({
           chainId: safe.chainId,
           safeAddress: safe.address,
         }),

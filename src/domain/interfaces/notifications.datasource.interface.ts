@@ -16,12 +16,13 @@ export interface INotificationsDatasource {
     safeAddress: `0x${string}`;
   }): Promise<Array<NotificationType>>;
 
-  getSubscribersWithTokensBySafe(args: {
+  getSubscribersBySafe(args: {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
+      deviceUuid: Uuid;
       cloudMessagingToken: string;
     }>
   >;

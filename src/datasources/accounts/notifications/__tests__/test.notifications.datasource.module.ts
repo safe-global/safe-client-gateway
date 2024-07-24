@@ -5,7 +5,7 @@ const accountsDatasource: INotificationsDatasource = {
   deleteDevice: jest.fn(),
   deleteSubscription: jest.fn(),
   getSafeSubscription: jest.fn(),
-  getSubscribersWithTokensBySafe: jest.fn(),
+  getSubscribersBySafe: jest.fn(),
   upsertSubscriptions: jest.fn(),
 };
 

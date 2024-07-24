@@ -8,14 +8,16 @@ import { NotificationsDatasourceModule } from '@/datasources/accounts/notificati
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 
 export const INotificationsRepositoryV2 = Symbol('INotificationsRepositoryV2');
 
 export interface INotificationsRepositoryV2 {
-  enqueueNotification(
-    token: string,
-    notification: FirebaseNotification,
-  ): Promise<void>;
+  enqueueNotification(args: {
+    token: string;
+    deviceUuid: Uuid;
+    notification: FirebaseNotification;
+  }): Promise<void>;
 
   upsertSubscriptions(args: UpsertSubscriptionsDto): Promise<{
     deviceUuid: Uuid;
@@ -26,14 +28,15 @@ export interface INotificationsRepositoryV2 {
     deviceUuid: Uuid;
     chainId: string;
     safeAddress: `0x${string}`;
-  }): Promise<unknown>;
+  }): Promise<Array<NotificationType>>;
 
-  getSubscribersWithTokensBySafe(args: {
+  getSubscribersBySafe(args: {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
+      deviceUuid: Uuid;
       cloudMessagingToken: string;
     }>
   >;
@@ -52,17 +55,17 @@ export interface INotificationsRepositoryV2 {
  * to not require database access when push notifications are disabled.
  */
 class NoopNotificationsRepositoryV2 implements INotificationsRepositoryV2 {
-  enqueueNotification(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _token: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _notification: FirebaseNotification,
-  ): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  enqueueNotification(_args: {
+    token: string;
+    deviceUuid: string;
+    notification: FirebaseNotification;
+  }): Promise<void> {
     return Promise.resolve();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async upsertSubscriptions(_args: UpsertSubscriptionsDto): Promise<{
+  upsertSubscriptions(_args: UpsertSubscriptionsDto): Promise<{
     deviceUuid: Uuid;
   }> {
     return Promise.resolve({ deviceUuid: crypto.randomUUID() });
@@ -74,17 +77,18 @@ class NoopNotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     deviceUuid: Uuid;
     chainId: string;
     safeAddress: `0x${string}`;
-  }): Promise<unknown> {
-    return Promise.resolve();
+  }): Promise<Array<NotificationType>> {
+    return Promise.resolve([]);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getSubscribersWithTokensBySafe(_args: {
+  getSubscribersBySafe(_args: {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
+      deviceUuid: Uuid;
       cloudMessagingToken: string;
     }>
   > {

@@ -49,6 +49,8 @@ import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-t
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import { messageCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/message-created.builder';
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
+import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
+import { NotificationsRepositoryV2Module } from '@/domain/notifications/notifications.repository.v2.interface';
 
 describe('Post Hook Events for Notifications (Unit)', () => {
   let app: INestApplication<Server>;
@@ -141,12 +143,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as Uuid,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
-    notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
-      subscribers,
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
 
     await request(app.getHttpServer())
       .post(`/hooks/events`)
@@ -181,10 +182,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
+          deviceUuid: faker.string.uuid() as Uuid,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
-      notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
+      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -257,10 +259,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
+          deviceUuid: faker.string.uuid() as Uuid,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
-      notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
+      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -328,12 +331,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as Uuid,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
-    notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
-      subscribers,
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
 
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
@@ -397,12 +399,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as Uuid,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
-    notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
-      subscribers,
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
 
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
@@ -444,12 +445,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as Uuid,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
-    notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
-      subscribers,
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
     const multisigTransaction = multisigTransactionBuilder()
       .with(
         'confirmations',
@@ -512,12 +512,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as Uuid,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
-    notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
-      subscribers,
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
 
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
@@ -581,12 +580,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as Uuid,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
-    notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
-      subscribers,
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
 
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
@@ -628,12 +626,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as Uuid,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
-    notificationsDatasource.getSubscribersWithTokensBySafe.mockResolvedValue(
-      subscribers,
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
     const message = messageBuilder()
       .with('messageHash', event.messageHash as `0x${string}`)
       .with(
@@ -680,6 +677,8 @@ describe('Post Hook Events for Notifications (Unit)', () => {
 
     expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
   });
+
+  it.todo('should cleanup unregistered tokens');
 
   it('should not fail to send all notifications if one throws', async () => {
     const events = [

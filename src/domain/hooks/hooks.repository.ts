@@ -386,7 +386,7 @@ export class HooksRepository implements IHooksRepository {
     }
 
     const subscriptions =
-      await this.notificationsRepository.getSubscribersWithTokensBySafe({
+      await this.notificationsRepository.getSubscribersBySafe({
         chainId: event.chainId,
         safeAddress: event.address,
       });
@@ -404,8 +404,12 @@ export class HooksRepository implements IHooksRepository {
         }
 
         return this.notificationsRepository
-          .enqueueNotification(subscription.cloudMessagingToken, {
-            data,
+          .enqueueNotification({
+            token: subscription.cloudMessagingToken,
+            deviceUuid: subscription.deviceUuid,
+            notification: {
+              data,
+            },
           })
           .then(() => {
             this.loggingService.info('Notification sent successfully');
