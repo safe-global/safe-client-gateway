@@ -1,6 +1,5 @@
 import { NotificationType as DomainNotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
-import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
-import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
+import { UUID } from 'crypto';
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
@@ -11,8 +10,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
-import { UpsertSubscriptionsDto } from '@/domain/notifications/entities-v2/upsert-subscriptions.dto.entity';
-import { UUID } from 'crypto';
+import { UpsertSubscriptionsDto } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
 
 @Injectable()
 export class NotificationsDatasource implements INotificationsDatasource {
@@ -21,8 +19,6 @@ export class NotificationsDatasource implements INotificationsDatasource {
     private readonly sql: postgres.Sql,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-    @Inject(IAccountsDatasource)
-    private readonly accountsDatasource: IAccountsDatasource,
   ) {}
 
   /**
@@ -37,7 +33,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
   async upsertSubscriptions(args: {
     signerAddress: `0x${string}`;
     upsertSubscriptionsDto: UpsertSubscriptionsDto;
-  }): Promise<{ deviceUuid: Uuid }> {
+  }): Promise<{ deviceUuid: UUID }> {
     const deviceUuid =
       args.upsertSubscriptionsDto.deviceUuid ?? crypto.randomUUID();
 
@@ -107,7 +103,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
    * @returns List of {@link DomainNotificationType} notifications subscribed to
    */
   async getSafeSubscription(args: {
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
     signerAddress: `0x${string}`;
@@ -147,7 +143,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
-      deviceUuid: Uuid;
+      deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
   > {
@@ -193,10 +189,9 @@ export class NotificationsDatasource implements INotificationsDatasource {
    * @param args.signerAddress Signer address
    */
   async deleteSubscription(args: {
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
   }): Promise<void> {
     await this.sql.begin(async (sql) => {
       try {
@@ -210,7 +205,6 @@ export class NotificationsDatasource implements INotificationsDatasource {
             AND pnd.device_uuid = ${args.deviceUuid}
             AND ns.chain_id = ${args.chainId}
             AND ns.safe_address = ${args.safeAddress}
-            AND ns.signer_address = ${args.signerAddress}
           RETURNING ns.push_notification_device_id;
         `;
 
@@ -242,7 +236,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
    *
    * @param deviceUuid Device UUID
    */
-  async deleteDevice(deviceUuid: Uuid): Promise<void> {
+  async deleteDevice(deviceUuid: UUID): Promise<void> {
     await this.sql`
       DELETE FROM push_notification_devices
       WHERE device_uuid = ${deviceUuid}

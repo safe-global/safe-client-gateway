@@ -1,6 +1,6 @@
-import { UpsertSubscriptionsDto } from '@/domain/notifications/entities-v2/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
-import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
+import { UUID } from 'crypto';
 
 export const INotificationsDatasource = Symbol('INotificationsDatasource');
 
@@ -9,12 +9,12 @@ export interface INotificationsDatasource {
     signerAddress: `0x${string}`;
     upsertSubscriptionsDto: UpsertSubscriptionsDto;
   }): Promise<{
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
   }>;
 
   getSafeSubscription(args: {
     signerAddress: `0x${string}`;
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<Array<NotificationType>>;
@@ -25,17 +25,16 @@ export interface INotificationsDatasource {
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
-      deviceUuid: Uuid;
+      deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
   >;
 
   deleteSubscription(args: {
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
   }): Promise<void>;
 
-  deleteDevice(deviceUuid: Uuid): Promise<void>;
+  deleteDevice(deviceUuid: UUID): Promise<void>;
 }

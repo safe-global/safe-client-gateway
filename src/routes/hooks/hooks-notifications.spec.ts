@@ -49,7 +49,7 @@ import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-t
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import { messageCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/message-created.builder';
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
-import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
+import { UUID } from 'crypto';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 
 describe('Post Hook Events for Notifications (Unit)', () => {
@@ -143,7 +143,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
@@ -181,7 +181,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -258,7 +258,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -327,7 +327,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -399,7 +399,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -451,7 +451,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -529,7 +529,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         .build();
       const subscribers = owners.map((owner) => ({
         subscriber: owner,
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }));
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
@@ -613,7 +613,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -685,7 +685,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -737,7 +737,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -816,7 +816,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         .build();
       const subscribers = owners.map((owner) => ({
         subscriber: owner,
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }));
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
@@ -908,7 +908,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -987,7 +987,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -1046,7 +1046,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -1127,7 +1127,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         .build();
       const subscribers = owners.map((owner) => ({
         subscriber: owner,
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }));
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
@@ -1226,7 +1226,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -1305,7 +1305,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -1364,7 +1364,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -1446,7 +1446,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         .build();
       const subscribers = owners.map((owner) => ({
         subscriber: owner,
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }));
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
@@ -1547,7 +1547,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -1611,7 +1611,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         },
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
-          deviceUuid: faker.string.uuid() as Uuid,
+          deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
       );
@@ -1666,36 +1666,36 @@ describe('Post Hook Events for Notifications (Unit)', () => {
     const ownerSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
     ];
     const delegateSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
     ];
     const nonOwnerDelegateSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
     ];
@@ -1808,36 +1808,36 @@ describe('Post Hook Events for Notifications (Unit)', () => {
     const ownerSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
     ];
     const delegateSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
     ];
     const nonOwnerDelegateSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
     ];
@@ -1957,7 +1957,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
@@ -2039,7 +2039,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       },
       (_, i) => ({
         subscriber: safe.owners[i],
-        deviceUuid: faker.string.uuid() as Uuid,
+        deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );

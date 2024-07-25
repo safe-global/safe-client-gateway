@@ -1,17 +1,19 @@
-import { UpsertSubscriptionsDto } from '@/domain/notifications/entities-v2/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
 import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
-import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
+import { UUID } from 'crypto';
 import { INotificationsRepositoryV2 } from '@/domain/notifications/notifications.repository.v2.interface';
 import {
   Inject,
   Injectable,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification.entity';
 import { get } from 'lodash';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 @Injectable()
 export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
@@ -53,7 +55,8 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
 
   async enqueueNotification(args: {
     token: string;
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
+    signerAddress: `0x${string}`;
     notification: FirebaseNotification;
   }): Promise<void> {
     try {
@@ -63,7 +66,13 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       );
     } catch (e) {
       if (this.isTokenUnregistered(e)) {
-        await this.deleteDevice(args.deviceUuid).catch(() => null);
+        this.loggingService.info(
+          `Deleting unregistered token for device ${args.deviceUuid}: ${e}`,
+        );
+        await this.notificationsDatasource
+          .deleteDevice(args.deviceUuid)
+          // No need to log as datasource does
+          .catch(() => null);
       } else {
         this.loggingService.info(`Failed to enqueue notification: ${e}`);
         throw new UnprocessableEntityException();
@@ -81,21 +90,37 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   }
 
   async upsertSubscriptions(args: {
-    signerAddress: `0x${string}`;
+    authPayload: AuthPayload;
     upsertSubscriptionsDto: UpsertSubscriptionsDto;
   }): Promise<{
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
   }> {
-    return this.notificationsDatasource.upsertSubscriptions(args);
+    if (!args.authPayload.signer_address) {
+      throw new UnauthorizedException();
+    }
+
+    return this.notificationsDatasource.upsertSubscriptions({
+      signerAddress: args.authPayload.signer_address,
+      upsertSubscriptionsDto: args.upsertSubscriptionsDto,
+    });
   }
 
   getSafeSubscription(args: {
-    deviceUuid: Uuid;
+    authPayload: AuthPayload;
+    deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
   }): Promise<Array<NotificationType>> {
-    return this.notificationsDatasource.getSafeSubscription(args);
+    if (!args.authPayload.signer_address) {
+      throw new UnauthorizedException();
+    }
+
+    return this.notificationsDatasource.getSafeSubscription({
+      signerAddress: args.authPayload.signer_address,
+      deviceUuid: args.deviceUuid,
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
   }
 
   getSubscribersBySafe(args: {
@@ -104,23 +129,30 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
-      deviceUuid: Uuid;
+      deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
   > {
-    return this.notificationsDatasource.getSubscribersBySafe(args);
+    return this.notificationsDatasource.getSubscribersBySafe({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
   }
 
+  // TODO: Test only signer-upper can delete
   deleteSubscription(args: {
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
   }): Promise<void> {
-    return this.notificationsDatasource.deleteSubscription(args);
+    return this.notificationsDatasource.deleteSubscription({
+      deviceUuid: args.deviceUuid,
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
   }
 
-  deleteDevice(deviceUuid: Uuid): Promise<void> {
+  deleteDevice(deviceUuid: UUID): Promise<void> {
     return this.notificationsDatasource.deleteDevice(deviceUuid);
   }
 }

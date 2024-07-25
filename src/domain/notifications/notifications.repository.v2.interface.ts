@@ -1,33 +1,34 @@
-import { UpsertSubscriptionsDto } from '@/domain/notifications/entities-v2/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
 import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
-import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
+import { UUID } from 'crypto';
 import { NotificationsRepositoryV2 } from '@/domain/notifications/notifications.repository.v2';
 import { Module } from '@nestjs/common';
 import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 export const INotificationsRepositoryV2 = Symbol('INotificationsRepositoryV2');
 
 export interface INotificationsRepositoryV2 {
   enqueueNotification(args: {
     token: string;
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
     notification: FirebaseNotification;
   }): Promise<void>;
 
   upsertSubscriptions(args: {
-    signerAddress: `0x${string}`;
+    authPayload: AuthPayload;
     upsertSubscriptionsDto: UpsertSubscriptionsDto;
   }): Promise<{
-    deviceUuid: Uuid;
+    deviceUuid: UUID;
   }>;
 
   getSafeSubscription(args: {
-    deviceUuid: Uuid;
+    authPayload: AuthPayload;
+    deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
   }): Promise<Array<NotificationType>>;
 
   getSubscribersBySafe(args: {
@@ -36,18 +37,18 @@ export interface INotificationsRepositoryV2 {
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
-      deviceUuid: Uuid;
+      deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
   >;
 
   deleteSubscription(args: {
+    deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
   }): Promise<void>;
 
-  deleteDevice(deviceUuid: Uuid): Promise<void>;
+  deleteDevice(deviceUuid: UUID): Promise<void>;
 }
 
 @Module({

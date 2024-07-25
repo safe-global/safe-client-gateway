@@ -48,6 +48,7 @@ import { AuthModule } from '@/routes/auth/auth.module';
 import { TransactionsViewControllerModule } from '@/routes/transactions/transactions-view.controller';
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
+import { NotificationsModuleV2 } from '@/routes/notifications/notifications.module.v2';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -87,7 +88,7 @@ export class AppModule implements NestModule {
         EstimationsModule,
         HealthModule,
         ...(isPushNotificationsEnabled
-          ? [HooksModuleWithNotifications]
+          ? [HooksModuleWithNotifications, NotificationsModuleV2]
           : [HooksModule]),
         MessagesModule,
         NotificationsModule,

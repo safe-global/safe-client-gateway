@@ -1,7 +1,7 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { DeviceType } from '@/domain/notifications/entities-v2/device-type.entity';
-import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
+import { UUID } from 'crypto';
 import { faker } from '@faker-js/faker';
 import postgres from 'postgres';
 import { getAddress } from 'viem';
@@ -9,7 +9,7 @@ import { getAddress } from 'viem';
 type PushNotificationDevicesRow = {
   id: number;
   device_type: 'ANDROID' | 'IOS' | 'WEB';
-  device_uuid: Uuid;
+  device_uuid: UUID;
   cloud_messaging_token: string;
   created_at: Date;
   updated_at: Date;
@@ -167,7 +167,7 @@ describe('Migration 00005_notifications', () => {
 
   it('should upsert the updated_at timestamp in push_notification_devices', async () => {
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
@@ -190,7 +190,7 @@ describe('Migration 00005_notifications', () => {
       },
     ]);
 
-    const newDeviceUuid = faker.string.uuid() as Uuid;
+    const newDeviceUuid = faker.string.uuid() as UUID;
     // Update device with new device_uuid
     const afterUpdate = await sql<
       [PushNotificationDevicesRow]
@@ -215,7 +215,7 @@ describe('Migration 00005_notifications', () => {
 
   it('should only allow an ANDROID, IOS, or WEB as device_type in push_notification_devices', async () => {
     const deviceType = faker.lorem.word() as DeviceType;
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     await migrator.test({
       migration: '00005_notifications',
@@ -232,7 +232,7 @@ describe('Migration 00005_notifications', () => {
 
   it('should not allow a duplicate device_uuid in push_notification_devices', async () => {
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     await migrator.test({
       migration: '00005_notifications',
@@ -276,7 +276,7 @@ describe('Migration 00005_notifications', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
@@ -307,7 +307,7 @@ describe('Migration 00005_notifications', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
@@ -336,7 +336,7 @@ describe('Migration 00005_notifications', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
@@ -394,7 +394,7 @@ describe('Migration 00005_notifications', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
@@ -432,7 +432,7 @@ describe('Migration 00005_notifications', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
@@ -470,7 +470,7 @@ describe('Migration 00005_notifications', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainId = faker.string.numeric();
     const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
-    const deviceUuid = faker.string.uuid() as Uuid;
+    const deviceUuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.alphanumeric();
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
