@@ -33,7 +33,11 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/entities/__tests__/upsert-subscriptions.dto.entity.builder';
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
+import {
+  INestApplication,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Server } from 'net';
 import request from 'supertest';
@@ -477,15 +481,20 @@ describe('Notifications Controller V2 (Unit)', () => {
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
-      notificationsDatasource.upsertSubscriptions.mockRejectedValue(
-        new Error('Error upserting subscription'),
-      );
+      const error = faker.helpers.arrayElement([
+        new UnprocessableEntityException(),
+        new NotFoundException(),
+      ]);
+      notificationsDatasource.upsertSubscriptions.mockRejectedValue(error);
 
       await request(app.getHttpServer())
         .post(`/v1/accounts/${signerAddress}/notifications/devices/register`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(upsertSubscriptionsDto)
-        .expect({});
+        .expect({
+          message: error.message,
+          statusCode: error.getStatus(),
+        });
     });
 
     describe('authentication', () => {
@@ -823,16 +832,18 @@ describe('Notifications Controller V2 (Unit)', () => {
         .with('chain_id', chainId)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      notificationsDatasource.getSafeSubscription.mockRejectedValue(
-        new Error('Error getting subscription'),
-      );
+      const error = new NotFoundException();
+      notificationsDatasource.getSafeSubscription.mockRejectedValue(error);
 
       await request(app.getHttpServer())
         .get(
           `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect({});
+        .expect({
+          message: error.message,
+          statusCode: error.getStatus(),
+        });
     });
 
     describe('authentication', () => {
@@ -1030,16 +1041,18 @@ describe('Notifications Controller V2 (Unit)', () => {
         .with('chain_id', chainId)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      notificationsDatasource.deleteSubscription.mockRejectedValue(
-        new Error('Error deleting subscription'),
-      );
+      const error = new NotFoundException();
+      notificationsDatasource.deleteSubscription.mockRejectedValue(error);
 
       await request(app.getHttpServer())
         .delete(
           `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect({});
+        .expect({
+          message: 'Not Found',
+          statusCode: 404,
+        });
     });
 
     describe('authentication', () => {
@@ -1208,16 +1221,18 @@ describe('Notifications Controller V2 (Unit)', () => {
         .with('chain_id', chainId)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      notificationsDatasource.deleteDevice.mockRejectedValue(
-        new Error('Error deleting device'),
-      );
+      const error = new NotFoundException();
+      notificationsDatasource.deleteDevice.mockRejectedValue(error);
 
       await request(app.getHttpServer())
         .delete(
           `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect({});
+        .expect({
+          message: 'Not Found',
+          statusCode: 404,
+        });
     });
 
     describe('authentication', () => {

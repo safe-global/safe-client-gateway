@@ -243,7 +243,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
     `.catch((e) => {
       const error = 'Error deleting device';
       this.loggingService.info(`${error}: ${asError(e).message}`);
-      throw new UnprocessableEntityException(error);
+      throw new NotFoundException(error);
     });
   }
 }
