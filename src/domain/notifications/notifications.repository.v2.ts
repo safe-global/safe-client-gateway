@@ -90,8 +90,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   async upsertSubscriptions(args: UpsertSubscriptionsDto): Promise<{
     deviceUuid: Uuid;
   }> {
-    const authorizedSafesToSubscribe: UpsertSubscriptionsDto['safes'] = [];
-
     // Only allow owners or delegates to subscribe to notifications
     // We don't Promise.all getSafe/getDelegates to prevent unnecessary calls
     for (const safeToSubscribe of args.safes) {
@@ -102,9 +100,8 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
         })
         .catch(() => null);
 
-      // Upsert owner
-      if (safe && safe.owners.includes(args.account)) {
-        authorizedSafesToSubscribe.push(safeToSubscribe);
+      const isOwner = !!safe?.owners.includes(args.account);
+      if (isOwner) {
         continue;
       }
 
@@ -116,23 +113,17 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
         })
         .catch(() => null);
 
-      // Upsert delegate
-      if (
-        delegates &&
-        delegates.results.some(({ delegate }) => delegate === args.account)
-      ) {
-        authorizedSafesToSubscribe.push(safeToSubscribe);
+      const isDelegate = !!delegates?.results.some(
+        ({ delegate }) => delegate === args.account,
+      );
+      if (isDelegate) {
+        continue;
       }
-    }
 
-    if (authorizedSafesToSubscribe.length === 0) {
       throw new UnauthorizedException();
     }
 
-    return this.notificationsDatasource.upsertSubscriptions({
-      ...args,
-      safes: authorizedSafesToSubscribe,
-    });
+    return this.notificationsDatasource.upsertSubscriptions(args);
   }
 
   getSafeSubscription(args: {
