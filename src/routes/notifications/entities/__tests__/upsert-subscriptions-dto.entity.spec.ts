@@ -73,7 +73,7 @@ describe('UpsertSubscriptionsDtoSchema', () => {
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'invalid_string',
-        message: 'Invalid uuid',
+        message: 'Invalid UUID',
         path: ['deviceUuid'],
         validation: 'uuid',
       },

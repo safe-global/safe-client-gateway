@@ -139,7 +139,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     });
   }
 
-  // TODO: Test only signer-upper can delete
   deleteSubscription(args: {
     deviceUuid: UUID;
     chainId: string;

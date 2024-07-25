@@ -221,9 +221,8 @@ describe('Notifications Controller V2 (Unit)', () => {
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
-      expect(() => jwtService.verify(accessToken)).not.toThrow();
       await request(app.getHttpServer())
-        .post(`/v2/register/notifications`)
+        .post(`/v1/accounts/${signerAddress}/notifications/devices/register`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(upsertSubscriptionsDto)
         .expect(201);
@@ -234,7 +233,7 @@ describe('Notifications Controller V2 (Unit)', () => {
       expect(
         notificationsDatasource.upsertSubscriptions,
       ).toHaveBeenNthCalledWith(1, {
-        signerAddress,
+        account: signerAddress,
         upsertSubscriptionsDto,
       });
     });
@@ -290,7 +289,6 @@ describe('Notifications Controller V2 (Unit)', () => {
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
-      expect(() => jwtService.verify(accessToken)).not.toThrow();
       await request(app.getHttpServer())
         .post(`/v2/register/notifications`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -415,7 +413,6 @@ describe('Notifications Controller V2 (Unit)', () => {
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
-      expect(() => jwtService.verify(accessToken)).not.toThrow();
       await request(app.getHttpServer())
         .post(`/v2/register/notifications`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -430,7 +427,123 @@ describe('Notifications Controller V2 (Unit)', () => {
         });
     });
 
+    it('should forward datasource errors', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
+        .with(
+          'safes',
+          Array.from(
+            {
+              length: faker.number.int({ min: 1, max: 5 }),
+            },
+            () => ({
+              chainId: chain.chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+              notificationTypes: faker.helpers.arrayElements(
+                Object.values(NotificationType),
+              ),
+            }),
+          ),
+        )
+        .build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chain.chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: chain, status: 200 });
+        }
+        for (const safe of upsertSubscriptionsDto.safes) {
+          if (
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          ) {
+            return Promise.resolve({
+              data: safeBuilder()
+                .with('address', safe.address)
+                .with('owners', [signerAddress])
+                .build(),
+              status: 200,
+            });
+          }
+        }
+        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+          return Promise.resolve({
+            data: pageBuilder().with('results', []).build(),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+      notificationsDatasource.upsertSubscriptions.mockRejectedValue(
+        new Error('Error upserting subscription'),
+      );
+
+      await request(app.getHttpServer())
+        .post(`/v1/accounts/${signerAddress}/notifications/devices/register`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(upsertSubscriptionsDto)
+        .expect({});
+    });
+
     describe('authentication', () => {
+      it('should return 403 if no token is present', async () => {
+        const chainId = faker.string.numeric();
+        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
+          .with(
+            'safes',
+            Array.from(
+              {
+                length: faker.number.int({ min: 1, max: 5 }),
+              },
+              () => ({
+                chainId,
+                address: getAddress(faker.finance.ethereumAddress()),
+                notificationTypes: faker.helpers.arrayElements(
+                  Object.values(NotificationType),
+                ),
+              }),
+            ),
+          )
+          .build();
+
+        await request(app.getHttpServer())
+          .post(`/v2/register/notifications`)
+          .send(upsertSubscriptionsDto)
+          .expect(403);
+      });
+
+      it('should return 403 if token is invalid', async () => {
+        const chainId = faker.string.numeric();
+        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
+          .with(
+            'safes',
+            Array.from(
+              {
+                length: faker.number.int({ min: 1, max: 5 }),
+              },
+              () => ({
+                chainId,
+                address: getAddress(faker.finance.ethereumAddress()),
+                notificationTypes: faker.helpers.arrayElements(
+                  Object.values(NotificationType),
+                ),
+              }),
+            ),
+          )
+          .build();
+        const accessToken = faker.string.sample();
+
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
+        await request(app.getHttpServer())
+          .post(`/v2/register/notifications`)
+          .set('Cookie', [`access_token=${accessToken}`])
+          .send(upsertSubscriptionsDto)
+          .expect(403);
+      });
+
       it('should return 403 if there is no signer_address', async () => {
         const chainId = faker.string.numeric();
         const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
@@ -490,61 +603,6 @@ describe('Notifications Controller V2 (Unit)', () => {
         const accessToken = jwtService.sign(authPayloadDto);
 
         expect(() => jwtService.verify(accessToken)).not.toThrow();
-        await request(app.getHttpServer())
-          .post(`/v2/register/notifications`)
-          .set('Cookie', [`access_token=${accessToken}`])
-          .send(upsertSubscriptionsDto)
-          .expect(403);
-      });
-
-      it('should return 403 if no token is present', async () => {
-        const chainId = faker.string.numeric();
-        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-          .with(
-            'safes',
-            Array.from(
-              {
-                length: faker.number.int({ min: 1, max: 5 }),
-              },
-              () => ({
-                chainId,
-                address: getAddress(faker.finance.ethereumAddress()),
-                notificationTypes: faker.helpers.arrayElements(
-                  Object.values(NotificationType),
-                ),
-              }),
-            ),
-          )
-          .build();
-
-        await request(app.getHttpServer())
-          .post(`/v2/register/notifications`)
-          .send(upsertSubscriptionsDto)
-          .expect(403);
-      });
-
-      it('should return 403 if token is invalid', async () => {
-        const chainId = faker.string.numeric();
-        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-          .with(
-            'safes',
-            Array.from(
-              {
-                length: faker.number.int({ min: 1, max: 5 }),
-              },
-              () => ({
-                chainId,
-                address: getAddress(faker.finance.ethereumAddress()),
-                notificationTypes: faker.helpers.arrayElements(
-                  Object.values(NotificationType),
-                ),
-              }),
-            ),
-          )
-          .build();
-        const accessToken = faker.string.sample();
-
-        expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
         await request(app.getHttpServer())
           .post(`/v2/register/notifications`)
           .set('Cookie', [`access_token=${accessToken}`])
@@ -628,53 +686,609 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
   });
 
-  describe.skip('GET /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress', () => {
-    it.todo('should return the subscription for the Safe');
+  describe('GET /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress', () => {
+    it('should return the subscription for the Safe', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const deviceUuid = faker.string.uuid();
+      const notificationTypes = faker.helpers.arrayElements(
+        Object.values(NotificationType),
+      );
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      notificationsDatasource.getSafeSubscription.mockResolvedValue(
+        notificationTypes,
+      );
 
-    it.todo('should return 422 if the account is invalid');
+      await request(app.getHttpServer())
+        .get(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(notificationTypes);
 
-    it.todo('should return XXX if the device can not be found');
+      expect(notificationsDatasource.getSafeSubscription).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(
+        notificationsDatasource.getSafeSubscription,
+      ).toHaveBeenNthCalledWith(1, {
+        account: signerAddress,
+        deviceUuid,
+        chainId,
+        safeAddress,
+      });
+    });
 
-    it.todo('should return XXX if the safe can not be found');
+    it('should allow subscription retrieval with a token with the same signer_address from a different chain_id', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const deviceUuid = faker.string.uuid();
+      const notificationTypes = faker.helpers.arrayElements(
+        Object.values(NotificationType),
+      );
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', faker.string.numeric({ exclude: chainId }))
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      notificationsDatasource.getSafeSubscription.mockResolvedValue(
+        notificationTypes,
+      );
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(notificationTypes);
+
+      expect(notificationsDatasource.getSafeSubscription).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(
+        notificationsDatasource.getSafeSubscription,
+      ).toHaveBeenNthCalledWith(1, {
+        account: signerAddress,
+        deviceUuid,
+        chainId,
+        safeAddress,
+      });
+    });
+
+    it('should return 422 if the deviceUuid is invalid', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const invalidDeviceUuid = faker.string.alphanumeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/accounts/${signerAddress}/notifications/devices/${invalidDeviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 422,
+          validation: 'uuid',
+          code: 'invalid_string',
+          message: 'Invalid UUID',
+          path: [],
+        });
+    });
+
+    it('should return 422 if the chainId is invalid', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const invalidChainId = faker.string.alpha();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${invalidChainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: [],
+        });
+    });
+
+    it('should forward datasource errors', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      notificationsDatasource.getSafeSubscription.mockRejectedValue(
+        new Error('Error getting subscription'),
+      );
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({});
+    });
 
     describe('authentication', () => {
-      it.todo(
-        'should allow preference retrieval with a token with the same signer_address from a different chain_id',
-      );
+      it('should return 403 if no token is present', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+          )
+          .expect(403);
+      });
+
+      it('should return 403 if token is invalid', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const accessToken = faker.string.sample();
+
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
+        await request(app.getHttpServer())
+          .get(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
 
       it.todo('should return 403 if there is no signer_address');
 
       it.todo('should return 403 if there is no chain_id');
 
-      it.todo('should return 403 if no token is present');
+      it('should return 403 if token is not yet valid', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const authPayloadDto = authPayloadDtoBuilder()
+          .with('signer_address', signerAddress)
+          .with('chain_id', chainId)
+          .build();
+        const accessToken = jwtService.sign({
+          ...authPayloadDto,
+          nbf: faker.date.future(),
+        });
 
-      it.todo('should return 403 if token is invalid');
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
+        await request(app.getHttpServer())
+          .get(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
 
-      it.todo('should return 403 if token is not yet valid');
+      it('should return 403 if token has expired', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const authPayloadDto = authPayloadDtoBuilder()
+          .with('signer_address', signerAddress)
+          .with('chain_id', chainId)
+          .build();
+        const accessToken = jwtService.sign({
+          ...authPayloadDto,
+          exp: faker.date.past(),
+        });
 
-      it.todo('should return 403 if token has expired');
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
+        await request(app.getHttpServer())
+          .get(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
     });
   });
 
-  describe.skip('DELETE /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress', () => {
-    it.todo('should delete the subscription for the Safe');
+  describe('DELETE /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress', () => {
+    it('should delete the subscription for the Safe', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
-    it.todo('should not delete subscriptions of other devices');
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
 
-    it.todo('should not delete the device if it has other subscriptions');
+      expect(notificationsDatasource.deleteSubscription).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(
+        notificationsDatasource.deleteSubscription,
+      ).toHaveBeenNthCalledWith(1, {
+        account: signerAddress,
+        deviceUuid,
+        chainId,
+        safeAddress,
+      });
+    });
 
-    it.todo('should return 422 if the account is invalid');
+    it('should allow subscription deletion with a token with the same signer_address from a different chain_id', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', faker.string.numeric({ exclude: chainId }))
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
-    it.todo('should return XXX if the device can not be found');
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
 
-    it.todo('should return XXX if the safe can not be found');
+      it.todo('should return XXX if the safe can not be found');
+    });
+
+    it('should return 422 if the deviceUuid is invalid', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const invalidDeviceUuid = faker.string.alphanumeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${invalidDeviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 422,
+          validation: 'uuid',
+          code: 'invalid_string',
+          message: 'Invalid UUID',
+          path: [],
+        });
+    });
+
+    it('should return 422 if the chainId is invalid', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const invalidChainId = faker.string.alpha();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${invalidChainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: [],
+        });
+    });
+
+    it('should forward datasource errors', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      notificationsDatasource.deleteSubscription.mockRejectedValue(
+        new Error('Error deleting subscription'),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({});
+    });
+
+    describe('authentication', () => {
+      it('should return 403 if no token is present', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+
+        await request(app.getHttpServer())
+          .delete(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+          )
+          .expect(403);
+      });
+
+      it('should return 403 if token is invalid', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const accessToken = faker.string.sample();
+
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
+        await request(app.getHttpServer())
+          .delete(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
+
+      it.todo('should return 403 if there is no signer_address');
+
+      it.todo('should return 403 if there is no chain_id');
+
+      it('should return 403 if token is not yet valid', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const authPayloadDto = authPayloadDtoBuilder()
+          .with('signer_address', signerAddress)
+          .with('chain_id', chainId)
+          .build();
+        const accessToken = jwtService.sign({
+          ...authPayloadDto,
+          nbf: faker.date.future(),
+        });
+
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
+        await request(app.getHttpServer())
+          .delete(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
+
+      it('should return 403 if token has expired', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const authPayloadDto = authPayloadDtoBuilder()
+          .with('signer_address', signerAddress)
+          .with('chain_id', chainId)
+          .build();
+        const accessToken = jwtService.sign({
+          ...authPayloadDto,
+          exp: faker.date.past(),
+        });
+
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
+        await request(app.getHttpServer())
+          .delete(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}/chains/${chainId}/safes/${safeAddress}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
+    });
   });
 
-  describe.skip('DELETE /v2/chains/:chainId/notifications/devices/:deviceUuid', () => {
-    it.todo('should delete all subscriptions of the device');
+  describe('DELETE /v2/chains/:chainId/notifications/devices/:deviceUuid', () => {
+    it('should delete the device', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
-    it.todo('should return 422 if the account is invalid');
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
 
-    it.todo('should return XXX if the device can not be found');
+      expect(notificationsDatasource.deleteDevice).toHaveBeenCalledTimes(1);
+      expect(notificationsDatasource.deleteDevice).toHaveBeenNthCalledWith(
+        1,
+        deviceUuid,
+      );
+    });
+
+    it('should allow device deletion with a token with the same signer_address from a different chain_id', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', faker.string.numeric({ exclude: chainId }))
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(notificationsDatasource.deleteDevice).toHaveBeenCalledTimes(1);
+      expect(notificationsDatasource.deleteDevice).toHaveBeenNthCalledWith(
+        1,
+        deviceUuid,
+      );
+    });
+
+    it('should return 422 if the deviceUuid is invalid', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const invalidDeviceUuid = faker.string.alphanumeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${invalidDeviceUuid}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 422,
+          validation: 'uuid',
+          code: 'invalid_string',
+          message: 'Invalid UUID',
+          path: [],
+        });
+    });
+
+    it.todo('should return 422 if the chainId is invalid');
+
+    it('should forward datasource errors', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const deviceUuid = faker.string.uuid();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .with('chain_id', chainId)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      notificationsDatasource.deleteDevice.mockRejectedValue(
+        new Error('Error deleting device'),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({});
+    });
+
+    describe('authentication', () => {
+      it('should return 403 if no token is present', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+
+        await request(app.getHttpServer())
+          .delete(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}`,
+          )
+          .expect(403);
+      });
+
+      it('should return 403 if token is invalid', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const accessToken = faker.string.sample();
+
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
+        await request(app.getHttpServer())
+          .delete(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
+
+      it.todo('should return 403 if there is no signer_address');
+
+      it.todo('should return 403 if there is no chain_id');
+
+      it('should return 403 if token is not yet valid', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const authPayloadDto = authPayloadDtoBuilder()
+          .with('signer_address', signerAddress)
+          .build();
+        const accessToken = jwtService.sign({
+          ...authPayloadDto,
+          nbf: faker.date.future(),
+        });
+
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
+        await request(app.getHttpServer())
+          .delete(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
+
+      it('should return 403 if token has expired', async () => {
+        const signerAddress = getAddress(faker.finance.ethereumAddress());
+        const deviceUuid = faker.string.uuid();
+        const authPayloadDto = authPayloadDtoBuilder()
+          .with('signer_address', signerAddress)
+          .build();
+        const accessToken = jwtService.sign({
+          ...authPayloadDto,
+          exp: faker.date.past(),
+        });
+
+        expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
+        await request(app.getHttpServer())
+          .delete(
+            `/v1/accounts/${signerAddress}/notifications/devices/${deviceUuid}`,
+          )
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(403);
+      });
+    });
   });
 });

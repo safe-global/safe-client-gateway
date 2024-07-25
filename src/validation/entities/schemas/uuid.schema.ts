@@ -3,7 +3,9 @@ import { z } from 'zod';
 
 export const UuidSchema = z
   .string()
-  .uuid()
+  .uuid({
+    message: 'Invalid UUID',
+  })
   // Return type of uuid is string so we need to cast it
   .transform((uuid) => {
     return uuid as UUID;
