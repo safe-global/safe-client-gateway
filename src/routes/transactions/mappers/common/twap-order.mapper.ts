@@ -15,6 +15,7 @@ import {
 } from '@/routes/transactions/helpers/twap-order.helper';
 import {
   KnownOrder,
+  Order,
   OrderKind,
   OrderStatus,
 } from '@/domain/swaps/entities/order.entity';
@@ -268,33 +269,32 @@ export class TwapOrderMapper {
       return OrderStatus.PreSignaturePending;
     }
 
-    const orderUid =
+    // Note: TWAPs can never "expire" in their entirety, only parts can but
+    // this does not affect TWAP status
+
+    // Check active or final order part depending on whether the TWAP is active
+    const orderUidToCheck =
       args.activeOrderUid ??
       this.gpv2OrderHelper.computeOrderUid({
         chainId: args.chainId,
         owner: args.safeAddress,
-        // If there is no "active" part, we use the last one to get the status
-        order: args.twapParts.slice(-1)[0],
+        order: args.twapParts.slice(-1)[0], // Last part's order
       });
 
-    // If we already have the order, there is no need to fetch it again
-    if (args.partOrders) {
-      const order = args.partOrders.find((order) => order.uid === orderUid);
-      if (order) {
-        return order.status;
-      }
-    }
-
     try {
-      const order = await this.swapsRepository.getOrder(args.chainId, orderUid);
-      // If the active order is fulfilled, the next one may not yet exist
-      // and fetching it would fail so we assume it's open
-      if (args.activeOrderUid && order.status === OrderStatus.Fulfilled) {
-        return OrderStatus.Open;
+      // If we already fetched the order, we don't need to do it again
+      const orderAlreadyFetched = !!args.partOrders?.some(
+        (order) => order.uid === orderUidToCheck,
+      );
+      if (!orderAlreadyFetched) {
+        await this.swapsRepository.getOrder(args.chainId, orderUidToCheck);
       }
-      return order.status;
+
+      // If the order was created, the TWAP is either open or fulfilled depending
+      // on whether the order part is active
+      return args.activeOrderUid ? OrderStatus.Open : OrderStatus.Fulfilled;
     } catch {
-      // If an order is not found, it's likely cancelled as it was never created
+      // If the order doesn't exist, it means the TWAP was cancelled
       return OrderStatus.Cancelled;
     }
   }
