@@ -271,17 +271,22 @@ export class TwapOrderMapper {
     // Note: TWAPs can never "expire" in their entirety, only parts can but
     // this does not affect TWAP status
 
+    const finalOrderUid = this.gpv2OrderHelper.computeOrderUid({
+      chainId: args.chainId,
+      owner: args.safeAddress,
+      order: args.twapParts.slice(-1)[0], // Last TWAP part
+    });
+
+    // If active order is final one, it's fulfilled as it exists
+    if (args.activeOrderUid === finalOrderUid) {
+      return OrderStatus.Fulfilled;
+    }
+
     // Check active or final order part depending on whether the TWAP is active
-    const orderUidToCheck =
-      args.activeOrderUid ??
-      this.gpv2OrderHelper.computeOrderUid({
-        chainId: args.chainId,
-        owner: args.safeAddress,
-        order: args.twapParts.slice(-1)[0], // Last part's order
-      });
+    const orderUidToCheck = args.activeOrderUid ?? finalOrderUid;
 
     try {
-      // If we already fetched the order, we don't need to do it again
+      // If we already fetched the order, we don't need to again
       const orderAlreadyFetched = !!args.partOrders?.some(
         (order) => order.uid === orderUidToCheck,
       );
@@ -289,8 +294,8 @@ export class TwapOrderMapper {
         await this.swapsRepository.getOrder(args.chainId, orderUidToCheck);
       }
 
-      // If the order was created, the TWAP is either open or fulfilled depending
-      // on whether the order part is active
+      // If the order exists, the TWAP is either open or fulfilled depending
+      // on whether the order is active
       return args.activeOrderUid ? OrderStatus.Open : OrderStatus.Fulfilled;
     } catch {
       // If the order doesn't exist, it means the TWAP was cancelled
