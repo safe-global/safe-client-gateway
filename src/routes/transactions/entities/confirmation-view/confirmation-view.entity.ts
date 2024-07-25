@@ -185,6 +185,12 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
   @ApiProperty({ enum: OrderClass })
   class: OrderClass.Limit;
 
+  @ApiProperty({
+    description:
+      'The order UID of the active order, null as it is not an active order',
+  })
+  activeOrderUid: null;
+
   @ApiProperty({ description: 'The timestamp when the TWAP expires' })
   validUntil: number;
 
@@ -278,6 +284,7 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
     status: OrderStatus;
     kind: OrderKind.Sell;
     class: OrderClass.Limit;
+    activeOrderUid: null;
     validUntil: number;
     sellAmount: string;
     buyAmount: string;
@@ -301,6 +308,7 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
     this.status = args.status;
     this.kind = args.kind;
     this.class = args.class;
+    this.activeOrderUid = args.activeOrderUid;
     this.validUntil = args.validUntil;
     this.sellAmount = args.sellAmount;
     this.buyAmount = args.buyAmount;

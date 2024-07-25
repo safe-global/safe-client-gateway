@@ -94,34 +94,54 @@ export class TwapOrderMapper {
     // Fetch all order parts if the transaction has been executed, otherwise none
     const partsToFetch = transaction.executionDate
       ? hasAbundantParts
-        ? // We use the last part (and only one) to get the status of the entire
+        ? // We use the last part (and only one) to get the amounts/fees of the entire
           // order and we only need one to get the token info
           twapParts.slice(-1)
         : twapParts
       : [];
 
-    const orders = await this.getOrdersForParts({
+    const activePart = this.getActivePart({
+      twapParts,
+      executionDate: transaction.executionDate,
+    });
+
+    const activeOrderUid = activePart
+      ? this.gpv2OrderHelper.computeOrderUid({
+          chainId: chainId,
+          owner: safeAddress,
+          order: activePart,
+        })
+      : null;
+
+    const partOrders = await this.getPartOrders({
       partsToFetch,
       chainId,
       safeAddress,
     });
 
-    const status = !orders ? OrderStatus.Unknown : this.getOrderStatus(orders);
+    const status = await this.getOrderStatus({
+      chainId,
+      safeAddress,
+      twapParts,
+      partOrders,
+      activeOrderUid,
+      executionDate: transaction.executionDate,
+    });
 
     const executedSellAmount: TwapOrderInfo['executedSellAmount'] =
-      hasAbundantParts || !orders
+      hasAbundantParts || !partOrders
         ? null
-        : this.getExecutedSellAmount(orders).toString();
+        : this.getExecutedSellAmount(partOrders).toString();
 
     const executedBuyAmount: TwapOrderInfo['executedBuyAmount'] =
-      hasAbundantParts || !orders
+      hasAbundantParts || !partOrders
         ? null
-        : this.getExecutedBuyAmount(orders).toString();
+        : this.getExecutedBuyAmount(partOrders).toString();
 
     const executedSurplusFee: TwapOrderInfo['executedSurplusFee'] =
-      hasAbundantParts || !orders
+      hasAbundantParts || !partOrders
         ? null
-        : this.getExecutedSurplusFee(orders).toString();
+        : this.getExecutedSurplusFee(partOrders).toString();
 
     const [sellToken, buyToken] = await Promise.all([
       this.swapOrderHelper.getToken({
@@ -138,6 +158,7 @@ export class TwapOrderMapper {
       status,
       kind: twapOrderData.kind,
       class: twapOrderData.class,
+      activeOrderUid,
       validUntil: Math.max(...twapParts.map((order) => order.validTo)),
       sellAmount: twapOrderData.sellAmount,
       buyAmount: twapOrderData.buyAmount,
@@ -172,7 +193,23 @@ export class TwapOrderMapper {
     });
   }
 
-  private async getOrdersForParts(args: {
+  private getActivePart(args: {
+    twapParts: Array<GPv2OrderParameters>;
+    executionDate: Date | null;
+  }): GPv2OrderParameters | null {
+    if (!args.executionDate) {
+      return null;
+    }
+
+    const now = new Date();
+    const activePart = args.twapParts.find((part) => {
+      return part.validTo > Math.floor(now.getTime() / 1_000);
+    });
+
+    return activePart ?? null;
+  }
+
+  private async getPartOrders(args: {
     partsToFetch: Array<GPv2OrderParameters>;
     chainId: string;
     safeAddress: `0x${string}`;
@@ -205,7 +242,7 @@ export class TwapOrderMapper {
         });
 
       if (!order || order.kind == OrderKind.Unknown) {
-        // Without every order it's not possible to determine status or executed amounts/fees
+        // Without every order it's not possible to determine executed amounts/fees
         return null;
       }
 
@@ -219,37 +256,47 @@ export class TwapOrderMapper {
     return orders;
   }
 
-  private getOrderStatus(
-    orders: Array<Awaited<ReturnType<typeof this.swapOrderHelper.getOrder>>>,
-  ): OrderStatus {
-    if (orders.length === 0) {
+  private async getOrderStatus(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    twapParts: Array<GPv2OrderParameters>;
+    partOrders: Array<KnownOrder> | null;
+    activeOrderUid: `0x${string}` | null;
+    executionDate: Date | null;
+  }): Promise<OrderStatus> {
+    if (!args.executionDate) {
       return OrderStatus.PreSignaturePending;
     }
 
-    // If an order is fulfilled, cancelled or expired, the part is "complete"
-    const completeStatuses = [
-      OrderStatus.Fulfilled,
-      OrderStatus.Cancelled,
-      OrderStatus.Expired,
-    ];
+    const orderUid =
+      args.activeOrderUid ??
+      this.gpv2OrderHelper.computeOrderUid({
+        chainId: args.chainId,
+        owner: args.safeAddress,
+        // If there is no "active" part, we use the last one to get the status
+        order: args.twapParts.slice(-1)[0],
+      });
 
-    for (let i = 0; i < orders.length; i++) {
-      const order = orders[i];
-
-      // Return the status of the last part
-      if (i === orders.length - 1) {
+    // If we already have the order, there is no need to fetch it again
+    if (args.partOrders) {
+      const order = args.partOrders.find((order) => order.uid === orderUid);
+      if (order) {
         return order.status;
       }
-
-      // If the part is complete, continue to the next part
-      if (completeStatuses.includes(order.status)) {
-        continue;
-      }
-
-      return order.status;
     }
 
-    return OrderStatus.Unknown;
+    try {
+      const order = await this.swapsRepository.getOrder(args.chainId, orderUid);
+      // If the active order is fulfilled, the next one may not yet exist
+      // and fetching it would fail so we assume it's open
+      if (args.activeOrderUid && order.status === OrderStatus.Fulfilled) {
+        return OrderStatus.Open;
+      }
+      return order.status;
+    } catch {
+      // If an order is not found, it's likely cancelled as it was never created
+      return OrderStatus.Cancelled;
+    }
   }
 
   private getExecutedSellAmount(orders: Array<KnownOrder>): bigint {
