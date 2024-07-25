@@ -15,7 +15,6 @@ import {
 } from '@/routes/transactions/helpers/twap-order.helper';
 import {
   KnownOrder,
-  Order,
   OrderKind,
   OrderStatus,
 } from '@/domain/swaps/entities/order.entity';
