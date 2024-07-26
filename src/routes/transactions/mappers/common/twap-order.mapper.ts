@@ -268,37 +268,40 @@ export class TwapOrderMapper {
       return OrderStatus.PreSignaturePending;
     }
 
-    // Note: TWAPs can never "expire" in their entirety, only parts can but
-    // this does not affect TWAP status
-
+    const finalPart = args.twapParts.slice(-1)[0];
     const finalOrderUid = this.gpv2OrderHelper.computeOrderUid({
       chainId: args.chainId,
       owner: args.safeAddress,
-      order: args.twapParts.slice(-1)[0], // Last TWAP part
+      order: finalPart,
     });
 
-    // If active order is final one, it's fulfilled as it exists
-    if (args.activeOrderUid === finalOrderUid) {
-      return OrderStatus.Fulfilled;
-    }
-
-    // Check active or final order part depending on whether the TWAP is active
+    // Check active or final order order
     const orderUidToCheck = args.activeOrderUid ?? finalOrderUid;
 
     try {
-      // If we already fetched the order, we don't need to again
-      const orderAlreadyFetched = !!args.partOrders?.some(
-        (order) => order.uid === orderUidToCheck,
-      );
+      // If already fetched (and exists), we don't need fetch it again
+      const orderAlreadyFetched = args.partOrders?.find((order) => {
+        return order.uid === orderUidToCheck;
+      });
       if (!orderAlreadyFetched) {
+        // Check if we can get the order (if it "exists")
         await this.swapsRepository.getOrder(args.chainId, orderUidToCheck);
       }
 
-      // If the order exists, the TWAP is either open or fulfilled depending
-      // on whether the order is active
-      return args.activeOrderUid ? OrderStatus.Open : OrderStatus.Fulfilled;
+      // We successfully fetched the final order OR the active order matches
+      // that of the final order meaning that the final order was created and
+      // we therefore know the TWAP was fulfilled
+      // Note: the final order of a TWAP can expire but as it would inherently
+      // be partially filled, we consider expired final orders as fulfilled
+      if (!args.activeOrderUid || args.activeOrderUid === finalOrderUid) {
+        return OrderStatus.Fulfilled;
+      }
+
+      // We successfully fetched the active order and it is not the final one
+      // meaning that the TWAP is still open
+      return OrderStatus.Open;
     } catch {
-      // If the order doesn't exist, it means the TWAP was cancelled
+      // The order doesn't exist, so it was cancelled
       return OrderStatus.Cancelled;
     }
   }
