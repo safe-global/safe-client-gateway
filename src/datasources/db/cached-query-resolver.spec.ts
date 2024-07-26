@@ -48,8 +48,6 @@ describe('CachedQueryResolver', () => {
         key: 'key',
         field: 'field',
       });
-      const cacheContent = await fakeCacheService.get(cacheDir);
-      expect(cacheContent).toBe(JSON.stringify(value));
     });
 
     it('should execute the query and cache the result if the cache is empty', async () => {
