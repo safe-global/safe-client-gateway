@@ -474,11 +474,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         });
       } else if (
         url ===
-        `${chain.transactionService}/api/v1/safes/${event.address}/multisig-transactions/`
+        `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
       ) {
         return Promise.resolve({
           status: 200,
-          data: pageBuilder().with('results', [multisigTransaction]).build(),
+          data: multisigTransaction,
         });
       } else {
         return Promise.reject(`No matching rule for url: ${url}`);
@@ -492,6 +492,93 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       .expect(202);
 
     expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+  });
+
+  it("should only enqueue PENDING_MULTISIG_TRANSACTION event notifications for those that haven't signed", async () => {
+    const event = pendingTransactionEventBuilder().build();
+    const chain = chainBuilder().with('chainId', event.chainId).build();
+    const owners = [
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+    ];
+    const safe = safeBuilder()
+      .with('address', event.address)
+      .with('threshold', faker.number.int({ min: 2 }))
+      .with('owners', owners)
+      .build();
+    const subscribers = owners.map((owner) => ({
+      subscriber: owner,
+      deviceUuid: faker.string.uuid() as Uuid,
+      cloudMessagingToken: faker.string.alphanumeric(),
+    }));
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
+    const confirmations = faker.helpers
+      .arrayElements(owners, { min: 1, max: owners.length - 1 })
+      .map((owner) => {
+        return confirmationBuilder().with('owner', owner).build();
+      });
+    const multisigTransaction = multisigTransactionBuilder()
+      .with('safe', event.address)
+      .with('confirmations', confirmations)
+      .build();
+
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
+        return Promise.resolve({
+          data: chain,
+          status: 200,
+        });
+      } else if (
+        url === `${chain.transactionService}/api/v1/safes/${event.address}`
+      ) {
+        return Promise.resolve({
+          status: 200,
+          data: safe,
+        });
+      } else if (
+        url ===
+        `${chain.transactionService}/api/v1/multisig-transactions/${event.safeTxHash}/`
+      ) {
+        return Promise.resolve({
+          status: 200,
+          data: multisigTransaction,
+        });
+      } else {
+        return Promise.reject(`No matching rule for url: ${url}`);
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(event)
+      .expect(202);
+
+    expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      subscribers.length - confirmations.length,
+    );
+    expect(pushNotificationsApi.enqueueNotification.mock.calls).toStrictEqual(
+      expect.arrayContaining(
+        subscribers
+          .filter((subscriber) => {
+            return confirmations.every((confirmation) => {
+              return confirmation.owner !== subscriber.subscriber;
+            });
+          })
+          .map((subscriber) => [
+            subscriber.cloudMessagingToken,
+            {
+              data: {
+                ...event,
+                type: 'CONFIRMATION_REQUEST',
+              },
+            },
+          ]),
+      ),
+    );
   });
 
   it("should enqueue MESSAGE_CONFIRMATION_REQUEST event notifications if the Safe has a threshold > 1 and the subscriber hasn't yet signed", async () => {
@@ -674,6 +761,93 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       .expect(202);
 
     expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+  });
+
+  it("should only enqueue MESSAGE_CONFIRMATION_REQUEST event notifications for those that haven't signed", async () => {
+    const event = messageCreatedEventBuilder().build();
+    const chain = chainBuilder().with('chainId', event.chainId).build();
+    const owners = [
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+    ];
+    const safe = safeBuilder()
+      .with('address', event.address)
+      .with('threshold', faker.number.int({ min: 2 }))
+      .with('owners', owners)
+      .build();
+    const subscribers = owners.map((owner) => ({
+      subscriber: owner,
+      deviceUuid: faker.string.uuid() as Uuid,
+      cloudMessagingToken: faker.string.alphanumeric(),
+    }));
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
+    const confirmations = faker.helpers
+      .arrayElements(owners, { min: 1, max: owners.length - 1 })
+      .map((owner) => {
+        return messageConfirmationBuilder().with('owner', owner).build();
+      });
+    const message = messageBuilder()
+      .with('messageHash', event.messageHash as `0x${string}`)
+      .with('confirmations', confirmations)
+      .build();
+
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
+        return Promise.resolve({
+          data: chain,
+          status: 200,
+        });
+      } else if (
+        url === `${chain.transactionService}/api/v1/safes/${event.address}`
+      ) {
+        return Promise.resolve({
+          status: 200,
+          data: safe,
+        });
+      } else if (
+        url ===
+        `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+      ) {
+        return Promise.resolve({
+          status: 200,
+          data: message,
+        });
+      } else {
+        return Promise.reject(`No matching rule for url: ${url}`);
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(event)
+      .expect(202);
+
+    expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      subscribers.length - confirmations.length,
+    );
+    expect(pushNotificationsApi.enqueueNotification.mock.calls).toStrictEqual(
+      expect.arrayContaining(
+        subscribers
+          .filter((subscriber) => {
+            return confirmations.every((confirmation) => {
+              return confirmation.owner !== subscriber.subscriber;
+            });
+          })
+          .map((subscriber) => [
+            subscriber.cloudMessagingToken,
+            {
+              data: {
+                ...event,
+                type: 'MESSAGE_CONFIRMATION_REQUEST',
+              },
+            },
+          ]),
+      ),
+    );
   });
 
   it('should cleanup unregistered tokens', async () => {

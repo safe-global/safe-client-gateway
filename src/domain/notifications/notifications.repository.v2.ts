@@ -93,33 +93,35 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     // Only allow owners or delegates to subscribe to notifications
     // We don't Promise.all getSafe/getDelegates to prevent unnecessary calls
     for (const safeToSubscribe of args.safes) {
-      const safe = await this.safeRepository
-        .getSafe({
-          chainId: safeToSubscribe.chainId,
-          address: safeToSubscribe.address,
-        })
-        .catch(() => null);
+      const safe = await this.safeRepository.getSafe({
+        chainId: safeToSubscribe.chainId,
+        address: safeToSubscribe.address,
+      });
 
       const isOwner = !!safe?.owners.includes(args.account);
       if (isOwner) {
         continue;
       }
 
-      const delegates = await this.delegatesRepository
-        .getDelegates({
-          chainId: safeToSubscribe.chainId,
-          safeAddress: safeToSubscribe.address,
-          delegate: args.account,
-        })
-        .catch(() => null);
+      const delegates = await this.delegatesRepository.getDelegates({
+        chainId: safeToSubscribe.chainId,
+        safeAddress: safeToSubscribe.address,
+        delegate: args.account,
+      });
 
-      const isDelegate = !!delegates?.results.some(
-        ({ delegate }) => delegate === args.account,
-      );
+      const isDelegate = !!delegates?.results.some((delegate) => {
+        return (
+          delegate.delegate === args.account &&
+          delegate.safe === safeToSubscribe.address
+        );
+      });
       if (isDelegate) {
         continue;
       }
 
+      this.loggingService.info(
+        `Non-owner/delegate ${args.account} tried to subscribe to Safe ${safeToSubscribe.address}`,
+      );
       throw new UnauthorizedException();
     }
 
