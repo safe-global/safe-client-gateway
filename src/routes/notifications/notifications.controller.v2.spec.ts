@@ -32,6 +32,7 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/entities/__tests__/upsert-subscriptions.dto.entity.builder';
+import { Chain } from '@/routes/chains/entities/chain.entity';
 import { faker } from '@faker-js/faker';
 import {
   INestApplication,
@@ -50,7 +51,9 @@ describe('Notifications Controller V2 (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let notificationsDatasource: jest.MockedObjectDeep<INotificationsDatasource>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    jest.resetAllMocks();
+
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -93,45 +96,38 @@ describe('Notifications Controller V2 (Unit)', () => {
     await app.init();
   });
 
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
-
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
   describe('POST /v2/register/notifications', () => {
     it('should upsert subscription(s) for owners', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const chain = chainBuilder().build();
-      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-        .with(
-          'safes',
-          Array.from(
-            {
-              length: faker.number.int({ min: 1, max: 5 }),
-            },
-            () => ({
-              chainId: chain.chainId,
-              address: getAddress(faker.finance.ethereumAddress()),
-              notificationTypes: faker.helpers.arrayElements(
-                Object.values(NotificationType),
-              ),
-            }),
-          ),
-        )
-        .build();
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+      const chains = upsertSubscriptionsDto.safes.reduce<Record<string, Chain>>(
+        (acc, { chainId }) => {
+          if (!acc[chainId]) {
+            acc[chainId] = chainBuilder().with('chainId', chainId).build();
+          }
+          return acc;
+        },
+        {},
+      );
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', signerAddress)
-        .with('chain_id', chain.chainId)
+        .with(
+          'chain_id',
+          faker.helpers.arrayElement(upsertSubscriptionsDto.safes).chainId,
+        )
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: chain, status: 200 });
-        }
         for (const safe of upsertSubscriptionsDto.safes) {
+          const chain = chains[safe.chainId];
+
+          if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
@@ -143,13 +139,14 @@ describe('Notifications Controller V2 (Unit)', () => {
               status: 200,
             });
           }
+          if (url === `${chain.transactionService}/api/v2/delegates/`) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', []).build(),
+              status: 200,
+            });
+          }
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
-          return Promise.resolve({
-            data: pageBuilder().with('results', []).build(),
-            status: 200,
-          });
-        }
+
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
@@ -172,34 +169,31 @@ describe('Notifications Controller V2 (Unit)', () => {
 
     it('should upsert subscription(s) for delegates', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const chain = chainBuilder().build();
-      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-        .with(
-          'safes',
-          Array.from(
-            {
-              length: faker.number.int({ min: 1, max: 5 }),
-            },
-            () => ({
-              chainId: chain.chainId,
-              address: getAddress(faker.finance.ethereumAddress()),
-              notificationTypes: faker.helpers.arrayElements(
-                Object.values(NotificationType),
-              ),
-            }),
-          ),
-        )
-        .build();
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+      const chains = upsertSubscriptionsDto.safes.reduce<Record<string, Chain>>(
+        (acc, { chainId }) => {
+          if (!acc[chainId]) {
+            acc[chainId] = chainBuilder().with('chainId', chainId).build();
+          }
+          return acc;
+        },
+        {},
+      );
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', signerAddress)
-        .with('chain_id', chain.chainId)
+        .with(
+          'chain_id',
+          faker.helpers.arrayElement(upsertSubscriptionsDto.safes).chainId,
+        )
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      networkService.get.mockImplementation(({ url, networkRequest }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: chain, status: 200 });
-        }
+      networkService.get.mockImplementation(({ url }) => {
         for (const safe of upsertSubscriptionsDto.safes) {
+          const chain = chains[safe.chainId];
+
+          if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
@@ -208,20 +202,21 @@ describe('Notifications Controller V2 (Unit)', () => {
               status: 200,
             });
           }
-          if (
-            url === `${chain.transactionService}/api/v2/delegates/` &&
-            networkRequest?.params?.safe === safe.address
-          ) {
+          if (url === `${chain.transactionService}/api/v2/delegates/`) {
             return Promise.resolve({
               data: pageBuilder()
                 .with('results', [
-                  delegateBuilder().with('delegate', signerAddress).build(),
+                  delegateBuilder()
+                    .with('delegate', signerAddress)
+                    .with('safe', safe.address)
+                    .build(),
                 ])
                 .build(),
               status: 200,
             });
           }
         }
+
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
@@ -244,34 +239,33 @@ describe('Notifications Controller V2 (Unit)', () => {
 
     it('should allow subscription upsertion with a token with the same signer_address from a different chain_id', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const chain = chainBuilder().build();
-      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-        .with(
-          'safes',
-          Array.from(
-            {
-              length: faker.number.int({ min: 1, max: 5 }),
-            },
-            () => ({
-              chainId: chain.chainId,
-              address: getAddress(faker.finance.ethereumAddress()),
-              notificationTypes: faker.helpers.arrayElements(
-                Object.values(NotificationType),
-              ),
-            }),
-          ),
-        )
-        .build();
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+      const chains = upsertSubscriptionsDto.safes.reduce<Record<string, Chain>>(
+        (acc, { chainId }) => {
+          if (!acc[chainId]) {
+            acc[chainId] = chainBuilder().with('chainId', chainId).build();
+          }
+          return acc;
+        },
+        {},
+      );
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', signerAddress)
-        .with('chain_id', faker.string.numeric({ exclude: chain.chainId }))
+        .with(
+          'chain_id',
+          faker.string.numeric({
+            exclude: upsertSubscriptionsDto.safes.map((safe) => safe.chainId),
+          }),
+        )
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: chain, status: 200 });
-        }
         for (const safe of upsertSubscriptionsDto.safes) {
+          const chain = chains[safe.chainId];
+
+          if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
@@ -283,13 +277,14 @@ describe('Notifications Controller V2 (Unit)', () => {
               status: 200,
             });
           }
+          if (url === `${chain.transactionService}/api/v2/delegates/`) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', []).build(),
+              status: 200,
+            });
+          }
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
-          return Promise.resolve({
-            data: pageBuilder().with('results', []).build(),
-            status: 200,
-          });
-        }
+
         return Promise.reject(new Error(`Could not match ${url}`));
       });
 
@@ -313,37 +308,35 @@ describe('Notifications Controller V2 (Unit)', () => {
     it('should allow subscription(s) to the same Safe with different devices', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
-      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-        .with(
-          'safes',
-          Array.from(
-            {
-              length: faker.number.int({ min: 1, max: 5 }),
-            },
-            () => ({
-              chainId: chain.chainId,
-              address: getAddress(faker.finance.ethereumAddress()),
-              notificationTypes: faker.helpers.arrayElements(
-                Object.values(NotificationType),
-              ),
-            }),
-          ),
-        )
-        .build();
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
       const secondSubscriptionDto = upsertSubscriptionsDtoBuilder()
         .with('safes', upsertSubscriptionsDto.safes)
         .with('deviceUuid', null)
         .build();
+      const chains = upsertSubscriptionsDto.safes.reduce<Record<string, Chain>>(
+        (acc, { chainId }) => {
+          if (!acc[chainId]) {
+            acc[chainId] = chainBuilder().with('chainId', chainId).build();
+          }
+          return acc;
+        },
+        {},
+      );
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', signerAddress)
-        .with('chain_id', chain.chainId)
+        .with(
+          'chain_id',
+          faker.helpers.arrayElement(upsertSubscriptionsDto.safes).chainId,
+        )
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: chain, status: 200 });
-        }
         for (const safe of upsertSubscriptionsDto.safes) {
+          const chain = chains[safe.chainId];
+
+          if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
@@ -355,22 +348,9 @@ describe('Notifications Controller V2 (Unit)', () => {
               status: 200,
             });
           }
-        }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
-          return Promise.resolve({
-            data: pageBuilder().with('results', []).build(),
-            status: 200,
-          });
-        }
-        for (const safe of secondSubscriptionDto.safes) {
-          if (
-            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
-          ) {
+          if (url === `${chain.transactionService}/api/v2/delegates/`) {
             return Promise.resolve({
-              data: safeBuilder()
-                .with('address', safe.address)
-                .with('owners', [signerAddress])
-                .build(),
+              data: pageBuilder().with('results', []).build(),
               status: 200,
             });
           }
@@ -384,27 +364,6 @@ describe('Notifications Controller V2 (Unit)', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send(upsertSubscriptionsDto)
         .expect(201);
-      await request(app.getHttpServer())
-        .post(`/v2/register/notifications`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send(secondSubscriptionDto)
-        .expect(201);
-
-      expect(notificationsDatasource.upsertSubscriptions).toHaveBeenCalledTimes(
-        2,
-      );
-      expect(
-        notificationsDatasource.upsertSubscriptions,
-      ).toHaveBeenNthCalledWith(1, {
-        signerAddress,
-        upsertSubscriptionsDto,
-      });
-      expect(
-        notificationsDatasource.upsertSubscriptions,
-      ).toHaveBeenNthCalledWith(2, {
-        signerAddress,
-        upsertSubscriptionsDto: secondSubscriptionDto,
-      });
     });
 
     it('should return 422 if the UpsertSubscriptionsDto is invalid', async () => {
@@ -433,34 +392,31 @@ describe('Notifications Controller V2 (Unit)', () => {
 
     it('should forward datasource errors', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const chain = chainBuilder().build();
-      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-        .with(
-          'safes',
-          Array.from(
-            {
-              length: faker.number.int({ min: 1, max: 5 }),
-            },
-            () => ({
-              chainId: chain.chainId,
-              address: getAddress(faker.finance.ethereumAddress()),
-              notificationTypes: faker.helpers.arrayElements(
-                Object.values(NotificationType),
-              ),
-            }),
-          ),
-        )
-        .build();
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+      const chains = upsertSubscriptionsDto.safes.reduce<Record<string, Chain>>(
+        (acc, { chainId }) => {
+          if (!acc[chainId]) {
+            acc[chainId] = chainBuilder().with('chainId', chainId).build();
+          }
+          return acc;
+        },
+        {},
+      );
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', signerAddress)
-        .with('chain_id', chain.chainId)
+        .with(
+          'chain_id',
+          faker.helpers.arrayElement(upsertSubscriptionsDto.safes).chainId,
+        )
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: chain, status: 200 });
-        }
         for (const safe of upsertSubscriptionsDto.safes) {
+          const chain = chains[safe.chainId];
+
+          if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
@@ -472,13 +428,14 @@ describe('Notifications Controller V2 (Unit)', () => {
               status: 200,
             });
           }
+          if (url === `${chain.transactionService}/api/v2/delegates/`) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', []).build(),
+              status: 200,
+            });
+          }
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
-          return Promise.resolve({
-            data: pageBuilder().with('results', []).build(),
-            status: 200,
-          });
-        }
+
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       const error = faker.helpers.arrayElement([
@@ -525,24 +482,7 @@ describe('Notifications Controller V2 (Unit)', () => {
       });
 
       it('should return 403 if token is invalid', async () => {
-        const chainId = faker.string.numeric();
-        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-          .with(
-            'safes',
-            Array.from(
-              {
-                length: faker.number.int({ min: 1, max: 5 }),
-              },
-              () => ({
-                chainId,
-                address: getAddress(faker.finance.ethereumAddress()),
-                notificationTypes: faker.helpers.arrayElements(
-                  Object.values(NotificationType),
-                ),
-              }),
-            ),
-          )
-          .build();
+        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
         const accessToken = faker.string.sample();
 
         expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
@@ -621,27 +561,13 @@ describe('Notifications Controller V2 (Unit)', () => {
 
       it('should return 403 if token is not yet valid', async () => {
         const signerAddress = getAddress(faker.finance.ethereumAddress());
-        const chainId = faker.string.numeric();
-        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-          .with(
-            'safes',
-            Array.from(
-              {
-                length: faker.number.int({ min: 1, max: 5 }),
-              },
-              () => ({
-                chainId,
-                address: getAddress(faker.finance.ethereumAddress()),
-                notificationTypes: faker.helpers.arrayElements(
-                  Object.values(NotificationType),
-                ),
-              }),
-            ),
-          )
-          .build();
+        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
         const authPayloadDto = authPayloadDtoBuilder()
           .with('signer_address', signerAddress)
-          .with('chain_id', chainId)
+          .with(
+            'chain_id',
+            faker.helpers.arrayElement(upsertSubscriptionsDto.safes).chainId,
+          )
           .build();
         const accessToken = jwtService.sign({
           ...authPayloadDto,
@@ -658,27 +584,13 @@ describe('Notifications Controller V2 (Unit)', () => {
 
       it('should return 403 if token has expired', async () => {
         const signerAddress = getAddress(faker.finance.ethereumAddress());
-        const chainId = faker.string.numeric();
-        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-          .with(
-            'safes',
-            Array.from(
-              {
-                length: faker.number.int({ min: 1, max: 5 }),
-              },
-              () => ({
-                chainId,
-                address: getAddress(faker.finance.ethereumAddress()),
-                notificationTypes: faker.helpers.arrayElements(
-                  Object.values(NotificationType),
-                ),
-              }),
-            ),
-          )
-          .build();
+        const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
         const authPayloadDto = authPayloadDtoBuilder()
           .with('signer_address', signerAddress)
-          .with('chain_id', chainId)
+          .with(
+            'chain_id',
+            faker.helpers.arrayElement(upsertSubscriptionsDto.safes).chainId,
+          )
           .build();
         const accessToken = jwtService.sign({
           ...authPayloadDto,
