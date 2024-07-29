@@ -1,5 +1,5 @@
-import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { Module } from '@nestjs/common';
+import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 
 const accountsDatasource = {
   createAccount: jest.fn(),
