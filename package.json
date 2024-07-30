@@ -38,7 +38,7 @@
     "cookie-parser": "^1.4.6",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
-    "nestjs-cls": "^4.3.0",
+    "nestjs-cls": "^4.4.0",
     "postgres": "^3.4.4",
     "redis": "^4.6.15",
     "reflect-metadata": "^0.2.2",
