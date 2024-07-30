@@ -23,7 +23,7 @@ export class CounterfactualSafesController {
   async getCounterfactualSafe(
     @Auth() authPayload: AuthPayload,
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('predictedAddress', new ValidationPipe(AddressSchema))
     predictedAddress: `0x${string}`,
   ): Promise<CounterfactualSafe> {
