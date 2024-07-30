@@ -35,6 +35,7 @@ export type StartTime =
 export type TwapOrderInfo = {
   status: OrderStatus;
   kind: OrderKind.Sell;
+  activeOrderUid: `0x${string}` | null;
   class: OrderClass.Limit;
   validUntil: number;
   sellAmount: string;
@@ -71,8 +72,14 @@ export class TwapOrderTransactionInfo
   @ApiProperty({ enum: OrderKind })
   kind: OrderKind.Sell;
 
-  @ApiProperty({ enum: OrderClass })
+  @ApiPropertyOptional({ enum: OrderClass })
   class: OrderClass.Limit;
+
+  @ApiProperty({
+    nullable: true,
+    description: 'The order UID of the active order, or null if none is active',
+  })
+  activeOrderUid: `0x${string}` | null;
 
   @ApiProperty({ description: 'The timestamp when the TWAP expires' })
   validUntil: number;
@@ -164,6 +171,7 @@ export class TwapOrderTransactionInfo
   constructor(args: {
     status: OrderStatus;
     kind: OrderKind.Sell;
+    activeOrderUid: `0x${string}` | null;
     class: OrderClass.Limit;
     validUntil: number;
     sellAmount: string;
@@ -187,6 +195,7 @@ export class TwapOrderTransactionInfo
     this.status = args.status;
     this.kind = args.kind;
     this.class = args.class;
+    this.activeOrderUid = args.activeOrderUid;
     this.validUntil = args.validUntil;
     this.sellAmount = args.sellAmount;
     this.buyAmount = args.buyAmount;
