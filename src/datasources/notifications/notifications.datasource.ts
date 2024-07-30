@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import postgres from 'postgres';
 import { UpsertSubscriptionsDto } from '@/domain/notifications/entities-v2/upsert-subscriptions.dto.entity';
+import { UUID } from 'crypto';
 
 @Injectable()
 export class NotificationsDatasource implements INotificationsDatasource {
@@ -25,30 +26,26 @@ export class NotificationsDatasource implements INotificationsDatasource {
   ) {}
 
   /**
-   * Upserts subscriptions for the given account/device as per the list of Safes
+   * Upserts subscriptions for the given signer/device as per the list of Safes
    * and notification types provided.
    *
-   * @param args.account Account address
-   * @param args.cloudMessagingToken Cloud messaging token
-   * @param args.deviceType Device type
-   * @param args.deviceUuid Device UUID (defaults to random UUID)
-   * @param args.safes List of Safes with notification types
+   * @param args.signerAddress Signer address
+   * @param args.upsertSubscriptionsDto {@link UpsertSubscriptionsDto} DTO
    *
    * @returns Device UUID
    */
-  async upsertSubscriptions(
-    upsertSubscriptionsDto: UpsertSubscriptionsDto,
-  ): Promise<{ deviceUuid: Uuid }> {
-    const account = await this.accountsDatasource.getAccount(
-      upsertSubscriptionsDto.account,
-    );
-    const deviceUuid = upsertSubscriptionsDto.deviceUuid ?? crypto.randomUUID();
+  async upsertSubscriptions(args: {
+    signerAddress: `0x${string}`;
+    upsertSubscriptionsDto: UpsertSubscriptionsDto;
+  }): Promise<{ deviceUuid: Uuid }> {
+    const deviceUuid =
+      args.upsertSubscriptionsDto.deviceUuid ?? crypto.randomUUID();
 
     await this.sql.begin(async (sql) => {
       // Insert (or update the type/cloud messaging token of) a device
       const [device] = await sql<[{ id: number }]>`
         INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token)
-        VALUES (${upsertSubscriptionsDto.deviceType}, ${deviceUuid}, ${upsertSubscriptionsDto.cloudMessagingToken})
+        VALUES (${args.upsertSubscriptionsDto.deviceType}, ${deviceUuid}, ${args.upsertSubscriptionsDto.cloudMessagingToken})
         ON CONFLICT (device_uuid)
         DO UPDATE SET
           cloud_messaging_token = EXCLUDED.cloud_messaging_token,
@@ -64,13 +61,13 @@ export class NotificationsDatasource implements INotificationsDatasource {
 
       // For each Safe, upsert the subscription and overwrite the subscribed-to notification types
       await Promise.all(
-        upsertSubscriptionsDto.safes.map(async (safe) => {
+        args.upsertSubscriptionsDto.safes.map(async (safe) => {
           try {
             // 1. Upsert subscription
             const [subscription] = await sql<[{ id: number }]>`
-              INSERT INTO notification_subscriptions (account_id, chain_id, safe_address, push_notification_device_id)
-              VALUES (${account.id}, ${safe.chainId}, ${safe.address}, ${device.id})
-              ON CONFLICT (account_id, chain_id, safe_address, push_notification_device_id)
+              INSERT INTO notification_subscriptions (chain_id, safe_address, signer_address, push_notification_device_id)
+              VALUES (${safe.chainId}, ${safe.address}, ${args.signerAddress}, ${device.id})
+              ON CONFLICT (chain_id, safe_address, signer_address, push_notification_device_id)
                 -- If no value is set ON CONFLICT, an error is thrown meaning nothing is returned
                 DO UPDATE SET updated_at = NOW()
               RETURNING id
@@ -100,23 +97,21 @@ export class NotificationsDatasource implements INotificationsDatasource {
   }
 
   /**
-   * Gets notification preferences for given account/device for the given Safe.
+   * Gets notification preferences for given signer/device for the given Safe.
    *
-   * @param args.account Account address
    * @param args.deviceUuid Device UUID
    * @param args.chainId Chain ID
    * @param args.safeAddress Safe address
+   * @param args.signerAddress Signer address
    *
    * @returns List of {@link DomainNotificationType} notifications subscribed to
    */
   async getSafeSubscription(args: {
-    account: `0x${string}`;
     deviceUuid: Uuid;
     chainId: string;
     safeAddress: `0x${string}`;
+    signerAddress: `0x${string}`;
   }): Promise<Array<DomainNotificationType>> {
-    const account = await this.accountsDatasource.getAccount(args.account);
-
     const notificationTypes = await this.sql<
       Array<{ name: DomainNotificationType }>
     >`
@@ -125,9 +120,9 @@ export class NotificationsDatasource implements INotificationsDatasource {
       JOIN push_notification_devices pnd ON ns.push_notification_device_id = pnd.id
       JOIN notification_subscription_notification_types nsnt ON ns.id = nsnt.notification_subscription_id
       JOIN notification_types nt ON nsnt.notification_type_id = nt.id
-      WHERE ns.account_id = ${account.id}
-        AND ns.chain_id = ${args.chainId}
+      WHERE ns.chain_id = ${args.chainId}
         AND ns.safe_address = ${args.safeAddress}
+        AND ns.signer_address = ${args.signerAddress}
         AND pnd.device_uuid = ${args.deviceUuid}
     `.catch((e) => {
       const error = 'Error getting subscription or notification types';
@@ -158,17 +153,22 @@ export class NotificationsDatasource implements INotificationsDatasource {
   > {
     const subscribers = await this.sql<
       Array<{
-        address: `0x${string}`;
-        device_uuid: Uuid;
+        signer_address: `0x${string}`;
         cloud_messaging_token: string;
+        device_uuid: UUID;
       }>
     >`
-      SELECT a.address, pnd.device_uuid, pnd.cloud_messaging_token
-      FROM notification_subscriptions ns
-      JOIN accounts a ON ns.account_id = a.id
-      JOIN push_notification_devices pnd ON ns.push_notification_device_id = pnd.id
-      WHERE ns.chain_id = ${args.chainId}
-        AND ns.safe_address = ${args.safeAddress}
+      SELECT 
+        pd.cloud_messaging_token,
+        ns.signer_address,
+        pd.device_uuid
+      FROM 
+        push_notification_devices pd
+      JOIN 
+        notification_subscriptions ns ON pd.id = ns.push_notification_device_id
+      WHERE 
+        ns.chain_id = ${args.chainId}
+        AND ns.safe_address = ${args.safeAddress};
     `.catch((e) => {
       const error = 'Error getting subscribers with tokens';
       this.loggingService.info(`${error}: ${asError(e).message}`);
@@ -177,7 +177,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
 
     return subscribers.map((subscriber) => {
       return {
-        subscriber: subscriber.address,
+        subscriber: subscriber.signer_address,
         deviceUuid: subscriber.device_uuid,
         cloudMessagingToken: subscriber.cloud_messaging_token,
       };
@@ -185,18 +185,18 @@ export class NotificationsDatasource implements INotificationsDatasource {
   }
 
   /**
-   * Deletes the Safe subscription for the given account/device.
+   * Deletes the Safe subscription for the given signer/device.
    *
-   * @param args.account Account address
    * @param args.deviceUuid Device UUID
    * @param args.chainId Chain ID
    * @param args.safeAddress Safe address
+   * @param args.signerAddress Signer address
    */
   async deleteSubscription(args: {
-    account: `0x${string}`;
     deviceUuid: Uuid;
     chainId: string;
     safeAddress: `0x${string}`;
+    signerAddress: `0x${string}`;
   }): Promise<void> {
     await this.sql.begin(async (sql) => {
       try {
@@ -205,13 +205,12 @@ export class NotificationsDatasource implements INotificationsDatasource {
           [{ push_notification_device_id: number }]
         >`
           DELETE FROM notification_subscriptions ns
-          USING accounts a, push_notification_devices pnd
-          WHERE ns.account_id = a.id
-            AND ns.push_notification_device_id = pnd.id
-            AND a.address = ${args.account}
+          USING push_notification_devices pnd
+          WHERE ns.push_notification_device_id = pnd.id
             AND pnd.device_uuid = ${args.deviceUuid}
             AND ns.chain_id = ${args.chainId}
             AND ns.safe_address = ${args.safeAddress}
+            AND ns.signer_address = ${args.signerAddress}
           RETURNING ns.push_notification_device_id;
         `;
 

@@ -7,11 +7,8 @@ import { INotificationsRepositoryV2 } from '@/domain/notifications/notifications
 import {
   Inject,
   Injectable,
-  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification.entity';
 import { get } from 'lodash';
@@ -50,10 +47,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     private readonly pushNotificationsApi: IPushNotificationsApi,
     @Inject(INotificationsDatasource)
     private readonly notificationsDatasource: INotificationsDatasource,
-    @Inject(ISafeRepository)
-    private readonly safeRepository: ISafeRepository,
-    @Inject(IDelegatesV2Repository)
-    private readonly delegatesRepository: IDelegatesV2Repository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {}
@@ -87,52 +80,20 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     return isNotFound && isUnregistered;
   }
 
-  async upsertSubscriptions(args: UpsertSubscriptionsDto): Promise<{
+  async upsertSubscriptions(args: {
+    signerAddress: `0x${string}`;
+    upsertSubscriptionsDto: UpsertSubscriptionsDto;
+  }): Promise<{
     deviceUuid: Uuid;
   }> {
-    // Only allow owners or delegates to subscribe to notifications
-    // We don't Promise.all getSafe/getDelegates to prevent unnecessary calls
-    for (const safeToSubscribe of args.safes) {
-      const safe = await this.safeRepository.getSafe({
-        chainId: safeToSubscribe.chainId,
-        address: safeToSubscribe.address,
-      });
-
-      const isOwner = !!safe?.owners.includes(args.account);
-      if (isOwner) {
-        continue;
-      }
-
-      const delegates = await this.delegatesRepository.getDelegates({
-        chainId: safeToSubscribe.chainId,
-        safeAddress: safeToSubscribe.address,
-        delegate: args.account,
-      });
-
-      const isDelegate = !!delegates?.results.some((delegate) => {
-        return (
-          delegate.delegate === args.account &&
-          delegate.safe === safeToSubscribe.address
-        );
-      });
-      if (isDelegate) {
-        continue;
-      }
-
-      this.loggingService.info(
-        `Non-owner/delegate ${args.account} tried to subscribe to Safe ${safeToSubscribe.address}`,
-      );
-      throw new UnauthorizedException();
-    }
-
     return this.notificationsDatasource.upsertSubscriptions(args);
   }
 
   getSafeSubscription(args: {
-    account: `0x${string}`;
     deviceUuid: Uuid;
     chainId: string;
     safeAddress: `0x${string}`;
+    signerAddress: `0x${string}`;
   }): Promise<Array<NotificationType>> {
     return this.notificationsDatasource.getSafeSubscription(args);
   }
@@ -151,10 +112,10 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   }
 
   deleteSubscription(args: {
-    account: `0x${string}`;
     deviceUuid: Uuid;
     chainId: string;
     safeAddress: `0x${string}`;
+    signerAddress: `0x${string}`;
   }): Promise<void> {
     return this.notificationsDatasource.deleteSubscription(args);
   }

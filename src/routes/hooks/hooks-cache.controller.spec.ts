@@ -28,8 +28,8 @@ import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manage
 import { safeCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/safe-created.build';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
-import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
-import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
+import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Post Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;

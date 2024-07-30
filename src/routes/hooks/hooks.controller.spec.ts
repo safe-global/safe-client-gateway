@@ -14,8 +14,8 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
-import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
-import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
+import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication<Server>;

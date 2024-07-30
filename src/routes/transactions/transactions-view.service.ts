@@ -201,6 +201,7 @@ export class TransactionsViewService {
       status: OrderStatus.PreSignaturePending,
       kind: twapOrderData.kind,
       class: twapOrderData.class,
+      activeOrderUid: null,
       validUntil: Math.max(...twapParts.map((order) => order.validTo)),
       sellAmount: twapOrderData.sellAmount,
       buyAmount: twapOrderData.buyAmount,

@@ -170,6 +170,8 @@ export default () => ({
     swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
     twapsDecoding: process.env.FF_TWAPS_DECODING?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
+    configHooksDebugLogs:
+      process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     imitationMapping:
       process.env.FF_IMITATION_MAPPING?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',

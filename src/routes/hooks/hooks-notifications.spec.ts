@@ -27,8 +27,8 @@ import request from 'supertest';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
 import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
-import { NotificationsDatasourceModule } from '@/datasources/accounts/notifications/notifications.datasource.module';
-import { TestNotificationsDatasourceModule } from '@/datasources/accounts/notifications/__tests__/test.notifications.datasource.module';
+import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   INetworkService,
