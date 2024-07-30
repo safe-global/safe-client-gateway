@@ -541,10 +541,7 @@ describe('CounterfactualSafesController', () => {
         .with('chain_id', chain.chainId)
         .with('signer_address', address)
         .build();
-      const accessToken = jwtService.sign({
-        ...authPayloadDto,
-        exp: faker.date.past(),
-      });
+      const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
         .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
