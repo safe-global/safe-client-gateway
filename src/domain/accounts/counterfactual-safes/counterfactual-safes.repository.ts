@@ -2,7 +2,10 @@ import { IAccountsRepository } from '@/domain/accounts/accounts.repository.inter
 import { ICounterfactualSafesRepository } from '@/domain/accounts/counterfactual-safes/counterfactual-safes.repository.interface';
 import { CounterfactualSafe } from '@/domain/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
 import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
-import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
+import {
+  AccountDataType,
+  AccountDataTypeNames,
+} from '@/domain/accounts/entities/account-data-type.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { ICounterfactualSafesDatasource } from '@/domain/interfaces/counterfactual-safes.datasource.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
@@ -39,16 +42,14 @@ export class CounterfactualSafesRepository
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    const [account] = await Promise.all([
-      this.accountsRepository.getAccount({
-        authPayload: args.authPayload,
-        address: args.address,
-      }),
-      this.checkCounterfactualSafesIsEnabled({
-        authPayload: args.authPayload,
-        address: args.address,
-      }),
-    ]);
+    await this.checkCounterfactualSafesIsEnabled({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const account = await this.accountsRepository.getAccount({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
     return this.datasource.getCounterfactualSafe({
       account,
       chainId: args.chainId,
@@ -63,7 +64,7 @@ export class CounterfactualSafesRepository
    * If the Counterfactual Safe exists, it returns it.
    * If the Counterfactual Safe does not exist, it's created.
    */
-  async getOrCreateCounterfactualSafe(args: {
+  async upsertCounterfactualSafe(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;
@@ -71,16 +72,14 @@ export class CounterfactualSafesRepository
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    const [account] = await Promise.all([
-      this.accountsRepository.getAccount({
-        authPayload: args.authPayload,
-        address: args.address,
-      }),
-      this.checkCounterfactualSafesIsEnabled({
-        authPayload: args.authPayload,
-        address: args.address,
-      }),
-    ]);
+    await this.checkCounterfactualSafesIsEnabled({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const account = await this.accountsRepository.getAccount({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
 
     try {
       return await this.datasource.getCounterfactualSafe({
@@ -125,11 +124,11 @@ export class CounterfactualSafesRepository
   private async checkCounterfactualSafeDataTypeIsActive(): Promise<AccountDataType> {
     const dataTypes = await this.accountsRepository.getDataTypes();
     const counterfactualSafeDataType = dataTypes.find(
-      (dataType) => dataType.name === 'CounterfactualSafes',
+      (dataType) => dataType.name === AccountDataTypeNames.CounterfactualSafes,
     );
     if (!counterfactualSafeDataType?.is_active) {
       this.loggingService.warn({
-        message: 'CounterfactualSafes data type is not active',
+        message: `${AccountDataTypeNames.CounterfactualSafes} data type is not active`,
       });
       throw new GoneException();
     }

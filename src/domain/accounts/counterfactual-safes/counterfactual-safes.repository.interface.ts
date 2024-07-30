@@ -18,7 +18,7 @@ export interface ICounterfactualSafesRepository {
     predictedAddress: `0x${string}`;
   }): Promise<CounterfactualSafe>;
 
-  getOrCreateCounterfactualSafe(args: {
+  upsertCounterfactualSafe(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;

@@ -23,6 +23,7 @@ import { createCounterfactualSafeDtoBuilder } from '@/domain/accounts/counterfac
 import { accountDataSettingBuilder } from '@/domain/accounts/entities/__tests__/account-data-setting.builder';
 import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
 import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.builder';
+import { AccountDataTypeNames } from '@/domain/accounts/entities/account-data-type.entity';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
@@ -101,7 +102,7 @@ describe('CounterfactualSafesController', () => {
       const account = accountBuilder().build();
       const accountDataTypes = [
         accountDataTypeBuilder()
-          .with('name', 'CounterfactualSafes')
+          .with('name', AccountDataTypeNames.CounterfactualSafes)
           .with('is_active', true)
           .build(),
       ];
@@ -134,7 +135,6 @@ describe('CounterfactualSafesController', () => {
           saltNonce: counterfactualSafe.salt_nonce,
           singletonAddress: counterfactualSafe.singleton_address,
           threshold: counterfactualSafe.threshold,
-          accountId: counterfactualSafe.account_id.toString(),
         });
     });
 
@@ -159,14 +159,16 @@ describe('CounterfactualSafesController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const counterfactualSafe = counterfactualSafeBuilder().build();
+      const accessToken = 'invalid';
 
       await request(app.getHttpServer())
         .get(
           `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
         )
-        .set('Cookie', ['access_token=invalid'])
+        .set('Cookie', [`access_token=${accessToken}`])
         .expect(403);
 
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
       expect(accountsRepository.getAccount).not.toHaveBeenCalled();
       expect(
         counterfactualSafesDataSource.getCounterfactualSafe,
@@ -193,6 +195,7 @@ describe('CounterfactualSafesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403);
 
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
       expect(accountsRepository.getAccount).not.toHaveBeenCalled();
       expect(
         counterfactualSafesDataSource.getCounterfactualSafe,
@@ -212,6 +215,7 @@ describe('CounterfactualSafesController', () => {
         exp: faker.date.past(),
       });
 
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
       await request(app.getHttpServer())
         .get(
           `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
@@ -226,7 +230,7 @@ describe('CounterfactualSafesController', () => {
     });
 
     it('returns 403 if signer_address is not a valid Ethereum address', async () => {
-      const address = faker.string.hexadecimal() as `0x${string}`;
+      const address = faker.string.sample() as `0x${string}`;
       const chain = chainBuilder().build();
       const counterfactualSafe = counterfactualSafeBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
@@ -282,7 +286,7 @@ describe('CounterfactualSafesController', () => {
       const account = accountBuilder().build();
       const accountDataTypes = [
         accountDataTypeBuilder()
-          .with('name', 'CounterfactualSafes')
+          .with('name', AccountDataTypeNames.CounterfactualSafes)
           .with('is_active', true)
           .build(),
       ];
@@ -321,7 +325,7 @@ describe('CounterfactualSafesController', () => {
       const account = accountBuilder().build();
       const accountDataTypes = [
         accountDataTypeBuilder()
-          .with('name', 'CounterfactualSafes')
+          .with('name', AccountDataTypeNames.CounterfactualSafes)
           .with('is_active', true)
           .build(),
       ];
@@ -355,7 +359,6 @@ describe('CounterfactualSafesController', () => {
           saltNonce: counterfactualSafe.salt_nonce,
           singletonAddress: counterfactualSafe.singleton_address,
           threshold: counterfactualSafe.threshold,
-          accountId: counterfactualSafe.account_id.toString(),
         });
 
       expect(
@@ -381,7 +384,7 @@ describe('CounterfactualSafesController', () => {
       const account = accountBuilder().build();
       const accountDataTypes = [
         accountDataTypeBuilder()
-          .with('name', 'CounterfactualSafes')
+          .with('name', AccountDataTypeNames.CounterfactualSafes)
           .with('is_active', true)
           .build(),
       ];
@@ -418,7 +421,6 @@ describe('CounterfactualSafesController', () => {
           saltNonce: counterfactualSafe.salt_nonce,
           singletonAddress: counterfactualSafe.singleton_address,
           threshold: counterfactualSafe.threshold,
-          accountId: counterfactualSafe.account_id.toString(),
         });
 
       expect(
@@ -452,10 +454,12 @@ describe('CounterfactualSafesController', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const createCounterfactualSafeDto =
         createCounterfactualSafeDtoBuilder().build();
+      const accessToken = 'invalid';
 
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
       await request(app.getHttpServer())
         .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
-        .set('Cookie', ['access_token=invalid'])
+        .set('Cookie', [`access_token=${accessToken}`])
         .send(createCounterfactualSafeDto)
         .expect(403);
 
@@ -482,6 +486,7 @@ describe('CounterfactualSafesController', () => {
         nbf: faker.date.future(),
       });
 
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
       await request(app.getHttpServer())
         .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -511,6 +516,7 @@ describe('CounterfactualSafesController', () => {
         exp: faker.date.past(),
       });
 
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
       await request(app.getHttpServer())
         .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -527,7 +533,7 @@ describe('CounterfactualSafesController', () => {
     });
 
     it('returns 403 if signer_address is not a valid Ethereum address', async () => {
-      const address = faker.string.hexadecimal() as `0x${string}`;
+      const address = faker.string.sample() as `0x${string}`;
       const chain = chainBuilder().build();
       const createCounterfactualSafeDto =
         createCounterfactualSafeDtoBuilder().build();

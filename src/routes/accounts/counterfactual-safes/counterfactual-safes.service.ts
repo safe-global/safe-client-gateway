@@ -23,13 +23,13 @@ export class CounterfactualSafesService {
     return this.mapCounterfactualSafe(domainCounterfactualSafe);
   }
 
-  async getOrCreateCounterfactualSafe(args: {
+  async upsertCounterfactualSafe(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;
   }): Promise<CounterfactualSafe> {
     const domainCounterfactualSafe =
-      await this.repository.getOrCreateCounterfactualSafe(args);
+      await this.repository.upsertCounterfactualSafe(args);
     return this.mapCounterfactualSafe(domainCounterfactualSafe);
   }
 
@@ -45,7 +45,6 @@ export class CounterfactualSafesService {
       domainCounterfactualSafe.salt_nonce,
       domainCounterfactualSafe.singleton_address,
       domainCounterfactualSafe.threshold,
-      domainCounterfactualSafe.account_id.toString(),
     );
   }
 }

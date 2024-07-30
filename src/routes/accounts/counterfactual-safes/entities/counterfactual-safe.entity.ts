@@ -17,8 +17,6 @@ export class CounterfactualSafe {
   singletonAddress: `0x${string}`;
   @ApiProperty()
   threshold: number;
-  @ApiProperty()
-  accountId: string;
 
   constructor(
     chainId: string,
@@ -29,7 +27,6 @@ export class CounterfactualSafe {
     saltNonce: string,
     singletonAddress: `0x${string}`,
     threshold: number,
-    accountId: string,
   ) {
     this.chainId = chainId;
     this.creator = creator;
@@ -39,6 +36,5 @@ export class CounterfactualSafe {
     this.saltNonce = saltNonce;
     this.singletonAddress = singletonAddress;
     this.threshold = threshold;
-    this.accountId = accountId;
   }
 }

@@ -32,26 +32,42 @@ describe('AccountDataTypeSchema', () => {
     },
   );
 
-  it.each(['name' as const, 'description' as const])(
-    'should not verify an AccountDataType with a integer %s',
-    (field) => {
-      const accountDataType = accountDataTypeBuilder().build();
-      // @ts-expect-error - should be strings
-      accountDataType[field] = faker.number.int();
+  it('should not verify an AccountDataType with a integer description', () => {
+    const accountDataType = accountDataTypeBuilder().build();
+    // @ts-expect-error - should be strings
+    accountDataType['description'] = faker.number.int();
 
-      const result = AccountDataTypeSchema.safeParse(accountDataType);
+    const result = AccountDataTypeSchema.safeParse(accountDataType);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Expected string, received number',
-          path: [field],
-          received: 'number',
-        },
-      ]);
-    },
-  );
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Expected string, received number',
+        path: ['description'],
+        received: 'number',
+      },
+    ]);
+  });
+
+  it('should not verify an AccountDataType with a random name', () => {
+    const accountDataType = accountDataTypeBuilder().build();
+    const randomName = faker.string.sample();
+    // @ts-expect-error - should be strings
+    accountDataType['name'] = randomName;
+
+    const result = AccountDataTypeSchema.safeParse(accountDataType);
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_enum_value',
+        message: `Invalid enum value. Expected 'CounterfactualSafes' | 'AddressBook' | 'Watchlist', received '${randomName}'`,
+        options: ['CounterfactualSafes', 'AddressBook', 'Watchlist'],
+        path: ['name'],
+        received: randomName,
+      },
+    ]);
+  });
 
   it('should not verify an AccountDataType with a non-boolean is_active', () => {
     const accountDataType = accountDataTypeBuilder().build();
@@ -98,7 +114,7 @@ describe('AccountDataTypeSchema', () => {
       },
       {
         code: 'invalid_type',
-        expected: 'string',
+        expected: "'CounterfactualSafes' | 'AddressBook' | 'Watchlist'",
         received: 'undefined',
         path: ['name'],
         message: 'Required',
