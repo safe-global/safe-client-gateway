@@ -35,20 +35,19 @@ INSERT INTO notification_types (name) VALUES
     ('MESSAGE_CONFIRMATION_REQUEST'), -- MESSAGE_CREATED
     ('MODULE_TRANSACTION');
 
----------------------------------------------------
--- Safe subscriptions for a given account/device --
----------------------------------------------------
+-------------------------------------------
+-- Safe subscriptions for a given device --
+-------------------------------------------
 CREATE TABLE notification_subscriptions (
     id SERIAL PRIMARY KEY,
-    account_id INT NOT NULL,
     push_notification_device_id INT NOT NULL,
     chain_id VARCHAR(255) NOT NULL,
     safe_address VARCHAR(42) NOT NULL,
+    signer_address VARCHAR(42) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
     FOREIGN KEY (push_notification_device_id) REFERENCES push_notification_devices(id) ON DELETE CASCADE,
-    UNIQUE(account_id, chain_id, safe_address, push_notification_device_id)
+    UNIQUE(chain_id, safe_address, push_notification_device_id, signer_address)
 );
 
 -- Update updated_at when a notification subscription is updated
