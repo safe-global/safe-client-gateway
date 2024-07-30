@@ -4,7 +4,6 @@ import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
 
 // TODO: Move to domain
 export type UpsertSubscriptionsDto = {
-  account: `0x${string}`;
   cloudMessagingToken: string;
   safes: Array<{
     chainId: string;
