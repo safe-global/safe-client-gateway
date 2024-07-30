@@ -114,6 +114,7 @@ export default (): ReturnType<typeof configuration> => ({
     swapsDecoding: true,
     twapsDecoding: true,
     debugLogs: false,
+    configHooksDebugLogs: false,
     imitationMapping: false,
     auth: false,
     confirmationView: false,

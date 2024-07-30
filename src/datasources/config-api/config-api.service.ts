@@ -1,4 +1,3 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -11,12 +10,15 @@ import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
+  private readonly areConfigHooksDebugLogsEnabled: boolean;
 
   constructor(
     private readonly dataSource: CacheFirstDataSource,
@@ -24,6 +26,7 @@ export class ConfigApi implements IConfigApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.baseUri =
       this.configurationService.getOrThrow<string>('safeConfig.baseUri');
@@ -34,6 +37,10 @@ export class ConfigApi implements IConfigApi {
     this.defaultNotFoundExpirationTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
+      );
+    this.areConfigHooksDebugLogsEnabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.configHooksDebugLogs',
       );
   }
 
@@ -76,6 +83,10 @@ export class ConfigApi implements IConfigApi {
   async clearChain(chainId: string): Promise<void> {
     const chainCacheKey = CacheRouter.getChainCacheKey(chainId);
     const chainsCacheKey = CacheRouter.getChainsCacheKey();
+    if (this.areConfigHooksDebugLogsEnabled) {
+      this.loggingService.info(`Clearing chain ${chainId}: ${chainCacheKey}`);
+      this.loggingService.info(`Clearing chains: ${chainsCacheKey}`);
+    }
     await Promise.all([
       this.cacheService.deleteByKey(chainCacheKey),
       this.cacheService.deleteByKey(chainsCacheKey),

@@ -18,6 +18,7 @@ import { getAddress } from 'viem';
 import { fullAppDataBuilder } from '@/domain/swaps/entities/__tests__/full-app-data.builder';
 import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
+import { NotFoundException } from '@nestjs/common';
 
 const loggingService = {
   debug: jest.fn(),
@@ -131,6 +132,7 @@ describe('TwapOrderMapper', () => {
     });
 
     expect(result).toEqual({
+      activeOrderUid: null,
       buyAmount: '51576509680023161648',
       buyToken: {
         address: buyToken.address,
@@ -323,6 +325,7 @@ describe('TwapOrderMapper', () => {
         trusted: buyToken.trusted,
       },
       class: 'limit',
+      activeOrderUid: null,
       durationOfPart: {
         durationType: 'AUTO',
       },
@@ -427,7 +430,14 @@ describe('TwapOrderMapper', () => {
       .build();
     const fullAppData = JSON.parse(fakeJson());
 
-    mockSwapsRepository.getOrder.mockResolvedValueOnce(part2);
+    mockSwapsRepository.getOrder.mockImplementation(
+      async (_chainId: string, orderUid: string) => {
+        if (orderUid === part2.uid) {
+          return Promise.resolve(part2);
+        }
+        return Promise.reject(new NotFoundException());
+      },
+    );
     mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
@@ -460,6 +470,7 @@ describe('TwapOrderMapper', () => {
         trusted: buyToken.trusted,
       },
       class: 'limit',
+      activeOrderUid: null,
       durationOfPart: {
         durationType: 'AUTO',
       },
@@ -680,6 +691,7 @@ describe('TwapOrderMapper', () => {
   });
 
   it('should map the TWAP order if source apps are restricted and a part order fullAppData matches any of the allowed apps', async () => {
+    configurationService.set('swaps.maxNumberOfParts', 2);
     configurationService.set('swaps.restrictApps', true);
 
     // We instantiate in tests to be able to set maxNumberOfParts
@@ -755,7 +767,14 @@ describe('TwapOrderMapper', () => {
       .with('fullAppData', { appCode: 'Safe Wallet Swaps' })
       .build();
 
-    mockSwapsRepository.getOrder.mockResolvedValueOnce(part1);
+    mockSwapsRepository.getOrder.mockImplementation(
+      async (_chainId: string, orderUid: string) => {
+        if (orderUid === part1.uid) {
+          return Promise.resolve(part1);
+        }
+        return Promise.reject(new NotFoundException());
+      },
+    );
     mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
       // We only need mock part1 addresses as all parts use the same tokens
       switch (address) {
@@ -841,6 +860,7 @@ describe('TwapOrderMapper', () => {
     });
 
     expect(result).toEqual({
+      activeOrderUid: null,
       buyAmount: '51576509680023161648',
       buyToken: {
         address: buyToken.address,
@@ -882,6 +902,812 @@ describe('TwapOrderMapper', () => {
       timeBetweenParts: 9000,
       type: 'TwapOrder',
       validUntil: Math.ceil(now.getTime() / 1_000) + 17999,
+    });
+  });
+
+  describe('specific cases for status - testing activeOrderUid and status', () => {
+    beforeEach(() => {
+      configurationService.set('swaps.restrictApps', false);
+    });
+
+    it('should map a cancelled status (3 parts for testing) if the first part is active', async () => {
+      /**
+       * Third transaction in multiSend
+       * @see https://sepolia.etherscan.io/tx/0x8b27d05e760d3a17b12934ffc5d678144fed649d46e3425c1dbec62c36267232
+       */
+      const chainId = '11155111';
+      const owner = '0xF979f34D16d865f51e2eC7baDEde4f3735DaFb7d';
+      const data =
+        '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000';
+      const executionDate = new Date('2024-07-26T10:17:24Z');
+      const orders = [
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:17:26.572430Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63',
+          availableBalance: null,
+          executedBuyAmount: '147966574407179274396',
+          executedSellAmount: '388694804521426831',
+          executedSellAmountBeforeFees: '388694804521426831',
+          executedFeeAmount: '0',
+          executedSurplusFee: '3713410339758625',
+          invalidated: false,
+          // Note: status modified from 'fulfilled' for the sake of this test
+          status: 'open',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721990243,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a37c637eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+      ] as unknown as Array<Order>;
+
+      // Order #1 is still active for 1 second
+      jest.setSystemTime(new Date((orders[0].validTo - 1) * 1_000));
+
+      configurationService.set('swaps.maxNumberOfParts', orders.length);
+      // We instantiate in tests to be able to set maxNumberOfParts
+      const mapper = new TwapOrderMapper(
+        configurationService,
+        mockLoggingService,
+        swapOrderHelper,
+        mockSwapsRepository,
+        composableCowDecoder,
+        gpv2OrderHelper,
+        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new SwapAppsHelper(
+          configurationService,
+          new Set(['Safe Wallet Swaps']),
+        ),
+      );
+
+      const buyToken = tokenBuilder()
+        .with('address', getAddress(orders[0].buyToken))
+        .build();
+      const sellToken = tokenBuilder()
+        .with('address', getAddress(orders[0].sellToken))
+        .build();
+      const fullAppData = JSON.parse(fakeJson());
+
+      mockSwapsRepository.getOrder.mockImplementation(
+        async (_chainId: string, orderUid: string) => {
+          const order = orders.find((order) => order.uid === orderUid);
+          if (order) {
+            return Promise.resolve(order);
+          }
+          return Promise.reject(new NotFoundException());
+        },
+      );
+      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+        // We only need mock part1 addresses as all parts use the same tokens
+        switch (address) {
+          case buyToken.address: {
+            return Promise.resolve(buyToken);
+          }
+          case sellToken.address: {
+            return Promise.resolve(sellToken);
+          }
+          default: {
+            return Promise.reject(new Error(`Token not found: ${address}`));
+          }
+        }
+      });
+      mockSwapsRepository.getFullAppData.mockResolvedValue({ fullAppData });
+
+      const result = await mapper.mapTwapOrder(chainId, owner, {
+        data,
+        executionDate,
+      });
+
+      expect(result).toStrictEqual(
+        expect.objectContaining({
+          activeOrderUid:
+            '0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63',
+          status: 'open',
+        }),
+      );
+    });
+
+    it("should map a cancelled status (3 parts for testing) if the first part exists and the second is active but it doesn't exist", async () => {
+      /**
+       * Third transaction in multiSend
+       * @see https://sepolia.etherscan.io/tx/0x8b27d05e760d3a17b12934ffc5d678144fed649d46e3425c1dbec62c36267232
+       */
+      const chainId = '11155111';
+      const owner = '0xF979f34D16d865f51e2eC7baDEde4f3735DaFb7d';
+      const data =
+        '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000';
+      const executionDate = new Date('2024-07-26T10:17:24Z');
+      const orders = [
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:17:26.572430Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63',
+          availableBalance: null,
+          executedBuyAmount: '147966574407179274396',
+          executedSellAmount: '388694804521426831',
+          executedSellAmountBeforeFees: '388694804521426831',
+          executedFeeAmount: '0',
+          executedSurplusFee: '3713410339758625',
+          invalidated: false,
+          status: 'fulfilled',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721990243,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a37c637eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+      ] as unknown as Array<Order>;
+
+      // Order #2 has been active for 1 second
+      jest.setSystemTime(new Date((orders[0].validTo + 1) * 1_000));
+
+      configurationService.set('swaps.maxNumberOfParts', orders.length);
+      // We instantiate in tests to be able to set maxNumberOfParts
+      const mapper = new TwapOrderMapper(
+        configurationService,
+        mockLoggingService,
+        swapOrderHelper,
+        mockSwapsRepository,
+        composableCowDecoder,
+        gpv2OrderHelper,
+        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new SwapAppsHelper(
+          configurationService,
+          new Set(['Safe Wallet Swaps']),
+        ),
+      );
+
+      const buyToken = tokenBuilder()
+        .with('address', getAddress(orders[0].buyToken))
+        .build();
+      const sellToken = tokenBuilder()
+        .with('address', getAddress(orders[0].sellToken))
+        .build();
+      const fullAppData = JSON.parse(fakeJson());
+
+      mockSwapsRepository.getOrder.mockImplementation(
+        async (_chainId: string, orderUid: string) => {
+          const order = orders.find((order) => order.uid === orderUid);
+          if (order) {
+            return Promise.resolve(order);
+          }
+          return Promise.reject(new NotFoundException());
+        },
+      );
+      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+        // We only need mock part1 addresses as all parts use the same tokens
+        switch (address) {
+          case buyToken.address: {
+            return Promise.resolve(buyToken);
+          }
+          case sellToken.address: {
+            return Promise.resolve(sellToken);
+          }
+          default: {
+            return Promise.reject(new Error(`Token not found: ${address}`));
+          }
+        }
+      });
+      mockSwapsRepository.getFullAppData.mockResolvedValue({ fullAppData });
+
+      const result = await mapper.mapTwapOrder(chainId, owner, {
+        data,
+        executionDate,
+      });
+
+      expect(result).toStrictEqual(
+        expect.objectContaining({
+          activeOrderUid:
+            '0x5ac23f4cc9d6b46d3eb3e4fb24e57cb7d7029d95522e3515548375fb76b67979f979f34d16d865f51e2ec7badede4f3735dafb7d66a38113',
+          status: 'cancelled',
+        }),
+      );
+    });
+
+    it("should map a cancelled status (3 parts for testing) if the last part is active but doesn't exist", async () => {
+      /**
+       * Third transaction in multiSend
+       * @see https://sepolia.etherscan.io/tx/0x8b27d05e760d3a17b12934ffc5d678144fed649d46e3425c1dbec62c36267232
+       */
+      const chainId = '11155111';
+      const owner = '0xF979f34D16d865f51e2eC7baDEde4f3735DaFb7d';
+      const data =
+        '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000';
+      const executionDate = new Date('2024-07-26T10:17:24Z');
+      const orders = [
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:17:26.572430Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63',
+          availableBalance: null,
+          executedBuyAmount: '147966574407179274396',
+          executedSellAmount: '388694804521426831',
+          executedSellAmountBeforeFees: '388694804521426831',
+          executedFeeAmount: '0',
+          executedSurplusFee: '3713410339758625',
+          invalidated: false,
+          status: 'fulfilled',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721990243,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a37c637eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x5ac23f4cc9d6b46d3eb3e4fb24e57cb7d7029d95522e3515548375fb76b67979f979f34d16d865f51e2ec7badede4f3735dafb7d66a38113?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:37:38.678515Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x5ac23f4cc9d6b46d3eb3e4fb24e57cb7d7029d95522e3515548375fb76b67979f979f34d16d865f51e2ec7badede4f3735dafb7d66a38113',
+          availableBalance: null,
+          executedBuyAmount: '147526334327050716675',
+          executedSellAmount: '388694804521426831',
+          executedSellAmountBeforeFees: '388694804521426831',
+          executedFeeAmount: '0',
+          executedSurplusFee: '3835585092662741',
+          invalidated: false,
+          status: 'fulfilled',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721991443,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a381137eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x3a807a76eb7c17b840f881d0c50cbe4e9f42510becec2589c31733dc5974512231eac7f0141837b266de30f4dc9af15629bd538166a385c3?tab=overview
+         */
+      ] as unknown as Array<Order>;
+
+      // Order #3 has been active for 1 second
+      jest.setSystemTime(new Date((orders[1].validTo + 1) * 1_000));
+
+      configurationService.set('swaps.maxNumberOfParts', orders.length);
+      // We instantiate in tests to be able to set maxNumberOfParts
+      const mapper = new TwapOrderMapper(
+        configurationService,
+        mockLoggingService,
+        swapOrderHelper,
+        mockSwapsRepository,
+        composableCowDecoder,
+        gpv2OrderHelper,
+        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new SwapAppsHelper(
+          configurationService,
+          new Set(['Safe Wallet Swaps']),
+        ),
+      );
+
+      const buyToken = tokenBuilder()
+        .with('address', getAddress(orders[0].buyToken))
+        .build();
+      const sellToken = tokenBuilder()
+        .with('address', getAddress(orders[0].sellToken))
+        .build();
+      const fullAppData = JSON.parse(fakeJson());
+
+      mockSwapsRepository.getOrder.mockImplementation(
+        async (_chainId: string, orderUid: string) => {
+          const order = orders.find((order) => order.uid === orderUid);
+          if (order) {
+            return Promise.resolve(order);
+          }
+          return Promise.reject(new NotFoundException());
+        },
+      );
+      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+        // We only need mock part1 addresses as all parts use the same tokens
+        switch (address) {
+          case buyToken.address: {
+            return Promise.resolve(buyToken);
+          }
+          case sellToken.address: {
+            return Promise.resolve(sellToken);
+          }
+          default: {
+            return Promise.reject(new Error(`Token not found: ${address}`));
+          }
+        }
+      });
+      mockSwapsRepository.getFullAppData.mockResolvedValue({ fullAppData });
+
+      const result = await mapper.mapTwapOrder(chainId, owner, {
+        data,
+        executionDate,
+      });
+
+      expect(result).toStrictEqual(
+        expect.objectContaining({
+          activeOrderUid:
+            '0x3a807a76eb7c17b840f881d0c50cbe4e9f42510becec2589c31733dc59745122f979f34d16d865f51e2ec7badede4f3735dafb7d66a385c3',
+          status: 'cancelled',
+        }),
+      );
+    });
+
+    it('should map a fulfilled status (3 parts for testing) if the last part is active and exists', async () => {
+      /**
+       * Third transaction in multiSend
+       * @see https://sepolia.etherscan.io/tx/0x8b27d05e760d3a17b12934ffc5d678144fed649d46e3425c1dbec62c36267232
+       */
+      const chainId = '11155111';
+      const owner = '0xF979f34D16d865f51e2eC7baDEde4f3735DaFb7d';
+      const data =
+        '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000';
+      const executionDate = new Date('2024-07-26T10:17:24Z');
+      const orders = [
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:17:26.572430Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63',
+          availableBalance: null,
+          executedBuyAmount: '147966574407179274396',
+          executedSellAmount: '388694804521426831',
+          executedSellAmountBeforeFees: '388694804521426831',
+          executedFeeAmount: '0',
+          executedSurplusFee: '3713410339758625',
+          invalidated: false,
+          status: 'fulfilled',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721990243,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a37c637eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x5ac23f4cc9d6b46d3eb3e4fb24e57cb7d7029d95522e3515548375fb76b67979f979f34d16d865f51e2ec7badede4f3735dafb7d66a38113?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:37:38.678515Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x5ac23f4cc9d6b46d3eb3e4fb24e57cb7d7029d95522e3515548375fb76b67979f979f34d16d865f51e2ec7badede4f3735dafb7d66a38113',
+          availableBalance: null,
+          executedBuyAmount: '147526334327050716675',
+          executedSellAmount: '388694804521426831',
+          executedSellAmountBeforeFees: '388694804521426831',
+          executedFeeAmount: '0',
+          executedSurplusFee: '3835585092662741',
+          invalidated: false,
+          status: 'fulfilled',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721991443,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a381137eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x3a807a76eb7c17b840f881d0c50cbe4e9f42510becec2589c31733dc59745122f979f34d16d865f51e2ec7badede4f3735dafb7d66a385c3?tab=overview?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:57:26.210553Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x3a807a76eb7c17b840f881d0c50cbe4e9f42510becec2589c31733dc59745122f979f34d16d865f51e2ec7badede4f3735dafb7d66a385c3',
+          availableBalance: null,
+          executedBuyAmount: '0',
+          executedSellAmount: '0',
+          executedSellAmountBeforeFees: '0',
+          executedFeeAmount: '0',
+          executedSurplusFee: '0',
+          invalidated: false,
+          // Note: changed from expired to open for testing purposes
+          status: 'open',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721992643,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a385c37eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+      ] as unknown as Array<Order>;
+
+      // Order #3 has been active for 1 second
+      jest.setSystemTime(new Date((orders[1].validTo + 1) * 1_000));
+
+      configurationService.set('swaps.maxNumberOfParts', orders.length);
+      // We instantiate in tests to be able to set maxNumberOfParts
+      const mapper = new TwapOrderMapper(
+        configurationService,
+        mockLoggingService,
+        swapOrderHelper,
+        mockSwapsRepository,
+        composableCowDecoder,
+        gpv2OrderHelper,
+        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new SwapAppsHelper(
+          configurationService,
+          new Set(['Safe Wallet Swaps']),
+        ),
+      );
+
+      const buyToken = tokenBuilder()
+        .with('address', getAddress(orders[0].buyToken))
+        .build();
+      const sellToken = tokenBuilder()
+        .with('address', getAddress(orders[0].sellToken))
+        .build();
+      const fullAppData = JSON.parse(fakeJson());
+
+      mockSwapsRepository.getOrder.mockImplementation(
+        async (_chainId: string, orderUid: string) => {
+          const order = orders.find((order) => order.uid === orderUid);
+          if (order) {
+            return Promise.resolve(order);
+          }
+          console.log('Order not found', orderUid);
+          return Promise.reject(new NotFoundException());
+        },
+      );
+      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+        // We only need mock part1 addresses as all parts use the same tokens
+        switch (address) {
+          case buyToken.address: {
+            return Promise.resolve(buyToken);
+          }
+          case sellToken.address: {
+            return Promise.resolve(sellToken);
+          }
+          default: {
+            return Promise.reject(new Error(`Token not found: ${address}`));
+          }
+        }
+      });
+      mockSwapsRepository.getFullAppData.mockResolvedValue({ fullAppData });
+
+      const result = await mapper.mapTwapOrder(chainId, owner, {
+        data,
+        executionDate,
+      });
+
+      expect(result).toStrictEqual(
+        expect.objectContaining({
+          activeOrderUid:
+            '0x3a807a76eb7c17b840f881d0c50cbe4e9f42510becec2589c31733dc59745122f979f34d16d865f51e2ec7badede4f3735dafb7d66a385c3',
+          status: 'fulfilled',
+        }),
+      );
+    });
+
+    it('should map a fulfilled status (3 parts for testing) if the TWAP expired', async () => {
+      /**
+       * Third transaction in multiSend
+       * @see https://sepolia.etherscan.io/tx/0x8b27d05e760d3a17b12934ffc5d678144fed649d46e3425c1dbec62c36267232
+       */
+      const chainId = '11155111';
+      const owner = '0xF979f34D16d865f51e2eC7baDEde4f3735DaFb7d';
+      const data =
+        '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000';
+      const executionDate = new Date('2024-07-26T10:17:24Z');
+      const orders = [
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:17:26.572430Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x8dd7580ce9c791ade023b0f6c89c55b2089d819bf5986ec3b1e9540abcf5b52ef979f34d16d865f51e2ec7badede4f3735dafb7d66a37c63',
+          availableBalance: null,
+          executedBuyAmount: '147966574407179274396',
+          executedSellAmount: '388694804521426831',
+          executedSellAmountBeforeFees: '388694804521426831',
+          executedFeeAmount: '0',
+          executedSurplusFee: '3713410339758625',
+          invalidated: false,
+          status: 'fulfilled',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721990243,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a37c637eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x5ac23f4cc9d6b46d3eb3e4fb24e57cb7d7029d95522e3515548375fb76b67979f979f34d16d865f51e2ec7badede4f3735dafb7d66a38113?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:37:38.678515Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x5ac23f4cc9d6b46d3eb3e4fb24e57cb7d7029d95522e3515548375fb76b67979f979f34d16d865f51e2ec7badede4f3735dafb7d66a38113',
+          availableBalance: null,
+          executedBuyAmount: '147526334327050716675',
+          executedSellAmount: '388694804521426831',
+          executedSellAmountBeforeFees: '388694804521426831',
+          executedFeeAmount: '0',
+          executedSurplusFee: '3835585092662741',
+          invalidated: false,
+          status: 'fulfilled',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721991443,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a381137eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+        /**
+         * @see https://explorer.cow.fi/sepolia/orders/0x3a807a76eb7c17b840f881d0c50cbe4e9f42510becec2589c31733dc59745122f979f34d16d865f51e2ec7badede4f3735dafb7d66a385c3?tab=overview?tab=overview
+         */
+        {
+          creationDate: '2024-07-26T10:57:26.210553Z',
+          owner: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          uid: '0x3a807a76eb7c17b840f881d0c50cbe4e9f42510becec2589c31733dc59745122f979f34d16d865f51e2ec7badede4f3735dafb7d66a385c3',
+          availableBalance: null,
+          executedBuyAmount: '0',
+          executedSellAmount: '0',
+          executedSellAmountBeforeFees: '0',
+          executedFeeAmount: '0',
+          executedSurplusFee: '0',
+          invalidated: false,
+          status: 'expired',
+          class: 'limit',
+          settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
+          fullFeeAmount: '0',
+          solverFee: '0',
+          isLiquidityOrder: false,
+          fullAppData:
+            '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
+          sellToken: '0xfff9976782d46cc05630d1f6ebab18b2324d6b14',
+          buyToken: '0xbe72e441bf55620febc26715db68d3494213d8cb',
+          receiver: '0xf979f34d16d865f51e2ec7badede4f3735dafb7d',
+          sellAmount: '388694804521426831',
+          buyAmount: '146908804750330871784',
+          validTo: 1721992643,
+          appData:
+            '0x7eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a6',
+          feeAmount: '0',
+          kind: 'sell',
+          partiallyFillable: false,
+          sellTokenBalance: 'erc20',
+          buyTokenBalance: 'erc20',
+          signingScheme: 'eip1271',
+          signature:
+            '0x5fd7e97ddaee378bd0eb30ddf479272accf91761e697bc00e067a268f95f1d2732ed230bd5a25ba2e97094ad7d83dc28a6572da797d6b3e7fc6663bd93efb789fc17e489000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000002200000000000000000000000000000000000000000000000000000000000000180000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000066a385c37eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000f3b277728b3fee749481eb3e0b3b48980dbbab78658fc419025cb16eee34677500000000000000000000000000000000000000000000000000000000000000005a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc95a28e9363bb942b639270062aa6bb295f434bcdfc42c97267bf003f272060dc90000000000000000000000000000000000000000000000000000000000000280000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a5000000000000000000000000000000000000000000000000000000190ee8afcb00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b14000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000f979f34d16d865f51e2ec7badede4f3735dafb7d0000000000000000000000000000000000000000000000000564ebdd858a1f8f000000000000000000000000000000000000000000000007f6c4eb9070b0bfe80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000000007eda228d5bb9d713863d5bfa596eeb9c8fa7c9da9d4ca889e1457b0cb30010a60000000000000000000000000000000000000000000000000000000000000000',
+          interactions: { pre: [], post: [] },
+        },
+      ] as unknown as Array<Order>;
+
+      // Order #3 exired 1 second ago
+      jest.setSystemTime(new Date((orders[2].validTo + 1) * 1_000));
+
+      configurationService.set('swaps.maxNumberOfParts', orders.length);
+      // We instantiate in tests to be able to set maxNumberOfParts
+      const mapper = new TwapOrderMapper(
+        configurationService,
+        mockLoggingService,
+        swapOrderHelper,
+        mockSwapsRepository,
+        composableCowDecoder,
+        gpv2OrderHelper,
+        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new SwapAppsHelper(
+          configurationService,
+          new Set(['Safe Wallet Swaps']),
+        ),
+      );
+
+      const buyToken = tokenBuilder()
+        .with('address', getAddress(orders[0].buyToken))
+        .build();
+      const sellToken = tokenBuilder()
+        .with('address', getAddress(orders[0].sellToken))
+        .build();
+      const fullAppData = JSON.parse(fakeJson());
+
+      mockSwapsRepository.getOrder.mockImplementation(
+        async (_chainId: string, orderUid: string) => {
+          const order = orders.find((order) => order.uid === orderUid);
+          if (order) {
+            return Promise.resolve(order);
+          }
+          return Promise.reject(new NotFoundException());
+        },
+      );
+      mockTokenRepository.getToken.mockImplementation(async ({ address }) => {
+        // We only need mock part1 addresses as all parts use the same tokens
+        switch (address) {
+          case buyToken.address: {
+            return Promise.resolve(buyToken);
+          }
+          case sellToken.address: {
+            return Promise.resolve(sellToken);
+          }
+          default: {
+            return Promise.reject(new Error(`Token not found: ${address}`));
+          }
+        }
+      });
+      mockSwapsRepository.getFullAppData.mockResolvedValue({ fullAppData });
+
+      const result = await mapper.mapTwapOrder(chainId, owner, {
+        data,
+        executionDate,
+      });
+
+      expect(result).toStrictEqual(
+        expect.objectContaining({
+          activeOrderUid: null,
+          status: 'fulfilled',
+        }),
+      );
     });
   });
 });

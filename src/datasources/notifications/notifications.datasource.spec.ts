@@ -11,6 +11,7 @@ import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import postgres from 'postgres';
 import { getAddress } from 'viem';
+import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -40,6 +41,7 @@ describe('NotificationsDatasource', () => {
     const accountsDatasource = new AccountsDatasource(
       fakeCacheService,
       sql,
+      new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockLoggingService,
       mockConfigurationService,
     );

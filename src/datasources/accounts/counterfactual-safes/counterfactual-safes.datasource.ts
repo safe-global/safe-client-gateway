@@ -4,7 +4,8 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { getFromCacheOrExecuteAndCache } from '@/datasources/db/utils';
+import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
+import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
 import { CounterfactualSafe } from '@/domain/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
 import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
@@ -22,6 +23,8 @@ export class CounterfactualSafesDatasource
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
+    @Inject(ICachedQueryResolver)
+    private readonly cachedQueryResolver: CachedQueryResolver,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
@@ -58,16 +61,14 @@ export class CounterfactualSafesDatasource
       args.chainId,
       args.predictedAddress,
     );
-    const [counterfactualSafe] = await getFromCacheOrExecuteAndCache<
+    const [counterfactualSafe] = await this.cachedQueryResolver.get<
       CounterfactualSafe[]
-    >(
-      this.loggingService,
-      this.cacheService,
+    >({
       cacheDir,
-      this.sql<CounterfactualSafe[]>`
+      query: this.sql<CounterfactualSafe[]>`
         SELECT * FROM counterfactual_safes WHERE chain_id = ${args.chainId} AND predicted_address = ${args.predictedAddress}`,
-      this.defaultExpirationTimeInSeconds,
-    );
+      ttl: this.defaultExpirationTimeInSeconds,
+    });
 
     if (!counterfactualSafe) {
       throw new NotFoundException('Error getting Counterfactual Safe.');
@@ -82,14 +83,12 @@ export class CounterfactualSafesDatasource
     const cacheDir = CacheRouter.getCounterfactualSafesCacheDir(
       account.address,
     );
-    return getFromCacheOrExecuteAndCache<CounterfactualSafe[]>(
-      this.loggingService,
-      this.cacheService,
+    return this.cachedQueryResolver.get<CounterfactualSafe[]>({
       cacheDir,
-      this.sql<CounterfactualSafe[]>`
+      query: this.sql<CounterfactualSafe[]>`
         SELECT * FROM counterfactual_safes WHERE account_id = ${account.id}`,
-      this.defaultExpirationTimeInSeconds,
-    );
+      ttl: this.defaultExpirationTimeInSeconds,
+    });
   }
 
   async deleteCounterfactualSafe(args: {
