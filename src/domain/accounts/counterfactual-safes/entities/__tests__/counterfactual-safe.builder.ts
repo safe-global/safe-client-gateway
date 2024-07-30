@@ -8,11 +8,12 @@ export function counterfactualSafeBuilder(): IBuilder<CounterfactualSafe> {
     .with('chain_id', faker.string.numeric({ length: 6 }))
     .with('creator', getAddress(faker.finance.ethereumAddress()))
     .with('fallback_handler', getAddress(faker.finance.ethereumAddress()))
-    .with('owners', 
-      Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
-        () => getAddress(faker.finance.ethereumAddress())
-      )
+    .with(
+      'owners',
+      Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () =>
+        getAddress(faker.finance.ethereumAddress()),
+      ),
+    )
     .with('predicted_address', getAddress(faker.finance.ethereumAddress()))
     .with('salt_nonce', faker.string.hexadecimal())
     .with('singleton_address', getAddress(faker.finance.ethereumAddress()))

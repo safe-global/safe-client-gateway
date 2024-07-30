@@ -122,7 +122,7 @@ describe('CounterfactualSafesController', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
@@ -145,7 +145,7 @@ describe('CounterfactualSafesController', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
         )
         .expect(403);
 
@@ -163,7 +163,7 @@ describe('CounterfactualSafesController', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403);
@@ -190,7 +190,7 @@ describe('CounterfactualSafesController', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403);
@@ -218,7 +218,7 @@ describe('CounterfactualSafesController', () => {
       expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403);
@@ -241,7 +241,7 @@ describe('CounterfactualSafesController', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403);
@@ -264,7 +264,7 @@ describe('CounterfactualSafesController', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/storage/counterfactual-safes/${chainId}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${chainId}/${counterfactualSafe.predicted_address}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403);
@@ -306,7 +306,7 @@ describe('CounterfactualSafesController', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/storage/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${chain.chainId}/${counterfactualSafe.predicted_address}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404);
@@ -346,7 +346,7 @@ describe('CounterfactualSafesController', () => {
         createCounterfactualSafeDtoBuilder().build();
 
       await request(app.getHttpServer())
-        .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
+        .put(`/v1/accounts/${address}/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(createCounterfactualSafeDto)
         .expect(200)
@@ -408,7 +408,7 @@ describe('CounterfactualSafesController', () => {
         createCounterfactualSafeDtoBuilder().build();
 
       await request(app.getHttpServer())
-        .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
+        .put(`/v1/accounts/${address}/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(createCounterfactualSafeDto)
         .expect(200)
@@ -437,7 +437,7 @@ describe('CounterfactualSafesController', () => {
         createCounterfactualSafeDtoBuilder().build();
 
       await request(app.getHttpServer())
-        .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
+        .put(`/v1/accounts/${address}/counterfactual-safes`)
         .send(createCounterfactualSafeDto)
         .expect(403);
 
@@ -458,7 +458,7 @@ describe('CounterfactualSafesController', () => {
 
       expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
       await request(app.getHttpServer())
-        .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
+        .put(`/v1/accounts/${address}/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(createCounterfactualSafeDto)
         .expect(403);
@@ -488,7 +488,7 @@ describe('CounterfactualSafesController', () => {
 
       expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
       await request(app.getHttpServer())
-        .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
+        .put(`/v1/accounts/${address}/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(createCounterfactualSafeDto)
         .expect(403);
@@ -518,7 +518,7 @@ describe('CounterfactualSafesController', () => {
 
       expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
       await request(app.getHttpServer())
-        .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
+        .put(`/v1/accounts/${address}/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(createCounterfactualSafeDto)
         .expect(403);
@@ -544,7 +544,7 @@ describe('CounterfactualSafesController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
+        .put(`/v1/accounts/${address}/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(createCounterfactualSafeDto)
         .expect(403);
@@ -570,7 +570,7 @@ describe('CounterfactualSafesController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .put(`/v1/accounts/${address}/storage/counterfactual-safes`)
+        .put(`/v1/accounts/${address}/counterfactual-safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send(createCounterfactualSafeDto)
         .expect(403);

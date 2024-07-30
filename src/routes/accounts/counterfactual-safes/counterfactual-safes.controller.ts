@@ -8,6 +8,7 @@ import { CounterfactualSafe } from '@/routes/accounts/counterfactual-safes/entit
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
@@ -18,7 +19,7 @@ export class CounterfactualSafesController {
   constructor(private readonly service: CounterfactualSafesService) {}
 
   @ApiOkResponse({ type: CounterfactualSafe })
-  @Get(':address/storage/counterfactual-safes/:chainId/:predictedAddress')
+  @Get(':address/counterfactual-safes/:chainId/:predictedAddress')
   @UseGuards(AuthGuard)
   async getCounterfactualSafe(
     @Auth() authPayload: AuthPayload,
@@ -36,7 +37,7 @@ export class CounterfactualSafesController {
   }
 
   @ApiOkResponse({ type: CounterfactualSafe })
-  @Put(':address/storage/counterfactual-safes')
+  @Put(':address/counterfactual-safes')
   @UseGuards(AuthGuard)
   async upsertCounterfactualSafe(
     @Auth() authPayload: AuthPayload,
