@@ -1,4 +1,4 @@
-import { UpsertSubscriptionsDto } from '@/datasources/accounts/notifications/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/datasources/notifications/entities/upsert-subscriptions.dto.entity';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
 

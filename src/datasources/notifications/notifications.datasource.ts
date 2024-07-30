@@ -11,7 +11,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
-import { UpsertSubscriptionsDto } from '@/datasources/accounts/notifications/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/datasources/notifications/entities/upsert-subscriptions.dto.entity';
 
 @Injectable()
 export class NotificationsDatasource implements INotificationsDatasource {
