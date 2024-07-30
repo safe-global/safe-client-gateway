@@ -230,12 +230,12 @@ describe('CounterfactualSafesController', () => {
     });
 
     it('returns 403 if signer_address is not a valid Ethereum address', async () => {
-      const address = faker.string.sample() as `0x${string}`;
+      const address = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const counterfactualSafe = counterfactualSafeBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
-        .with('signer_address', address)
+        .with('signer_address', faker.string.sample() as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -258,7 +258,7 @@ describe('CounterfactualSafesController', () => {
       const counterfactualSafe = counterfactualSafeBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
         .with('chain_id', chainId)
-        .with('signer_address', address)
+        .with('signer_address', faker.string.sample() as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -533,13 +533,13 @@ describe('CounterfactualSafesController', () => {
     });
 
     it('returns 403 if signer_address is not a valid Ethereum address', async () => {
-      const address = faker.string.sample() as `0x${string}`;
+      const address = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
       const createCounterfactualSafeDto =
         createCounterfactualSafeDtoBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
-        .with('signer_address', address)
+        .with('signer_address', faker.string.sample() as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
 
