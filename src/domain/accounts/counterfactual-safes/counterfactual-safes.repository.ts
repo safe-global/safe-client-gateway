@@ -64,7 +64,7 @@ export class CounterfactualSafesRepository
    * If the Counterfactual Safe exists, it returns it.
    * If the Counterfactual Safe does not exist, it's created.
    */
-  async upsertCounterfactualSafe(args: {
+  async createCounterfactualSafe(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;

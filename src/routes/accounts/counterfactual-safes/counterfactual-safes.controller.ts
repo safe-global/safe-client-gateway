@@ -37,13 +37,13 @@ export class CounterfactualSafesController {
   @ApiOkResponse({ type: CounterfactualSafe })
   @Put(':address/counterfactual-safes')
   @UseGuards(AuthGuard)
-  async upsertCounterfactualSafe(
+  async createCounterfactualSafe(
     @Auth() authPayload: AuthPayload,
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
     @Body(new ValidationPipe(CreateCounterfactualSafeDtoSchema))
     createCounterfactualSafeDto: CreateCounterfactualSafeDto,
   ): Promise<CounterfactualSafe> {
-    return this.service.upsertCounterfactualSafe({
+    return this.service.createCounterfactualSafe({
       authPayload,
       address,
       createCounterfactualSafeDto,
