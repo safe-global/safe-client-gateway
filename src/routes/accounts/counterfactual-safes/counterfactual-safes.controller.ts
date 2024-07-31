@@ -74,4 +74,13 @@ export class CounterfactualSafesController {
       predictedAddress,
     });
   }
+
+  @Delete(':address/counterfactual-safes')
+  @UseGuards(AuthGuard)
+  async deleteCounterfactualSafes(
+    @Auth() authPayload: AuthPayload,
+    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+  ): Promise<void> {
+    return this.service.deleteCounterfactualSafes({ authPayload, address });
+  }
 }

@@ -30,6 +30,11 @@ export interface ICounterfactualSafesRepository {
     chainId: string;
     predictedAddress: `0x${string}`;
   }): Promise<void>;
+
+  deleteCounterfactualSafes(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<void>;
 }
 
 @Module({
