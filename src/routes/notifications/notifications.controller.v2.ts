@@ -28,8 +28,6 @@ import { UUID } from 'crypto';
 export class NotificationsControllerV2 {
   constructor(private readonly notificationsService: NotificationsServiceV2) {}
 
-  // TODO: Add ApiOkResponse and HttpCode for each route
-
   @Post('register/notifications')
   @UseGuards(AuthGuard)
   upsertSubscriptions(
