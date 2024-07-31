@@ -2,12 +2,12 @@ import { BalancesRepositoryModule } from '@/domain/balances/balances.repository.
 import { BlockchainRepositoryModule } from '@/domain/blockchain/blockchain.repository.interface';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { CollectiblesRepositoryModule } from '@/domain/collectibles/collectibles.repository.interface';
+import { EventNotificationsHelperModule } from '@/domain/hooks/helpers/event-notifications.helper';
 import {
   HooksRepository,
   HooksRepositoryWithNotifications,
 } from '@/domain/hooks/hooks.repository';
 import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.interface';
-import { NotificationsRepositoryV2Module } from '@/domain/notifications/notifications.repository.v2.interface';
 import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
@@ -28,7 +28,7 @@ export interface IHooksRepository {
     ChainsRepositoryModule,
     CollectiblesRepositoryModule,
     MessagesRepositoryModule,
-    NotificationsRepositoryV2Module,
+    EventNotificationsHelperModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
     TransactionsRepositoryModule,
