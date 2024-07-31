@@ -762,4 +762,159 @@ describe('CounterfactualSafesController', () => {
       ).not.toHaveBeenCalled();
     });
   });
+
+  describe('Delete Counterfactual Safes', () => {
+    it('should delete all Counterfactual Safes by account address', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.CounterfactualSafes)
+          .with('is_active', true)
+          .build(),
+      ];
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', true)
+          .build(),
+      ]);
+      counterfactualSafesDataSource.deleteCounterfactualSafesForAccount.mockResolvedValue();
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/counterfactual-safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns 403 if no token is present', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/counterfactual-safes`)
+        .expect(403);
+
+      expect(accountsRepository.getAccount).not.toHaveBeenCalled();
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 if the token is not a valid JWT', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const accessToken = 'invalid';
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/counterfactual-safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
+      expect(accountsRepository.getAccount).not.toHaveBeenCalled();
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 is token it not yet valid', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        nbf: faker.date.future(),
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/counterfactual-safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt not active');
+      expect(accountsRepository.getAccount).not.toHaveBeenCalled();
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 if token has expired', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign({
+        ...authPayloadDto,
+        exp: faker.date.past(),
+      });
+
+      expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/counterfactual-safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(accountsRepository.getAccount).not.toHaveBeenCalled();
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 if signer_address is not a valid Ethereum address', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chain = chainBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chain.chainId)
+        .with('signer_address', faker.string.sample() as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/counterfactual-safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(accountsRepository.getAccount).not.toHaveBeenCalled();
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 if chain_id is not a valid chain ID', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.lorem.sentence();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', faker.string.sample() as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/counterfactual-safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(accountsRepository.getAccount).not.toHaveBeenCalled();
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
+      ).not.toHaveBeenCalled();
+    });
+  });
 });
