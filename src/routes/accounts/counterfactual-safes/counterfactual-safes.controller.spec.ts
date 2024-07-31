@@ -138,6 +138,52 @@ describe('CounterfactualSafesController', () => {
         });
     });
 
+    it('should return a Counterfactual Safe even if the token is associated with a different chain ID', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', faker.string.numeric())
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.CounterfactualSafes)
+          .with('is_active', true)
+          .build(),
+      ];
+      const counterfactualSafe = counterfactualSafeBuilder().build();
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', true)
+          .build(),
+      ]);
+      counterfactualSafesDataSource.getCounterfactualSafe.mockResolvedValue(
+        counterfactualSafe,
+      );
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/accounts/${address}/counterfactual-safes/${faker.string.numeric()}/${counterfactualSafe.predicted_address}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect({
+          chainId: counterfactualSafe.chain_id,
+          creator: counterfactualSafe.creator,
+          fallbackHandler: counterfactualSafe.fallback_handler,
+          owners: counterfactualSafe.owners,
+          predictedAddress: counterfactualSafe.predicted_address,
+          saltNonce: counterfactualSafe.salt_nonce,
+          singletonAddress: counterfactualSafe.singleton_address,
+          threshold: counterfactualSafe.threshold,
+        });
+    });
+
     it('returns 403 if no token is present', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const chain = chainBuilder().build();
