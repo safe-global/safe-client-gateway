@@ -3,6 +3,8 @@ import { AppModule } from '@/app.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestAccountsDataSourceModule } from '@/datasources/accounts/__tests__/test.accounts.datasource.module';
 import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
+import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
+import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
@@ -60,6 +62,8 @@ describe('AccountsController', () => {
       .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountsDatasourceModule)
       .useModule(TestAccountsDataSourceModule)
+      .overrideModule(CounterfactualSafesDatasourceModule)
+      .useModule(TestCounterfactualSafesDataSourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

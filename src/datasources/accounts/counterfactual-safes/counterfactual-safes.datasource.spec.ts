@@ -129,6 +129,7 @@ describe('CounterfactualSafesDatasource tests', () => {
       });
 
       const actual = await target.getCounterfactualSafe({
+        account,
         chainId: counterfactualSafe.chain_id,
         predictedAddress: counterfactualSafe.predicted_address,
       });
@@ -148,10 +149,12 @@ describe('CounterfactualSafesDatasource tests', () => {
 
       // first call is not cached
       const actual = await target.getCounterfactualSafe({
+        account,
         chainId: counterfactualSafe.chain_id,
         predictedAddress: counterfactualSafe.predicted_address,
       });
       await target.getCounterfactualSafe({
+        account,
         chainId: counterfactualSafe.chain_id,
         predictedAddress: counterfactualSafe.predicted_address,
       });
@@ -177,17 +180,23 @@ describe('CounterfactualSafesDatasource tests', () => {
     });
 
     it('should not cache if the Counterfactual Safe is not found', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const [account] = await sql<
+        Account[]
+      >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
       const counterfactualSafe = createCounterfactualSafeDtoBuilder().build();
 
       // should not cache the Counterfactual Safe
       await expect(
         target.getCounterfactualSafe({
+          account,
           chainId: counterfactualSafe.chainId,
           predictedAddress: counterfactualSafe.predictedAddress,
         }),
       ).rejects.toThrow('Error getting Counterfactual Safe.');
       await expect(
         target.getCounterfactualSafe({
+          account,
           chainId: counterfactualSafe.chainId,
           predictedAddress: counterfactualSafe.predictedAddress,
         }),
@@ -327,6 +336,7 @@ describe('CounterfactualSafesDatasource tests', () => {
 
       // the Counterfactual Safe is cached
       await target.getCounterfactualSafe({
+        account,
         chainId: counterfactualSafe.chain_id,
         predictedAddress: counterfactualSafe.predicted_address,
       });
@@ -347,6 +357,7 @@ describe('CounterfactualSafesDatasource tests', () => {
       ).resolves.not.toThrow();
       await expect(
         target.getCounterfactualSafe({
+          account,
           chainId: counterfactualSafe.chain_id,
           predictedAddress: counterfactualSafe.predicted_address,
         }),
