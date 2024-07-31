@@ -1,10 +1,8 @@
-import {
-  CreateCounterfactualSafeDto,
-  CreateCounterfactualSafeDtoSchema,
-} from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
+import { CreateCounterfactualSafeDtoSchema } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { CounterfactualSafesService } from '@/routes/accounts/counterfactual-safes/counterfactual-safes.service';
 import { CounterfactualSafe } from '@/routes/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
+import { CreateCounterfactualSafeDto } from '@/routes/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
