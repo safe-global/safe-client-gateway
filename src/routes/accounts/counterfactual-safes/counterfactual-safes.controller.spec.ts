@@ -168,7 +168,7 @@ describe('CounterfactualSafesController', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/accounts/${address}/counterfactual-safes/${faker.string.numeric()}/${counterfactualSafe.predicted_address}`,
+          `/v1/accounts/${address}/counterfactual-safes/${faker.string.numeric({ exclude: authPayloadDto.chain_id })}/${counterfactualSafe.predicted_address}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
