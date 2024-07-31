@@ -78,6 +78,7 @@ export class NotificationsControllerV2 {
 
   @Delete('chains/:chainId/notifications/devices/:deviceUuid')
   deleteDevice(
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) _chainId: string,
     @Param('deviceUuid', new ValidationPipe(UuidSchema)) deviceUuid: UUID,
   ): Promise<void> {
     return this.notificationsService.deleteDevice(deviceUuid);
