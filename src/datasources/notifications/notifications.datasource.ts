@@ -109,7 +109,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
    * @param args.deviceUuid Device UUID
    * @param args.chainId Chain ID
    * @param args.safeAddress Safe address
-   * @param args.signerAddress Signer address (optional)
+   * @param args.signerAddress Signer address
    *
    * @returns List of {@link DomainNotificationType} notifications subscribed to
    */
@@ -117,7 +117,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
     deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-    signerAddress?: `0x${string}`;
+    signerAddress: `0x${string}`;
   }): Promise<Array<DomainNotificationType>> {
     const notificationTypes = await this.sql<
       Array<{ name: DomainNotificationType }>
@@ -129,11 +129,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
       JOIN notification_types nt ON nsnt.notification_type_id = nt.id
       WHERE ns.chain_id = ${args.chainId}
         AND ns.safe_address = ${args.safeAddress}
-        ${
-          args.signerAddress
-            ? this.sql`AND ns.signer_address = ${args.signerAddress}`
-            : this.sql``
-        }
+        AND ns.signer_address = ${args.signerAddress}
         AND pnd.device_uuid = ${args.deviceUuid}
     `.catch((e) => {
       const error = 'Error getting subscription or notification types';

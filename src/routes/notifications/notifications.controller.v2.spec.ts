@@ -763,7 +763,7 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     describe('authentication', () => {
-      it('should return 403 if no token is present', async () => {
+      it('should return "unknown" subscriptions with no token', async () => {
         const chainId = faker.string.numeric();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const deviceUuid = faker.string.uuid();

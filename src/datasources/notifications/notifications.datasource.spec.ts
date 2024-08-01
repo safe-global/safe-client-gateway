@@ -756,24 +756,6 @@ describe('NotificationsDatasource', () => {
         }),
       ).resolves.toStrictEqual(expect.arrayContaining(safe.notificationTypes));
     });
-
-    it('should return a subscription for a Safe without a signer', async () => {
-      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-      await target.upsertSubscriptions({
-        signerAddress: undefined,
-        upsertSubscriptionsDto,
-      });
-
-      const safe = upsertSubscriptionsDto.safes[0];
-      await expect(
-        target.getSafeSubscription({
-          signerAddress: undefined,
-          deviceUuid: upsertSubscriptionsDto.deviceUuid!,
-          chainId: safe.chainId,
-          safeAddress: safe.address,
-        }),
-      ).resolves.toStrictEqual(expect.arrayContaining(safe.notificationTypes));
-    });
   });
 
   describe('getSubscribersBySafe', () => {
