@@ -69,7 +69,6 @@ export class EventNotificationsHelper {
    * @param event - {@link Event} to notify about
    */
   public async onEventEnqueueNotifications(event: Event): Promise<unknown> {
-    console.log('==> onEventEnqueueNotifications');
     if (!this.isEventToNotify(event)) {
       return;
     }
@@ -154,7 +153,7 @@ export class EventNotificationsHelper {
    */
   private async getRelevantSubscribers(event: EventToNotify): Promise<
     Array<{
-      subscriber: `0x${string}`;
+      subscriber: `0x${string}` | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
@@ -171,6 +170,10 @@ export class EventNotificationsHelper {
 
     const ownersAndDelegates = await Promise.allSettled(
       subscriptions.map(async (subscription) => {
+        if (!subscription.subscriber) {
+          return;
+        }
+
         const isOwnerOrDelegate = await this.isOwnerOrDelegate({
           chainId: event.chainId,
           safeAddress: event.address,
@@ -238,7 +241,7 @@ export class EventNotificationsHelper {
    */
   private async mapEventNotification(
     event: EventToNotify,
-    subscriber: `0x${string}`,
+    subscriber: `0x${string}` | null,
   ): Promise<Notification | null> {
     if (
       event.type === TransactionEventType.INCOMING_ETHER ||
@@ -248,11 +251,17 @@ export class EventNotificationsHelper {
     } else if (
       event.type === TransactionEventType.PENDING_MULTISIG_TRANSACTION
     ) {
+      if (!subscriber) {
+        return null;
+      }
       return await this.mapPendingMultisigTransactionEventNotification(
         event,
         subscriber,
       );
     } else if (event.type === TransactionEventType.MESSAGE_CREATED) {
+      if (!subscriber) {
+        return null;
+      }
       return await this.mapMessageCreatedEventNotification(event, subscriber);
     } else {
       return event;

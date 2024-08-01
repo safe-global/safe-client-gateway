@@ -459,7 +459,7 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     describe('authentication', () => {
-      it('should return 403 if no token is present', async () => {
+      it('should upsert with no token', async () => {
         const chainId = faker.string.numeric();
         const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
           .with(
@@ -482,7 +482,7 @@ describe('Notifications Controller V2 (Unit)', () => {
         await request(app.getHttpServer())
           .post(`/v2/register/notifications`)
           .send(upsertSubscriptionsDto)
-          .expect(403);
+          .expect(201);
       });
 
       it('should return 403 if token is invalid', async () => {
