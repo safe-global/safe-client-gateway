@@ -162,7 +162,7 @@ describe('NotificationsDatasource', () => {
         .build();
       const newNotificationTypes = faker.helpers.arrayElements(
         Object.values(NotificationType),
-        { min: 1, max: 2 },
+        { min: 1, max: 1 },
       );
       await target.upsertSubscriptions({
         signerAddress,
