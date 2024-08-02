@@ -1017,6 +1017,9 @@ describe('CounterfactualSafesController', () => {
       expect(
         counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
       ).toHaveBeenCalledTimes(1);
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafesForAccount,
+      ).toHaveBeenCalledWith(account);
     });
 
     it('should not propagate a database error', async () => {
