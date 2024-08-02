@@ -2,7 +2,6 @@ import { TestDbFactory } from '@/__tests__/db.factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { upsertSubscriptionsDtoBuilder } from '@/datasources/notifications/__tests__/upsert-subscriptions.dto.entity.builder';
 import { NotificationsDatasource } from '@/datasources/notifications/notifications.datasource';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
@@ -22,14 +21,12 @@ const mockConfigurationService = jest.mocked({
 } as jest.MockedObjectDeep<IConfigurationService>);
 
 describe('NotificationsDatasource', () => {
-  let fakeCacheService: FakeCacheService;
   let migrator: PostgresDatabaseMigrator;
   let sql: postgres.Sql;
   const testDbFactory = new TestDbFactory();
   let target: NotificationsDatasource;
 
   beforeAll(async () => {
-    fakeCacheService = new FakeCacheService();
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
