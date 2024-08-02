@@ -1,9 +1,7 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
-import { upsertSubscriptionsDtoBuilder } from '@/domain/notifications/entities-v2/__tests__/upsert-subscriptions.dto.entity.builder';
+import { upsertSubscriptionsDtoBuilder } from '@/datasources/notifications/__tests__/upsert-subscriptions.dto.entity.builder';
 import { NotificationsDatasource } from '@/datasources/notifications/notifications.datasource';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
@@ -11,7 +9,6 @@ import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import postgres from 'postgres';
 import { getAddress } from 'viem';
-import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -24,32 +21,19 @@ const mockConfigurationService = jest.mocked({
 } as jest.MockedObjectDeep<IConfigurationService>);
 
 describe('NotificationsDatasource', () => {
-  let fakeCacheService: FakeCacheService;
   let migrator: PostgresDatabaseMigrator;
   let sql: postgres.Sql;
   const testDbFactory = new TestDbFactory();
   let target: NotificationsDatasource;
 
   beforeAll(async () => {
-    fakeCacheService = new FakeCacheService();
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') return faker.number.int();
     });
-    const accountsDatasource = new AccountsDatasource(
-      fakeCacheService,
-      sql,
-      new CachedQueryResolver(mockLoggingService, fakeCacheService),
-      mockLoggingService,
-      mockConfigurationService,
-    );
-    target = new NotificationsDatasource(
-      sql,
-      mockLoggingService,
-      accountsDatasource,
-    );
+    target = new NotificationsDatasource(sql, mockLoggingService);
   });
 
   afterEach(async () => {
@@ -135,7 +119,7 @@ describe('NotificationsDatasource', () => {
       const secondSubscriptionsDto = upsertSubscriptionsDtoBuilder()
         .with('deviceUuid', upsertSubscriptionsDto.deviceUuid)
         .build();
-      await target.upsertSubscriptions({
+      const { deviceUuid } = await target.upsertSubscriptions({
         signerAddress,
         upsertSubscriptionsDto,
       });
@@ -147,14 +131,14 @@ describe('NotificationsDatasource', () => {
           upsertSubscriptionsDto: secondSubscriptionsDto,
         }),
       ).resolves.not.toThrow();
-      // Device UUID should have updated
       await expect(
         sql`SELECT * FROM push_notification_devices`,
       ).resolves.toStrictEqual([
         {
           id: 1,
           device_type: secondSubscriptionsDto.deviceType,
-          device_uuid: expect.any(String),
+          // Device UUID shouldn't have updated
+          device_uuid: deviceUuid,
           cloud_messaging_token: secondSubscriptionsDto.cloudMessagingToken,
           created_at: expect.any(Date),
           updated_at: expect.any(Date),
@@ -171,12 +155,14 @@ describe('NotificationsDatasource', () => {
             address: getAddress(faker.finance.ethereumAddress()),
             notificationTypes: faker.helpers.arrayElements(
               Object.values(NotificationType),
+              { min: 3, max: 3 },
             ),
           },
         ])
         .build();
       const newNotificationTypes = faker.helpers.arrayElements(
         Object.values(NotificationType),
+        { min: 1, max: 2 },
       );
       await target.upsertSubscriptions({
         signerAddress,
@@ -199,20 +185,17 @@ describe('NotificationsDatasource', () => {
         sql`SELECT * FROM notification_types`,
         sql`SELECT * FROM notification_subscription_notification_types`,
       ]).then(([notificationTypes, subscribedNotifications]) => {
+        expect(subscribedNotifications.length).toBe(1);
         // Only new notification types should be subscribed to
-        expect(subscribedNotifications).toStrictEqual(
-          expect.arrayContaining(
-            newNotificationTypes.map((type) => {
-              return {
-                id: expect.any(Number),
-                notification_subscription_id: 1,
-                notification_type_id: notificationTypes.find(
-                  (t) => t.name === type,
-                )?.id,
-              };
-            }),
-          ),
-        );
+        expect(subscribedNotifications).toStrictEqual([
+          {
+            id: expect.any(Number),
+            notification_subscription_id: 1,
+            notification_type_id: notificationTypes.find(
+              (t) => t.name === newNotificationTypes[0],
+            )?.id,
+          },
+        ]);
       });
     });
 
@@ -334,7 +317,7 @@ describe('NotificationsDatasource', () => {
       });
       await target.upsertSubscriptions({
         signerAddress: secondSignerAddress,
-        upsertSubscriptionsDto: upsertSubscriptionsDto,
+        upsertSubscriptionsDto,
       });
 
       // Ensure correct database structure
@@ -450,6 +433,9 @@ describe('NotificationsDatasource', () => {
       const secondUpsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
         .with('safes', upsertSubscriptionsDto.safes)
         .build();
+      const thirdSignerAddress = getAddress(faker.finance.ethereumAddress());
+      const thirdUpsertSubscriptionsDto =
+        upsertSubscriptionsDtoBuilder().build();
       await target.upsertSubscriptions({
         signerAddress,
         upsertSubscriptionsDto,
@@ -457,6 +443,10 @@ describe('NotificationsDatasource', () => {
       await target.upsertSubscriptions({
         signerAddress: secondSignerAddress,
         upsertSubscriptionsDto: secondUpsertSubscriptionsDto,
+      });
+      await target.upsertSubscriptions({
+        signerAddress: thirdSignerAddress,
+        upsertSubscriptionsDto: thirdUpsertSubscriptionsDto,
       });
 
       const safe = upsertSubscriptionsDto.safes[0];
