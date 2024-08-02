@@ -1,6 +1,5 @@
 import { NotificationType as DomainNotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
-import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
@@ -20,8 +19,6 @@ export class NotificationsDatasource implements INotificationsDatasource {
     private readonly sql: postgres.Sql,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-    @Inject(IAccountsDatasource)
-    private readonly accountsDatasource: IAccountsDatasource,
   ) {}
 
   /**
