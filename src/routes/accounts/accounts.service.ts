@@ -20,10 +20,12 @@ export class AccountsService {
   async createAccount(args: {
     authPayload: AuthPayload;
     createAccountDto: CreateAccountDto;
+    clientIp: string;
   }): Promise<Account> {
     const domainAccount = await this.accountsRepository.createAccount({
       authPayload: args.authPayload,
       address: args.createAccountDto.address,
+      clientIp: args.clientIp,
     });
     return this.mapAccount(domainAccount);
   }

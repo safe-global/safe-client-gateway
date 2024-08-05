@@ -6,6 +6,14 @@ export default () => ({
     version: process.env.APPLICATION_VERSION,
     buildNumber: process.env.APPLICATION_BUILD_NUMBER,
   },
+  accounts: {
+    creationRateLimitPeriodSeconds: parseInt(
+      process.env.ACCOUNT_CREATION_RATE_LIMIT_PERIOD_SECONDS ?? `${60}`,
+    ),
+    creationRateLimitCalls: parseInt(
+      process.env.ACCOUNT_CREATION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${1}`,
+    ),
+  },
   amqp: {
     url: process.env.AMQP_URL || 'amqp://localhost:5672',
     exchange: {

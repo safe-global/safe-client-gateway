@@ -129,7 +129,10 @@ describe('AccountsController', () => {
 
       expect(accountDataSource.createAccount).toHaveBeenCalledTimes(1);
       // Check the address was checksummed
-      expect(accountDataSource.createAccount).toHaveBeenCalledWith(address);
+      expect(accountDataSource.createAccount).toHaveBeenCalledWith({
+        address,
+        clientIp: expect.any(String),
+      });
     });
 
     it('should propagate errors', async () => {

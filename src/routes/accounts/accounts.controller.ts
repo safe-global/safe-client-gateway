@@ -21,9 +21,11 @@ import {
   Param,
   Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 
 @ApiTags('accounts')
 @Controller({ path: 'accounts', version: '1' })
@@ -38,10 +40,12 @@ export class AccountsController {
     @Body(new ValidationPipe(CreateAccountDtoSchema))
     createAccountDto: CreateAccountDto,
     @Auth() authPayload: AuthPayload,
+    @Req() req: Request,
   ): Promise<Account> {
     return this.accountsService.createAccount({
       authPayload,
       createAccountDto,
+      clientIp: req.ip,
     });
   }
 
