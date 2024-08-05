@@ -42,6 +42,19 @@ export class CounterfactualSafesController {
     });
   }
 
+  @ApiOkResponse({ type: CounterfactualSafe, isArray: true })
+  @Get(':address/counterfactual-safes')
+  @UseGuards(AuthGuard)
+  async getCounterfactualSafes(
+    @Auth() authPayload: AuthPayload,
+    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+  ): Promise<CounterfactualSafe[]> {
+    return this.service.getCounterfactualSafes({
+      authPayload,
+      address,
+    });
+  }
+
   @ApiOkResponse({ type: CounterfactualSafe })
   @Put(':address/counterfactual-safes')
   @UseGuards(AuthGuard)

@@ -58,6 +58,28 @@ export class CounterfactualSafesRepository
   }
 
   /**
+   * Gets all the Counterfactual Safes associated with an account address.
+   * Checks that the account has the CounterfactualSafes data setting enabled.
+   */
+  async getCounterfactualSafes(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<CounterfactualSafe[]> {
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+    await this.checkCounterfactualSafesIsEnabled({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const account = await this.accountsRepository.getAccount({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    return this.datasource.getCounterfactualSafesForAccount(account);
+  }
+
+  /**
    * Gets or creates a Counterfactual Safe.
    * Checks that the account has the CounterfactualSafes data setting enabled.
    *
