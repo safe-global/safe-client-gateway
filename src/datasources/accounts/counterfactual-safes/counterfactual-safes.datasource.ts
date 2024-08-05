@@ -71,10 +71,11 @@ export class CounterfactualSafesDatasource
     chainId: string;
     predictedAddress: `0x${string}`;
   }): Promise<CounterfactualSafe> {
-    const cacheDir = CacheRouter.getCounterfactualSafeCacheDir(
-      args.chainId,
-      args.predictedAddress,
-    );
+    const cacheDir = CacheRouter.getCounterfactualSafeCacheDir({
+      accountId: args.account.id,
+      chainId: args.chainId,
+      predictedAddress: args.predictedAddress,
+    });
     const [counterfactualSafe] = await this.cachedQueryResolver.get<
       CounterfactualSafe[]
     >({
@@ -124,10 +125,11 @@ export class CounterfactualSafesDatasource
     } finally {
       await Promise.all([
         this.cacheService.deleteByKey(
-          CacheRouter.getCounterfactualSafeCacheDir(
-            args.chainId,
-            args.predictedAddress,
-          ).key,
+          CacheRouter.getCounterfactualSafeCacheDir({
+            accountId: args.account.id,
+            chainId: args.chainId,
+            predictedAddress: args.predictedAddress,
+          }).key,
         ),
         this.cacheService.deleteByKey(
           CacheRouter.getCounterfactualSafesCacheDir(args.account.address).key,
@@ -150,10 +152,11 @@ export class CounterfactualSafesDatasource
       await Promise.all(
         deleted.map((row) => {
           return this.cacheService.deleteByKey(
-            CacheRouter.getCounterfactualSafeCacheDir(
-              row.chain_id,
-              row.predicted_address,
-            ).key,
+            CacheRouter.getCounterfactualSafeCacheDir({
+              accountId: account.id,
+              chainId: row.chain_id,
+              predictedAddress: row.predicted_address,
+            }).key,
           );
         }),
       );

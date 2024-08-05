@@ -273,7 +273,7 @@ describe('CounterfactualSafesDatasource tests', () => {
 
       expect(actual).toStrictEqual(counterfactualSafe);
       const cacheDir = new CacheDir(
-        `${counterfactualSafe.chain_id}_counterfactual_safe_${counterfactualSafe.predicted_address}`,
+        `${counterfactualSafe.chain_id}_counterfactual_safe_${account.id}_${counterfactualSafe.predicted_address}`,
         '',
       );
       const cacheContent = await fakeCacheService.get(cacheDir);
@@ -281,12 +281,12 @@ describe('CounterfactualSafesDatasource tests', () => {
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'cache_miss',
-        key: `${counterfactualSafe.chain_id}_counterfactual_safe_${counterfactualSafe.predicted_address}`,
+        key: `${counterfactualSafe.chain_id}_counterfactual_safe_${account.id}_${counterfactualSafe.predicted_address}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
         type: 'cache_hit',
-        key: `${counterfactualSafe.chain_id}_counterfactual_safe_${counterfactualSafe.predicted_address}`,
+        key: `${counterfactualSafe.chain_id}_counterfactual_safe_${account.id}_${counterfactualSafe.predicted_address}`,
         field: '',
       });
     });
@@ -315,19 +315,19 @@ describe('CounterfactualSafesDatasource tests', () => {
       ).rejects.toThrow('Error getting Counterfactual Safe.');
 
       const cacheDir = new CacheDir(
-        `${counterfactualSafe.chainId}_counterfactual_safe_${counterfactualSafe.predictedAddress}`,
+        `${counterfactualSafe.chainId}_counterfactual_safe_${account.id}_${counterfactualSafe.predictedAddress}`,
         '',
       );
       expect(await fakeCacheService.get(cacheDir)).toBeUndefined();
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'cache_miss',
-        key: `${counterfactualSafe.chainId}_counterfactual_safe_${counterfactualSafe.predictedAddress}`,
+        key: `${counterfactualSafe.chainId}_counterfactual_safe_${account.id}_${counterfactualSafe.predictedAddress}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
         type: 'cache_miss',
-        key: `${counterfactualSafe.chainId}_counterfactual_safe_${counterfactualSafe.predictedAddress}`,
+        key: `${counterfactualSafe.chainId}_counterfactual_safe_${account.id}_${counterfactualSafe.predictedAddress}`,
         field: '',
       });
     });
@@ -453,7 +453,7 @@ describe('CounterfactualSafesDatasource tests', () => {
         predictedAddress: counterfactualSafe.predicted_address,
       });
       const cacheDir = new CacheDir(
-        `${counterfactualSafe.chain_id}_counterfactual_safe_${counterfactualSafe.predicted_address}`,
+        `${counterfactualSafe.chain_id}_counterfactual_safe_${account.id}_${counterfactualSafe.predicted_address}`,
         '',
       );
       const beforeDeletion = await fakeCacheService.get(cacheDir);
