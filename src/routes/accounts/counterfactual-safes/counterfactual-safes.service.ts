@@ -23,6 +23,17 @@ export class CounterfactualSafesService {
     return this.mapCounterfactualSafe(domainCounterfactualSafe);
   }
 
+  async getCounterfactualSafes(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<CounterfactualSafe[]> {
+    const domainCounterfactualSafes =
+      await this.repository.getCounterfactualSafes(args);
+    return domainCounterfactualSafes.map((counterfactualSafe) =>
+      this.mapCounterfactualSafe(counterfactualSafe),
+    );
+  }
+
   async createCounterfactualSafe(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
