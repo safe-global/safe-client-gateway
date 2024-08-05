@@ -23,6 +23,18 @@ export interface ICounterfactualSafesRepository {
     address: `0x${string}`;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;
   }): Promise<CounterfactualSafe>;
+
+  deleteCounterfactualSafe(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+    predictedAddress: `0x${string}`;
+  }): Promise<void>;
+
+  deleteCounterfactualSafes(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<void>;
 }
 
 @Module({

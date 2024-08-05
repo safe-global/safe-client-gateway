@@ -98,6 +98,56 @@ export class CounterfactualSafesRepository
     }
   }
 
+  /**
+   * Deletes a Counterfactual Safe.
+   * Checks that the account has the CounterfactualSafes data setting enabled.
+   */
+  async deleteCounterfactualSafe(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+    predictedAddress: `0x${string}`;
+  }): Promise<void> {
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+    await this.checkCounterfactualSafesIsEnabled({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const account = await this.accountsRepository.getAccount({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    return this.datasource.deleteCounterfactualSafe({
+      account,
+      chainId: args.chainId,
+      predictedAddress: args.predictedAddress,
+    });
+  }
+
+  /**
+   * Deletes all the Counterfactual Safes created by the passed account address.
+   * Checks that the account has the CounterfactualSafes data setting enabled.
+   */
+  async deleteCounterfactualSafes(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<void> {
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+    await this.checkCounterfactualSafesIsEnabled({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const account = await this.accountsRepository.getAccount({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    return this.datasource.deleteCounterfactualSafesForAccount(account);
+  }
+
   private async checkCounterfactualSafesIsEnabled(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;

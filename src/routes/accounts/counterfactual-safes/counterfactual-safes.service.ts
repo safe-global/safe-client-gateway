@@ -33,6 +33,22 @@ export class CounterfactualSafesService {
     return this.mapCounterfactualSafe(domainCounterfactualSafe);
   }
 
+  async deleteCounterfactualSafe(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+    predictedAddress: `0x${string}`;
+  }): Promise<void> {
+    await this.repository.deleteCounterfactualSafe(args);
+  }
+
+  async deleteCounterfactualSafes(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+  }): Promise<void> {
+    await this.repository.deleteCounterfactualSafes(args);
+  }
+
   private mapCounterfactualSafe(
     domainCounterfactualSafe: DomainCounterfactualSafe,
   ): CounterfactualSafe {

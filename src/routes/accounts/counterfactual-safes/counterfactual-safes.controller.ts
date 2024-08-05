@@ -8,7 +8,15 @@ import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('accounts')
@@ -48,5 +56,31 @@ export class CounterfactualSafesController {
       address,
       createCounterfactualSafeDto,
     });
+  }
+
+  @Delete(':address/counterfactual-safes/:chainId/:predictedAddress')
+  @UseGuards(AuthGuard)
+  async deleteCounterfactualSafe(
+    @Auth() authPayload: AuthPayload,
+    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('predictedAddress', new ValidationPipe(AddressSchema))
+    predictedAddress: `0x${string}`,
+  ): Promise<void> {
+    return this.service.deleteCounterfactualSafe({
+      authPayload,
+      address,
+      chainId,
+      predictedAddress,
+    });
+  }
+
+  @Delete(':address/counterfactual-safes')
+  @UseGuards(AuthGuard)
+  async deleteCounterfactualSafes(
+    @Auth() authPayload: AuthPayload,
+    @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
+  ): Promise<void> {
+    return this.service.deleteCounterfactualSafes({ authPayload, address });
   }
 }
