@@ -10,6 +10,10 @@ export default (): ReturnType<typeof configuration> => ({
   accounts: {
     creationRateLimitPeriodSeconds: faker.number.int(),
     creationRateLimitCalls: faker.number.int(),
+    counterfactualSafes: {
+      creationRateLimitPeriodSeconds: faker.number.int(),
+      creationRateLimitCalls: faker.number.int(),
+    },
   },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),

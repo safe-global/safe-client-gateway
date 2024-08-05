@@ -13,6 +13,16 @@ export default () => ({
     creationRateLimitCalls: parseInt(
       process.env.ACCOUNT_CREATION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${1}`,
     ),
+    counterfactualSafes: {
+      creationRateLimitPeriodSeconds: parseInt(
+        process.env.COUNTERFACTUAL_SAFES_CREATION_RATE_LIMIT_PERIOD_SECONDS ??
+          `${3600}`,
+      ),
+      creationRateLimitCalls: parseInt(
+        process.env.COUNTERFACTUAL_SAFES_CREATION_RATE_LIMIT_CALLS_BY_PERIOD ??
+          `${10}`,
+      ),
+    },
   },
   amqp: {
     url: process.env.AMQP_URL || 'amqp://localhost:5672',

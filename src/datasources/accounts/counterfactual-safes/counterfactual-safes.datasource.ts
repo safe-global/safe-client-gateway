@@ -6,6 +6,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
+import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import { CounterfactualSafe } from '@/domain/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
 import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
@@ -18,7 +19,13 @@ import postgres from 'postgres';
 export class CounterfactualSafesDatasource
   implements ICounterfactualSafesDatasource
 {
+  private static readonly COUNTERFACTUAL_SAFES_CREATION_CACHE_PREFIX =
+    'counterfactual_safes_creation';
   private readonly defaultExpirationTimeInSeconds: number;
+  // Number of seconds for each rate-limit cycle
+  private readonly counterfactualSafesCreationRateLimitPeriodSeconds: number;
+  // Number of allowed calls on each rate-limit cycle
+  private readonly counterfactualSafesCreationRateLimitCalls: number;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -33,12 +40,21 @@ export class CounterfactualSafesDatasource
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
       );
+    this.counterfactualSafesCreationRateLimitPeriodSeconds =
+      configurationService.getOrThrow(
+        'accounts.counterfactualSafes.creationRateLimitPeriodSeconds',
+      );
+    this.counterfactualSafesCreationRateLimitCalls =
+      configurationService.getOrThrow(
+        'accounts.counterfactualSafes.creationRateLimitCalls',
+      );
   }
 
   async createCounterfactualSafe(args: {
     account: Account;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;
   }): Promise<CounterfactualSafe> {
+    await this.checkCreationRateLimit(args.account);
     const [counterfactualSafe] = await this.sql<CounterfactualSafe[]>`
       INSERT INTO counterfactual_safes 
       ${this.sql([this.mapCreationDtoToRow(args.account, args.createCounterfactualSafeDto)])}
@@ -141,6 +157,21 @@ export class CounterfactualSafesDatasource
           );
         }),
       );
+    }
+  }
+
+  private async checkCreationRateLimit(account: Account): Promise<void> {
+    const current = await this.cacheService.increment(
+      CacheRouter.getRateLimitCacheKey(
+        `${CounterfactualSafesDatasource.COUNTERFACTUAL_SAFES_CREATION_CACHE_PREFIX}_${account.address}`,
+      ),
+      this.counterfactualSafesCreationRateLimitPeriodSeconds,
+    );
+    if (current > this.counterfactualSafesCreationRateLimitCalls) {
+      this.loggingService.warn(
+        `Limit of ${this.counterfactualSafesCreationRateLimitCalls} reached for account ${account.address}`,
+      );
+      throw new LimitReachedError();
     }
   }
 

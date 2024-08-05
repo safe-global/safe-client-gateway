@@ -88,6 +88,118 @@ describe('CounterfactualSafesDatasource tests', () => {
       );
     });
 
+    it('should create a Counterfactual Safe if the rate limit is not hit', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const [account] = await sql<
+        Account[]
+      >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
+      const creationRateLimitCalls = faker.number.int({ min: 5, max: 10 });
+      const createCounterfactualSafes = Array.from(
+        { length: creationRateLimitCalls },
+        (_, i) =>
+          createCounterfactualSafeDtoBuilder()
+            .with('chainId', i.toString())
+            .build(),
+      );
+
+      mockConfigurationService.getOrThrow.mockImplementation((key) => {
+        switch (key) {
+          case 'expirationTimeInSeconds.default':
+            return faker.number.int();
+          case 'accounts.counterfactualSafes.creationRateLimitPeriodSeconds':
+            return faker.number.int({ min: 10 });
+          case 'accounts.counterfactualSafes.creationRateLimitCalls':
+            return creationRateLimitCalls;
+        }
+      });
+
+      target = new CounterfactualSafesDatasource(
+        fakeCacheService,
+        sql,
+        new CachedQueryResolver(mockLoggingService, fakeCacheService),
+        mockLoggingService,
+        mockConfigurationService,
+      );
+
+      for (let i = 0; i < creationRateLimitCalls - 1; i++) {
+        await target.createCounterfactualSafe({
+          account,
+          createCounterfactualSafeDto: createCounterfactualSafes[i],
+        });
+      }
+
+      const lastCounterfactualSafe =
+        createCounterfactualSafes[createCounterfactualSafes.length - 1];
+      const actual = await target.createCounterfactualSafe({
+        account,
+        createCounterfactualSafeDto: lastCounterfactualSafe,
+      });
+      expect(actual).toStrictEqual(
+        expect.objectContaining({
+          id: expect.any(Number),
+          chain_id: lastCounterfactualSafe.chainId,
+          creator: account.address,
+          fallback_handler: lastCounterfactualSafe.fallbackHandler,
+          owners: lastCounterfactualSafe.owners,
+          predicted_address: lastCounterfactualSafe.predictedAddress,
+          salt_nonce: lastCounterfactualSafe.saltNonce,
+          singleton_address: lastCounterfactualSafe.singletonAddress,
+          threshold: lastCounterfactualSafe.threshold,
+          account_id: account.id,
+        }),
+      );
+    });
+
+    it('should fail if the rate limit is hit', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const [account] = await sql<
+        Account[]
+      >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
+      const creationRateLimitCalls = faker.number.int({ min: 5, max: 10 });
+      const createCounterfactualSafes = Array.from(
+        { length: creationRateLimitCalls },
+        (_, i) =>
+          createCounterfactualSafeDtoBuilder()
+            .with('chainId', i.toString())
+            .build(),
+      );
+
+      mockConfigurationService.getOrThrow.mockImplementation((key) => {
+        switch (key) {
+          case 'expirationTimeInSeconds.default':
+            return faker.number.int();
+          case 'accounts.counterfactualSafes.creationRateLimitPeriodSeconds':
+            return faker.number.int({ min: 10 });
+          case 'accounts.counterfactualSafes.creationRateLimitCalls':
+            return creationRateLimitCalls;
+        }
+      });
+
+      target = new CounterfactualSafesDatasource(
+        fakeCacheService,
+        sql,
+        new CachedQueryResolver(mockLoggingService, fakeCacheService),
+        mockLoggingService,
+        mockConfigurationService,
+      );
+
+      for (let i = 0; i < creationRateLimitCalls; i++) {
+        await target.createCounterfactualSafe({
+          account,
+          createCounterfactualSafeDto: createCounterfactualSafes[i],
+        });
+      }
+
+      await expect(
+        target.createCounterfactualSafe({
+          account,
+          createCounterfactualSafeDto: createCounterfactualSafeDtoBuilder()
+            .with('chainId', '11')
+            .build(),
+        }),
+      ).rejects.toThrow('Rate limit reached');
+    });
+
     it('should delete the cache for the account Counterfactual Safes', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const [account] = await sql<
