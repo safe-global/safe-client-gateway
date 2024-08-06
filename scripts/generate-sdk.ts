@@ -1,6 +1,7 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as prettier from 'prettier';
 import openapiTS, {
   astToString,
   type Method,
@@ -35,14 +36,10 @@ async function main(): Promise<void> {
     const components = getComponents(definitions);
     const wrappers = getWrappers(definitions);
 
-    fs.writeFileSync(
-      path.join(SDK_FOLDER, SCHEMA_FILE),
-      [WARNING, schema, components].join('\n\n'),
-    );
-    fs.writeFileSync(
-      path.join(SDK_FOLDER, SDK_FILE),
-      [WARNING, client, wrappers].join('\n\n'),
-    );
+    await Promise.all([
+      writeFile(SCHEMA_FILE, [WARNING, schema, components].join('\n\n')),
+      writeFile(SDK_FILE, [WARNING, client, wrappers].join('\n\n')),
+    ]);
 
     process.exit();
   } catch (error) {
@@ -212,4 +209,16 @@ function getWrappers(definitions: OpenAPI3): string {
     })
     .filter(Boolean)
     .join('\n\n');
+}
+
+/**
+ * Writes a prettified file to the ${@link SDK_FOLDER}
+ * @param fileName - Name of file to write
+ * @param content - Content to write
+ */
+async function writeFile(fileName: string, content: string): Promise<void> {
+  const prettified = await prettier.format(content, {
+    parser: 'typescript',
+  });
+  fs.writeFileSync(path.join(SDK_FOLDER, fileName), prettified);
 }
