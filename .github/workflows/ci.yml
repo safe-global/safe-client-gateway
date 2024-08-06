@@ -198,18 +198,13 @@ jobs:
       - name: Generate SDK
         run: yarn generate-sdk
 
-      - name: Push to repository
-        env:
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
+      - name: Clone repository
         run: |
-          # Set git config
-          git config --global user.name 'iamacook'
-          git config --global user.email 'aaron@safe.global'
-
-          # Clone the repository
           git clone https://github.com/5afe/cgw-sdk
           cd cgw-sdk
 
+      - name: Update repository
+        run: |
           # Remove the old dist folder
           if [ -d "dist" ]; then
             rm -rf dist
@@ -219,13 +214,33 @@ jobs:
           mkdir -p dist
           cp -r ../dist/sdk/* dist/
 
-          # Update the package.json version
+      - name: Check for diffs
+        run: |
+          if git diff --quiet; then
+            echo "should_update=false" >> $GITHUB_ENV
+          else
+            echo "should_update=true" >> $GITHUB_ENV
+          fi
+
+      - name: Update package.json version
+        if: env.should_update == 'true'
+        run: |
+          cd cgw-sdk
           CURRENT_VERSION=$(jq -r '.version' package.json)
           NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
           jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
           mv package_tmp.json package.json
+          git add package.json
+          git commit -m "Update package.json version to $NEW_VERSION"
 
-          # Commit and push
+      - name: Push to repository
+        if: env.should_update == 'true'
+        env:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
+        run: |
+          git config --global user.name 'iamacook'
+          git config --global user.email 'aaron@safe.global'
+          cd cgw-sdk
           git add .
           git commit -m "Generate ${{ github.sha }} SDK"
           git push https://$PERSONAL_ACCESS_TOKEN@github.com/5afe/cgw-sdk.git
