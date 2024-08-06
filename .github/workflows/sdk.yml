@@ -1,0 +1,31 @@
+name: Generate SDK
+
+on:
+  push:
+
+jobs:
+  generate-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/iron'
+          cache: 'yarn'
+      - run: yarn install --immutable
+
+      - name: Generate SDK
+        run: yarn generate-sdk
+
+      - name: Push to repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
+          REPO_NAME: cgw-sdk
+        run: |
+          git config --global user.name 'iamacook'
+          git config --global user.email 'aaron@safe.global'
+          git clone https://github.com/5afe/${{ env.REPO_NAME }}.git cloned-repo
+          cd cloned-repo
+          git add .
+          git commit -m "Update SDK according to ${{ github.sha }}"
+          git push
