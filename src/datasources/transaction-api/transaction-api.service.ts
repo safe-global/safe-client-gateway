@@ -32,6 +32,7 @@ import { get } from 'lodash';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
+  private static readonly HOLESKY_CHAIN_ID = '17000';
 
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
@@ -49,24 +50,36 @@ export class TransactionApi implements ITransactionApi {
     private readonly networkService: INetworkService,
     private readonly loggingService: ILoggingService,
   ) {
-    this.defaultExpirationTimeInSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.default',
-      );
-    this.defaultNotFoundExpirationTimeSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.notFound.default',
-      );
-    this.tokenNotFoundExpirationTimeSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.notFound.token',
-      );
-    this.contractNotFoundExpirationTimeSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.notFound.contract',
-      );
-    this.ownersExpirationTimeSeconds =
-      this.configurationService.getOrThrow<number>('owners.ownersTtlSeconds');
+    if (chainId === TransactionApi.HOLESKY_CHAIN_ID) {
+      const holeskyExpirationTime =
+        this.configurationService.getOrThrow<number>(
+          'expirationTimeInSeconds.holesky',
+        );
+      this.defaultExpirationTimeInSeconds = holeskyExpirationTime;
+      this.defaultNotFoundExpirationTimeSeconds = holeskyExpirationTime;
+      this.tokenNotFoundExpirationTimeSeconds = holeskyExpirationTime;
+      this.contractNotFoundExpirationTimeSeconds = holeskyExpirationTime;
+      this.ownersExpirationTimeSeconds = holeskyExpirationTime;
+    } else {
+      this.defaultExpirationTimeInSeconds =
+        this.configurationService.getOrThrow<number>(
+          'expirationTimeInSeconds.default',
+        );
+      this.defaultNotFoundExpirationTimeSeconds =
+        this.configurationService.getOrThrow<number>(
+          'expirationTimeInSeconds.notFound.default',
+        );
+      this.tokenNotFoundExpirationTimeSeconds =
+        this.configurationService.getOrThrow<number>(
+          'expirationTimeInSeconds.notFound.token',
+        );
+      this.contractNotFoundExpirationTimeSeconds =
+        this.configurationService.getOrThrow<number>(
+          'expirationTimeInSeconds.notFound.contract',
+        );
+      this.ownersExpirationTimeSeconds =
+        this.configurationService.getOrThrow<number>('owners.ownersTtlSeconds');
+    }
   }
 
   async getDataDecoded(args: {
