@@ -1335,9 +1335,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/schematics@npm:^10.1.2":
-  version: 10.1.2
-  resolution: "@nestjs/schematics@npm:10.1.2"
+"@nestjs/schematics@npm:^10.1.3":
+  version: 10.1.3
+  resolution: "@nestjs/schematics@npm:10.1.3"
   dependencies:
     "@angular-devkit/core": "npm:17.3.8"
     "@angular-devkit/schematics": "npm:17.3.8"
@@ -1346,7 +1346,7 @@ __metadata:
     pluralize: "npm:8.0.0"
   peerDependencies:
     typescript: ">=4.8.2"
-  checksum: 10/c6aff36353bc43da024891d643a7b3683ee9c1764e351bded8430f52d90cf8e53c1e2aee430542efd55943e8ce674cba7ba120543d078ea38058364f80d8d971
+  checksum: 10/f9aa9a31192e2e7ae4d2e831dabb2438156be4fcc8b4b846746e2f137d7775a7768379974f0c3d4b6c436a157131d0b6744dc555ee28ca32282bc7bf971bc09a
   languageName: node
   linkType: hard
 
@@ -1567,12 +1567,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@safe-global/safe-deployments@npm:^1.37.1":
-  version: 1.37.1
-  resolution: "@safe-global/safe-deployments@npm:1.37.1"
+"@safe-global/safe-deployments@npm:^1.37.3":
+  version: 1.37.3
+  resolution: "@safe-global/safe-deployments@npm:1.37.3"
   dependencies:
     semver: "npm:^7.6.2"
-  checksum: 10/2cb05ad0d1768264885d9e92d1fcc1340af77f88605ac46fd99b8aa4118d923671e4bb3d380e3dd7caa13ca4e8ed6edae4765dd5394b78966a51f391375d683b
+  checksum: 10/3d1fcaac850a1d1100eaa5ff753c88c9bb889c678bb09248323c6b0c9d6228225a88be47973a89bb32829fe2d13ed17c21f854b9fdc29cc1b3c734021761f15c
   languageName: node
   linkType: hard
 
@@ -6839,12 +6839,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.3.2":
-  version: 3.3.2
-  resolution: "prettier@npm:3.3.2"
+"prettier@npm:^3.3.3":
+  version: 3.3.3
+  resolution: "prettier@npm:3.3.3"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10/83214e154afa5aa9b664c2506640212323eb1376b13379b2413dc351b7de0687629dca3f00ff2ec895ebd7e3a2adb7d7e231b6c77606e2358137f2150807405b
+  checksum: 10/5beac1f30b5b40162532b8e2f7c3a4eb650910a2695e9c8512a62ffdc09dae93190c29db9107fa7f26d1b6c71aad3628ecb9b5de1ecb0911191099be109434d7
   languageName: node
   linkType: hard
 
@@ -7254,11 +7254,11 @@ __metadata:
     "@nestjs/config": "npm:^3.2.3"
     "@nestjs/core": "npm:^10.3.10"
     "@nestjs/platform-express": "npm:^10.3.10"
-    "@nestjs/schematics": "npm:^10.1.2"
+    "@nestjs/schematics": "npm:^10.1.3"
     "@nestjs/serve-static": "npm:^4.0.2"
     "@nestjs/swagger": "npm:^7.4.0"
     "@nestjs/testing": "npm:^10.3.10"
-    "@safe-global/safe-deployments": "npm:^1.37.1"
+    "@safe-global/safe-deployments": "npm:^1.37.3"
     "@types/amqplib": "npm:^0"
     "@types/cookie-parser": "npm:^1.4.7"
     "@types/express": "npm:^4.17.21"
@@ -7279,20 +7279,20 @@ __metadata:
     lodash: "npm:^4.17.21"
     nestjs-cls: "npm:^4.4.0"
     postgres: "npm:^3.4.4"
-    prettier: "npm:^3.3.2"
+    prettier: "npm:^3.3.3"
     redis: "npm:^4.7.0"
     reflect-metadata: "npm:^0.2.2"
     rxjs: "npm:^7.8.1"
     semver: "npm:^7.6.3"
     source-map-support: "npm:^0.5.20"
     supertest: "npm:^7.0.0"
-    ts-jest: "npm:29.2.3"
+    ts-jest: "npm:29.2.4"
     ts-loader: "npm:^9.5.1"
     ts-node: "npm:^10.9.2"
     tsconfig-paths: "npm:4.2.0"
     typescript: "npm:^5.5.3"
     typescript-eslint: "npm:^7.16.1"
-    viem: "npm:^2.18.4"
+    viem: "npm:^2.18.8"
     winston: "npm:^3.13.1"
     zod: "npm:^3.23.8"
   languageName: unknown
@@ -7952,9 +7952,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-jest@npm:29.2.3":
-  version: 29.2.3
-  resolution: "ts-jest@npm:29.2.3"
+"ts-jest@npm:29.2.4":
+  version: 29.2.4
+  resolution: "ts-jest@npm:29.2.4"
   dependencies:
     bs-logger: "npm:0.x"
     ejs: "npm:^3.1.10"
@@ -7985,7 +7985,7 @@ __metadata:
       optional: true
   bin:
     ts-jest: cli.js
-  checksum: 10/d3c3388cea8ea4a7f52c7c97e34a1abf1d83152fa0625ddea7b82c0e3599a786185b95d3e12a09eb27521adedc90780a3dc9df29156ca83f1094e163113ede62
+  checksum: 10/69db25e06b93f4ea4e454a54afc4e49c59b71f7efdef94fe728f4d62b8c475364d0fed7253212c5394669dcd143516ab6f630f4b139b2f9c37119245cf5a963c
   languageName: node
   linkType: hard
 
@@ -8309,9 +8309,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^2.18.4":
-  version: 2.18.4
-  resolution: "viem@npm:2.18.4"
+"viem@npm:^2.18.8":
+  version: 2.18.8
+  resolution: "viem@npm:2.18.8"
   dependencies:
     "@adraffy/ens-normalize": "npm:1.10.0"
     "@noble/curves": "npm:1.4.0"
@@ -8327,7 +8327,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/05a0ce65fc3917c65fb3917d23133f19f9408a7474f60aff76ba569846afa5b81d14775997027c4efe80b2581652d78e465b151c1d27208e9445aeb962a11cf4
+  checksum: 10/d02dc2bc74c94da13864ae8202d20aacc0f657e8596d5db59580b1c39f8d76c3f9b906b193e384df2edb4cdf3e4f0a3accfa63b5f717835e580006f64fb2e41e
   languageName: node
   linkType: hard
 

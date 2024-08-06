@@ -43,6 +43,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
+import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
 
 describe('Notifications Controller V2 (Unit)', () => {
   let app: INestApplication<Server>;
@@ -72,6 +74,8 @@ describe('Notifications Controller V2 (Unit)', () => {
       .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountsDatasourceModule)
       .useModule(TestAccountsDataSourceModule)
+      .overrideModule(CounterfactualSafesDatasourceModule)
+      .useModule(TestCounterfactualSafesDataSourceModule)
       .overrideModule(NotificationsDatasourceModule)
       .useModule(TestNotificationsDatasourceModule)
       .overrideModule(CacheModule)

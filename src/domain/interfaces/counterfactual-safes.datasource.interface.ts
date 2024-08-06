@@ -13,6 +13,7 @@ export interface ICounterfactualSafesDatasource {
   }): Promise<CounterfactualSafe>;
 
   getCounterfactualSafe(args: {
+    account: Account;
     chainId: string;
     predictedAddress: `0x${string}`;
   }): Promise<CounterfactualSafe>;
