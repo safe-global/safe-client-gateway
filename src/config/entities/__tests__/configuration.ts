@@ -100,6 +100,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   expirationTimeInSeconds: {
     default: faker.number.int(),
+    holesky: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
