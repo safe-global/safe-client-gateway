@@ -9,3 +9,5 @@ export const IncomingTokenEventSchema = z.object({
   tokenAddress: AddressSchema,
   txHash: z.string(),
 });
+
+export type IncomingTokenEvent = z.infer<typeof IncomingTokenEventSchema>;

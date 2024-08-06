@@ -96,6 +96,7 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
    *
    * @returns - OAuth2 token
    */
+  // TODO: Use CacheFirstDataSource
   private async getOauth2Token(): Promise<string> {
     const cacheDir = CacheRouter.getFirebaseOAuth2TokenCacheDir();
     const cachedToken = await this.cacheService.get(cacheDir);

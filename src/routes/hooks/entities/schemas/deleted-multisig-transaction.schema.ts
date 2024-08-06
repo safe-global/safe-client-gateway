@@ -8,3 +8,7 @@ export const DeletedMultisigTransactionEventSchema = z.object({
   chainId: z.string(),
   safeTxHash: z.string(),
 });
+
+export type DeletedMultisigTransactionEvent = z.infer<
+  typeof DeletedMultisigTransactionEventSchema
+>;

@@ -425,7 +425,7 @@ describe('NotificationsDatasource', () => {
     });
   });
 
-  describe('getSubscribersWithTokensBySafe', () => {
+  describe('getSubscribersBySafe', () => {
     it('should return a list of subscribers with tokens for a Safe', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -451,17 +451,19 @@ describe('NotificationsDatasource', () => {
 
       const safe = upsertSubscriptionsDto.safes[0];
       await expect(
-        target.getSubscribersWithTokensBySafe({
+        target.getSubscribersBySafe({
           chainId: safe.chainId,
           safeAddress: safe.address,
         }),
       ).resolves.toStrictEqual([
         {
           subscriber: signerAddress,
+          deviceUuid: upsertSubscriptionsDto.deviceUuid!,
           cloudMessagingToken: upsertSubscriptionsDto.cloudMessagingToken,
         },
         {
           subscriber: secondSignerAddress,
+          deviceUuid: secondUpsertSubscriptionsDto.deviceUuid!,
           cloudMessagingToken: secondUpsertSubscriptionsDto.cloudMessagingToken,
         },
       ]);

@@ -266,12 +266,13 @@ export class CacheRouter {
     to?: string;
     value?: string;
     tokenAddress?: string;
+    txHash?: string;
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getIncomingTransfersCacheKey(args),
-      `${args.executionDateGte}_${args.executionDateLte}_${args.to}_${args.value}_${args.tokenAddress}_${args.limit}_${args.offset}`,
+      `${args.executionDateGte}_${args.executionDateLte}_${args.to}_${args.value}_${args.tokenAddress}_${args.txHash}_${args.limit}_${args.offset}`,
     );
   }
 

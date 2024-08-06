@@ -132,6 +132,7 @@ export class SafeRepository implements ISafeRepository {
     to?: string;
     value?: string;
     tokenAddress?: string;
+    txHash?: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<Transfer>> {

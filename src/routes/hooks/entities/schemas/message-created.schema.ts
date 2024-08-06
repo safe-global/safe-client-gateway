@@ -8,3 +8,5 @@ export const MessageCreatedEventSchema = z.object({
   chainId: z.string(),
   messageHash: z.string(),
 });
+
+export type MessageCreatedEvent = z.infer<typeof MessageCreatedEventSchema>;

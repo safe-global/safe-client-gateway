@@ -986,6 +986,7 @@ describe('TransactionApi', () => {
       const to = faker.finance.ethereumAddress();
       const value = faker.string.numeric();
       const tokenAddress = faker.finance.ethereumAddress();
+      const txHash = faker.string.hexadecimal();
       const limit = faker.number.int();
       const offset = faker.number.int();
       const incomingTransfer = erc20TransferBuilder()
@@ -997,7 +998,7 @@ describe('TransactionApi', () => {
       const getIncomingTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/incoming-transfers/`;
       const cacheDir = new CacheDir(
         `${chainId}_incoming_transfers_${safeAddress}`,
-        `${executionDateGte}_${executionDateLte}_${to}_${value}_${tokenAddress}_${limit}_${offset}`,
+        `${executionDateGte}_${executionDateLte}_${to}_${value}_${tokenAddress}_${txHash}_${limit}_${offset}`,
       );
       networkService.get.mockResolvedValueOnce({
         status: 200,
@@ -1013,6 +1014,7 @@ describe('TransactionApi', () => {
         tokenAddress,
         limit,
         offset,
+        txHash,
       });
 
       expect(actual).toBe(actual);
@@ -1031,6 +1033,7 @@ describe('TransactionApi', () => {
             token_address: tokenAddress,
             limit,
             offset,
+            transaction_hash: txHash,
           },
         },
       });
@@ -1047,6 +1050,7 @@ describe('TransactionApi', () => {
       const to = faker.finance.ethereumAddress();
       const value = faker.string.numeric();
       const tokenAddress = faker.finance.ethereumAddress();
+      const txHash = faker.string.hexadecimal();
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getIncomingTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/incoming-transfers/`;
@@ -1056,7 +1060,7 @@ describe('TransactionApi', () => {
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_incoming_transfers_${safeAddress}`,
-        `${executionDateGte}_${executionDateLte}_${to}_${value}_${tokenAddress}_${limit}_${offset}`,
+        `${executionDateGte}_${executionDateLte}_${to}_${value}_${tokenAddress}_${txHash}_${limit}_${offset}`,
       );
       mockDataSource.get.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -1076,6 +1080,7 @@ describe('TransactionApi', () => {
           to,
           value,
           tokenAddress,
+          txHash,
           limit,
           offset,
         }),
@@ -1094,6 +1099,7 @@ describe('TransactionApi', () => {
             to,
             value,
             token_address: tokenAddress,
+            transaction_hash: txHash,
             limit,
             offset,
           },

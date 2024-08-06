@@ -1,4 +1,4 @@
-import { UpsertSubscriptionsDto } from '@/datasources/notifications/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/domain/notifications/entities-v2/upsert-subscriptions.dto.entity';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
 
@@ -19,13 +19,13 @@ export interface INotificationsDatasource {
     safeAddress: `0x${string}`;
   }): Promise<Array<NotificationType>>;
 
-  getSubscribersWithTokensBySafe(args: {
+  getSubscribersBySafe(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    signerAddress: `0x${string}`;
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
+      deviceUuid: Uuid;
       cloudMessagingToken: string;
     }>
   >;

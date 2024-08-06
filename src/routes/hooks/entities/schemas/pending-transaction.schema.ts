@@ -8,3 +8,7 @@ export const PendingTransactionEventSchema = z.object({
   chainId: z.string(),
   safeTxHash: z.string(),
 });
+
+export type PendingTransactionEvent = z.infer<
+  typeof PendingTransactionEventSchema
+>;

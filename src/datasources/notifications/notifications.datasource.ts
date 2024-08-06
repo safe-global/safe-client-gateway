@@ -10,7 +10,8 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
-import { UpsertSubscriptionsDto } from '@/datasources/notifications/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/domain/notifications/entities-v2/upsert-subscriptions.dto.entity';
+import { UUID } from 'crypto';
 
 @Injectable()
 export class NotificationsDatasource implements INotificationsDatasource {
@@ -130,28 +131,34 @@ export class NotificationsDatasource implements INotificationsDatasource {
   }
 
   /**
-   * Gets subscribers and their cloud messaging tokens for the given Safe.
+   * Gets subscribers and their device UUID/cloud messaging tokens for the given Safe.
    *
    * @param args.chainId Chain ID
    * @param args.safeAddress Safe address
    *
    * @returns List of subscribers/tokens for given Safe
    */
-  async getSubscribersWithTokensBySafe(args: {
+  async getSubscribersBySafe(args: {
     chainId: string;
     safeAddress: string;
   }): Promise<
     Array<{
       subscriber: `0x${string}`;
+      deviceUuid: Uuid;
       cloudMessagingToken: string;
     }>
   > {
     const subscribers = await this.sql<
-      Array<{ signer_address: `0x${string}`; cloud_messaging_token: string }>
+      Array<{
+        signer_address: `0x${string}`;
+        cloud_messaging_token: string;
+        device_uuid: UUID;
+      }>
     >`
       SELECT 
         pd.cloud_messaging_token,
-        ns.signer_address
+        ns.signer_address,
+        pd.device_uuid
       FROM 
         push_notification_devices pd
       JOIN 
@@ -168,6 +175,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
     return subscribers.map((subscriber) => {
       return {
         subscriber: subscriber.signer_address,
+        deviceUuid: subscriber.device_uuid,
         cloudMessagingToken: subscriber.cloud_messaging_token,
       };
     });

@@ -9,3 +9,7 @@ export const ModuleTransactionEventSchema = z.object({
   module: AddressSchema,
   txHash: z.string(),
 });
+
+export type ModuleTransactionEvent = z.infer<
+  typeof ModuleTransactionEventSchema
+>;

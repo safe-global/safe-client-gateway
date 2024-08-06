@@ -9,3 +9,7 @@ export const ExecutedTransactionEventSchema = z.object({
   safeTxHash: z.string(),
   txHash: z.string(),
 });
+
+export type ExecutedTransactionEvent = z.infer<
+  typeof ExecutedTransactionEventSchema
+>;

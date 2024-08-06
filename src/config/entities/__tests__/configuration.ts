@@ -122,6 +122,7 @@ export default (): ReturnType<typeof configuration> => ({
     delegatesV2: false,
     counterfactualBalances: false,
     accounts: false,
+    pushNotifications: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
