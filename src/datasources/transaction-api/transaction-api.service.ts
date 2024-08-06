@@ -29,6 +29,7 @@ import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmat
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { ILoggingService } from '@/logging/logging.interface';
 import { get } from 'lodash';
+import { getAddress } from 'viem';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
@@ -607,6 +608,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getMultisigTransactions(args: {
+    // TODO: safeAddress and to should be `0x${string}`
     safeAddress: string;
     ordering?: string;
     executed?: boolean;
@@ -626,28 +628,48 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/multisig-transactions/`;
-      return await this.dataSource.get({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: {
-          params: {
-            safe: args.safeAddress,
-            ordering: args.ordering,
-            executed: args.executed,
-            trusted: args.trusted,
-            execution_date__gte: args.executionDateGte,
-            execution_date__lte: args.executionDateLte,
-            to: args.to,
-            value: args.value,
-            nonce: args.nonce,
-            nonce__gte: args.nonceGte,
-            limit: args.limit,
-            offset: args.offset,
+      return await this.dataSource
+        .get<Page<MultisigTransaction>>({
+          cacheDir,
+          url,
+          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+          networkRequest: {
+            params: {
+              safe: args.safeAddress,
+              ordering: args.ordering,
+              executed: args.executed,
+              trusted: args.trusted,
+              execution_date__gte: args.executionDateGte,
+              execution_date__lte: args.executionDateLte,
+              to: args.to,
+              value: args.value,
+              nonce: args.nonce,
+              nonce__gte: args.nonceGte,
+              limit: args.limit,
+              offset: args.offset,
+            },
           },
-        },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
+          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        })
+        .then(async (data): Promise<Page<MultisigTransaction>> => {
+          const hasConfirmationsRequired = data.results.every((tx) => {
+            return tx.confirmationsRequired !== null;
+          });
+          if (hasConfirmationsRequired) {
+            return data;
+          }
+
+          const results = await Promise.all(
+            data.results.map(async (transaction) => {
+              return await this._setConfirmationsRequired(transaction);
+            }),
+          );
+
+          return {
+            ...data,
+            results,
+          };
+        });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
@@ -670,15 +692,47 @@ export class TransactionApi implements ITransactionApi {
         safeTransactionHash,
       });
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
-      return await this.dataSource.get({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
+      return await this.dataSource
+        .get<MultisigTransaction>({
+          cacheDir,
+          url,
+          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        })
+        .then(async (transaction) => {
+          return await this._setConfirmationsRequired(transaction);
+        });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
+  }
+
+  /**
+   * The Transaction Service sometimes returns null for confirmationsRequired
+   * TODO: Remove this method once the Transaction Service is fixed
+   * @see https://github.com/safe-global/safe-transaction-service/issues/2170
+   * @param transaction - {@link MultisigTransaction} maybe missing confirmationsRequired
+   * @returns - {@link MultisigTransaction} with confirmationsRequired set
+   */
+  private async _setConfirmationsRequired(
+    transaction: MultisigTransaction & {
+      confirmationsRequired:
+        | MultisigTransaction['confirmationsRequired']
+        | null;
+    },
+  ): Promise<MultisigTransaction> {
+    if (transaction.confirmationsRequired !== null) {
+      return transaction;
+    }
+
+    transaction.confirmationsRequired =
+      transaction.isExecuted && transaction.confirmations !== null
+        ? transaction.confirmations.length
+        : await this.getSafe(getAddress(transaction.safe)).then((safe) => {
+            return safe.threshold;
+          });
+
+    return transaction;
   }
 
   async deleteTransaction(args: {
