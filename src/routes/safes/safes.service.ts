@@ -310,7 +310,9 @@ export class SafesService {
       )
       .map((tx) => {
         const isMultisig = 'safeTxHash' in tx && tx.safeTxHash !== undefined;
-        return isMultisig ? tx.modified ?? tx.submissionDate : tx.executionDate;
+        return isMultisig
+          ? (tx.modified ?? tx.submissionDate)
+          : tx.executionDate;
       });
 
     return max(dates) ?? null;
