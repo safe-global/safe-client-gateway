@@ -1,4 +1,3 @@
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as prettier from 'prettier';
@@ -7,11 +6,9 @@ import openapiTS, {
   type Method,
   type OpenAPI3,
 } from 'openapi-typescript';
-import { AppModule } from '@/app.module';
-import { DefaultAppProvider } from '@/app.provider';
-import configuration from '@/config/entities/configuration';
 
-const SWAGGER_URL = 'https://safe-client.safe.global/api';
+const PROD_SWAGGER_URL = 'https://safe-client.safe.global/api';
+const STAGING_SWAGGER_URL = 'https://safe-client.staging.5afe.dev/api';
 
 const SDK_FOLDER = path.join(process.cwd(), 'dist', 'sdk');
 const SCHEMA_FILE = 'schema.d.ts';
@@ -22,7 +19,14 @@ const WARNING = `/**
  */`;
 
 /**
- * Main function to generate SDK for Safe Client Gateway
+ * Main function to generate SDK for Safe Client Gateway:
+ *
+ * 1. Create 'dist/sdk' folder
+ * 2. Scrape Swagger definitions from staging
+ * 3. Convert definitions to TypeScript schema, re-exporting components
+ * 4. Generate openapi-fetch client factory and singleton
+ * 5. Generate path-specific wrappers for client
+ * 6. Write schema and SDK files to 'dist/sdk'
  */
 async function main(): Promise<void> {
   try {
@@ -31,9 +35,10 @@ async function main(): Promise<void> {
     const definitions = await getSwaggerDefinitions();
 
     const schema = await getSchema(definitions);
-    const client = getClient();
     // Re-export components for import convenience
     const components = getComponents(definitions);
+
+    const client = getClient();
     const wrappers = getWrappers(definitions);
 
     await Promise.all([
@@ -51,11 +56,15 @@ async function main(): Promise<void> {
 void main();
 
 /**
- * Build Swagger definitions from project
+ * Scrapes Swagger definitions from {@link STAGING_SWAGGER_URL}
+ * as that's where new features are added first
  * @returns Swagger definitions object
+ *
+ * Note: it is possible to get the definitions from NestJS with
+ * `SwaggerModule.createDocument` but we scrape to match deployment
  */
 async function getSwaggerDefinitions(): Promise<OpenAPI3> {
-  const url = `${SWAGGER_URL}/swagger-ui-init.js`;
+  const url = `${STAGING_SWAGGER_URL}/swagger-ui-init.js`;
   const swaggerUiInit = await fetch(url).then((res) => {
     if (res.ok) {
       return res.text();
@@ -72,18 +81,6 @@ async function getSwaggerDefinitions(): Promise<OpenAPI3> {
 
   const options = JSON.parse(optionsMatch[1]);
   return options.swaggerDoc;
-
-  /**
-   * TODO: Get Swagger definitions from running NestJS app
-   * Not done for initial testing due to concerns re. env. vars.
-   */
-  const app = await new DefaultAppProvider().provide(
-    AppModule.register(configuration),
-  );
-  const spec = SwaggerModule.createDocument(app, new DocumentBuilder().build());
-  await app.close();
-
-  return spec as OpenAPI3;
 }
 
 /**
@@ -126,7 +123,7 @@ function getClient(): string {
   const client = [
     'const createClient = _createClient<paths>;',
     `let _client = createClient({
-  baseUrl: '${SWAGGER_URL}',
+  baseUrl: '${PROD_SWAGGER_URL}',
 })`,
     `export function getClient() {
   return _client
@@ -160,7 +157,7 @@ function getWrappers(definitions: OpenAPI3): string {
       const method = ((): Method => {
         const isFetchMethod = (method: string): method is Method => {
           // prettier-ignore
-          return ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace', ].includes(method);
+          return ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'].includes(method);
         };
         const [_method] = Object.keys(pathItemObj);
         if (!isFetchMethod(_method)) {
@@ -212,7 +209,7 @@ function getWrappers(definitions: OpenAPI3): string {
 }
 
 /**
- * Writes a prettified file to the ${@link SDK_FOLDER}
+ * Writes a prettified file to the {@link SDK_FOLDER}
  * @param fileName - Name of file to write
  * @param content - Content to write
  */
