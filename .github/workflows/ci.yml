@@ -185,8 +185,8 @@ jobs:
 
   generate-sdk:
     runs-on: ubuntu-latest
-    needs: [autodeploy]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    # needs: [autodeploy]
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -202,15 +202,30 @@ jobs:
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
         run: |
+          # Set git config
           git config --global user.name 'iamacook'
           git config --global user.email 'aaron@safe.global'
+
+          # Clone the repository
           git clone https://github.com/5afe/cgw-sdk
           cd cgw-sdk
+
+          # Remove the old dist folder
           if [ -d "dist" ]; then
             rm -rf dist
           fi
+
+          # Copy the new dist folder
           mkdir -p dist
           cp -r ../dist/sdk/* dist/
+
+          # Update the package.json version
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
+          jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
+          mv package_tmp.json package.json
+
+          # Commit and push
           git add .
           git commit -m "Generate ${{ github.sha }} SDK"
           git push https://$PERSONAL_ACCESS_TOKEN@github.com/5afe/cgw-sdk.git
