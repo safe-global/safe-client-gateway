@@ -26,7 +26,7 @@ jobs:
           git config --global user.email 'aaron@safe.global'
           git clone https://github.com/5afe/cgw-sdk cloned-repo
           mkdir -p cloned-repo/dist
-          cp -r dist/sdk/* temp/dist/
+          cp -r dist/sdk/* cloned-repo/dist/
           cd cloned-repo
           git add .
           git commit -m "Update SDK according to ${{ github.sha }}"
