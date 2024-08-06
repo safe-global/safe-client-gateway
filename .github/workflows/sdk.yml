@@ -19,7 +19,7 @@ jobs:
 
       - name: Push to repository
         env:
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
         run: |
           git config --global user.name 'iamacook'
           git config --global user.email 'aaron@safe.global'
