@@ -7286,7 +7286,7 @@ __metadata:
     semver: "npm:^7.6.3"
     source-map-support: "npm:^0.5.20"
     supertest: "npm:^7.0.0"
-    ts-jest: "npm:29.2.3"
+    ts-jest: "npm:29.2.4"
     ts-loader: "npm:^9.5.1"
     ts-node: "npm:^10.9.2"
     tsconfig-paths: "npm:4.2.0"
@@ -7952,9 +7952,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-jest@npm:29.2.3":
-  version: 29.2.3
-  resolution: "ts-jest@npm:29.2.3"
+"ts-jest@npm:29.2.4":
+  version: 29.2.4
+  resolution: "ts-jest@npm:29.2.4"
   dependencies:
     bs-logger: "npm:0.x"
     ejs: "npm:^3.1.10"
@@ -7985,7 +7985,7 @@ __metadata:
       optional: true
   bin:
     ts-jest: cli.js
-  checksum: 10/d3c3388cea8ea4a7f52c7c97e34a1abf1d83152fa0625ddea7b82c0e3599a786185b95d3e12a09eb27521adedc90780a3dc9df29156ca83f1094e163113ede62
+  checksum: 10/69db25e06b93f4ea4e454a54afc4e49c59b71f7efdef94fe728f4d62b8c475364d0fed7253212c5394669dcd143516ab6f630f4b139b2f9c37119245cf5a963c
   languageName: node
   linkType: hard
 
