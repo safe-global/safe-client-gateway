@@ -19,15 +19,13 @@ jobs:
 
       - name: Push to repository
         env:
-          GITHUB_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
-          REPO_NAME: cgw-sdk
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           git config --global user.name 'iamacook'
           git config --global user.email 'aaron@safe.global'
-          git clone git@github.com:5afe/cgw-sdk.git cloned-repo
-          mkdir -p cloned-repo/dist
-          cp -r dist/sdk/* cloned-repo/dist/
-          cd cloned-repo
+          git clone https://github.com/5afe/cgw-sdk
+          cd cgw-sdk
+          cp -r ./dist/sdk/* cgw-sdk
           git add .
           git commit -m "Update SDK according to ${{ github.sha }}"
-          git push
+          git push https://$PERSONAL_ACCESS_TOKEN@github.com/5afe/cgw-sdk.git
