@@ -35,9 +35,6 @@ export class CounterfactualSafesDatasource
       );
   }
 
-  // TODO: the repository calling this function should:
-  // - check the AccountDataSettings to see if counterfactual-safes is enabled.
-  // - check the AccountDataType to see if it's active.
   async createCounterfactualSafe(args: {
     account: Account;
     createCounterfactualSafeDto: CreateCounterfactualSafeDto;
@@ -54,6 +51,7 @@ export class CounterfactualSafesDatasource
   }
 
   async getCounterfactualSafe(args: {
+    account: Account;
     chainId: string;
     predictedAddress: `0x${string}`;
   }): Promise<CounterfactualSafe> {
@@ -66,7 +64,10 @@ export class CounterfactualSafesDatasource
     >({
       cacheDir,
       query: this.sql<CounterfactualSafe[]>`
-        SELECT * FROM counterfactual_safes WHERE chain_id = ${args.chainId} AND predicted_address = ${args.predictedAddress}`,
+        SELECT * FROM counterfactual_safes 
+        WHERE account_id = ${args.account.id}
+          AND chain_id = ${args.chainId}
+          AND predicted_address = ${args.predictedAddress}`,
       ttl: this.defaultExpirationTimeInSeconds,
     });
 
