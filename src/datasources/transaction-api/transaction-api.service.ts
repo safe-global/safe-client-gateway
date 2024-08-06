@@ -22,7 +22,10 @@ import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.ent
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { SafeList } from '@/domain/safe/entities/safe-list.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { Transaction } from '@/domain/safe/entities/transaction.entity';
+import {
+  isMultisigTransaction,
+  Transaction,
+} from '@/domain/safe/entities/transaction.entity';
 import { Transfer } from '@/domain/safe/entities/transfer.entity';
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
@@ -660,8 +663,8 @@ export class TransactionApi implements ITransactionApi {
           }
 
           const results = await Promise.all(
-            data.results.map(async (transaction) => {
-              return await this._setConfirmationsRequired(transaction);
+            data.results.map(async (tx) => {
+              return await this._setConfirmationsRequired(tx);
             }),
           );
 
@@ -796,22 +799,47 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/all-transactions/`;
-      return await this.dataSource.get({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: {
-          params: {
-            safe: args.safeAddress,
-            ordering: args.ordering,
-            executed: args.executed,
-            queued: args.queued,
-            limit: args.limit,
-            offset: args.offset,
+      return await this.dataSource
+        .get<Page<Transaction>>({
+          cacheDir,
+          url,
+          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+          networkRequest: {
+            params: {
+              safe: args.safeAddress,
+              ordering: args.ordering,
+              executed: args.executed,
+              queued: args.queued,
+              limit: args.limit,
+              offset: args.offset,
+            },
           },
-        },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
+          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        })
+        .then(async (data): Promise<Page<Transaction>> => {
+          const hasConfirmationsRequired = data.results.every((tx) => {
+            return (
+              isMultisigTransaction(tx) && tx.confirmationsRequired !== null
+            );
+          });
+          if (hasConfirmationsRequired) {
+            return data;
+          }
+
+          const results = await Promise.all(
+            data.results.map(async (tx) => {
+              if (!isMultisigTransaction(tx)) {
+                return tx;
+              }
+              return await this._setConfirmationsRequired(tx);
+            }),
+          );
+
+          return {
+            ...data,
+            results,
+          };
+        });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }

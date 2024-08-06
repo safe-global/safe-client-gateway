@@ -160,7 +160,10 @@ describe('Transactions History Controller (Unit)', () => {
   it('Failure: data page validation fails', async () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
-    const page = pageBuilder().build();
+    const multisigTransaction = multisigTransactionBuilder().build();
+    // @ts-expect-error - Safe must be defined
+    multisigTransaction.safe = null;
+    const page = pageBuilder().with('results', [multisigTransaction]).build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       // Param ValidationPipe checksums address
@@ -170,7 +173,7 @@ describe('Transactions History Controller (Unit)', () => {
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: { ...page, results: faker.word.words() },
+          data: page,
           status: 200,
         });
       }
