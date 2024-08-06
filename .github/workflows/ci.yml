@@ -185,8 +185,8 @@ jobs:
 
   generate-sdk:
     runs-on: ubuntu-latest
-    needs: [autodeploy]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    # needs: [autodeploy]
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -215,9 +215,9 @@ jobs:
 
           # Check for diffs
           if git diff --quiet; then
-            echo "should_update=false" >> $GITHUB_ENV
-          else
             echo "should_update=true" >> $GITHUB_ENV
+          else
+            echo "should_update=false" >> $GITHUB_ENV
           fi
 
       - name: Update SDK
