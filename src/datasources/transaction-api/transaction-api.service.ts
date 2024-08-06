@@ -655,16 +655,11 @@ export class TransactionApi implements ITransactionApi {
           expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         })
         .then(async (data): Promise<Page<MultisigTransaction>> => {
-          const hasConfirmationsRequired = data.results.every((tx) => {
-            return tx.confirmationsRequired !== null;
-          });
-          if (hasConfirmationsRequired) {
-            return data;
-          }
-
           const results = await Promise.all(
             data.results.map(async (tx) => {
-              return await this._setConfirmationsRequired(tx);
+              return tx.confirmationsRequired !== null
+                ? tx
+                : await this._setConfirmationsRequired(tx);
             }),
           );
 
@@ -702,9 +697,11 @@ export class TransactionApi implements ITransactionApi {
           notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
           expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         })
-        .then(async (transaction) => {
-          return await this._setConfirmationsRequired(transaction);
-        });
+        .then(async (tx) =>
+          tx.confirmationsRequired !== null
+            ? tx
+            : await this._setConfirmationsRequired(tx),
+        );
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
@@ -817,21 +814,14 @@ export class TransactionApi implements ITransactionApi {
           expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         })
         .then(async (data): Promise<Page<Transaction>> => {
-          const hasConfirmationsRequired = data.results.every((tx) => {
-            return (
-              isMultisigTransaction(tx) && tx.confirmationsRequired !== null
-            );
-          });
-          if (hasConfirmationsRequired) {
-            return data;
-          }
-
           const results = await Promise.all(
             data.results.map(async (tx) => {
               if (!isMultisigTransaction(tx)) {
                 return tx;
               }
-              return await this._setConfirmationsRequired(tx);
+              return tx.confirmationsRequired !== null
+                ? tx
+                : await this._setConfirmationsRequired(tx);
             }),
           );
 

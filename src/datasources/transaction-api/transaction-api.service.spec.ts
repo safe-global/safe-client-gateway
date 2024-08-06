@@ -1442,7 +1442,7 @@ describe('TransactionApi', () => {
         offset,
       });
 
-      expect(actual).toBe(multisigTransactionsPage);
+      expect(actual).toStrictEqual(multisigTransactionsPage);
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockDataSource.get).toHaveBeenCalledWith({
         cacheDir,
@@ -1826,7 +1826,6 @@ describe('TransactionApi', () => {
             },
           ],
         });
-        // Doesn't need to fetch the Safe for it's threshold
         expect(mockDataSource.get).toHaveBeenCalledTimes(3);
         expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
           cacheDir: multisigTransactionsCacheDir,
