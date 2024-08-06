@@ -24,8 +24,8 @@ jobs:
           git config --global user.name 'iamacook'
           git config --global user.email 'aaron@safe.global'
           git clone https://github.com/5afe/cgw-sdk
-          cd cgw-sdk
           cp -r dist/sdk/* cgw-sdk
+          cd cgw-sdk
           git add .
           git commit -m "Update SDK according to ${{ github.sha }}"
           git push https://$PERSONAL_ACCESS_TOKEN@github.com/5afe/cgw-sdk.git
