@@ -196,6 +196,8 @@ jobs:
       - run: yarn install --immutable
 
       - name: Generate SDK
+        env:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
         run: |
           yarn generate-sdk
 
@@ -225,7 +227,7 @@ jobs:
 
             # Commit the changes
             git add .
-            git commit -m "SDK v$NEW_VERSION for ${{ github.sha }}"
+            git commit -m "v$NEW_VERSION for ${{ github.sha }}"
 
             # Push the changes
             git push https://$PERSONAL_ACCESS_TOKEN@github.com/5afe/cgw-sdk.git
