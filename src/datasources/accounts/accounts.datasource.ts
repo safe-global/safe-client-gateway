@@ -214,6 +214,10 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   /**
    * Checks if the client IP address has reached the account creation rate limit.
    *
+   * NOTE: the rate limit is implemented in the datasource layer for this use case
+   * because we need to restrict the actual creation of accounts, not merely
+   * the attempts to create them.
+   *
    * If the client IP address is invalid, a warning is logged.
    * If the client IP address is valid and rate limit is reached, a {@link LimitReachedError} is thrown.
    *
