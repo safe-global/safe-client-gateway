@@ -15,6 +15,7 @@ import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import { IpSchema } from '@/validation/entities/schemas/ip.schema';
 import {
   Inject,
   Injectable,
@@ -26,7 +27,6 @@ import postgres from 'postgres';
 
 @Injectable()
 export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
-  private static readonly SIMPLE_IPV4_REGEX = /^(\d{1,3}\.){3}\d{1,3}$/;
   private static readonly ACCOUNT_CREATION_CACHE_PREFIX = 'account_creation';
   private readonly defaultExpirationTimeInSeconds: number;
   // Number of seconds for each rate-limit cycle
@@ -220,7 +220,8 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
    * @param clientIp - client IP address.
    */
   private async checkCreationRateLimit(clientIp: string): Promise<void> {
-    if (!clientIp || !AccountsDatasource.SIMPLE_IPV4_REGEX.test(clientIp)) {
+    const { success: isValidIp } = IpSchema.safeParse(clientIp);
+    if (!clientIp || !isValidIp) {
       this.loggingService.warn(
         `Invalid client IP while creating account: ${clientIp}`,
       );
