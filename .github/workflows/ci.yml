@@ -197,8 +197,11 @@ jobs:
 
       - name: Generate SDK
         run: |
-          # Generate the SDK
           yarn generate-sdk
+
+          # Set config
+          git config --global user.name 'iamacook'
+          git config --global user.email 'aaron@safe.global'
 
           # Clone the cgw-sdk repository
           git clone https://github.com/5afe/cgw-sdk
@@ -213,29 +216,19 @@ jobs:
           mkdir -p dist
           cp -r ../dist/sdk/* dist/
 
-          # Check for diffs
           if git diff --quiet; then
-            echo "should_update=true" >> $GITHUB_ENV
-          else
-            echo "should_update=false" >> $GITHUB_ENV
+            # Update the package.json version
+            CURRENT_VERSION=$(jq -r '.version' package.json)
+            NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
+            jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
+            mv package_tmp.json package.json
+
+            # Commit the changes
+            git add .
+            git commit -m "SDK v$NEW_VERSION for ${{ github.sha }}"
+
+            # Push the changes
+            git push https://$PERSONAL_ACCESS_TOKEN@github.com/5afe/cgw-sdk.git
+          else 
+            echo "No changes to commit"
           fi
-
-      - name: Update SDK
-        if: env.should_update == 'true'
-        env:
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
-        run: |
-          # Update the package.json version
-          CURRENT_VERSION=$(jq -r '.version' package.json)
-          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
-          jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
-          mv package_tmp.json package.json
-
-          # Commit the changes
-          git add .
-          git commit -m "SDK v$NEW_VERSION for ${{ github.sha }}"
-
-          # Push the changes
-          git config --global user.name 'iamacook'
-          git config --global user.email 'aaron@safe.global'
-          git push https://$PERSONAL_ACCESS_TOKEN@github.com/5afe/cgw-sdk.git
