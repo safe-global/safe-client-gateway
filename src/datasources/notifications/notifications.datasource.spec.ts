@@ -1,10 +1,10 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { upsertSubscriptionsDtoBuilder } from '@/datasources/notifications/__tests__/upsert-subscriptions.dto.entity.builder';
+import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/entities/__tests__/upsert-subscriptions.dto.entity.builder';
 import { NotificationsDatasource } from '@/datasources/notifications/notifications.datasource';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
-import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
+import { UUID } from 'crypto';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import postgres from 'postgres';
@@ -49,7 +49,7 @@ describe('NotificationsDatasource', () => {
     it('should insert a subscription', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
-        .with('deviceUuid', undefined)
+        .with('deviceUuid', null)
         .build();
 
       const actual = await target.upsertSubscriptions({
@@ -202,7 +202,7 @@ describe('NotificationsDatasource', () => {
     it('should allow multiple subscriptions, varying by device UUID', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
-      const secondDeviceUuid = faker.string.uuid() as Uuid;
+      const secondDeviceUuid = faker.string.uuid() as UUID;
       const secondUpsertSubscriptionsDto = {
         ...upsertSubscriptionsDto,
         deviceUuid: secondDeviceUuid,
@@ -491,17 +491,16 @@ describe('NotificationsDatasource', () => {
 
       const safe = upsertSubscriptionsDto.safes[0];
       await target.deleteSubscription({
-        signerAddress,
         deviceUuid: upsertSubscriptionsDto.deviceUuid!,
         chainId: safe.chainId,
         safeAddress: safe.address,
       });
 
       await expect(
-        sql`SELECT * FROM notification_subscriptions WHERE signer_address = ${signerAddress} AND chain_id = ${safe.chainId} AND safe_address = ${safe.address}`,
+        sql`SELECT * FROM notification_subscriptions WHERE chain_id = ${safe.chainId} AND safe_address = ${safe.address}`,
       ).resolves.toStrictEqual([]);
       await expect(
-        sql`SELECT * FROM push_notification_devices WHERE device_uuid = ${upsertSubscriptionsDto.deviceUuid!}`,
+        sql`SELECT * FROM push_notification_devices WHERE device_uuid = ${upsertSubscriptionsDto.deviceUuid as UUID}`,
       ).resolves.toStrictEqual([]);
     });
 
@@ -518,7 +517,7 @@ describe('NotificationsDatasource', () => {
           },
         ])
         .build();
-      const secondDeviceUuid = faker.string.uuid() as Uuid;
+      const secondDeviceUuid = faker.string.uuid() as UUID;
       const secondUpsertSubscriptionsDto = {
         ...upsertSubscriptionsDto,
         deviceUuid: secondDeviceUuid,
@@ -534,7 +533,6 @@ describe('NotificationsDatasource', () => {
 
       const safe = upsertSubscriptionsDto.safes[0];
       await target.deleteSubscription({
-        signerAddress,
         deviceUuid: upsertSubscriptionsDto.deviceUuid!,
         chainId: safe.chainId,
         safeAddress: safe.address,
@@ -586,7 +584,6 @@ describe('NotificationsDatasource', () => {
         deviceUuid: upsertSubscriptionsDto.deviceUuid!,
         chainId: safe.chainId,
         safeAddress: safe.address,
-        signerAddress,
       });
 
       // Device should not have been deleted

@@ -3,8 +3,8 @@ import { Builder, IBuilder } from '@/__tests__/builder';
 import { getAddress } from 'viem';
 import { UpsertSubscriptionsDto } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
 import { DeviceType } from '@/domain/notifications/entities-v2/device-type.entity';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import { UUID } from 'crypto';
+import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 
 export function upsertSubscriptionsDtoBuilder(): IBuilder<UpsertSubscriptionsDto> {
   return new Builder<UpsertSubscriptionsDto>()

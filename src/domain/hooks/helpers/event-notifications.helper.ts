@@ -69,7 +69,6 @@ export class EventNotificationsHelper {
    * @param event - {@link Event} to notify about
    */
   public async onEventEnqueueNotifications(event: Event): Promise<unknown> {
-    console.log('==> onEventEnqueueNotifications');
     if (!this.isEventToNotify(event)) {
       return;
     }
