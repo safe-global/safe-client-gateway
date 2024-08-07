@@ -212,6 +212,13 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
+      - uses: actions/cache@v3
+        with:
+          path: |
+           ~/.yarn/cache
+            node_modules
+          key: ${{ runner.os }}-yarn-sdk-${{ hashFiles('sdk-repo/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-sdk-
       - name: Commit and push changes to SDK repo
         working-directory: sdk-repo
         run: |
