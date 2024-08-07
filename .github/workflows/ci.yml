@@ -193,7 +193,7 @@ jobs:
         with:
           node-version: 'lts/iron'
           cache: 'yarn'
-      - run: yarn install
+      - run: yarn install --immutable
       - run: yarn generate-sdk
       - uses: actions/checkout@v4
         with:
@@ -215,7 +215,7 @@ jobs:
       - name: Commit and push changes to SDK repo
         working-directory: sdk-repo
         run: |
-          yarn install --immutable
+          yarn install
           yarn build
 
           CURRENT_VERSION=$(jq -r '.version' package.json)
