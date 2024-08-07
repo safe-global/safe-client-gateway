@@ -215,9 +215,7 @@ jobs:
         run: |
           yarn install --immutable
           yarn build
-
-          echo git diff
-          if git diff --quiet; then
+          if [[ $(git diff --stat) == '' ]]; then
             echo "No changes to commit."
             exit 0
           fi
