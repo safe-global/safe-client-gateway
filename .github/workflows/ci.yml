@@ -192,11 +192,11 @@ jobs:
         with:
           node-version: 'lts/iron'
           cache: 'yarn'
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         run: |
           yarn install --immutable
           yarn generate-sdk
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           repository: 5afe/cgw-sdk
           token: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
