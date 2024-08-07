@@ -216,11 +216,6 @@ jobs:
           yarn install --immutable
           yarn build
 
-          if [[ $(git diff --stat) == '' ]]; then
-            echo "No changes to commit."
-            exit 0
-          fi
-
           CURRENT_VERSION=$(jq -r '.version' package.json)
           NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
           jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
