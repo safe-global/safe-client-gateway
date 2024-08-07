@@ -1,0 +1,14 @@
+import { DeviceType } from '@/domain/notifications/entities-v2/device-type.entity';
+import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { Uuid } from '@/domain/notifications/entities-v2/uuid.entity';
+
+export type UpsertSubscriptionsDto = {
+  cloudMessagingToken: string;
+  safes: Array<{
+    chainId: string;
+    address: `0x${string}`;
+    notificationTypes: Array<NotificationType>;
+  }>;
+  deviceType: DeviceType;
+  deviceUuid?: Uuid;
+};

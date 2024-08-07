@@ -66,7 +66,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     } catch (e) {
       if (this.isTokenUnregistered(e)) {
         this.loggingService.info(
-          `Deleting unregistered token for device ${args.deviceUuid}: ${e}`,
+          `Deleting device due to stale token ${args.deviceUuid}: ${e}`,
         );
         await this.notificationsDatasource
           .deleteDevice(args.deviceUuid)
@@ -106,8 +106,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<Array<NotificationType>> {
-    // TODO: Is this even possible without an account?
-    // We'd need to theoretically need to store the preferences locally first?
     if (!args.authPayload.signer_address) {
       throw new UnauthorizedException();
     }

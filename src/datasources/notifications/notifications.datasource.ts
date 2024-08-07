@@ -51,7 +51,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
         RETURNING id
       `.catch((e) => {
         const error = 'Error getting device';
-        this.loggingService.info(`${error}: ${asError(e).message}`);
+        this.loggingService.warn(`${error}: ${asError(e).message}`);
         throw new UnprocessableEntityException(error);
       });
 
@@ -93,7 +93,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
             `;
           } catch (e) {
             const error = 'Error upserting subscription';
-            this.loggingService.info(`${error}: ${asError(e).message}`);
+            this.loggingService.warn(`${error}: ${asError(e).message}`);
             throw new NotFoundException();
           }
         }),
@@ -133,7 +133,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
         AND pnd.device_uuid = ${args.deviceUuid}
     `.catch((e) => {
       const error = 'Error getting subscription or notification types';
-      this.loggingService.info(`${error}: ${asError(e).message}`);
+      this.loggingService.warn(`${error}: ${asError(e).message}`);
       throw new NotFoundException(error);
     });
 
@@ -178,7 +178,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
         AND ns.safe_address = ${args.safeAddress};
     `.catch((e) => {
       const error = 'Error getting subscribers with tokens';
-      this.loggingService.info(`${error}: ${asError(e).message}`);
+      this.loggingService.warn(`${error}: ${asError(e).message}`);
       throw new NotFoundException(error);
     });
 
@@ -236,7 +236,7 @@ export class NotificationsDatasource implements INotificationsDatasource {
         }
       } catch (e) {
         const error = 'Error deleting subscription';
-        this.loggingService.info(`${error}: ${asError(e).message}`);
+        this.loggingService.warn(`${error}: ${asError(e).message}`);
         throw new NotFoundException(error);
       }
     });
@@ -253,8 +253,8 @@ export class NotificationsDatasource implements INotificationsDatasource {
       WHERE device_uuid = ${deviceUuid}
     `.catch((e) => {
       const error = 'Error deleting device';
-      this.loggingService.info(`${error}: ${asError(e).message}`);
-      throw new NotFoundException(error);
+      this.loggingService.warn(`${error}: ${asError(e).message}`);
+      throw new UnprocessableEntityException(error);
     });
   }
 }
