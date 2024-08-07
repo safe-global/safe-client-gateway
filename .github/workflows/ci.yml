@@ -206,8 +206,8 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: |
-           ~/.yarn/cache
-            node_modules
+            ~/.yarn/cache
+             node_modules
           key: ${{ runner.os }}-yarn-sdk-${{ hashFiles('sdk-repo/yarn.lock') }}
           restore-keys: ${{ runner.os }}-yarn-sdk-
       - name: Update SDK
@@ -226,7 +226,7 @@ jobs:
           NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
           jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
           mv package_tmp.json package.json
-          
+
           git config --global user.name 'iamacook'
           git config --global user.email 'aaron@safe.global'
 
