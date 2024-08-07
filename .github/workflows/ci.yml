@@ -220,8 +220,7 @@ jobs:
 
           if git diff --quiet; then
             # Build SDK
-            npm install -g yarn@1
-            yarn install --immutable
+            yarn install
             yarn build
 
             # Update the package.json version
