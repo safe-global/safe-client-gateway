@@ -219,7 +219,10 @@ jobs:
           cp -r ../dist/sdk/* src/
 
           if git diff --quiet; then
-            # Build SDK
+            # Reset cache for SDK repo
+            yarn cache clean
+
+            # Install and build the SDK
             yarn install
             yarn build
 
