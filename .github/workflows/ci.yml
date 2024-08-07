@@ -209,16 +209,19 @@ jobs:
           git clone https://github.com/5afe/cgw-sdk
           cd cgw-sdk
 
-          # Remove the old dist folder
-          if [ -d "dist" ]; then
-            rm -rf dist
+          # Remove the old src folder
+          if [ -d "src" ]; then
+            rm -rf src
           fi
 
-          # Copy the new dist folder
-          mkdir -p dist
-          cp -r ../dist/sdk/* dist/
+          # Copy the new SDK
+          mkdir -p src
+          cp -r ../dist/sdk/* src/
 
           if git diff --quiet; then
+            # Build the SDK
+            yarn build
+
             # Update the package.json version
             CURRENT_VERSION=$(jq -r '.version' package.json)
             NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')

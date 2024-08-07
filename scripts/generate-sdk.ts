@@ -11,7 +11,7 @@ const PROD_SWAGGER_URL = 'https://safe-client.safe.global/api';
 const STAGING_SWAGGER_URL = 'https://safe-client.staging.5afe.dev/api';
 
 const SDK_FOLDER = path.join(process.cwd(), 'dist', 'sdk');
-const SCHEMA_FILE = 'schema.d.ts';
+const SCHEMA_FILE = 'schema.ts';
 const SDK_FILE = 'sdk.ts';
 
 const WARNING = `/**
