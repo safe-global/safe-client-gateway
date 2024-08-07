@@ -206,12 +206,12 @@ jobs:
       - name: Check diffs
         working-directory: sdk-repo
         run: |
-          if ! git diff --quiet; then
+          if git diff --quiet; then
             echo "No changes to commit."
             exit 0
           fi
       # If different, SDK build will fail with unclear error
-      - name: Check packageManager Versions
+      - name: Assert packageManager versions match
         run: |
           MAIN_PM_VERSION=$(jq -r '.packageManager' package.json)
           SDK_PM_VERSION=$(jq -r '.packageManager' sdk-repo/package.json)
@@ -239,7 +239,7 @@ jobs:
           NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
           jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
           mv package_tmp.json package.json
-      - name: Commit and push changes to SDK repo
+      - name: Commit and push changes
         working-directory: sdk-repo
         run: |
           git config --global user.name 'iamacook'
