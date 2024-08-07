@@ -220,6 +220,7 @@ jobs:
 
           if git diff --quiet; then
             # Build the SDK
+            yarn install --immutable
             yarn build
 
             # Update the package.json version
