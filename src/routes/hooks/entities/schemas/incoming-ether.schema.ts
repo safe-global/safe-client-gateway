@@ -9,3 +9,5 @@ export const IncomingEtherEventSchema = z.object({
   txHash: z.string(),
   value: z.string(),
 });
+
+export type IncomingEtherEvent = z.infer<typeof IncomingEtherEventSchema>;

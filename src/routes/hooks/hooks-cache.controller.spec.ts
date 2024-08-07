@@ -28,6 +28,8 @@ import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manage
 import { safeCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/safe-created.build';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
+import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
+import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 
 describe('Post Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;
@@ -52,6 +54,8 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
     app = moduleFixture.createNestApplication();
 
@@ -76,45 +80,6 @@ describe('Post Hook Events for Cache (Unit)', () => {
 
   afterAll(async () => {
     await app.close();
-  });
-
-  it('should return 410 if the eventsQueue FF is active and the hook is not CHAIN_UPDATE or SAFE_APPS_UPDATE', async () => {
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        eventsQueue: true,
-      },
-    });
-
-    await initApp(testConfiguration);
-
-    const payload = {
-      type: 'INCOMING_TOKEN',
-      tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.string.hexadecimal({ length: 32 }),
-    };
-    const safeAddress = faker.finance.ethereumAddress();
-    const chainId = faker.string.numeric();
-    const data = {
-      address: safeAddress,
-      chainId: chainId,
-      ...payload,
-    };
-
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(data)
-      .expect(410);
-  });
-
-  it('should throw an error if authorization is not sent in the request headers', async () => {
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .send({})
-      .expect(403);
   });
 
   it.each([

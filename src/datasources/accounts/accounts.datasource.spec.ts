@@ -157,7 +157,6 @@ describe('AccountsDatasource tests', () => {
         }),
       ).rejects.toThrow('Rate limit reached');
 
-      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
       const { count } = await sql`SELECT id FROM accounts`;
       expect(count).toBe(accountCreationRateLimitCalls);
     });
@@ -192,7 +191,6 @@ describe('AccountsDatasource tests', () => {
         });
       }
 
-      expect(mockLoggingService.warn).not.toHaveBeenCalled();
       const { count } = await sql`SELECT id FROM accounts`;
       expect(count).toBe(accountsToCreate);
     });

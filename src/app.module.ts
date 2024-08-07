@@ -18,7 +18,10 @@ import { CommunityModule } from '@/routes/community/community.module';
 import { ContractsModule } from '@/routes/contracts/contracts.module';
 import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
 import { DelegatesModule } from '@/routes/delegates/delegates.module';
-import { HooksModule } from '@/routes/hooks/hooks.module';
+import {
+  HooksModule,
+  HooksModuleWithNotifications,
+} from '@/routes/hooks/hooks.module';
 import { SafeAppsModule } from '@/routes/safe-apps/safe-apps.module';
 import { HealthModule } from '@/routes/health/health.module';
 import { OwnersModule } from '@/routes/owners/owners.module';
@@ -45,6 +48,7 @@ import { AuthModule } from '@/routes/auth/auth.module';
 import { TransactionsViewControllerModule } from '@/routes/transactions/transactions-view.controller';
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
+import { NotificationsModuleV2 } from '@/routes/notifications/notifications.module.v2';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -58,6 +62,7 @@ export class AppModule implements NestModule {
       email: isEmailFeatureEnabled,
       confirmationView: isConfirmationViewEnabled,
       delegatesV2: isDelegatesV2Enabled,
+      pushNotifications: isPushNotificationsEnabled,
     } = configFactory()['features'];
 
     return {
@@ -82,7 +87,9 @@ export class AppModule implements NestModule {
           : []),
         EstimationsModule,
         HealthModule,
-        HooksModule,
+        ...(isPushNotificationsEnabled
+          ? [HooksModuleWithNotifications, NotificationsModuleV2]
+          : [HooksModule]),
         MessagesModule,
         NotificationsModule,
         OwnersModule,

@@ -108,6 +108,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   expirationTimeInSeconds: {
     default: faker.number.int(),
+    holesky: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
@@ -130,6 +131,7 @@ export default (): ReturnType<typeof configuration> => ({
     delegatesV2: false,
     counterfactualBalances: false,
     accounts: false,
+    pushNotifications: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {

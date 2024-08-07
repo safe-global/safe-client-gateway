@@ -111,6 +111,7 @@ export interface ITransactionApi {
     to?: string;
     value?: string;
     tokenAddress?: string;
+    txHash?: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<Transfer>>;
