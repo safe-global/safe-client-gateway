@@ -198,6 +198,7 @@ jobs:
       - name: Generate SDK
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
+          YARN_HARDENED: 'false'
         run: |
           yarn generate-sdk
 
@@ -220,7 +221,7 @@ jobs:
 
           if git diff --quiet; then
             # Build the SDK
-            yarn install --immutable --verbose
+            yarn install --immutable
             yarn build
 
             # Update the package.json version
