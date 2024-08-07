@@ -203,24 +203,6 @@ jobs:
       - run: rm -rf sdk-repo/src
       - run: mkdir -p sdk-repo/src
       - run: cp -r dist/sdk/* sdk-repo/src/
-      - name: Check diffs
-        working-directory: sdk-repo
-        run: |
-          echo git diff
-          if git diff --quiet; then
-            echo "No changes to commit."
-            exit 0
-          fi
-      # If different, SDK build will fail with unclear error
-      - name: Assert packageManager versions match
-        run: |
-          MAIN_PM_VERSION=$(jq -r '.packageManager' package.json)
-          SDK_PM_VERSION=$(jq -r '.packageManager' sdk-repo/package.json)
-          if [ "$MAIN_PM_VERSION" != "$SDK_PM_VERSION" ]; then
-            echo "packageManager versions do not match: $MAIN_PM_VERSION (main) vs $SDK_PM_VERSION (sdk-repo)"
-            exit 1
-          fi
-      # If same cache, lockfile will not generate correctly
       - uses: actions/cache@v3
         with:
           path: |
@@ -228,21 +210,23 @@ jobs:
             node_modules
           key: ${{ runner.os }}-yarn-sdk-${{ hashFiles('sdk-repo/yarn.lock') }}
           restore-keys: ${{ runner.os }}-yarn-sdk-
-      - name: Build SDK
+      - name: Update SDK
         working-directory: sdk-repo
         run: |
           yarn install --immutable
           yarn build
-      - name: Update package.json version
-        working-directory: sdk-repo
-        run: |
+
+          echo git diff
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
           CURRENT_VERSION=$(jq -r '.version' package.json)
           NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
           jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
           mv package_tmp.json package.json
-      - name: Commit and push changes
-        working-directory: sdk-repo
-        run: |
+          
           git config --global user.name 'iamacook'
           git config --global user.email 'aaron@safe.global'
 
