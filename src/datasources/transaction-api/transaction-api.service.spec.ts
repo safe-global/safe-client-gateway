@@ -1448,7 +1448,7 @@ describe('TransactionApi', () => {
         offset,
       });
 
-      expect(actual).toBe(multisigTransactionsPage);
+      expect(actual).toStrictEqual(multisigTransactionsPage);
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockDataSource.get).toHaveBeenCalledWith({
         cacheDir,
@@ -1471,6 +1471,402 @@ describe('TransactionApi', () => {
             offset,
           },
         },
+      });
+    });
+
+    /**
+     * The Transaction Service sometimes returns null for confirmationsRequired
+     * TODO: Remove this method once the Transaction Service is fixed
+     */
+    describe('assign default confirmationsRequired value', () => {
+      describe('executed transactions', () => {
+        it('should use the confirmations length if it exists', async () => {
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('isExecuted', true)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const multisigTransactionsPage = pageBuilder()
+            .with('results', [multisigTransaction])
+            .build();
+          const ordering = faker.word.noun();
+          const executedDateGte = faker.date.recent().toISOString();
+          const executedDateLte = faker.date.recent().toISOString();
+          const limit = faker.number.int();
+          const offset = faker.number.int();
+          const getMultisigTransactionsUrl = `${baseUrl}/api/v1/safes/${multisigTransaction.safe}/multisig-transactions/`;
+          const multisigTransactionsCacheDir = new CacheDir(
+            `${chainId}_multisig_transactions_${multisigTransaction.safe}`,
+            `${ordering}_${multisigTransaction.isExecuted}_${multisigTransaction.trusted}_${executedDateGte}_${executedDateLte}_${multisigTransaction.to}_${multisigTransaction.value}_${multisigTransaction.nonce}_${multisigTransaction.nonce}_${limit}_${offset}`,
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === multisigTransactionsCacheDir.key) {
+              return Promise.resolve(multisigTransactionsPage);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getMultisigTransactions({
+            safeAddress: multisigTransaction.safe,
+            ordering,
+            executed: multisigTransaction.isExecuted,
+            trusted: multisigTransaction.trusted,
+            executionDateGte: executedDateGte,
+            executionDateLte: executedDateLte,
+            to: multisigTransaction.to,
+            value: multisigTransaction.value,
+            nonce: multisigTransaction.nonce.toString(),
+            nonceGte: multisigTransaction.nonce,
+            limit,
+            offset,
+          });
+
+          expect(actual).toStrictEqual({
+            ...multisigTransactionsPage,
+            results: [
+              {
+                ...multisigTransaction,
+                confirmationsRequired:
+                  multisigTransaction.confirmations!.length,
+              },
+            ],
+          });
+          // Doesn't need to fetch the Safe for it's threshold
+          expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+          expect(mockDataSource.get).toHaveBeenCalledWith({
+            cacheDir: multisigTransactionsCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getMultisigTransactionsUrl,
+            networkRequest: {
+              params: {
+                safe: multisigTransaction.safe,
+                ordering,
+                executed: multisigTransaction.isExecuted,
+                trusted: multisigTransaction.trusted,
+                execution_date__gte: executedDateGte,
+                execution_date__lte: executedDateLte,
+                to: multisigTransaction.to,
+                value: multisigTransaction.value,
+                nonce: multisigTransaction.nonce.toString(),
+                nonce__gte: multisigTransaction.nonce,
+                limit,
+                offset,
+              },
+            },
+          });
+        });
+
+        it('should otherwise use the threshold of the Safe', async () => {
+          const safe = safeBuilder().build();
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', true)
+            .with('confirmations', null)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const multisigTransactionsPage = pageBuilder()
+            .with('results', [multisigTransaction])
+            .build();
+          const ordering = faker.word.noun();
+          const executedDateGte = faker.date.recent().toISOString();
+          const executedDateLte = faker.date.recent().toISOString();
+          const limit = faker.number.int();
+          const offset = faker.number.int();
+          const getMultisigTransactionsUrl = `${baseUrl}/api/v1/safes/${multisigTransaction.safe}/multisig-transactions/`;
+          const multisigTransactionsCacheDir = new CacheDir(
+            `${chainId}_multisig_transactions_${multisigTransaction.safe}`,
+            `${ordering}_${multisigTransaction.isExecuted}_${multisigTransaction.trusted}_${executedDateGte}_${executedDateLte}_${multisigTransaction.to}_${multisigTransaction.value}_${multisigTransaction.nonce}_${multisigTransaction.nonce}_${limit}_${offset}`,
+          );
+          const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+          const safeCacheDir = new CacheDir(
+            `${chainId}_safe_${safe.address}`,
+            '',
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === multisigTransactionsCacheDir.key) {
+              return Promise.resolve(multisigTransactionsPage);
+            }
+            if (cacheDir.key === safeCacheDir.key) {
+              return Promise.resolve(safe);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getMultisigTransactions({
+            safeAddress: multisigTransaction.safe,
+            ordering,
+            executed: multisigTransaction.isExecuted,
+            trusted: multisigTransaction.trusted,
+            executionDateGte: executedDateGte,
+            executionDateLte: executedDateLte,
+            to: multisigTransaction.to,
+            value: multisigTransaction.value,
+            nonce: multisigTransaction.nonce.toString(),
+            nonceGte: multisigTransaction.nonce,
+            limit,
+            offset,
+          });
+
+          expect(actual).toStrictEqual({
+            ...multisigTransactionsPage,
+            results: [
+              {
+                ...multisigTransaction,
+                confirmationsRequired: safe.threshold,
+              },
+            ],
+          });
+          expect(mockDataSource.get).toHaveBeenCalledTimes(2);
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
+            cacheDir: multisigTransactionsCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getMultisigTransactionsUrl,
+            networkRequest: {
+              params: {
+                safe: multisigTransaction.safe,
+                ordering,
+                executed: multisigTransaction.isExecuted,
+                trusted: multisigTransaction.trusted,
+                execution_date__gte: executedDateGte,
+                execution_date__lte: executedDateLte,
+                to: multisigTransaction.to,
+                value: multisigTransaction.value,
+                nonce: multisigTransaction.nonce.toString(),
+                nonce__gte: multisigTransaction.nonce,
+                limit,
+                offset,
+              },
+            },
+          });
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(2, {
+            cacheDir: safeCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getSafeUrl,
+          });
+        });
+      });
+
+      describe('queued transactions', () => {
+        it('should use the threshold of the Safe', async () => {
+          const safe = safeBuilder().build();
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', false)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const multisigTransactionsPage = pageBuilder()
+            .with('results', [multisigTransaction])
+            .build();
+          const ordering = faker.word.noun();
+          const executedDateGte = faker.date.recent().toISOString();
+          const executedDateLte = faker.date.recent().toISOString();
+          const limit = faker.number.int();
+          const offset = faker.number.int();
+          const getMultisigTransactionsUrl = `${baseUrl}/api/v1/safes/${multisigTransaction.safe}/multisig-transactions/`;
+          const multisigTransactionCacheDir = new CacheDir(
+            `${chainId}_multisig_transactions_${multisigTransaction.safe}`,
+            `${ordering}_${multisigTransaction.isExecuted}_${multisigTransaction.trusted}_${executedDateGte}_${executedDateLte}_${multisigTransaction.to}_${multisigTransaction.value}_${multisigTransaction.nonce}_${multisigTransaction.nonce}_${limit}_${offset}`,
+          );
+          const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+          const safeCacheDir = new CacheDir(
+            `${chainId}_safe_${safe.address}`,
+            '',
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === multisigTransactionCacheDir.key) {
+              return Promise.resolve(multisigTransactionsPage);
+            }
+            if (cacheDir.key === safeCacheDir.key) {
+              return Promise.resolve(safe);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getMultisigTransactions({
+            safeAddress: multisigTransaction.safe,
+            ordering,
+            executed: multisigTransaction.isExecuted,
+            trusted: multisigTransaction.trusted,
+            executionDateGte: executedDateGte,
+            executionDateLte: executedDateLte,
+            to: multisigTransaction.to,
+            value: multisigTransaction.value,
+            nonce: multisigTransaction.nonce.toString(),
+            nonceGte: multisigTransaction.nonce,
+            limit,
+            offset,
+          });
+
+          expect(actual).toStrictEqual({
+            ...multisigTransactionsPage,
+            results: [
+              {
+                ...multisigTransaction,
+                confirmationsRequired: safe.threshold,
+              },
+            ],
+          });
+          expect(mockDataSource.get).toHaveBeenCalledTimes(2);
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
+            cacheDir: multisigTransactionCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getMultisigTransactionsUrl,
+            networkRequest: {
+              params: {
+                safe: multisigTransaction.safe,
+                ordering,
+                executed: multisigTransaction.isExecuted,
+                trusted: multisigTransaction.trusted,
+                execution_date__gte: executedDateGte,
+                execution_date__lte: executedDateLte,
+                to: multisigTransaction.to,
+                value: multisigTransaction.value,
+                nonce: multisigTransaction.nonce.toString(),
+                nonce__gte: multisigTransaction.nonce,
+                limit,
+                offset,
+              },
+            },
+          });
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(2, {
+            cacheDir: safeCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getSafeUrl,
+          });
+        });
+      });
+
+      it('should assign defaults across history/queued transactions', async () => {
+        const safe = safeBuilder().build();
+        const ordering = faker.word.noun();
+        const executedDateGte = faker.date.recent().toISOString();
+        const executedDateLte = faker.date.recent().toISOString();
+        const limit = faker.number.int();
+        const offset = faker.number.int();
+
+        // Executed transaction with confirmations - should use the confirmations length
+        const executedMultisigTxWithConfirmations = multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', true)
+          .with('confirmationsRequired', null as unknown as number)
+          .build();
+
+        // Executed transaction without confirmations - should use the Safe's threshold
+        const executedMultisigTxWithoutConfirmations =
+          multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', true)
+            .with('confirmations', null)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+
+        // Queued transaction - should use the Safe's threshold
+        const queuedMultisigTx = multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .with('confirmationsRequired', null as unknown as number)
+          .build();
+
+        const multisigTransactionsPage = pageBuilder()
+          .with('results', [
+            executedMultisigTxWithConfirmations,
+            executedMultisigTxWithoutConfirmations,
+            queuedMultisigTx,
+          ])
+          .build();
+        const getMultisigTransactionsUrl = `${baseUrl}/api/v1/safes/${safe.address}/multisig-transactions/`;
+        const multisigTransactionsCacheDir = new CacheDir(
+          `${chainId}_multisig_transactions_${safe.address}`,
+          `${ordering}_${executedMultisigTxWithConfirmations.isExecuted}_${executedMultisigTxWithConfirmations.trusted}_${executedDateGte}_${executedDateLte}_${executedMultisigTxWithConfirmations.to}_${executedMultisigTxWithConfirmations.value}_${executedMultisigTxWithConfirmations.nonce}_${executedMultisigTxWithConfirmations.nonce}_${limit}_${offset}`,
+        );
+        const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+        const safeCacheDir = new CacheDir(
+          `${chainId}_safe_${safe.address}`,
+          '',
+        );
+
+        mockDataSource.get.mockImplementation(({ cacheDir }) => {
+          if (cacheDir.key === multisigTransactionsCacheDir.key) {
+            return Promise.resolve(multisigTransactionsPage);
+          }
+          if (cacheDir.key === safeCacheDir.key) {
+            return Promise.resolve(safe);
+          }
+          return Promise.reject(new Error('Unexpected cacheDir'));
+        });
+
+        const actual = await service.getMultisigTransactions({
+          safeAddress: executedMultisigTxWithConfirmations.safe,
+          ordering,
+          executed: executedMultisigTxWithConfirmations.isExecuted,
+          trusted: executedMultisigTxWithConfirmations.trusted,
+          executionDateGte: executedDateGte,
+          executionDateLte: executedDateLte,
+          to: executedMultisigTxWithConfirmations.to,
+          value: executedMultisigTxWithConfirmations.value,
+          nonce: executedMultisigTxWithConfirmations.nonce.toString(),
+          nonceGte: executedMultisigTxWithConfirmations.nonce,
+          limit,
+          offset,
+        });
+
+        expect(actual).toStrictEqual({
+          ...multisigTransactionsPage,
+          results: [
+            {
+              ...executedMultisigTxWithConfirmations,
+              confirmationsRequired:
+                executedMultisigTxWithConfirmations.confirmations!.length,
+            },
+            {
+              ...executedMultisigTxWithoutConfirmations,
+              confirmationsRequired: safe.threshold,
+            },
+            {
+              ...queuedMultisigTx,
+              confirmationsRequired: safe.threshold,
+            },
+          ],
+        });
+        expect(mockDataSource.get).toHaveBeenCalledTimes(3);
+        expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
+          cacheDir: multisigTransactionsCacheDir,
+          expireTimeSeconds: defaultExpirationTimeInSeconds,
+          notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+          url: getMultisigTransactionsUrl,
+          networkRequest: {
+            params: {
+              safe: executedMultisigTxWithConfirmations.safe,
+              ordering,
+              executed: executedMultisigTxWithConfirmations.isExecuted,
+              trusted: executedMultisigTxWithConfirmations.trusted,
+              execution_date__gte: executedDateGte,
+              execution_date__lte: executedDateLte,
+              to: executedMultisigTxWithConfirmations.to,
+              value: executedMultisigTxWithConfirmations.value,
+              nonce: executedMultisigTxWithConfirmations.nonce.toString(),
+              nonce__gte: executedMultisigTxWithConfirmations.nonce,
+              limit,
+              offset,
+            },
+          },
+        });
+        expect(mockDataSource.get).toHaveBeenNthCalledWith(2, {
+          cacheDir: safeCacheDir,
+          expireTimeSeconds: defaultExpirationTimeInSeconds,
+          notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+          url: getSafeUrl,
+        });
+        expect(mockDataSource.get).toHaveBeenNthCalledWith(3, {
+          cacheDir: safeCacheDir,
+          expireTimeSeconds: defaultExpirationTimeInSeconds,
+          notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+          url: getSafeUrl,
+        });
       });
     });
 
@@ -1581,6 +1977,148 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getMultisigTransactionUrl,
+      });
+    });
+
+    describe('assign default confirmationsRequired value', () => {
+      describe('executed transactions', () => {
+        it('should use the confirmations length if it exists', async () => {
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('isExecuted', true)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const getMultisigTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+          const multisigTransactionCacheDir = new CacheDir(
+            `${chainId}_multisig_transaction_${multisigTransaction.safeTxHash}`,
+            '',
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === multisigTransactionCacheDir.key) {
+              return Promise.resolve(multisigTransaction);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getMultisigTransaction(
+            multisigTransaction.safeTxHash,
+          );
+
+          expect(actual).toStrictEqual({
+            ...multisigTransaction,
+            confirmationsRequired: multisigTransaction.confirmations!.length,
+          });
+          // Doesn't need to fetch the Safe for it's threshold
+          expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+          expect(mockDataSource.get).toHaveBeenCalledWith({
+            cacheDir: multisigTransactionCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getMultisigTransactionUrl,
+          });
+        });
+
+        it('should otherwise use the threshold of the Safe', async () => {
+          const safe = safeBuilder().build();
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', true)
+            .with('confirmations', null)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const getMultisigTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+          const multisigTransactionCacheDir = new CacheDir(
+            `${chainId}_multisig_transaction_${multisigTransaction.safeTxHash}`,
+            '',
+          );
+          const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+          const safeCacheDir = new CacheDir(
+            `${chainId}_safe_${safe.address}`,
+            '',
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === multisigTransactionCacheDir.key) {
+              return Promise.resolve(multisigTransaction);
+            }
+            if (cacheDir.key === safeCacheDir.key) {
+              return Promise.resolve(safe);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getMultisigTransaction(
+            multisigTransaction.safeTxHash,
+          );
+
+          expect(actual).toStrictEqual({
+            ...multisigTransaction,
+            confirmationsRequired: safe.threshold,
+          });
+          expect(mockDataSource.get).toHaveBeenCalledTimes(2);
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
+            cacheDir: multisigTransactionCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getMultisigTransactionUrl,
+          });
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(2, {
+            cacheDir: safeCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getSafeUrl,
+          });
+        });
+      });
+
+      describe('queued transactions', () => {
+        it('should use the threshold of the Safe', async () => {
+          const safe = safeBuilder().build();
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', false)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const getMultisigTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+          const multisigTransactionCacheDir = new CacheDir(
+            `${chainId}_multisig_transaction_${multisigTransaction.safeTxHash}`,
+            '',
+          );
+          const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+          const safeCacheDir = new CacheDir(
+            `${chainId}_safe_${safe.address}`,
+            '',
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === multisigTransactionCacheDir.key) {
+              return Promise.resolve(multisigTransaction);
+            }
+            if (cacheDir.key === safeCacheDir.key) {
+              return Promise.resolve(safe);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getMultisigTransaction(
+            multisigTransaction.safeTxHash,
+          );
+
+          expect(actual).toStrictEqual({
+            ...multisigTransaction,
+            confirmationsRequired: safe.threshold,
+          });
+          expect(mockDataSource.get).toHaveBeenCalledTimes(2);
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
+            cacheDir: multisigTransactionCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getMultisigTransactionUrl,
+          });
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(2, {
+            cacheDir: safeCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getSafeUrl,
+          });
+        });
       });
     });
 
@@ -1790,7 +2328,7 @@ describe('TransactionApi', () => {
         offset,
       });
 
-      expect(actual).toBe(allTransactionsPage);
+      expect(actual).toStrictEqual(allTransactionsPage);
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockDataSource.get).toHaveBeenCalledWith({
         cacheDir,
@@ -1807,6 +2345,354 @@ describe('TransactionApi', () => {
             offset,
           },
         },
+      });
+    });
+
+    /**
+     * The Transaction Service sometimes returns null for confirmationsRequired
+     * TODO: Remove this method once the Transaction Service is fixed
+     */
+    describe('assign default confirmationsRequired value for MultisigTransactions', () => {
+      describe('executed transactions', () => {
+        it('should use the confirmations length if it exists', async () => {
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const ordering = faker.word.noun();
+          const executed = faker.datatype.boolean();
+          const queued = faker.datatype.boolean();
+          const limit = faker.number.int();
+          const offset = faker.number.int();
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('isExecuted', true)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const creationTransaction = creationTransactionBuilder().build();
+          const allTransactionsPage = pageBuilder()
+            .with('results', [multisigTransaction, creationTransaction])
+            .build();
+          const getAllTransactionsUrl = `${baseUrl}/api/v1/safes/${safeAddress}/all-transactions/`;
+          const cacheDir = new CacheDir(
+            `${chainId}_all_transactions_${safeAddress}`,
+            `${ordering}_${executed}_${queued}_${limit}_${offset}`,
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === cacheDir.key) {
+              return Promise.resolve(allTransactionsPage);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getAllTransactions({
+            safeAddress,
+            ordering,
+            executed,
+            queued,
+            limit,
+            offset,
+          });
+
+          expect(actual).toStrictEqual({
+            ...allTransactionsPage,
+            results: [
+              {
+                ...multisigTransaction,
+                confirmationsRequired:
+                  multisigTransaction.confirmations!.length,
+              },
+              creationTransaction,
+            ],
+          });
+          expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+          expect(mockDataSource.get).toHaveBeenCalledWith({
+            cacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getAllTransactionsUrl,
+            networkRequest: {
+              params: {
+                safe: safeAddress,
+                ordering,
+                executed,
+                queued,
+                limit,
+                offset,
+              },
+            },
+          });
+        });
+
+        it('should otherwise use the threshold of the Safe', async () => {
+          const safe = safeBuilder().build();
+          const ordering = faker.word.noun();
+          const executed = faker.datatype.boolean();
+          const queued = faker.datatype.boolean();
+          const limit = faker.number.int();
+          const offset = faker.number.int();
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', true)
+            .with('confirmations', null)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const creationTransaction = creationTransactionBuilder().build();
+          const allTransactionsPage = pageBuilder()
+            .with('results', [multisigTransaction, creationTransaction])
+            .build();
+          const getAllTransactionsUrl = `${baseUrl}/api/v1/safes/${safe.address}/all-transactions/`;
+          const allTransactionsCacheDir = new CacheDir(
+            `${chainId}_all_transactions_${safe.address}`,
+            `${ordering}_${executed}_${queued}_${limit}_${offset}`,
+          );
+          const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+          const safeCacheDir = new CacheDir(
+            `${chainId}_safe_${safe.address}`,
+            '',
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === allTransactionsCacheDir.key) {
+              return Promise.resolve(allTransactionsPage);
+            }
+            if (cacheDir.key === safeCacheDir.key) {
+              return Promise.resolve(safe);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getAllTransactions({
+            safeAddress: safe.address,
+            ordering,
+            executed,
+            queued,
+            limit,
+            offset,
+          });
+
+          expect(actual).toStrictEqual({
+            ...allTransactionsPage,
+            results: [
+              {
+                ...multisigTransaction,
+                confirmationsRequired: safe.threshold,
+              },
+              creationTransaction,
+            ],
+          });
+          expect(mockDataSource.get).toHaveBeenCalledTimes(2);
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
+            cacheDir: allTransactionsCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getAllTransactionsUrl,
+            networkRequest: {
+              params: {
+                safe: safe.address,
+                ordering,
+                executed,
+                queued,
+                limit,
+                offset,
+              },
+            },
+          });
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(2, {
+            cacheDir: safeCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getSafeUrl,
+          });
+        });
+      });
+      describe('queued transactions', () => {
+        it('should use the threshold of the Safe', async () => {
+          const safe = safeBuilder().build();
+          const ordering = faker.word.noun();
+          const executed = faker.datatype.boolean();
+          const queued = faker.datatype.boolean();
+          const limit = faker.number.int();
+          const offset = faker.number.int();
+          const multisigTransaction = multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', false)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+          const creationTransaction = creationTransactionBuilder().build();
+          const allTransactionsPage = pageBuilder()
+            .with('results', [multisigTransaction, creationTransaction])
+            .build();
+          const getAllTransactionsUrl = `${baseUrl}/api/v1/safes/${safe.address}/all-transactions/`;
+          const allTransactionsCacheDir = new CacheDir(
+            `${chainId}_all_transactions_${safe.address}`,
+            `${ordering}_${executed}_${queued}_${limit}_${offset}`,
+          );
+          const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+          const safeCacheDir = new CacheDir(
+            `${chainId}_safe_${safe.address}`,
+            '',
+          );
+          mockDataSource.get.mockImplementation(({ cacheDir }) => {
+            if (cacheDir.key === allTransactionsCacheDir.key) {
+              return Promise.resolve(allTransactionsPage);
+            }
+            if (cacheDir.key === safeCacheDir.key) {
+              return Promise.resolve(safe);
+            }
+            return Promise.reject(new Error('Unexpected cacheDir'));
+          });
+
+          const actual = await service.getAllTransactions({
+            safeAddress: safe.address,
+            ordering,
+            executed,
+            queued,
+            limit,
+            offset,
+          });
+
+          expect(actual).toStrictEqual({
+            ...allTransactionsPage,
+            results: [
+              {
+                ...multisigTransaction,
+                confirmationsRequired: safe.threshold,
+              },
+              creationTransaction,
+            ],
+          });
+          expect(mockDataSource.get).toHaveBeenCalledTimes(2);
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
+            cacheDir: allTransactionsCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getAllTransactionsUrl,
+            networkRequest: {
+              params: {
+                safe: safe.address,
+                ordering,
+                executed,
+                queued,
+                limit,
+                offset,
+              },
+            },
+          });
+          expect(mockDataSource.get).toHaveBeenNthCalledWith(2, {
+            cacheDir: safeCacheDir,
+            expireTimeSeconds: defaultExpirationTimeInSeconds,
+            notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+            url: getSafeUrl,
+          });
+        });
+      });
+
+      it('should assign defaults across history/queued transactions', async () => {
+        const safe = safeBuilder().build();
+        const ordering = faker.word.noun();
+        const executed = faker.datatype.boolean();
+        const queued = faker.datatype.boolean();
+        const limit = faker.number.int();
+        const offset = faker.number.int();
+        const queuedMultisigTransaction = multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .with('confirmationsRequired', null as unknown as number)
+          .build();
+        const multisigTransactionWithConfirmations =
+          multisigTransactionBuilder()
+            .with('isExecuted', true)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+        const multisigTransactionWithoutConfirmations =
+          multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', true)
+            .with('confirmations', null)
+            .with('confirmationsRequired', null as unknown as number)
+            .build();
+        const creationTransaction = creationTransactionBuilder().build();
+        const allTransactionsPage = pageBuilder()
+          .with('results', [
+            queuedMultisigTransaction,
+            multisigTransactionWithConfirmations,
+            multisigTransactionWithoutConfirmations,
+            creationTransaction,
+          ])
+          .build();
+        const getAllTransactionsUrl = `${baseUrl}/api/v1/safes/${safe.address}/all-transactions/`;
+        const allTransactionsCacheDir = new CacheDir(
+          `${chainId}_all_transactions_${safe.address}`,
+          `${ordering}_${executed}_${queued}_${limit}_${offset}`,
+        );
+        const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+        const safeCacheDir = new CacheDir(
+          `${chainId}_safe_${safe.address}`,
+          '',
+        );
+        mockDataSource.get.mockImplementation(({ cacheDir }) => {
+          if (cacheDir.key === allTransactionsCacheDir.key) {
+            return Promise.resolve(allTransactionsPage);
+          }
+          if (cacheDir.key === safeCacheDir.key) {
+            return Promise.resolve(safe);
+          }
+          return Promise.reject(new Error('Unexpected cacheDir'));
+        });
+
+        const actual = await service.getAllTransactions({
+          safeAddress: safe.address,
+          ordering,
+          executed,
+          queued,
+          limit,
+          offset,
+        });
+
+        expect(actual).toStrictEqual({
+          ...allTransactionsPage,
+          results: [
+            {
+              ...queuedMultisigTransaction,
+              confirmationsRequired: safe.threshold,
+            },
+            {
+              ...multisigTransactionWithConfirmations,
+              confirmationsRequired:
+                multisigTransactionWithConfirmations.confirmations!.length,
+            },
+            {
+              ...multisigTransactionWithoutConfirmations,
+              confirmationsRequired: safe.threshold,
+            },
+            creationTransaction,
+          ],
+        });
+        expect(mockDataSource.get).toHaveBeenCalledTimes(3);
+        expect(mockDataSource.get).toHaveBeenNthCalledWith(1, {
+          cacheDir: allTransactionsCacheDir,
+          expireTimeSeconds: defaultExpirationTimeInSeconds,
+          notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+          url: getAllTransactionsUrl,
+          networkRequest: {
+            params: {
+              safe: safe.address,
+              ordering,
+              executed,
+              queued,
+              limit,
+              offset,
+            },
+          },
+        });
+        expect(mockDataSource.get).toHaveBeenNthCalledWith(2, {
+          cacheDir: safeCacheDir,
+          expireTimeSeconds: defaultExpirationTimeInSeconds,
+          notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+          url: getSafeUrl,
+        });
+        expect(mockDataSource.get).toHaveBeenNthCalledWith(3, {
+          cacheDir: safeCacheDir,
+          expireTimeSeconds: defaultExpirationTimeInSeconds,
+          notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+          url: getSafeUrl,
+        });
       });
     });
 
