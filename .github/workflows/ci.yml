@@ -206,6 +206,7 @@ jobs:
       - name: Check diffs
         working-directory: sdk-repo
         run: |
+          echo git diff
           if git diff --quiet; then
             echo "No changes to commit."
             exit 0
