@@ -7,6 +7,10 @@ export default (): ReturnType<typeof configuration> => ({
     version: faker.system.semver(),
     buildNumber: faker.string.numeric(),
   },
+  accounts: {
+    creationRateLimitPeriodSeconds: faker.number.int(),
+    creationRateLimitCalls: faker.number.int(),
+  },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),
     exchange: { name: faker.string.sample(), mode: faker.string.sample() },

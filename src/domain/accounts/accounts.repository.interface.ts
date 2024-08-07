@@ -13,6 +13,7 @@ export interface IAccountsRepository {
   createAccount(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
+    clientIp: string;
   }): Promise<Account>;
 
   getAccount(args: {

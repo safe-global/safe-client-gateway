@@ -7,6 +7,7 @@ import {
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
+import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
@@ -14,6 +15,7 @@ import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import { IpSchema } from '@/validation/entities/schemas/ip.schema';
 import {
   Inject,
   Injectable,
@@ -25,7 +27,12 @@ import postgres from 'postgres';
 
 @Injectable()
 export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
+  private static readonly ACCOUNT_CREATION_CACHE_PREFIX = 'account_creation';
   private readonly defaultExpirationTimeInSeconds: number;
+  // Number of seconds for each rate-limit cycle
+  private readonly accountCreationRateLimitPeriodSeconds: number;
+  // Number of allowed calls on each rate-limit cycle
+  private readonly accountCreationRateLimitCalls: number;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -40,6 +47,13 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
       );
+    this.accountCreationRateLimitPeriodSeconds =
+      configurationService.getOrThrow(
+        'accounts.creationRateLimitPeriodSeconds',
+      );
+    this.accountCreationRateLimitCalls = configurationService.getOrThrow(
+      'accounts.creationRateLimitCalls',
+    );
   }
 
   /**
@@ -52,9 +66,13 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     );
   }
 
-  async createAccount(address: `0x${string}`): Promise<Account> {
+  async createAccount(args: {
+    address: `0x${string}`;
+    clientIp: string;
+  }): Promise<Account> {
+    await this.checkCreationRateLimit(args.clientIp);
     const [account] = await this.sql<[Account]>`
-      INSERT INTO accounts (address) VALUES (${address}) RETURNING *`.catch(
+      INSERT INTO accounts (address) VALUES (${args.address}) RETURNING *`.catch(
       (e) => {
         this.loggingService.warn(
           `Error creating account: ${asError(e).message}`,
@@ -62,7 +80,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         throw new UnprocessableEntityException('Error creating account.');
       },
     );
-    const cacheDir = CacheRouter.getAccountCacheDir(address);
+    const cacheDir = CacheRouter.getAccountCacheDir(args.address);
     await this.cacheService.set(
       cacheDir,
       JSON.stringify([account]),
@@ -190,6 +208,40 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       throw new UnprocessableEntityException(
         `Data types not found or not active.`,
       );
+    }
+  }
+
+  /**
+   * Checks if the client IP address has reached the account creation rate limit.
+   *
+   * NOTE: the rate limit is implemented in the datasource layer for this use case
+   * because we need to restrict the actual creation of accounts, not merely
+   * the attempts to create them.
+   *
+   * If the client IP address is invalid, a warning is logged.
+   * If the client IP address is valid and rate limit is reached, a {@link LimitReachedError} is thrown.
+   *
+   * @param clientIp - client IP address.
+   */
+  private async checkCreationRateLimit(clientIp: string): Promise<void> {
+    const { success: isValidIp } = IpSchema.safeParse(clientIp);
+    if (!clientIp || !isValidIp) {
+      this.loggingService.warn(
+        `Invalid client IP while creating account: ${clientIp}`,
+      );
+    } else {
+      const current = await this.cacheService.increment(
+        CacheRouter.getRateLimitCacheKey(
+          `${AccountsDatasource.ACCOUNT_CREATION_CACHE_PREFIX}_${clientIp}`,
+        ),
+        this.accountCreationRateLimitPeriodSeconds,
+      );
+      if (current > this.accountCreationRateLimitCalls) {
+        this.loggingService.warn(
+          `Limit of ${this.accountCreationRateLimitCalls} reached for IP ${clientIp}`,
+        );
+        throw new LimitReachedError();
+      }
     }
   }
 }

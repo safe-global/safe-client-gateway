@@ -20,11 +20,15 @@ export class AccountsRepository implements IAccountsRepository {
   async createAccount(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
+    clientIp: string;
   }): Promise<Account> {
     if (!args.authPayload.isForSigner(args.address)) {
       throw new UnauthorizedException();
     }
-    const account = await this.datasource.createAccount(args.address);
+    const account = await this.datasource.createAccount({
+      address: args.address,
+      clientIp: args.clientIp,
+    });
     return AccountSchema.parse(account);
   }
 

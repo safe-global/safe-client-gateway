@@ -64,7 +64,10 @@ describe('AccountsDatasource tests', () => {
     it('creates an account successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
-      const result = await target.createAccount(address);
+      const result = await target.createAccount({
+        address,
+        clientIp: faker.internet.ipv4(),
+      });
 
       expect(result).toStrictEqual({
         id: expect.any(Number),
@@ -88,20 +91,124 @@ describe('AccountsDatasource tests', () => {
       );
     });
 
+    it('creates an account successfully if the clientIp is not a valid IP', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const result = await target.createAccount({
+        address,
+        clientIp: faker.string.sample(),
+      });
+
+      expect(result).toStrictEqual({
+        id: expect.any(Number),
+        group_id: null,
+        address,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      });
+
+      // check the account is stored in the cache
+      const cacheDir = new CacheDir(`account_${address}`, '');
+      const cacheContent = await fakeCacheService.get(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toStrictEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(Number),
+            group_id: null,
+            address,
+          }),
+        ]),
+      );
+    });
+
+    it('should fail if the IP hits the rate limit', async () => {
+      const clientIp = faker.internet.ipv4();
+      const accountCreationRateLimitCalls = faker.number.int({
+        min: 2,
+        max: 5,
+      });
+      mockConfigurationService.getOrThrow.mockImplementation((key) => {
+        if (key === 'expirationTimeInSeconds.default')
+          return faker.number.int();
+        if (key === 'accounts.creationRateLimitCalls')
+          return accountCreationRateLimitCalls;
+        if (key === 'accounts.creationRateLimitPeriodSeconds')
+          return faker.number.int({ min: 10 });
+      });
+      target = new AccountsDatasource(
+        fakeCacheService,
+        sql,
+        new CachedQueryResolver(mockLoggingService, fakeCacheService),
+        mockLoggingService,
+        mockConfigurationService,
+      );
+
+      for (let i = 0; i < accountCreationRateLimitCalls; i++) {
+        await target.createAccount({
+          address: getAddress(faker.finance.ethereumAddress()),
+          clientIp,
+        });
+      }
+
+      await expect(
+        target.createAccount({
+          address: getAddress(faker.finance.ethereumAddress()),
+          clientIp,
+        }),
+      ).rejects.toThrow('Rate limit reached');
+
+      const { count } = await sql`SELECT id FROM accounts`;
+      expect(count).toBe(accountCreationRateLimitCalls);
+    });
+
+    it('should create accounts while the IP does not hit the rate limit', async () => {
+      const clientIp = faker.internet.ipv4();
+      const accountsToCreate = faker.number.int({ min: 1, max: 5 });
+      const accountCreationRateLimitCalls = faker.number.int({
+        min: 5,
+        max: 10,
+      });
+      mockConfigurationService.getOrThrow.mockImplementation((key) => {
+        if (key === 'expirationTimeInSeconds.default')
+          return faker.number.int();
+        if (key === 'accounts.creationRateLimitCalls')
+          return accountCreationRateLimitCalls;
+        if (key === 'accounts.creationRateLimitPeriodSeconds')
+          return faker.number.int({ min: 10 });
+      });
+      target = new AccountsDatasource(
+        fakeCacheService,
+        sql,
+        new CachedQueryResolver(mockLoggingService, fakeCacheService),
+        mockLoggingService,
+        mockConfigurationService,
+      );
+
+      for (let i = 0; i < accountsToCreate; i++) {
+        await target.createAccount({
+          address: getAddress(faker.finance.ethereumAddress()),
+          clientIp,
+        });
+      }
+
+      const { count } = await sql`SELECT id FROM accounts`;
+      expect(count).toBe(accountsToCreate);
+    });
+
     it('throws when an account with the same address already exists', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount(address);
+      await target.createAccount({ address, clientIp: faker.internet.ipv4() });
 
-      await expect(target.createAccount(address)).rejects.toThrow(
-        'Error creating account.',
-      );
+      await expect(
+        target.createAccount({ address, clientIp: faker.internet.ipv4() }),
+      ).rejects.toThrow('Error creating account.');
     });
   });
 
   describe('getAccount', () => {
     it('returns an account successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount(address);
+      await target.createAccount({ address, clientIp: faker.internet.ipv4() });
 
       const result = await target.getAccount(address);
 
@@ -116,7 +223,7 @@ describe('AccountsDatasource tests', () => {
 
     it('returns an account from cache', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount(address);
+      await target.createAccount({ address, clientIp: faker.internet.ipv4() });
 
       const result = await target.getAccount(address);
 
@@ -174,7 +281,7 @@ describe('AccountsDatasource tests', () => {
   describe('deleteAccount', () => {
     it('deletes an account successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount(address);
+      await target.createAccount({ address, clientIp: faker.internet.ipv4() });
 
       await expect(target.deleteAccount(address)).resolves.not.toThrow();
 
@@ -191,7 +298,7 @@ describe('AccountsDatasource tests', () => {
 
     it('should clear the cache on account deletion', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount(address);
+      await target.createAccount({ address, clientIp: faker.internet.ipv4() });
 
       // get the account from the cache
       const beforeDeletion = await target.getAccount(address);
@@ -335,7 +442,10 @@ describe('AccountsDatasource tests', () => {
   describe('getAccountDataSettings', () => {
     it('should get the account data settings successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount(address);
+      const account = await target.createAccount({
+        address,
+        clientIp: faker.internet.ipv4(),
+      });
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -366,7 +476,10 @@ describe('AccountsDatasource tests', () => {
 
     it('should get the account data settings from cache', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount(address);
+      const account = await target.createAccount({
+        address,
+        clientIp: faker.internet.ipv4(),
+      });
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -426,7 +539,10 @@ describe('AccountsDatasource tests', () => {
 
     it('should omit account data settings which data type is not active', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount(address);
+      const account = await target.createAccount({
+        address,
+        clientIp: faker.internet.ipv4(),
+      });
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -467,7 +583,10 @@ describe('AccountsDatasource tests', () => {
   describe('upsertAccountDataSettings', () => {
     it('adds account data settings successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount(address);
+      const account = await target.createAccount({
+        address,
+        clientIp: faker.internet.ipv4(),
+      });
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -500,7 +619,10 @@ describe('AccountsDatasource tests', () => {
 
     it('should write the associated cache on upsert', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount(address);
+      const account = await target.createAccount({
+        address,
+        clientIp: faker.internet.ipv4(),
+      });
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -538,7 +660,10 @@ describe('AccountsDatasource tests', () => {
 
     it('updates existing account data settings successfully', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const account = await target.createAccount(address);
+      const account = await target.createAccount({
+        address,
+        clientIp: faker.internet.ipv4(),
+      });
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -623,7 +748,7 @@ describe('AccountsDatasource tests', () => {
 
     it('throws an error if a non-existent data type is provided', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount(address);
+      await target.createAccount({ address, clientIp: faker.internet.ipv4() });
       const accountDataTypes = Array.from(
         { length: faker.number.int({ min: 1, max: 4 }) },
         () => accountDataTypeBuilder().with('is_active', true).build(),
@@ -652,7 +777,7 @@ describe('AccountsDatasource tests', () => {
 
     it('throws an error if an inactive data type is provided', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      await target.createAccount(address);
+      await target.createAccount({ address, clientIp: faker.internet.ipv4() });
       const accountDataTypes = [
         accountDataTypeBuilder().with('is_active', false).build(),
         accountDataTypeBuilder().build(),
