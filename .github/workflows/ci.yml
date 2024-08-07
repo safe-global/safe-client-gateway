@@ -182,3 +182,48 @@ jobs:
           AUTODEPLOY_URL: ${{ secrets.AUTODEPLOY_URL }}
           AUTODEPLOY_TOKEN: ${{ secrets.AUTODEPLOY_TOKEN }}
           TARGET_ENV: 'staging'
+
+  generate-sdk:
+    runs-on: ubuntu-latest
+    # needs: [autodeploy]
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/iron'
+          cache: 'yarn'
+      - run: yarn install --immutable
+      - run: yarn generate-sdk
+      - uses: actions/checkout@v4
+        with:
+          repository: 5afe/cgw-sdk
+          token: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
+          path: sdk-repo
+      - run: rm -rf sdk-repo/src
+      - run: mkdir -p sdk-repo/src
+      - run: cp -r dist/sdk/* sdk-repo/src/
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.yarn/cache
+             node_modules
+          key: ${{ runner.os }}-yarn-sdk-${{ hashFiles('sdk-repo/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-sdk-
+      - name: Update SDK
+        working-directory: sdk-repo
+        run: |
+          yarn install --immutable
+          yarn build
+
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
+          jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
+          mv package_tmp.json package.json
+
+          git config --global user.name 'iamacook'
+          git config --global user.email 'aaron@safe.global'
+
+          git add .
+          git commit -m "v$NEW_VERSION for ${{ github.sha }}"
+          git push
