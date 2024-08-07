@@ -188,53 +188,42 @@ jobs:
     # needs: [autodeploy]
     # if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/iron'
           cache: 'yarn'
-      - run: yarn install --immutable
-
-      - name: Generate SDK
-        env:
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
+        uses: actions/checkout@v4
         run: |
+          yarn install --immutable
           yarn generate-sdk
+        uses: actions/checkout@v4
+        with:
+          repository: 5afe/cgw-sdk
+          token: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN_FOR_SDK_GEN }}
+        run: |
+          yarn install --immutable
+          yarn build
 
-          # Set config
-          git config --global user.name 'iamacook'
-          git config --global user.email 'aaron@safe.global'
-
-          # Clone the cgw-sdk repository
-          git clone https://github.com/5afe/cgw-sdk
-          cd cgw-sdk
-
-          # Remove the old src folder
           if [ -d "src" ]; then
             rm -rf src
           fi
-
-          # Copy the new SDK
           mkdir -p src
           cp -r ../dist/sdk/* src/
-
-          if git diff --quiet; then
-            # Install and build the SDK
-            yarn install
-            yarn build
-
-            # Update the package.json version
-            CURRENT_VERSION=$(jq -r '.version' package.json)
-            NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
-            jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
-            mv package_tmp.json package.json
-
-            # Commit the changes
-            git add .
-            git commit -m "v$NEW_VERSION for ${{ github.sha }}"
-
-            # Push the changes
-            git push https://$PERSONAL_ACCESS_TOKEN@github.com/5afe/cgw-sdk.git
-          else 
-            echo "No changes to commit"
+          
+          if ! git diff --quiet; then
+              echo "No changes to commit."
+              exit 0
           fi
+
+          CURRENT_VERSION=$(jq -r '.version' package.json)
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. -v OFS=. '{$NF++;print}')
+          jq --arg new_version "$NEW_VERSION" '.version = $new_version' package.json > package_tmp.json
+          mv package_tmp.json package.json
+
+          git config --global user.name 'iamacook'
+          git config --global user.email 'aaron@safe.global'
+
+          git add .
+          git commit -m "v$NEW_VERSION for ${{ github.sha }}"
+
+          git push
