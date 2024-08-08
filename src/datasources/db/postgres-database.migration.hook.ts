@@ -3,6 +3,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import postgres from 'postgres';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { asError } from '@/logging/utils';
 
 /**
  * The {@link PostgresDatabaseMigrationHook} is a Module Init hook meaning
@@ -29,31 +30,39 @@ export class PostgresDatabaseMigrationHook implements OnModuleInit {
     );
   }
 
+  /**
+   * Function executed when the module is initialized.
+   *
+   * This function will check if the migrations are enabled and if so, it will
+   * acquire a lock to perform a migration. If the lock is not acquired, then
+   * a migration is being executed by another instance.
+   *
+   * If the lock is acquired, the migration will be executed and the lock will
+   * be released.
+   */
   async onModuleInit(): Promise<void> {
     if (!this.runMigrations) {
       return this.loggingService.info('Database migrations are disabled');
     }
 
-    this.loggingService.info('Checking migrations');
     try {
-      // Acquire lock to perform a migration.
-      // If the lock is not acquired, then a migration is being executed by another instance.
-      // Migrations should strive to be idempotent as they can be executed by multiple instances
-      // on the same database.
-      await this
-        .sql`SELECT pg_advisory_lock(${PostgresDatabaseMigrationHook.LOCK_MAGIC_NUMBER})`;
-      // Perform migration
+      this.loggingService.info('Checking migrations');
+      await this.acquireLock();
       await this.migrator.migrate();
+      await this.releaseLock();
       this.loggingService.info('Pending migrations executed');
     } catch (e) {
-      // If there's an error performing a migration, we should throw the error
-      // and prevent the service from starting
-      this.loggingService.error(e);
-      throw e;
-    } finally {
-      // the lock should be released if the migration completed (successfully or not)
-      await this
-        .sql`SELECT pg_advisory_unlock(${PostgresDatabaseMigrationHook.LOCK_MAGIC_NUMBER})`;
+      this.loggingService.error(`Error running migrations: ${asError(e)}`);
     }
+  }
+
+  private async acquireLock(): Promise<void> {
+    await this
+      .sql`SELECT pg_advisory_lock(${PostgresDatabaseMigrationHook.LOCK_MAGIC_NUMBER})`;
+  }
+
+  private async releaseLock(): Promise<void> {
+    await this
+      .sql`SELECT pg_advisory_unlock(${PostgresDatabaseMigrationHook.LOCK_MAGIC_NUMBER})`;
   }
 }
