@@ -33,13 +33,13 @@ export class PostgresDatabaseMigrator {
   constructor(@Inject('DB_INSTANCE') private readonly sql: Sql) {}
 
   /**
-   * Runs/records migrations not present in the {@link PostgresMigrator.MIGRATIONS_TABLE} table.
+   * Runs/records migrations not present in the {@link PostgresDatabaseMigrator.MIGRATIONS_TABLE} table.
    *
    * Note: all migrations are run in a single transaction for optimal performance.
    */
   async migrate(
     path = PostgresDatabaseMigrator.MIGRATIONS_FOLDER,
-  ): Promise<void> {
+  ): Promise<Migration[]> {
     const migrations = this.getMigrations(path);
 
     await this.assertMigrationsTable();
@@ -53,6 +53,8 @@ export class PostgresDatabaseMigrator {
         await this.setLastRunMigration({ transaction, migration: current });
       }
     });
+
+    return remaining;
   }
 
   /**
