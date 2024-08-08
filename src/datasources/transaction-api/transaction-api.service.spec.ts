@@ -3591,4 +3591,75 @@ describe('TransactionApi', () => {
       );
     });
   });
+
+  // TODO: Remove temporary cache times test for Holesky chain.
+  describe('temp - Holesky expiration times', () => {
+    it('should use the Holesky expiration time for the datasource', async () => {
+      const holeskyExpirationTime = faker.number.int();
+      const holeskyChainId = '17000';
+      mockConfigurationService.getOrThrow.mockImplementation((key) => {
+        if (key === 'expirationTimeInSeconds.holesky') {
+          return holeskyExpirationTime;
+        }
+        if (key === 'expirationTimeInSeconds.default') {
+          return defaultExpirationTimeInSeconds;
+        }
+        if (key === 'expirationTimeInSeconds.notFound.default') {
+          return notFoundExpireTimeSeconds;
+        }
+        if (key === 'expirationTimeInSeconds.notFound.contract') {
+          return notFoundExpireTimeSeconds;
+        }
+        if (key === 'expirationTimeInSeconds.notFound.token') {
+          return notFoundExpireTimeSeconds;
+        }
+        if (key === 'owners.ownersTtlSeconds') {
+          return ownersTtlSeconds;
+        }
+        throw Error(`Unexpected key: ${key}`);
+      });
+
+      service = new TransactionApi(
+        holeskyChainId, // Holesky chainId
+        baseUrl,
+        mockDataSource,
+        mockCacheService,
+        mockConfigurationService,
+        httpErrorFactory,
+        mockNetworkService,
+        mockLoggingService,
+      );
+
+      const token = tokenBuilder().build();
+      const tokensPage = pageBuilder().with('results', [token]).build();
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const getTokensUrl = `${baseUrl}/api/v1/tokens/`;
+      const cacheDir = new CacheDir(
+        `${holeskyChainId}_tokens`,
+        `${limit}_${offset}`,
+      );
+      mockDataSource.get.mockResolvedValueOnce(tokensPage);
+
+      const actual = await service.getTokens({
+        limit,
+        offset,
+      });
+
+      expect(actual).toBe(tokensPage);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        expireTimeSeconds: holeskyExpirationTime,
+        notFoundExpireTimeSeconds: holeskyExpirationTime,
+        url: getTokensUrl,
+        networkRequest: {
+          params: {
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+  });
 });

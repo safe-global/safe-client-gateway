@@ -54,6 +54,7 @@ export class TransactionApi implements ITransactionApi {
     private readonly networkService: INetworkService,
     private readonly loggingService: ILoggingService,
   ) {
+    // TODO: Remove temporary cache times for Holesky chain.
     if (chainId === TransactionApi.HOLESKY_CHAIN_ID) {
       const holeskyExpirationTime =
         this.configurationService.getOrThrow<number>(
