@@ -36,7 +36,7 @@ export interface INotificationsRepositoryV2 {
     safeAddress: `0x${string}`;
   }): Promise<
     Array<{
-      subscriber: `0x${string}`;
+      subscriber: `0x${string}` | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }>

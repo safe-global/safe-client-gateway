@@ -29,7 +29,7 @@ type NotificationTypesRow = {
 
 type NotificationSubscriptionsRow = {
   id: number;
-  signer_address: `0x${string}`;
+  signer_address: `0x${string}` | null;
   push_notification_device_id: PushNotificationDevicesRow['id'];
   chain_id: string;
   safe_address: `0x${string}`;
@@ -302,6 +302,40 @@ describe('Migration 00005_notifications', () => {
     ).resolves.toStrictEqual([]);
   });
 
+  it('should allow nullable signer_address in notification_subscriptions', async () => {
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const chainId = faker.string.numeric();
+    const deviceType = faker.helpers.arrayElement(Object.values(DeviceType));
+    const deviceUuid = faker.string.uuid() as UUID;
+    const cloudMessagingToken = faker.string.alphanumeric();
+    const afterMigration = await migrator.test({
+      migration: '00005_notifications',
+      after: (sql: postgres.Sql) => {
+        // Create device
+        return sql<
+          [PushNotificationDevicesRow]
+        >`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken}) RETURNING *`;
+      },
+    });
+
+    // Create subscription
+    await expect(
+      sql<
+        [NotificationSubscriptionsRow]
+      >`INSERT INTO notification_subscriptions (push_notification_device_id, chain_id, safe_address) VALUES (${afterMigration.after[0].id}, ${chainId}, ${safeAddress}) RETURNING *`,
+    ).resolves.toStrictEqual([
+      {
+        id: 1,
+        signer_address: null,
+        push_notification_device_id: afterMigration.after[0].id,
+        chain_id: chainId,
+        safe_address: safeAddress,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      },
+    ]);
+  });
+
   it('should prevent duplicate subscriptions (signer, chain, Safe address and device) in notification_subscriptions', async () => {
     const signerAddress = getAddress(faker.finance.ethereumAddress());
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -325,7 +359,7 @@ describe('Migration 00005_notifications', () => {
 
     // Create duplicate subscription
     await expect(
-      sql`INSERT INTO notification_subscriptions (signer_address, push_notification_device_id, chain_id, safe_address) VALUES (${afterMigration.after[0].signer_address}, ${afterMigration.after[0].push_notification_device_id}, ${chainId}, ${safeAddress})`,
+      sql`INSERT INTO notification_subscriptions (signer_address, push_notification_device_id, chain_id, safe_address) VALUES (${signerAddress}, ${afterMigration.after[0].push_notification_device_id}, ${chainId}, ${safeAddress})`,
     ).rejects.toThrow(
       'duplicate key value violates unique constraint "notification_subscriptions_chain_id_safe_address_push_notif_key"',
     );

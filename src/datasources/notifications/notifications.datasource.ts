@@ -25,13 +25,13 @@ export class NotificationsDatasource implements INotificationsDatasource {
    * Upserts subscriptions for the given signer/device as per the list of Safes
    * and notification types provided.
    *
-   * @param args.signerAddress Signer address
+   * @param args.signerAddress Signer address (optional)
    * @param args.upsertSubscriptionsDto {@link UpsertSubscriptionsDto} DTO
    *
    * @returns Device UUID
    */
   async upsertSubscriptions(args: {
-    signerAddress: `0x${string}`;
+    signerAddress?: `0x${string}`;
     upsertSubscriptionsDto: UpsertSubscriptionsDto;
   }): Promise<{ deviceUuid: UUID }> {
     const deviceUuid =
@@ -59,21 +59,32 @@ export class NotificationsDatasource implements INotificationsDatasource {
       await Promise.all(
         args.upsertSubscriptionsDto.safes.map(async (safe) => {
           try {
-            // 1. Upsert subscription
+            // 1. Delete previous subscriptions (and by cascade, notification types)
+            //    to avoid duplicates, and clearing "unknown" subscriptions
+            await sql`
+              DELETE FROM notification_subscriptions
+              WHERE chain_id = ${safe.chainId}
+              AND safe_address = ${safe.address}
+              AND (
+                signer_address = ${args.signerAddress ?? null}
+                OR (
+                  signer_address IS NULL
+                )
+              )
+              AND push_notification_device_id = ${device.id}
+            `;
+
+            // 2. Upsert subscription
             const [subscription] = await sql<[{ id: number }]>`
               INSERT INTO notification_subscriptions (chain_id, safe_address, signer_address, push_notification_device_id)
-              VALUES (${safe.chainId}, ${safe.address}, ${args.signerAddress}, ${device.id})
+              VALUES (${safe.chainId}, ${safe.address}, ${args.signerAddress ?? null}, ${device.id})
               ON CONFLICT (chain_id, safe_address, signer_address, push_notification_device_id)
                 -- If no value is set ON CONFLICT, an error is thrown meaning nothing is returned
                 DO UPDATE SET updated_at = NOW()
               RETURNING id
             `;
-            // 2. Remove existing subscribed-to notification types
-            await sql`
-              DELETE FROM notification_subscription_notification_types
-              WHERE notification_subscription_id = ${subscription.id}
-            `;
-            // 3. Insert new subscribed-to notification types
+
+            // 3. Insert subscribed-to notification types
             await sql`
               INSERT INTO notification_subscription_notification_types (notification_subscription_id, notification_type_id)
               SELECT ${subscription.id}, id
@@ -142,14 +153,14 @@ export class NotificationsDatasource implements INotificationsDatasource {
     safeAddress: string;
   }): Promise<
     Array<{
-      subscriber: `0x${string}`;
+      subscriber: `0x${string}` | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }>
   > {
     const subscribers = await this.sql<
       Array<{
-        signer_address: `0x${string}`;
+        signer_address: `0x${string}` | null;
         cloud_messaging_token: string;
         device_uuid: UUID;
       }>

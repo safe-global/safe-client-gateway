@@ -187,7 +187,10 @@ describe('Post Hook Events for Notifications (Unit)', () => {
           length: faker.number.int({ min: 1, max: 5 }),
         },
         () => ({
-          subscriber: getAddress(faker.finance.ethereumAddress()),
+          subscriber: faker.helpers.arrayElement([
+            getAddress(faker.finance.ethereumAddress()),
+            null,
+          ]),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
@@ -264,7 +267,10 @@ describe('Post Hook Events for Notifications (Unit)', () => {
           length: faker.number.int({ min: 1, max: 5 }),
         },
         () => ({
-          subscriber: getAddress(faker.finance.ethereumAddress()),
+          subscriber: faker.helpers.arrayElement([
+            getAddress(faker.finance.ethereumAddress()),
+            null,
+          ]),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
@@ -1553,7 +1559,10 @@ describe('Post Hook Events for Notifications (Unit)', () => {
           length: faker.number.int({ min: 1, max: 5 }),
         },
         () => ({
-          subscriber: getAddress(faker.finance.ethereumAddress()),
+          subscriber: faker.helpers.arrayElement([
+            getAddress(faker.finance.ethereumAddress()),
+            null,
+          ]),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
@@ -1617,7 +1626,10 @@ describe('Post Hook Events for Notifications (Unit)', () => {
           length: faker.number.int({ min: 1, max: 5 }),
         },
         () => ({
-          subscriber: getAddress(faker.finance.ethereumAddress()),
+          subscriber: faker.helpers.arrayElement([
+            getAddress(faker.finance.ethereumAddress()),
+            null,
+          ]),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
@@ -1701,7 +1713,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         cloudMessagingToken: faker.string.alphanumeric(),
       },
       {
-        subscriber: getAddress(faker.finance.ethereumAddress()),
+        subscriber: null,
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
@@ -1722,12 +1734,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
           .build(),
       ])
       .build();
-    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
-      ownerSubscriptions.concat(
-        delegateSubscriptions,
-        nonOwnerDelegateSubscriptions,
-      ),
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue([
+      ...ownerSubscriptions,
+      ...delegateSubscriptions,
+      ...nonOwnerDelegateSubscriptions,
+    ]);
 
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
@@ -1843,7 +1854,7 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         cloudMessagingToken: faker.string.alphanumeric(),
       },
       {
-        subscriber: getAddress(faker.finance.ethereumAddress()),
+        subscriber: null,
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       },
@@ -1864,12 +1875,11 @@ describe('Post Hook Events for Notifications (Unit)', () => {
           .build(),
       ])
       .build();
-    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
-      ownerSubscriptions.concat(
-        delegateSubscriptions,
-        nonOwnerDelegateSubscriptions,
-      ),
-    );
+    notificationsDatasource.getSubscribersBySafe.mockResolvedValue([
+      ...ownerSubscriptions,
+      ...delegateSubscriptions,
+      ...nonOwnerDelegateSubscriptions,
+    ]);
 
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
