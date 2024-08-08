@@ -8,10 +8,10 @@ export default () => ({
   },
   accounts: {
     creationRateLimitPeriodSeconds: parseInt(
-      process.env.ACCOUNT_CREATION_RATE_LIMIT_PERIOD_SECONDS ?? `${60}`,
+      process.env.ACCOUNT_CREATION_RATE_LIMIT_PERIOD_SECONDS ?? `${3600}`,
     ),
     creationRateLimitCalls: parseInt(
-      process.env.ACCOUNT_CREATION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${1}`,
+      process.env.ACCOUNT_CREATION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${25}`,
     ),
     counterfactualSafes: {
       creationRateLimitPeriodSeconds: parseInt(
@@ -20,7 +20,7 @@ export default () => ({
       ),
       creationRateLimitCalls: parseInt(
         process.env.COUNTERFACTUAL_SAFES_CREATION_RATE_LIMIT_CALLS_BY_PERIOD ??
-          `${10}`,
+          `${25}`,
       ),
     },
   },
