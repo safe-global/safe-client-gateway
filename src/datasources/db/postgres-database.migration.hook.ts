@@ -48,9 +48,11 @@ export class PostgresDatabaseMigrationHook implements OnModuleInit {
     try {
       this.loggingService.info('Checking migrations');
       await this.acquireLock();
-      await this.migrator.migrate();
+      const executed = await this.migrator.migrate();
       await this.releaseLock();
-      this.loggingService.info('Pending migrations executed');
+      this.loggingService.info(
+        `Pending migrations executed: [${executed.map((m) => m.name).join(', ')}]`,
+      );
     } catch (e) {
       this.loggingService.error(`Error running migrations: ${asError(e)}`);
     }

@@ -58,6 +58,19 @@ describe('PostgresDatabaseMigrationHook tests', () => {
     configurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'application.runMigrations') return true;
     });
+    const executed = [
+      {
+        path: faker.system.filePath(),
+        id: faker.number.int(),
+        name: faker.string.sample(),
+      },
+      {
+        path: faker.system.filePath(),
+        id: faker.number.int(),
+        name: faker.string.sample(),
+      },
+    ];
+    migrator.migrate.mockResolvedValue(executed);
     target = new PostgresDatabaseMigrationHook(
       sql,
       migrator,
@@ -70,7 +83,7 @@ describe('PostgresDatabaseMigrationHook tests', () => {
     expect(loggingService.info).toHaveBeenCalledTimes(2);
     expect(loggingService.info).toHaveBeenCalledWith('Checking migrations');
     expect(loggingService.info).toHaveBeenCalledWith(
-      'Pending migrations executed',
+      `Pending migrations executed: [${executed[0].name}, ${executed[1].name}]`,
     );
   });
 });
