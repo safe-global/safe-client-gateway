@@ -46,9 +46,9 @@ export class AuthService {
       ...(notBefore && {
         nbf: new Date(notBefore),
       }),
-      ...(expirationTime && {
-        exp: new Date(expirationTime),
-      }),
+      exp: expirationTime
+        ? new Date(expirationTime)
+        : this.siweRepository.getMaxValidityDate(),
     });
 
     return {

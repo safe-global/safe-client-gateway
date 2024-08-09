@@ -111,6 +111,10 @@ export class SiweRepository implements ISiweRepository {
     }
   }
 
+  getMaxValidityDate(): Date {
+    return new Date(Date.now() + this.maxValidityPeriodInSeconds * 1_000);
+  }
+
   /**
    * Verifies signature of signed SiWe message, either by EOA or smart contract
    *
