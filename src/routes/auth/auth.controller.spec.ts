@@ -502,5 +502,56 @@ describe('AuthController', () => {
       // Nonce deleted
       await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
     });
+
+    it('should get the max expirationTime if not specified on the SiWE message', async () => {
+      // Fix "now" as it is otherwise to precisely expect expiration/maxAge
+      jest.setSystemTime(0);
+
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', undefined)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+      const expectedExpirationTime = new Date(
+        Date.now() + maxValidityPeriodInMs,
+      );
+      const maxAge = getSecondsUntil(expectedExpirationTime);
+
+      await expect(cacheService.get(cacheDir)).resolves.toBe(
+        nonceResponse.body.nonce,
+      );
+      await request(app.getHttpServer())
+        .post('/v1/auth/verify')
+        .send({
+          message,
+          signature,
+        })
+        .expect(200)
+        .expect(({ headers }) => {
+          const setCookie = headers['set-cookie'];
+          const setCookieRegExp = new RegExp(
+            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expectedExpirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
+          );
+
+          expect(setCookie).toHaveLength;
+          expect(setCookie[0]).toMatch(setCookieRegExp);
+        });
+      // Verified off-chain as EOA
+      expect(verifySiweMessageMock).not.toHaveBeenCalled();
+      // Nonce deleted
+      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+    });
   });
 });

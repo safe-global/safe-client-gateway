@@ -8,6 +8,8 @@ export const ISiweRepository = Symbol('ISiweRepository');
 export interface ISiweRepository {
   generateNonce(): Promise<{ nonce: string }>;
 
+  getMaxValidityDate(): Date;
+
   isValidMessage(args: {
     message: string;
     signature: `0x${string}`;
