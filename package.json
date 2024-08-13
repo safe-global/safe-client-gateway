@@ -58,7 +58,7 @@
     "@types/jest": "29.5.12",
     "@types/jsonwebtoken": "^9",
     "@types/lodash": "^4.17.7",
-    "@types/node": "^20.14.8",
+    "@types/node": "^22.2.0",
     "@types/semver": "^7.5.8",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.7.0",
