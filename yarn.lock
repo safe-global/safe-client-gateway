@@ -1187,9 +1187,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/cli@npm:^10.4.2":
-  version: 10.4.2
-  resolution: "@nestjs/cli@npm:10.4.2"
+"@nestjs/cli@npm:^10.4.4":
+  version: 10.4.4
+  resolution: "@nestjs/cli@npm:10.4.4"
   dependencies:
     "@angular-devkit/core": "npm:17.3.8"
     "@angular-devkit/schematics": "npm:17.3.8"
@@ -1208,7 +1208,7 @@ __metadata:
     tsconfig-paths: "npm:4.2.0"
     tsconfig-paths-webpack-plugin: "npm:4.1.0"
     typescript: "npm:5.3.3"
-    webpack: "npm:5.92.1"
+    webpack: "npm:5.93.0"
     webpack-node-externals: "npm:3.0.0"
   peerDependencies:
     "@swc/cli": ^0.1.62 || ^0.3.0 || ^0.4.0
@@ -1220,7 +1220,7 @@ __metadata:
       optional: true
   bin:
     nest: bin/nest.js
-  checksum: 10/20587526f460c9d696a0637354f746efe272547b570321119411bef7298471cd157f384f9097ae529f70e9e67e094ce5d2112e360198502b561cbec91bc271b6
+  checksum: 10/6f722a168e4a8c11ee1c9d07b7c5062048e69df8f74b3c2fa0bb800a8c0d9ddef4c7f6a7d80b0eddf4d0769ced7f97e781ce9804d7798271fae71a2fc6654c99
   languageName: node
   linkType: hard
 
@@ -7249,7 +7249,7 @@ __metadata:
   resolution: "safe-client-gateway@workspace:."
   dependencies:
     "@faker-js/faker": "npm:^8.4.1"
-    "@nestjs/cli": "npm:^10.4.2"
+    "@nestjs/cli": "npm:^10.4.4"
     "@nestjs/common": "npm:^10.4.0"
     "@nestjs/config": "npm:^3.2.3"
     "@nestjs/core": "npm:^10.4.0"
@@ -8390,9 +8390,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webpack@npm:5.92.1":
-  version: 5.92.1
-  resolution: "webpack@npm:5.92.1"
+"webpack@npm:5.93.0":
+  version: 5.93.0
+  resolution: "webpack@npm:5.93.0"
   dependencies:
     "@types/eslint-scope": "npm:^3.7.3"
     "@types/estree": "npm:^1.0.5"
@@ -8423,7 +8423,7 @@ __metadata:
       optional: true
   bin:
     webpack: bin/webpack.js
-  checksum: 10/76fcfbebcc0719c4734c65a01dcef7a0f18f3f2647484e8a7e8606adbd128ac42756bb3a8b7e2d486fe97f6286ebdc7b937ccdf3cf1d21b4684134bb89bbed89
+  checksum: 10/a48bef7a511d826db7f9ebee2c84317214923ac40cb2aabe6a649546c54a76a55fc3b91ff03c05fed22a13a176891c47bbff7fcc644c53bcbe5091555863641b
   languageName: node
   linkType: hard
 
