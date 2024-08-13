@@ -36,6 +36,8 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
       '@typescript-eslint/unbound-method': 'off',
+      // Added after typescript-eslint 8.1.0
+      '@typescript-eslint/prefer-promise-reject-errors': 'off',
     },
   },
   eslintConfigPrettier,

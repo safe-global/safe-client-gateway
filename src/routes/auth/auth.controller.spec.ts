@@ -169,7 +169,7 @@ describe('AuthController', () => {
             `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
           );
 
-          expect(setCookie).toHaveLength;
+          expect(setCookie).toHaveLength(1);
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Verified off-chain as EOA
@@ -217,7 +217,7 @@ describe('AuthController', () => {
             `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
           );
 
-          expect(setCookie).toHaveLength;
+          expect(setCookie).toHaveLength(1);
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Verified on-chain as could not verify EOA
@@ -285,7 +285,7 @@ describe('AuthController', () => {
             `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=None`,
           );
 
-          expect(setCookie).toHaveLength;
+          expect(setCookie).toHaveLength(1);
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Verified off-chain as EOA
@@ -545,7 +545,7 @@ describe('AuthController', () => {
             `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expectedExpirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
           );
 
-          expect(setCookie).toHaveLength;
+          expect(setCookie).toHaveLength(1);
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
       // Verified off-chain as EOA

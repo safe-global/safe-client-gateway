@@ -8,6 +8,7 @@ import { IApiManager } from '@/domain/interfaces/api.manager.interface';
 
 export const ITransactionApiManager = Symbol('ITransactionApiManager');
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface ITransactionApiManager extends IApiManager<ITransactionApi> {}
 
 @Module({
