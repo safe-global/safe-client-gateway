@@ -33,6 +33,19 @@ import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.helper';
+import { PooledStakingHelperModule } from '@/routes/transactions/helpers/kiln-pooled-staking.helper';
+import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
+import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
+import { KilnDedicatedStakingHelperModule } from '@/routes/transactions/helpers/kiln-dedicated-staking.helper';
+import {
+  DedicatedDepositConfirmationView,
+  PooledDepositConfirmationView,
+  PooledRequestExitConfirmationView,
+  PooledWithdrawConfirmationView,
+  DefiDepositConfirmationView,
+  DefiWithdrawConfirmationView,
+} from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
+import { KilnDefiVaultHelperModule } from '@/routes/transactions/helpers/kiln-defi-vault.helper';
 
 @ApiTags('transactions')
 @Controller({
@@ -48,10 +61,25 @@ export class TransactionsViewController {
       oneOf: [
         { $ref: getSchemaPath(BaselineConfirmationView) },
         { $ref: getSchemaPath(CowSwapConfirmationView) },
+        { $ref: getSchemaPath(DedicatedDepositConfirmationView) },
+        { $ref: getSchemaPath(PooledDepositConfirmationView) },
+        { $ref: getSchemaPath(PooledRequestExitConfirmationView) },
+        { $ref: getSchemaPath(PooledWithdrawConfirmationView) },
+        { $ref: getSchemaPath(DefiDepositConfirmationView) },
+        { $ref: getSchemaPath(DefiWithdrawConfirmationView) },
       ],
     },
   })
-  @ApiExtraModels(BaselineConfirmationView, CowSwapConfirmationView)
+  @ApiExtraModels(
+    BaselineConfirmationView,
+    CowSwapConfirmationView,
+    DedicatedDepositConfirmationView,
+    PooledDepositConfirmationView,
+    PooledRequestExitConfirmationView,
+    PooledWithdrawConfirmationView,
+    DefiDepositConfirmationView,
+    DefiWithdrawConfirmationView,
+  )
   @ApiOperation({
     summary: 'Confirm Transaction View',
     description: 'This endpoint is experimental and may change.',
@@ -76,9 +104,14 @@ export class TransactionsViewController {
   imports: [
     DataDecodedRepositoryModule,
     GPv2DecoderModule,
+    KilnDedicatedStakingHelperModule,
+    KilnDefiVaultHelperModule,
     SwapOrderHelperModule,
+    TokenRepositoryModule,
     TwapOrderHelperModule,
+    PooledStakingHelperModule,
     SwapsRepositoryModule,
+    StakingRepositoryModule,
     SwapAppsHelperModule,
   ],
   providers: [TransactionsViewService, ComposableCowDecoder],

@@ -5,7 +5,12 @@ import {
   CowSwapConfirmationView,
   CowSwapTwapConfirmationView,
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
@@ -17,6 +22,20 @@ import { OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
+import { KilnPooledStakingHelper } from '@/routes/transactions/helpers/kiln-pooled-staking.helper';
+import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { KilnDedicatedStakingHelper } from '@/routes/transactions/helpers/kiln-dedicated-staking.helper';
+import {
+  DedicatedDepositConfirmationView,
+  PooledDepositConfirmationView,
+  PooledRequestExitConfirmationView,
+  PooledWithdrawConfirmationView,
+  DefiDepositConfirmationView,
+  DefiWithdrawConfirmationView,
+} from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { KilnDefiVaultHelper } from '@/routes/transactions/helpers/kiln-defi-vault.helper';
 
 @Injectable({})
 export class TransactionsViewService {
@@ -30,7 +49,14 @@ export class TransactionsViewService {
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
     private readonly composableCowDecoder: ComposableCowDecoder,
+    private readonly defiVaultHelper: KilnDefiVaultHelper,
+    private readonly dedicatedStakingHelper: KilnDedicatedStakingHelper,
+    private readonly pooledStakingHelper: KilnPooledStakingHelper,
+    @Inject(IStakingRepository)
+    private readonly stakingRepository: IStakingRepository,
     private readonly swapAppsHelper: SwapAppsHelper,
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: ITokenRepository,
   ) {}
 
   async getTransactionConfirmationView(args: {
@@ -38,12 +64,46 @@ export class TransactionsViewService {
     safeAddress: `0x${string}`;
     transactionDataDto: TransactionDataDto;
   }): Promise<ConfirmationView> {
-    const dataDecoded = await this.dataDecodedRepository.getDataDecoded({
-      chainId: args.chainId,
-      data: args.transactionDataDto.data,
-      to: args.transactionDataDto.to,
-    });
+    const dataDecoded = await this.dataDecodedRepository
+      .getDataDecoded({
+        chainId: args.chainId,
+        data: args.transactionDataDto.data,
+        to: args.transactionDataDto.to,
+      })
+      .catch(() => {
+        // TODO: Get Kiln to verify all deployments
+        // Fallback for unverified contracts
+        return {
+          method: '',
+          parameters: null,
+        };
+      });
 
+    // Staking
+    const dedicatedStakingDepsitData = this.dedicatedStakingHelper.findDeposit(
+      args.transactionDataDto.data,
+    );
+
+    const pooledStakingDepositData = this.pooledStakingHelper.findDeposit(
+      args.transactionDataDto.data,
+    );
+
+    const pooledStakingRequestExitData =
+      this.pooledStakingHelper.findRequestExit(args.transactionDataDto.data);
+
+    const pooledStakingWithdrawData = this.pooledStakingHelper.findWithdraw(
+      args.transactionDataDto.data,
+    );
+
+    const defiDepositData = this.defiVaultHelper.findDeposit(
+      args.transactionDataDto.data,
+    );
+
+    const defiWithdrawData = this.defiVaultHelper.findWithdraw(
+      args.transactionDataDto.data,
+    );
+
+    // Swaps
     const swapOrderData = this.swapOrderHelper.findSwapOrder(
       args.transactionDataDto.data,
     );
@@ -55,7 +115,17 @@ export class TransactionsViewService {
         })
       : null;
 
-    if (!swapOrderData && !twapSwapOrderData) {
+    // TODO: Refactor approach of finding and handling different confirmation views
+    if (
+      !dedicatedStakingDepsitData &&
+      !pooledStakingDepositData &&
+      !pooledStakingRequestExitData &&
+      !pooledStakingWithdrawData &&
+      !defiDepositData &&
+      !defiWithdrawData &&
+      !swapOrderData &&
+      !twapSwapOrderData
+    ) {
       return new BaselineConfirmationView({
         method: dataDecoded.method,
         parameters: dataDecoded.parameters,
@@ -63,7 +133,49 @@ export class TransactionsViewService {
     }
 
     try {
-      if (swapOrderData) {
+      if (dedicatedStakingDepsitData && args.transactionDataDto.to) {
+        return await this.getDedicatedStakingStakeConfirmationView({
+          chainId: args.chainId,
+          to: args.transactionDataDto.to,
+          data: dedicatedStakingDepsitData,
+          dataDecoded,
+        });
+      } else if (pooledStakingDepositData && args.transactionDataDto.to) {
+        return await this.getPooledStakingStakeConfirmationView({
+          chainId: args.chainId,
+          to: args.transactionDataDto.to,
+          data: pooledStakingDepositData,
+          dataDecoded,
+        });
+      } else if (pooledStakingRequestExitData && args.transactionDataDto.to) {
+        return await this.getPooledStakingRequestExitConfirmationView({
+          chainId: args.chainId,
+          to: args.transactionDataDto.to,
+          data: pooledStakingRequestExitData,
+          dataDecoded,
+        });
+      } else if (pooledStakingWithdrawData && args.transactionDataDto.to) {
+        return await this.getPooledStakingWithdrawConfirmationView({
+          chainId: args.chainId,
+          to: args.transactionDataDto.to,
+          data: pooledStakingWithdrawData,
+          dataDecoded,
+        });
+      } else if (defiDepositData && args.transactionDataDto.to) {
+        return await this.getDefiDepositConfirmationView({
+          chainId: args.chainId,
+          to: args.transactionDataDto.to,
+          data: defiDepositData,
+          dataDecoded,
+        });
+      } else if (defiWithdrawData && args.transactionDataDto.to) {
+        return await this.getDefiWithdrawConfirmationView({
+          chainId: args.chainId,
+          to: args.transactionDataDto.to,
+          data: defiWithdrawData,
+          dataDecoded,
+        });
+      } else if (swapOrderData) {
         return await this.getSwapOrderConfirmationView({
           chainId: args.chainId,
           data: swapOrderData,
@@ -77,8 +189,7 @@ export class TransactionsViewService {
           dataDecoded,
         });
       } else {
-        // Should not reach here
-        throw new Error('No swap order data found');
+        throw new Error('No decodable confirmation view data found');
       }
     } catch (error) {
       this.loggingService.warn(error);
@@ -87,6 +198,316 @@ export class TransactionsViewService {
         parameters: dataDecoded.parameters,
       });
     }
+  }
+
+  private async getDedicatedStakingStakeConfirmationView(args: {
+    chainId: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
+    dataDecoded: DataDecoded;
+  }): Promise<DedicatedDepositConfirmationView> {
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+
+    if (
+      deployment.product_type !== 'dedicated' ||
+      deployment.chain === 'unknown'
+    ) {
+      throw new NotFoundException('Staking deployment not found');
+    }
+
+    if (deployment.status !== 'active' || !deployment.product_fee) {
+      throw new UnprocessableEntityException(
+        'Staking deployment is not active',
+      );
+    }
+
+    const [dedicatedStakingStats, networkStats] = await Promise.all([
+      this.stakingRepository.getDedicatedStakingStats(args.chainId),
+      this.stakingRepository.getNetworkStats(args.chainId),
+    ]);
+
+    const fee = Number(deployment.product_fee);
+    const nrr = dedicatedStakingStats.gross_apy.last_30d * (1 - fee);
+
+    return new DedicatedDepositConfirmationView({
+      method: args.dataDecoded.method,
+      parameters: args.dataDecoded.parameters,
+      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+      estimatedExitTime: networkStats.estimated_exit_time_seconds,
+      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
+      fee,
+      monthlyNrr: nrr,
+      annualNrr: nrr,
+    });
+  }
+
+  private async getPooledStakingStakeConfirmationView(args: {
+    chainId: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
+    dataDecoded: DataDecoded;
+  }): Promise<PooledDepositConfirmationView> {
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+
+    if (
+      deployment.product_type !== 'pooling' ||
+      deployment.chain === 'unknown'
+    ) {
+      throw new NotFoundException('Staking pool not found');
+    }
+
+    if (deployment.status !== 'active') {
+      throw new UnprocessableEntityException('Staking pool is not active');
+    }
+
+    const [pooledStakingStats, networkStats, poolToken, exchangeRate] =
+      await Promise.all([
+        this.stakingRepository.getPooledStakingStats({
+          chainId: args.chainId,
+          pool: args.to,
+        }),
+        this.stakingRepository.getNetworkStats(args.chainId),
+        this.pooledStakingHelper.getPoolToken({
+          chainId: args.chainId,
+          pool: args.to,
+        }),
+        this.pooledStakingHelper.getRate({
+          chainId: args.chainId,
+          pool: args.to,
+        }),
+      ]);
+
+    return new PooledDepositConfirmationView({
+      method: args.dataDecoded.method,
+      parameters: args.dataDecoded.parameters,
+      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+      estimatedExitTime: networkStats.estimated_exit_time_seconds,
+      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
+      fee: pooledStakingStats.fee,
+      monthlyNrr: pooledStakingStats.one_month.nrr,
+      annualNrr: pooledStakingStats.one_week.nrr,
+      pool: new AddressInfo(args.to, deployment.display_name),
+      exchangeRate: exchangeRate.toString(),
+      poolToken,
+    });
+  }
+
+  private async getPooledStakingRequestExitConfirmationView(args: {
+    chainId: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
+    dataDecoded: DataDecoded;
+  }): Promise<PooledRequestExitConfirmationView> {
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+
+    if (
+      deployment.product_type !== 'pooling' ||
+      deployment.chain === 'unknown' ||
+      // Don't check if active to support request exist
+      deployment.status === 'unknown'
+    ) {
+      throw new NotFoundException('Staking pool not found');
+    }
+
+    const [networkStats, poolToken, exchangeRate] = await Promise.all([
+      this.stakingRepository.getNetworkStats(args.chainId),
+      this.pooledStakingHelper.getPoolToken({
+        chainId: args.chainId,
+        pool: args.to,
+      }),
+      this.pooledStakingHelper.getRate({
+        chainId: args.chainId,
+        pool: args.to,
+      }),
+    ]);
+
+    return new PooledRequestExitConfirmationView({
+      method: args.dataDecoded.method,
+      parameters: args.dataDecoded.parameters,
+      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+      estimatedExitTime: networkStats.estimated_exit_time_seconds,
+      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
+      pool: new AddressInfo(args.to, deployment.display_name),
+      exchangeRate: exchangeRate.toString(),
+      poolToken,
+    });
+  }
+
+  private async getPooledStakingWithdrawConfirmationView(args: {
+    chainId: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
+    dataDecoded: DataDecoded;
+  }): Promise<PooledWithdrawConfirmationView> {
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+
+    if (
+      deployment.product_type !== 'pooling' ||
+      deployment.chain === 'unknown' ||
+      // Don't check if active to support withdrawal
+      deployment.status === 'unknown'
+    ) {
+      throw new NotFoundException('Staking pool not found');
+    }
+
+    const [networkStats, poolToken, exchangeRate] = await Promise.all([
+      this.stakingRepository.getNetworkStats(args.chainId),
+      this.pooledStakingHelper.getPoolToken({
+        chainId: args.chainId,
+        pool: args.to,
+      }),
+      this.pooledStakingHelper.getRate({
+        chainId: args.chainId,
+        pool: args.to,
+      }),
+    ]);
+
+    return new PooledWithdrawConfirmationView({
+      method: args.dataDecoded.method,
+      parameters: args.dataDecoded.parameters,
+      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+      estimatedExitTime: networkStats.estimated_exit_time_seconds,
+      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
+      pool: new AddressInfo(args.to, deployment.display_name),
+      exchangeRate: exchangeRate.toString(),
+      poolToken,
+    });
+  }
+
+  private async getDefiDepositConfirmationView(args: {
+    chainId: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
+    dataDecoded: DataDecoded;
+  }): Promise<DefiDepositConfirmationView> {
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+
+    if (deployment.product_type !== 'defi' || deployment.chain === 'unknown') {
+      throw new NotFoundException('DeFi vault not found');
+    }
+
+    if (deployment.status !== 'active') {
+      throw new UnprocessableEntityException('DeFi vault is not active');
+    }
+
+    const defiVaultStats = await this.stakingRepository.getDefiVaultStats({
+      chainId: args.chainId,
+      vault: args.to,
+    });
+
+    if (
+      defiVaultStats.protocol === 'unknown' ||
+      defiVaultStats.chain === 'unknown'
+    ) {
+      throw new NotFoundException('DeFi Vault not found');
+    }
+
+    const [amount] = this.defiVaultHelper.decodeDeposit(args.data);
+    const [exchangeRate, vaultToken] = await Promise.all([
+      this.defiVaultHelper.previewDeposit({
+        chainId: args.chainId,
+        vault: args.to,
+        amount,
+      }),
+      this.tokenRepository.getToken({
+        chainId: args.chainId,
+        address: args.to,
+      }),
+    ]);
+
+    return new DefiDepositConfirmationView({
+      method: args.dataDecoded.method,
+      parameters: args.dataDecoded.parameters,
+      fee: 0, // TODO
+      monthlyNrr: defiVaultStats.nrr,
+      annualNrr: defiVaultStats.nrr,
+      vault: new AddressInfo(args.to, deployment.display_name),
+      exchangeRate: exchangeRate.toString(),
+      vaultToken: new TokenInfo({
+        address: vaultToken.address,
+        decimals: vaultToken.decimals ?? defiVaultStats.asset_decimals,
+        logoUri: vaultToken.logoUri,
+        name: vaultToken.name,
+        symbol: vaultToken.symbol,
+        trusted: vaultToken.trusted,
+      }),
+    });
+  }
+
+  private async getDefiWithdrawConfirmationView(args: {
+    chainId: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
+    dataDecoded: DataDecoded;
+  }): Promise<DefiWithdrawConfirmationView> {
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+
+    if (
+      deployment.product_type !== 'defi' ||
+      deployment.chain === 'unknown' ||
+      // Don't check if active to support withdrawal
+      deployment.status === 'unknown'
+    ) {
+      throw new NotFoundException('DeFi vault not found');
+    }
+
+    const defiVaultStats = await this.stakingRepository.getDefiVaultStats({
+      chainId: args.chainId,
+      vault: args.to,
+    });
+
+    if (
+      defiVaultStats.protocol === 'unknown' ||
+      defiVaultStats.chain === 'unknown'
+    ) {
+      throw new NotFoundException('DeFi Vault not found');
+    }
+
+    const [amount] = this.defiVaultHelper.decodeWithdraw(args.data);
+    const [exchangeRate, vaultToken] = await Promise.all([
+      this.defiVaultHelper.previewWithdraw({
+        chainId: args.chainId,
+        vault: args.to,
+        amount,
+      }),
+      this.tokenRepository.getToken({
+        chainId: args.chainId,
+        address: args.to,
+      }),
+    ]);
+
+    return new DefiWithdrawConfirmationView({
+      method: args.dataDecoded.method,
+      parameters: args.dataDecoded.parameters,
+      vault: new AddressInfo(args.to, deployment.display_name),
+      exchangeRate: exchangeRate.toString(),
+      vaultToken: new TokenInfo({
+        address: vaultToken.address,
+        decimals: vaultToken.decimals ?? defiVaultStats.asset_decimals,
+        logoUri: vaultToken.logoUri,
+        name: vaultToken.name,
+        symbol: vaultToken.symbol,
+        trusted: vaultToken.trusted,
+      }),
+    });
   }
 
   private async getSwapOrderConfirmationView(args: {

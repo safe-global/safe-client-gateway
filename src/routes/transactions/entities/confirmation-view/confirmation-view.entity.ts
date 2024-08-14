@@ -12,26 +12,46 @@ import {
   StartTime,
   TwapOrderInfo,
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
+import {
+  DedicatedDepositConfirmationView,
+  PooledDepositConfirmationView,
+  PooledRequestExitConfirmationView,
+  PooledWithdrawConfirmationView,
+  DefiDepositConfirmationView,
+  DefiWithdrawConfirmationView,
+} from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
 
-interface Baseline {
+export interface IBaselineConfirmationView {
   method: string;
   parameters: DataDecodedParameter[] | null;
 }
 
-enum DecodedType {
+export enum ConfirmationViewDecodedType {
   Generic = 'GENERIC',
   CowSwapOrder = 'COW_SWAP_ORDER',
   CowSwapTwapOrder = 'COW_SWAP_TWAP_ORDER',
+  KilnDedicatedDeposit = 'KILN_DEDICATED_DEPOSIT',
+  KilnPooledDeposit = 'KILN_POOLED_DEPOSIT',
+  KilnPooledRequestExist = 'KILN_POOLED_REQUEST_EXIT',
+  KilnPooledWithdraw = 'KILN_POOLED_WITHDRAW',
+  KilnDefiDeposit = 'KILN_DEFI_DEPOSIT',
+  KilnDefiWithdraw = 'KILN_DEFI_WITHDRAW',
 }
 
 export type ConfirmationView =
   | BaselineConfirmationView
   | CowSwapConfirmationView
-  | CowSwapTwapConfirmationView;
+  | CowSwapTwapConfirmationView
+  | DedicatedDepositConfirmationView
+  | PooledDepositConfirmationView
+  | PooledRequestExitConfirmationView
+  | PooledWithdrawConfirmationView
+  | DefiDepositConfirmationView
+  | DefiWithdrawConfirmationView;
 
-export class BaselineConfirmationView implements Baseline {
-  @ApiProperty({ enum: [DecodedType.Generic] })
-  type = DecodedType.Generic;
+export class BaselineConfirmationView implements IBaselineConfirmationView {
+  @ApiProperty({ enum: [ConfirmationViewDecodedType.Generic] })
+  type = ConfirmationViewDecodedType.Generic;
 
   @ApiProperty()
   method: string;
@@ -48,10 +68,13 @@ export class BaselineConfirmationView implements Baseline {
   }
 }
 
-export class CowSwapConfirmationView implements Baseline, OrderInfo {
+// TODO: Move swap confirmation views to new file
+export class CowSwapConfirmationView
+  implements IBaselineConfirmationView, OrderInfo
+{
   // Baseline implementation
-  @ApiProperty({ enum: [DecodedType.CowSwapOrder] })
-  type = DecodedType.CowSwapOrder;
+  @ApiProperty({ enum: [ConfirmationViewDecodedType.CowSwapOrder] })
+  type = ConfirmationViewDecodedType.CowSwapOrder;
 
   @ApiProperty()
   method: string;
@@ -138,7 +161,8 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   buyToken: TokenInfo;
 
   constructor(
-    args: Baseline & OrderInfo & { sellToken: TokenInfo; buyToken: TokenInfo },
+    args: IBaselineConfirmationView &
+      OrderInfo & { sellToken: TokenInfo; buyToken: TokenInfo },
   ) {
     this.method = args.method;
     this.parameters = args.parameters;
@@ -161,10 +185,12 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   }
 }
 
-export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
+export class CowSwapTwapConfirmationView
+  implements IBaselineConfirmationView, TwapOrderInfo
+{
   // Baseline implementation
-  @ApiProperty({ enum: [DecodedType.CowSwapTwapOrder] })
-  type = DecodedType.CowSwapTwapOrder;
+  @ApiProperty({ enum: [ConfirmationViewDecodedType.CowSwapTwapOrder] })
+  type = ConfirmationViewDecodedType.CowSwapTwapOrder;
 
   @ApiProperty()
   method: string;
