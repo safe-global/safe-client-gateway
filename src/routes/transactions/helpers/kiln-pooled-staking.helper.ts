@@ -26,7 +26,7 @@ export class KilnPooledStakingHelper {
     private readonly tokenRepository: ITokenRepository,
   ) {}
 
-  public findDeposit(data: `0x${string}`): `0x${string}` | null {
+  public findStake(data: `0x${string}`): `0x${string}` | null {
     const selector = toFunctionSelector('function stake() external payable');
     return this.transactionDataFinder.findTransactionData(
       (transaction) => transaction.data.startsWith(selector),

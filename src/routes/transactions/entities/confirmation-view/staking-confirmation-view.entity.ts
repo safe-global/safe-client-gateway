@@ -7,14 +7,14 @@ import {
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 
-// Included in every dedicated/pooled deposit calls
+// Included in dedicated `stake` and pooled `deposit` calls
 interface IStakingTimes {
   estimatedEntryTime: number;
   estimatedExitTime: number;
   estimatedWithdrawalTime: number;
 }
 
-// Included in every dedicated/pooled/DeFi deposit calls
+// Included in dedicated `stake`, pooled `deposit`, and DeFi `deposit` calls
 interface IFeeAndRevenue {
   fee: number;
   monthlyNrr: number;
@@ -38,8 +38,8 @@ interface IDefiVault {
 export class DedicatedDepositConfirmationView
   implements IBaselineConfirmationView, IStakingTimes, IFeeAndRevenue
 {
-  @ApiProperty({ enum: [ConfirmationViewDecodedType.KilnDedicatedDeposit] })
-  type = ConfirmationViewDecodedType.KilnDedicatedDeposit;
+  @ApiProperty({ enum: [ConfirmationViewDecodedType.KilnDedicatedStake] })
+  type = ConfirmationViewDecodedType.KilnDedicatedStake;
 
   @ApiProperty()
   method: string;

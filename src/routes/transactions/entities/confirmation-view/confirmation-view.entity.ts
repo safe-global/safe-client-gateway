@@ -30,7 +30,7 @@ export enum ConfirmationViewDecodedType {
   Generic = 'GENERIC',
   CowSwapOrder = 'COW_SWAP_ORDER',
   CowSwapTwapOrder = 'COW_SWAP_TWAP_ORDER',
-  KilnDedicatedDeposit = 'KILN_DEDICATED_DEPOSIT',
+  KilnDedicatedStake = 'KILN_DEDICATED_STAKE',
   KilnPooledDeposit = 'KILN_POOLED_DEPOSIT',
   KilnPooledRequestExist = 'KILN_POOLED_REQUEST_EXIT',
   KilnPooledWithdraw = 'KILN_POOLED_WITHDRAW',

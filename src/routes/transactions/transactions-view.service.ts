@@ -80,11 +80,11 @@ export class TransactionsViewService {
       });
 
     // Staking
-    const dedicatedStakingDepsitData = this.dedicatedStakingHelper.findDeposit(
+    const dedicatedStakingDepositData = this.dedicatedStakingHelper.findDeposit(
       args.transactionDataDto.data,
     );
 
-    const pooledStakingDepositData = this.pooledStakingHelper.findDeposit(
+    const pooledStakingStakeData = this.pooledStakingHelper.findStake(
       args.transactionDataDto.data,
     );
 
@@ -117,8 +117,8 @@ export class TransactionsViewService {
 
     // TODO: Refactor approach of finding and handling different confirmation views
     if (
-      !dedicatedStakingDepsitData &&
-      !pooledStakingDepositData &&
+      !dedicatedStakingDepositData &&
+      !pooledStakingStakeData &&
       !pooledStakingRequestExitData &&
       !pooledStakingWithdrawData &&
       !defiDepositData &&
@@ -133,18 +133,18 @@ export class TransactionsViewService {
     }
 
     try {
-      if (dedicatedStakingDepsitData && args.transactionDataDto.to) {
+      if (dedicatedStakingDepositData && args.transactionDataDto.to) {
         return await this.getDedicatedStakingStakeConfirmationView({
           chainId: args.chainId,
           to: args.transactionDataDto.to,
-          data: dedicatedStakingDepsitData,
+          data: dedicatedStakingDepositData,
           dataDecoded,
         });
-      } else if (pooledStakingDepositData && args.transactionDataDto.to) {
+      } else if (pooledStakingStakeData && args.transactionDataDto.to) {
         return await this.getPooledStakingStakeConfirmationView({
           chainId: args.chainId,
           to: args.transactionDataDto.to,
-          data: pooledStakingDepositData,
+          data: pooledStakingStakeData,
           dataDecoded,
         });
       } else if (pooledStakingRequestExitData && args.transactionDataDto.to) {
