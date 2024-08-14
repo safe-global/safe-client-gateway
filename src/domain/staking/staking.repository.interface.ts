@@ -7,7 +7,10 @@ import { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-st
 export const IStakingRepository = Symbol('IStakingRepository');
 
 export interface IStakingRepository {
-  getDeployments(chainId: string): Promise<Array<Deployment>>;
+  getDeployment(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<Deployment>;
 
   getNetworkStats(chainId: string): Promise<NetworkStats>;
 
@@ -21,7 +24,7 @@ export interface IStakingRepository {
   getDefiVaultStats(args: {
     chainId: string;
     vault: `0x${string}`;
-  }): Promise<Array<DefiVaultStats>>;
+  }): Promise<DefiVaultStats>;
 
   clearApi(chainId: string): void;
 }

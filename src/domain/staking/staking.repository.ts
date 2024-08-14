@@ -29,10 +29,16 @@ export class StakingRepository implements IStakingRepository {
     private readonly stakingApiFactory: IStakingApiManager,
   ) {}
 
-  public async getDeployments(chainId: string): Promise<Array<Deployment>> {
-    const stakingApi = await this.stakingApiFactory.getApi(chainId);
+  public async getDeployment(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<Deployment> {
+    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const deployments = await stakingApi.getDeployments();
-    return deployments.map((deployment) => DeploymentSchema.parse(deployment));
+    const deployment = deployments.find(({ chain_id, address }) => {
+      return chain_id.toString() && address === args.address;
+    });
+    return DeploymentSchema.parse(deployment);
   }
 
   public async getNetworkStats(chainId: string): Promise<NetworkStats> {
@@ -61,10 +67,13 @@ export class StakingRepository implements IStakingRepository {
   public async getDefiVaultStats(args: {
     chainId: string;
     vault: `0x${string}`;
-  }): Promise<Array<DefiVaultStats>> {
+  }): Promise<DefiVaultStats> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const defiStats = await stakingApi.getDefiVaultStats(args);
-    return defiStats.map((defiStats) => DefiVaultStatsSchema.parse(defiStats));
+    // Cannot be >1 contract deployed at the same address so return first element
+    return defiStats.map((defiStats) =>
+      DefiVaultStatsSchema.parse(defiStats),
+    )[0];
   }
 
   public clearApi(chainId: string): void {
