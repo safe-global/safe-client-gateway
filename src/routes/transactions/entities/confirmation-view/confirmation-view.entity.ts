@@ -16,7 +16,7 @@ import {
   DedicatedDepositConfirmationView,
   PooledDepositConfirmationView,
   PooledRequestExitConfirmationView,
-  PooledWithdrawConfirmationView,
+  PooledMultiClaimConfirmationView,
   DefiDepositConfirmationView,
   DefiWithdrawConfirmationView,
 } from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
@@ -33,7 +33,7 @@ export enum ConfirmationViewDecodedType {
   KilnDedicatedStake = 'KILN_DEDICATED_STAKE',
   KilnPooledDeposit = 'KILN_POOLED_DEPOSIT',
   KilnPooledRequestExist = 'KILN_POOLED_REQUEST_EXIT',
-  KilnPooledWithdraw = 'KILN_POOLED_WITHDRAW',
+  KilnPooledMultiClaim = 'KILN_POOLED_MULTI_CLAIM',
   KilnDefiDeposit = 'KILN_DEFI_DEPOSIT',
   KilnDefiWithdraw = 'KILN_DEFI_WITHDRAW',
 }
@@ -45,7 +45,7 @@ export type ConfirmationView =
   | DedicatedDepositConfirmationView
   | PooledDepositConfirmationView
   | PooledRequestExitConfirmationView
-  | PooledWithdrawConfirmationView
+  | PooledMultiClaimConfirmationView
   | DefiDepositConfirmationView
   | DefiWithdrawConfirmationView;
 

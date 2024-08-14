@@ -30,7 +30,7 @@ import {
   DedicatedDepositConfirmationView,
   PooledDepositConfirmationView,
   PooledRequestExitConfirmationView,
-  PooledWithdrawConfirmationView,
+  PooledMultiClaimConfirmationView,
   DefiDepositConfirmationView,
   DefiWithdrawConfirmationView,
 } from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
@@ -91,7 +91,7 @@ export class TransactionsViewService {
     const pooledStakingRequestExitData =
       this.pooledStakingHelper.findRequestExit(args.transactionDataDto.data);
 
-    const pooledStakingWithdrawData = this.pooledStakingHelper.findWithdraw(
+    const pooledStakingWithdrawData = this.pooledStakingHelper.findMultiClaim(
       args.transactionDataDto.data,
     );
 
@@ -347,7 +347,7 @@ export class TransactionsViewService {
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-  }): Promise<PooledWithdrawConfirmationView> {
+  }): Promise<PooledMultiClaimConfirmationView> {
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
@@ -374,7 +374,7 @@ export class TransactionsViewService {
       }),
     ]);
 
-    return new PooledWithdrawConfirmationView({
+    return new PooledMultiClaimConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
       estimatedEntryTime: networkStats.estimated_entry_time_seconds,

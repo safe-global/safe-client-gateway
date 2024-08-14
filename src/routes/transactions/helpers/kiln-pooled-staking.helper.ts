@@ -44,7 +44,7 @@ export class KilnPooledStakingHelper {
     );
   }
 
-  public findWithdraw(data: `0x${string}`): `0x${string}` | null {
+  public findMultiClaim(data: `0x${string}`): `0x${string}` | null {
     const selector = toFunctionSelector(
       'function multiClaim(address[] exitQueues, uint256[][] ticketIds, uint32[][] casksIds) external',
     );

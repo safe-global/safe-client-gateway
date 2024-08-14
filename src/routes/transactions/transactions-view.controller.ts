@@ -41,7 +41,7 @@ import {
   DedicatedDepositConfirmationView,
   PooledDepositConfirmationView,
   PooledRequestExitConfirmationView,
-  PooledWithdrawConfirmationView,
+  PooledMultiClaimConfirmationView,
   DefiDepositConfirmationView,
   DefiWithdrawConfirmationView,
 } from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
@@ -64,7 +64,7 @@ export class TransactionsViewController {
         { $ref: getSchemaPath(DedicatedDepositConfirmationView) },
         { $ref: getSchemaPath(PooledDepositConfirmationView) },
         { $ref: getSchemaPath(PooledRequestExitConfirmationView) },
-        { $ref: getSchemaPath(PooledWithdrawConfirmationView) },
+        { $ref: getSchemaPath(PooledMultiClaimConfirmationView) },
         { $ref: getSchemaPath(DefiDepositConfirmationView) },
         { $ref: getSchemaPath(DefiWithdrawConfirmationView) },
       ],
@@ -76,7 +76,7 @@ export class TransactionsViewController {
     DedicatedDepositConfirmationView,
     PooledDepositConfirmationView,
     PooledRequestExitConfirmationView,
-    PooledWithdrawConfirmationView,
+    PooledMultiClaimConfirmationView,
     DefiDepositConfirmationView,
     DefiWithdrawConfirmationView,
   )

@@ -203,11 +203,11 @@ export class PooledRequestExitConfirmationView
   }
 }
 
-export class PooledWithdrawConfirmationView
+export class PooledMultiClaimConfirmationView
   implements IBaselineConfirmationView, IStakingTimes, IPooled
 {
-  @ApiProperty({ enum: [ConfirmationViewDecodedType.KilnPooledWithdraw] })
-  type = ConfirmationViewDecodedType.KilnPooledWithdraw;
+  @ApiProperty({ enum: [ConfirmationViewDecodedType.KilnPooledMultiClaim] })
+  type = ConfirmationViewDecodedType.KilnPooledMultiClaim;
 
   @ApiProperty()
   method: string;
