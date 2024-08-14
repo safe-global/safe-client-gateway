@@ -25,15 +25,31 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { faker } from '@faker-js/faker';
 import { Server } from 'net';
-import { getAddress } from 'viem';
+import { encodeFunctionData, erc4626Abi, getAddress, parseAbi } from 'viem';
+import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
+import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
+import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
+import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/pooled-staking-stats.entity.builder';
+import { TestBlockchainApiManagerModule } from '@/datasources/blockchain/__tests__/test.blockchain-api.manager';
+import {
+  BlockchainApiManagerModule,
+  IBlockchainApiManager,
+} from '@/domain/interfaces/blockchain-api.manager.interface';
+import { FakeBlockchainApiManager } from '@/datasources/blockchain/__tests__/fake.blockchain-api.manager';
+import { defiVaultStatsBuilder } from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
+
+const readContractMock = jest.fn();
 
 describe('TransactionsViewController tests', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let swapsApiUrl: string;
+  let stakingApiUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
-  const verifiedApp = faker.company.buzzNoun();
-  const chainId = '1';
+  let blockchainApiManager: FakeBlockchainApiManager;
+
+  const swapsVerifiedApp = faker.company.buzzNoun();
+  const swapsChainId = '1';
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -48,7 +64,7 @@ describe('TransactionsViewController tests', () => {
       swaps: {
         ...baseConfig.swaps,
         restrictApps: true,
-        allowedApps: [verifiedApp],
+        allowedApps: [swapsVerifiedApp],
       },
     });
 
@@ -63,14 +79,21 @@ describe('TransactionsViewController tests', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(BlockchainApiManagerModule)
+      .useModule(TestBlockchainApiManagerModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-    swapsApiUrl = configurationService.getOrThrow(`swaps.api.${chainId}`);
+    swapsApiUrl = configurationService.getOrThrow(`swaps.api.${swapsChainId}`);
+    stakingApiUrl = configurationService.getOrThrow('staking.mainnet.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
+    blockchainApiManager.getApi.mockImplementation(() => ({
+      readContract: readContractMock,
+    }));
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -115,7 +138,78 @@ describe('TransactionsViewController tests', () => {
   describe('Staking', () => {
     describe('Dedicated staking', () => {
       describe('deposit', () => {
-        it.todo('returns the dedicated staking `deposit` confirmation view');
+        it('returns the dedicated staking `deposit` confirmation view', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('status', 'active')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+          const networkStats = networkStatsBuilder().build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/kiln-stats`) {
+              return Promise.resolve({
+                data: { data: dedicatedStakingStats },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_DEDICATED_STAKE',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              fee: +deployment.product_fee!,
+              monthlyNrr:
+                dedicatedStakingStats.gross_apy.last_30d *
+                (1 - +deployment.product_fee!),
+              annualNrr:
+                dedicatedStakingStats.gross_apy.last_30d *
+                (1 - +deployment.product_fee!),
+            });
+        });
 
         it.todo(
           'returns the generic confirmation view if the deployment is not available',
@@ -149,7 +243,104 @@ describe('TransactionsViewController tests', () => {
 
     describe('Pooled staking', () => {
       describe('stake', () => {
-        it.todo('returns the pooled staking `stake` confirmation view');
+        it('returns the pooled staking `stake` confirmation view', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling')
+            .with('status', 'active')
+            .build();
+          const pooledStakingStats = pooledStakingStatsBuilder()
+            .with('address', deployment.address)
+            .build();
+          const networkStats = networkStatsBuilder().build();
+          const poolToken = tokenBuilder()
+            .with('address', deployment.address)
+            .with('decimals', null) // Test default decimals
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/onchain/v2/network-stats`) {
+              return Promise.resolve({
+                data: { data: pooledStakingStats },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: poolToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_POOLED_DEPOSIT',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              fee: pooledStakingStats.fee,
+              monthlyNrr: pooledStakingStats.one_month.nrr,
+              annualNrr: pooledStakingStats.one_year.nrr,
+              pool: {
+                value: deployment.address,
+                name: deployment.display_name,
+                logoUri: null,
+              },
+              exchangeRate: rate.toString(),
+              poolToken: {
+                address: poolToken.address,
+                decimals: 18,
+                logoUri: poolToken.logoUri,
+                name: poolToken.name,
+                symbol: poolToken.symbol,
+                trusted: poolToken.trusted,
+              },
+            });
+        });
 
         it.todo(
           'returns the generic confirmation view if the deployment is not available',
@@ -185,7 +376,92 @@ describe('TransactionsViewController tests', () => {
       });
 
       describe('requestExit', () => {
-        it.todo('returns the pooled staking `requestExit` confirmation view');
+        it('returns the pooled staking `requestExit` confirmation view', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling')
+            .with('status', 'active')
+            .build();
+          const networkStats = networkStatsBuilder().build();
+          const poolToken = tokenBuilder()
+            .with('address', deployment.address)
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function requestExit(uint256 amount) external']),
+            args: [faker.number.bigInt()],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: poolToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_POOLED_REQUEST_EXIT',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              pool: {
+                value: deployment.address,
+                name: deployment.display_name,
+                logoUri: null,
+              },
+              exchangeRate: rate.toString(),
+              poolToken: {
+                address: poolToken.address,
+                decimals: poolToken.decimals,
+                logoUri: poolToken.logoUri,
+                name: poolToken.name,
+                symbol: poolToken.symbol,
+                trusted: poolToken.trusted,
+              },
+            });
+        });
 
         it.todo(
           'returns the generic confirmation view if the deployment is not available',
@@ -217,7 +493,97 @@ describe('TransactionsViewController tests', () => {
       });
 
       describe('multiClaim', () => {
-        it.todo('returns the pooled staking `multiClaim` confirmation view');
+        it('returns the pooled staking `multiClaim` confirmation view', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling')
+            .build();
+          const networkStats = networkStatsBuilder().build();
+          const poolToken = tokenBuilder()
+            .with('address', deployment.address)
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi([
+              'function multiClaim(address[] exitQueues, uint256[][] ticketIds, uint32[][] casksIds) external',
+            ]),
+            args: [
+              [getAddress(faker.finance.ethereumAddress())],
+              [[faker.number.bigInt()]],
+              [[faker.number.int()]],
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: poolToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_POOLED_MULTI_CLAIM',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              pool: {
+                value: deployment.address,
+                name: deployment.display_name,
+                logoUri: null,
+              },
+              exchangeRate: rate.toString(),
+              poolToken: {
+                address: poolToken.address,
+                decimals: poolToken.decimals,
+                logoUri: poolToken.logoUri,
+                name: poolToken.name,
+                symbol: poolToken.symbol,
+                trusted: poolToken.trusted,
+              },
+            });
+        });
 
         it.todo(
           'returns the generic confirmation view if the deployment is not available',
@@ -251,7 +617,102 @@ describe('TransactionsViewController tests', () => {
 
     describe('DeFi', () => {
       describe('deposit', () => {
-        it.todo('returns the DeFi vault `deposit` confirmation view');
+        it('returns the DeFi vault `deposit` confirmation view', async () => {
+          const chain = chainBuilder()
+            .with(
+              'chainId',
+              faker.helpers.arrayElement(['1', '42161', '56', '137', '10']),
+            )
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder().build();
+          const vaultToken = tokenBuilder()
+            .with('address', deployment.address)
+            .with('decimals', null) // Test default decimals
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: vaultToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_DEFI_DEPOSIT',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              fee: 0, // TODO
+              monthlyNrr: defiVaultStats.nrr,
+              annualNrr: defiVaultStats.nrr,
+              vault: {
+                value: deployment.address,
+                name: deployment.display_name,
+                logoUri: null,
+              },
+              exchangeRate: rate.toString(),
+              vaultToken: {
+                address: vaultToken.address,
+                decimals: defiVaultStats.asset_decimals,
+                logoUri: vaultToken.logoUri,
+                name: vaultToken.name,
+                symbol: vaultToken.symbol,
+                trusted: vaultToken.trusted,
+              },
+            });
+        });
 
         it.todo(
           'returns the generic confirmation view if the deployment is not available',
@@ -290,8 +751,100 @@ describe('TransactionsViewController tests', () => {
         );
       });
 
-      describe('deposit', () => {
-        it.todo('returns the DeFi vault `withdraw` confirmation view');
+      describe('withdraw', () => {
+        it('returns the DeFi vault `withdraw` confirmation view', async () => {
+          const chain = chainBuilder()
+            .with(
+              'chainId',
+              faker.helpers.arrayElement(['1', '42161', '56', '137', '10']),
+            )
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder().build();
+          const vaultToken = tokenBuilder()
+            .with('address', deployment.address)
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: vaultToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_DEFI_WITHDRAW',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              vault: {
+                value: deployment.address,
+                name: deployment.display_name,
+                logoUri: null,
+              },
+              exchangeRate: rate.toString(),
+              vaultToken: {
+                address: vaultToken.address,
+                decimals: vaultToken.decimals,
+                logoUri: vaultToken.logoUri,
+                name: vaultToken.name,
+                symbol: vaultToken.symbol,
+                trusted: vaultToken.trusted,
+              },
+            });
+        });
 
         it.todo(
           'returns the generic confirmation view if the deployment is not available',
@@ -334,14 +887,14 @@ describe('TransactionsViewController tests', () => {
 
   describe('Swaps', () => {
     it('Gets swap confirmation view with swap data', async () => {
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
       const preSignatureEncoder = setPreSignatureEncoder();
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
-        .with('fullAppData', `{ "appCode": "${verifiedApp}" }`)
+        .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
         .build();
       const buyToken = tokenBuilder().with('address', order.buyToken).build();
       const sellToken = tokenBuilder().with('address', order.sellToken).build();
@@ -426,7 +979,7 @@ describe('TransactionsViewController tests', () => {
       /**
        * @see https://sepolia.etherscan.io/address/0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74
        */
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder()
         .with('address', '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381')
         .build();
@@ -435,7 +988,7 @@ describe('TransactionsViewController tests', () => {
       const appDataHash =
         '0xf7be7261f56698c258bf75f888d68a00c85b22fb21958b9009c719eb88aebda0';
       const fullAppData = {
-        fullAppData: JSON.stringify({ appCode: verifiedApp }),
+        fullAppData: JSON.stringify({ appCode: swapsVerifiedApp }),
       };
       const dataDecoded = dataDecodedBuilder().build();
       const buyToken = tokenBuilder()
@@ -500,14 +1053,14 @@ describe('TransactionsViewController tests', () => {
     });
 
     it('Gets Generic confirmation view if order data is not available', async () => {
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
       const preSignatureEncoder = setPreSignatureEncoder();
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
-        .with('fullAppData', `{ "appCode": "${verifiedApp}" }`)
+        .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
         .build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -544,14 +1097,14 @@ describe('TransactionsViewController tests', () => {
     });
 
     it('Gets Generic confirmation view if buy token data is not available', async () => {
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
       const preSignatureEncoder = setPreSignatureEncoder();
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
-        .with('fullAppData', `{ "appCode": "${verifiedApp}" }`)
+        .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
         .build();
       const sellToken = tokenBuilder().with('address', order.sellToken).build();
       networkService.get.mockImplementation(({ url }) => {
@@ -599,14 +1152,14 @@ describe('TransactionsViewController tests', () => {
     });
 
     it('Gets Generic confirmation view if sell token data is not available', async () => {
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
       const preSignatureEncoder = setPreSignatureEncoder();
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
-        .with('fullAppData', `{ "appCode": "${verifiedApp}" }`)
+        .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
         .build();
       const buyToken = tokenBuilder().with('address', order.sellToken).build();
       networkService.get.mockImplementation(({ url }) => {
@@ -654,7 +1207,7 @@ describe('TransactionsViewController tests', () => {
     });
 
     it('Gets Generic confirmation view if swap app is restricted', async () => {
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
       const preSignatureEncoder = setPreSignatureEncoder();
@@ -711,7 +1264,7 @@ describe('TransactionsViewController tests', () => {
     });
 
     it('executedSurplusFee is rendered as null if not available', async () => {
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
       const preSignatureEncoder = setPreSignatureEncoder();
@@ -719,7 +1272,7 @@ describe('TransactionsViewController tests', () => {
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
         .with('executedSurplusFee', null)
-        .with('fullAppData', `{ "appCode": "${verifiedApp}" }`)
+        .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
         .build();
       const buyToken = tokenBuilder().with('address', order.buyToken).build();
       const sellToken = tokenBuilder().with('address', order.sellToken).build();
