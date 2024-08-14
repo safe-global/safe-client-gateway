@@ -11,6 +11,7 @@ import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.
 import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
+import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { TransactionsRepositoryModule } from '@/domain/transactions/transactions.repository.interface';
 import { Event } from '@/routes/hooks/entities/event.entity';
 import { Module } from '@nestjs/common';
@@ -31,6 +32,7 @@ export interface IHooksRepository {
     EventNotificationsHelperModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
+    StakingRepositoryModule,
     TransactionsRepositoryModule,
     QueuesRepositoryModule,
   ],
@@ -54,6 +56,7 @@ export class HooksRepositoryWithNotificationsModule {}
     MessagesRepositoryModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
+    StakingRepositoryModule,
     TransactionsRepositoryModule,
     QueuesRepositoryModule,
   ],

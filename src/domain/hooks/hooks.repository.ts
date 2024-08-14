@@ -19,6 +19,7 @@ import { EventSchema } from '@/routes/hooks/entities/schemas/event.schema';
 import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository.interface';
 import { IHooksRepository } from '@/domain/hooks/hooks.repository.interface';
 import { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
+import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 
 @Injectable()
 export class HooksRepositoryWithNotifications implements IHooksRepository {
@@ -40,6 +41,8 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(IStakingRepository)
+    private readonly stakingRepository: IStakingRepository,
     @Inject(ITransactionsRepository)
     private readonly transactionsRepository: ITransactionsRepository,
     @Inject(LoggingService)
@@ -329,6 +332,8 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
           this.chainsRepository.clearChain(event.chainId).then(() => {
             // RPC may have changed
             this.blockchainRepository.clearApi(event.chainId);
+            // Testnet status may have changed
+            this.stakingRepository.clearApi(event.chainId);
             // Transaction Service may have changed
             this.transactionsRepository.clearApi(event.chainId);
             this.balancesRepository.clearApi(event.chainId);
@@ -442,6 +447,8 @@ export class HooksRepository implements IHooksRepository {
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(IStakingRepository)
+    private readonly stakingRepository: IStakingRepository,
     @Inject(ITransactionsRepository)
     private readonly transactionsRepository: ITransactionsRepository,
     @Inject(LoggingService)
@@ -726,6 +733,8 @@ export class HooksRepository implements IHooksRepository {
           this.chainsRepository.clearChain(event.chainId).then(() => {
             // RPC may have changed
             this.blockchainRepository.clearApi(event.chainId);
+            // Testnet status may have changed
+            this.stakingRepository.clearApi(event.chainId);
             // Transaction Service may have changed
             this.transactionsRepository.clearApi(event.chainId);
             this.balancesRepository.clearApi(event.chainId);
