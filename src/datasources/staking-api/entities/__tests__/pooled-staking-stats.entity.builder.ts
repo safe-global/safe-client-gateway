@@ -1,9 +1,9 @@
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { PooledStaking } from '@/datasources/staking-api/entities/pooled-staking.entity';
+import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
-type RevenueMetrics = PooledStaking[
+type RevenueMetrics = PooledStakingStats[
   | 'one_year'
   | 'six_month'
   | 'three_month'
@@ -15,7 +15,7 @@ function pooledStakingStatsPeriodRevenueMetricsBuilder(): IBuilder<RevenueMetric
     .with('nrr', faker.number.float());
 }
 
-type Pool = PooledStaking['pools'][number];
+type Pool = PooledStakingStats['pools'][number];
 function pooledStakingStatsPoolBuilder(): IBuilder<Pool> {
   return new Builder<Pool>()
     .with('address', getAddress(faker.finance.ethereumAddress()))
@@ -27,8 +27,8 @@ function pooledStakingStatsPoolBuilder(): IBuilder<Pool> {
     .with('operator_address', getAddress(faker.finance.ethereumAddress()));
 }
 
-export function pooledStakingStatsBuilder(): IBuilder<PooledStaking> {
-  return new Builder<PooledStaking>()
+export function pooledStakingStatsBuilder(): IBuilder<PooledStakingStats> {
+  return new Builder<PooledStakingStats>()
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('name', faker.lorem.sentence())
     .with('symbol', faker.finance.currencyCode())

@@ -1,7 +1,8 @@
 import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
-import { KilnStats } from '@/datasources/staking-api/entities/kiln-stats.entity';
+import { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
-import { PooledStaking } from '@/datasources/staking-api/entities/pooled-staking.entity';
+import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
+import { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 
 export const IStakingApi = Symbol('IStakingApi');
 
@@ -10,7 +11,12 @@ export interface IStakingApi {
 
   getNetworkStats(): Promise<NetworkStats>;
 
-  getKilnStats(): Promise<KilnStats>;
+  getDedicatedStakingStats(): Promise<DedicatedStakingStats>;
 
-  getPooledStakingStats(pool: `0x${string}`): Promise<PooledStaking>;
+  getPooledStakingStats(pool: `0x${string}`): Promise<PooledStakingStats>;
+
+  getDefiVaultStats(args: {
+    chainId: string;
+    vault: `0x${string}`;
+  }): Promise<Array<DefiVaultStats>>;
 }

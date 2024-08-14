@@ -74,6 +74,35 @@ describe('DeploymentSchema', () => {
     );
   });
 
+  it('should allow numeric string product_fee values', () => {
+    const deployment = deploymentBuilder()
+      .with('product_fee', faker.string.numeric())
+      .build();
+
+    const result = DeploymentSchema.safeParse(deployment);
+
+    expect(result.success && result.data.product_fee).toBe(
+      deployment.product_fee,
+    );
+  });
+
+  it('should not allow numeric product_fee values', () => {
+    const deployment = deploymentBuilder()
+      .with('product_fee', faker.number.float() as unknown as string)
+      .build();
+
+    const result = DeploymentSchema.safeParse(deployment);
+
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'invalid_type',
+      expected: 'string',
+      message: 'Expected string, received number',
+      path: ['product_fee'],
+      received: 'number',
+    });
+  });
+
   it('should default product_fee to null', () => {
     const deployment = deploymentBuilder().build();
     // @ts-expect-error - inferred type does not allow undefined

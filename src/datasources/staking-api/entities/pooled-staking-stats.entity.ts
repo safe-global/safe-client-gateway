@@ -2,7 +2,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 
-export const PooledStakingSchema = z.object({
+export const PooledStakingStatsSchema = z.object({
   address: AddressSchema,
   name: z.string(),
   symbol: z.string(),
@@ -45,4 +45,4 @@ export const PooledStakingSchema = z.object({
   ),
 });
 
-export type PooledStaking = z.infer<typeof PooledStakingSchema>;
+export type PooledStakingStats = z.infer<typeof PooledStakingStatsSchema>;

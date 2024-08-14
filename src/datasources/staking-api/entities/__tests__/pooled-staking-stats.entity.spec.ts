@@ -1,16 +1,16 @@
 import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/pooled-staking-stats.entity.builder';
 import {
-  PooledStaking,
-  PooledStakingSchema,
-} from '@/datasources/staking-api/entities/pooled-staking.entity';
+  PooledStakingStats,
+  PooledStakingStatsSchema,
+} from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 describe('PooledStakingSchema', () => {
-  it('should validate a PooledStaking object', () => {
+  it('should validate a PooledStakingStats object', () => {
     const pooledStakingStats = pooledStakingStatsBuilder().build();
 
-    const result = PooledStakingSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
     expect(result.success).toBe(true);
   });
@@ -21,7 +21,7 @@ describe('PooledStakingSchema', () => {
       .with('address', nonChecksummedAddress as `0x${string}`)
       .build();
 
-    const result = PooledStakingSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
     expect(result.success && result.data.address).toBe(
       getAddress(nonChecksummedAddress),
@@ -35,7 +35,7 @@ describe('PooledStakingSchema', () => {
         .with(key, faker.string.alpha())
         .build();
 
-      const result = PooledStakingSchema.safeParse(pooledStakingStats);
+      const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
       expect(!result.success && result.error.issues.length).toBe(1);
       expect(!result.success && result.error.issues[0]).toStrictEqual({
@@ -50,7 +50,7 @@ describe('PooledStakingSchema', () => {
     const pooledStakingStats = pooledStakingStatsBuilder().build();
     pooledStakingStats.pools[0].total_deposited = faker.string.alpha();
 
-    const result = PooledStakingSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
     expect(!result.success && result.error.issues.length).toBe(1);
     expect(!result.success && result.error.issues[0]).toStrictEqual({
@@ -69,7 +69,7 @@ describe('PooledStakingSchema', () => {
     const pooledStakingStats = pooledStakingStatsBuilder().build();
     pooledStakingStats.pools[0][key] = nonChecksummedAddress as `0x${string}`;
 
-    const result = PooledStakingSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
     expect(result.success && result.data.pools[0][key]).toBe(
       getAddress(nonChecksummedAddress),
@@ -86,10 +86,16 @@ describe('PooledStakingSchema', () => {
       .with(key, faker.string.numeric() as unknown as number)
       .build();
 
-    const result = PooledStakingSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
     expect(!result.success && result.error.issues.length).toBe(1);
-    expect(!result.success && result.error.issues[0]).toStrictEqual({});
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'invalid_type',
+      expected: 'number',
+      message: 'Expected number, received string',
+      path: [key],
+      received: 'string',
+    });
   });
 
   it.each([
@@ -103,10 +109,25 @@ describe('PooledStakingSchema', () => {
     pooledStakingStats[key].nrr = faker.string.numeric() as unknown as number;
     pooledStakingStats[key].grr = faker.string.numeric() as unknown as number;
 
-    const result = PooledStakingSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
-    expect(!result.success && result.error.issues.length).toBe(1);
-    expect(!result.success && result.error.issues[0]).toStrictEqual({});
+    expect(!result.success && result.error.issues.length).toBe(2);
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Expected number, received string',
+        path: [key, 'nrr'],
+        received: 'string',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Expected number, received string',
+        path: [key, 'grr'],
+        received: 'string',
+      },
+    ]);
   });
 
   it.each(['ratio' as const, 'commission' as const])(
@@ -116,32 +137,39 @@ describe('PooledStakingSchema', () => {
       pooledStakingStats.pools[0][key] =
         faker.string.numeric() as unknown as number;
 
-      const result = PooledStakingSchema.safeParse(pooledStakingStats);
+      const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
       expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({});
+      expect(!result.success && result.error.issues[0]).toStrictEqual({
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Expected number, received string',
+        path: ['pools', 0, key],
+        received: 'string',
+      });
     },
   );
 
-  it.each(Object.keys(PooledStakingSchema.shape) as Array<keyof PooledStaking>)(
-    'should validate missing %s values',
-    (key) => {
-      const pooledStakingStats = pooledStakingStatsBuilder().build();
-      delete pooledStakingStats[key];
+  it.each(
+    Object.keys(PooledStakingStatsSchema.shape) as Array<
+      keyof PooledStakingStats
+    >,
+  )('should validate missing %s values', (key) => {
+    const pooledStakingStats = pooledStakingStatsBuilder().build();
+    delete pooledStakingStats[key];
 
-      const result = PooledStakingSchema.safeParse(pooledStakingStats);
+    const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual;
-    },
-  );
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual;
+  });
 
-  it('should not validate an invalid PooledStaking object', () => {
+  it('should not validate an invalid PooledStakingStats object', () => {
     const pooledStaking = {
-      invalid: 'PooledStaking',
+      invalid: 'PooledStakingStats',
     };
 
-    const result = PooledStakingSchema.safeParse(pooledStaking);
+    const result = PooledStakingStatsSchema.safeParse(pooledStaking);
 
     expect(!result.success && result.error.issues).toStrictEqual([]);
   });
