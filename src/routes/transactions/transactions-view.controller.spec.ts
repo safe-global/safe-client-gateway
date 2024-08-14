@@ -114,21 +114,221 @@ describe('TransactionsViewController tests', () => {
 
   describe('Staking', () => {
     describe('Dedicated staking', () => {
-      it.todo('Gets stake confirmation view');
+      describe('deposit', () => {
+        it.todo('returns the dedicated staking `deposit` confirmation view');
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not dedicated-specific',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment chain is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not active',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment has no product fee',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the dedicated staking stats are not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the network stats are not available',
+        );
+      });
     });
 
     describe('Pooled staking', () => {
-      it.todo('Gets stake confirmation view');
+      describe('stake', () => {
+        it.todo('returns the pooled staking `stake` confirmation view');
 
-      it.todo('Gets exit request confirmation view');
+        it.todo(
+          'returns the generic confirmation view if the deployment is not available',
+        );
 
-      it.todo('Gets withdraw confirmation view');
+        it.todo(
+          'returns the generic confirmation view if the deployment is not pool-specific',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment chain is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not active',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the pooled staking stats are not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the network stats are not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the pool token is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the exchange rate is not available',
+        );
+      });
+
+      describe('requestExit', () => {
+        it.todo('returns the pooled staking `requestExit` confirmation view');
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not pool-specific',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment chain is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment status is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the network stats are not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the pool token is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the exchange rate is not available',
+        );
+      });
+
+      describe('multiClaim', () => {
+        it.todo('returns the pooled staking `multiClaim` confirmation view');
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not pool-specific',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment chain is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment status is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the network stats are not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the pool token is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the exchange rate is not available',
+        );
+      });
     });
 
     describe('DeFi', () => {
-      it.todo('Gets deposit confirmation view');
+      describe('deposit', () => {
+        it.todo('returns the DeFi vault `deposit` confirmation view');
 
-      it.todo('Gets withdraw confirmation view');
+        it.todo(
+          'returns the generic confirmation view if the deployment is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not defi-specific',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment chain is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not active',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the DeFi vault is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the DeFi vault protocol is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the DeFi vault chain is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the exchange rate is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the vault token is not available',
+        );
+      });
+
+      describe('deposit', () => {
+        it.todo('returns the DeFi vault `withdraw` confirmation view');
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment is not defi-specific',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment chain is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the deployment status is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the DeFi vault is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the DeFi vault protocol is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the DeFi vault chain is unknown',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the exchange rate is not available',
+        );
+
+        it.todo(
+          'returns the generic confirmation view if the vault token is not available',
+        );
+      });
     });
   });
 
