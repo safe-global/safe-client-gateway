@@ -171,6 +171,112 @@ describe('PooledStakingSchema', () => {
 
     const result = PooledStakingStatsSchema.safeParse(pooledStaking);
 
-    expect(!result.success && result.error.issues).toStrictEqual([]);
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Required',
+        path: ['address'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Required',
+        path: ['name'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Required',
+        path: ['symbol'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Required',
+        path: ['fee'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Required',
+        path: ['total_supply'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Required',
+        path: ['total_underlying_supply'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Required',
+        path: ['total_stakers'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Required',
+        path: ['nrr'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Required',
+        path: ['grr'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'object',
+        message: 'Required',
+        path: ['one_year'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'object',
+        message: 'Required',
+        path: ['six_month'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'object',
+        message: 'Required',
+        path: ['three_month'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'object',
+        message: 'Required',
+        path: ['one_month'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'object',
+        message: 'Required',
+        path: ['one_week'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'array',
+        message: 'Required',
+        path: ['pools'],
+        received: 'undefined',
+      },
+    ]);
   });
 });

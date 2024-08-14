@@ -5,7 +5,7 @@ import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/
 import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
 import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/pooled-staking-stats.entity.builder';
-import { KilnStakingApi } from '@/datasources/staking-api/kiln-api.service';
+import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 import { defiVaultStatsBuilder } from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
@@ -15,8 +15,8 @@ const networkService = jest.mocked({
 } as jest.MockedObjectDeep<INetworkService>);
 const mockNetworkService = jest.mocked(networkService);
 
-describe('KilnStakingApi', () => {
-  let target: KilnStakingApi;
+describe('KilnApi', () => {
+  let target: KilnApi;
 
   let baseUrl: string;
   let apiKey: string;
@@ -28,12 +28,7 @@ describe('KilnStakingApi', () => {
     baseUrl = faker.internet.url({ appendSlash: false });
     apiKey = faker.string.hexadecimal({ length: 32 });
     httpErrorFactory = new HttpErrorFactory();
-    target = new KilnStakingApi(
-      baseUrl,
-      apiKey,
-      mockNetworkService,
-      httpErrorFactory,
-    );
+    target = new KilnApi(baseUrl, apiKey, mockNetworkService, httpErrorFactory);
   });
 
   describe('getDeployments', () => {

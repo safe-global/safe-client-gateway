@@ -4,7 +4,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { KilnStakingApi } from '@/datasources/staking-api/kiln-api.service';
+import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
 import { IStakingApi } from '@/domain/interfaces/staking-api.interface';
@@ -36,7 +36,7 @@ export class StakingApiManager implements IStakingApiManager {
       chain.isTestnet ? 'staking.testnet.apiKey' : 'staking.mainnet.apiKey',
     );
 
-    this.apis[chainId] = new KilnStakingApi(
+    this.apis[chainId] = new KilnApi(
       baseUrl,
       apiKey,
       this.networkService,

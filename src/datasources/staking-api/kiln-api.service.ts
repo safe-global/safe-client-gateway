@@ -7,7 +7,7 @@ import { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedica
 import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
 import { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 
-export class KilnStakingApi implements IStakingApi {
+export class KilnApi implements IStakingApi {
   constructor(
     private readonly baseUrl: string,
     private readonly apiKey: string,
