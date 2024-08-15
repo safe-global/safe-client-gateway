@@ -25,6 +25,7 @@ import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-tra
 import { DeviceType } from '@/domain/notifications/entities/device.entity';
 import { getAddress } from 'viem';
 import { ILoggingService } from '@/logging/logging.interface';
+import { indexingStatusBuilder } from '@/domain/chains/entities/__tests__/indexing-status.builder';
 
 const dataSource = {
   get: jest.fn(),
@@ -60,6 +61,7 @@ describe('TransactionApi', () => {
   let httpErrorFactory: HttpErrorFactory;
   let service: TransactionApi;
   let defaultExpirationTimeInSeconds: number;
+  let indexingExpirationTimeInSeconds: number;
   let notFoundExpireTimeSeconds: number;
   let ownersTtlSeconds: number;
 
@@ -68,11 +70,15 @@ describe('TransactionApi', () => {
 
     httpErrorFactory = new HttpErrorFactory();
     defaultExpirationTimeInSeconds = faker.number.int();
+    indexingExpirationTimeInSeconds = faker.number.int();
     notFoundExpireTimeSeconds = faker.number.int();
     ownersTtlSeconds = faker.number.int();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.indexing') {
+        return indexingExpirationTimeInSeconds;
       }
       if (key === 'expirationTimeInSeconds.notFound.default') {
         return notFoundExpireTimeSeconds;
@@ -262,6 +268,57 @@ describe('TransactionApi', () => {
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
         url: getSingletonsUrl,
+      });
+    });
+  });
+
+  describe('getIndexingStatus', () => {
+    it('should return the indexing status received', async () => {
+      const indexingStatus = indexingStatusBuilder().build();
+      const getIndexingStatusUrl = `${baseUrl}/api/v1/about/indexing/`;
+      const cacheDir = new CacheDir(`${chainId}_indexing`, '');
+      mockDataSource.get.mockResolvedValueOnce(indexingStatus);
+
+      const actual = await service.getIndexingStatus();
+
+      expect(actual).toBe(indexingStatus);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        expireTimeSeconds: indexingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        url: getIndexingStatusUrl,
+      });
+    });
+
+    const errorMessage = faker.word.words();
+    it.each([
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
+      ['standard', new Error(errorMessage)],
+    ])(`should forward a %s error`, async (_, error) => {
+      const getIndexingStatusUrl = `${baseUrl}/api/v1/about/indexing/`;
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      const cacheDir = new CacheDir(`${chainId}_indexing`, '');
+      mockDataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getIndexingStatusUrl),
+          {
+            status: statusCode,
+          } as Response,
+          error,
+        ),
+      );
+      await expect(service.getIndexingStatus()).rejects.toThrow(expected);
+
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        expireTimeSeconds: indexingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        url: getIndexingStatusUrl,
       });
     });
   });
@@ -3600,6 +3657,9 @@ describe('TransactionApi', () => {
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
         if (key === 'expirationTimeInSeconds.holesky') {
           return holeskyExpirationTime;
+        }
+        if (key === 'expirationTimeInSeconds.indexing') {
+          return indexingExpirationTimeInSeconds;
         }
         if (key === 'expirationTimeInSeconds.default') {
           return defaultExpirationTimeInSeconds;

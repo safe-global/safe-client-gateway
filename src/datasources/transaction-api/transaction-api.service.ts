@@ -14,6 +14,7 @@ import { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { Estimation } from '@/domain/estimations/entities/estimation.entity';
 import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
+import { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
 import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { Message } from '@/domain/messages/entities/message.entity';
 import { Device } from '@/domain/notifications/entities/device.entity';
@@ -39,6 +40,7 @@ export class TransactionApi implements ITransactionApi {
   private static readonly HOLESKY_CHAIN_ID = '17000';
 
   private readonly defaultExpirationTimeInSeconds: number;
+  private readonly indexingExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private readonly tokenNotFoundExpirationTimeSeconds: number;
   private readonly contractNotFoundExpirationTimeSeconds: number;
@@ -54,6 +56,11 @@ export class TransactionApi implements ITransactionApi {
     private readonly networkService: INetworkService,
     private readonly loggingService: ILoggingService,
   ) {
+    this.indexingExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.indexing',
+      );
+
     // TODO: Remove temporary cache times for Holesky chain.
     if (chainId === TransactionApi.HOLESKY_CHAIN_ID) {
       const holeskyExpirationTime =
@@ -136,6 +143,21 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
+  async getIndexingStatus(): Promise<IndexingStatus> {
+    try {
+      const cacheDir = CacheRouter.getIndexingCacheDir(this.chainId);
+      const url = `${this.baseUrl}/api/v1/about/indexing/`;
+      return await this.dataSource.get({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.indexingExpirationTimeInSeconds,
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));

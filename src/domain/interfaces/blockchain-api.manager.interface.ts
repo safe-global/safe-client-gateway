@@ -3,6 +3,7 @@ import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { PublicClient } from 'viem';
 import { Module } from '@nestjs/common';
 import { IApiManager } from '@/domain/interfaces/api.manager.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 
 export const IBlockchainApiManager = Symbol('IBlockchainApiManager');
 
@@ -12,6 +13,7 @@ export interface IBlockchainApiManager extends IApiManager<PublicClient> {}
 @Module({
   imports: [ConfigApiModule],
   providers: [
+    HttpErrorFactory,
     { provide: IBlockchainApiManager, useClass: BlockchainApiManager },
   ],
   exports: [IBlockchainApiManager],

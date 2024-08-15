@@ -6,6 +6,7 @@ import { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import { Page } from '@/domain/entities/page.entity';
 import { Estimation } from '@/domain/estimations/entities/estimation.entity';
 import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
+import { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
 import { Message } from '@/domain/messages/entities/message.entity';
 import { Device } from '@/domain/notifications/entities/device.entity';
 import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
@@ -28,6 +29,8 @@ export interface ITransactionApi {
   getBackbone(): Promise<Backbone>;
 
   getSingletons(): Promise<Singleton[]>;
+
+  getIndexingStatus(): Promise<IndexingStatus>;
 
   getSafe(safeAddress: `0x${string}`): Promise<Safe>;
 

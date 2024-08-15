@@ -58,12 +58,15 @@ describe('Transaction API Manager Tests', () => {
       .with('vpcTransactionService', vpcTxServiceUrl)
       .build();
     const expirationTimeInSeconds = faker.number.int();
+    const indexingExpirationTimeInSeconds = faker.number.int();
     const notFoundExpireTimeSeconds = faker.number.int();
     const ownersTtlSeconds = faker.number.int();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
       else if (key === 'expirationTimeInSeconds.default')
         return expirationTimeInSeconds;
+      else if (key === 'expirationTimeInSeconds.indexing')
+        return indexingExpirationTimeInSeconds;
       else if (key === 'expirationTimeInSeconds.notFound.default')
         return notFoundExpireTimeSeconds;
       else if (key === 'expirationTimeInSeconds.notFound.contract')
