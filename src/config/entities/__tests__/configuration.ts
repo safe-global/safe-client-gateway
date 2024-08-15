@@ -108,6 +108,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   expirationTimeInSeconds: {
     default: faker.number.int(),
+    rpc: faker.number.int(),
     holesky: faker.number.int(),
     notFound: {
       default: faker.number.int(),
