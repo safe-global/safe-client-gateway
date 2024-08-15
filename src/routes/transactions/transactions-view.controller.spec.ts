@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, NotFoundException } from '@nestjs/common';
 import {
   INetworkService,
   NetworkService,
@@ -211,33 +211,359 @@ describe('TransactionsViewController tests', () => {
             });
         });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not available',
-        );
+        it('returns the generic confirmation view if the deployment is not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('status', 'active')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not dedicated-specific',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment chain is unknown',
-        );
+        it('returns the generic confirmation view if the deployment is not dedicated-specific', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling') // Pooling
+            .with('status', 'active')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not active',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment has no product fee',
-        );
+        it('returns the generic confirmation view if the deployment chain is unknown', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('chain', 'unknown') // Unknown
+            .with('product_type', 'dedicated')
+            .with('status', 'active')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'returns the generic confirmation view if the dedicated staking stats are not available',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the network stats are not available',
-        );
+        it('returns the generic confirmation view if the deployment is not active', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('status', 'unknown') // Not active
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the deployment has no product fee', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('status', 'active')
+            .with('product_fee', null) // No product fee
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the dedicated staking stats are not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('status', 'active')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const networkStats = networkStatsBuilder().build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/kiln-stats`) {
+              return Promise.reject(new NotFoundException());
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the network stats are not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('status', 'active')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/kiln-stats`) {
+              return Promise.resolve({
+                data: { data: dedicatedStakingStats },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
       });
     });
 
@@ -342,41 +668,197 @@ describe('TransactionsViewController tests', () => {
             });
         });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not available',
-        );
+        it('returns the generic confirmation view if the deployment is not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const to = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not pool-specific',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment chain is unknown',
-        );
+        it('returns the generic confirmation view if the deployment is not pool-specific', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated') // Not pooling
+            .with('status', 'active')
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not active',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the pooled staking stats are not available',
-        );
+        it('returns the generic confirmation view if the deployment chain is unknown', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('chain', 'unknown') // Unknown
+            .with('product_type', 'pooling')
+            .with('status', 'active')
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
 
-        it.todo(
-          'returns the generic confirmation view if the network stats are not available',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the pool token is not available',
-        );
+        it('returns the generic confirmation view if the deployment is not active', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling')
+            .with('status', 'unknown') // Not active
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
 
-        it.todo(
-          'returns the generic confirmation view if the exchange rate is not available',
-        );
-      });
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-      describe('requestExit', () => {
-        it('returns the pooled staking `requestExit` confirmation view', async () => {
+        it('returns the generic confirmation view if the pooled staking stats are not available', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
           const dataDecoded = dataDecodedBuilder().build();
           const deployment = deploymentBuilder()
@@ -391,8 +873,7 @@ describe('TransactionsViewController tests', () => {
           const rate = faker.number.bigInt();
           const safeAddress = faker.finance.ethereumAddress();
           const data = encodeFunctionData({
-            abi: parseAbi(['function requestExit(uint256 amount) external']),
-            args: [faker.number.bigInt()],
+            abi: parseAbi(['function stake() external payable']),
           });
           networkService.get.mockImplementation(({ url }) => {
             if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -403,6 +884,9 @@ describe('TransactionsViewController tests', () => {
                 data: { data: [deployment] },
                 status: 200,
               });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/onchain/v2/network-stats`) {
+              return Promise.reject(new NotFoundException());
             }
             if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
               return Promise.resolve({
@@ -439,74 +923,245 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_POOLED_REQUEST_EXIT',
+              type: 'GENERIC',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
-              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-              estimatedExitTime: networkStats.estimated_exit_time_seconds,
-              estimatedWithdrawalTime:
-                networkStats.estimated_withdrawal_time_seconds,
-              pool: {
-                value: deployment.address,
-                name: deployment.display_name,
-                logoUri: null,
-              },
-              exchangeRate: rate.toString(),
-              poolToken: {
-                address: poolToken.address,
-                decimals: poolToken.decimals,
-                logoUri: poolToken.logoUri,
-                name: poolToken.name,
-                symbol: poolToken.symbol,
-                trusted: poolToken.trusted,
-              },
             });
         });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment is not pool-specific',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment chain is unknown',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment status is unknown',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the network stats are not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the pool token is not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the exchange rate is not available',
-        );
-      });
-
-      describe('multiClaim', () => {
-        it('returns the pooled staking `multiClaim` confirmation view', async () => {
+        it('returns the generic confirmation view if the network stats are not available', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
           const dataDecoded = dataDecodedBuilder().build();
           const deployment = deploymentBuilder()
             .with('chain_id', +chain.chainId)
             .with('product_type', 'pooling')
+            .with('status', 'active')
             .build();
-          const networkStats = networkStatsBuilder().build();
+          const pooledStakingStats = pooledStakingStatsBuilder()
+            .with('address', deployment.address)
+            .build();
           const poolToken = tokenBuilder()
             .with('address', deployment.address)
             .build();
           const rate = faker.number.bigInt();
           const safeAddress = faker.finance.ethereumAddress();
           const data = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/onchain/v2/network-stats`) {
+              return Promise.resolve({
+                data: { data: pooledStakingStats },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.reject(new NotFoundException());
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: poolToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the pool token is not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling')
+            .with('status', 'active')
+            .build();
+          const pooledStakingStats = pooledStakingStatsBuilder()
+            .with('address', deployment.address)
+            .build();
+          const networkStats = networkStatsBuilder().build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/onchain/v2/network-stats`) {
+              return Promise.resolve({
+                data: { data: pooledStakingStats },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the exchange rate is not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling')
+            .with('status', 'active')
+            .build();
+          const pooledStakingStats = pooledStakingStatsBuilder()
+            .with('address', deployment.address)
+            .build();
+          const networkStats = networkStatsBuilder().build();
+          const poolToken = tokenBuilder()
+            .with('address', deployment.address)
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/onchain/v2/network-stats`) {
+              return Promise.resolve({
+                data: { data: pooledStakingStats },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: poolToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockRejectedValue(new NotFoundException());
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+      });
+
+      [
+        {
+          method: 'requestExit',
+          data: encodeFunctionData({
+            abi: parseAbi(['function requestExit(uint256 amount) external']),
+            args: [faker.number.bigInt()],
+          }),
+          type: 'KILN_POOLED_REQUEST_EXIT',
+        },
+        {
+          method: 'multiClaim',
+          data: encodeFunctionData({
             abi: parseAbi([
               'function multiClaim(address[] exitQueues, uint256[][] ticketIds, uint32[][] casksIds) external',
             ]),
@@ -515,114 +1170,465 @@ describe('TransactionsViewController tests', () => {
               [[faker.number.bigInt()]],
               [[faker.number.int()]],
             ],
-          });
-          networkService.get.mockImplementation(({ url }) => {
-            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-              return Promise.resolve({ data: chain, status: 200 });
-            }
-            if (url === `${stakingApiUrl}/v1/deployments`) {
-              return Promise.resolve({
-                data: { data: [deployment] },
-                status: 200,
-              });
-            }
-            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
-              return Promise.resolve({
-                data: { data: networkStats },
-                status: 200,
-              });
-            }
-            if (
-              url ===
-              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
-            ) {
-              return Promise.resolve({
-                data: poolToken,
-                status: 200,
-              });
-            }
-            return Promise.reject(new Error(`Could not match ${url}`));
-          });
-          networkService.post.mockImplementation(({ url }) => {
-            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
-              return Promise.resolve({ data: dataDecoded, status: 200 });
-            }
-            return Promise.reject(new Error(`Could not match ${url}`));
-          });
-          readContractMock.mockResolvedValue(rate);
-
-          await request(app.getHttpServer())
-            .post(
-              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
-            )
-            .send({
-              to: deployment.address,
-              data,
-            })
-            .expect(200)
-            .expect({
-              type: 'KILN_POOLED_MULTI_CLAIM',
-              method: dataDecoded.method,
-              parameters: dataDecoded.parameters,
-              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-              estimatedExitTime: networkStats.estimated_exit_time_seconds,
-              estimatedWithdrawalTime:
-                networkStats.estimated_withdrawal_time_seconds,
-              pool: {
-                value: deployment.address,
-                name: deployment.display_name,
-                logoUri: null,
-              },
-              exchangeRate: rate.toString(),
-              poolToken: {
-                address: poolToken.address,
-                decimals: poolToken.decimals,
-                logoUri: poolToken.logoUri,
-                name: poolToken.name,
-                symbol: poolToken.symbol,
-                trusted: poolToken.trusted,
-              },
+          }),
+          type: 'KILN_POOLED_MULTI_CLAIM',
+        },
+      ].map(({ method, data, type }) => {
+        describe(method, () => {
+          it(`returns the pooled staking \`${method}\` confirmation view`, async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const deployment = deploymentBuilder()
+              .with('chain_id', +chain.chainId)
+              .with('product_type', 'pooling')
+              .with('status', 'active')
+              .build();
+            const networkStats = networkStatsBuilder().build();
+            const poolToken = tokenBuilder()
+              .with('address', deployment.address)
+              .build();
+            const rate = faker.number.bigInt();
+            const safeAddress = faker.finance.ethereumAddress();
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              }
+              if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              }
+              if (
+                url ===
+                `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+              ) {
+                return Promise.resolve({
+                  data: poolToken,
+                  status: 200,
+                });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
             });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            readContractMock.mockResolvedValue(rate);
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to: deployment.address,
+                data,
+              })
+              .expect(200)
+              .expect({
+                type,
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+                estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+                estimatedExitTime: networkStats.estimated_exit_time_seconds,
+                estimatedWithdrawalTime:
+                  networkStats.estimated_withdrawal_time_seconds,
+                pool: {
+                  value: deployment.address,
+                  name: deployment.display_name,
+                  logoUri: null,
+                },
+                exchangeRate: rate.toString(),
+                poolToken: {
+                  address: poolToken.address,
+                  decimals: poolToken.decimals,
+                  logoUri: poolToken.logoUri,
+                  name: poolToken.name,
+                  symbol: poolToken.symbol,
+                  trusted: poolToken.trusted,
+                },
+              });
+          });
+
+          it('returns the generic confirmation view if the deployment is not available', async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const safeAddress = faker.finance.ethereumAddress();
+            const to = faker.finance.ethereumAddress();
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.reject(new NotFoundException());
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to,
+                data,
+              })
+              .expect(200)
+              .expect({
+                type: 'GENERIC',
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+              });
+          });
+
+          it('returns the generic confirmation view if the deployment is not pool-specific', async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const deployment = deploymentBuilder()
+              .with('chain_id', +chain.chainId)
+              .with('product_type', 'dedicated') // Not pooling
+              .with('status', 'active')
+              .build();
+            const safeAddress = faker.finance.ethereumAddress();
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to: deployment.address,
+                data,
+              })
+              .expect(200)
+              .expect({
+                type: 'GENERIC',
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+              });
+          });
+
+          it('returns the generic confirmation view if the deployment chain is unknown', async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const deployment = deploymentBuilder()
+              .with('chain_id', +chain.chainId)
+              .with('chain', 'unknown') // Unknown
+              .with('product_type', 'pooling')
+              .with('status', 'active')
+              .build();
+            const safeAddress = faker.finance.ethereumAddress();
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to: deployment.address,
+                data,
+              })
+              .expect(200)
+              .expect({
+                type: 'GENERIC',
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+              });
+          });
+
+          it('returns the generic confirmation view if the deployment status is unknown', async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const deployment = deploymentBuilder()
+              .with('chain_id', +chain.chainId)
+              .with('product_type', 'pooling')
+              .with('status', 'unknown') // Unknown
+              .build();
+            const safeAddress = faker.finance.ethereumAddress();
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to: deployment.address,
+                data,
+              })
+              .expect(200)
+              .expect({
+                type: 'GENERIC',
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+              });
+          });
+
+          it('returns the generic confirmation view if the network stats are not available', async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const deployment = deploymentBuilder()
+              .with('chain_id', +chain.chainId)
+              .with('product_type', 'pooling')
+              .with('status', 'active')
+              .build();
+            const poolToken = tokenBuilder()
+              .with('address', deployment.address)
+              .build();
+            const rate = faker.number.bigInt();
+            const safeAddress = faker.finance.ethereumAddress();
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              }
+              if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+                return Promise.reject(new NotFoundException());
+              }
+              if (
+                url ===
+                `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+              ) {
+                return Promise.resolve({
+                  data: poolToken,
+                  status: 200,
+                });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            readContractMock.mockResolvedValue(rate);
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to: deployment.address,
+                data,
+              })
+              .expect(200)
+              .expect({
+                type: 'GENERIC',
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+              });
+          });
+
+          it('returns the generic confirmation view if the pool token is not available', async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const deployment = deploymentBuilder()
+              .with('chain_id', +chain.chainId)
+              .with('product_type', 'pooling')
+              .with('status', 'active')
+              .build();
+            const networkStats = networkStatsBuilder().build();
+            const rate = faker.number.bigInt();
+            const safeAddress = faker.finance.ethereumAddress();
+            const data = encodeFunctionData({
+              abi: parseAbi(['function requestExit(uint256 amount) external']),
+              args: [faker.number.bigInt()],
+            });
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              }
+              if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              }
+              if (
+                url ===
+                `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+              ) {
+                return Promise.reject(new NotFoundException());
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            readContractMock.mockResolvedValue(rate);
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to: deployment.address,
+                data,
+              })
+              .expect(200)
+              .expect({
+                type: 'GENERIC',
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+              });
+          });
+
+          it('returns the generic confirmation view if the exchange rate is not available', async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const deployment = deploymentBuilder()
+              .with('chain_id', +chain.chainId)
+              .with('product_type', 'pooling')
+              .with('status', 'active')
+              .build();
+            const networkStats = networkStatsBuilder().build();
+            const poolToken = tokenBuilder()
+              .with('address', deployment.address)
+              .build();
+            const safeAddress = faker.finance.ethereumAddress();
+            const data = encodeFunctionData({
+              abi: parseAbi(['function requestExit(uint256 amount) external']),
+              args: [faker.number.bigInt()],
+            });
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              }
+              if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              }
+              if (
+                url ===
+                `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+              ) {
+                return Promise.resolve({
+                  data: poolToken,
+                  status: 200,
+                });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            readContractMock.mockRejectedValue(new NotFoundException());
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to: deployment.address,
+                data,
+              })
+              .expect(200)
+              .expect({
+                type: 'GENERIC',
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+              });
+          });
         });
-
-        it.todo(
-          'returns the generic confirmation view if the deployment is not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment is not pool-specific',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment chain is unknown',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment status is unknown',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the network stats are not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the pool token is not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the exchange rate is not available',
-        );
       });
     });
 
     describe('DeFi', () => {
+      const chains = ['1', '42161', '56', '137', '10'];
       describe('deposit', () => {
         it('returns the DeFi vault `deposit` confirmation view', async () => {
           const chain = chainBuilder()
-            .with(
-              'chainId',
-              faker.helpers.arrayElement(['1', '42161', '56', '137', '10']),
-            )
+            .with('chainId', faker.helpers.arrayElement(chains))
             .with('isTestnet', false)
             .build();
           const dataDecoded = dataDecodedBuilder().build();
@@ -694,7 +1700,7 @@ describe('TransactionsViewController tests', () => {
               type: 'KILN_DEFI_DEPOSIT',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
-              fee: 0, // TODO
+              fee: 0,
               monthlyNrr: defiVaultStats.nrr,
               annualNrr: defiVaultStats.nrr,
               vault: {
@@ -714,50 +1720,413 @@ describe('TransactionsViewController tests', () => {
             });
         });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment is not defi-specific',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment chain is unknown',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the deployment is not active',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the DeFi vault is not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the DeFi vault protocol is unknown',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the DeFi vault chain is unknown',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the exchange rate is not available',
-        );
-
-        it.todo(
-          'returns the generic confirmation view if the vault token is not available',
-        );
-      });
-
-      describe('withdraw', () => {
-        it('returns the DeFi vault `withdraw` confirmation view', async () => {
+        it('returns the generic confirmation view if the deployment is not available', async () => {
           const chain = chainBuilder()
-            .with(
-              'chainId',
-              faker.helpers.arrayElement(['1', '42161', '56', '137', '10']),
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
             )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the deployment is not defi-specific', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling') // Not defi
+            .with('status', 'active')
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the deployment chain is unknown', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('chain', 'unknown') // Unknown
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the deployment is not active', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'unknown') // Unknown
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the DeFi vault is not available', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the DeFi vault protocol is unknown', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder()
+            .with('protocol', 'unknown') // Unknown
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the DeFi vault chain is unknown', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder()
+            .with('chain', 'unknown') // Unknown
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the exchange rate is not available', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
             .with('isTestnet', false)
             .build();
           const dataDecoded = dataDecodedBuilder().build();
@@ -769,6 +2138,154 @@ describe('TransactionsViewController tests', () => {
           const defiVaultStats = defiVaultStatsBuilder().build();
           const vaultToken = tokenBuilder()
             .with('address', deployment.address)
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: vaultToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockRejectedValue(new NotFoundException());
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the vault token is not available', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder().build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+      });
+
+      describe('withdraw', () => {
+        it('returns the DeFi vault `withdraw` confirmation view', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder().build();
+          const vaultToken = tokenBuilder()
+            .with('address', deployment.address)
+            .with('decimals', null) // Test default decimals
             .build();
           const rate = faker.number.bigInt();
           const safeAddress = faker.finance.ethereumAddress();
@@ -837,7 +2354,7 @@ describe('TransactionsViewController tests', () => {
               exchangeRate: rate.toString(),
               vaultToken: {
                 address: vaultToken.address,
-                decimals: vaultToken.decimals,
+                decimals: defiVaultStats.asset_decimals,
                 logoUri: vaultToken.logoUri,
                 name: vaultToken.name,
                 symbol: vaultToken.symbol,
@@ -846,41 +2363,563 @@ describe('TransactionsViewController tests', () => {
             });
         });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not available',
-        );
+        it('returns the generic confirmation view if the deployment is not available', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const to = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment is not defi-specific',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment chain is unknown',
-        );
+        it('returns the generic confirmation view if the deployment is not defi-specific', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling') // Not defi
+            .with('status', 'active')
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'returns the generic confirmation view if the deployment status is unknown',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the DeFi vault is not available',
-        );
+        it('returns the generic confirmation view if the deployment chain is unknown', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('chain', 'unknown') // Unknown
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'returns the generic confirmation view if the DeFi vault protocol is unknown',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the DeFi vault chain is unknown',
-        );
+        it('returns the generic confirmation view if the deployment status is unknown', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'unknown') // Unknown
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'returns the generic confirmation view if the exchange rate is not available',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
 
-        it.todo(
-          'returns the generic confirmation view if the vault token is not available',
-        );
+        it('returns the generic confirmation view if the DeFi vault is not available', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the DeFi vault protocol is unknown', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder()
+            .with('protocol', 'unknown') // Unknown
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the DeFi vault chain is unknown', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder()
+            .with('chain', 'unknown') // Unknown
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the exchange rate is not available', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder().build();
+          const vaultToken = tokenBuilder()
+            .with('address', deployment.address)
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: vaultToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockRejectedValue(new NotFoundException());
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
+
+        it('returns the generic confirmation view if the vault token is not available', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder().build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.reject(new NotFoundException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'GENERIC',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+            });
+        });
       });
     });
   });

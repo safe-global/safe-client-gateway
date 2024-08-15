@@ -79,152 +79,121 @@ export class TransactionsViewService {
         };
       });
 
-    // Staking
-    // TODO: Refactor approach of finding and handling different confirmation views
-    const dedicatedStakingDepositData = this.dedicatedStakingHelper.findDeposit(
-      args.transactionDataDto.data,
-    );
-
-    const pooledStakingStakeData = this.pooledStakingHelper.findStake(
-      args.transactionDataDto.data,
-    );
-
-    const pooledStakingRequestExitData =
-      this.pooledStakingHelper.findRequestExit(args.transactionDataDto.data);
-
-    const pooledStakingWithdrawData = this.pooledStakingHelper.findMultiClaim(
-      args.transactionDataDto.data,
-    );
-
-    const defiDepositData = this.defiVaultHelper.findDeposit(
-      args.transactionDataDto.data,
-    );
-
-    const defiWithdrawData = this.defiVaultHelper.findWithdraw(
-      args.transactionDataDto.data,
-    );
-
-    const hasStakingData = Boolean(
-      dedicatedStakingDepositData ||
-        pooledStakingStakeData ||
-        pooledStakingRequestExitData ||
-        pooledStakingWithdrawData ||
-        defiDepositData ||
-        defiWithdrawData,
-    );
-
-    // Swaps
-    const swapOrderData = this.swapOrderHelper.findSwapOrder(
-      args.transactionDataDto.data,
-    );
-
-    const twapSwapOrderData = args.transactionDataDto.to
-      ? this.twapOrderHelper.findTwapOrder({
-          to: args.transactionDataDto.to,
-          data: args.transactionDataDto.data,
-        })
-      : null;
-
-    if (!hasStakingData && !swapOrderData && !twapSwapOrderData) {
-      return new BaselineConfirmationView({
-        method: dataDecoded.method,
-        parameters: dataDecoded.parameters,
-      });
-    }
-
-    const deployment =
-      hasStakingData && args.transactionDataDto.to
-        ? await this.stakingRepository
-            .getDeployment({
-              chainId: args.chainId,
-              address: args.transactionDataDto.to,
-            })
-            .catch(() => null)
-        : null;
-
     try {
-      if (
-        deployment?.product_type === 'dedicated' &&
-        dedicatedStakingDepositData &&
-        args.transactionDataDto.to
-      ) {
-        return await this.getDedicatedStakingDepositConfirmationView({
-          chainId: args.chainId,
-          to: args.transactionDataDto.to,
-          data: dedicatedStakingDepositData,
-          dataDecoded,
-        });
-      } else if (
-        deployment?.product_type === 'pooling' &&
-        pooledStakingStakeData &&
-        args.transactionDataDto.to
-      ) {
-        return await this.getPooledStakingStakeConfirmationView({
-          chainId: args.chainId,
-          to: args.transactionDataDto.to,
-          data: pooledStakingStakeData,
-          dataDecoded,
-        });
-      } else if (
-        deployment?.product_type === 'pooling' &&
-        pooledStakingRequestExitData &&
-        args.transactionDataDto.to
-      ) {
-        return await this.getPooledStakingRequestExitConfirmationView({
-          chainId: args.chainId,
-          to: args.transactionDataDto.to,
-          data: pooledStakingRequestExitData,
-          dataDecoded,
-        });
-      } else if (
-        deployment?.product_type === 'pooling' &&
-        pooledStakingWithdrawData &&
-        args.transactionDataDto.to
-      ) {
-        return await this.getPooledStakingWithdrawConfirmationView({
-          chainId: args.chainId,
-          to: args.transactionDataDto.to,
-          data: pooledStakingWithdrawData,
-          dataDecoded,
-        });
-      } else if (
-        deployment?.product_type === 'defi' &&
-        defiDepositData &&
-        args.transactionDataDto.to
-      ) {
-        return await this.getDefiDepositConfirmationView({
-          chainId: args.chainId,
-          to: args.transactionDataDto.to,
-          data: defiDepositData,
-          dataDecoded,
-        });
-      } else if (
-        deployment?.product_type === 'defi' &&
-        defiWithdrawData &&
-        args.transactionDataDto.to
-      ) {
-        return await this.getDefiWithdrawConfirmationView({
-          chainId: args.chainId,
-          to: args.transactionDataDto.to,
-          data: defiWithdrawData,
-          dataDecoded,
-        });
-      } else if (swapOrderData) {
+      // Swaps
+      const swapOrderData = this.swapOrderHelper.findSwapOrder(
+        args.transactionDataDto.data,
+      );
+      if (swapOrderData) {
         return await this.getSwapOrderConfirmationView({
           chainId: args.chainId,
           data: swapOrderData,
           dataDecoded,
         });
-      } else if (twapSwapOrderData) {
+      }
+
+      const twapSwapOrderData = args.transactionDataDto.to
+        ? this.twapOrderHelper.findTwapOrder({
+            to: args.transactionDataDto.to,
+            data: args.transactionDataDto.data,
+          })
+        : null;
+      if (twapSwapOrderData) {
         return await this.getTwapOrderConfirmationView({
           chainId: args.chainId,
           safeAddress: args.safeAddress,
           data: twapSwapOrderData,
           dataDecoded,
         });
-      } else {
-        throw new Error('No decodable confirmation view data found');
       }
+
+      const deployment = args.transactionDataDto.to
+        ? await this.stakingRepository.getDeployment({
+            chainId: args.chainId,
+            address: args.transactionDataDto.to,
+          })
+        : null;
+
+      // Dedicated Staking
+      const dedicatedStakingDepositData =
+        this.dedicatedStakingHelper.findDeposit(args.transactionDataDto.data);
+      if (
+        deployment?.product_type === 'dedicated' &&
+        dedicatedStakingDepositData
+      ) {
+        return await this.getDedicatedStakingDepositConfirmationView({
+          chainId: args.chainId,
+          to: deployment.address,
+          data: dedicatedStakingDepositData,
+          dataDecoded,
+        });
+      }
+
+      // Pooled staking
+      const pooledStakingStakeData = this.pooledStakingHelper.findStake(
+        args.transactionDataDto.data,
+      );
+      if (deployment?.product_type === 'pooling' && pooledStakingStakeData) {
+        return await this.getPooledStakingStakeConfirmationView({
+          chainId: args.chainId,
+          to: deployment.address,
+          data: pooledStakingStakeData,
+          dataDecoded,
+        });
+      }
+
+      const pooledStakingRequestExitData =
+        this.pooledStakingHelper.findRequestExit(args.transactionDataDto.data);
+      if (
+        deployment?.product_type === 'pooling' &&
+        pooledStakingRequestExitData
+      ) {
+        return await this.getPooledStakingRequestExitConfirmationView({
+          chainId: args.chainId,
+          to: deployment.address,
+          data: pooledStakingRequestExitData,
+          dataDecoded,
+        });
+      }
+
+      const pooledStakingWithdrawData = this.pooledStakingHelper.findMultiClaim(
+        args.transactionDataDto.data,
+      );
+      if (deployment?.product_type === 'pooling' && pooledStakingWithdrawData) {
+        return await this.getPooledStakingWithdrawConfirmationView({
+          chainId: args.chainId,
+          to: deployment.address,
+          data: pooledStakingWithdrawData,
+          dataDecoded,
+        });
+      }
+
+      // DeFi vault
+      const defiDepositData = this.defiVaultHelper.findDeposit(
+        args.transactionDataDto.data,
+      );
+      if (deployment?.product_type === 'defi' && defiDepositData) {
+        return await this.getDefiDepositConfirmationView({
+          chainId: args.chainId,
+          to: deployment.address,
+          data: defiDepositData,
+          dataDecoded,
+        });
+      }
+
+      const defiWithdrawData = this.defiVaultHelper.findWithdraw(
+        args.transactionDataDto.data,
+      );
+      if (deployment?.product_type === 'defi' && defiWithdrawData) {
+        return await this.getDefiWithdrawConfirmationView({
+          chainId: args.chainId,
+          to: deployment.address,
+          data: defiWithdrawData,
+          dataDecoded,
+        });
+      }
+
+      throw new UnprocessableEntityException('Unable to decode data');
     } catch (error) {
       this.loggingService.warn(error);
       return new BaselineConfirmationView({
