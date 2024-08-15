@@ -38,7 +38,7 @@ export class AddressInfoHelper {
     for (const source of sources) {
       try {
         return await this._getFromSource(chainId, address, source);
-      } catch (e) {
+      } catch {
         this.loggingService.debug(
           `Could not get address info with source=${source} for ${address}`,
         );

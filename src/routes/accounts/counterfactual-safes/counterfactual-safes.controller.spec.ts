@@ -856,8 +856,9 @@ describe('CounterfactualSafesController', () => {
         .expect(401);
 
       expect(accountsRepository.getAccount).not.toHaveBeenCalled();
-      expect(counterfactualSafesDataSource.deleteCounterfactualSafe).not
-        .toHaveBeenCalled;
+      expect(
+        counterfactualSafesDataSource.deleteCounterfactualSafe,
+      ).not.toHaveBeenCalled();
     });
 
     it('should not propagate a database error', async () => {

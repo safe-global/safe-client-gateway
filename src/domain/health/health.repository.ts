@@ -22,7 +22,7 @@ export class HealthRepository implements IHealthRepository {
   async isReady(): Promise<HealthEntity> {
     try {
       await this.cacheService.ping();
-    } catch (error) {
+    } catch {
       this.loggingService.warn('Cache service connection is not established');
       return HealthEntity.NOT_READY;
     }

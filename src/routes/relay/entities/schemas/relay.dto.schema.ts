@@ -19,7 +19,7 @@ export const RelayDtoSchema = z.object({
 
       try {
         return BigInt(value);
-      } catch (e) {
+      } catch {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Unable to parse value',

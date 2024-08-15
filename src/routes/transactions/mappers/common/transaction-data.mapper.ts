@@ -85,7 +85,7 @@ export class TransactionDataMapper {
         chainId,
         contractAddress: to,
       });
-    } catch (err) {
+    } catch {
       return false;
     }
 

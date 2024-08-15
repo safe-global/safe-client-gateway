@@ -314,7 +314,7 @@ export class LimitAddressesMapper {
       }
 
       singleton = decoded.args[0];
-    } catch (e) {
+    } catch {
       return false;
     }
 
