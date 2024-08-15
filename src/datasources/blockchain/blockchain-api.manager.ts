@@ -52,7 +52,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     return this.blockchainApiMap[chainId];
   }
 
-  async destroyApi(chainId: string): Promise<void> {
+  destroyApi(chainId: string): void {
     if (!this.blockchainApiMap?.[chainId]) {
       return;
     }
@@ -60,7 +60,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     delete this.blockchainApiMap[chainId];
 
     const key = CacheRouter.getRpcRequestsKey(chainId);
-    await this.cacheService.deleteByKey(key);
+    void this.cacheService.deleteByKey(key);
   }
 
   /**

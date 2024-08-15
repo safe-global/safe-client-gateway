@@ -91,7 +91,7 @@ describe('BlockchainApiManager', () => {
       configApiMock.getChain.mockResolvedValue(chain);
 
       const api = await target.getApi(chain.chainId);
-      await target.destroyApi(chain.chainId);
+      target.destroyApi(chain.chainId);
       const cachedApi = await target.getApi(chain.chainId);
 
       expect(api).not.toBe(cachedApi);
