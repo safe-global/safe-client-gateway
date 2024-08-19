@@ -3,17 +3,17 @@ import {
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
+import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem';
 
-describe('TransactionDataFinder', () => {
-  let target: TransactionDataFinder;
+describe('TransactionFinder', () => {
+  let target: TransactionFinder;
 
   beforeEach(() => {
     jest.resetAllMocks();
     const multiSendDecoder = new MultiSendDecoder();
-    target = new TransactionDataFinder(multiSendDecoder);
+    target = new TransactionFinder(multiSendDecoder);
   });
 
   it('should return the given transaction data if it is the expected one', () => {
@@ -27,7 +27,7 @@ describe('TransactionDataFinder', () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => true;
 
-    const result = target.findTransactionData(isTransactionData, transaction);
+    const result = target.findTransaction(isTransactionData, transaction);
 
     expect(result).toBe(transaction.data);
   });
@@ -51,7 +51,7 @@ describe('TransactionDataFinder', () => {
       return args.data === transaction.data;
     };
 
-    const result = target.findTransactionData(isTransactionData, {
+    const result = target.findTransaction(isTransactionData, {
       data: multiSend.encode(),
     });
 
@@ -69,7 +69,7 @@ describe('TransactionDataFinder', () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => false;
 
-    const result = target.findTransactionData(isTransactionData, transaction);
+    const result = target.findTransaction(isTransactionData, transaction);
 
     expect(result).toBe(null);
   });

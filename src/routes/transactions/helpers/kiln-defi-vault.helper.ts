@@ -3,10 +3,12 @@ import {
   IBlockchainApiManager,
 } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { Erc4626Decoder } from '@/domain/staking/contracts/decoders/erc-4626-decoder.helper';
+import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import {
-  TransactionDataFinder,
-  TransactionDataFinderModule,
-} from '@/routes/transactions/helpers/transaction-data-finder.helper';
+  TransactionFinder,
+  TransactionFinderModule,
+} from '@/routes/transactions/helpers/transaction-finder.helper';
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { erc4626Abi } from 'viem';
 
@@ -16,21 +18,77 @@ export class KilnDefiVaultHelper {
     @Inject(IBlockchainApiManager)
     private readonly blockchainApiManager: IBlockchainApiManager,
     private readonly erc4626Decoder: Erc4626Decoder,
-    private readonly transactionDataFinder: TransactionDataFinder,
+    private readonly transactionFinder: TransactionFinder,
+    @Inject(IStakingRepository)
+    private readonly stakingRepository: IStakingRepository,
   ) {}
 
-  public findDeposit(data: `0x${string}`): `0x${string}` | null {
-    return this.transactionDataFinder.findTransactionData(
+  public async findDeposit(args: {
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<{
+    to: `0x${string}`;
+    data: `0x${string}`;
+  } | null> {
+    const transaction = this.transactionFinder.findTransaction(
       (transaction) => this.erc4626Decoder.helpers.isDeposit(transaction.data),
-      { data },
+      args,
     );
+
+    if (!transaction?.to) {
+      return null;
+    }
+
+    const deployment = await this.stakingRepository
+      .getDeployment({
+        chainId: args.chainId,
+        address: transaction.to,
+      })
+      .catch(() => null);
+
+    if (deployment?.product_type !== 'defi') {
+      return null;
+    }
+
+    return {
+      to: transaction.to,
+      data: transaction.data,
+    };
   }
 
-  public findWithdraw(data: `0x${string}`): `0x${string}` | null {
-    return this.transactionDataFinder.findTransactionData(
+  public async findWithdraw(args: {
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<{
+    to: `0x${string}`;
+    data: `0x${string}`;
+  } | null> {
+    const transaction = this.transactionFinder.findTransaction(
       (transaction) => this.erc4626Decoder.helpers.isWithdraw(transaction.data),
-      { data },
+      args,
     );
+
+    if (!transaction?.to) {
+      return null;
+    }
+
+    const deployment = await this.stakingRepository
+      .getDeployment({
+        chainId: args.chainId,
+        address: transaction.to,
+      })
+      .catch(() => null);
+
+    if (deployment?.product_type !== 'defi') {
+      return null;
+    }
+
+    return {
+      to: transaction.to,
+      data: transaction.data,
+    };
   }
 
   public decodeDeposit(
@@ -97,7 +155,11 @@ export class KilnDefiVaultHelper {
 }
 
 @Module({
-  imports: [BlockchainApiManagerModule, TransactionDataFinderModule],
+  imports: [
+    BlockchainApiManagerModule,
+    TransactionFinderModule,
+    StakingRepositoryModule,
+  ],
   providers: [KilnDefiVaultHelper, Erc4626Decoder],
   exports: [KilnDefiVaultHelper],
 })

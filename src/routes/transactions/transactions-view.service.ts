@@ -125,29 +125,18 @@ export class TransactionsViewService {
         });
       }
 
-      const deployment =
-        args.transactionDataDto.to &&
-        this.isDedicatedStakingEnabled &&
-        this.isPooledStakingEnabled &&
-        this.isDefiVaultsEnabled
-          ? await this.stakingRepository.getDeployment({
-              chainId: args.chainId,
-              address: args.transactionDataDto.to,
-            })
-          : null;
-
       // Dedicated Staking
       const dedicatedStakingDepositData =
         this.isDedicatedStakingEnabled &&
-        this.dedicatedStakingHelper.findDeposit(args.transactionDataDto.data);
-      if (
-        deployment?.product_type === 'dedicated' &&
-        dedicatedStakingDepositData
-      ) {
+        (await this.dedicatedStakingHelper.findDeposit({
+          chainId: args.chainId,
+          ...args.transactionDataDto,
+        }));
+      if (dedicatedStakingDepositData) {
         return await this.getDedicatedStakingDepositConfirmationView({
           chainId: args.chainId,
-          to: deployment.address,
-          data: dedicatedStakingDepositData,
+          to: dedicatedStakingDepositData.to,
+          data: dedicatedStakingDepositData.data,
           dataDecoded,
         });
       }
@@ -155,39 +144,45 @@ export class TransactionsViewService {
       // Pooled staking
       const pooledStakingStakeData =
         this.isPooledStakingEnabled &&
-        this.pooledStakingHelper.findStake(args.transactionDataDto.data);
-      if (deployment?.product_type === 'pooling' && pooledStakingStakeData) {
+        (await this.pooledStakingHelper.findStake({
+          chainId: args.chainId,
+          ...args.transactionDataDto,
+        }));
+      if (pooledStakingStakeData) {
         return await this.getPooledStakingStakeConfirmationView({
           chainId: args.chainId,
-          to: deployment.address,
-          data: pooledStakingStakeData,
+          to: pooledStakingStakeData.to,
+          data: pooledStakingStakeData.data,
           dataDecoded,
         });
       }
 
       const pooledStakingRequestExitData =
         this.isPooledStakingEnabled &&
-        this.pooledStakingHelper.findRequestExit(args.transactionDataDto.data);
-      if (
-        deployment?.product_type === 'pooling' &&
-        pooledStakingRequestExitData
-      ) {
+        (await this.pooledStakingHelper.findRequestExit({
+          chainId: args.chainId,
+          ...args.transactionDataDto,
+        }));
+      if (pooledStakingRequestExitData) {
         return await this.getPooledStakingRequestExitConfirmationView({
           chainId: args.chainId,
-          to: deployment.address,
-          data: pooledStakingRequestExitData,
+          to: pooledStakingRequestExitData.to,
+          data: pooledStakingRequestExitData.data,
           dataDecoded,
         });
       }
 
       const pooledStakingWithdrawData =
         this.isPooledStakingEnabled &&
-        this.pooledStakingHelper.findMultiClaim(args.transactionDataDto.data);
-      if (deployment?.product_type === 'pooling' && pooledStakingWithdrawData) {
+        (await this.pooledStakingHelper.findMultiClaim({
+          chainId: args.chainId,
+          ...args.transactionDataDto,
+        }));
+      if (pooledStakingWithdrawData) {
         return await this.getPooledStakingWithdrawConfirmationView({
           chainId: args.chainId,
-          to: deployment.address,
-          data: pooledStakingWithdrawData,
+          to: pooledStakingWithdrawData.to,
+          data: pooledStakingWithdrawData.data,
           dataDecoded,
         });
       }
@@ -195,24 +190,30 @@ export class TransactionsViewService {
       // DeFi vault
       const defiDepositData =
         this.isDefiVaultsEnabled &&
-        this.defiVaultHelper.findDeposit(args.transactionDataDto.data);
-      if (deployment?.product_type === 'defi' && defiDepositData) {
+        (await this.defiVaultHelper.findDeposit({
+          chainId: args.chainId,
+          ...args.transactionDataDto,
+        }));
+      if (defiDepositData) {
         return await this.getDefiDepositConfirmationView({
           chainId: args.chainId,
-          to: deployment.address,
-          data: defiDepositData,
+          to: defiDepositData.to,
+          data: defiDepositData.data,
           dataDecoded,
         });
       }
 
       const defiWithdrawData =
         this.isDefiVaultsEnabled &&
-        this.defiVaultHelper.findWithdraw(args.transactionDataDto.data);
-      if (deployment?.product_type === 'defi' && defiWithdrawData) {
+        (await this.defiVaultHelper.findWithdraw({
+          chainId: args.chainId,
+          ...args.transactionDataDto,
+        }));
+      if (defiWithdrawData) {
         return await this.getDefiWithdrawConfirmationView({
           chainId: args.chainId,
-          to: deployment.address,
-          data: defiWithdrawData,
+          to: defiWithdrawData.to,
+          data: defiWithdrawData.data,
           dataDecoded,
         });
       }
@@ -441,7 +442,7 @@ export class TransactionsViewService {
       defiVaultStats.protocol === 'unknown' ||
       defiVaultStats.chain === 'unknown'
     ) {
-      throw new NotFoundException('DeFi Vault not found');
+      throw new NotFoundException('DeFi vault stats not found');
     }
 
     const [amount] = this.defiVaultHelper.decodeDeposit(args.data);
@@ -505,7 +506,7 @@ export class TransactionsViewService {
       defiVaultStats.protocol === 'unknown' ||
       defiVaultStats.chain === 'unknown'
     ) {
-      throw new NotFoundException('DeFi Vault not found');
+      throw new NotFoundException('DeFi vault stats not found');
     }
 
     const [amount] = this.defiVaultHelper.decodeWithdraw(args.data);

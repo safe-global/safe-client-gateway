@@ -8,7 +8,7 @@ import { getAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { OrderKind, OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
-import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
+import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 
@@ -33,8 +33,8 @@ const configurationService = {
 } as jest.MockedObjectDeep<IConfigurationService>;
 const configurationServiceMock = jest.mocked(configurationService);
 
-const transactionDataFinder = {} as jest.Mocked<TransactionDataFinder>;
-const transactionDataFinderMock = jest.mocked(transactionDataFinder);
+const transactionFinder = {} as jest.Mocked<TransactionFinder>;
+const transactionFinderMock = jest.mocked(transactionFinder);
 
 const chainsRepository = {
   getChain: jest.fn(),
@@ -53,7 +53,7 @@ describe('Swap Order Helper tests', () => {
     });
 
     target = new SwapOrderHelper(
-      transactionDataFinderMock,
+      transactionFinderMock,
       gpv2DecoderMock,
       tokenRepositoryMock,
       swapsRepositoryMock,
