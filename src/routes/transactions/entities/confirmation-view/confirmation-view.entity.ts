@@ -12,14 +12,16 @@ import {
   StartTime,
   TwapOrderInfo,
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
+import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/dedicated-staking-confirmation-view.entity';
 import {
-  DedicatedDepositConfirmationView,
-  PooledDepositConfirmationView,
-  PooledRequestExitConfirmationView,
-  PooledMultiClaimConfirmationView,
-  DefiDepositConfirmationView,
-  DefiWithdrawConfirmationView,
-} from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
+  DefiStakingDepositConfirmationView,
+  DefiStakingWithdrawConfirmationView,
+} from '@/routes/transactions/entities/staking/defi-staking-confirmation-view.entity';
+import {
+  PooledStakingStakeConfirmationView,
+  PooledStakingRequestExitConfirmationView,
+  PooledStakingWithdrawConfirmationView,
+} from '@/routes/transactions/entities/staking/pooled-confirmation-view.entity';
 
 export interface IBaselineConfirmationView {
   method: string;
@@ -30,24 +32,24 @@ export enum ConfirmationViewDecodedType {
   Generic = 'GENERIC',
   CowSwapOrder = 'COW_SWAP_ORDER',
   CowSwapTwapOrder = 'COW_SWAP_TWAP_ORDER',
-  KilnDedicatedStake = 'KILN_DEDICATED_STAKE',
-  KilnPooledDeposit = 'KILN_POOLED_DEPOSIT',
-  KilnPooledRequestExist = 'KILN_POOLED_REQUEST_EXIT',
-  KilnPooledMultiClaim = 'KILN_POOLED_MULTI_CLAIM',
-  KilnDefiDeposit = 'KILN_DEFI_DEPOSIT',
-  KilnDefiWithdraw = 'KILN_DEFI_WITHDRAW',
+  KilnNativeStakingDeposit = 'KILN_NATIVE_STAKING_DEPOSIT',
+  KilnPooledStakingDeposit = 'KILN_POOLED_STAKING_DEPOSIT',
+  KilnPooledStakingRequestExist = 'KILN_POOLED_STAKING_REQUEST_EXIT',
+  KilnPooledStakingWithdraw = 'KILN_POOLED_STAKING_WITHDRAW',
+  KilnDefiStakingDeposit = 'KILN_DEFI_STAKING_DEPOSIT',
+  KilnDefiStakingWithdraw = 'KILN_DEFI_STAKING_WITHDRAW',
 }
 
 export type ConfirmationView =
   | BaselineConfirmationView
   | CowSwapConfirmationView
   | CowSwapTwapConfirmationView
-  | DedicatedDepositConfirmationView
-  | PooledDepositConfirmationView
-  | PooledRequestExitConfirmationView
-  | PooledMultiClaimConfirmationView
-  | DefiDepositConfirmationView
-  | DefiWithdrawConfirmationView;
+  | NativeStakingDepositConfirmationView
+  | PooledStakingStakeConfirmationView
+  | PooledStakingRequestExitConfirmationView
+  | PooledStakingWithdrawConfirmationView
+  | DefiStakingDepositConfirmationView
+  | DefiStakingWithdrawConfirmationView;
 
 export class BaselineConfirmationView implements IBaselineConfirmationView {
   @ApiProperty({ enum: [ConfirmationViewDecodedType.Generic] })

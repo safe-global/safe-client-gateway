@@ -9,6 +9,12 @@ export enum TransactionInfoType {
   SwapOrder = 'SwapOrder',
   SwapTransfer = 'SwapTransfer',
   TwapOrder = 'TwapOrder',
+  NativeStakingDeposit = 'NativeStakingDeposit',
+  PooledStakingDepositInfo = 'PooledStakingStake',
+  PooledStakingRequestExit = 'PooledStakingRequestExit',
+  PooledStakingWithdraw = 'PooledStakingWithdraw',
+  DefiStakingDeposit = 'DefiStakingDeposit',
+  DefiStakingWithdraw = 'DefiStakingWithdraw',
 }
 
 export class TransactionInfo {

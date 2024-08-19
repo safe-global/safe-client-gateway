@@ -36,16 +36,21 @@ import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.he
 import { PooledStakingHelperModule } from '@/routes/transactions/helpers/kiln-pooled-staking.helper';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
-import { KilnDedicatedStakingHelperModule } from '@/routes/transactions/helpers/kiln-dedicated-staking.helper';
+import { KilnNativeStakingHelperModule } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { KilnDefiStakingHelperModule } from '@/routes/transactions/helpers/kiln-defi-staking.helper';
+import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/dedicated-staking-confirmation-view.entity';
 import {
-  DedicatedDepositConfirmationView,
-  PooledDepositConfirmationView,
-  PooledRequestExitConfirmationView,
-  PooledMultiClaimConfirmationView,
-  DefiDepositConfirmationView,
-  DefiWithdrawConfirmationView,
-} from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
-import { KilnDefiVaultHelperModule } from '@/routes/transactions/helpers/kiln-defi-vault.helper';
+  PooledStakingStakeConfirmationView,
+  PooledStakingWithdrawConfirmationView,
+  PooledStakingRequestExitConfirmationView,
+} from '@/routes/transactions/entities/staking/pooled-confirmation-view.entity';
+import {
+  DefiStakingDepositConfirmationView,
+  DefiStakingWithdrawConfirmationView,
+} from '@/routes/transactions/entities/staking/defi-staking-confirmation-view.entity';
+import { PooledStakingMapperModule } from '@/routes/transactions/mappers/common/pooled-staking.mapper';
+import { NativeStakingMapperModule } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { DefiStakingMapperModule } from '@/routes/transactions/mappers/common/defi-staking.mapper';
 
 @ApiTags('transactions')
 @Controller({
@@ -61,24 +66,24 @@ export class TransactionsViewController {
       oneOf: [
         { $ref: getSchemaPath(BaselineConfirmationView) },
         { $ref: getSchemaPath(CowSwapConfirmationView) },
-        { $ref: getSchemaPath(DedicatedDepositConfirmationView) },
-        { $ref: getSchemaPath(PooledDepositConfirmationView) },
-        { $ref: getSchemaPath(PooledRequestExitConfirmationView) },
-        { $ref: getSchemaPath(PooledMultiClaimConfirmationView) },
-        { $ref: getSchemaPath(DefiDepositConfirmationView) },
-        { $ref: getSchemaPath(DefiWithdrawConfirmationView) },
+        { $ref: getSchemaPath(NativeStakingDepositConfirmationView) },
+        { $ref: getSchemaPath(PooledStakingStakeConfirmationView) },
+        { $ref: getSchemaPath(PooledStakingRequestExitConfirmationView) },
+        { $ref: getSchemaPath(PooledStakingWithdrawConfirmationView) },
+        { $ref: getSchemaPath(DefiStakingDepositConfirmationView) },
+        { $ref: getSchemaPath(DefiStakingWithdrawConfirmationView) },
       ],
     },
   })
   @ApiExtraModels(
     BaselineConfirmationView,
     CowSwapConfirmationView,
-    DedicatedDepositConfirmationView,
-    PooledDepositConfirmationView,
-    PooledRequestExitConfirmationView,
-    PooledMultiClaimConfirmationView,
-    DefiDepositConfirmationView,
-    DefiWithdrawConfirmationView,
+    NativeStakingDepositConfirmationView,
+    PooledStakingStakeConfirmationView,
+    PooledStakingRequestExitConfirmationView,
+    PooledStakingWithdrawConfirmationView,
+    DefiStakingDepositConfirmationView,
+    DefiStakingWithdrawConfirmationView,
   )
   @ApiOperation({
     summary: 'Confirm Transaction View',
@@ -103,13 +108,16 @@ export class TransactionsViewController {
 @Module({
   imports: [
     DataDecodedRepositoryModule,
+    DefiStakingMapperModule,
     GPv2DecoderModule,
-    KilnDedicatedStakingHelperModule,
-    KilnDefiVaultHelperModule,
+    KilnNativeStakingHelperModule,
+    KilnDefiStakingHelperModule,
+    NativeStakingMapperModule,
     SwapOrderHelperModule,
     TokenRepositoryModule,
     TwapOrderHelperModule,
     PooledStakingHelperModule,
+    PooledStakingMapperModule,
     SwapsRepositoryModule,
     StakingRepositoryModule,
     SwapAppsHelperModule,

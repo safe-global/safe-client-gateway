@@ -43,6 +43,9 @@ import { TwapOrderMapperModule } from '@/routes/transactions/mappers/common/twap
 import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.helper';
 import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
 import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.helper';
+import { DefiStakingMapperModule } from '@/routes/transactions/mappers/common/defi-staking.mapper';
+import { NativeStakingMapperModule } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { PooledStakingMapperModule } from '@/routes/transactions/mappers/common/pooled-staking.mapper';
 
 @Module({
   controllers: [TransactionsController],
@@ -50,7 +53,10 @@ import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.he
     AddressInfoModule,
     ContractsRepositoryModule,
     DataDecodedRepositoryModule,
+    DefiStakingMapperModule,
     HumanDescriptionRepositoryModule,
+    NativeStakingMapperModule,
+    PooledStakingMapperModule,
     SafeRepositoryModule,
     SafeAppsRepositoryModule,
     GPv2DecoderModule,

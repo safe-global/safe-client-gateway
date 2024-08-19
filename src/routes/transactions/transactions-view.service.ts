@@ -24,25 +24,28 @@ import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composab
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
 import { KilnPooledStakingHelper } from '@/routes/transactions/helpers/kiln-pooled-staking.helper';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { KilnDedicatedStakingHelper } from '@/routes/transactions/helpers/kiln-dedicated-staking.helper';
-import {
-  DedicatedDepositConfirmationView,
-  PooledDepositConfirmationView,
-  PooledRequestExitConfirmationView,
-  PooledMultiClaimConfirmationView,
-  DefiDepositConfirmationView,
-  DefiWithdrawConfirmationView,
-} from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { KilnDefiVaultHelper } from '@/routes/transactions/helpers/kiln-defi-vault.helper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { PooledStakingMapper } from '@/routes/transactions/mappers/common/pooled-staking.mapper';
+import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/dedicated-staking-confirmation-view.entity';
+import {
+  PooledStakingStakeConfirmationView,
+  PooledStakingRequestExitConfirmationView,
+  PooledStakingWithdrawConfirmationView,
+} from '@/routes/transactions/entities/staking/pooled-confirmation-view.entity';
+import { DefiStakingMapper } from '@/routes/transactions/mappers/common/defi-staking.mapper';
+import {
+  DefiStakingDepositConfirmationView,
+  DefiStakingWithdrawConfirmationView,
+} from '@/routes/transactions/entities/staking/defi-staking-confirmation-view.entity';
+import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { KilnDefiStakingHelper } from '@/routes/transactions/helpers/kiln-defi-staking.helper';
 
 @Injectable({})
 export class TransactionsViewService {
-  isDedicatedStakingEnabled: boolean;
-  isPooledStakingEnabled: boolean;
-  isDefiVaultsEnabled: boolean;
+  private readonly isNativeStakingEnabled: boolean;
+  private readonly isPooledStakingEnabled: boolean;
+  private readonly isDefiStakingEnabled: boolean;
 
   constructor(
     @Inject(IDataDecodedRepository)
@@ -54,26 +57,26 @@ export class TransactionsViewService {
     @Inject(ISwapsRepository)
     private readonly swapsRepository: ISwapsRepository,
     private readonly composableCowDecoder: ComposableCowDecoder,
-    private readonly defiVaultHelper: KilnDefiVaultHelper,
-    private readonly dedicatedStakingHelper: KilnDedicatedStakingHelper,
+    private readonly defiStakingHelper: KilnDefiStakingHelper,
+    private readonly nativeStakingHelper: KilnNativeStakingHelper,
     private readonly pooledStakingHelper: KilnPooledStakingHelper,
     @Inject(IStakingRepository)
     private readonly stakingRepository: IStakingRepository,
     private readonly swapAppsHelper: SwapAppsHelper,
-    @Inject(ITokenRepository)
-    private readonly tokenRepository: ITokenRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly nativeStakingMapper: NativeStakingMapper,
+    private readonly pooledStakingMapper: PooledStakingMapper,
+    private readonly defiStakingMapper: DefiStakingMapper,
   ) {
-    this.isDedicatedStakingEnabled =
-      this.configurationService.getOrThrow<boolean>(
-        'features.dedicatedStaking',
-      );
+    this.isNativeStakingEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.nativeStaking',
+    );
     this.isPooledStakingEnabled = this.configurationService.getOrThrow<boolean>(
       'features.pooledStaking',
     );
-    this.isDefiVaultsEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.defiVaults',
+    this.isDefiStakingEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.defiStaking',
     );
   }
 
@@ -127,13 +130,13 @@ export class TransactionsViewService {
 
       // Dedicated Staking
       const dedicatedStakingDepositData =
-        this.isDedicatedStakingEnabled &&
-        (await this.dedicatedStakingHelper.findDeposit({
+        this.isNativeStakingEnabled &&
+        (await this.nativeStakingHelper.findDeposit({
           chainId: args.chainId,
           ...args.transactionDataDto,
         }));
       if (dedicatedStakingDepositData) {
-        return await this.getDedicatedStakingDepositConfirmationView({
+        return await this.getNativeStakingDepositConfirmationView({
           chainId: args.chainId,
           to: dedicatedStakingDepositData.to,
           data: dedicatedStakingDepositData.data,
@@ -149,7 +152,7 @@ export class TransactionsViewService {
           ...args.transactionDataDto,
         }));
       if (pooledStakingStakeData) {
-        return await this.getPooledStakingStakeConfirmationView({
+        return await this.getPooledStakingDepositConfirmationView({
           chainId: args.chainId,
           to: pooledStakingStakeData.to,
           data: pooledStakingStakeData.data,
@@ -187,10 +190,10 @@ export class TransactionsViewService {
         });
       }
 
-      // DeFi vault
+      // DeFi staking
       const defiDepositData =
-        this.isDefiVaultsEnabled &&
-        (await this.defiVaultHelper.findDeposit({
+        this.isDefiStakingEnabled &&
+        (await this.defiStakingHelper.findDeposit({
           chainId: args.chainId,
           ...args.transactionDataDto,
         }));
@@ -204,8 +207,8 @@ export class TransactionsViewService {
       }
 
       const defiWithdrawData =
-        this.isDefiVaultsEnabled &&
-        (await this.defiVaultHelper.findWithdraw({
+        this.isDefiStakingEnabled &&
+        (await this.defiStakingHelper.findWithdraw({
           chainId: args.chainId,
           ...args.transactionDataDto,
         }));
@@ -228,101 +231,53 @@ export class TransactionsViewService {
     }
   }
 
-  private async getDedicatedStakingDepositConfirmationView(args: {
+  private async getNativeStakingDepositConfirmationView(args: {
     chainId: string;
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-  }): Promise<DedicatedDepositConfirmationView> {
+  }): Promise<NativeStakingDepositConfirmationView> {
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
     });
 
-    if (
-      deployment.product_type !== 'dedicated' ||
-      deployment.chain === 'unknown'
-    ) {
-      throw new NotFoundException('Staking deployment not found');
-    }
-
-    if (deployment.status !== 'active' || !deployment.product_fee) {
+    if (deployment.status !== 'active') {
       throw new UnprocessableEntityException(
         'Staking deployment is not active',
       );
     }
 
-    const [dedicatedStakingStats, networkStats] = await Promise.all([
-      this.stakingRepository.getDedicatedStakingStats(args.chainId),
-      this.stakingRepository.getNetworkStats(args.chainId),
-    ]);
+    const depositInfo = await this.nativeStakingMapper.mapDepositInfo(args);
 
-    const fee = Number(deployment.product_fee);
-    const nrr = dedicatedStakingStats.gross_apy.last_30d * (1 - fee);
-
-    return new DedicatedDepositConfirmationView({
+    return new NativeStakingDepositConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
-      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-      estimatedExitTime: networkStats.estimated_exit_time_seconds,
-      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
-      fee,
-      monthlyNrr: nrr,
-      annualNrr: nrr,
+      ...depositInfo,
     });
   }
 
-  private async getPooledStakingStakeConfirmationView(args: {
+  private async getPooledStakingDepositConfirmationView(args: {
     chainId: string;
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-  }): Promise<PooledDepositConfirmationView> {
+  }): Promise<PooledStakingStakeConfirmationView> {
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
     });
 
-    if (
-      deployment.product_type !== 'pooling' ||
-      deployment.chain === 'unknown'
-    ) {
-      throw new NotFoundException('Staking pool not found');
-    }
-
     if (deployment.status !== 'active') {
       throw new UnprocessableEntityException('Staking pool is not active');
     }
 
-    const [pooledStakingStats, networkStats, poolToken, exchangeRate] =
-      await Promise.all([
-        this.stakingRepository.getPooledStakingStats({
-          chainId: args.chainId,
-          pool: args.to,
-        }),
-        this.stakingRepository.getNetworkStats(args.chainId),
-        this.pooledStakingHelper.getPoolToken({
-          chainId: args.chainId,
-          pool: args.to,
-        }),
-        this.pooledStakingHelper.getRate({
-          chainId: args.chainId,
-          pool: args.to,
-        }),
-      ]);
+    const stakeInfo = await this.pooledStakingMapper.mapStakeInfo(args);
 
-    return new PooledDepositConfirmationView({
+    return new PooledStakingStakeConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
-      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-      estimatedExitTime: networkStats.estimated_exit_time_seconds,
-      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
-      fee: pooledStakingStats.fee,
-      monthlyNrr: pooledStakingStats.one_month.nrr,
-      annualNrr: pooledStakingStats.one_year.nrr,
-      pool: new AddressInfo(args.to, deployment.display_name),
-      exchangeRate: exchangeRate.toString(),
-      poolToken,
+      ...stakeInfo,
     });
   }
 
@@ -331,42 +286,24 @@ export class TransactionsViewService {
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-  }): Promise<PooledRequestExitConfirmationView> {
+  }): Promise<PooledStakingRequestExitConfirmationView> {
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
     });
 
-    if (
-      deployment.product_type !== 'pooling' ||
-      deployment.chain === 'unknown' ||
-      // Don't check if active to support request exist
-      deployment.status === 'unknown'
-    ) {
+    // Don't check if active to support request exist
+    if (deployment.status === 'unknown') {
       throw new NotFoundException('Staking pool not found');
     }
 
-    const [networkStats, poolToken, exchangeRate] = await Promise.all([
-      this.stakingRepository.getNetworkStats(args.chainId),
-      this.pooledStakingHelper.getPoolToken({
-        chainId: args.chainId,
-        pool: args.to,
-      }),
-      this.pooledStakingHelper.getRate({
-        chainId: args.chainId,
-        pool: args.to,
-      }),
-    ]);
+    const requestExitInfo =
+      await this.pooledStakingMapper.mapRequestExitInfo(args);
 
-    return new PooledRequestExitConfirmationView({
+    return new PooledStakingRequestExitConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
-      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-      estimatedExitTime: networkStats.estimated_exit_time_seconds,
-      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
-      pool: new AddressInfo(args.to, deployment.display_name),
-      exchangeRate: exchangeRate.toString(),
-      poolToken,
+      ...requestExitInfo,
     });
   }
 
@@ -375,42 +312,23 @@ export class TransactionsViewService {
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-  }): Promise<PooledMultiClaimConfirmationView> {
+  }): Promise<PooledStakingWithdrawConfirmationView> {
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
     });
 
-    if (
-      deployment.product_type !== 'pooling' ||
-      deployment.chain === 'unknown' ||
-      // Don't check if active to support withdrawal
-      deployment.status === 'unknown'
-    ) {
+    // Don't check if active to support withdrawal
+    if (deployment.status === 'unknown') {
       throw new NotFoundException('Staking pool not found');
     }
 
-    const [networkStats, poolToken, exchangeRate] = await Promise.all([
-      this.stakingRepository.getNetworkStats(args.chainId),
-      this.pooledStakingHelper.getPoolToken({
-        chainId: args.chainId,
-        pool: args.to,
-      }),
-      this.pooledStakingHelper.getRate({
-        chainId: args.chainId,
-        pool: args.to,
-      }),
-    ]);
+    const withdrawInfo = await this.pooledStakingMapper.mapWithdrawInfo(args);
 
-    return new PooledMultiClaimConfirmationView({
+    return new PooledStakingWithdrawConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
-      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-      estimatedExitTime: networkStats.estimated_exit_time_seconds,
-      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
-      pool: new AddressInfo(args.to, deployment.display_name),
-      exchangeRate: exchangeRate.toString(),
-      poolToken,
+      ...withdrawInfo,
     });
   }
 
@@ -419,61 +337,24 @@ export class TransactionsViewService {
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-  }): Promise<DefiDepositConfirmationView> {
+  }): Promise<DefiStakingDepositConfirmationView> {
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
     });
 
-    if (deployment.product_type !== 'defi' || deployment.chain === 'unknown') {
-      throw new NotFoundException('DeFi vault not found');
-    }
-
     if (deployment.status !== 'active') {
-      throw new UnprocessableEntityException('DeFi vault is not active');
+      throw new UnprocessableEntityException(
+        'DeFi staking vault is not active',
+      );
     }
 
-    const defiVaultStats = await this.stakingRepository.getDefiVaultStats({
-      chainId: args.chainId,
-      vault: args.to,
-    });
+    const depositInfo = await this.defiStakingMapper.mapDepositInfo(args);
 
-    if (
-      defiVaultStats.protocol === 'unknown' ||
-      defiVaultStats.chain === 'unknown'
-    ) {
-      throw new NotFoundException('DeFi vault stats not found');
-    }
-
-    const [amount] = this.defiVaultHelper.decodeDeposit(args.data);
-    const [exchangeRate, vaultToken] = await Promise.all([
-      this.defiVaultHelper.previewDeposit({
-        chainId: args.chainId,
-        vault: args.to,
-        amount,
-      }),
-      this.tokenRepository.getToken({
-        chainId: args.chainId,
-        address: args.to,
-      }),
-    ]);
-
-    return new DefiDepositConfirmationView({
+    return new DefiStakingDepositConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
-      fee: 0, // TODO
-      monthlyNrr: defiVaultStats.nrr,
-      annualNrr: defiVaultStats.nrr,
-      vault: new AddressInfo(args.to, deployment.display_name),
-      exchangeRate: exchangeRate.toString(),
-      vaultToken: new TokenInfo({
-        address: vaultToken.address,
-        decimals: vaultToken.decimals ?? defiVaultStats.asset_decimals,
-        logoUri: vaultToken.logoUri,
-        name: vaultToken.name,
-        symbol: vaultToken.symbol,
-        trusted: vaultToken.trusted,
-      }),
+      ...depositInfo,
     });
   }
 
@@ -482,59 +363,23 @@ export class TransactionsViewService {
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-  }): Promise<DefiWithdrawConfirmationView> {
+  }): Promise<DefiStakingWithdrawConfirmationView> {
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
     });
 
-    if (
-      deployment.product_type !== 'defi' ||
-      deployment.chain === 'unknown' ||
-      // Don't check if active to support withdrawal
-      deployment.status === 'unknown'
-    ) {
+    // Don't check if active to support withdrawal
+    if (deployment.status === 'unknown') {
       throw new NotFoundException('DeFi vault not found');
     }
 
-    const defiVaultStats = await this.stakingRepository.getDefiVaultStats({
-      chainId: args.chainId,
-      vault: args.to,
-    });
+    const withdrawInfo = await this.defiStakingMapper.mapWithdrawInfo(args);
 
-    if (
-      defiVaultStats.protocol === 'unknown' ||
-      defiVaultStats.chain === 'unknown'
-    ) {
-      throw new NotFoundException('DeFi vault stats not found');
-    }
-
-    const [amount] = this.defiVaultHelper.decodeWithdraw(args.data);
-    const [exchangeRate, vaultToken] = await Promise.all([
-      this.defiVaultHelper.previewWithdraw({
-        chainId: args.chainId,
-        vault: args.to,
-        amount,
-      }),
-      this.tokenRepository.getToken({
-        chainId: args.chainId,
-        address: args.to,
-      }),
-    ]);
-
-    return new DefiWithdrawConfirmationView({
+    return new DefiStakingWithdrawConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
-      vault: new AddressInfo(args.to, deployment.display_name),
-      exchangeRate: exchangeRate.toString(),
-      vaultToken: new TokenInfo({
-        address: vaultToken.address,
-        decimals: vaultToken.decimals ?? defiVaultStats.asset_decimals,
-        logoUri: vaultToken.logoUri,
-        name: vaultToken.name,
-        symbol: vaultToken.symbol,
-        trusted: vaultToken.trusted,
-      }),
+      ...withdrawInfo,
     });
   }
 

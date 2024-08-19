@@ -64,9 +64,9 @@ describe('TransactionsViewController tests', () => {
       features: {
         ...baseConfig.features,
         confirmationView: true,
-        dedicatedStaking: true,
+        nativeStaking: true,
         pooledStaking: true,
-        defiVaults: true,
+        defiStaking: true,
       },
       swaps: {
         ...baseConfig.swaps,
@@ -201,7 +201,7 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_DEDICATED_STAKE',
+              type: 'KILN_NATIVE_STAKING_DEPOSIT',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               estimatedEntryTime: networkStats.estimated_entry_time_seconds,
@@ -288,7 +288,7 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_DEDICATED_STAKE',
+              type: 'KILN_NATIVE_STAKING_DEPOSIT',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               estimatedEntryTime: networkStats.estimated_entry_time_seconds,
@@ -735,7 +735,7 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_POOLED_DEPOSIT',
+              type: 'KILN_POOLED_STAKING_DEPOSIT',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               estimatedEntryTime: networkStats.estimated_entry_time_seconds,
@@ -848,7 +848,7 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_POOLED_DEPOSIT',
+              type: 'KILN_POOLED_STAKING_DEPOSIT',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               estimatedEntryTime: networkStats.estimated_entry_time_seconds,
@@ -1364,7 +1364,7 @@ describe('TransactionsViewController tests', () => {
             abi: parseAbi(['function requestExit(uint256 amount) external']),
             args: [faker.number.bigInt()],
           }),
-          type: 'KILN_POOLED_REQUEST_EXIT',
+          type: 'KILN_POOLED_STAKING_REQUEST_EXIT',
         },
         {
           method: 'multiClaim',
@@ -1378,7 +1378,7 @@ describe('TransactionsViewController tests', () => {
               [[faker.number.int()]],
             ],
           }),
-          type: 'KILN_POOLED_MULTI_CLAIM',
+          type: 'KILN_POOLED_STAKING_WITHDRAW',
         },
       ].map(({ method, data, type }) => {
         describe(method, () => {
@@ -2003,7 +2003,7 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_DEFI_DEPOSIT',
+              type: 'KILN_DEFI_STAKING_DEPOSIT',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               fee: 0,
@@ -2111,7 +2111,7 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_DEFI_DEPOSIT',
+              type: 'KILN_DEFI_STAKING_DEPOSIT',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               fee: 0,
@@ -2757,7 +2757,7 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_DEFI_WITHDRAW',
+              type: 'KILN_DEFI_STAKING_WITHDRAW',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               vault: {
@@ -2863,7 +2863,7 @@ describe('TransactionsViewController tests', () => {
             })
             .expect(200)
             .expect({
-              type: 'KILN_DEFI_WITHDRAW',
+              type: 'KILN_DEFI_STAKING_WITHDRAW',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               vault: {

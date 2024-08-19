@@ -13,7 +13,7 @@ import { Inject, Injectable, Module } from '@nestjs/common';
 import { erc4626Abi } from 'viem';
 
 @Injectable()
-export class KilnDefiVaultHelper {
+export class KilnDefiStakingHelper {
   constructor(
     @Inject(IBlockchainApiManager)
     private readonly blockchainApiManager: IBlockchainApiManager,
@@ -160,7 +160,7 @@ export class KilnDefiVaultHelper {
     TransactionFinderModule,
     StakingRepositoryModule,
   ],
-  providers: [KilnDefiVaultHelper, Erc4626Decoder],
-  exports: [KilnDefiVaultHelper],
+  providers: [KilnDefiStakingHelper, Erc4626Decoder],
+  exports: [KilnDefiStakingHelper],
 })
-export class KilnDefiVaultHelperModule {}
+export class KilnDefiStakingHelperModule {}

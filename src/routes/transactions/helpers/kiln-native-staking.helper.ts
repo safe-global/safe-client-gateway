@@ -8,7 +8,7 @@ import { Inject, Injectable, Module } from '@nestjs/common';
 import { toFunctionSelector } from 'viem';
 
 @Injectable()
-export class KilnDedicatedStakingHelper {
+export class KilnNativeStakingHelper {
   constructor(
     private readonly transactionFinder: TransactionFinder,
     @Inject(IStakingRepository)
@@ -53,7 +53,7 @@ export class KilnDedicatedStakingHelper {
 
 @Module({
   imports: [TransactionFinderModule, StakingRepositoryModule],
-  providers: [KilnDedicatedStakingHelper],
-  exports: [KilnDedicatedStakingHelper],
+  providers: [KilnNativeStakingHelper],
+  exports: [KilnNativeStakingHelper],
 })
-export class KilnDedicatedStakingHelperModule {}
+export class KilnNativeStakingHelperModule {}
