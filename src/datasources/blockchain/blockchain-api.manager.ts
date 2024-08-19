@@ -1,25 +1,43 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import { Chain as DomainChain } from '@/domain/chains/entities/chain.entity';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
 import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { Chain, PublicClient, createPublicClient, http } from 'viem';
+import {
+  Chain,
+  PublicClient,
+  RpcRequestError,
+  createPublicClient,
+  custom,
+} from 'viem';
+import { getHttpRpcClient } from 'viem/utils';
 
 @Injectable()
 export class BlockchainApiManager implements IBlockchainApiManager {
   private static readonly INFURA_URL_PATTERN = 'infura';
   private readonly blockchainApiMap: Record<string, PublicClient> = {};
   private readonly infuraApiKey: string;
+  private readonly rpcExpirationTimeInSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
+    @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
     this.infuraApiKey = this.configurationService.getOrThrow<string>(
       'blockchain.infura.apiKey',
     );
+    this.rpcExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.rpc',
+      );
   }
 
   async getApi(chainId: string): Promise<PublicClient> {
@@ -29,21 +47,85 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     }
 
     const chain = await this.configApi.getChain(chainId);
-    this.blockchainApiMap[chainId] = this.createClient(chain);
+    this.blockchainApiMap[chainId] = this._createCachedRpcClient(chain);
 
     return this.blockchainApiMap[chainId];
   }
 
   destroyApi(chainId: string): void {
-    if (this.blockchainApiMap?.[chainId]) {
-      delete this.blockchainApiMap[chainId];
+    if (!this.blockchainApiMap?.[chainId]) {
+      return;
     }
+
+    delete this.blockchainApiMap[chainId];
+
+    const key = CacheRouter.getRpcRequestsKey(chainId);
+    void this.cacheService.deleteByKey(key);
   }
 
-  private createClient(chain: DomainChain): PublicClient {
+  /**
+   * Creates a {@link PublicClient} with a cache layer for RPC requests
+   * @param domainChain {@link DomainChain} to create the client for
+   */
+  _createCachedRpcClient(domainChain: DomainChain): PublicClient {
+    const chain = this.formatChain(domainChain);
+
+    const rpcUrl = chain.rpcUrls.default.http[0];
+    const rpcClient = getHttpRpcClient(rpcUrl);
+
+    const request = async (body: {
+      method: string;
+      params?: unknown;
+    }): Promise<unknown> => {
+      const cacheDir = CacheRouter.getRpcRequestsCacheDir({
+        chainId: domainChain.chainId,
+        method: body.method,
+        params: ((): string => {
+          try {
+            // We cannot be certain of the shape of the params object
+            return JSON.stringify(body.params);
+          } catch {
+            return '';
+          }
+        })(),
+      });
+
+      const cache = await this.cacheService.get(cacheDir);
+
+      if (cache != null) {
+        return cache;
+      }
+
+      const { error, result } = await rpcClient.request({
+        body,
+      });
+
+      if (
+        error ||
+        // Result will always be a string, but we need to check for the type
+        typeof result !== 'string'
+      ) {
+        throw new RpcRequestError({
+          body,
+          error,
+          url: rpcUrl,
+        });
+      }
+
+      await this.cacheService.set(
+        cacheDir,
+        result,
+        this.rpcExpirationTimeInSeconds,
+      );
+
+      return result;
+    };
+
     return createPublicClient({
-      chain: this.formatChain(chain),
-      transport: http(),
+      chain,
+      transport: custom({
+        request,
+      }),
     });
   }
 
