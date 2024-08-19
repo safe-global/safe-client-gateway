@@ -9,7 +9,7 @@ import {
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import {
   KilnPooledStakingHelper,
-  PooledStakingHelperModule,
+  KilnPooledStakingHelperModule,
 } from '@/routes/transactions/helpers/kiln-pooled-staking.helper';
 import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
 
@@ -104,7 +104,7 @@ export class PooledStakingMapper {
 }
 
 @Module({
-  imports: [StakingRepositoryModule, PooledStakingHelperModule],
+  imports: [StakingRepositoryModule, KilnPooledStakingHelperModule],
   providers: [PooledStakingMapper],
   exports: [PooledStakingMapper],
 })

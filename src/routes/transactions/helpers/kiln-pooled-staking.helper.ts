@@ -188,4 +188,4 @@ export class KilnPooledStakingHelper {
   providers: [KilnPooledStakingHelper],
   exports: [KilnPooledStakingHelper],
 })
-export class PooledStakingHelperModule {}
+export class KilnPooledStakingHelperModule {}

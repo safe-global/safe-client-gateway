@@ -33,7 +33,7 @@ import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.helper';
-import { PooledStakingHelperModule } from '@/routes/transactions/helpers/kiln-pooled-staking.helper';
+import { KilnPooledStakingHelperModule } from '@/routes/transactions/helpers/kiln-pooled-staking.helper';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { TokenRepositoryModule } from '@/domain/tokens/token.repository.interface';
 import { KilnNativeStakingHelperModule } from '@/routes/transactions/helpers/kiln-native-staking.helper';
@@ -116,7 +116,7 @@ export class TransactionsViewController {
     SwapOrderHelperModule,
     TokenRepositoryModule,
     TwapOrderHelperModule,
-    PooledStakingHelperModule,
+    KilnPooledStakingHelperModule,
     PooledStakingMapperModule,
     SwapsRepositoryModule,
     StakingRepositoryModule,
