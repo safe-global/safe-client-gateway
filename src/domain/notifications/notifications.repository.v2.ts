@@ -139,11 +139,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void> {
-    return this.notificationsDatasource.deleteSubscription({
-      deviceUuid: args.deviceUuid,
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-    });
+    return this.notificationsDatasource.deleteSubscription(args);
   }
 
   deleteDevice(deviceUuid: UUID): Promise<void> {

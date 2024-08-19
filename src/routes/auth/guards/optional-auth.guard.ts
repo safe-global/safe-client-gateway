@@ -4,7 +4,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Request } from 'express';
 
 @Injectable()
-export class NotificationsGuard implements CanActivate {
+export class OptionalAuthGuard implements CanActivate {
   constructor(private readonly authGuard: AuthGuard) {}
   canActivate(context: ExecutionContext): boolean {
     const request: Request = context.switchToHttp().getRequest();
@@ -14,7 +14,7 @@ export class NotificationsGuard implements CanActivate {
 
     /**
      * If there is no access token, we allow the request to proceed as
-     * users can register for "public" notifications having not signed.
+     * we may have public/private access on the same route.
      */
     if (!accessToken) {
       return true;
