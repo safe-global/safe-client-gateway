@@ -136,8 +136,6 @@ export class ChainsService {
       blockNumber: BigInt(lastSyncedBlock),
     });
 
-    console.log('==> block', block);
-
     return new IndexingStatus({
       lastSync: Number(block.timestamp),
       synced: indexingStatus.synced,
