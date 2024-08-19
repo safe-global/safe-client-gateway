@@ -60,6 +60,9 @@ describe('TransactionsViewController tests', () => {
       features: {
         ...baseConfig.features,
         confirmationView: true,
+        dedicatedStaking: true,
+        pooledStaking: true,
+        defiVault: true,
       },
       swaps: {
         ...baseConfig.swaps,

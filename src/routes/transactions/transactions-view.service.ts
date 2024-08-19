@@ -36,9 +36,14 @@ import {
 } from '@/routes/transactions/entities/confirmation-view/staking-confirmation-view.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { KilnDefiVaultHelper } from '@/routes/transactions/helpers/kiln-defi-vault.helper';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable({})
 export class TransactionsViewService {
+  isDedicatedStakingEnabled: boolean;
+  isPooledStakingEnabled: boolean;
+  isDefiVaultsEnabled: boolean;
+
   constructor(
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: IDataDecodedRepository,
@@ -57,7 +62,20 @@ export class TransactionsViewService {
     private readonly swapAppsHelper: SwapAppsHelper,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isDedicatedStakingEnabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.dedicatedStaking',
+      );
+    this.isPooledStakingEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.pooledStaking',
+    );
+    this.isDefiVaultsEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.defiVaults',
+    );
+  }
 
   async getTransactionConfirmationView(args: {
     chainId: string;
@@ -107,15 +125,20 @@ export class TransactionsViewService {
         });
       }
 
-      const deployment = args.transactionDataDto.to
-        ? await this.stakingRepository.getDeployment({
-            chainId: args.chainId,
-            address: args.transactionDataDto.to,
-          })
-        : null;
+      const deployment =
+        args.transactionDataDto.to &&
+        this.isDedicatedStakingEnabled &&
+        this.isPooledStakingEnabled &&
+        this.isDefiVaultsEnabled
+          ? await this.stakingRepository.getDeployment({
+              chainId: args.chainId,
+              address: args.transactionDataDto.to,
+            })
+          : null;
 
       // Dedicated Staking
       const dedicatedStakingDepositData =
+        this.isDedicatedStakingEnabled &&
         this.dedicatedStakingHelper.findDeposit(args.transactionDataDto.data);
       if (
         deployment?.product_type === 'dedicated' &&
@@ -130,9 +153,9 @@ export class TransactionsViewService {
       }
 
       // Pooled staking
-      const pooledStakingStakeData = this.pooledStakingHelper.findStake(
-        args.transactionDataDto.data,
-      );
+      const pooledStakingStakeData =
+        this.isPooledStakingEnabled &&
+        this.pooledStakingHelper.findStake(args.transactionDataDto.data);
       if (deployment?.product_type === 'pooling' && pooledStakingStakeData) {
         return await this.getPooledStakingStakeConfirmationView({
           chainId: args.chainId,
@@ -143,6 +166,7 @@ export class TransactionsViewService {
       }
 
       const pooledStakingRequestExitData =
+        this.isPooledStakingEnabled &&
         this.pooledStakingHelper.findRequestExit(args.transactionDataDto.data);
       if (
         deployment?.product_type === 'pooling' &&
@@ -156,9 +180,9 @@ export class TransactionsViewService {
         });
       }
 
-      const pooledStakingWithdrawData = this.pooledStakingHelper.findMultiClaim(
-        args.transactionDataDto.data,
-      );
+      const pooledStakingWithdrawData =
+        this.isPooledStakingEnabled &&
+        this.pooledStakingHelper.findMultiClaim(args.transactionDataDto.data);
       if (deployment?.product_type === 'pooling' && pooledStakingWithdrawData) {
         return await this.getPooledStakingWithdrawConfirmationView({
           chainId: args.chainId,
@@ -169,9 +193,9 @@ export class TransactionsViewService {
       }
 
       // DeFi vault
-      const defiDepositData = this.defiVaultHelper.findDeposit(
-        args.transactionDataDto.data,
-      );
+      const defiDepositData =
+        this.isDefiVaultsEnabled &&
+        this.defiVaultHelper.findDeposit(args.transactionDataDto.data);
       if (deployment?.product_type === 'defi' && defiDepositData) {
         return await this.getDefiDepositConfirmationView({
           chainId: args.chainId,
@@ -181,9 +205,9 @@ export class TransactionsViewService {
         });
       }
 
-      const defiWithdrawData = this.defiVaultHelper.findWithdraw(
-        args.transactionDataDto.data,
-      );
+      const defiWithdrawData =
+        this.isDefiVaultsEnabled &&
+        this.defiVaultHelper.findWithdraw(args.transactionDataDto.data);
       if (deployment?.product_type === 'defi' && defiWithdrawData) {
         return await this.getDefiWithdrawConfirmationView({
           chainId: args.chainId,
