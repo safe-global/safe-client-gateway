@@ -25,6 +25,7 @@ export class CacheRouter {
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
   private static readonly RELAY_KEY = 'relay';
+  private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_BALANCES_KEY = 'safe_balances';
   private static readonly SAFE_COLLECTIBLES_KEY = 'safe_collectibles';
@@ -531,6 +532,21 @@ export class CacheRouter {
     return new CacheDir(
       `${CacheRouter.COUNTERFACTUAL_SAFES_KEY}_${address}`,
       '',
+    );
+  }
+
+  static getRpcRequestsKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.RPC_REQUESTS_KEY}`;
+  }
+
+  static getRpcRequestsCacheDir(args: {
+    chainId: string;
+    method: string;
+    params: string;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getRpcRequestsKey(args.chainId),
+      `${args.method}_${args.params}`,
     );
   }
 }

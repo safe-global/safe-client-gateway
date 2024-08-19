@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export const checkGuardIsApplied = (guard: Function, fn: Function): void => {
   const guards: (() => void)[] = Reflect.getMetadata('__guards__', fn);
   expect(guards?.length ?? 0).toBeGreaterThan(0);
