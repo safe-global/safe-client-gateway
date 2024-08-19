@@ -43,7 +43,7 @@ CREATE TABLE notification_subscriptions (
     push_notification_device_id INT NOT NULL,
     chain_id VARCHAR(255) NOT NULL,
     safe_address VARCHAR(42) NOT NULL,
-    signer_address VARCHAR(42) NOT NULL,
+    signer_address VARCHAR(42),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     FOREIGN KEY (push_notification_device_id) REFERENCES push_notification_devices(id) ON DELETE CASCADE,

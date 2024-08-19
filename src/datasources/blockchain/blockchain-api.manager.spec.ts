@@ -1,11 +1,13 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { BlockchainApiManager } from '@/datasources/blockchain/blockchain-api.manager';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { faker } from '@faker-js/faker';
+import { toHex } from 'viem';
 
 const configApiMock = jest.mocked({
   getChain: jest.fn(),
@@ -103,6 +105,7 @@ describe('BlockchainApiManager', () => {
       const chain = chainBuilder().build();
       const client = target._createCachedRpcClient(chain);
       const fetchSpy = jest.spyOn(global, 'fetch');
+      const chainId = toHex(chain.chainId);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       fetchSpy.mockImplementation((_: unknown) => {
         return Promise.resolve({
@@ -112,11 +115,20 @@ describe('BlockchainApiManager', () => {
           json: () => {
             // Return chain ID
             return Promise.resolve({
-              result: faker.string.hexadecimal(),
+              result: chainId,
             });
           },
         } as Response);
       });
+      const body = {
+        jsonrpc: '2.0',
+        id: 0,
+        method: 'eth_chainId',
+      };
+      const cacheDir = new CacheDir(
+        `${chain.chainId}_rpc_requests`,
+        `${body.method}_undefined`,
+      );
 
       await client.getChainId();
 
@@ -126,17 +138,15 @@ describe('BlockchainApiManager', () => {
 
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenNthCalledWith(1, chain.rpcUri.value, {
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 0,
-          method: 'eth_chainId',
-        }),
+        body: JSON.stringify(body),
         headers: {
           'Content-Type': 'application/json',
         },
         method: 'POST',
         signal: expect.any(AbortSignal),
       });
+      expect(fakeCacheService.keyCount()).toBe(1);
+      await expect(fakeCacheService.get(cacheDir)).resolves.toBe(chainId);
 
       fetchSpy.mockRestore();
     });
