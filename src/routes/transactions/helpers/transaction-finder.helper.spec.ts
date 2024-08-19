@@ -29,7 +29,7 @@ describe('TransactionFinder', () => {
 
     const result = target.findTransaction(isTransactionData, transaction);
 
-    expect(result).toBe(transaction.data);
+    expect(result).toStrictEqual({ data: transaction.data });
   });
 
   it('should return the transaction data if it is found in a MultiSend transaction', () => {
@@ -55,7 +55,10 @@ describe('TransactionFinder', () => {
       data: multiSend.encode(),
     });
 
-    expect(result).toBe(transaction.data);
+    expect(result).toStrictEqual({
+      to: transaction.to,
+      data: transaction.data,
+    });
   });
 
   it('should return null if the transaction data is not found', () => {

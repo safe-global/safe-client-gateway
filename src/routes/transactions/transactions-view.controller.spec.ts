@@ -37,6 +37,10 @@ import {
 } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { FakeBlockchainApiManager } from '@/datasources/blockchain/__tests__/fake.blockchain-api.manager';
 import { defiVaultStatsBuilder } from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 
 const readContractMock = jest.fn();
 
@@ -194,6 +198,93 @@ describe('TransactionsViewController tests', () => {
             .send({
               to: deployment.address,
               data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_DEDICATED_STAKE',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              fee: +deployment.product_fee!,
+              monthlyNrr:
+                dedicatedStakingStats.gross_apy.last_30d *
+                (1 - +deployment.product_fee!),
+              annualNrr:
+                dedicatedStakingStats.gross_apy.last_30d *
+                (1 - +deployment.product_fee!),
+            });
+        });
+
+        it('returns the dedicated staking `deposit` confirmation view from batch', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('status', 'active')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+          const networkStats = networkStatsBuilder().build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const depositData = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          const multiSendAddress = getAddress(faker.finance.ethereumAddress());
+          const multiSendData = multiSendEncoder()
+            .with(
+              'transactions',
+              multiSendTransactionsEncoder([
+                {
+                  to: deployment.address,
+                  data: depositData,
+                  value: BigInt(0),
+                  operation: 0,
+                },
+              ]),
+            )
+            .encode();
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/kiln-stats`) {
+              return Promise.resolve({
+                data: { data: dedicatedStakingStats },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: multiSendAddress,
+              data: multiSendData,
             })
             .expect(200)
             .expect({
@@ -641,6 +732,119 @@ describe('TransactionsViewController tests', () => {
             .send({
               to: deployment.address,
               data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_POOLED_DEPOSIT',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              fee: pooledStakingStats.fee,
+              monthlyNrr: pooledStakingStats.one_month.nrr,
+              annualNrr: pooledStakingStats.one_year.nrr,
+              pool: {
+                value: deployment.address,
+                name: deployment.display_name,
+                logoUri: null,
+              },
+              exchangeRate: rate.toString(),
+              poolToken: {
+                address: poolToken.address,
+                decimals: 18,
+                logoUri: poolToken.logoUri,
+                name: poolToken.name,
+                symbol: poolToken.symbol,
+                trusted: poolToken.trusted,
+              },
+            });
+        });
+
+        it('returns the pooled staking `stake` confirmation view from batch', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'pooling')
+            .with('status', 'active')
+            .build();
+          const pooledStakingStats = pooledStakingStatsBuilder()
+            .with('address', deployment.address)
+            .build();
+          const networkStats = networkStatsBuilder().build();
+          const poolToken = tokenBuilder()
+            .with('address', deployment.address)
+            .with('decimals', null) // Test default decimals
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const stakeData = encodeFunctionData({
+            abi: parseAbi(['function stake() external payable']),
+          });
+          const multiSendAddress = getAddress(faker.finance.ethereumAddress());
+          const multiSendData = multiSendEncoder()
+            .with(
+              'transactions',
+              multiSendTransactionsEncoder([
+                {
+                  to: deployment.address,
+                  data: stakeData,
+                  value: BigInt(0),
+                  operation: 0,
+                },
+              ]),
+            )
+            .encode();
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/onchain/v2/network-stats`) {
+              return Promise.resolve({
+                data: { data: pooledStakingStats },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+              return Promise.resolve({
+                data: { data: networkStats },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: poolToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: multiSendAddress,
+              data: multiSendData,
             })
             .expect(200)
             .expect({
@@ -1261,6 +1465,105 @@ describe('TransactionsViewController tests', () => {
               });
           });
 
+          it(`returns the pooled staking \`${method}\` confirmation view from batch`, async () => {
+            const chain = chainBuilder().with('isTestnet', false).build();
+            const dataDecoded = dataDecodedBuilder().build();
+            const deployment = deploymentBuilder()
+              .with('chain_id', +chain.chainId)
+              .with('product_type', 'pooling')
+              .with('status', 'active')
+              .build();
+            const networkStats = networkStatsBuilder().build();
+            const poolToken = tokenBuilder()
+              .with('address', deployment.address)
+              .build();
+            const rate = faker.number.bigInt();
+            const safeAddress = faker.finance.ethereumAddress();
+            const multiSendAddress = getAddress(
+              faker.finance.ethereumAddress(),
+            );
+            const multiSendData = multiSendEncoder()
+              .with(
+                'transactions',
+                multiSendTransactionsEncoder([
+                  {
+                    to: deployment.address,
+                    data,
+                    value: BigInt(0),
+                    operation: 0,
+                  },
+                ]),
+              )
+              .encode();
+            networkService.get.mockImplementation(({ url }) => {
+              if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+                return Promise.resolve({ data: chain, status: 200 });
+              }
+              if (url === `${stakingApiUrl}/v1/deployments`) {
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              }
+              if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              }
+              if (
+                url ===
+                `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+              ) {
+                return Promise.resolve({
+                  data: poolToken,
+                  status: 200,
+                });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            networkService.post.mockImplementation(({ url }) => {
+              if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+                return Promise.resolve({ data: dataDecoded, status: 200 });
+              }
+              return Promise.reject(new Error(`Could not match ${url}`));
+            });
+            readContractMock.mockResolvedValue(rate);
+
+            await request(app.getHttpServer())
+              .post(
+                `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+              )
+              .send({
+                to: multiSendAddress,
+                data: multiSendData,
+              })
+              .expect(200)
+              .expect({
+                type,
+                method: dataDecoded.method,
+                parameters: dataDecoded.parameters,
+                estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+                estimatedExitTime: networkStats.estimated_exit_time_seconds,
+                estimatedWithdrawalTime:
+                  networkStats.estimated_withdrawal_time_seconds,
+                pool: {
+                  value: deployment.address,
+                  name: deployment.display_name,
+                  logoUri: null,
+                },
+                exchangeRate: rate.toString(),
+                poolToken: {
+                  address: poolToken.address,
+                  decimals: poolToken.decimals,
+                  logoUri: poolToken.logoUri,
+                  name: poolToken.name,
+                  symbol: poolToken.symbol,
+                  trusted: poolToken.trusted,
+                },
+              });
+          });
+
           it('returns the generic confirmation view if the deployment is not available', async () => {
             const chain = chainBuilder().with('isTestnet', false).build();
             const dataDecoded = dataDecodedBuilder().build();
@@ -1697,6 +2000,114 @@ describe('TransactionsViewController tests', () => {
             .send({
               to: deployment.address,
               data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_DEFI_DEPOSIT',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              fee: 0,
+              monthlyNrr: defiVaultStats.nrr,
+              annualNrr: defiVaultStats.nrr,
+              vault: {
+                value: deployment.address,
+                name: deployment.display_name,
+                logoUri: null,
+              },
+              exchangeRate: rate.toString(),
+              vaultToken: {
+                address: vaultToken.address,
+                decimals: defiVaultStats.asset_decimals,
+                logoUri: vaultToken.logoUri,
+                name: vaultToken.name,
+                symbol: vaultToken.symbol,
+                trusted: vaultToken.trusted,
+              },
+            });
+        });
+
+        it('returns the DeFi vault `deposit` confirmation view from batch', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder().build();
+          const vaultToken = tokenBuilder()
+            .with('address', deployment.address)
+            .with('decimals', null) // Test default decimals
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const depositData = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'deposit',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          const multiSendAddress = getAddress(faker.finance.ethereumAddress());
+          const multiSendData = multiSendEncoder()
+            .with(
+              'transactions',
+              multiSendTransactionsEncoder([
+                {
+                  to: deployment.address,
+                  data: depositData,
+                  value: BigInt(0),
+                  operation: 0,
+                },
+              ]),
+            )
+            .encode();
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: vaultToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: multiSendAddress,
+              data: multiSendData,
             })
             .expect(200)
             .expect({
@@ -2343,6 +2754,112 @@ describe('TransactionsViewController tests', () => {
             .send({
               to: deployment.address,
               data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_DEFI_WITHDRAW',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              vault: {
+                value: deployment.address,
+                name: deployment.display_name,
+                logoUri: null,
+              },
+              exchangeRate: rate.toString(),
+              vaultToken: {
+                address: vaultToken.address,
+                decimals: defiVaultStats.asset_decimals,
+                logoUri: vaultToken.logoUri,
+                name: vaultToken.name,
+                symbol: vaultToken.symbol,
+                trusted: vaultToken.trusted,
+              },
+            });
+        });
+
+        it('returns the DeFi vault `withdraw` confirmation view from batch', async () => {
+          const chain = chainBuilder()
+            .with('chainId', faker.helpers.arrayElement(chains))
+            .with('isTestnet', false)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('status', 'active')
+            .build();
+          const defiVaultStats = defiVaultStatsBuilder().build();
+          const vaultToken = tokenBuilder()
+            .with('address', deployment.address)
+            .with('decimals', null) // Test default decimals
+            .build();
+          const rate = faker.number.bigInt();
+          const safeAddress = faker.finance.ethereumAddress();
+          const withdrawData = encodeFunctionData({
+            abi: erc4626Abi,
+            functionName: 'withdraw',
+            args: [
+              faker.number.bigInt(),
+              getAddress(faker.finance.ethereumAddress()),
+              getAddress(faker.finance.ethereumAddress()),
+            ],
+          });
+          const multiSendAddress = getAddress(faker.finance.ethereumAddress());
+          const multiSendData = multiSendEncoder()
+            .with(
+              'transactions',
+              multiSendTransactionsEncoder([
+                {
+                  to: deployment.address,
+                  data: withdrawData,
+                  value: BigInt(0),
+                  operation: 0,
+                },
+              ]),
+            )
+            .encode();
+          networkService.get.mockImplementation(({ url }) => {
+            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+              return Promise.resolve({ data: chain, status: 200 });
+            }
+            if (url === `${stakingApiUrl}/v1/deployments`) {
+              return Promise.resolve({
+                data: { data: [deployment] },
+                status: 200,
+              });
+            }
+            if (url === `${stakingApiUrl}/v1/defi/network-stats`) {
+              return Promise.resolve({
+                data: { data: [defiVaultStats] },
+                status: 200,
+              });
+            }
+            if (
+              url ===
+              `${chain.transactionService}/api/v1/tokens/${deployment.address}`
+            ) {
+              return Promise.resolve({
+                data: vaultToken,
+                status: 200,
+              });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+          readContractMock.mockResolvedValue(rate);
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: multiSendAddress,
+              data: multiSendData,
             })
             .expect(200)
             .expect({
