@@ -56,7 +56,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   async enqueueNotification(args: {
     token: string;
     deviceUuid: UUID;
-    signerAddress: `0x${string}`;
     notification: FirebaseNotification;
   }): Promise<void> {
     try {
@@ -95,10 +94,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   }): Promise<{
     deviceUuid: UUID;
   }> {
-    if (!args.authPayload.signer_address) {
-      throw new UnauthorizedException();
-    }
-
     return this.notificationsDatasource.upsertSubscriptions({
       signerAddress: args.authPayload.signer_address,
       upsertSubscriptionsDto: args.upsertSubscriptionsDto,
@@ -128,7 +123,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     safeAddress: `0x${string}`;
   }): Promise<
     Array<{
-      subscriber: `0x${string}`;
+      subscriber: `0x${string}` | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }>

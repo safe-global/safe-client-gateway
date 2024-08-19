@@ -6,7 +6,7 @@ export const INotificationsDatasource = Symbol('INotificationsDatasource');
 
 export interface INotificationsDatasource {
   upsertSubscriptions(args: {
-    signerAddress: `0x${string}`;
+    signerAddress?: `0x${string}`;
     upsertSubscriptionsDto: UpsertSubscriptionsDto;
   }): Promise<{
     deviceUuid: UUID;
@@ -24,7 +24,7 @@ export interface INotificationsDatasource {
     safeAddress: `0x${string}`;
   }): Promise<
     Array<{
-      subscriber: `0x${string}`;
+      subscriber: `0x${string}` | null;
       deviceUuid: UUID;
       cloudMessagingToken: string;
     }>

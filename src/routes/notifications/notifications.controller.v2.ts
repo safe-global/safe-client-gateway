@@ -22,6 +22,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { UUID } from 'crypto';
+import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
@@ -29,7 +30,7 @@ export class NotificationsControllerV2 {
   constructor(private readonly notificationsService: NotificationsServiceV2) {}
 
   @Post('register/notifications')
-  @UseGuards(AuthGuard)
+  @UseGuards(OptionalAuthGuard)
   upsertSubscriptions(
     @Body(new ValidationPipe(UpsertSubscriptionsDtoSchema))
     upsertSubscriptionsDto: UpsertSubscriptionsDto,
