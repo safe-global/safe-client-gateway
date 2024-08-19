@@ -279,6 +279,19 @@ export default () => ({
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
+  staking: {
+    testnet: {
+      baseUri:
+        process.env.STAKING_TESTNET_API_BASE_URI ||
+        'https://api.testnet.kiln.fi',
+      apiKey: process.env.STAKING_TESTNET_API_KEY,
+    },
+    mainnet: {
+      baseUri:
+        process.env.STAKING_API_BASE_URI || 'https://api.testnet.kiln.fi',
+      apiKey: process.env.STAKING_API_KEY,
+    },
+  },
   swaps: {
     api: {
       1: 'https://api.cow.fi/mainnet',

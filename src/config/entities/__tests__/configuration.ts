@@ -189,6 +189,16 @@ export default (): ReturnType<typeof configuration> => ({
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
+  staking: {
+    testnet: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+    },
+    mainnet: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+    },
+  },
   swaps: {
     api: {
       1: faker.internet.url({ appendSlash: false }),
