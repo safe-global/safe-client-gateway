@@ -93,14 +93,18 @@ export class BlockchainApiManager implements IBlockchainApiManager {
       const cache = await this.cacheService.get(cacheDir);
 
       if (cache != null) {
-        return JSON.parse(cache);
+        return cache;
       }
 
       const { error, result } = await rpcClient.request({
         body,
       });
 
-      if (error) {
+      if (
+        error ||
+        // Result will always be a string, but we need to check for the type
+        typeof result !== 'string'
+      ) {
         throw new RpcRequestError({
           body,
           error,
@@ -110,7 +114,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
 
       await this.cacheService.set(
         cacheDir,
-        JSON.stringify(result),
+        result,
         this.rpcExpirationTimeInSeconds,
       );
 
