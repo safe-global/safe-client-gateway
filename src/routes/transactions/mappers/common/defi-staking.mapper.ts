@@ -6,7 +6,7 @@ import {
 } from '@/domain/tokens/token.repository.interface';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
-  DefiDepositTransactionInfo,
+  DefiStakingDepositTransactionInfo,
   DefiStakingWithdrawTransactionInfo,
 } from '@/routes/transactions/entities/staking/defi-staking-info.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
@@ -30,7 +30,7 @@ export class DefiStakingMapper {
     chainId: string;
     to: `0x${string}`;
     data: `0x${string}`;
-  }): Promise<DefiDepositTransactionInfo> {
+  }): Promise<DefiStakingDepositTransactionInfo> {
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
@@ -65,7 +65,7 @@ export class DefiStakingMapper {
       }),
     ]);
 
-    return new DefiDepositTransactionInfo({
+    return new DefiStakingDepositTransactionInfo({
       fee: 0, // TODO
       monthlyNrr: defiVaultStats.nrr,
       annualNrr: defiVaultStats.nrr,

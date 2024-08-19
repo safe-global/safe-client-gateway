@@ -17,7 +17,7 @@ export type DefiStakingDepositInfo = StakingFinancialInfo & DefiStaking;
 
 export type DefiStakingWithdrawInfo = DefiStaking;
 
-export class DefiDepositTransactionInfo
+export class DefiStakingDepositTransactionInfo
   extends TransactionInfo
   implements DefiStakingDepositInfo
 {
