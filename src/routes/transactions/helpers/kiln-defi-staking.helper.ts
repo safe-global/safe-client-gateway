@@ -111,9 +111,6 @@ export class KilnDefiStakingHelper {
     amount: bigint;
   }): Promise<bigint> {
     const blockchainApi = await this.blockchainApiManager.getApi(args.chainId);
-    // TODO: Should we cache this?
-    // `previewDeposit` returns the best estimate according to the current block
-    // if we want to cache this value, we should call `toShares` instead
     return blockchainApi.readContract({
       abi: erc4626Abi,
       functionName: 'previewDeposit',
@@ -142,9 +139,6 @@ export class KilnDefiStakingHelper {
     amount: bigint;
   }): Promise<bigint> {
     const blockchainApi = await this.blockchainApiManager.getApi(args.chainId);
-    // TODO: Should we cache this?
-    // `previewWithdraw` returns the best estimate according to the current block
-    // if we want to cache this value, we should call `toAssets` instead
     return blockchainApi.readContract({
       abi: erc4626Abi,
       functionName: 'previewWithdraw',

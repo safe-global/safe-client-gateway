@@ -150,7 +150,6 @@ export class KilnPooledStakingHelper {
     pool: `0x${string}`;
   }): Promise<bigint> {
     const blockchainApi = await this.blockchainApiManager.getApi(args.chainId);
-    // TODO: Should we cache this?
     return blockchainApi.readContract({
       abi: parseAbi(['function rate() external view returns (uint256)']),
       functionName: 'rate',

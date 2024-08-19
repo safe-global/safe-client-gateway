@@ -28,8 +28,8 @@ export class PooledStakingDepositTransactionInfo
   extends TransactionInfo
   implements PooledStakingDepositInfo
 {
-  @ApiProperty({ enum: [TransactionInfoType.PooledStakingDepositInfo] })
-  override type = TransactionInfoType.PooledStakingDepositInfo;
+  @ApiProperty({ enum: [TransactionInfoType.PooledStakingDeposit] })
+  override type = TransactionInfoType.PooledStakingDeposit;
 
   @ApiProperty()
   pool: AddressInfo;
@@ -69,7 +69,7 @@ export class PooledStakingDepositTransactionInfo
     monthlyNrr: number;
     annualNrr: number;
   }) {
-    super(TransactionInfoType.PooledStakingDepositInfo, null, null);
+    super(TransactionInfoType.PooledStakingDeposit, null, null);
     this.pool = args.pool;
     this.exchangeRate = args.exchangeRate;
     this.poolToken = args.poolToken;
