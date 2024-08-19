@@ -198,7 +198,7 @@ export default () => ({
       process.env.FF_CONFIRMATION_VIEW?.toLowerCase() === 'true',
     nativeStaking: process.env.FF_NATIVE_STAKING?.toLowerCase() === 'true',
     pooledStaking: process.env.FF_POOLED_STAKING?.toLowerCase() === 'true',
-    defiStaking: process.env.FF_DEFI_VAULTS?.toLowerCase() === 'true',
+    defiStaking: process.env.FF_DEFI_STAKING?.toLowerCase() === 'true',
     eventsQueue: process.env.FF_EVENTS_QUEUE?.toLowerCase() === 'true',
     delegatesV2: process.env.FF_DELEGATES_V2?.toLowerCase() === 'true',
     counterfactualBalances:
