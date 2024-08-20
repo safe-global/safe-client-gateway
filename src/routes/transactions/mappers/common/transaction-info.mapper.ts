@@ -24,6 +24,9 @@ import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper
 import { TwapOrderMapper } from '@/routes/transactions/mappers/common/twap-order.mapper';
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
+import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-info.entity';
+import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -33,6 +36,7 @@ export class MultisigTransactionInfoMapper {
   private readonly isRichFragmentsEnabled: boolean;
   private readonly isSwapsDecodingEnabled: boolean;
   private readonly isTwapsDecodingEnabled: boolean;
+  private readonly isNativeStakingDecodingEnabled: boolean;
 
   private readonly ERC20_TRANSFER_METHODS = [
     this.TRANSFER_METHOD,
@@ -61,6 +65,8 @@ export class MultisigTransactionInfoMapper {
     private readonly swapOrderHelper: SwapOrderHelper,
     private readonly twapOrderMapper: TwapOrderMapper,
     private readonly twapOrderHelper: TwapOrderHelper,
+    private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
+    private readonly nativeStakingMapper: NativeStakingMapper,
   ) {
     this.isRichFragmentsEnabled = this.configurationService.getOrThrow(
       'features.richFragments',
@@ -70,6 +76,9 @@ export class MultisigTransactionInfoMapper {
     );
     this.isTwapsDecodingEnabled = this.configurationService.getOrThrow(
       'features.twapsDecoding',
+    );
+    this.isNativeStakingDecodingEnabled = this.configurationService.getOrThrow(
+      'features.nativeStakingDecoding',
     );
   }
 
@@ -112,6 +121,17 @@ export class MultisigTransactionInfoMapper {
       const twapOrder = await this.mapTwapOrder(chainId, transaction);
       if (twapOrder) {
         return twapOrder;
+      }
+    }
+
+    if (this.isNativeStakingDecodingEnabled) {
+      const nativeStakingDeposit = await this.mapNativeStakingDeposit(
+        chainId,
+        transaction,
+      );
+      // If the transaction is a native staking deposit, we return it immediately
+      if (nativeStakingDeposit) {
+        return nativeStakingDeposit;
       }
     }
 
@@ -268,6 +288,44 @@ export class MultisigTransactionInfoMapper {
           executionDate: transaction.executionDate,
         },
       );
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  /**
+   * Maps a native staking `deposit` transaction.
+   * If the transaction is not to an official deployment, it returns null.
+   *
+   * @param chainId - chain ID of the transaction
+   * @param transaction - transaction to map
+   * @returns mapped {@link NativeStakingDepositTransactionInfo} or null if none found
+   */
+  private async mapNativeStakingDeposit(
+    chainId: string,
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): Promise<NativeStakingDepositTransactionInfo | null> {
+    if (!transaction?.data) {
+      return null;
+    }
+
+    const nativeStakingTransaction =
+      await this.kilnNativeStakingHelper.findDeposit({
+        chainId,
+        to: transaction.to,
+        data: transaction.data,
+      });
+
+    if (!nativeStakingTransaction) {
+      return null;
+    }
+
+    try {
+      return await this.nativeStakingMapper.mapDepositInfo({
+        chainId,
+        to: nativeStakingTransaction.to,
+      });
     } catch (error) {
       this.loggingService.warn(error);
       return null;

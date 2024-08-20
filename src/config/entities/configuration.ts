@@ -206,6 +206,8 @@ export default () => ({
     pushNotifications:
       process.env.FF_PUSH_NOTIFICATIONS?.toLowerCase() === 'true',
     nativeStaking: process.env.FF_NATIVE_STAKING?.toLowerCase() === 'true',
+    nativeStakingDecoding:
+      process.env.FF_NATIVE_STAKING_DECODING?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
