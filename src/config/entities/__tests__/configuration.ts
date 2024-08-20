@@ -110,6 +110,7 @@ export default (): ReturnType<typeof configuration> => ({
     default: faker.number.int(),
     rpc: faker.number.int(),
     holesky: faker.number.int(),
+    indexing: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),

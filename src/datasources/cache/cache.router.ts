@@ -16,6 +16,7 @@ export class CacheRouter {
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly FIREBASE_OAUTH2_TOKEN_KEY = 'firebase_oauth2_token';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
+  private static readonly INDEXING_KEY = 'indexing';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
   private static readonly MODULE_TRANSACTION_KEY = 'module_transaction';
@@ -282,6 +283,10 @@ export class CacheRouter {
     safeAddress: string;
   }): string {
     return `${args.chainId}_${CacheRouter.INCOMING_TRANSFERS_KEY}_${args.safeAddress}`;
+  }
+
+  static getIndexingCacheDir(chainId: string): CacheDir {
+    return new CacheDir(`${chainId}_${CacheRouter.INDEXING_KEY}`, '');
   }
 
   static getMultisigTransactionsCacheDir(args: {
