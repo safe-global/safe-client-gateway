@@ -1,7 +1,7 @@
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
-import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
+import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { zeroAddress } from 'viem';
 
@@ -9,10 +9,10 @@ describe('GPv2OrderHelper', () => {
   const target = new GPv2OrderHelper();
 
   const multiSendDecoder = new MultiSendDecoder();
-  const transactionDataFinder = new TransactionDataFinder(multiSendDecoder);
+  const transactionFinder = new TransactionFinder(multiSendDecoder);
   const composableCowDecoder = new ComposableCowDecoder();
   const twapOrderHelper = new TwapOrderHelper(
-    transactionDataFinder,
+    transactionFinder,
     composableCowDecoder,
   );
 

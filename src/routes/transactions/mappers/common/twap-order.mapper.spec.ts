@@ -16,7 +16,7 @@ import { TwapOrderMapper } from '@/routes/transactions/mappers/common/twap-order
 import { ILoggingService } from '@/logging/logging.interface';
 import { getAddress } from 'viem';
 import { fullAppDataBuilder } from '@/domain/swaps/entities/__tests__/full-app-data.builder';
-import { TransactionDataFinder } from '@/routes/transactions/helpers/transaction-data-finder.helper';
+import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
 import { NotFoundException } from '@nestjs/common';
 
@@ -46,11 +46,11 @@ const mockChainsRepository = {
 describe('TwapOrderMapper', () => {
   const configurationService = new FakeConfigurationService();
   const multiSendDecoder = new MultiSendDecoder();
-  const transactionDataFinder = new TransactionDataFinder(multiSendDecoder);
+  const transactionFinder = new TransactionFinder(multiSendDecoder);
   const gpv2Decoder = new GPv2Decoder(mockLoggingService);
   const allowedApps = new Set<string>();
   const swapOrderHelper = new SwapOrderHelper(
-    transactionDataFinder,
+    transactionFinder,
     gpv2Decoder,
     mockTokenRepository,
     mockSwapsRepository,
@@ -61,7 +61,7 @@ describe('TwapOrderMapper', () => {
   const gpv2OrderHelper = new GPv2OrderHelper();
   configurationService.set('swaps.restrictApps', false);
   const twapOrderHelper = new TwapOrderHelper(
-    transactionDataFinder,
+    transactionFinder,
     composableCowDecoder,
   );
 
@@ -520,7 +520,7 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new TwapOrderHelper(transactionFinder, composableCowDecoder),
       new SwapAppsHelper(configurationService, allowedApps),
     );
 
@@ -563,7 +563,7 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new TwapOrderHelper(transactionFinder, composableCowDecoder),
       new SwapAppsHelper(configurationService, new Set(['app1', 'app2'])),
     );
 
@@ -603,7 +603,7 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new TwapOrderHelper(transactionFinder, composableCowDecoder),
       new SwapAppsHelper(configurationService, allowedApps),
     );
 
@@ -702,7 +702,7 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new TwapOrderHelper(transactionFinder, composableCowDecoder),
       new SwapAppsHelper(configurationService, new Set(['Safe Wallet Swaps'])),
     );
 
@@ -814,7 +814,7 @@ describe('TwapOrderMapper', () => {
       mockSwapsRepository,
       composableCowDecoder,
       gpv2OrderHelper,
-      new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+      new TwapOrderHelper(transactionFinder, composableCowDecoder),
       new SwapAppsHelper(configurationService, new Set(['app1', 'app2'])),
     );
 
@@ -976,7 +976,7 @@ describe('TwapOrderMapper', () => {
         mockSwapsRepository,
         composableCowDecoder,
         gpv2OrderHelper,
-        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new TwapOrderHelper(transactionFinder, composableCowDecoder),
         new SwapAppsHelper(
           configurationService,
           new Set(['Safe Wallet Swaps']),
@@ -1095,7 +1095,7 @@ describe('TwapOrderMapper', () => {
         mockSwapsRepository,
         composableCowDecoder,
         gpv2OrderHelper,
-        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new TwapOrderHelper(transactionFinder, composableCowDecoder),
         new SwapAppsHelper(
           configurationService,
           new Set(['Safe Wallet Swaps']),
@@ -1257,7 +1257,7 @@ describe('TwapOrderMapper', () => {
         mockSwapsRepository,
         composableCowDecoder,
         gpv2OrderHelper,
-        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new TwapOrderHelper(transactionFinder, composableCowDecoder),
         new SwapAppsHelper(
           configurationService,
           new Set(['Safe Wallet Swaps']),
@@ -1457,7 +1457,7 @@ describe('TwapOrderMapper', () => {
         mockSwapsRepository,
         composableCowDecoder,
         gpv2OrderHelper,
-        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new TwapOrderHelper(transactionFinder, composableCowDecoder),
         new SwapAppsHelper(
           configurationService,
           new Set(['Safe Wallet Swaps']),
@@ -1657,7 +1657,7 @@ describe('TwapOrderMapper', () => {
         mockSwapsRepository,
         composableCowDecoder,
         gpv2OrderHelper,
-        new TwapOrderHelper(transactionDataFinder, composableCowDecoder),
+        new TwapOrderHelper(transactionFinder, composableCowDecoder),
         new SwapAppsHelper(
           configurationService,
           new Set(['Safe Wallet Swaps']),

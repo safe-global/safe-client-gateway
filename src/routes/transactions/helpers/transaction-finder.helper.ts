@@ -2,7 +2,7 @@ import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder
 import { Injectable, Module } from '@nestjs/common';
 
 @Injectable()
-export class TransactionDataFinder {
+export class TransactionFinder {
   constructor(private readonly multiSendDecoder: MultiSendDecoder) {}
 
   /**
@@ -12,15 +12,15 @@ export class TransactionDataFinder {
    * @param transaction - transaction to search for the data
    * @returns transaction data if found, otherwise null
    */
-  public findTransactionData(
+  public findTransaction(
     isTransactionData: (args: {
       to?: `0x${string}`;
       data: `0x${string}`;
     }) => boolean,
     transaction: { to?: `0x${string}`; data: `0x${string}` },
-  ): `0x${string}` | null {
+  ): { to?: `0x${string}`; data: `0x${string}` } | null {
     if (isTransactionData(transaction)) {
-      return transaction.data;
+      return transaction;
     }
 
     if (this.multiSendDecoder.helpers.isMultiSend(transaction.data)) {
@@ -29,7 +29,10 @@ export class TransactionDataFinder {
         .find(isTransactionData);
 
       if (batchedTransaction) {
-        return batchedTransaction.data;
+        return {
+          to: batchedTransaction.to,
+          data: batchedTransaction.data,
+        };
       }
     }
 
@@ -39,7 +42,7 @@ export class TransactionDataFinder {
 
 @Module({
   imports: [],
-  providers: [TransactionDataFinder, MultiSendDecoder],
-  exports: [TransactionDataFinder],
+  providers: [TransactionFinder, MultiSendDecoder],
+  exports: [TransactionFinder],
 })
-export class TransactionDataFinderModule {}
+export class TransactionFinderModule {}

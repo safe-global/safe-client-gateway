@@ -1,7 +1,7 @@
 import {
-  TransactionDataFinder,
-  TransactionDataFinderModule,
-} from '@/routes/transactions/helpers/transaction-data-finder.helper';
+  TransactionFinder,
+  TransactionFinderModule,
+} from '@/routes/transactions/helpers/transaction-finder.helper';
 import {
   ComposableCowDecoder,
   TwapStruct,
@@ -33,7 +33,7 @@ export class TwapOrderHelper {
     '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74' as const;
 
   constructor(
-    private readonly transactionDataFinder: TransactionDataFinder,
+    private readonly transactionFinder: TransactionFinder,
     private readonly composableCowDecoder: ComposableCowDecoder,
   ) {}
 
@@ -48,13 +48,15 @@ export class TwapOrderHelper {
     to: `0x${string}`;
     data: `0x${string}`;
   }): `0x${string}` | null {
-    return this.transactionDataFinder.findTransactionData(({ to, data }) => {
-      return (
-        !!to &&
-        isAddressEqual(to, TwapOrderHelper.ComposableCowAddress) &&
-        this.composableCowDecoder.helpers.isCreateWithContext(data)
-      );
-    }, args);
+    return (
+      this.transactionFinder.findTransaction(({ to, data }) => {
+        return (
+          !!to &&
+          isAddressEqual(to, TwapOrderHelper.ComposableCowAddress) &&
+          this.composableCowDecoder.helpers.isCreateWithContext(data)
+        );
+      }, args)?.data ?? null
+    );
   }
 
   /**
@@ -164,7 +166,7 @@ export class TwapOrderHelper {
 }
 
 @Module({
-  imports: [TransactionDataFinderModule],
+  imports: [TransactionFinderModule],
   providers: [ComposableCowDecoder, TwapOrderHelper],
   exports: [TwapOrderHelper],
 })

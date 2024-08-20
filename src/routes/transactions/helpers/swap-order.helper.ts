@@ -1,8 +1,8 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
 import {
-  TransactionDataFinder,
-  TransactionDataFinderModule,
-} from '@/routes/transactions/helpers/transaction-data-finder.helper';
+  TransactionFinder,
+  TransactionFinderModule,
+} from '@/routes/transactions/helpers/transaction-finder.helper';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import {
   ITokenRepository,
@@ -33,7 +33,7 @@ export class SwapOrderHelper {
     this.configurationService.getOrThrow('swaps.explorerBaseUri');
 
   constructor(
-    private readonly transactionDataFinder: TransactionDataFinder,
+    private readonly transactionFinder: TransactionFinder,
     private readonly gpv2Decoder: GPv2Decoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
@@ -54,10 +54,12 @@ export class SwapOrderHelper {
    * @returns The swap order if found, otherwise null
    */
   public findSwapOrder(data: `0x${string}`): `0x${string}` | null {
-    return this.transactionDataFinder.findTransactionData(
-      (transaction) =>
-        this.gpv2Decoder.helpers.isSetPreSignature(transaction.data),
-      { data },
+    return (
+      this.transactionFinder.findTransaction(
+        (transaction) =>
+          this.gpv2Decoder.helpers.isSetPreSignature(transaction.data),
+        { data },
+      )?.data ?? null
     );
   }
 
@@ -159,7 +161,7 @@ export class SwapOrderHelper {
     ChainsRepositoryModule,
     SwapsRepositoryModule,
     TokenRepositoryModule,
-    TransactionDataFinderModule,
+    TransactionFinderModule,
   ],
   providers: [SwapOrderHelper, GPv2Decoder],
   exports: [SwapOrderHelper],
