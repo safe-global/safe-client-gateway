@@ -33,6 +33,9 @@ import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.helper';
+import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-confirmation-view.entity';
+import { KilnNativeStakingHelperModule } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { NativeStakingMapperModule } from '@/routes/transactions/mappers/common/native-staking.mapper';
 
 @ApiTags('transactions')
 @Controller({
@@ -48,10 +51,15 @@ export class TransactionsViewController {
       oneOf: [
         { $ref: getSchemaPath(BaselineConfirmationView) },
         { $ref: getSchemaPath(CowSwapConfirmationView) },
+        { $ref: getSchemaPath(NativeStakingDepositConfirmationView) },
       ],
     },
   })
-  @ApiExtraModels(BaselineConfirmationView, CowSwapConfirmationView)
+  @ApiExtraModels(
+    BaselineConfirmationView,
+    CowSwapConfirmationView,
+    NativeStakingDepositConfirmationView,
+  )
   @ApiOperation({
     summary: 'Confirm Transaction View',
     description: 'This endpoint is experimental and may change.',
@@ -76,6 +84,8 @@ export class TransactionsViewController {
   imports: [
     DataDecodedRepositoryModule,
     GPv2DecoderModule,
+    KilnNativeStakingHelperModule,
+    NativeStakingMapperModule,
     SwapOrderHelperModule,
     TwapOrderHelperModule,
     SwapsRepositoryModule,

@@ -134,6 +134,7 @@ export default (): ReturnType<typeof configuration> => ({
     counterfactualBalances: false,
     accounts: false,
     pushNotifications: false,
+    nativeStaking: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
