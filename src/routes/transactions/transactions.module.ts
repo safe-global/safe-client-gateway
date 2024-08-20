@@ -43,6 +43,9 @@ import { TwapOrderMapperModule } from '@/routes/transactions/mappers/common/twap
 import { TwapOrderHelperModule } from '@/routes/transactions/helpers/twap-order.helper';
 import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
 import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.helper';
+import { KilnNativeStakingHelperModule } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 
 @Module({
   controllers: [TransactionsController],
@@ -54,6 +57,8 @@ import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.he
     SafeRepositoryModule,
     SafeAppsRepositoryModule,
     GPv2DecoderModule,
+    KilnNativeStakingHelperModule,
+    StakingRepositoryModule,
     SwapAppsHelperModule,
     SwapOrderMapperModule,
     SwapOrderHelperModule,
@@ -80,6 +85,7 @@ import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.he
     MultisigTransactionMapper,
     MultisigTransactionStatusMapper,
     NativeCoinTransferMapper,
+    NativeStakingMapper,
     QueuedItemsMapper,
     SafeAppInfoMapper,
     SettingsChangeMapper,
