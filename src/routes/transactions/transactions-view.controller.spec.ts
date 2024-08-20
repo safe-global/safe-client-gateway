@@ -29,18 +29,10 @@ import { encodeFunctionData, getAddress, parseAbi } from 'viem';
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
-import { TestBlockchainApiManagerModule } from '@/datasources/blockchain/__tests__/test.blockchain-api.manager';
-import {
-  BlockchainApiManagerModule,
-  IBlockchainApiManager,
-} from '@/domain/interfaces/blockchain-api.manager.interface';
-import { FakeBlockchainApiManager } from '@/datasources/blockchain/__tests__/fake.blockchain-api.manager';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
-
-const readContractMock = jest.fn();
 
 describe('TransactionsViewController tests', () => {
   let app: INestApplication<Server>;
@@ -48,7 +40,6 @@ describe('TransactionsViewController tests', () => {
   let swapsApiUrl: string;
   let stakingApiUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
-  let blockchainApiManager: FakeBlockchainApiManager;
 
   const swapsVerifiedApp = faker.company.buzzNoun();
   const swapsChainId = '1';
@@ -82,8 +73,6 @@ describe('TransactionsViewController tests', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
-      .overrideModule(BlockchainApiManagerModule)
-      .useModule(TestBlockchainApiManagerModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -93,11 +82,6 @@ describe('TransactionsViewController tests', () => {
     swapsApiUrl = configurationService.getOrThrow(`swaps.api.${swapsChainId}`);
     stakingApiUrl = configurationService.getOrThrow('staking.mainnet.baseUri');
     networkService = moduleFixture.get(NetworkService);
-    blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
-    blockchainApiManager.getApi.mockImplementation(() => ({
-      readContract: readContractMock,
-    }));
-
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
@@ -877,7 +861,7 @@ describe('TransactionsViewController tests', () => {
             });
         });
 
-        it('returns the generic confirmation view if the deployment is unknown', async () => {
+        it('returns the generic confirmation view if not transacting with a deployment address', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
           const dataDecoded = dataDecodedBuilder().build();
           const deployment = deploymentBuilder()
@@ -886,6 +870,7 @@ describe('TransactionsViewController tests', () => {
             .with('product_fee', faker.number.float().toString())
             .build();
           const safeAddress = faker.finance.ethereumAddress();
+          const to = faker.finance.ethereumAddress(); // Not deployment.address, ergo "unknown"
           const data = encodeFunctionData({
             abi: parseAbi(['function deposit() external payable']),
           });
@@ -913,7 +898,7 @@ describe('TransactionsViewController tests', () => {
               `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
             )
             .send({
-              to: deployment.address,
+              to,
               data,
             })
             .expect(200)

@@ -11,6 +11,15 @@ export class NativeStakingMapper {
     private readonly stakingRepository: IStakingRepository,
   ) {}
 
+  /**
+   * Maps the {@link NativeStakingDepositTransactionInfo} for the given
+   * native staking deployment's `deposit` call
+   *
+   * @param args.chainId - the chain ID of the native staking deployment
+   * @param args.to - the address of the native staking deployment
+   *
+   * @returns {@link NativeStakingDepositTransactionInfo} for the given native staking deployment
+   */
   public async mapDepositInfo(args: {
     chainId: string;
     to: `0x${string}`;
@@ -25,7 +34,7 @@ export class NativeStakingMapper {
       deployment.chain === 'unknown' ||
       deployment.status === 'unknown'
     ) {
-      throw new NotFoundException('Staking deployment not found');
+      throw new NotFoundException('Native staking deployment not found');
     }
 
     const [nativeStakingStats, networkStats] = await Promise.all([
@@ -34,6 +43,8 @@ export class NativeStakingMapper {
     ]);
 
     const fee = deployment.product_fee ? Number(deployment.product_fee) : 0;
+    // NRR = GRR * (1 - service_fees)
+    // Kiln also uses last_30d field, with product_fee
     const nrr = nativeStakingStats.gross_apy.last_30d * (1 - fee);
 
     return new NativeStakingDepositTransactionInfo({
@@ -43,6 +54,7 @@ export class NativeStakingMapper {
       estimatedExitTime: networkStats.estimated_exit_time_seconds,
       estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
       fee,
+      // For uniform data structure, we have monthly/annual but we use the same value
       monthlyNrr: nrr,
       annualNrr: nrr,
     });
