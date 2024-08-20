@@ -17,9 +17,15 @@ import { OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-confirmation-view.entity';
 
 @Injectable({})
 export class TransactionsViewService {
+  private readonly isNativeStakingEnabled: boolean;
+
   constructor(
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: IDataDecodedRepository,
@@ -31,18 +37,35 @@ export class TransactionsViewService {
     private readonly swapsRepository: ISwapsRepository,
     private readonly composableCowDecoder: ComposableCowDecoder,
     private readonly swapAppsHelper: SwapAppsHelper,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+    private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
+    private readonly nativeStakingMapper: NativeStakingMapper,
+  ) {
+    this.isNativeStakingEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.nativeStaking',
+    );
+  }
 
   async getTransactionConfirmationView(args: {
     chainId: string;
     safeAddress: `0x${string}`;
     transactionDataDto: TransactionDataDto;
   }): Promise<ConfirmationView> {
-    const dataDecoded = await this.dataDecodedRepository.getDataDecoded({
-      chainId: args.chainId,
-      data: args.transactionDataDto.data,
-      to: args.transactionDataDto.to,
-    });
+    const dataDecoded = await this.dataDecodedRepository
+      .getDataDecoded({
+        chainId: args.chainId,
+        data: args.transactionDataDto.data,
+        to: args.transactionDataDto.to,
+      })
+      .catch(() => {
+        // TODO: Get Kiln to verify all deployments
+        // Fallback for unverified contracts
+        return {
+          method: '',
+          parameters: null,
+        };
+      });
 
     const swapOrderData = this.swapOrderHelper.findSwapOrder(
       args.transactionDataDto.data,
@@ -55,7 +78,14 @@ export class TransactionsViewService {
         })
       : null;
 
-    if (!swapOrderData && !twapSwapOrderData) {
+    const nativeStakingTransaction =
+      this.isNativeStakingEnabled &&
+      (await this.kilnNativeStakingHelper.findDeposit({
+        chainId: args.chainId,
+        ...args.transactionDataDto,
+      }));
+
+    if (!swapOrderData && !twapSwapOrderData && !nativeStakingTransaction) {
       return new BaselineConfirmationView({
         method: dataDecoded.method,
         parameters: dataDecoded.parameters,
@@ -75,6 +105,12 @@ export class TransactionsViewService {
           safeAddress: args.safeAddress,
           data: twapSwapOrderData,
           dataDecoded,
+        });
+      } else if (nativeStakingTransaction) {
+        return await this.getNativeStakingDepositConfirmationView({
+          chainId: args.chainId,
+          dataDecoded,
+          ...nativeStakingTransaction,
         });
       } else {
         // Should not reach here
@@ -233,6 +269,20 @@ export class TransactionsViewService {
       timeBetweenParts: twapOrderData.timeBetweenParts,
       durationOfPart: twapOrderData.durationOfPart,
       startTime: twapOrderData.startTime,
+    });
+  }
+
+  private async getNativeStakingDepositConfirmationView(args: {
+    chainId: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
+    dataDecoded: DataDecoded;
+  }): Promise<NativeStakingDepositConfirmationView> {
+    const depositInfo = await this.nativeStakingMapper.mapDepositInfo(args);
+    return new NativeStakingDepositConfirmationView({
+      method: args.dataDecoded.method,
+      parameters: args.dataDecoded.parameters,
+      ...depositInfo,
     });
   }
 }

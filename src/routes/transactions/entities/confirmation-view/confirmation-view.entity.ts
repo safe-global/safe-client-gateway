@@ -12,22 +12,25 @@ import {
   StartTime,
   TwapOrderInfo,
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
+import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-confirmation-view.entity';
 
-interface Baseline {
+export interface Baseline {
   method: string;
   parameters: DataDecodedParameter[] | null;
 }
 
-enum DecodedType {
+export enum DecodedType {
   Generic = 'GENERIC',
   CowSwapOrder = 'COW_SWAP_ORDER',
   CowSwapTwapOrder = 'COW_SWAP_TWAP_ORDER',
+  KilnNativeStakingDeposit = 'KILN_NATIVE_STAKING_DEPOSIT',
 }
 
 export type ConfirmationView =
   | BaselineConfirmationView
   | CowSwapConfirmationView
-  | CowSwapTwapConfirmationView;
+  | CowSwapTwapConfirmationView
+  | NativeStakingDepositConfirmationView;
 
 export class BaselineConfirmationView implements Baseline {
   @ApiProperty({ enum: [DecodedType.Generic] })
@@ -48,6 +51,7 @@ export class BaselineConfirmationView implements Baseline {
   }
 }
 
+// TODO: Move swap confirmation views to new file
 export class CowSwapConfirmationView implements Baseline, OrderInfo {
   // Baseline implementation
   @ApiProperty({ enum: [DecodedType.CowSwapOrder] })
