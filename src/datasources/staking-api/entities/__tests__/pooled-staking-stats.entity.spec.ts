@@ -161,7 +161,7 @@ describe('PooledStakingSchema', () => {
     const result = PooledStakingStatsSchema.safeParse(pooledStakingStats);
 
     expect(!result.success && result.error.issues.length).toBe(1);
-    expect(!result.success && result.error.issues[0]).toStrictEqual;
+    expect(!result.success && result.error.issues[0].path[0]).toBe(key);
   });
 
   it('should not validate an invalid PooledStakingStats object', () => {
