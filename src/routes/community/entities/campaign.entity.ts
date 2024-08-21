@@ -15,6 +15,18 @@ export class Campaign implements DomainCampaign {
   endDate!: Date;
   @ApiPropertyOptional({ type: String, nullable: true })
   lastUpdated!: Date | null;
-  @ApiProperty({ type: [ActivityMetadata] })
+  @ApiPropertyOptional({ type: [ActivityMetadata], nullable: true })
   activitiesMetadata!: ActivityMetadata[] | null;
+  @ApiProperty()
+  rewardValue!: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  rewardText!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  iconUrl!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  safeAppUrl!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  partnerUrl!: string | null;
+  @ApiProperty()
+  isPromoted!: boolean;
 }

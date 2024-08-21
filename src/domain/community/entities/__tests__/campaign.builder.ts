@@ -16,7 +16,13 @@ export function campaignBuilder(): IBuilder<Campaign> {
       Array.from({ length: faker.number.int({ min: 0, max: 5 }) }, () =>
         activityMetadataBuilder().build(),
       ),
-    );
+    )
+    .with('rewardValue', faker.number.float().toString())
+    .with('rewardText', faker.lorem.sentence())
+    .with('iconUrl', faker.internet.url())
+    .with('safeAppUrl', faker.internet.url())
+    .with('partnerUrl', faker.internet.url())
+    .with('isPromoted', faker.datatype.boolean());
 }
 
 export function toJson(campaign: Campaign): unknown {

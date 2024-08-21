@@ -12,7 +12,7 @@ describe('CampaignSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['startDate' as const, 'endDate' as const])(
+  it.each(['startDate' as const, 'endDate' as const, 'lastUpdated' as const])(
     `should coerce %s to a date`,
     (field) => {
       const campaign = campaignBuilder()
@@ -22,34 +22,83 @@ describe('CampaignSchema', () => {
       const result = CampaignSchema.safeParse(campaign);
 
       expect(result.success && result.data[field]).toStrictEqual(
-        new Date(campaign[field]),
+        new Date(campaign[field]!),
       );
     },
   );
 
-  it('should default lastUpdated to null', () => {
-    const campaign = campaignBuilder()
-      .with('lastUpdated', faker.date.recent())
-      .build();
-    // @ts-expect-error - inferred types don't allow optional fields
-    delete campaign.lastUpdated;
+  it.each([
+    'lastUpdated' as const,
+    'activitiesMetadata' as const,
+    'rewardText' as const,
+    'iconUrl' as const,
+    'safeAppUrl' as const,
+    'partnerUrl' as const,
+  ])('should default %s to null', (key) => {
+    const campaign = campaignBuilder().build();
+    delete campaign[key];
 
     const result = CampaignSchema.safeParse(campaign);
 
-    expect(result.success && result.data.lastUpdated).toBe(null);
+    expect(result.success && result.data[key]).toBe(null);
   });
 
-  it('should coerce lastUpdated to a date', () => {
-    const lastUpdated = faker.date.recent().toISOString();
+  it.each(['iconUrl' as const, 'safeAppUrl' as const, 'partnerUrl' as const])(
+    'should not validate a non-URL %s value',
+    (key) => {
+      const campaign = campaignBuilder()
+        .with(key, faker.string.alphanumeric())
+        .build();
+
+      const result = CampaignSchema.safeParse(campaign);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            validation: 'url',
+            code: 'invalid_string',
+            message: 'Invalid url',
+            path: [key],
+          },
+        ]),
+      );
+    },
+  );
+
+  it('should not validate a non-numerical rewardValue', () => {
     const campaign = campaignBuilder()
-      .with('lastUpdated', lastUpdated as unknown as Date)
+      .with('rewardValue', faker.string.alpha())
       .build();
 
     const result = CampaignSchema.safeParse(campaign);
 
-    expect(result.success && result.data.lastUpdated).toStrictEqual(
-      new Date(lastUpdated),
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: ['rewardValue'],
+        },
+      ]),
     );
+  });
+
+  it.each([
+    'resourceId' as const,
+    'name' as const,
+    'description' as const,
+    'startDate' as const,
+    'endDate' as const,
+    'rewardValue' as const,
+    'isPromoted' as const,
+  ])('should not validate a missing %s', (key) => {
+    const campaign = campaignBuilder().build();
+    delete campaign[key];
+
+    const result = CampaignSchema.safeParse(campaign);
+
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0].path).toStrictEqual([key]);
   });
 
   it('should not validate an invalid campaign', () => {
@@ -89,6 +138,20 @@ describe('CampaignSchema', () => {
           code: 'invalid_date',
           path: ['endDate'],
           message: 'Invalid date',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['rewardValue'],
+          message: 'Required',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          received: 'undefined',
+          path: ['isPromoted'],
+          message: 'Required',
         },
       ]),
     );
