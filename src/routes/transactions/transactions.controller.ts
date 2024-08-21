@@ -39,6 +39,7 @@ import { DeleteTransactionDto } from '@/routes/transactions/entities/delete-tran
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { DeleteTransactionDtoSchema } from '@/routes/transactions/entities/schemas/delete-transaction.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { CreationTransaction } from '@/routes/transactions/entities/creation-transaction.entity';
 
 @ApiTags('transactions')
 @Controller({
@@ -270,6 +271,20 @@ export class TransactionsController {
       chainId,
       safeAddress,
       proposeTransactionDto,
+    });
+  }
+
+  @HttpCode(200)
+  @ApiOkResponse({ type: CreationTransaction })
+  @Get('chains/:chainId/safes/:safeAddress/transactions/creation')
+  async getCreationTransaction(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
+  ): Promise<CreationTransaction> {
+    return this.transactionsService.getCreationTransaction({
+      chainId,
+      safeAddress,
     });
   }
 }

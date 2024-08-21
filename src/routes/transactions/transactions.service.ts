@@ -18,6 +18,7 @@ import {
   TRANSFER_PREFIX,
 } from '@/routes/transactions/constants';
 import { ConflictType } from '@/routes/transactions/entities/conflict-type.entity';
+import { CreationTransaction } from '@/routes/transactions/entities/creation-transaction.entity';
 import { IncomingTransfer } from '@/routes/transactions/entities/incoming-transfer.entity';
 import { ModuleTransaction } from '@/routes/transactions/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/routes/transactions/entities/multisig-transaction.entity';
@@ -440,6 +441,13 @@ export class TransactionsService {
       domainTransaction,
       safe,
     );
+  }
+
+  async getCreationTransaction(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<CreationTransaction> {
+    return this.safeRepository.getCreationTransaction(args);
   }
 
   /**
