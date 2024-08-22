@@ -278,7 +278,12 @@ export class TransactionsViewService {
     data: `0x${string}`;
     dataDecoded: DataDecoded;
   }): Promise<NativeStakingDepositConfirmationView> {
-    const depositInfo = await this.nativeStakingMapper.mapDepositInfo(args);
+    const depositInfo = await this.nativeStakingMapper.mapDepositInfo({
+      chainId: args.chainId,
+      to: args.to,
+      isConfirmed: false,
+      depositExecutionDate: null,
+    });
     return new NativeStakingDepositConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
