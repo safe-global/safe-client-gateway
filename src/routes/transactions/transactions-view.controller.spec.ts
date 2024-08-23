@@ -627,8 +627,9 @@ describe('TransactionsViewController tests', () => {
                 networkStats.estimated_withdrawal_time_seconds,
               fee: +deployment.product_fee!,
               monthlyNrr:
-                dedicatedStakingStats.gross_apy.last_30d *
-                (1 - +deployment.product_fee!),
+                (dedicatedStakingStats.gross_apy.last_30d *
+                  (1 - +deployment.product_fee!)) /
+                12,
               annualNrr:
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
@@ -714,8 +715,9 @@ describe('TransactionsViewController tests', () => {
                 networkStats.estimated_withdrawal_time_seconds,
               fee: +deployment.product_fee!,
               monthlyNrr:
-                dedicatedStakingStats.gross_apy.last_30d *
-                (1 - +deployment.product_fee!),
+                (dedicatedStakingStats.gross_apy.last_30d *
+                  (1 - +deployment.product_fee!)) /
+                12,
               annualNrr:
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
