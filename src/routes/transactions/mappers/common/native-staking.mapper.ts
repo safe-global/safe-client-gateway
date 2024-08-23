@@ -62,8 +62,7 @@ export class NativeStakingMapper {
       estimatedExitTime: networkStats.estimated_exit_time_seconds,
       estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
       fee,
-      // For uniform data structure, we have monthly/annual but we use the same value
-      monthlyNrr: nrr,
+      monthlyNrr: nrr / 12,
       annualNrr: nrr,
     });
   }
