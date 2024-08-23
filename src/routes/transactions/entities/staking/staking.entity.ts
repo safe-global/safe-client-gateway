@@ -1,12 +1,11 @@
-/**
- * Present in all calls for native/pooled/defi staking
- *
- * TODO: Confirm with design but something like:
- * - Queued: pending
- * - History: entering, active/validating, exiting, awaiting withdrawal, exited/withdrawn
- */
+// Present in all calls for native/pooled/defi staking
 export enum StakingStatus {
-  Unknown = 'unknown',
+  AwaitingEntry = 'AWAITING_ENTRY',
+  RequestedExit = 'REQUESTED_EXIT',
+  SignatureNeeded = 'SIGNATURE_NEEDED',
+  Validating = 'VALIDATING',
+  Withdrawn = 'WITHDRAWN',
+  Unknown = 'UNKNOWN',
 }
 
 export type StakingStatusInfo = {

@@ -21,9 +21,7 @@ export class NativeStakingDepositTransactionInfo
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingDeposit] })
   override type = TransactionInfoType.NativeStakingDeposit;
 
-  @ApiProperty({
-    enum: StakingStatus,
-  })
+  @ApiProperty({ enum: StakingStatus })
   status: StakingStatus;
 
   @ApiProperty()

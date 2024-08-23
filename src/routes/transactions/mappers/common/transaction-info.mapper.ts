@@ -322,9 +322,16 @@ export class MultisigTransactionInfoMapper {
     }
 
     try {
+      const tx = transaction as MultisigTransaction;
+      const isConfirmed =
+        !!tx.confirmations &&
+        tx.confirmations.length >= tx.confirmationsRequired;
+
       return await this.nativeStakingMapper.mapDepositInfo({
         chainId,
         to: nativeStakingTransaction.to,
+        isConfirmed,
+        depositExecutionDate: transaction.executionDate,
       });
     } catch (error) {
       this.loggingService.warn(error);

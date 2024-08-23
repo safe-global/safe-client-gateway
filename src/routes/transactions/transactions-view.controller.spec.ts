@@ -619,7 +619,7 @@ describe('TransactionsViewController tests', () => {
             .expect({
               type: 'KILN_NATIVE_STAKING_DEPOSIT',
               method: dataDecoded.method,
-              status: 'unknown',
+              status: 'SIGNATURE_NEEDED',
               parameters: dataDecoded.parameters,
               estimatedEntryTime: networkStats.estimated_entry_time_seconds,
               estimatedExitTime: networkStats.estimated_exit_time_seconds,
@@ -707,7 +707,7 @@ describe('TransactionsViewController tests', () => {
               type: 'KILN_NATIVE_STAKING_DEPOSIT',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
-              status: 'unknown',
+              status: 'SIGNATURE_NEEDED',
               estimatedEntryTime: networkStats.estimated_entry_time_seconds,
               estimatedExitTime: networkStats.estimated_exit_time_seconds,
               estimatedWithdrawalTime:
