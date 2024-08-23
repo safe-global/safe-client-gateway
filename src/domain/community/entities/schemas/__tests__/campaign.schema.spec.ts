@@ -30,6 +30,7 @@ describe('CampaignSchema', () => {
   it.each([
     'lastUpdated' as const,
     'activitiesMetadata' as const,
+    'rewardValue' as const,
     'rewardText' as const,
     'iconUrl' as const,
     'safeAppUrl' as const,
@@ -89,7 +90,6 @@ describe('CampaignSchema', () => {
     'description' as const,
     'startDate' as const,
     'endDate' as const,
-    'rewardValue' as const,
     'isPromoted' as const,
   ])('should not validate a missing %s', (key) => {
     const campaign = campaignBuilder().build();
@@ -138,13 +138,6 @@ describe('CampaignSchema', () => {
           code: 'invalid_date',
           path: ['endDate'],
           message: 'Invalid date',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'undefined',
-          path: ['rewardValue'],
-          message: 'Required',
         },
         {
           code: 'invalid_type',

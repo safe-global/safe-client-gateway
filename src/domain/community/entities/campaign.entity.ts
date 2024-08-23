@@ -13,7 +13,7 @@ export const CampaignSchema = z.object({
   endDate: z.coerce.date(),
   lastUpdated: z.coerce.date().nullish().default(null),
   activitiesMetadata: z.array(ActivityMetadataSchema).nullish().default(null),
-  rewardValue: NumericStringSchema,
+  rewardValue: NumericStringSchema.nullish().default(null),
   rewardText: z.string().nullish().default(null),
   iconUrl: z.string().url().nullish().default(null),
   safeAppUrl: z.string().url().nullish().default(null),
