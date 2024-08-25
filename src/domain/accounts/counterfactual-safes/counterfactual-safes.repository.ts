@@ -34,49 +34,21 @@ export class CounterfactualSafesRepository
    * Checks that the account has the CounterfactualSafes data setting enabled.
    */
   async getCounterfactualSafe(args: {
-    authPayload: AuthPayload;
     address: `0x${string}`;
     chainId: string;
     predictedAddress: `0x${string}`;
   }): Promise<CounterfactualSafe> {
-    if (!args.authPayload.isForSigner(args.address)) {
-      throw new UnauthorizedException();
-    }
-    await this.checkCounterfactualSafesIsEnabled({
-      authPayload: args.authPayload,
-      address: args.address,
-    });
-    const account = await this.accountsRepository.getAccount({
-      authPayload: args.authPayload,
-      address: args.address,
-    });
-    return this.datasource.getCounterfactualSafe({
-      account,
-      chainId: args.chainId,
-      predictedAddress: args.predictedAddress,
-    });
+    return this.datasource.getCounterfactualSafe(args);
   }
 
   /**
    * Gets all the Counterfactual Safes associated with an account address.
    * Checks that the account has the CounterfactualSafes data setting enabled.
    */
-  async getCounterfactualSafes(args: {
-    authPayload: AuthPayload;
-    address: `0x${string}`;
-  }): Promise<CounterfactualSafe[]> {
-    if (!args.authPayload.isForSigner(args.address)) {
-      throw new UnauthorizedException();
-    }
-    await this.checkCounterfactualSafesIsEnabled({
-      authPayload: args.authPayload,
-      address: args.address,
-    });
-    const account = await this.accountsRepository.getAccount({
-      authPayload: args.authPayload,
-      address: args.address,
-    });
-    return this.datasource.getCounterfactualSafesForAccount(account);
+  async getCounterfactualSafes(
+    address: `0x${string}`,
+  ): Promise<CounterfactualSafe[]> {
+    return this.datasource.getCounterfactualSafesForAddress(address);
   }
 
   /**
@@ -105,7 +77,7 @@ export class CounterfactualSafesRepository
 
     try {
       return await this.datasource.getCounterfactualSafe({
-        account,
+        address: args.address,
         chainId: args.createCounterfactualSafeDto.chainId,
         predictedAddress: args.createCounterfactualSafeDto.predictedAddress,
       });

@@ -12,16 +12,12 @@ export const ICounterfactualSafesRepository = Symbol(
 
 export interface ICounterfactualSafesRepository {
   getCounterfactualSafe(args: {
-    authPayload: AuthPayload;
     address: `0x${string}`;
     chainId: string;
     predictedAddress: `0x${string}`;
   }): Promise<CounterfactualSafe>;
 
-  getCounterfactualSafes(args: {
-    authPayload: AuthPayload;
-    address: `0x${string}`;
-  }): Promise<CounterfactualSafe[]>;
+  getCounterfactualSafes(address: `0x${string}`): Promise<CounterfactualSafe[]>;
 
   createCounterfactualSafe(args: {
     authPayload: AuthPayload;
