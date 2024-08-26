@@ -67,7 +67,7 @@ export class CounterfactualSafesDatasource
   }
 
   async getCounterfactualSafe(args: {
-    account: Account;
+    address: `0x${string}`;
     chainId: string;
     predictedAddress: `0x${string}`;
   }): Promise<CounterfactualSafe> {
@@ -81,7 +81,7 @@ export class CounterfactualSafesDatasource
       cacheDir,
       query: this.sql<CounterfactualSafe[]>`
         SELECT * FROM counterfactual_safes 
-        WHERE account_id = ${args.account.id}
+        WHERE account_id = (SELECT id FROM accounts WHERE address = ${args.address})
           AND chain_id = ${args.chainId}
           AND predicted_address = ${args.predictedAddress}`,
       ttl: this.defaultExpirationTimeInSeconds,
@@ -94,16 +94,15 @@ export class CounterfactualSafesDatasource
     return counterfactualSafe;
   }
 
-  getCounterfactualSafesForAccount(
-    account: Account,
+  getCounterfactualSafesForAddress(
+    address: `0x${string}`,
   ): Promise<CounterfactualSafe[]> {
-    const cacheDir = CacheRouter.getCounterfactualSafesCacheDir(
-      account.address,
-    );
+    const cacheDir = CacheRouter.getCounterfactualSafesCacheDir(address);
     return this.cachedQueryResolver.get<CounterfactualSafe[]>({
       cacheDir,
       query: this.sql<CounterfactualSafe[]>`
-        SELECT * FROM counterfactual_safes WHERE account_id = ${account.id}`,
+        SELECT * FROM counterfactual_safes WHERE account_id = 
+          (SELECT id FROM accounts WHERE address = ${address})`,
       ttl: this.defaultExpirationTimeInSeconds,
     });
   }

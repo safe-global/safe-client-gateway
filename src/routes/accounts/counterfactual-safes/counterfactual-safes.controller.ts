@@ -26,16 +26,13 @@ export class CounterfactualSafesController {
 
   @ApiOkResponse({ type: CounterfactualSafe })
   @Get(':address/counterfactual-safes/:chainId/:predictedAddress')
-  @UseGuards(AuthGuard)
   async getCounterfactualSafe(
-    @Auth() authPayload: AuthPayload,
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('predictedAddress', new ValidationPipe(AddressSchema))
     predictedAddress: `0x${string}`,
   ): Promise<CounterfactualSafe> {
     return this.service.getCounterfactualSafe({
-      authPayload,
       address,
       chainId,
       predictedAddress,
@@ -44,15 +41,10 @@ export class CounterfactualSafesController {
 
   @ApiOkResponse({ type: CounterfactualSafe, isArray: true })
   @Get(':address/counterfactual-safes')
-  @UseGuards(AuthGuard)
   async getCounterfactualSafes(
-    @Auth() authPayload: AuthPayload,
     @Param('address', new ValidationPipe(AddressSchema)) address: `0x${string}`,
   ): Promise<CounterfactualSafe[]> {
-    return this.service.getCounterfactualSafes({
-      authPayload,
-      address,
-    });
+    return this.service.getCounterfactualSafes(address);
   }
 
   @ApiOkResponse({ type: CounterfactualSafe })

@@ -4,7 +4,7 @@ import { Module } from '@nestjs/common';
 const counterfactualSafesDatasource = {
   createCounterfactualSafe: jest.fn(),
   getCounterfactualSafe: jest.fn(),
-  getCounterfactualSafesForAccount: jest.fn(),
+  getCounterfactualSafesForAddress: jest.fn(),
   deleteCounterfactualSafe: jest.fn(),
   deleteCounterfactualSafesForAccount: jest.fn(),
 } as jest.MockedObjectDeep<ICounterfactualSafesDatasource>;
