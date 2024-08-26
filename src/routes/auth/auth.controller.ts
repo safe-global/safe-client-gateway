@@ -1,6 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
 import { AuthService } from '@/routes/auth/auth.service';
+import { AuthNonce } from '@/routes/auth/entities/auth-nonce.entity';
 import { SiweDto, SiweDtoSchema } from '@/routes/auth/entities/siwe.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
@@ -12,7 +13,7 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
-import { ApiExcludeController } from '@nestjs/swagger';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
 /**
@@ -24,8 +25,8 @@ import { Response } from 'express';
  * 3. If verification succeeds, JWT token is added to `access_token`
  *    Set-Cookie.
  */
+@ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
-@ApiExcludeController()
 export class AuthController {
   static readonly ACCESS_TOKEN_COOKIE_NAME = 'access_token';
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_LAX = 'lax';
@@ -43,15 +44,17 @@ export class AuthController {
     );
   }
 
+  @ApiOkResponse({ type: AuthNonce })
   @Get('nonce')
-  async getNonce(): Promise<{
-    nonce: string;
-  }> {
+  async getNonce(): Promise<AuthNonce> {
     return this.authService.getNonce();
   }
 
   @HttpCode(200)
   @Post('verify')
+  @ApiOkResponse({
+    description: 'Empty response body. JWT token is set as response cookie.',
+  })
   async verify(
     @Res({ passthrough: true })
     res: Response,
