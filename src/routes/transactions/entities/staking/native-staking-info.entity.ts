@@ -4,6 +4,7 @@ import {
   StakingTimeInfo,
   StakingFinancialInfo,
 } from '@/routes/transactions/entities/staking/staking.entity';
+import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
@@ -42,6 +43,9 @@ export class NativeStakingDepositTransactionInfo
   @ApiProperty()
   annualNrr: number;
 
+  @ApiProperty()
+  tokenInfo: TokenInfo;
+
   constructor(args: {
     status: StakingStatus;
     estimatedEntryTime: number;
@@ -50,6 +54,7 @@ export class NativeStakingDepositTransactionInfo
     fee: number;
     monthlyNrr: number;
     annualNrr: number;
+    tokenInfo: TokenInfo;
   }) {
     super(TransactionInfoType.NativeStakingDeposit, null, null);
     this.status = args.status;
@@ -59,5 +64,6 @@ export class NativeStakingDepositTransactionInfo
     this.fee = args.fee;
     this.monthlyNrr = args.monthlyNrr;
     this.annualNrr = args.annualNrr;
+    this.tokenInfo = args.tokenInfo;
   }
 }
