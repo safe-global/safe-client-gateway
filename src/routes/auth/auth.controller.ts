@@ -4,7 +4,15 @@ import { AuthService } from '@/routes/auth/auth.service';
 import { AuthNonce } from '@/routes/auth/entities/auth-nonce.entity';
 import { SiweDto, SiweDtoSchema } from '@/routes/auth/entities/siwe.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { Body, Controller, Get, Inject, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Post,
+  Res,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
@@ -42,6 +50,7 @@ export class AuthController {
     return this.authService.getNonce();
   }
 
+  @HttpCode(200)
   @Post('verify')
   @ApiOkResponse({
     description: 'Empty response body. JWT token is set as response cookie.',
