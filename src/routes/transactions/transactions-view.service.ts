@@ -1,3 +1,13 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import { OrderStatus } from '@/domain/swaps/entities/order.entity';
+import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 import { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
 import {
   BaselineConfirmationView,
@@ -5,22 +15,14 @@ import {
   CowSwapConfirmationView,
   CowSwapTwapConfirmationView,
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
-import { Inject, Injectable } from '@nestjs/common';
-import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
-import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
-import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
-import { OrderStatus } from '@/domain/swaps/entities/order.entity';
-import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
-import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
-import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
-import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-confirmation-view.entity';
+import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
+import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
+import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
+import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable({})
 export class TransactionsViewService {
@@ -41,6 +43,8 @@ export class TransactionsViewService {
     private readonly configurationService: IConfigurationService,
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {
     this.isNativeStakingEnabled = this.configurationService.getOrThrow<boolean>(
       'features.nativeStaking',
@@ -286,10 +290,20 @@ export class TransactionsViewService {
       isConfirmed: false,
       depositExecutionDate: null,
     });
+    const chain = await this.chainsRepository.getChain(args.chainId);
     return new NativeStakingDepositConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
       value: args.value ? Number(args.value) : 0,
+      // tokenInfo is set to the native currency of the chain for native staking deposits
+      tokenInfo: new TokenInfo({
+        address: NULL_ADDRESS,
+        decimals: chain.nativeCurrency.decimals,
+        logoUri: chain.nativeCurrency.logoUri,
+        name: chain.nativeCurrency.name,
+        symbol: chain.nativeCurrency.symbol,
+        trusted: true,
+      }),
       ...depositInfo,
     });
   }
