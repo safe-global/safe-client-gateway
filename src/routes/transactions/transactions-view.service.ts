@@ -108,9 +108,10 @@ export class TransactionsViewService {
         });
       } else if (nativeStakingTransaction) {
         return await this.getNativeStakingDepositConfirmationView({
+          ...nativeStakingTransaction,
           chainId: args.chainId,
           dataDecoded,
-          ...nativeStakingTransaction,
+          value: args.transactionDataDto.value,
         });
       } else {
         // Should not reach here
@@ -277,6 +278,7 @@ export class TransactionsViewService {
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
+    value?: string;
   }): Promise<NativeStakingDepositConfirmationView> {
     const depositInfo = await this.nativeStakingMapper.mapDepositInfo({
       chainId: args.chainId,
@@ -287,6 +289,7 @@ export class TransactionsViewService {
     return new NativeStakingDepositConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
+      value: args.value ? Number(args.value) : 0,
       ...depositInfo,
     });
   }

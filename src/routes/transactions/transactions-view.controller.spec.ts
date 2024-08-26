@@ -576,6 +576,7 @@ describe('TransactionsViewController tests', () => {
           const data = encodeFunctionData({
             abi: parseAbi(['function deposit() external payable']),
           });
+          const value = faker.string.numeric();
           networkService.get.mockImplementation(({ url }) => {
             if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
               return Promise.resolve({ data: chain, status: 200 });
@@ -614,6 +615,7 @@ describe('TransactionsViewController tests', () => {
             .send({
               to: deployment.address,
               data,
+              value,
             })
             .expect(200)
             .expect({
@@ -633,6 +635,7 @@ describe('TransactionsViewController tests', () => {
               annualNrr:
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
+              value: Number(value),
             });
         });
 
@@ -721,6 +724,7 @@ describe('TransactionsViewController tests', () => {
               annualNrr:
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
+              value: 0, // defaults to 0 if not provided in the request
             });
         });
 

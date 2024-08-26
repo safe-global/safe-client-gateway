@@ -44,6 +44,9 @@ export class NativeStakingDepositConfirmationView
   @ApiProperty()
   annualNrr: number;
 
+  @ApiProperty()
+  value: number;
+
   constructor(args: {
     method: string;
     parameters: DataDecodedParameter[] | null;
@@ -54,6 +57,7 @@ export class NativeStakingDepositConfirmationView
     fee: number;
     monthlyNrr: number;
     annualNrr: number;
+    value: number;
   }) {
     this.method = args.method;
     this.parameters = args.parameters;
@@ -64,5 +68,6 @@ export class NativeStakingDepositConfirmationView
     this.fee = args.fee;
     this.monthlyNrr = args.monthlyNrr;
     this.annualNrr = args.annualNrr;
+    this.value = args.value;
   }
 }
