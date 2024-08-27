@@ -637,6 +637,15 @@ describe('TransactionsViewController tests', () => {
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
               value: Number(value),
+              expectedMonthlyReward:
+                ((dedicatedStakingStats.gross_apy.last_30d *
+                  (1 - +deployment.product_fee!)) /
+                  12) *
+                Number(value),
+              expectedAnnualReward:
+                dedicatedStakingStats.gross_apy.last_30d *
+                (1 - +deployment.product_fee!) *
+                Number(value),
               tokenInfo: {
                 address: NULL_ADDRESS,
                 decimals: chain.nativeCurrency.decimals,
@@ -734,6 +743,8 @@ describe('TransactionsViewController tests', () => {
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
               value: 0, // defaults to 0 if not provided in the request
+              expectedMonthlyReward: 0, // 0 as value is 0
+              expectedAnnualReward: 0, // 0 as value is 0
               tokenInfo: {
                 address: NULL_ADDRESS,
                 decimals: chain.nativeCurrency.decimals,
