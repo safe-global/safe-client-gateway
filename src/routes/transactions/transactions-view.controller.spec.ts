@@ -41,6 +41,7 @@ describe('TransactionsViewController tests', () => {
   let swapsApiUrl: string;
   let stakingApiUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let pricesProviderUrl: string;
 
   const swapsVerifiedApp = faker.company.buzzNoun();
   const swapsChainId = '1';
@@ -83,6 +84,9 @@ describe('TransactionsViewController tests', () => {
     swapsApiUrl = configurationService.getOrThrow(`swaps.api.${swapsChainId}`);
     stakingApiUrl = configurationService.getOrThrow('staking.mainnet.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    pricesProviderUrl = configurationService.getOrThrow(
+      'balances.providers.safe.prices.baseUri',
+    );
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
@@ -577,30 +581,40 @@ describe('TransactionsViewController tests', () => {
           const data = encodeFunctionData({
             abi: parseAbi(['function deposit() external payable']),
           });
-          const value = faker.string.numeric();
+          const value = faker.string.numeric({ length: 18 });
+          const fiatPrice = 1212.23; // TODO: randomize
+          const nativeCoinPriceProviderResponse = {
+            [chain.pricesProvider.nativeCoin!]: {
+              usd: fiatPrice,
+            },
+          };
           networkService.get.mockImplementation(({ url }) => {
-            if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-              return Promise.resolve({ data: chain, status: 200 });
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/kiln-stats`:
+                return Promise.resolve({
+                  data: { data: dedicatedStakingStats },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              case `${pricesProviderUrl}/simple/price`:
+                return Promise.resolve({
+                  data: nativeCoinPriceProviderResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
             }
-            if (url === `${stakingApiUrl}/v1/deployments`) {
-              return Promise.resolve({
-                data: { data: [deployment] },
-                status: 200,
-              });
-            }
-            if (url === `${stakingApiUrl}/v1/eth/kiln-stats`) {
-              return Promise.resolve({
-                data: { data: dedicatedStakingStats },
-                status: 200,
-              });
-            }
-            if (url === `${stakingApiUrl}/v1/eth/network-stats`) {
-              return Promise.resolve({
-                data: { data: networkStats },
-                status: 200,
-              });
-            }
-            return Promise.reject(new Error(`Could not match ${url}`));
           });
           networkService.post.mockImplementation(({ url }) => {
             if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
@@ -608,6 +622,17 @@ describe('TransactionsViewController tests', () => {
             }
             return Promise.reject(new Error(`Could not match ${url}`));
           });
+
+          const annualNrr =
+            dedicatedStakingStats.gross_apy.last_30d *
+            (1 - Number(deployment.product_fee));
+          const monthlyNrr = annualNrr / 12;
+          const expectedAnnualReward = (annualNrr / 100) * Number(value);
+          const expectedMonthlyReward = expectedAnnualReward / 12;
+          const expectedFiatAnnualReward =
+            (expectedAnnualReward * fiatPrice) /
+            Math.pow(10, chain.nativeCurrency.decimals);
+          const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
           await request(app.getHttpServer())
             .post(
@@ -629,23 +654,13 @@ describe('TransactionsViewController tests', () => {
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds,
               fee: +deployment.product_fee!,
-              monthlyNrr:
-                (dedicatedStakingStats.gross_apy.last_30d *
-                  (1 - +deployment.product_fee!)) /
-                12,
-              annualNrr:
-                dedicatedStakingStats.gross_apy.last_30d *
-                (1 - +deployment.product_fee!),
+              monthlyNrr,
+              annualNrr,
               value: Number(value),
-              expectedMonthlyReward:
-                ((dedicatedStakingStats.gross_apy.last_30d *
-                  (1 - +deployment.product_fee!)) /
-                  12) *
-                Number(value),
-              expectedAnnualReward:
-                dedicatedStakingStats.gross_apy.last_30d *
-                (1 - +deployment.product_fee!) *
-                Number(value),
+              expectedAnnualReward,
+              expectedMonthlyReward,
+              expectedFiatAnnualReward,
+              expectedFiatMonthlyReward,
               tokenInfo: {
                 address: NULL_ADDRESS,
                 decimals: chain.nativeCurrency.decimals,
@@ -745,6 +760,8 @@ describe('TransactionsViewController tests', () => {
               value: 0, // defaults to 0 if not provided in the request
               expectedMonthlyReward: 0, // 0 as value is 0
               expectedAnnualReward: 0, // 0 as value is 0
+              expectedFiatMonthlyReward: 0, // 0 as value is 0
+              expectedFiatAnnualReward: 0, // 0 as value is 0
               tokenInfo: {
                 address: NULL_ADDRESS,
                 decimals: chain.nativeCurrency.decimals,

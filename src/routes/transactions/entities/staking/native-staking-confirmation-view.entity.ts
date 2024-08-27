@@ -55,6 +55,12 @@ export class NativeStakingDepositConfirmationView
   expectedMonthlyReward: number;
 
   @ApiProperty()
+  expectedFiatAnnualReward: number;
+
+  @ApiProperty()
+  expectedFiatMonthlyReward: number;
+
+  @ApiProperty()
   tokenInfo: TokenInfo;
 
   constructor(args: {
@@ -70,6 +76,8 @@ export class NativeStakingDepositConfirmationView
     value: number;
     expectedAnnualReward: number;
     expectedMonthlyReward: number;
+    expectedFiatAnnualReward: number;
+    expectedFiatMonthlyReward: number;
     tokenInfo: TokenInfo;
   }) {
     this.method = args.method;
@@ -84,6 +92,8 @@ export class NativeStakingDepositConfirmationView
     this.value = args.value;
     this.expectedAnnualReward = args.expectedAnnualReward;
     this.expectedMonthlyReward = args.expectedMonthlyReward;
+    this.expectedFiatAnnualReward = args.expectedFiatAnnualReward;
+    this.expectedFiatMonthlyReward = args.expectedFiatMonthlyReward;
     this.tokenInfo = args.tokenInfo;
   }
 }
