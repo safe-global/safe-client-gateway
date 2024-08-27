@@ -1,38 +1,39 @@
-import { INestApplication, NotFoundException } from '@nestjs/common';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { AppModule } from '@/app.module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { NetworkModule } from '@/datasources/network/network.module';
 import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { NetworkModule } from '@/datasources/network/network.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import request from 'supertest';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
-import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/gp-v2-encoder.builder';
-import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import { faker } from '@faker-js/faker';
-import { Server } from 'net';
-import { encodeFunctionData, getAddress, parseAbi } from 'viem';
-import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
+import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/gp-v2-encoder.builder';
+import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
+import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { faker } from '@faker-js/faker';
+import { INestApplication, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Server } from 'net';
+import request from 'supertest';
+import { encodeFunctionData, getAddress, parseAbi } from 'viem';
 
 describe('TransactionsViewController tests', () => {
   let app: INestApplication<Server>;
@@ -636,6 +637,14 @@ describe('TransactionsViewController tests', () => {
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
               value: Number(value),
+              tokenInfo: {
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                logoUri: chain.nativeCurrency.logoUri,
+                name: chain.nativeCurrency.name,
+                symbol: chain.nativeCurrency.symbol,
+                trusted: true,
+              },
             });
         });
 
@@ -725,6 +734,14 @@ describe('TransactionsViewController tests', () => {
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
               value: 0, // defaults to 0 if not provided in the request
+              tokenInfo: {
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                logoUri: chain.nativeCurrency.logoUri,
+                name: chain.nativeCurrency.name,
+                symbol: chain.nativeCurrency.symbol,
+                trusted: true,
+              },
             });
         });
 

@@ -1,3 +1,11 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
+import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import { OrderStatus } from '@/domain/swaps/entities/order.entity';
+import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
 import {
   BaselineConfirmationView,
@@ -5,22 +13,14 @@ import {
   CowSwapConfirmationView,
   CowSwapTwapConfirmationView,
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
-import { Inject, Injectable } from '@nestjs/common';
-import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
-import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
-import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
-import { OrderStatus } from '@/domain/swaps/entities/order.entity';
-import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
-import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
-import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
-import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-confirmation-view.entity';
+import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
+import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
+import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
+import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable({})
 export class TransactionsViewService {

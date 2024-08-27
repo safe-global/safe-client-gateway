@@ -1,4 +1,3 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DataDecodedParameter } from '@/routes/data-decode/entities/data-decoded-parameter.entity';
 import {
   Baseline,
@@ -6,6 +5,8 @@ import {
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
 import { NativeStakingDepositInfo } from '@/routes/transactions/entities/staking/native-staking-info.entity';
 import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
+import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class NativeStakingDepositConfirmationView
   implements Baseline, NativeStakingDepositInfo
@@ -47,6 +48,9 @@ export class NativeStakingDepositConfirmationView
   @ApiProperty()
   value: number;
 
+  @ApiProperty()
+  tokenInfo: TokenInfo;
+
   constructor(args: {
     method: string;
     parameters: DataDecodedParameter[] | null;
@@ -58,6 +62,7 @@ export class NativeStakingDepositConfirmationView
     monthlyNrr: number;
     annualNrr: number;
     value: number;
+    tokenInfo: TokenInfo;
   }) {
     this.method = args.method;
     this.parameters = args.parameters;
@@ -69,5 +74,6 @@ export class NativeStakingDepositConfirmationView
     this.monthlyNrr = args.monthlyNrr;
     this.annualNrr = args.annualNrr;
     this.value = args.value;
+    this.tokenInfo = args.tokenInfo;
   }
 }

@@ -1,8 +1,14 @@
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
+import {
+  ChainsRepositoryModule,
+  IChainsRepository,
+} from '@/domain/chains/chains.repository.interface';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-info.entity';
 import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
+import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
 
 @Injectable()
@@ -10,6 +16,8 @@ export class NativeStakingMapper {
   constructor(
     @Inject(IStakingRepository)
     private readonly stakingRepository: IStakingRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {}
 
   /**
@@ -29,6 +37,7 @@ export class NativeStakingMapper {
     isConfirmed: boolean;
     depositExecutionDate: Date | null;
   }): Promise<NativeStakingDepositTransactionInfo> {
+    const chain = await this.chainsRepository.getChain(args.chainId);
     const deployment = await this.stakingRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
@@ -64,6 +73,15 @@ export class NativeStakingMapper {
       fee,
       monthlyNrr: nrr / 12,
       annualNrr: nrr,
+      // tokenInfo is set to the native currency of the chain for native staking deposits
+      tokenInfo: new TokenInfo({
+        address: NULL_ADDRESS,
+        decimals: chain.nativeCurrency.decimals,
+        logoUri: chain.nativeCurrency.logoUri,
+        name: chain.nativeCurrency.name,
+        symbol: chain.nativeCurrency.symbol,
+        trusted: true,
+      }),
     });
   }
 
@@ -105,7 +123,7 @@ export class NativeStakingMapper {
 }
 
 @Module({
-  imports: [StakingRepositoryModule],
+  imports: [StakingRepositoryModule, ChainsRepositoryModule],
   providers: [NativeStakingMapper],
   exports: [NativeStakingMapper],
 })
