@@ -286,10 +286,13 @@ export class TransactionsViewService {
       isConfirmed: false,
       depositExecutionDate: null,
     });
+    const value = args.value ? Number(args.value) : 0;
     return new NativeStakingDepositConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
-      value: args.value ? Number(args.value) : 0,
+      value,
+      expectedMonthlyReward: depositInfo.monthlyNrr * value,
+      expectedAnnualReward: depositInfo.annualNrr * value,
       ...depositInfo,
     });
   }

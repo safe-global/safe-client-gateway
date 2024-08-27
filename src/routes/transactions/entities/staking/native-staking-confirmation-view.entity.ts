@@ -49,6 +49,12 @@ export class NativeStakingDepositConfirmationView
   value: number;
 
   @ApiProperty()
+  expectedAnnualReward: number;
+
+  @ApiProperty()
+  expectedMonthlyReward: number;
+
+  @ApiProperty()
   tokenInfo: TokenInfo;
 
   constructor(args: {
@@ -62,6 +68,8 @@ export class NativeStakingDepositConfirmationView
     monthlyNrr: number;
     annualNrr: number;
     value: number;
+    expectedAnnualReward: number;
+    expectedMonthlyReward: number;
     tokenInfo: TokenInfo;
   }) {
     this.method = args.method;
@@ -74,6 +82,8 @@ export class NativeStakingDepositConfirmationView
     this.monthlyNrr = args.monthlyNrr;
     this.annualNrr = args.annualNrr;
     this.value = args.value;
+    this.expectedAnnualReward = args.expectedAnnualReward;
+    this.expectedMonthlyReward = args.expectedMonthlyReward;
     this.tokenInfo = args.tokenInfo;
   }
 }
