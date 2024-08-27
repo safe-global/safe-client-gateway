@@ -132,6 +132,16 @@ export class SafeBalancesApi implements IBalancesApi {
     return this.coingeckoApi.getFiatCodes();
   }
 
+  /**
+   * Gets the USD price of the native coin of the chain associated with {@link chainId}.
+   */
+  async getNativeCoinPrice(chain: Chain): Promise<number | null> {
+    return this.coingeckoApi.getNativeCoinPrice({
+      chain,
+      fiatCode: 'USD',
+    });
+  }
+
   private async _mapBalances(
     balances: Balance[],
     fiatCode: string,

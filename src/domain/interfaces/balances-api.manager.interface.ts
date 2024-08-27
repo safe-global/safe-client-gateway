@@ -19,6 +19,12 @@ export interface IBalancesApiManager extends IApiManager<IBalancesApi> {
   getApi(chainId: string, safeAddress: `0x${string}`): Promise<IBalancesApi>;
 
   /**
+   * Gets the {@link SafeBalancesApi} implementation associated with the chainId.
+   * @param chainId - the chain identifier to check.
+   */
+  getSafeBalancesApi(chainId: string): Promise<IBalancesApi>;
+
+  /**
    * Gets the list of supported fiat codes.
    * @returns an alphabetically ordered list of uppercase strings representing the supported fiat codes.
    */

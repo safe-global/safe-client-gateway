@@ -1,4 +1,6 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
@@ -41,6 +43,10 @@ export class TransactionsViewService {
     private readonly configurationService: IConfigurationService,
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
+    @Inject(IBalancesRepository)
+    private readonly balancesRepository: IBalancesRepository,
   ) {
     this.isNativeStakingEnabled = this.configurationService.getOrThrow<boolean>(
       'features.nativeStaking',
@@ -287,12 +293,25 @@ export class TransactionsViewService {
       depositExecutionDate: null,
     });
     const value = args.value ? Number(args.value) : 0;
+    const chain = await this.chainsRepository.getChain(args.chainId);
+    const nativeCoinPrice =
+      await this.balancesRepository.getNativeCoinPrice(chain);
+
+    const expectedAnnualReward = (depositInfo.annualNrr / 100) * value;
+    const expectedMonthlyReward = expectedAnnualReward / 12;
+    const expectedFiatAnnualReward =
+      (expectedAnnualReward * (nativeCoinPrice ?? 0)) /
+      Math.pow(10, chain.nativeCurrency.decimals);
+    const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
+
     return new NativeStakingDepositConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
       value,
-      expectedMonthlyReward: depositInfo.monthlyNrr * value,
-      expectedAnnualReward: depositInfo.annualNrr * value,
+      expectedAnnualReward,
+      expectedMonthlyReward,
+      expectedFiatAnnualReward,
+      expectedFiatMonthlyReward,
       ...depositInfo,
     });
   }
