@@ -26,6 +26,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable({})
 export class TransactionsViewService {
+  private static readonly ETH_ETHERS_PER_VALIDATOR = 32;
   private readonly isNativeStakingEnabled: boolean;
 
   constructor(
@@ -294,6 +295,11 @@ export class TransactionsViewService {
     });
     const value = args.value ? Number(args.value) : 0;
     const chain = await this.chainsRepository.getChain(args.chainId);
+    const numValidators = Math.floor(
+      value /
+        Math.pow(10, chain.nativeCurrency.decimals) /
+        TransactionsViewService.ETH_ETHERS_PER_VALIDATOR,
+    );
     const nativeCoinPrice =
       await this.balancesRepository.getNativeCoinPrice(chain);
 
@@ -308,6 +314,7 @@ export class TransactionsViewService {
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
       value,
+      numValidators,
       expectedAnnualReward,
       expectedMonthlyReward,
       expectedFiatAnnualReward,
