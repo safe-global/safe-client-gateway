@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import {
-  ChainPageSchema,
+  ChainLenientPageSchema,
   ChainSchema,
 } from '@/domain/chains/entities/schemas/chain.schema';
 import { Chain } from '@/domain/chains/entities/chain.entity';
@@ -14,10 +14,13 @@ import {
   IndexingStatus,
   IndexingStatusSchema,
 } from '@/domain/indexing/entities/indexing-status.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { differenceBy } from 'lodash';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
   constructor(
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
@@ -34,7 +37,14 @@ export class ChainsRepository implements IChainsRepository {
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
     const page = await this.configApi.getChains({ limit, offset });
-    return ChainPageSchema.parse(page);
+    const valid = ChainLenientPageSchema.parse(page);
+    if (valid.results.length < page.results.length) {
+      this.loggingService.error({
+        message: 'Some chains could not be parsed',
+        errors: differenceBy(page.results, valid.results, 'chainId'),
+      });
+    }
+    return valid;
   }
 
   async getSingletons(chainId: string): Promise<Singleton[]> {

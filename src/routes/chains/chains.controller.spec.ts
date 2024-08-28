@@ -200,7 +200,7 @@ describe('Chains Controller (Unit)', () => {
       });
     });
 
-    it('Failure: received data is not valid', async () => {
+    it('should exclude items not passing validation', async () => {
       networkService.get.mockResolvedValueOnce({
         data: {
           ...chainsResponse,
@@ -209,10 +209,66 @@ describe('Chains Controller (Unit)', () => {
         status: 200,
       });
 
-      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
-        statusCode: 500,
-        message: 'Internal server error',
-      });
+      await request(app.getHttpServer())
+        .get('/v1/chains')
+        .expect(200)
+        .expect({
+          count: chainsResponse.count,
+          next: chainsResponse.next,
+          previous: chainsResponse.previous,
+          results: [
+            {
+              chainId: chainsResponse.results[0].chainId,
+              chainName: chainsResponse.results[0].chainName,
+              description: chainsResponse.results[0].description,
+              chainLogoUri: chainsResponse.results[0].chainLogoUri,
+              l2: chainsResponse.results[0].l2,
+              isTestnet: chainsResponse.results[0].isTestnet,
+              shortName: chainsResponse.results[0].shortName,
+              rpcUri: chainsResponse.results[0].rpcUri,
+              safeAppsRpcUri: chainsResponse.results[0].safeAppsRpcUri,
+              publicRpcUri: chainsResponse.results[0].publicRpcUri,
+              blockExplorerUriTemplate:
+                chainsResponse.results[0].blockExplorerUriTemplate,
+              nativeCurrency: chainsResponse.results[0].nativeCurrency,
+              transactionService: chainsResponse.results[0].transactionService,
+              theme: chainsResponse.results[0].theme,
+              gasPrice: chainsResponse.results[0].gasPrice,
+              ensRegistryAddress: getAddress(
+                chainsResponse.results[0].ensRegistryAddress!,
+              ),
+              disabledWallets: chainsResponse.results[0].disabledWallets,
+              features: chainsResponse.results[0].features,
+              balancesProvider: chainsResponse.results[0].balancesProvider,
+              contractAddresses: chainsResponse.results[0].contractAddresses,
+            },
+            {
+              chainId: chainsResponse.results[1].chainId,
+              chainName: chainsResponse.results[1].chainName,
+              description: chainsResponse.results[1].description,
+              chainLogoUri: chainsResponse.results[1].chainLogoUri,
+              l2: chainsResponse.results[1].l2,
+              isTestnet: chainsResponse.results[1].isTestnet,
+              shortName: chainsResponse.results[1].shortName,
+              rpcUri: chainsResponse.results[1].rpcUri,
+              safeAppsRpcUri: chainsResponse.results[1].safeAppsRpcUri,
+              publicRpcUri: chainsResponse.results[1].publicRpcUri,
+              blockExplorerUriTemplate:
+                chainsResponse.results[1].blockExplorerUriTemplate,
+              nativeCurrency: chainsResponse.results[1].nativeCurrency,
+              transactionService: chainsResponse.results[1].transactionService,
+              theme: chainsResponse.results[1].theme,
+              gasPrice: chainsResponse.results[1].gasPrice,
+              ensRegistryAddress: getAddress(
+                chainsResponse.results[1].ensRegistryAddress!,
+              ),
+              disabledWallets: chainsResponse.results[1].disabledWallets,
+              features: chainsResponse.results[1].features,
+              balancesProvider: chainsResponse.results[1].balancesProvider,
+              contractAddresses: chainsResponse.results[1].contractAddresses,
+            },
+          ],
+        });
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
