@@ -21,7 +21,6 @@ import {
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { faker } from '@faker-js/faker';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Server } from 'net';
@@ -63,8 +62,7 @@ describe('Get creation transaction', () => {
   });
 
   it('should return the creation transaction', async () => {
-    const chainId = faker.string.numeric();
-    const chain = chainBuilder().with('chainId', chainId).build();
+    const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const creationTransaction = creationTransactionBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -97,8 +95,7 @@ describe('Get creation transaction', () => {
   });
 
   it('should forward Transaction Service errors', async () => {
-    const chainId = faker.string.numeric();
-    const chain = chainBuilder().with('chainId', chainId).build();
+    const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getCreationTransactionUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/creation/`;
@@ -125,8 +122,7 @@ describe('Get creation transaction', () => {
   });
 
   it('should fail if the Transaction Service fails', async () => {
-    const chainId = faker.string.numeric();
-    const chain = chainBuilder().with('chainId', chainId).build();
+    const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getCreationTransactionUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/creation/`;
@@ -149,8 +145,7 @@ describe('Get creation transaction', () => {
   });
 
   it('should fail if the Config Service fails', async () => {
-    const chainId = faker.string.numeric();
-    const chain = chainBuilder().with('chainId', chainId).build();
+    const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const creationTransaction = creationTransactionBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
