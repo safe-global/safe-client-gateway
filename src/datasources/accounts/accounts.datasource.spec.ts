@@ -155,7 +155,7 @@ describe('AccountsDatasource tests', () => {
           address: getAddress(faker.finance.ethereumAddress()),
           clientIp,
         }),
-      ).rejects.toThrow('Rate limit reached');
+      ).rejects.toThrow('Accounts creation rate limit reached');
 
       const { count } = await sql`SELECT id FROM accounts`;
       expect(count).toBe(accountCreationRateLimitCalls);

@@ -7,11 +7,11 @@ import {
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
-import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
 import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
+import { AccountsCreationRateLimitError } from '@/domain/accounts/errors/accounts-creation-rate-limit.error';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
@@ -219,7 +219,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
    * the attempts to create them.
    *
    * If the client IP address is invalid, a warning is logged.
-   * If the client IP address is valid and rate limit is reached, a {@link LimitReachedError} is thrown.
+   * If the client IP address is valid and rate limit is reached, a {@link AccountsCreationRateLimitError} is thrown.
    *
    * @param clientIp - client IP address.
    */
@@ -240,7 +240,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         this.loggingService.warn(
           `Limit of ${this.accountCreationRateLimitCalls} reached for IP ${clientIp}`,
         );
-        throw new LimitReachedError();
+        throw new AccountsCreationRateLimitError();
       }
     }
   }

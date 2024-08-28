@@ -197,7 +197,7 @@ describe('CounterfactualSafesDatasource tests', () => {
             .with('chainId', '11')
             .build(),
         }),
-      ).rejects.toThrow('Rate limit reached');
+      ).rejects.toThrow('Counterfactual Safes creation rate limit reached');
     });
 
     it('should delete the cache for the account Counterfactual Safes', async () => {

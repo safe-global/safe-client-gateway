@@ -146,7 +146,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       return this._mapBalances(chainName, data.data);
     } catch (error) {
       if (error instanceof LimitReachedError) {
-        throw new DataSourceError(error.message, 429);
+        throw error;
       }
       throw this.httpErrorFactory.from(error);
     }

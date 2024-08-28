@@ -6,9 +6,9 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
-import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import { CounterfactualSafe } from '@/domain/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
 import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
+import { CounterfactualSafesCreationRateLimitError } from '@/domain/accounts/counterfactual-safes/errors/counterfactual-safes-creation-rate-limit.error';
 import { Account } from '@/domain/accounts/entities/account.entity';
 import { ICounterfactualSafesDatasource } from '@/domain/interfaces/counterfactual-safes.datasource.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -170,7 +170,7 @@ export class CounterfactualSafesDatasource
       this.loggingService.warn(
         `Limit of ${this.counterfactualSafesCreationRateLimitCalls} reached for account ${account.address}`,
       );
-      throw new LimitReachedError();
+      throw new CounterfactualSafesCreationRateLimitError();
     }
   }
 
