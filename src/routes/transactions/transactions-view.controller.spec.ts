@@ -582,7 +582,7 @@ describe('TransactionsViewController tests', () => {
           const data = encodeFunctionData({
             abi: parseAbi(['function deposit() external payable']),
           });
-          const value = faker.string.numeric({ length: 18 });
+          const value = getNumberString(64 * 10 ** 18 + 1);
           const fiatPrice = faker.number.float({ min: 0, max: 1_000_000 });
           const nativeCoinPriceProviderResponse = {
             [chain.pricesProvider.nativeCoin!]: {
@@ -658,6 +658,7 @@ describe('TransactionsViewController tests', () => {
               monthlyNrr,
               annualNrr,
               value: getNumberString(Number(value)),
+              numValidators: 2,
               expectedAnnualReward: getNumberString(expectedAnnualReward),
               expectedMonthlyReward: getNumberString(expectedMonthlyReward),
               expectedFiatAnnualReward,
@@ -759,6 +760,7 @@ describe('TransactionsViewController tests', () => {
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
               value: '0', // defaults to 0 if not provided in the request
+              numValidators: 0, // 0 as value is 0
               expectedMonthlyReward: '0', // 0 as value is 0
               expectedAnnualReward: '0', // 0 as value is 0
               expectedFiatMonthlyReward: 0, // 0 as value is 0

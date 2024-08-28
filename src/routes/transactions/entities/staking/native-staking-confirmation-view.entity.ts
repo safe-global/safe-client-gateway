@@ -49,6 +49,9 @@ export class NativeStakingDepositConfirmationView
   value: string;
 
   @ApiProperty()
+  numValidators: number;
+
+  @ApiProperty()
   expectedAnnualReward: string;
 
   @ApiProperty()
@@ -74,6 +77,7 @@ export class NativeStakingDepositConfirmationView
     monthlyNrr: number;
     annualNrr: number;
     value: string;
+    numValidators: number;
     expectedAnnualReward: string;
     expectedMonthlyReward: string;
     expectedFiatAnnualReward: number;
@@ -90,6 +94,7 @@ export class NativeStakingDepositConfirmationView
     this.monthlyNrr = args.monthlyNrr;
     this.annualNrr = args.annualNrr;
     this.value = args.value;
+    this.numValidators = args.numValidators;
     this.expectedAnnualReward = args.expectedAnnualReward;
     this.expectedMonthlyReward = args.expectedMonthlyReward;
     this.expectedFiatAnnualReward = args.expectedFiatAnnualReward;
