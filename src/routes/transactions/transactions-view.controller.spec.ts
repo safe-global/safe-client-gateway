@@ -16,6 +16,7 @@ import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { getNumberString } from '@/domain/common/utils/utils';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -582,7 +583,7 @@ describe('TransactionsViewController tests', () => {
             abi: parseAbi(['function deposit() external payable']),
           });
           const value = faker.string.numeric({ length: 18 });
-          const fiatPrice = 1212.23; // TODO: randomize
+          const fiatPrice = faker.number.float({ min: 0, max: 1_000_000 });
           const nativeCoinPriceProviderResponse = {
             [chain.pricesProvider.nativeCoin!]: {
               usd: fiatPrice,
@@ -656,9 +657,9 @@ describe('TransactionsViewController tests', () => {
               fee: +deployment.product_fee!,
               monthlyNrr,
               annualNrr,
-              value: Number(value),
-              expectedAnnualReward,
-              expectedMonthlyReward,
+              value: getNumberString(Number(value)),
+              expectedAnnualReward: getNumberString(expectedAnnualReward),
+              expectedMonthlyReward: getNumberString(expectedMonthlyReward),
               expectedFiatAnnualReward,
               expectedFiatMonthlyReward,
               tokenInfo: {
@@ -757,9 +758,9 @@ describe('TransactionsViewController tests', () => {
               annualNrr:
                 dedicatedStakingStats.gross_apy.last_30d *
                 (1 - +deployment.product_fee!),
-              value: 0, // defaults to 0 if not provided in the request
-              expectedMonthlyReward: 0, // 0 as value is 0
-              expectedAnnualReward: 0, // 0 as value is 0
+              value: '0', // defaults to 0 if not provided in the request
+              expectedMonthlyReward: '0', // 0 as value is 0
+              expectedAnnualReward: '0', // 0 as value is 0
               expectedFiatMonthlyReward: 0, // 0 as value is 0
               expectedFiatAnnualReward: 0, // 0 as value is 0
               tokenInfo: {

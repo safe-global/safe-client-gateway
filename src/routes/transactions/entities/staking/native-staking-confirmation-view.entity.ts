@@ -46,13 +46,13 @@ export class NativeStakingDepositConfirmationView
   annualNrr: number;
 
   @ApiProperty()
-  value: number;
+  value: string;
 
   @ApiProperty()
-  expectedAnnualReward: number;
+  expectedAnnualReward: string;
 
   @ApiProperty()
-  expectedMonthlyReward: number;
+  expectedMonthlyReward: string;
 
   @ApiProperty()
   expectedFiatAnnualReward: number;
@@ -73,9 +73,9 @@ export class NativeStakingDepositConfirmationView
     fee: number;
     monthlyNrr: number;
     annualNrr: number;
-    value: number;
-    expectedAnnualReward: number;
-    expectedMonthlyReward: number;
+    value: string;
+    expectedAnnualReward: string;
+    expectedMonthlyReward: string;
     expectedFiatAnnualReward: number;
     expectedFiatMonthlyReward: number;
     tokenInfo: TokenInfo;
