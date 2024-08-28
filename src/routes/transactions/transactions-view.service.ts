@@ -294,6 +294,9 @@ export class TransactionsViewService {
     });
     const value = args.value ? Number(args.value) : 0;
     const chain = await this.chainsRepository.getChain(args.chainId);
+    const numValidators = Math.floor(
+      value / Math.pow(10, chain.nativeCurrency.decimals) / 32,
+    );
     const nativeCoinPrice =
       await this.balancesRepository.getNativeCoinPrice(chain);
 
@@ -308,6 +311,7 @@ export class TransactionsViewService {
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
       value,
+      numValidators,
       expectedAnnualReward,
       expectedMonthlyReward,
       expectedFiatAnnualReward,
