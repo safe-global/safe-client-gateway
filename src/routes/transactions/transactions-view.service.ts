@@ -1,6 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { getNumberString } from '@/domain/common/utils/utils';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
@@ -313,10 +314,10 @@ export class TransactionsViewService {
     return new NativeStakingDepositConfirmationView({
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
-      value,
+      value: getNumberString(value),
       numValidators,
-      expectedAnnualReward,
-      expectedMonthlyReward,
+      expectedAnnualReward: getNumberString(expectedAnnualReward),
+      expectedMonthlyReward: getNumberString(expectedMonthlyReward),
       expectedFiatAnnualReward,
       expectedFiatMonthlyReward,
       ...depositInfo,
