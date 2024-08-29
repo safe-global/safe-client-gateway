@@ -1,8 +1,13 @@
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import {
+  BalancesRepositoryModule,
+  IBalancesRepository,
+} from '@/domain/balances/balances.repository.interface';
+import {
   ChainsRepositoryModule,
   IChainsRepository,
 } from '@/domain/chains/chains.repository.interface';
+import { getNumberString } from '@/domain/common/utils/utils';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -13,11 +18,15 @@ import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class NativeStakingMapper {
+  private static readonly ETH_ETHERS_PER_VALIDATOR = 32;
+
   constructor(
     @Inject(IStakingRepository)
     private readonly stakingRepository: IStakingRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    @Inject(IBalancesRepository)
+    private readonly balancesRepository: IBalancesRepository,
   ) {}
 
   /**
@@ -34,6 +43,7 @@ export class NativeStakingMapper {
   public async mapDepositInfo(args: {
     chainId: string;
     to: `0x${string}`;
+    value: string | null;
     isConfirmed: boolean;
     depositExecutionDate: Date | null;
   }): Promise<NativeStakingDepositTransactionInfo> {
@@ -56,10 +66,24 @@ export class NativeStakingMapper {
       this.stakingRepository.getNetworkStats(args.chainId),
     ]);
 
+    const value = args.value ? Number(args.value) : 0;
+    const numValidators = Math.floor(
+      value /
+        Math.pow(10, chain.nativeCurrency.decimals) /
+        NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
+    );
     const fee = deployment.product_fee ? Number(deployment.product_fee) : 0;
     // NRR = GRR * (1 - service_fees)
     // Kiln also uses last_30d field, with product_fee
     const nrr = nativeStakingStats.gross_apy.last_30d * (1 - fee);
+    const expectedAnnualReward = (nrr / 100) * value;
+    const expectedMonthlyReward = expectedAnnualReward / 12;
+    const nativeCoinPrice =
+      await this.balancesRepository.getNativeCoinPrice(chain);
+    const expectedFiatAnnualReward =
+      (expectedAnnualReward * (nativeCoinPrice ?? 0)) /
+      Math.pow(10, chain.nativeCurrency.decimals);
+    const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
     return new NativeStakingDepositTransactionInfo({
       status: this.mapStatus(
@@ -73,6 +97,12 @@ export class NativeStakingMapper {
       fee,
       monthlyNrr: nrr / 12,
       annualNrr: nrr,
+      value: getNumberString(value),
+      numValidators,
+      expectedAnnualReward: getNumberString(expectedAnnualReward),
+      expectedMonthlyReward: getNumberString(expectedMonthlyReward),
+      expectedFiatAnnualReward,
+      expectedFiatMonthlyReward,
       // tokenInfo is set to the native currency of the chain for native staking deposits
       tokenInfo: new TokenInfo({
         address: NULL_ADDRESS,
@@ -123,7 +153,11 @@ export class NativeStakingMapper {
 }
 
 @Module({
-  imports: [StakingRepositoryModule, ChainsRepositoryModule],
+  imports: [
+    StakingRepositoryModule,
+    ChainsRepositoryModule,
+    BalancesRepositoryModule,
+  ],
   providers: [NativeStakingMapper],
   exports: [NativeStakingMapper],
 })
