@@ -42,11 +42,6 @@ export class BalancesRepository implements IBalancesRepository {
     return this.balancesApiManager.getFiatCodes();
   }
 
-  async getNativeCoinPrice(chain: Chain): Promise<number | null> {
-    const api = await this.balancesApiManager.getSafeBalancesApi(chain.chainId);
-    return api.getNativeCoinPrice(chain);
-  }
-
   clearApi(chainId: string): void {
     this.balancesApiManager.destroyApi(chainId);
   }

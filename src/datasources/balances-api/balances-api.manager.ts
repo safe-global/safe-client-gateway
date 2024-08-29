@@ -71,10 +71,6 @@ export class BalancesApiManager implements IBalancesApiManager {
     }
   }
 
-  async getSafeBalancesApi(chainId: string): Promise<IBalancesApi> {
-    return this._getSafeBalancesApi(chainId);
-  }
-
   async getFiatCodes(): Promise<string[]> {
     const [zerionFiatCodes, safeFiatCodes] = await Promise.all([
       this.zerionBalancesApi.getFiatCodes(),

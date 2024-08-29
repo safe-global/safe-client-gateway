@@ -284,13 +284,6 @@ export class ZerionBalancesApi implements IBalancesApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  getNativeCoinPrice(): Promise<number | null> {
-    this.loggingService.warn(
-      'Native coin price retrieval is not implemented for Zerion',
-    );
-    return Promise.resolve(null);
-  }
-
   private _getChainName(chain: Chain): string {
     const chainName =
       chain.balancesProvider.chainName ??

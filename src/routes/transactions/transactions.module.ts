@@ -1,4 +1,3 @@
-import { BalancesRepositoryModule } from '@/domain/balances/balances.repository.interface';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
 import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
@@ -53,7 +52,6 @@ import { Module } from '@nestjs/common';
   controllers: [TransactionsController],
   imports: [
     AddressInfoModule,
-    BalancesRepositoryModule,
     ChainsRepositoryModule,
     ContractsRepositoryModule,
     DataDecodedRepositoryModule,

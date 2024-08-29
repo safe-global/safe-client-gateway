@@ -51,7 +51,6 @@ const zerionBalancesApi = {
   getCollectibles: jest.fn(),
   clearCollectibles: jest.fn(),
   getFiatCodes: jest.fn(),
-  getNativeCoinPrice: jest.fn(),
 } as IBalancesApi;
 
 const zerionBalancesApiMock = jest.mocked(zerionBalancesApi);

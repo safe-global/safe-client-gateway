@@ -34,11 +34,6 @@ export interface IBalancesRepository {
   getFiatCodes(): Promise<string[]>;
 
   /**
-   * Gets the price of the native coin of the chain.
-   */
-  getNativeCoinPrice(chain: Chain): Promise<number | null>;
-
-  /**
    * Clears the API associated with {@link chainId}
    */
   clearApi(chainId: string): void;

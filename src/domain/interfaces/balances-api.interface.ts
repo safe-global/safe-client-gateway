@@ -32,6 +32,4 @@ export interface IBalancesApi {
   }): Promise<void>;
 
   getFiatCodes(): Promise<string[]>;
-
-  getNativeCoinPrice(chain: Chain): Promise<number | null>;
 }

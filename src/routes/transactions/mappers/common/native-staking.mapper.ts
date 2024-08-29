@@ -1,9 +1,5 @@
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import {
-  BalancesRepositoryModule,
-  IBalancesRepository,
-} from '@/domain/balances/balances.repository.interface';
-import {
   ChainsRepositoryModule,
   IChainsRepository,
 } from '@/domain/chains/chains.repository.interface';
@@ -25,8 +21,6 @@ export class NativeStakingMapper {
     private readonly stakingRepository: IStakingRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
-    @Inject(IBalancesRepository)
-    private readonly balancesRepository: IBalancesRepository,
   ) {}
 
   /**
@@ -78,10 +72,8 @@ export class NativeStakingMapper {
     const nrr = nativeStakingStats.gross_apy.last_30d * (1 - fee);
     const expectedAnnualReward = (nrr / 100) * value;
     const expectedMonthlyReward = expectedAnnualReward / 12;
-    const nativeCoinPrice =
-      await this.balancesRepository.getNativeCoinPrice(chain);
     const expectedFiatAnnualReward =
-      (expectedAnnualReward * (nativeCoinPrice ?? 0)) /
+      (expectedAnnualReward * (networkStats.eth_price_usd ?? 0)) /
       Math.pow(10, chain.nativeCurrency.decimals);
     const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
@@ -153,11 +145,7 @@ export class NativeStakingMapper {
 }
 
 @Module({
-  imports: [
-    StakingRepositoryModule,
-    ChainsRepositoryModule,
-    BalancesRepositoryModule,
-  ],
+  imports: [StakingRepositoryModule, ChainsRepositoryModule],
   providers: [NativeStakingMapper],
   exports: [NativeStakingMapper],
 })
