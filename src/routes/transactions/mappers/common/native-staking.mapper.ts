@@ -35,6 +35,7 @@ export class NativeStakingMapper {
    *
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.to - the address of the native staking deployment
+   * @param args.value - the value of the deposit transaction
    * @param args.isConfirmed - whether the deposit transaction is confirmed
    * @param args.depositExecutionDate - the date when the deposit transaction was executed
    *
@@ -119,9 +120,9 @@ export class NativeStakingMapper {
    * Maps the {@link StakingStatus} for the given native staking deployment's `deposit` call.
    * - If the deposit transaction is not confirmed, the status is `SignatureNeeded`.
    * - If the deposit transaction is confirmed but the deposit execution date is not available,
-   * the status is `AwaitingEntry`.
+   * the status is `AwaitingExecution`.
    * - If the deposit execution date is available, the status is `AwaitingEntry` if the current
-   * date is before the estimated entry time, otherwise the status is `Validating`.
+   * date is before the estimated entry time, otherwise the status is `ValidationStarted`.
    * - If the status cannot be determined, the status is `Unknown`.
    *
    * @param networkStats - the network stats for the chain where the native staking deployment lives
@@ -139,7 +140,7 @@ export class NativeStakingMapper {
     }
 
     if (!depositExecutionDate) {
-      return StakingStatus.AwaitingEntry;
+      return StakingStatus.AwaitingExecution;
     }
 
     const estimatedDepositEntryTime =
@@ -148,7 +149,7 @@ export class NativeStakingMapper {
 
     return Date.now() <= estimatedDepositEntryTime
       ? StakingStatus.AwaitingEntry
-      : StakingStatus.Validating;
+      : StakingStatus.ValidationStarted;
   }
 }
 
