@@ -330,6 +330,7 @@ export class MultisigTransactionInfoMapper {
       return await this.nativeStakingMapper.mapDepositInfo({
         chainId,
         to: nativeStakingTransaction.to,
+        value: transaction.value,
         isConfirmed,
         depositExecutionDate: transaction.executionDate,
       });

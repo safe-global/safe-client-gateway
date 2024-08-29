@@ -1,5 +1,3 @@
-import { BalancesRepositoryModule } from '@/domain/balances/balances.repository.interface';
-import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { GPv2DecoderModule } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
@@ -84,8 +82,6 @@ export class TransactionsViewController {
 
 @Module({
   imports: [
-    BalancesRepositoryModule,
-    ChainsRepositoryModule,
     DataDecodedRepositoryModule,
     GPv2DecoderModule,
     KilnNativeStakingHelperModule,
