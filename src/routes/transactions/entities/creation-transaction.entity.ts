@@ -1,29 +1,30 @@
+import { CreationTransaction as DomainCreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreationTransaction {
+export class CreationTransaction implements DomainCreationTransaction {
   @ApiProperty()
   created: Date;
   @ApiProperty()
-  creator: string;
+  creator: `0x${string}`;
   @ApiProperty()
-  transactionHash: string;
+  transactionHash: `0x${string}`;
   @ApiProperty()
-  factoryAddress: string;
+  factoryAddress: `0x${string}`;
   @ApiPropertyOptional({ type: String, nullable: true })
-  masterCopy: string | null;
+  masterCopy: `0x${string}` | null;
   @ApiPropertyOptional({ type: String, nullable: true })
-  setupData: string | null;
+  setupData: `0x${string}` | null;
   @ApiPropertyOptional({ type: DataDecoded, nullable: true })
   dataDecoded: DataDecoded | null;
 
   constructor(
     created: Date,
-    creator: string,
-    transactionHash: string,
-    factoryAddress: string,
-    masterCopy: string | null,
-    setupData: string | null,
+    creator: `0x${string}`,
+    transactionHash: `0x${string}`,
+    factoryAddress: `0x${string}`,
+    masterCopy: `0x${string}` | null,
+    setupData: `0x${string}` | null,
     dataDecoded: DataDecoded | null,
   ) {
     this.created = created;
