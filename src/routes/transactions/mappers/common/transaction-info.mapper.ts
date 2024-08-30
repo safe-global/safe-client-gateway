@@ -27,6 +27,7 @@ import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/t
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -132,6 +133,13 @@ export class MultisigTransactionInfoMapper {
       // If the transaction is a native staking deposit, we return it immediately
       if (nativeStakingDeposit) {
         return nativeStakingDeposit;
+      }
+
+      const nativeStakingValidatorsExit =
+        await this.mapNativeStakingValidatorsExit(chainId, transaction);
+      // If the transaction is a native staking validators exit, we return it immediately
+      if (nativeStakingValidatorsExit) {
+        return nativeStakingValidatorsExit;
       }
     }
 
@@ -310,14 +318,14 @@ export class MultisigTransactionInfoMapper {
       return null;
     }
 
-    const nativeStakingTransaction =
+    const nativeStakingDepositTransaction =
       await this.kilnNativeStakingHelper.findDeposit({
         chainId,
         to: transaction.to,
         data: transaction.data,
       });
 
-    if (!nativeStakingTransaction) {
+    if (!nativeStakingDepositTransaction) {
       return null;
     }
 
@@ -329,10 +337,48 @@ export class MultisigTransactionInfoMapper {
 
       return await this.nativeStakingMapper.mapDepositInfo({
         chainId,
-        to: nativeStakingTransaction.to,
+        to: nativeStakingDepositTransaction.to,
         value: transaction.value,
         isConfirmed,
         depositExecutionDate: transaction.executionDate,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapNativeStakingValidatorsExit(
+    chainId: string,
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): Promise<NativeStakingValidatorsExitTransactionInfo | null> {
+    if (!transaction?.data) {
+      return null;
+    }
+
+    const nativeStakingValidatorsExitTransaction =
+      await this.kilnNativeStakingHelper.findValidatorsExit({
+        chainId,
+        to: transaction.to,
+        data: transaction.data,
+      });
+
+    if (!nativeStakingValidatorsExitTransaction) {
+      return null;
+    }
+
+    try {
+      const isConfirmed =
+        'confirmations' in transaction &&
+        !!transaction.confirmations &&
+        transaction.confirmations.length >= transaction.confirmationsRequired;
+
+      return await this.nativeStakingMapper.mapValidatorsExitInfo({
+        chainId,
+        to: nativeStakingValidatorsExitTransaction.to,
+        value: transaction.value,
+        isConfirmed,
+        validatorsExitExecutionDate: transaction.executionDate,
       });
     } catch (error) {
       this.loggingService.warn(error);

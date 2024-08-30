@@ -5,9 +5,9 @@ export enum StakingStatus {
   AwaitingExecution = 'AWAITING_EXECUTION',
   RequestedExit = 'REQUESTED_EXIT',
   SignatureNeeded = 'SIGNATURE_NEEDED',
+  Unknown = 'UNKNOWN',
   ValidationStarted = 'VALIDATION_STARTED',
   Withdrawn = 'WITHDRAWN',
-  Unknown = 'UNKNOWN',
 }
 
 // TODO: rename to StakingDepositStatusInfo
@@ -16,9 +16,10 @@ export type StakingStatusInfo = {
 };
 
 export enum StakingValidatorsExitStatus {
-  SignatureNeeded = 'SIGNATURE_NEEDED',
-  RequestPending = 'REQUEST_PENDING',
+  AwaitingExecution = 'AWAITING_EXECUTION',
   ReadyToWithdraw = 'READY_TO_WITHDRAW',
+  RequestPending = 'REQUEST_PENDING',
+  SignatureNeeded = 'SIGNATURE_NEEDED',
 }
 
 export type StakingValidatorsExitInfo = {

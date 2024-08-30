@@ -561,9 +561,9 @@ describe('TransactionsViewController tests', () => {
     });
   });
 
-  describe.only('Staking', () => {
-    describe.only('Native', () => {
-      describe.skip('deposit', () => {
+  describe('Staking', () => {
+    describe('Native', () => {
+      describe('deposit', () => {
         it('returns the native staking `deposit` confirmation view', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
           const dataDecoded = dataDecodedBuilder().build();
@@ -1110,8 +1110,8 @@ describe('TransactionsViewController tests', () => {
         });
       });
 
-      describe.only('validators exit', () => {
-        it.only('returns the native staking `validators exit` confirmation view', async () => {
+      describe('validators exit', () => {
+        it('returns the native staking `validators exit` confirmation view', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
           const dataDecoded = dataDecodedBuilder().build();
           const deployment = deploymentBuilder()
@@ -1120,8 +1120,12 @@ describe('TransactionsViewController tests', () => {
             .with('product_fee', faker.number.float().toString())
             .build();
           const safeAddress = faker.finance.ethereumAddress();
+          const networkStats = networkStatsBuilder().build();
+          const validatorPublicKey = faker.string.hexadecimal();
           const data = encodeFunctionData({
-            abi: parseAbi(['function requestValidatorsExit() external']),
+            abi: parseAbi(['function requestValidatorsExit(bytes)']),
+            functionName: 'requestValidatorsExit',
+            args: [validatorPublicKey as `0x${string}`],
           });
           const value = getNumberString(64 * 10 ** 18 + 1);
           networkService.get.mockImplementation(({ url }) => {
@@ -1131,6 +1135,11 @@ describe('TransactionsViewController tests', () => {
               case `${stakingApiUrl}/v1/deployments`:
                 return Promise.resolve({
                   data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
                   status: 200,
                 });
               default:
@@ -1153,23 +1162,26 @@ describe('TransactionsViewController tests', () => {
               data,
               value,
             })
-            .expect(200);
-          // .expect({
-          //   type: 'KILN_NATIVE_STAKING_VALIDATOR_EXIT',
-          //   method: dataDecoded.method,
-          //   status: 'SIGNATURE_NEEDED',
-          //   parameters: dataDecoded.parameters,
-          //   value: getNumberString(Number(value)),
-          //   numValidators: 2,
-          //   tokenInfo: {
-          //     address: NULL_ADDRESS,
-          //     decimals: chain.nativeCurrency.decimals,
-          //     logoUri: chain.nativeCurrency.logoUri,
-          //     name: chain.nativeCurrency.name,
-          //     symbol: chain.nativeCurrency.symbol,
-          //     trusted: true,
-          //   },
-          // });
+            .expect(200)
+            .expect({
+              type: 'KILN_NATIVE_STAKING_VALIDATORS_EXIT',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              status: 'SIGNATURE_NEEDED',
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              value: getNumberString(Number(value)),
+              numValidators: 2,
+              tokenInfo: {
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                logoUri: chain.nativeCurrency.logoUri,
+                name: chain.nativeCurrency.name,
+                symbol: chain.nativeCurrency.symbol,
+                trusted: true,
+              },
+            });
         });
       });
     });

@@ -8,7 +8,11 @@ import { IStakingRepository } from '@/domain/staking/staking.repository.interfac
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
-import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
+import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
+import {
+  StakingStatus,
+  StakingValidatorsExitStatus,
+} from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
 
@@ -79,7 +83,7 @@ export class NativeStakingMapper {
     const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
     return new NativeStakingDepositTransactionInfo({
-      status: this.mapStatus(
+      status: this.mapDepositStatus(
         networkStats,
         args.isConfirmed,
         args.depositExecutionDate,
@@ -108,6 +112,61 @@ export class NativeStakingMapper {
     });
   }
 
+  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo
+  public async mapValidatorsExitInfo(args: {
+    chainId: string;
+    to: `0x${string}`;
+    value: string | null;
+    isConfirmed: boolean;
+    validatorsExitExecutionDate: Date | null;
+  }): Promise<NativeStakingValidatorsExitTransactionInfo> {
+    const chain = await this.chainsRepository.getChain(args.chainId);
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+
+    if (
+      deployment.product_type !== 'dedicated' ||
+      deployment.chain === 'unknown' ||
+      deployment.status === 'unknown'
+    ) {
+      throw new NotFoundException('Native staking deployment not found');
+    }
+
+    const networkStats = await this.stakingRepository.getNetworkStats(
+      args.chainId,
+    );
+
+    // TODO: value from dataDecoded?
+    const value = args.value ? Number(args.value) : 0;
+    const numValidators = Math.floor(
+      value /
+        Math.pow(10, chain.nativeCurrency.decimals) /
+        NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
+    );
+
+    return new NativeStakingValidatorsExitTransactionInfo({
+      status: this.mapValidatorsExitStatus(
+        networkStats,
+        args.isConfirmed,
+        args.validatorsExitExecutionDate,
+      ),
+      estimatedExitTime: networkStats.estimated_exit_time_seconds,
+      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
+      value: getNumberString(value),
+      numValidators,
+      tokenInfo: new TokenInfo({
+        address: NULL_ADDRESS,
+        decimals: chain.nativeCurrency.decimals,
+        logoUri: chain.nativeCurrency.logoUri,
+        name: chain.nativeCurrency.name,
+        symbol: chain.nativeCurrency.symbol,
+        trusted: true,
+      }),
+    });
+  }
+
   /**
    * Maps the {@link StakingStatus} for the given native staking deployment's `deposit` call.
    * - If the deposit transaction is not confirmed, the status is `SignatureNeeded`.
@@ -122,7 +181,7 @@ export class NativeStakingMapper {
    * @param depositExecutionDate - the date when the deposit transaction was executed
    * @returns
    */
-  private mapStatus(
+  private mapDepositStatus(
     networkStats: NetworkStats,
     isConfirmed: boolean,
     depositExecutionDate: Date | null,
@@ -142,6 +201,29 @@ export class NativeStakingMapper {
     return Date.now() <= estimatedDepositEntryTime
       ? StakingStatus.AwaitingEntry
       : StakingStatus.ValidationStarted;
+  }
+
+  private mapValidatorsExitStatus(
+    networkStats: NetworkStats,
+    isConfirmed: boolean,
+    validatorsExitExecutionDate: Date | null,
+  ): StakingValidatorsExitStatus {
+    if (!isConfirmed) {
+      return StakingValidatorsExitStatus.SignatureNeeded;
+    }
+
+    if (!validatorsExitExecutionDate) {
+      return StakingValidatorsExitStatus.AwaitingExecution;
+    }
+
+    // TODO: get validator status from the Kiln API
+    const estimatedCompletionTime =
+      validatorsExitExecutionDate.getTime() +
+      networkStats.estimated_exit_time_seconds * 1000;
+
+    return Date.now() <= estimatedCompletionTime
+      ? StakingValidatorsExitStatus.RequestPending
+      : StakingValidatorsExitStatus.ReadyToWithdraw;
   }
 }
 

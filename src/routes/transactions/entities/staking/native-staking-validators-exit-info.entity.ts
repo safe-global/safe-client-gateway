@@ -6,7 +6,7 @@ import {
 } from '@/routes/transactions/entities/transaction-info.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class NativeStakingValidatorsExitInfo extends TransactionInfo {
+export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingValidatorsExit] })
   override type = TransactionInfoType.NativeStakingValidatorsExit;
 

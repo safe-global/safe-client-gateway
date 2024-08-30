@@ -14,6 +14,7 @@ import {
   CowSwapTwapConfirmationView,
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
 import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-deposit-confirmation-view.entity';
+import { NativeStakingValidatorsExitConfirmationView } from '@/routes/transactions/entities/staking/native-staking-validators-exit-confirmation-view.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
@@ -78,14 +79,26 @@ export class TransactionsViewService {
         })
       : null;
 
-    const nativeStakingTransaction =
+    const nativeStakingDepositTransaction =
       this.isNativeStakingEnabled &&
       (await this.kilnNativeStakingHelper.findDeposit({
         chainId: args.chainId,
         ...args.transactionDataDto,
       }));
 
-    if (!swapOrderData && !twapSwapOrderData && !nativeStakingTransaction) {
+    const nativeStakingValidatorsExitTransaction =
+      this.isNativeStakingEnabled &&
+      (await this.kilnNativeStakingHelper.findValidatorsExit({
+        chainId: args.chainId,
+        ...args.transactionDataDto,
+      }));
+
+    if (
+      !swapOrderData &&
+      !twapSwapOrderData &&
+      !nativeStakingDepositTransaction &&
+      !nativeStakingValidatorsExitTransaction
+    ) {
       return new BaselineConfirmationView({
         method: dataDecoded.method,
         parameters: dataDecoded.parameters,
@@ -106,9 +119,16 @@ export class TransactionsViewService {
           data: twapSwapOrderData,
           dataDecoded,
         });
-      } else if (nativeStakingTransaction) {
+      } else if (nativeStakingDepositTransaction) {
         return await this.getNativeStakingDepositConfirmationView({
-          ...nativeStakingTransaction,
+          ...nativeStakingDepositTransaction,
+          chainId: args.chainId,
+          dataDecoded,
+          value: args.transactionDataDto.value ?? null,
+        });
+      } else if (nativeStakingValidatorsExitTransaction) {
+        return await this.getNativeStakingValidatorsExitConfirmationView({
+          ...nativeStakingValidatorsExitTransaction,
           chainId: args.chainId,
           dataDecoded,
           value: args.transactionDataDto.value ?? null,
@@ -291,6 +311,28 @@ export class TransactionsViewService {
       method: args.dataDecoded.method,
       parameters: args.dataDecoded.parameters,
       ...depositInfo,
+    });
+  }
+
+  private async getNativeStakingValidatorsExitConfirmationView(args: {
+    chainId: string;
+    to: `0x${string}`;
+    data: `0x${string}`;
+    dataDecoded: DataDecoded;
+    value: string | null;
+  }): Promise<NativeStakingValidatorsExitConfirmationView> {
+    const validatorsExitInfo =
+      await this.nativeStakingMapper.mapValidatorsExitInfo({
+        chainId: args.chainId,
+        to: args.to,
+        value: args.value,
+        isConfirmed: false,
+        validatorsExitExecutionDate: null,
+      });
+    return new NativeStakingValidatorsExitConfirmationView({
+      method: args.dataDecoded.method,
+      parameters: args.dataDecoded.parameters,
+      ...validatorsExitInfo,
     });
   }
 }
