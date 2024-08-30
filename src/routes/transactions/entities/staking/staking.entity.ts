@@ -1,9 +1,10 @@
 // Present in all calls for native/pooled/defi staking
 export enum StakingStatus {
   AwaitingEntry = 'AWAITING_ENTRY',
+  AwaitingExecution = 'AWAITING_EXECUTION',
   RequestedExit = 'REQUESTED_EXIT',
   SignatureNeeded = 'SIGNATURE_NEEDED',
-  Validating = 'VALIDATING',
+  ValidationStarted = 'VALIDATION_STARTED',
   Withdrawn = 'WITHDRAWN',
   Unknown = 'UNKNOWN',
 }
