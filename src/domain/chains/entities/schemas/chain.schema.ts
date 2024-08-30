@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
+import { buildLenientPageSchema } from '@/domain/entities/schemas/lenient-page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 
 export const NativeCurrencySchema = z.object({
   name: z.string(),
@@ -118,4 +118,4 @@ export const ChainSchema = z.object({
 
 // TODO: Merge schema definitions with ChainEntity.
 
-export const ChainPageSchema = buildPageSchema(ChainSchema);
+export const ChainLenientPageSchema = buildLenientPageSchema(ChainSchema);
