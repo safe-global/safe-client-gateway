@@ -24,7 +24,7 @@ import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper
 import { TwapOrderMapper } from '@/routes/transactions/mappers/common/twap-order.mapper';
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
-import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-info.entity';
+import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 

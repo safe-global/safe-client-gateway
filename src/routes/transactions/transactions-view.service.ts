@@ -13,7 +13,7 @@ import {
   CowSwapConfirmationView,
   CowSwapTwapConfirmationView,
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
-import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-confirmation-view.entity';
+import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-deposit-confirmation-view.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';

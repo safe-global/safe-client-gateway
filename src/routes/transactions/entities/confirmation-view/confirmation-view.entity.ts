@@ -12,7 +12,8 @@ import {
   StartTime,
   TwapOrderInfo,
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
-import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-confirmation-view.entity';
+import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-deposit-confirmation-view.entity';
+import { NativeStakingValidatorsExitConfirmationView } from '@/routes/transactions/entities/staking/native-staking-validators-exit-confirmation-view.entity';
 
 export interface Baseline {
   method: string;
@@ -24,13 +25,15 @@ export enum DecodedType {
   CowSwapOrder = 'COW_SWAP_ORDER',
   CowSwapTwapOrder = 'COW_SWAP_TWAP_ORDER',
   KilnNativeStakingDeposit = 'KILN_NATIVE_STAKING_DEPOSIT',
+  KilnNativeStakingValidatorsExit = 'KILN_NATIVE_STAKING_VALIDATORS_EXIT',
 }
 
 export type ConfirmationView =
   | BaselineConfirmationView
   | CowSwapConfirmationView
   | CowSwapTwapConfirmationView
-  | NativeStakingDepositConfirmationView;
+  | NativeStakingDepositConfirmationView
+  | NativeStakingValidatorsExitConfirmationView;
 
 export class BaselineConfirmationView implements Baseline {
   @ApiProperty({ enum: [DecodedType.Generic] })

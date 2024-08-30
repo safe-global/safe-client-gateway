@@ -1,3 +1,4 @@
+// TODO: rename to StakingDepositStatus
 // Present in all calls for native/pooled/defi staking
 export enum StakingStatus {
   AwaitingEntry = 'AWAITING_ENTRY',
@@ -9,8 +10,19 @@ export enum StakingStatus {
   Unknown = 'UNKNOWN',
 }
 
+// TODO: rename to StakingDepositStatusInfo
 export type StakingStatusInfo = {
   status: StakingStatus;
+};
+
+export enum StakingValidatorsExitStatus {
+  SignatureNeeded = 'SIGNATURE_NEEDED',
+  RequestPending = 'REQUEST_PENDING',
+  ReadyToWithdraw = 'READY_TO_WITHDRAW',
+}
+
+export type StakingValidatorsExitInfo = {
+  status: StakingValidatorsExitStatus;
 };
 
 // Present in all deposit calls for native/pooled staking

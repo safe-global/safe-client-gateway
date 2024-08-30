@@ -3,7 +3,7 @@ import {
   Baseline,
   DecodedType,
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
-import { NativeStakingDepositInfo } from '@/routes/transactions/entities/staking/native-staking-info.entity';
+import { NativeStakingDepositInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
