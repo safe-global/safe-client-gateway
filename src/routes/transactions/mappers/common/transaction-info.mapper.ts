@@ -368,17 +368,11 @@ export class MultisigTransactionInfoMapper {
     }
 
     try {
-      const isConfirmed =
-        'confirmations' in transaction &&
-        !!transaction.confirmations &&
-        transaction.confirmations.length >= transaction.confirmationsRequired;
-
       return await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId,
         to: nativeStakingValidatorsExitTransaction.to,
         value: transaction.value,
-        isConfirmed,
-        validatorsExitExecutionDate: transaction.executionDate,
+        transaction,
       });
     } catch (error) {
       this.loggingService.warn(error);

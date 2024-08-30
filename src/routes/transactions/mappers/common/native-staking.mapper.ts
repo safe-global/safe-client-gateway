@@ -3,7 +3,11 @@ import {
   ChainsRepositoryModule,
   IChainsRepository,
 } from '@/domain/chains/chains.repository.interface';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
+import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -117,8 +121,7 @@ export class NativeStakingMapper {
     chainId: string;
     to: `0x${string}`;
     value: string | null;
-    isConfirmed: boolean;
-    validatorsExitExecutionDate: Date | null;
+    transaction: MultisigTransaction | ModuleTransaction | null;
   }): Promise<NativeStakingValidatorsExitTransactionInfo> {
     const chain = await this.chainsRepository.getChain(args.chainId);
     const deployment = await this.stakingRepository.getDeployment({
@@ -138,8 +141,10 @@ export class NativeStakingMapper {
       args.chainId,
     );
 
-    // TODO: value from dataDecoded?
-    const value = args.value ? Number(args.value) : 0;
+    const value = args.transaction?.dataDecoded
+      ? this.getValueFromDataDecoded(args.transaction.dataDecoded, chain)
+      : Number(args.value ?? 0);
+
     const numValidators = Math.floor(
       value /
         Math.pow(10, chain.nativeCurrency.decimals) /
@@ -147,11 +152,7 @@ export class NativeStakingMapper {
     );
 
     return new NativeStakingValidatorsExitTransactionInfo({
-      status: this.mapValidatorsExitStatus(
-        networkStats,
-        args.isConfirmed,
-        args.validatorsExitExecutionDate,
-      ),
+      status: this.mapValidatorsExitStatus(networkStats, args.transaction),
       estimatedExitTime: networkStats.estimated_exit_time_seconds,
       estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
       value: getNumberString(value),
@@ -205,25 +206,47 @@ export class NativeStakingMapper {
 
   private mapValidatorsExitStatus(
     networkStats: NetworkStats,
-    isConfirmed: boolean,
-    validatorsExitExecutionDate: Date | null,
+    transaction: MultisigTransaction | ModuleTransaction | null,
   ): StakingValidatorsExitStatus {
+    const isConfirmed =
+      transaction &&
+      'confirmations' in transaction &&
+      !!transaction.confirmations &&
+      transaction.confirmations.length >= transaction.confirmationsRequired;
+
     if (!isConfirmed) {
       return StakingValidatorsExitStatus.SignatureNeeded;
     }
 
-    if (!validatorsExitExecutionDate) {
+    if (!transaction.executionDate) {
       return StakingValidatorsExitStatus.AwaitingExecution;
     }
 
     // TODO: get validator status from the Kiln API
     const estimatedCompletionTime =
-      validatorsExitExecutionDate.getTime() +
+      transaction.executionDate.getTime() +
       networkStats.estimated_exit_time_seconds * 1000;
 
     return Date.now() <= estimatedCompletionTime
       ? StakingValidatorsExitStatus.RequestPending
       : StakingValidatorsExitStatus.ReadyToWithdraw;
+  }
+
+  private getValueFromDataDecoded(data: DataDecoded, chain: Chain): number {
+    if (data.method === 'requestValidatorsExit') {
+      const publicKeys =
+        data.parameters?.filter(
+          (parameter) => parameter.name === '_publicKeys',
+        ) ?? [];
+      const decimals = chain.nativeCurrency.decimals;
+      return (
+        publicKeys.length *
+        Math.pow(10, decimals) *
+        NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR
+      );
+    }
+
+    return 0;
   }
 }
 

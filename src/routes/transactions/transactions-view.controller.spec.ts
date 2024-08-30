@@ -1183,6 +1183,7 @@ describe('TransactionsViewController tests', () => {
               },
             });
         });
+        // TODO: add error cases
       });
     });
   });

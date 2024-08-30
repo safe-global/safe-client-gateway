@@ -326,8 +326,7 @@ export class TransactionsViewService {
         chainId: args.chainId,
         to: args.to,
         value: args.value,
-        isConfirmed: false,
-        validatorsExitExecutionDate: null,
+        transaction: null,
       });
     return new NativeStakingValidatorsExitConfirmationView({
       method: args.dataDecoded.method,
