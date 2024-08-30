@@ -10,6 +10,7 @@ export enum TransactionInfoType {
   SwapTransfer = 'SwapTransfer',
   TwapOrder = 'TwapOrder',
   NativeStakingDeposit = 'NativeStakingDeposit',
+  NativeStakingValidatorsExit = 'NativeStakingValidatorsExit',
 }
 
 export class TransactionInfo {

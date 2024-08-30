@@ -1109,6 +1109,81 @@ describe('TransactionsViewController tests', () => {
             });
         });
       });
+
+      describe('validators exit', () => {
+        it('returns the native staking `validators exit` confirmation view', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const networkStats = networkStatsBuilder().build();
+          const validatorPublicKey = faker.string.hexadecimal();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function requestValidatorsExit(bytes)']),
+            functionName: 'requestValidatorsExit',
+            args: [validatorPublicKey as `0x${string}`],
+          });
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+              value,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_NATIVE_STAKING_VALIDATORS_EXIT',
+              method: dataDecoded.method,
+              parameters: dataDecoded.parameters,
+              status: 'SIGNATURE_NEEDED',
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              value: getNumberString(Number(value)),
+              numValidators: 2,
+              tokenInfo: {
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                logoUri: chain.nativeCurrency.logoUri,
+                name: chain.nativeCurrency.name,
+                symbol: chain.nativeCurrency.symbol,
+                trusted: true,
+              },
+            });
+        });
+      });
     });
   });
 });

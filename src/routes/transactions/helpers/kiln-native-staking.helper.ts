@@ -50,6 +50,45 @@ export class KilnNativeStakingHelper {
       data: transaction.data,
     };
   }
+
+  // TODO: refactor this and the above function to a single function
+  public async findValidatorsExit(args: {
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<{
+    to: `0x${string}`;
+    data: `0x${string}`;
+  } | null> {
+    const selector = toFunctionSelector(
+      'function requestValidatorsExit(bytes) external',
+    );
+    const transaction = this.transactionFinder.findTransaction(
+      (transaction) => transaction.data.startsWith(selector),
+      args,
+    );
+
+    if (!transaction?.to) {
+      return null;
+    }
+
+    // We need to check against the deployment as `deposit` is a common function name
+    const deployment = await this.stakingRepository
+      .getDeployment({
+        chainId: args.chainId,
+        address: transaction.to,
+      })
+      .catch(() => null);
+
+    if (deployment?.product_type !== 'dedicated') {
+      return null;
+    }
+
+    return {
+      to: transaction.to,
+      data: transaction.data,
+    };
+  }
 }
 
 @Module({
