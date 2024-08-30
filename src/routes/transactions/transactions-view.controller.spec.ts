@@ -42,7 +42,6 @@ describe('TransactionsViewController tests', () => {
   let swapsApiUrl: string;
   let stakingApiUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
-  let pricesProviderUrl: string;
 
   const swapsVerifiedApp = faker.company.buzzNoun();
   const swapsChainId = '1';
@@ -85,9 +84,6 @@ describe('TransactionsViewController tests', () => {
     swapsApiUrl = configurationService.getOrThrow(`swaps.api.${swapsChainId}`);
     stakingApiUrl = configurationService.getOrThrow('staking.mainnet.baseUri');
     networkService = moduleFixture.get(NetworkService);
-    pricesProviderUrl = configurationService.getOrThrow(
-      'balances.providers.safe.prices.baseUri',
-    );
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
@@ -458,7 +454,7 @@ describe('TransactionsViewController tests', () => {
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
         // We don't use buzzNoun here as it can generate the same value as verifiedApp
-        .with('fullAppData', `{ "appCode": "restrited app code" }`)
+        .with('fullAppData', `{ "appCode": "restricted app code" }`)
         .build();
       const buyToken = tokenBuilder().with('address', order.buyToken).build();
       const sellToken = tokenBuilder().with('address', order.sellToken).build();
@@ -583,12 +579,6 @@ describe('TransactionsViewController tests', () => {
             abi: parseAbi(['function deposit() external payable']),
           });
           const value = getNumberString(64 * 10 ** 18 + 1);
-          const fiatPrice = faker.number.float({ min: 0, max: 1_000_000 });
-          const nativeCoinPriceProviderResponse = {
-            [chain.pricesProvider.nativeCoin!]: {
-              usd: fiatPrice,
-            },
-          };
           networkService.get.mockImplementation(({ url }) => {
             switch (url) {
               case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -606,11 +596,6 @@ describe('TransactionsViewController tests', () => {
               case `${stakingApiUrl}/v1/eth/network-stats`:
                 return Promise.resolve({
                   data: { data: networkStats },
-                  status: 200,
-                });
-              case `${pricesProviderUrl}/simple/price`:
-                return Promise.resolve({
-                  data: nativeCoinPriceProviderResponse,
                   status: 200,
                 });
               default:
@@ -631,7 +616,7 @@ describe('TransactionsViewController tests', () => {
           const expectedAnnualReward = (annualNrr / 100) * Number(value);
           const expectedMonthlyReward = expectedAnnualReward / 12;
           const expectedFiatAnnualReward =
-            (expectedAnnualReward * fiatPrice) /
+            (expectedAnnualReward * networkStats.eth_price_usd) /
             Math.pow(10, chain.nativeCurrency.decimals);
           const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
