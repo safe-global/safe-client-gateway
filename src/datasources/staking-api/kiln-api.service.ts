@@ -127,7 +127,7 @@ export class KilnApi implements IStakingApi {
 
   async getStakes(validatorsPublicKeys: `0x${string}`[]): Promise<Stake[]> {
     try {
-      const url = `${this.baseUrl}/v1/stakes`;
+      const url = `${this.baseUrl}/v1/eth/stakes`;
       // Note: Kiln always return { data: T }
       const { data } = await this.networkService.get<{
         data: Array<Stake>;

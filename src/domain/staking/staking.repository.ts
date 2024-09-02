@@ -25,6 +25,7 @@ import {
   Stake,
   StakeSchema,
 } from '@/datasources/staking-api/entities/stake.entity';
+import { getAddress } from 'viem';
 
 @Injectable()
 export class StakingRepository implements IStakingRepository {
@@ -40,7 +41,7 @@ export class StakingRepository implements IStakingRepository {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const deployments = await stakingApi.getDeployments();
     const deployment = deployments.find(({ chain_id, address }) => {
-      return chain_id.toString() && address === args.address;
+      return chain_id.toString() && getAddress(address) === args.address;
     });
     return DeploymentSchema.parse(deployment);
   }

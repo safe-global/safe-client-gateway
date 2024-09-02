@@ -417,5 +417,7 @@ describe('KilnApi', () => {
         },
       });
     });
+
+    // TODO: add error handling tests
   });
 });
