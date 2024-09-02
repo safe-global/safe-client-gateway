@@ -117,7 +117,17 @@ export class NativeStakingMapper {
     });
   }
 
-  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo
+  /**
+   * Maps the {@link NativeStakingValidatorsExitTransactionInfo} for the given
+   * native staking deployment's `validators exit` call
+   *
+   * @param args.chainId - the chain ID of the native staking deployment
+   * @param args.to - the address of the native staking deployment
+   * @param args.value - the value of the validators exit transaction
+   * @param args.transaction - the transaction object for the validators exit
+   * @returns {@link NativeStakingValidatorsExitTransactionInfo} for the given native staking deployment
+   */
+  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo and mapWithdrawInfo
   public async mapValidatorsExitInfo(args: {
     chainId: string;
     to: `0x${string}`;
@@ -169,6 +179,17 @@ export class NativeStakingMapper {
     });
   }
 
+  /**
+   * Maps the {@link NativeStakingWithdrawTransactionInfo} for the given
+   * native staking deployment's `withdraw` call
+   *
+   * @param args.chainId - the chain ID of the native staking deployment
+   * @param args.to - the address of the native staking deployment
+   * @param args.value - the value of the withdraw transaction
+   * @param args.transaction - the transaction object for the withdraw
+   * @returns {@link NativeStakingWithdrawTransactionInfo} for the given native staking deployment
+   */
+  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo and mapWithdrawInfo
   public async mapWithdrawInfo(args: {
     chainId: string;
     to: `0x${string}`;
