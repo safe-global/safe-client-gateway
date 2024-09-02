@@ -6,6 +6,7 @@ import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-st
 import { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
 import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
 import { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
+import { Stake } from '@/datasources/staking-api/entities/stake.entity';
 
 export class KilnApi implements IStakingApi {
   constructor(
@@ -115,6 +116,29 @@ export class KilnApi implements IStakingApi {
           },
           params: {
             vaults: this.getDefiVaultIdentifier(args),
+          },
+        },
+      });
+      return data.data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getStakes(validatorsPublicKeys: `0x${string}`[]): Promise<Stake[]> {
+    try {
+      const url = `${this.baseUrl}/v1/stakes`;
+      // Note: Kiln always return { data: T }
+      const { data } = await this.networkService.get<{
+        data: Array<Stake>;
+      }>({
+        url,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+          params: {
+            validators: validatorsPublicKeys,
           },
         },
       });

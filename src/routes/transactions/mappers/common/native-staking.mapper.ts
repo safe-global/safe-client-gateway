@@ -13,6 +13,7 @@ import { StakingRepositoryModule } from '@/domain/staking/staking.repository.mod
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
+import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import {
   StakingStatus,
   StakingValidatorsExitStatus,
@@ -168,6 +169,53 @@ export class NativeStakingMapper {
     });
   }
 
+  public async mapWithdrawInfo(args: {
+    chainId: string;
+    to: `0x${string}`;
+    value: string | null;
+    transaction: MultisigTransaction | ModuleTransaction | null;
+  }): Promise<NativeStakingWithdrawTransactionInfo> {
+    const chain = await this.chainsRepository.getChain(args.chainId);
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+
+    if (
+      deployment.product_type !== 'dedicated' ||
+      deployment.chain === 'unknown' ||
+      deployment.status === 'unknown'
+    ) {
+      throw new NotFoundException('Native staking deployment not found');
+    }
+
+    let value = Number(args.value ?? 0);
+
+    if (args.transaction) {
+      const validatorsPublicKeys = args.transaction?.dataDecoded
+        ? this.getPublicKeysFromDataDecoded(args.transaction.dataDecoded)
+        : [];
+
+      const stakes = await this.stakingRepository.getStakes({
+        chainId: args.chainId,
+        validatorsPublicKeys,
+      });
+      value = stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
+    }
+
+    return new NativeStakingWithdrawTransactionInfo({
+      value: getNumberString(value),
+      tokenInfo: new TokenInfo({
+        address: NULL_ADDRESS,
+        decimals: chain.nativeCurrency.decimals,
+        logoUri: chain.nativeCurrency.logoUri,
+        name: chain.nativeCurrency.name,
+        symbol: chain.nativeCurrency.symbol,
+        trusted: true,
+      }),
+    });
+  }
+
   /**
    * Maps the {@link StakingStatus} for the given native staking deployment's `deposit` call.
    * - If the deposit transaction is not confirmed, the status is `SignatureNeeded`.
@@ -247,6 +295,14 @@ export class NativeStakingMapper {
     }
 
     return 0;
+  }
+
+  private getPublicKeysFromDataDecoded(data: DataDecoded): `0x${string}`[] {
+    const publicKeys =
+      data.parameters?.filter(
+        (parameter) => parameter.name === '_publicKeys',
+      ) ?? [];
+    return publicKeys.map((publicKey) => publicKey.value as `0x${string}`);
   }
 }
 
