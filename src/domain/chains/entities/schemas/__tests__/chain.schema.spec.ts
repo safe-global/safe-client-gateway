@@ -8,6 +8,7 @@ import { nativeCurrencyBuilder } from '@/domain/chains/entities/__tests__/native
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
 import { themeBuilder } from '@/domain/chains/entities/__tests__/theme.builder';
+import { Chain } from '@/domain/chains/entities/chain.entity';
 import {
   ChainSchema,
   BalancesProviderSchema,
@@ -20,7 +21,9 @@ import {
   RpcUriSchema,
   ThemeSchema,
   ContractAddressesSchema,
+  ChainLenientPageSchema,
 } from '@/domain/chains/entities/schemas/chain.schema';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';
@@ -600,6 +603,44 @@ describe('Chain schemas', () => {
           },
         ]),
       );
+    });
+  });
+
+  describe('ChainLenientPageSchema', () => {
+    it('should validate a valid Chain page', () => {
+      const chains = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => chainBuilder().build(),
+      );
+      const chainPage = pageBuilder()
+        .with('results', chains)
+        .with('count', chains.length)
+        .build();
+
+      const result = ChainLenientPageSchema.safeParse(chainPage);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should exclude invalid Chain items, adjusting the count accordingly', () => {
+      const chains = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => chainBuilder().build(),
+      );
+      const chainPage = pageBuilder<Chain>()
+        .with('results', chains)
+        .with('count', chains.length)
+        .build();
+      // @ts-expect-error - results are assumed optional
+      delete chainPage.results[0].chainId;
+
+      const result = ChainLenientPageSchema.safeParse(chainPage);
+
+      expect(result.success).toBe(true);
+      expect(result.success && result.data.results.length).toBe(
+        chains.length - 1,
+      );
+      expect(result.success && result.data.count).toBe(chains.length - 1);
     });
   });
 });

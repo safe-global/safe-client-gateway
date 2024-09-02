@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
-import { buildLenientPageSchema } from '@/domain/entities/schemas/lenient-page.schema.factory';
+import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const NativeCurrencySchema = z.object({
