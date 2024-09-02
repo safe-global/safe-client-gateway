@@ -196,11 +196,13 @@ export class NativeStakingMapper {
     value: string | null;
     transaction: MultisigTransaction | ModuleTransaction | null;
   }): Promise<NativeStakingWithdrawTransactionInfo> {
-    const chain = await this.chainsRepository.getChain(args.chainId);
-    const deployment = await this.stakingRepository.getDeployment({
-      chainId: args.chainId,
-      address: args.to,
-    });
+    const [chain, deployment] = await Promise.all([
+      this.chainsRepository.getChain(args.chainId),
+      this.stakingRepository.getDeployment({
+        chainId: args.chainId,
+        address: args.to,
+      }),
+    ]);
 
     if (
       deployment.product_type !== 'dedicated' ||
