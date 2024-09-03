@@ -2,8 +2,7 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 import { z } from 'zod';
 
 export const StakeSchema = z.object({
-  // Note: validator_address would be a 96 character hexadecimal string.
-  validator_address: z.string(),
+  validator_address: HexSchema.refine((value) => value.length === 96),
   state: z.string(),
   effective_balance: NumericStringSchema,
   rewards: NumericStringSchema,
