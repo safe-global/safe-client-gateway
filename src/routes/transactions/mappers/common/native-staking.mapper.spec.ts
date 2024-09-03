@@ -4,11 +4,19 @@ import {
 } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
+import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 import { ChainsRepository } from '@/domain/chains/chains.repository';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import {
+  dataDecodedBuilder,
+  dataDecodedParameterBuilder,
+} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { StakingRepository } from '@/domain/staking/staking.repository';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
+import { faker } from '@faker-js/faker';
 
 const mockStakingRepository = jest.mocked({
   getDeployment: jest.fn(),
@@ -54,7 +62,6 @@ describe('NativeStakingMapper', () => {
           dedicatedStakingStatsGrossApyBuilder().with('last_30d', 3).build(),
         )
         .build();
-
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -115,7 +122,6 @@ describe('NativeStakingMapper', () => {
           dedicatedStakingStatsGrossApyBuilder().with('last_30d', 3).build(),
         )
         .build();
-
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -160,7 +166,7 @@ describe('NativeStakingMapper', () => {
       );
     });
 
-    it('should map a native staking deposit info with RequestPending status', async () => {
+    it('should map a native staking deposit info with AwaitingEntry status', async () => {
       const chain = chainBuilder().build();
       const productFee = '0.5';
       const deployment = deploymentBuilder()
@@ -179,7 +185,6 @@ describe('NativeStakingMapper', () => {
         .build();
       const depositExecutionDate = jest.now();
       jest.advanceTimersByTime(1_000);
-
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -243,7 +248,6 @@ describe('NativeStakingMapper', () => {
         .build();
       const depositExecutionDate = jest.now();
       jest.advanceTimersByTime(2_000);
-
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -286,6 +290,575 @@ describe('NativeStakingMapper', () => {
           },
         }),
       );
+    });
+
+    it('should fail if the deployment type is not `dedicated`', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'defi')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
+        dedicatedStakingStats,
+      );
+
+      await expect(
+        target.mapDepositInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: '64000000000000000000',
+          isConfirmed: false,
+          depositExecutionDate: null,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
+    });
+
+    it('should fail if the deployment chain is unknown', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'unknown')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
+        dedicatedStakingStats,
+      );
+
+      await expect(
+        target.mapDepositInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: '64000000000000000000',
+          isConfirmed: false,
+          depositExecutionDate: null,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
+    });
+
+    it('should fail if the deployment status is unknown', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('status', 'unknown')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
+        dedicatedStakingStats,
+      );
+
+      await expect(
+        target.mapDepositInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: '64000000000000000000',
+          isConfirmed: false,
+          depositExecutionDate: null,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
+    });
+  });
+
+  describe('mapValidatorsExitInfo', () => {
+    it('should map a native staking validators exit info with SignatureNeeded status', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const transaction = multisigTransactionBuilder()
+        .with('confirmationsRequired', 2) // 2 confirmations required
+        .with('confirmations', [confirmationBuilder().build()]) // only 1 confirmation
+        .with(
+          'dataDecoded',
+          dataDecodedBuilder()
+            .with('method', 'requestValidatorsExit')
+            .with('parameters', [
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      const actual = await target.mapValidatorsExitInfo({
+        chainId: chain.chainId,
+        to: deployment.address,
+        value: null,
+        transaction,
+      });
+
+      expect(actual).toEqual(
+        expect.objectContaining({
+          type: 'NativeStakingValidatorsExit',
+          status: 'SIGNATURE_NEEDED',
+          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedWithdrawalTime:
+            networkStats.estimated_withdrawal_time_seconds,
+          value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
+          numValidators: 3, // 3 public keys in the transaction data => 3 validators
+          tokenInfo: {
+            address: NULL_ADDRESS,
+            decimals: chain.nativeCurrency.decimals,
+            logoUri: chain.nativeCurrency.logoUri,
+            name: chain.nativeCurrency.name,
+            symbol: chain.nativeCurrency.symbol,
+            trusted: true,
+          },
+        }),
+      );
+    });
+
+    it('should map a native staking validators exit info with RequestPending status', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const transaction = multisigTransactionBuilder()
+        .with('confirmationsRequired', 2) // 2 confirmations required
+        .with('confirmations', [
+          confirmationBuilder().build(),
+          confirmationBuilder().build(),
+        ]) // 2 confirmations received
+        .with('executionDate', null) // not executed
+        .with(
+          'dataDecoded',
+          dataDecodedBuilder()
+            .with('method', 'requestValidatorsExit')
+            .with('parameters', [
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      const actual = await target.mapValidatorsExitInfo({
+        chainId: chain.chainId,
+        to: deployment.address,
+        value: null,
+        transaction,
+      });
+
+      expect(actual).toEqual(
+        expect.objectContaining({
+          type: 'NativeStakingValidatorsExit',
+          status: 'AWAITING_EXECUTION',
+          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedWithdrawalTime:
+            networkStats.estimated_withdrawal_time_seconds,
+          value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
+          numValidators: 3, // 3 public keys in the transaction data => 3 validators
+          tokenInfo: {
+            address: NULL_ADDRESS,
+            decimals: chain.nativeCurrency.decimals,
+            logoUri: chain.nativeCurrency.logoUri,
+            name: chain.nativeCurrency.name,
+            symbol: chain.nativeCurrency.symbol,
+            trusted: true,
+          },
+        }),
+      );
+    });
+
+    it('should map a native staking validators exit info with RequestPending status', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .build();
+      const networkStats = networkStatsBuilder()
+        .with('estimated_exit_time_seconds', 2)
+        .build();
+      const executionDate = jest.now();
+      jest.advanceTimersByTime(1_000);
+      const transaction = multisigTransactionBuilder()
+        .with('confirmationsRequired', 2) // 2 confirmations required
+        .with('confirmations', [
+          confirmationBuilder().build(),
+          confirmationBuilder().build(),
+        ]) // 2 confirmations received
+        .with('executionDate', new Date(executionDate)) // execution date < now + exit period
+        .with(
+          'dataDecoded',
+          dataDecodedBuilder()
+            .with('method', 'requestValidatorsExit')
+            .with('parameters', [
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      const actual = await target.mapValidatorsExitInfo({
+        chainId: chain.chainId,
+        to: deployment.address,
+        value: null,
+        transaction,
+      });
+
+      expect(actual).toEqual(
+        expect.objectContaining({
+          type: 'NativeStakingValidatorsExit',
+          status: 'REQUEST_PENDING',
+          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedWithdrawalTime:
+            networkStats.estimated_withdrawal_time_seconds,
+          value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
+          numValidators: 3, // 3 public keys in the transaction data => 3 validators
+          tokenInfo: {
+            address: NULL_ADDRESS,
+            decimals: chain.nativeCurrency.decimals,
+            logoUri: chain.nativeCurrency.logoUri,
+            name: chain.nativeCurrency.name,
+            symbol: chain.nativeCurrency.symbol,
+            trusted: true,
+          },
+        }),
+      );
+    });
+
+    it('should map a native staking validators exit info with ReadyToWithdraw status', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .build();
+      const networkStats = networkStatsBuilder()
+        .with('estimated_exit_time_seconds', 2)
+        .build();
+      const executionDate = jest.now();
+      jest.advanceTimersByTime(3_000); // now > execution time + exit period
+      const transaction = multisigTransactionBuilder()
+        .with('confirmationsRequired', 2) // 2 confirmations required
+        .with('confirmations', [
+          confirmationBuilder().build(),
+          confirmationBuilder().build(),
+        ]) // 2 confirmations received
+        .with('executionDate', new Date(executionDate))
+        .with(
+          'dataDecoded',
+          dataDecodedBuilder()
+            .with('method', 'requestValidatorsExit')
+            .with('parameters', [
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', faker.finance.ethereumAddress())
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      const actual = await target.mapValidatorsExitInfo({
+        chainId: chain.chainId,
+        to: deployment.address,
+        value: null,
+        transaction,
+      });
+
+      expect(actual).toEqual(
+        expect.objectContaining({
+          type: 'NativeStakingValidatorsExit',
+          status: 'READY_TO_WITHDRAW',
+          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedWithdrawalTime:
+            networkStats.estimated_withdrawal_time_seconds,
+          value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
+          numValidators: 3, // 3 public keys in the transaction data => 3 validators
+          tokenInfo: {
+            address: NULL_ADDRESS,
+            decimals: chain.nativeCurrency.decimals,
+            logoUri: chain.nativeCurrency.logoUri,
+            name: chain.nativeCurrency.name,
+            symbol: chain.nativeCurrency.symbol,
+            trusted: true,
+          },
+        }),
+      );
+    });
+
+    it('should fail if the deployment type is not `dedicated`', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'defi')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      await expect(
+        target.mapValidatorsExitInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: null,
+          transaction,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
+    });
+
+    it('should fail if the deployment chain is unknown', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'unknown')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      await expect(
+        target.mapValidatorsExitInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: null,
+          transaction,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
+    });
+
+    it('should fail if the deployment status is unknown', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('status', 'unknown')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      await expect(
+        target.mapValidatorsExitInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: null,
+          transaction,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
+    });
+  });
+
+  describe('mapWithdrawInfo', () => {
+    it('should map a native staking withdraw info', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const publicKeys = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+      const transaction = multisigTransactionBuilder()
+        .with('confirmationsRequired', 2) // 2 confirmations required
+        .with('confirmations', [confirmationBuilder().build()]) // only 1 confirmation
+        .with(
+          'dataDecoded',
+          dataDecodedBuilder()
+            .with('method', 'batchWithdrawCLFee')
+            .with('parameters', [
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', publicKeys[0])
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', publicKeys[1])
+                .build(),
+              dataDecodedParameterBuilder()
+                .with('name', '_publicKeys')
+                .with('type', 'bytes')
+                .with('value', publicKeys[2])
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+      const stakes = [
+        stakeBuilder().with('rewards', '3.25').build(),
+        stakeBuilder().with('rewards', '1.25').build(),
+        stakeBuilder().with('rewards', '1').build(),
+      ];
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getStakes.mockResolvedValue(stakes);
+
+      const actual = await target.mapWithdrawInfo({
+        chainId: chain.chainId,
+        to: deployment.address,
+        value: null,
+        transaction,
+      });
+
+      expect(actual).toEqual(
+        expect.objectContaining({
+          type: 'NativeStakingWithdraw',
+          value: '5.5', // stakes rewards sum
+          tokenInfo: {
+            address: NULL_ADDRESS,
+            decimals: chain.nativeCurrency.decimals,
+            logoUri: chain.nativeCurrency.logoUri,
+            name: chain.nativeCurrency.name,
+            symbol: chain.nativeCurrency.symbol,
+            trusted: true,
+          },
+        }),
+      );
+
+      expect(mockStakingRepository.getStakes).toHaveBeenCalledWith({
+        chainId: chain.chainId,
+        validatorsPublicKeys: publicKeys,
+      });
+    });
+
+    it('should fail if the deployment type is not `dedicated`', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'defi')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      await expect(
+        target.mapWithdrawInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: null,
+          transaction,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
+    });
+
+    it('should fail if the deployment chain is unknown', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'unknown')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      await expect(
+        target.mapWithdrawInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: null,
+          transaction,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
+    });
+
+    it('should fail if the deployment status is unknown', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('status', 'unknown')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+
+      await expect(
+        target.mapWithdrawInfo({
+          chainId: chain.chainId,
+          to: deployment.address,
+          value: null,
+          transaction,
+        }),
+      ).rejects.toThrow('Native staking deployment not found');
     });
   });
 });
