@@ -86,21 +86,9 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "^src/**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "coveragePathIgnorePatterns": [
-      ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      ".e2e-spec.ts",
-      "/abis/",
-      "/assets/",
-      "/coverage/",
-      "/data/",
-      "/dist/",
-      "/scripts/",
-      "e2e-setup.ts",
-      "main.ts"
-    ],
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@/abis/(.*)$": "<rootDir>/abis/$1",
