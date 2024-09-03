@@ -8,7 +8,7 @@ export function stakeBuilder(): IBuilder<Stake> {
       'validator_address',
       faker.string.hexadecimal({
         length: 96,
-      }),
+      }) as `0x${string}`,
     )
     .with('state', faker.lorem.words())
     .with('effective_balance', faker.string.numeric())

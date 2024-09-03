@@ -121,7 +121,7 @@ export class NativeStakingMapper {
 
   /**
    * Maps the {@link NativeStakingValidatorsExitTransactionInfo} for the given
-   * native staking deployment's `validators exit` call
+   * native staking `validators exit` transaction.
    *
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.to - the address of the native staking deployment
@@ -185,7 +185,7 @@ export class NativeStakingMapper {
 
   /**
    * Maps the {@link NativeStakingWithdrawTransactionInfo} for the given
-   * native staking deployment's `withdraw` call
+   * native staking `withdraw` transaction.
    *
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.to - the address of the native staking deployment
@@ -223,11 +223,13 @@ export class NativeStakingMapper {
         ? this.getPublicKeysFromDataDecoded(args.transaction.dataDecoded)
         : [];
 
-      const stakes = await this.stakingRepository.getStakes({
-        chainId: args.chainId,
-        validatorsPublicKeys,
-      });
-      value = stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
+      if (validatorsPublicKeys.length > 0) {
+        const stakes = await this.stakingRepository.getStakes({
+          chainId: args.chainId,
+          validatorsPublicKeys,
+        });
+        value = stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
+      }
     }
 
     return new NativeStakingWithdrawTransactionInfo({
