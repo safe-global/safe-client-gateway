@@ -89,6 +89,11 @@
       "^src/**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
+    "coveragePathIgnorePatterns": [
+      "main.ts",
+      ".+\\/__tests__\\/.+\\.factory.(t|j)s",
+      ".e2e-spec.ts"
+    ],
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@/abis/(.*)$": "<rootDir>/abis/$1",
