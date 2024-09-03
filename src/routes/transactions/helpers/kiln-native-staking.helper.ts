@@ -41,7 +41,10 @@ export class KilnNativeStakingHelper {
       })
       .catch(() => null);
 
-    if (deployment?.product_type !== 'dedicated') {
+    if (
+      deployment?.product_type !== 'dedicated' &&
+      deployment?.chain !== 'unknown'
+    ) {
       return null;
     }
 
@@ -80,7 +83,10 @@ export class KilnNativeStakingHelper {
       })
       .catch(() => null);
 
-    if (deployment?.product_type !== 'dedicated') {
+    if (
+      deployment?.product_type !== 'dedicated' &&
+      deployment?.chain !== 'unknown'
+    ) {
       return null;
     }
 
@@ -118,7 +124,10 @@ export class KilnNativeStakingHelper {
       })
       .catch(() => null);
 
-    if (deployment?.product_type !== 'dedicated') {
+    if (
+      deployment?.product_type !== 'dedicated' &&
+      deployment?.chain !== 'unknown'
+    ) {
       return null;
     }
 
