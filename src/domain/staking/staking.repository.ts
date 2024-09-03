@@ -41,6 +41,7 @@ export class StakingRepository implements IStakingRepository {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const deployments = await stakingApi.getDeployments();
     const deployment = deployments.find(({ chain_id, address }) => {
+      // Note: addresses might not be checksummed at this point
       return chain_id.toString() && getAddress(address) === args.address;
     });
     return DeploymentSchema.parse(deployment);

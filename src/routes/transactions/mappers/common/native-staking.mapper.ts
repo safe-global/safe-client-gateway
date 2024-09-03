@@ -51,11 +51,13 @@ export class NativeStakingMapper {
     isConfirmed: boolean;
     depositExecutionDate: Date | null;
   }): Promise<NativeStakingDepositTransactionInfo> {
-    const chain = await this.chainsRepository.getChain(args.chainId);
-    const deployment = await this.stakingRepository.getDeployment({
-      chainId: args.chainId,
-      address: args.to,
-    });
+    const [chain, deployment] = await Promise.all([
+      this.chainsRepository.getChain(args.chainId),
+      this.stakingRepository.getDeployment({
+        chainId: args.chainId,
+        address: args.to,
+      }),
+    ]);
 
     if (
       deployment.product_type !== 'dedicated' ||
@@ -134,11 +136,13 @@ export class NativeStakingMapper {
     value: string | null;
     transaction: MultisigTransaction | ModuleTransaction | null;
   }): Promise<NativeStakingValidatorsExitTransactionInfo> {
-    const chain = await this.chainsRepository.getChain(args.chainId);
-    const deployment = await this.stakingRepository.getDeployment({
-      chainId: args.chainId,
-      address: args.to,
-    });
+    const [chain, deployment] = await Promise.all([
+      this.chainsRepository.getChain(args.chainId),
+      this.stakingRepository.getDeployment({
+        chainId: args.chainId,
+        address: args.to,
+      }),
+    ]);
 
     if (
       deployment.product_type !== 'dedicated' ||
@@ -302,7 +306,17 @@ export class NativeStakingMapper {
       ? StakingValidatorsExitStatus.RequestPending
       : StakingValidatorsExitStatus.ReadyToWithdraw;
   }
-
+  /**
+   * Gets the total value to withdraw from the native staking deployment
+   * based on the amount of publicKey items in the transaction data.
+   *
+   * Each publicKey item represents a validator to withdraw, and each
+   * native staking validator has a fixed amount of 32 ETH to withdraw.
+   *
+   * @param data - the decoded data of the transaction
+   * @param chain - the chain where the native staking deployment lives
+   * @returns the total value to withdraw from the native staking deployment
+   */
   private getValueFromDataDecoded(data: DataDecoded, chain: Chain): number {
     if (data.method === 'requestValidatorsExit') {
       const publicKeys =

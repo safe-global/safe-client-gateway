@@ -201,10 +201,13 @@ describe('Chains Controller (Unit)', () => {
     });
 
     it('should exclude items not passing validation', async () => {
+      const invalidChains = [{ invalid: 'item' }];
       networkService.get.mockResolvedValueOnce({
         data: {
           ...chainsResponse,
-          results: [...chainsResponse.results, { invalid: 'item' }],
+          // Ensure count does not include invalid chains
+          count: chainsResponse.results.length + invalidChains.length,
+          results: [...chainsResponse.results, ...invalidChains],
         },
         status: 200,
       });
@@ -270,6 +273,31 @@ describe('Chains Controller (Unit)', () => {
           ],
         });
 
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${safeConfigUrl}/api/v1/chains`,
+        networkRequest: {
+          params: {
+            limit: PaginationData.DEFAULT_LIMIT,
+            offset: PaginationData.DEFAULT_OFFSET,
+          },
+        },
+      });
+    });
+
+    it('Failure: received data is not valid', async () => {
+      networkService.get.mockResolvedValueOnce({
+        data: {
+          ...chainsResponse,
+          count: chainsResponse.count?.toString(),
+        },
+        status: 200,
+      });
+
+      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
+        statusCode: 500,
+        message: 'Internal server error',
+      });
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${safeConfigUrl}/api/v1/chains`,
