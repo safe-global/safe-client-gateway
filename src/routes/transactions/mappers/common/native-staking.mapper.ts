@@ -235,7 +235,17 @@ export class NativeStakingMapper {
       ? StakingValidatorsExitStatus.RequestPending
       : StakingValidatorsExitStatus.ReadyToWithdraw;
   }
-
+  /**
+   * Gets the total value to withdraw from the native staking deployment
+   * based on the amount of publicKey items in the transaction data.
+   *
+   * Each publicKey item represents a validator to withdraw, and each
+   * native staking validator has a fixed amount of 32 ETH to withdraw.
+   *
+   * @param data - the decoded data of the transaction
+   * @param chain - the chain where the native staking deployment lives
+   * @returns the total value to withdraw from the native staking deployment
+   */
   private getValueFromDataDecoded(data: DataDecoded, chain: Chain): number {
     if (data.method === 'requestValidatorsExit') {
       const publicKeys =
