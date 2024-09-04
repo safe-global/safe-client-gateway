@@ -121,7 +121,7 @@ export class NativeStakingMapper {
 
   /**
    * Maps the {@link NativeStakingValidatorsExitTransactionInfo} for the given
-   * native staking `validators exit` transaction.
+   * native staking `requestValidatorsExit` transaction.
    *
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.to - the address of the native staking deployment
@@ -185,7 +185,7 @@ export class NativeStakingMapper {
 
   /**
    * Maps the {@link NativeStakingWithdrawTransactionInfo} for the given
-   * native staking `withdraw` transaction.
+   * native staking `batchWithdrawCLFee` transaction.
    *
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.to - the address of the native staking deployment

@@ -32,6 +32,19 @@ describe('StakeSchema', () => {
     },
   );
 
+  it('should not validate a `validator_address` with an invalid length', () => {
+    const stake = stakeBuilder().with('validator_address', '0x00').build();
+
+    const result = StakeSchema.safeParse(stake);
+
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'custom',
+      message: 'Invalid input',
+      path: ['validator_address'],
+    });
+  });
+
   it.each(['effective_balance' as const, 'rewards' as const])(
     'should not validate non-numeric string %s values',
     (key) => {
