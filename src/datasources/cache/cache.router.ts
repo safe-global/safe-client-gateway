@@ -1,9 +1,9 @@
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class CacheRouter {
-  private static readonly ACCOUNT_KEY = 'account';
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
   private static readonly ACCOUNT_DATA_TYPES_KEY = 'account_data_types';
+  private static readonly ACCOUNT_KEY = 'account';
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
   private static readonly AUTH_NONCE_KEY = 'auth_nonce';
   private static readonly BACKBONE_KEY = 'backbone';
@@ -25,6 +25,7 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
+  private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
@@ -34,6 +35,14 @@ export class CacheRouter {
   private static readonly SAFE_FIAT_CODES_KEY = 'safe_fiat_codes';
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
+  private static readonly STAKING_DEDICATED_STAKING_STATS_KEY =
+    'staking_dedicated_staking_stats';
+  private static readonly STAKING_DEFI_VAULT_STATS_KEY =
+    'staking_defi_vault_stats';
+  private static readonly STAKING_DEPLOYMENTS_KEY = 'staking_deployments';
+  private static readonly STAKING_NETWORK_STATS_KEY = 'staking_network_stats';
+  private static readonly STAKING_POOLED_STAKING_STATS_KEY =
+    'staking_pooled_staking_stats';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
@@ -41,7 +50,6 @@ export class CacheRouter {
   private static readonly TRANSFERS_KEY = 'transfers';
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
-  private static readonly RATE_LIMIT_KEY = 'rate_limit';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -552,6 +560,32 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getRpcRequestsKey(args.chainId),
       `${args.method}_${args.params}`,
+    );
+  }
+
+  static getStakingDeploymentsCacheDir(): CacheDir {
+    return new CacheDir(this.STAKING_DEPLOYMENTS_KEY, '');
+  }
+
+  static getStakingNetworkStatsCacheDir(): CacheDir {
+    return new CacheDir(this.STAKING_NETWORK_STATS_KEY, '');
+  }
+
+  static getStakingDedicatedStakingStatsCacheDir(): CacheDir {
+    return new CacheDir(this.STAKING_DEDICATED_STAKING_STATS_KEY, '');
+  }
+
+  static getStakingPooledStakingStatsCacheDir(pool: `0x${string}`): CacheDir {
+    return new CacheDir(`${this.STAKING_POOLED_STAKING_STATS_KEY}_${pool}`, '');
+  }
+
+  static getStakingDefiVaultStatsCacheDir(args: {
+    chainId: string;
+    vault: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${this.STAKING_DEFI_VAULT_STATS_KEY}_${args.vault}`,
+      '',
     );
   }
 }
