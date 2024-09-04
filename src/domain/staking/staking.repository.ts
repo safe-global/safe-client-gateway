@@ -25,7 +25,6 @@ import {
   Stake,
   StakeSchema,
 } from '@/datasources/staking-api/entities/stake.entity';
-import { getAddress } from 'viem';
 
 @Injectable()
 export class StakingRepository implements IStakingRepository {
@@ -38,13 +37,23 @@ export class StakingRepository implements IStakingRepository {
     chainId: string;
     address: `0x${string}`;
   }): Promise<Deployment> {
-    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const deployments = await stakingApi.getDeployments();
-    const deployment = deployments.find(({ chain_id, address }) => {
-      // Note: addresses might not be checksummed at this point
-      return chain_id.toString() && getAddress(address) === args.address;
+    const deployments = await this.getDeployments(args.chainId);
+    const deployment = deployments.find((deployment) => {
+      return (
+        args.chainId === deployment.chain_id.toString() &&
+        args.address == deployment.address
+      );
     });
-    return DeploymentSchema.parse(deployment);
+    if (!deployment) {
+      throw new Error('Deployment not found');
+    }
+    return deployment;
+  }
+
+  private async getDeployments(chainId: string): Promise<Array<Deployment>> {
+    const stakingApi = await this.stakingApiFactory.getApi(chainId);
+    const deployments = await stakingApi.getDeployments();
+    return deployments.map((deployment) => DeploymentSchema.parse(deployment));
   }
 
   public async getNetworkStats(chainId: string): Promise<NetworkStats> {
