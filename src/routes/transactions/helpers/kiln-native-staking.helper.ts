@@ -23,38 +23,12 @@ export class KilnNativeStakingHelper {
     to: `0x${string}`;
     data: `0x${string}`;
   } | null> {
-    const selector = toFunctionSelector('function deposit() external payable');
-    const transaction = this.transactionFinder.findTransaction(
-      (transaction) => transaction.data.startsWith(selector),
-      args,
-    );
-
-    if (!transaction?.to) {
-      return null;
-    }
-
-    // We need to check against the deployment as `deposit` is a common function name
-    const deployment = await this.stakingRepository
-      .getDeployment({
-        chainId: args.chainId,
-        address: transaction.to,
-      })
-      .catch(() => null);
-
-    if (
-      deployment?.product_type !== 'dedicated' &&
-      deployment?.chain !== 'unknown'
-    ) {
-      return null;
-    }
-
-    return {
-      to: transaction.to,
-      data: transaction.data,
-    };
+    return this.findTransactionAndCheckDeployment({
+      ...args,
+      selector: toFunctionSelector('function deposit() external payable'),
+    });
   }
 
-  // TODO: refactor this and the above function to a single function
   public async findValidatorsExit(args: {
     chainId: string;
     to?: `0x${string}`;
@@ -63,37 +37,12 @@ export class KilnNativeStakingHelper {
     to: `0x${string}`;
     data: `0x${string}`;
   } | null> {
-    const selector = toFunctionSelector(
-      'function requestValidatorsExit(bytes) external',
-    );
-    const transaction = this.transactionFinder.findTransaction(
-      (transaction) => transaction.data.startsWith(selector),
-      args,
-    );
-
-    if (!transaction?.to) {
-      return null;
-    }
-
-    // We need to check against the deployment as `deposit` is a common function name
-    const deployment = await this.stakingRepository
-      .getDeployment({
-        chainId: args.chainId,
-        address: transaction.to,
-      })
-      .catch(() => null);
-
-    if (
-      deployment?.product_type !== 'dedicated' &&
-      deployment?.chain !== 'unknown'
-    ) {
-      return null;
-    }
-
-    return {
-      to: transaction.to,
-      data: transaction.data,
-    };
+    return this.findTransactionAndCheckDeployment({
+      ...args,
+      selector: toFunctionSelector(
+        'function requestValidatorsExit(bytes) external',
+      ),
+    });
   }
 
   public async findWithdraw(args: {
@@ -104,11 +53,25 @@ export class KilnNativeStakingHelper {
     to: `0x${string}`;
     data: `0x${string}`;
   } | null> {
-    const selector = toFunctionSelector(
-      'function batchWithdrawCLFee(bytes) external',
-    );
+    return this.findTransactionAndCheckDeployment({
+      ...args,
+      selector: toFunctionSelector(
+        'function batchWithdrawCLFee(bytes) external',
+      ),
+    });
+  }
+
+  private async findTransactionAndCheckDeployment(args: {
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+    selector: string;
+  }): Promise<{
+    to: `0x${string}`;
+    data: `0x${string}`;
+  } | null> {
     const transaction = this.transactionFinder.findTransaction(
-      (transaction) => transaction.data.startsWith(selector),
+      (transaction) => transaction.data.startsWith(args.selector),
       args,
     );
 
@@ -116,7 +79,6 @@ export class KilnNativeStakingHelper {
       return null;
     }
 
-    // We need to check against the deployment as `deposit` is a common function name
     const deployment = await this.stakingRepository
       .getDeployment({
         chainId: args.chainId,

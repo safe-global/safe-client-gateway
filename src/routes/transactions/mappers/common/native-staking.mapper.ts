@@ -1,3 +1,4 @@
+import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import {
   ChainsRepositoryModule,
@@ -58,14 +59,7 @@ export class NativeStakingMapper {
         address: args.to,
       }),
     ]);
-
-    if (
-      deployment.product_type !== 'dedicated' ||
-      deployment.chain === 'unknown' ||
-      deployment.status === 'unknown'
-    ) {
-      throw new NotFoundException('Native staking deployment not found');
-    }
+    this.validateDeployment(deployment);
 
     const [nativeStakingStats, networkStats] = await Promise.all([
       this.stakingRepository.getDedicatedStakingStats(args.chainId),
@@ -129,7 +123,6 @@ export class NativeStakingMapper {
    * @param args.transaction - the transaction object for the validators exit
    * @returns {@link NativeStakingValidatorsExitTransactionInfo} for the given native staking deployment
    */
-  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo and mapWithdrawInfo
   public async mapValidatorsExitInfo(args: {
     chainId: string;
     to: `0x${string}`;
@@ -143,14 +136,7 @@ export class NativeStakingMapper {
         address: args.to,
       }),
     ]);
-
-    if (
-      deployment.product_type !== 'dedicated' ||
-      deployment.chain === 'unknown' ||
-      deployment.status === 'unknown'
-    ) {
-      throw new NotFoundException('Native staking deployment not found');
-    }
+    this.validateDeployment(deployment);
 
     const networkStats = await this.stakingRepository.getNetworkStats(
       args.chainId,
@@ -193,7 +179,6 @@ export class NativeStakingMapper {
    * @param args.transaction - the transaction object for the withdraw
    * @returns {@link NativeStakingWithdrawTransactionInfo} for the given native staking deployment
    */
-  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo and mapWithdrawInfo
   public async mapWithdrawInfo(args: {
     chainId: string;
     to: `0x${string}`;
@@ -207,14 +192,7 @@ export class NativeStakingMapper {
         address: args.to,
       }),
     ]);
-
-    if (
-      deployment.product_type !== 'dedicated' ||
-      deployment.chain === 'unknown' ||
-      deployment.status === 'unknown'
-    ) {
-      throw new NotFoundException('Native staking deployment not found');
-    }
+    this.validateDeployment(deployment);
 
     let value = Number(args.value ?? 0);
 
@@ -228,7 +206,10 @@ export class NativeStakingMapper {
           chainId: args.chainId,
           validatorsPublicKeys,
         });
-        value = stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
+        value = stakes.reduce((sum, stake) => {
+          const reward = Number(stake.rewards);
+          return sum + (isNaN(reward) ? 0 : reward);
+        }, 0);
       }
     }
 
@@ -243,6 +224,16 @@ export class NativeStakingMapper {
         trusted: true,
       }),
     });
+  }
+
+  private validateDeployment(deployment: Deployment): void {
+    if (
+      deployment.product_type !== 'dedicated' ||
+      deployment.chain === 'unknown' ||
+      deployment.status === 'unknown'
+    ) {
+      throw new NotFoundException('Native staking deployment not found');
+    }
   }
 
   /**
@@ -281,6 +272,17 @@ export class NativeStakingMapper {
       : StakingStatus.ValidationStarted;
   }
 
+  /**
+   * Maps the {@link StakingValidatorsExitStatus} for the given native staking `validators exit` transaction.
+   * - If the transaction is not confirmed, the status is `SignatureNeeded`.
+   * - If the transaction is confirmed but the execution date is not available, the status is `AwaitingExecution`.
+   * - If the execution date is available, the status is `RequestPending` if the current date is before the estimated
+   * exit time, otherwise the status is `ReadyToWithdraw`.
+   *
+   * @param networkStats - the network stats for the chain where the native staking deployment lives.
+   * @param transaction - the validators exit transaction.
+   * @returns - the {@link StakingValidatorsExitStatus} status of the validators exit transaction.
+   */
   private mapValidatorsExitStatus(
     networkStats: NetworkStats,
     transaction: MultisigTransaction | ModuleTransaction | null,
@@ -299,7 +301,6 @@ export class NativeStakingMapper {
       return StakingValidatorsExitStatus.AwaitingExecution;
     }
 
-    // TODO: get validator status from the Kiln API
     const estimatedCompletionTime =
       transaction.executionDate.getTime() +
       networkStats.estimated_exit_time_seconds * 1000;
@@ -321,10 +322,7 @@ export class NativeStakingMapper {
    */
   private getValueFromDataDecoded(data: DataDecoded, chain: Chain): number {
     if (data.method === 'requestValidatorsExit') {
-      const publicKeys =
-        data.parameters?.filter(
-          (parameter) => parameter.name === '_publicKeys',
-        ) ?? [];
+      const publicKeys = this.getPublicKeysFromDataDecoded(data);
       const decimals = chain.nativeCurrency.decimals;
       return (
         publicKeys.length *
@@ -336,6 +334,11 @@ export class NativeStakingMapper {
     return 0;
   }
 
+  /**
+   * Gets the public keys from the transaction decoded data.
+   * @param data - the transaction decoded data.
+   * @returns the public keys from the transaction decoded data.
+   */
   private getPublicKeysFromDataDecoded(data: DataDecoded): `0x${string}`[] {
     const publicKeys =
       data.parameters?.filter(
