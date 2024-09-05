@@ -595,8 +595,7 @@ export class CacheRouter {
    * Calculate cache directory for staking stakes.
    *
    * Note: This function hashes the validators public keys to keep the
-   * cache key short and deterministic. The probability of collision is
-   * 0.00000271% for each 1,000,000 sets of validators public keys.
+   * cache key short and deterministic.
    *
    * @param validatorsPublicKeys - Array of validators public keys
    * @returns {@link CacheDir} - Cache directory
@@ -606,7 +605,6 @@ export class CacheRouter {
   ): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(validatorsPublicKeys.join('_'));
-    const hashed = hash.digest('hex').substring(0, 16);
-    return new CacheDir(`${this.STAKING_STAKES_KEY}_${hashed}`, '');
+    return new CacheDir(`${this.STAKING_STAKES_KEY}_${hash.digest('hex')}`, '');
   }
 }
