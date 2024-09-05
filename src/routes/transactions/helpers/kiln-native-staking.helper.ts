@@ -61,6 +61,10 @@ export class KilnNativeStakingHelper {
     });
   }
 
+  /**
+   * Check the transaction and the deployment to see if it is a valid staking transaction.
+   * We need to check against the deployment as some function signatures have common function names, e.g. deposit.
+   */
   private async findTransactionAndCheckDeployment(args: {
     chainId: string;
     to?: `0x${string}`;

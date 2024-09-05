@@ -206,10 +206,7 @@ export class NativeStakingMapper {
           chainId: args.chainId,
           validatorsPublicKeys,
         });
-        value = stakes.reduce((sum, stake) => {
-          const reward = Number(stake.rewards);
-          return sum + (isNaN(reward) ? 0 : reward);
-        }, 0);
+        value = stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
       }
     }
 
@@ -238,17 +235,16 @@ export class NativeStakingMapper {
 
   /**
    * Maps the {@link StakingStatus} for the given native staking deployment's `deposit` call.
-   * - If the deposit transaction is not confirmed, the status is `SignatureNeeded`.
+   * - If the deposit transaction is not confirmed, the status is {@link StakingStatus.SignatureNeeded}.
    * - If the deposit transaction is confirmed but the deposit execution date is not available,
-   * the status is `AwaitingExecution`.
-   * - If the deposit execution date is available, the status is `AwaitingEntry` if the current
-   * date is before the estimated entry time, otherwise the status is `ValidationStarted`.
-   * - If the status cannot be determined, the status is `Unknown`.
+   * the status is {@link StakingStatus.AwaitingExecution}.
+   * - If the deposit execution date is available, the status is {@link StakingStatus.AwaitingEntry} if the current
+   * date is before the estimated entry time, otherwise the status is {@link StakingStatus.ValidationStarted}.
    *
-   * @param networkStats - the network stats for the chain where the native staking deployment lives
-   * @param isConfirmed - whether the deposit transaction is confirmed
-   * @param depositExecutionDate - the date when the deposit transaction was executed
-   * @returns
+   * @param networkStats - the network stats for the chain where the native staking deployment lives.
+   * @param isConfirmed - whether the deposit transaction is confirmed.
+   * @param depositExecutionDate - the date when the deposit transaction was executed.
+   * @returns - the {@link StakingStatus} status of the deposit transaction.
    */
   private mapDepositStatus(
     networkStats: NetworkStats,
@@ -274,10 +270,11 @@ export class NativeStakingMapper {
 
   /**
    * Maps the {@link StakingValidatorsExitStatus} for the given native staking `requestValidatorsExit` transaction.
-   * - If the transaction is not confirmed, the status is `SignatureNeeded`.
-   * - If the transaction is confirmed but the execution date is not available, the status is `AwaitingExecution`.
-   * - If the execution date is available, the status is `RequestPending` if the current date is before the estimated
-   * exit time, otherwise the status is `ReadyToWithdraw`.
+   * - If the transaction is not confirmed, the status is {@link StakingValidatorsExitStatus.SignatureNeeded}.
+   * - If the transaction is confirmed but the execution date is not available, the status
+   * is {@link StakingValidatorsExitStatus.AwaitingExecution}.
+   * - If the execution date is available, the status is {@link StakingValidatorsExitStatus.RequestPending} if the
+   * current date is before the estimated exit time, otherwise the status is {@link StakingValidatorsExitStatus.ReadyToWithdraw}.
    *
    * @param networkStats - the network stats for the chain where the native staking deployment lives.
    * @param transaction - the validators exit transaction.
