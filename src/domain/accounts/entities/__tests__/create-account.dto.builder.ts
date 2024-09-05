@@ -9,6 +9,6 @@ export function createAccountDtoBuilder(): IBuilder<CreateAccountDto> {
       .with('address', getAddress(faker.finance.ethereumAddress()))
       // Note: regular expression is simplified because faker has limited support for regex.
       // https://fakerjs.dev/api/helpers#fromregexp
-      .with('name', faker.helpers.fromRegExp(/[a-zA-Z0-9]{3,20}/i))
+      .with('name', faker.helpers.fromRegExp(/[a-zA-Z0-9]{12,20}/i))
   );
 }

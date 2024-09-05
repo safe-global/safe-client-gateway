@@ -112,17 +112,14 @@ describe('AccountsController', () => {
 
   describe('Create accounts', () => {
     it('should create an account', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
+      const createAccountDto = createAccountDtoBuilder().build();
       const chain = chainBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
-        .with('signer_address', address)
+        .with('signer_address', createAccountDto.address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const account = accountBuilder().build();
-      const createAccountDto = createAccountDtoBuilder()
-        .with('address', address)
-        .build();
       accountDataSource.createAccount.mockResolvedValue(account);
 
       await request(app.getHttpServer())
@@ -132,9 +129,8 @@ describe('AccountsController', () => {
         .expect(201);
 
       expect(accountDataSource.createAccount).toHaveBeenCalledTimes(1);
-      // Check the address was checksummed
       expect(accountDataSource.createAccount).toHaveBeenCalledWith({
-        address,
+        createAccountDto,
         clientIp: expect.any(String),
       });
     });

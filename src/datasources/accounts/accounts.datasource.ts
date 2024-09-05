@@ -10,6 +10,7 @@ import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.int
 import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
+import { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.entity';
 import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { AccountsCreationRateLimitError } from '@/domain/accounts/errors/accounts-creation-rate-limit.error';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
@@ -23,6 +24,8 @@ import {
   OnModuleInit,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import crypto from 'crypto';
+import { omit } from 'lodash';
 import postgres from 'postgres';
 
 @Injectable()
@@ -67,26 +70,31 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   }
 
   async createAccount(args: {
-    address: `0x${string}`;
+    createAccountDto: CreateAccountDto;
     clientIp: string;
   }): Promise<Account> {
     await this.checkCreationRateLimit(args.clientIp);
+    const { address, name } = args.createAccountDto;
+    // TODO: compute the hash
+    const nameHash = crypto.randomBytes(32).toString('hex');
+    // TODO: encrypt the name
     const [account] = await this.sql<[Account]>`
-      INSERT INTO accounts (address) VALUES (${args.address}) RETURNING *`.catch(
-      (e) => {
-        this.loggingService.warn(
-          `Error creating account: ${asError(e).message}`,
-        );
-        throw new UnprocessableEntityException('Error creating account.');
-      },
-    );
-    const cacheDir = CacheRouter.getAccountCacheDir(args.address);
+      INSERT INTO accounts (address, name, name_hash)
+        VALUES (${address}, ${name}, ${nameHash})
+      RETURNING *
+      `.catch((e) => {
+      this.loggingService.warn(`Error creating account: ${asError(e).message}`);
+      throw new UnprocessableEntityException('Error creating account.');
+    });
+    const cacheDir = CacheRouter.getAccountCacheDir(address);
+    // TODO: decrypt the name
+    const result = omit({ ...account, name }, 'name_hash');
     await this.cacheService.set(
       cacheDir,
-      JSON.stringify([account]),
+      JSON.stringify([result]),
       this.defaultExpirationTimeInSeconds,
     );
-    return account;
+    return result;
   }
 
   async getAccount(address: `0x${string}`): Promise<Account> {
