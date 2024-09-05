@@ -26,6 +26,7 @@ export enum DecodedType {
   CowSwapTwapOrder = 'COW_SWAP_TWAP_ORDER',
   KilnNativeStakingDeposit = 'KILN_NATIVE_STAKING_DEPOSIT',
   KilnNativeStakingValidatorsExit = 'KILN_NATIVE_STAKING_VALIDATORS_EXIT',
+  KilnNativeStakingWithdraw = 'KILN_NATIVE_STAKING_WITHDRAW',
 }
 
 export type ConfirmationView =
