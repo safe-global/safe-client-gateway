@@ -3,6 +3,7 @@ import { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedica
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
+import { Stake } from '@/datasources/staking-api/entities/stake.entity';
 
 export const IStakingApi = Symbol('IStakingApi');
 
@@ -19,4 +20,6 @@ export interface IStakingApi {
     chainId: string;
     vault: `0x${string}`;
   }): Promise<Array<DefiVaultStats>>;
+
+  getStakes(validatorsPublicKeys: `0x${string}`[]): Promise<Stake[]>;
 }

@@ -90,9 +90,15 @@
     ],
     "coverageDirectory": "../coverage",
     "coveragePathIgnorePatterns": [
-      "index.ts",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      ".e2e-spec.ts"
+      "/abis/",
+      "/assets/",
+      "/coverage/",
+      "/data/",
+      "/dist/",
+      "/scripts/",
+      ".e2e-spec.ts",
+      "main.ts"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {

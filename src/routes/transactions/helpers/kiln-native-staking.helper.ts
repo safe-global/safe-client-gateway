@@ -41,7 +41,10 @@ export class KilnNativeStakingHelper {
       })
       .catch(() => null);
 
-    if (deployment?.product_type !== 'dedicated') {
+    if (
+      deployment?.product_type !== 'dedicated' &&
+      deployment?.chain !== 'unknown'
+    ) {
       return null;
     }
 
@@ -80,7 +83,51 @@ export class KilnNativeStakingHelper {
       })
       .catch(() => null);
 
-    if (deployment?.product_type !== 'dedicated') {
+    if (
+      deployment?.product_type !== 'dedicated' &&
+      deployment?.chain !== 'unknown'
+    ) {
+      return null;
+    }
+
+    return {
+      to: transaction.to,
+      data: transaction.data,
+    };
+  }
+
+  public async findWithdraw(args: {
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<{
+    to: `0x${string}`;
+    data: `0x${string}`;
+  } | null> {
+    const selector = toFunctionSelector(
+      'function batchWithdrawCLFee(bytes) external',
+    );
+    const transaction = this.transactionFinder.findTransaction(
+      (transaction) => transaction.data.startsWith(selector),
+      args,
+    );
+
+    if (!transaction?.to) {
+      return null;
+    }
+
+    // We need to check against the deployment as `deposit` is a common function name
+    const deployment = await this.stakingRepository
+      .getDeployment({
+        chainId: args.chainId,
+        address: transaction.to,
+      })
+      .catch(() => null);
+
+    if (
+      deployment?.product_type !== 'dedicated' &&
+      deployment?.chain !== 'unknown'
+    ) {
       return null;
     }
 

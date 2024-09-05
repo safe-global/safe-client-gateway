@@ -28,6 +28,7 @@ import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entit
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
+import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -140,6 +141,15 @@ export class MultisigTransactionInfoMapper {
       // If the transaction is a native staking validators exit, we return it immediately
       if (nativeStakingValidatorsExit) {
         return nativeStakingValidatorsExit;
+      }
+
+      const nativeStakingWithdraw = await this.mapNativeStakingWithdraw(
+        chainId,
+        transaction,
+      );
+      // If the transaction is a native staking withdraw, we return it immediately
+      if (nativeStakingWithdraw) {
+        return nativeStakingWithdraw;
       }
     }
 
@@ -371,6 +381,38 @@ export class MultisigTransactionInfoMapper {
       return await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId,
         to: nativeStakingValidatorsExitTransaction.to,
+        value: transaction.value,
+        transaction,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapNativeStakingWithdraw(
+    chainId: string,
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): Promise<NativeStakingWithdrawTransactionInfo | null> {
+    if (!transaction?.data) {
+      return null;
+    }
+
+    const nativeStakingWithdrawTransaction =
+      await this.kilnNativeStakingHelper.findWithdraw({
+        chainId,
+        to: transaction.to,
+        data: transaction.data,
+      });
+
+    if (!nativeStakingWithdrawTransaction) {
+      return null;
+    }
+
+    try {
+      return await this.nativeStakingMapper.mapWithdrawInfo({
+        chainId,
+        to: nativeStakingWithdrawTransaction.to,
         value: transaction.value,
         transaction,
       });

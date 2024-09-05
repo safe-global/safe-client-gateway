@@ -9,6 +9,7 @@ import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
 import { defiVaultStatsBuilder } from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
+import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 
 const networkService = jest.mocked({
   get: jest.fn(),
@@ -376,6 +377,81 @@ describe('KilnApi', () => {
           },
           params: {
             vaults: `${defiVaultStats.chain}_${defiVaultStats.vault}`,
+          },
+        },
+      });
+    });
+  });
+
+  describe('getStakes', () => {
+    it('should return stakes', async () => {
+      const validatorsPublicKeys = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => faker.string.hexadecimal({ length: 66 }) as `0x${string}`,
+      );
+      const stakes = Array.from({ length: validatorsPublicKeys.length }, () =>
+        stakeBuilder().build(),
+      );
+      const getStakesUrl = `${baseUrl}/v1/eth/stakes`;
+      networkService.get.mockResolvedValue({
+        status: 200,
+        // Note: Kiln always return { data: T }
+        data: {
+          data: stakes,
+        },
+      });
+
+      const actual = await target.getStakes(validatorsPublicKeys);
+
+      expect(actual).toBe(stakes);
+
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenNthCalledWith(1, {
+        url: getStakesUrl,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            validators: validatorsPublicKeys,
+          },
+        },
+      });
+    });
+
+    it('should forward errors', async () => {
+      const validatorsPublicKeys = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => faker.string.hexadecimal({ length: 66 }) as `0x${string}`,
+      );
+      const getStakesUrl = `${baseUrl}/v1/eth/stakes`;
+      const errorMessage = faker.lorem.sentence();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      networkService.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getStakesUrl),
+          {
+            status: statusCode,
+          } as Response,
+          new Error(errorMessage),
+        ),
+      );
+      await expect(target.getStakes(validatorsPublicKeys)).rejects.toThrow(
+        expected,
+      );
+
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenNthCalledWith(1, {
+        url: getStakesUrl,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            validators: validatorsPublicKeys,
           },
         },
       });
