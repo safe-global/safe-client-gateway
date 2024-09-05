@@ -69,14 +69,16 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     );
   }
 
+  // TODO: document this function explaining why the name is hashed (unique constraint)
   async createAccount(args: {
     createAccountDto: CreateAccountDto;
     clientIp: string;
   }): Promise<Account> {
     await this.checkCreationRateLimit(args.clientIp);
     const { address, name } = args.createAccountDto;
-    // TODO: compute the hash
-    const nameHash = crypto.randomBytes(32).toString('hex');
+    const hash = crypto.createHash('sha256');
+    hash.update(name);
+    const nameHash = hash.digest('hex');
     // TODO: encrypt the name
     const [account] = await this.sql<[Account]>`
       INSERT INTO accounts (address, name, name_hash)
