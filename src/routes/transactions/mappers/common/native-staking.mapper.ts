@@ -13,6 +13,7 @@ import { StakingRepositoryModule } from '@/domain/staking/staking.repository.mod
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
+import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import {
   StakingStatus,
   StakingValidatorsExitStatus,
@@ -118,7 +119,17 @@ export class NativeStakingMapper {
     });
   }
 
-  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo
+  /**
+   * Maps the {@link NativeStakingValidatorsExitTransactionInfo} for the given
+   * native staking `requestValidatorsExit` transaction.
+   *
+   * @param args.chainId - the chain ID of the native staking deployment
+   * @param args.to - the address of the native staking deployment
+   * @param args.value - the value of the validators exit transaction
+   * @param args.transaction - the transaction object for the validators exit
+   * @returns {@link NativeStakingValidatorsExitTransactionInfo} for the given native staking deployment
+   */
+  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo and mapWithdrawInfo
   public async mapValidatorsExitInfo(args: {
     chainId: string;
     to: `0x${string}`;
@@ -161,6 +172,68 @@ export class NativeStakingMapper {
       estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
       value: getNumberString(value),
       numValidators,
+      tokenInfo: new TokenInfo({
+        address: NULL_ADDRESS,
+        decimals: chain.nativeCurrency.decimals,
+        logoUri: chain.nativeCurrency.logoUri,
+        name: chain.nativeCurrency.name,
+        symbol: chain.nativeCurrency.symbol,
+        trusted: true,
+      }),
+    });
+  }
+
+  /**
+   * Maps the {@link NativeStakingWithdrawTransactionInfo} for the given
+   * native staking `batchWithdrawCLFee` transaction.
+   *
+   * @param args.chainId - the chain ID of the native staking deployment
+   * @param args.to - the address of the native staking deployment
+   * @param args.value - the value of the withdraw transaction
+   * @param args.transaction - the transaction object for the withdraw
+   * @returns {@link NativeStakingWithdrawTransactionInfo} for the given native staking deployment
+   */
+  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo and mapWithdrawInfo
+  public async mapWithdrawInfo(args: {
+    chainId: string;
+    to: `0x${string}`;
+    value: string | null;
+    transaction: MultisigTransaction | ModuleTransaction | null;
+  }): Promise<NativeStakingWithdrawTransactionInfo> {
+    const [chain, deployment] = await Promise.all([
+      this.chainsRepository.getChain(args.chainId),
+      this.stakingRepository.getDeployment({
+        chainId: args.chainId,
+        address: args.to,
+      }),
+    ]);
+
+    if (
+      deployment.product_type !== 'dedicated' ||
+      deployment.chain === 'unknown' ||
+      deployment.status === 'unknown'
+    ) {
+      throw new NotFoundException('Native staking deployment not found');
+    }
+
+    let value = Number(args.value ?? 0);
+
+    if (args.transaction) {
+      const validatorsPublicKeys = args.transaction?.dataDecoded
+        ? this.getPublicKeysFromDataDecoded(args.transaction.dataDecoded)
+        : [];
+
+      if (validatorsPublicKeys.length > 0) {
+        const stakes = await this.stakingRepository.getStakes({
+          chainId: args.chainId,
+          validatorsPublicKeys,
+        });
+        value = stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
+      }
+    }
+
+    return new NativeStakingWithdrawTransactionInfo({
+      value: getNumberString(value),
       tokenInfo: new TokenInfo({
         address: NULL_ADDRESS,
         decimals: chain.nativeCurrency.decimals,
@@ -261,6 +334,14 @@ export class NativeStakingMapper {
     }
 
     return 0;
+  }
+
+  private getPublicKeysFromDataDecoded(data: DataDecoded): `0x${string}`[] {
+    const publicKeys =
+      data.parameters?.filter(
+        (parameter) => parameter.name === '_publicKeys',
+      ) ?? [];
+    return publicKeys.map((publicKey) => publicKey.value as `0x${string}`);
   }
 }
 

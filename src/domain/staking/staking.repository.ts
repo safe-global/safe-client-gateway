@@ -21,6 +21,10 @@ import {
   DefiVaultStats,
   DefiVaultStatsSchema,
 } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
+import {
+  Stake,
+  StakeSchema,
+} from '@/datasources/staking-api/entities/stake.entity';
 
 @Injectable()
 export class StakingRepository implements IStakingRepository {
@@ -85,6 +89,15 @@ export class StakingRepository implements IStakingRepository {
     return defiStats.map((defiStats) =>
       DefiVaultStatsSchema.parse(defiStats),
     )[0];
+  }
+
+  public async getStakes(args: {
+    chainId: string;
+    validatorsPublicKeys: `0x${string}`[];
+  }): Promise<Stake[]> {
+    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
+    const stakes = await stakingApi.getStakes(args.validatorsPublicKeys);
+    return stakes.map((stake) => StakeSchema.parse(stake));
   }
 
   public clearApi(chainId: string): void {

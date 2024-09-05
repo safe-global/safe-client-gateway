@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export class CacheRouter {
@@ -43,6 +44,7 @@ export class CacheRouter {
   private static readonly STAKING_NETWORK_STATS_KEY = 'staking_network_stats';
   private static readonly STAKING_POOLED_STAKING_STATS_KEY =
     'staking_pooled_staking_stats';
+  private static readonly STAKING_STAKES_KEY = 'staking_stakes';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
@@ -587,5 +589,24 @@ export class CacheRouter {
       `${args.chainId}_${this.STAKING_DEFI_VAULT_STATS_KEY}_${args.vault}`,
       '',
     );
+  }
+
+  /**
+   * Calculate cache directory for staking stakes.
+   *
+   * Note: This function hashes the validators public keys to keep the
+   * cache key short and deterministic. The probability of collision is
+   * 0.00000271% for each 1,000,000 sets of validators public keys.
+   *
+   * @param validatorsPublicKeys - Array of validators public keys
+   * @returns {@link CacheDir} - Cache directory
+   */
+  static getStakingStakesCacheDir(
+    validatorsPublicKeys: `0x${string}`[],
+  ): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(validatorsPublicKeys.join('_'));
+    const hashed = hash.digest('hex').substring(0, 16);
+    return new CacheDir(`${this.STAKING_STAKES_KEY}_${hashed}`, '');
   }
 }

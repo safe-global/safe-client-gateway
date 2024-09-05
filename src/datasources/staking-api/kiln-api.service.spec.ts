@@ -1,5 +1,6 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
@@ -8,6 +9,7 @@ import { defiVaultStatsBuilder } from '@/datasources/staking-api/entities/__test
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
 import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/pooled-staking-stats.entity.builder';
+import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { faker } from '@faker-js/faker';
@@ -433,6 +435,85 @@ describe('KilnApi', () => {
           },
           params: {
             vaults: `${defiVaultStats.chain}_${defiVaultStats.vault}`,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+  });
+
+  describe('getStakes', () => {
+    it('should return stakes', async () => {
+      const validatorsPublicKeys = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => faker.string.hexadecimal({ length: 66 }) as `0x${string}`,
+      );
+      const stakes = Array.from({ length: validatorsPublicKeys.length }, () =>
+        stakeBuilder().build(),
+      );
+      const getStakesUrl = `${baseUrl}/v1/eth/stakes`;
+      dataSource.get.mockResolvedValue({
+        status: 200,
+        // Note: Kiln always return { data: T }
+        data: stakes,
+      });
+
+      const actual = await target.getStakes(validatorsPublicKeys);
+
+      expect(actual).toBe(stakes);
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys),
+        url: getStakesUrl,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            validators: validatorsPublicKeys,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+
+    it('should forward errors', async () => {
+      const validatorsPublicKeys = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => faker.string.hexadecimal({ length: 66 }) as `0x${string}`,
+      );
+      const getStakesUrl = `${baseUrl}/v1/eth/stakes`;
+      const errorMessage = faker.lorem.sentence();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      dataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getStakesUrl),
+          {
+            status: statusCode,
+          } as Response,
+          new Error(errorMessage),
+        ),
+      );
+      await expect(target.getStakes(validatorsPublicKeys)).rejects.toThrow(
+        expected,
+      );
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys),
+        url: getStakesUrl,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            validators: validatorsPublicKeys,
           },
         },
         expireTimeSeconds: stakingExpirationTimeInSeconds,
