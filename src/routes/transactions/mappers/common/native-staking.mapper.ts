@@ -273,7 +273,7 @@ export class NativeStakingMapper {
   }
 
   /**
-   * Maps the {@link StakingValidatorsExitStatus} for the given native staking `validators exit` transaction.
+   * Maps the {@link StakingValidatorsExitStatus} for the given native staking `requestValidatorsExit` transaction.
    * - If the transaction is not confirmed, the status is `SignatureNeeded`.
    * - If the transaction is confirmed but the execution date is not available, the status is `AwaitingExecution`.
    * - If the execution date is available, the status is `RequestPending` if the current date is before the estimated
