@@ -85,9 +85,12 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "roots": [
+      "./src",
+      "./migrations"
+    ],
     "collectCoverageFrom": [
-      "<rootDir>/src/**/*.(t|j)s",
-      "<rootDir>/migrations/**/*.(t|j)s"
+      "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
     "coveragePathIgnorePatterns": [
