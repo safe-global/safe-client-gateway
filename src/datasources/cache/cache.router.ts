@@ -594,8 +594,9 @@ export class CacheRouter {
   /**
    * Calculate cache directory for staking stakes.
    *
-   * Note: This function hashes the validators public keys to keep the
-   * cache key short and deterministic.
+   * Note: This function hashes the validators' public keys to keep the
+   * cache key short and deterministic. Redis and other cache systems
+   * may experience performance degradation with long keys.
    *
    * @param validatorsPublicKeys - Array of validators public keys
    * @returns {@link CacheDir} - Cache directory
