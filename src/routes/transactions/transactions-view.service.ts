@@ -1,6 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { OrderStatus } from '@/domain/swaps/entities/order.entity';
@@ -43,6 +44,7 @@ export class TransactionsViewService {
     private readonly configurationService: IConfigurationService,
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
+    private readonly kilnDecoder: KilnDecoder,
   ) {
     this.isNativeStakingEnabled = this.configurationService.getOrThrow<boolean>(
       'features.nativeStaking',
@@ -61,12 +63,16 @@ export class TransactionsViewService {
         to: args.transactionDataDto.to,
       })
       .catch(() => {
-        // TODO: Get Kiln to verify all deployments
         // Fallback for unverified contracts
-        return {
-          method: '',
-          parameters: null,
-        };
+        const { data } = args.transactionDataDto;
+        const fallbackDataDecoded =
+          this.kilnDecoder.decodeDeposit(data) ??
+          this.kilnDecoder.decodeValidatorsExit(data) ??
+          this.kilnDecoder.decodeBatchWithdrawCLFee(data);
+        if (!fallbackDataDecoded) {
+          throw new Error('Transaction data could not be decoded');
+        }
+        return fallbackDataDecoded;
       });
 
     const swapOrderData = this.swapOrderHelper.findSwapOrder(
