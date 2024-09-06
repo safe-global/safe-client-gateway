@@ -16,7 +16,7 @@ import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entit
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import {
-  StakingStatus,
+  StakingDepositStatus,
   StakingValidatorsExitStatus,
 } from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
@@ -234,29 +234,29 @@ export class NativeStakingMapper {
   }
 
   /**
-   * Maps the {@link StakingStatus} for the given native staking deployment's `deposit` call.
-   * - If the deposit transaction is not confirmed, the status is {@link StakingStatus.SignatureNeeded}.
+   * Maps the {@link StakingDepositStatus} for the given native staking deployment's `deposit` call.
+   * - If the deposit transaction is not confirmed, the status is {@link StakingDepositStatus.SignatureNeeded}.
    * - If the deposit transaction is confirmed but the deposit execution date is not available,
-   * the status is {@link StakingStatus.AwaitingExecution}.
-   * - If the deposit execution date is available, the status is {@link StakingStatus.AwaitingEntry} if the current
-   * date is before the estimated entry time, otherwise the status is {@link StakingStatus.ValidationStarted}.
+   * the status is {@link StakingDepositStatus.AwaitingExecution}.
+   * - If the deposit execution date is available, the status is {@link StakingDepositStatus.AwaitingEntry} if the current
+   * date is before the estimated entry time, otherwise the status is {@link StakingDepositStatus.ValidationStarted}.
    *
    * @param networkStats - the network stats for the chain where the native staking deployment lives.
    * @param isConfirmed - whether the deposit transaction is confirmed.
    * @param depositExecutionDate - the date when the deposit transaction was executed.
-   * @returns - the {@link StakingStatus} status of the deposit transaction.
+   * @returns - the {@link StakingDepositStatus} status of the deposit transaction.
    */
   private mapDepositStatus(
     networkStats: NetworkStats,
     isConfirmed: boolean,
     depositExecutionDate: Date | null,
-  ): StakingStatus {
+  ): StakingDepositStatus {
     if (!isConfirmed) {
-      return StakingStatus.SignatureNeeded;
+      return StakingDepositStatus.SignatureNeeded;
     }
 
     if (!depositExecutionDate) {
-      return StakingStatus.AwaitingExecution;
+      return StakingDepositStatus.AwaitingExecution;
     }
 
     const estimatedDepositEntryTime =
@@ -264,8 +264,8 @@ export class NativeStakingMapper {
       networkStats.estimated_entry_time_seconds * 1000;
 
     return Date.now() <= estimatedDepositEntryTime
-      ? StakingStatus.AwaitingEntry
-      : StakingStatus.ValidationStarted;
+      ? StakingDepositStatus.AwaitingEntry
+      : StakingDepositStatus.ValidationStarted;
   }
 
   /**
