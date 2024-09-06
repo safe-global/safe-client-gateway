@@ -81,7 +81,10 @@
       "json",
       "ts"
     ],
-    "testRegex": ".*\\.spec\\.ts$",
+    "testMatch": [
+      "<rootDir>/src/**/*.spec.ts",
+      "<rootDir>/migrations/**/*.spec.ts"
+    ],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
@@ -90,15 +93,9 @@
     ],
     "coverageDirectory": "../coverage",
     "coveragePathIgnorePatterns": [
+      "index.ts",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      "/abis/",
-      "/assets/",
-      "/coverage/",
-      "/data/",
-      "/dist/",
-      "/scripts/",
-      ".e2e-spec.ts",
-      "main.ts"
+      ".e2e-spec.ts"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
