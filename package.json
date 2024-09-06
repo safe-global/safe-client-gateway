@@ -81,16 +81,13 @@
       "json",
       "ts"
     ],
-    "testMatch": [
-      "<rootDir>/src/**/*.spec.ts",
-      "<rootDir>/migrations/**/*.spec.ts"
-    ],
+    "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "src/**/*.(t|j)s",
-      "migrations/**/*.(t|j)s"
+      "<rootDir>/src/**/*.(t|j)s",
+      "<rootDir>/migrations/**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
     "coveragePathIgnorePatterns": [
