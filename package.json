@@ -92,7 +92,7 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageDirectory": "./coverage",
     "coveragePathIgnorePatterns": [
       "index.ts",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
