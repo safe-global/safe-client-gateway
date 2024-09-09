@@ -9,6 +9,13 @@ import { toFunctionSelector } from 'viem';
 
 @Injectable()
 export class KilnNativeStakingHelper {
+  private static readonly DEPOSIT_SIGNATURE =
+    'function deposit() external payable';
+  private static readonly VALIDATORS_EXIT_SIGNATURE =
+    'function requestValidatorsExit(bytes) external';
+  private static readonly WITHDRAW_SIGNATURE =
+    'function batchWithdrawCLFee(bytes) external';
+
   constructor(
     private readonly transactionFinder: TransactionFinder,
     @Inject(IStakingRepository)
@@ -21,7 +28,7 @@ export class KilnNativeStakingHelper {
     data: `0x${string}`;
   }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
     return this.findNativeStakingTransaction({
-      signature: 'function deposit() external payable',
+      signature: KilnNativeStakingHelper.DEPOSIT_SIGNATURE,
       ...args,
     });
   }
@@ -32,7 +39,7 @@ export class KilnNativeStakingHelper {
     data: `0x${string}`;
   }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
     return this.findNativeStakingTransaction({
-      signature: 'function requestValidatorsExit(bytes) external',
+      signature: KilnNativeStakingHelper.VALIDATORS_EXIT_SIGNATURE,
       ...args,
     });
   }
@@ -43,7 +50,7 @@ export class KilnNativeStakingHelper {
     data: `0x${string}`;
   }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
     return this.findNativeStakingTransaction({
-      signature: 'function batchWithdrawCLFee(bytes) external',
+      signature: KilnNativeStakingHelper.WITHDRAW_SIGNATURE,
       ...args,
     });
   }
