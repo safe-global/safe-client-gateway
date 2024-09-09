@@ -1,3 +1,4 @@
+import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import {
   ChainsRepositoryModule,
@@ -15,7 +16,7 @@ import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entit
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import {
-  StakingStatus,
+  StakingDepositStatus,
   StakingValidatorsExitStatus,
 } from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
@@ -58,14 +59,7 @@ export class NativeStakingMapper {
         address: args.to,
       }),
     ]);
-
-    if (
-      deployment.product_type !== 'dedicated' ||
-      deployment.chain === 'unknown' ||
-      deployment.status === 'unknown'
-    ) {
-      throw new NotFoundException('Native staking deployment not found');
-    }
+    this.validateDeployment(deployment);
 
     const [nativeStakingStats, networkStats] = await Promise.all([
       this.stakingRepository.getDedicatedStakingStats(args.chainId),
@@ -129,7 +123,6 @@ export class NativeStakingMapper {
    * @param args.transaction - the transaction object for the validators exit
    * @returns {@link NativeStakingValidatorsExitTransactionInfo} for the given native staking deployment
    */
-  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo and mapWithdrawInfo
   public async mapValidatorsExitInfo(args: {
     chainId: string;
     to: `0x${string}`;
@@ -143,14 +136,7 @@ export class NativeStakingMapper {
         address: args.to,
       }),
     ]);
-
-    if (
-      deployment.product_type !== 'dedicated' ||
-      deployment.chain === 'unknown' ||
-      deployment.status === 'unknown'
-    ) {
-      throw new NotFoundException('Native staking deployment not found');
-    }
+    this.validateDeployment(deployment);
 
     const networkStats = await this.stakingRepository.getNetworkStats(
       args.chainId,
@@ -193,7 +179,6 @@ export class NativeStakingMapper {
    * @param args.transaction - the transaction object for the withdraw
    * @returns {@link NativeStakingWithdrawTransactionInfo} for the given native staking deployment
    */
-  // TODO: refactor common logic between mapDepositInfo and mapValidatorsExitInfo and mapWithdrawInfo
   public async mapWithdrawInfo(args: {
     chainId: string;
     to: `0x${string}`;
@@ -207,14 +192,7 @@ export class NativeStakingMapper {
         address: args.to,
       }),
     ]);
-
-    if (
-      deployment.product_type !== 'dedicated' ||
-      deployment.chain === 'unknown' ||
-      deployment.status === 'unknown'
-    ) {
-      throw new NotFoundException('Native staking deployment not found');
-    }
+    this.validateDeployment(deployment);
 
     let value = Number(args.value ?? 0);
 
@@ -245,31 +223,40 @@ export class NativeStakingMapper {
     });
   }
 
+  private validateDeployment(deployment: Deployment): void {
+    if (
+      deployment.product_type !== 'dedicated' ||
+      deployment.chain === 'unknown' ||
+      deployment.status === 'unknown'
+    ) {
+      throw new NotFoundException('Native staking deployment not found');
+    }
+  }
+
   /**
-   * Maps the {@link StakingStatus} for the given native staking deployment's `deposit` call.
-   * - If the deposit transaction is not confirmed, the status is `SignatureNeeded`.
+   * Maps the {@link StakingDepositStatus} for the given native staking deployment's `deposit` call.
+   * - If the deposit transaction is not confirmed, the status is {@link StakingDepositStatus.SignatureNeeded}.
    * - If the deposit transaction is confirmed but the deposit execution date is not available,
-   * the status is `AwaitingExecution`.
-   * - If the deposit execution date is available, the status is `AwaitingEntry` if the current
-   * date is before the estimated entry time, otherwise the status is `ValidationStarted`.
-   * - If the status cannot be determined, the status is `Unknown`.
+   * the status is {@link StakingDepositStatus.AwaitingExecution}.
+   * - If the deposit execution date is available, the status is {@link StakingDepositStatus.AwaitingEntry} if the current
+   * date is before the estimated entry time, otherwise the status is {@link StakingDepositStatus.ValidationStarted}.
    *
-   * @param networkStats - the network stats for the chain where the native staking deployment lives
-   * @param isConfirmed - whether the deposit transaction is confirmed
-   * @param depositExecutionDate - the date when the deposit transaction was executed
-   * @returns
+   * @param networkStats - the network stats for the chain where the native staking deployment lives.
+   * @param isConfirmed - whether the deposit transaction is confirmed.
+   * @param depositExecutionDate - the date when the deposit transaction was executed.
+   * @returns - the {@link StakingDepositStatus} status of the deposit transaction.
    */
   private mapDepositStatus(
     networkStats: NetworkStats,
     isConfirmed: boolean,
     depositExecutionDate: Date | null,
-  ): StakingStatus {
+  ): StakingDepositStatus {
     if (!isConfirmed) {
-      return StakingStatus.SignatureNeeded;
+      return StakingDepositStatus.SignatureNeeded;
     }
 
     if (!depositExecutionDate) {
-      return StakingStatus.AwaitingExecution;
+      return StakingDepositStatus.AwaitingExecution;
     }
 
     const estimatedDepositEntryTime =
@@ -277,10 +264,22 @@ export class NativeStakingMapper {
       networkStats.estimated_entry_time_seconds * 1000;
 
     return Date.now() <= estimatedDepositEntryTime
-      ? StakingStatus.AwaitingEntry
-      : StakingStatus.ValidationStarted;
+      ? StakingDepositStatus.AwaitingEntry
+      : StakingDepositStatus.ValidationStarted;
   }
 
+  /**
+   * Maps the {@link StakingValidatorsExitStatus} for the given native staking `requestValidatorsExit` transaction.
+   * - If the transaction is not confirmed, the status is {@link StakingValidatorsExitStatus.SignatureNeeded}.
+   * - If the transaction is confirmed but the execution date is not available, the status
+   * is {@link StakingValidatorsExitStatus.AwaitingExecution}.
+   * - If the execution date is available, the status is {@link StakingValidatorsExitStatus.RequestPending} if the
+   * current date is before the estimated exit time, otherwise the status is {@link StakingValidatorsExitStatus.ReadyToWithdraw}.
+   *
+   * @param networkStats - the network stats for the chain where the native staking deployment lives.
+   * @param transaction - the validators exit transaction.
+   * @returns - the {@link StakingValidatorsExitStatus} status of the validators exit transaction.
+   */
   private mapValidatorsExitStatus(
     networkStats: NetworkStats,
     transaction: MultisigTransaction | ModuleTransaction | null,
@@ -299,7 +298,6 @@ export class NativeStakingMapper {
       return StakingValidatorsExitStatus.AwaitingExecution;
     }
 
-    // TODO: get validator status from the Kiln API
     const estimatedCompletionTime =
       transaction.executionDate.getTime() +
       networkStats.estimated_exit_time_seconds * 1000;
@@ -321,10 +319,7 @@ export class NativeStakingMapper {
    */
   private getValueFromDataDecoded(data: DataDecoded, chain: Chain): number {
     if (data.method === 'requestValidatorsExit') {
-      const publicKeys =
-        data.parameters?.filter(
-          (parameter) => parameter.name === '_publicKeys',
-        ) ?? [];
+      const publicKeys = this.getPublicKeysFromDataDecoded(data);
       const decimals = chain.nativeCurrency.decimals;
       return (
         publicKeys.length *
@@ -336,6 +331,11 @@ export class NativeStakingMapper {
     return 0;
   }
 
+  /**
+   * Gets the public keys from the transaction decoded data.
+   * @param data - the transaction decoded data.
+   * @returns the public keys from the transaction decoded data.
+   */
   private getPublicKeysFromDataDecoded(data: DataDecoded): `0x${string}`[] {
     const publicKeys =
       data.parameters?.filter(

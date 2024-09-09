@@ -1,18 +1,13 @@
-// TODO: rename to StakingDepositStatus
 // Present in all calls for native/pooled/defi staking
-export enum StakingStatus {
+export enum StakingDepositStatus {
   AwaitingEntry = 'AWAITING_ENTRY',
   AwaitingExecution = 'AWAITING_EXECUTION',
-  RequestedExit = 'REQUESTED_EXIT',
   SignatureNeeded = 'SIGNATURE_NEEDED',
-  Unknown = 'UNKNOWN',
   ValidationStarted = 'VALIDATION_STARTED',
-  Withdrawn = 'WITHDRAWN',
 }
 
-// TODO: rename to StakingDepositStatusInfo
-export type StakingStatusInfo = {
-  status: StakingStatus;
+export type StakingDepositStatusInfo = {
+  status: StakingDepositStatus;
 };
 
 export enum StakingValidatorsExitStatus {

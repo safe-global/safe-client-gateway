@@ -82,21 +82,21 @@ export class TransactionsViewService {
 
     const nativeStakingDepositTransaction =
       this.isNativeStakingEnabled &&
-      (await this.kilnNativeStakingHelper.findDeposit({
+      (await this.kilnNativeStakingHelper.findDepositTransaction({
         chainId: args.chainId,
         ...args.transactionDataDto,
       }));
 
     const nativeStakingValidatorsExitTransaction =
       this.isNativeStakingEnabled &&
-      (await this.kilnNativeStakingHelper.findValidatorsExit({
+      (await this.kilnNativeStakingHelper.findValidatorsExitTransaction({
         chainId: args.chainId,
         ...args.transactionDataDto,
       }));
 
     const nativeStakingWithdrawTransaction =
       this.isNativeStakingEnabled &&
-      (await this.kilnNativeStakingHelper.findWithdraw({
+      (await this.kilnNativeStakingHelper.findWithdrawTransaction({
         chainId: args.chainId,
         ...args.transactionDataDto,
       }));
