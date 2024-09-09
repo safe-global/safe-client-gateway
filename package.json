@@ -85,20 +85,19 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "roots": [
+      "./src",
+      "./migrations"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageDirectory": "./coverage",
     "coveragePathIgnorePatterns": [
+      "index.ts",
+      ".+\\/__tests__\\/.+\\.builder.(t|j)s",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      "/abis/",
-      "/assets/",
-      "/coverage/",
-      "/data/",
-      "/dist/",
-      "/scripts/",
-      ".e2e-spec.ts",
-      "main.ts"
+      ".e2e-spec.ts"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
