@@ -7,31 +7,56 @@ import {
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { toFunctionSelector } from 'viem';
 
-type NativeStakingTransaction = 'deposit' | 'validatorsExit' | 'withdraw';
-
 @Injectable()
 export class KilnNativeStakingHelper {
-  private static readonly SIGNATURES: Record<NativeStakingTransaction, string> =
-    {
-      deposit: 'function deposit() external payable',
-      validatorsExit: 'function requestValidatorsExit(bytes) external',
-      withdraw: 'function batchWithdrawCLFee(bytes) external',
-    };
-
   constructor(
     private readonly transactionFinder: TransactionFinder,
     @Inject(IStakingRepository)
     private readonly stakingRepository: IStakingRepository,
   ) {}
 
-  public async findTransaction(
-    type: NativeStakingTransaction,
-    args: { chainId: string; to?: `0x${string}`; data: `0x${string}` },
-  ): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
-    const signature = KilnNativeStakingHelper.SIGNATURES[type];
+  public async findDepositTransaction(args: {
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
+    return this.findNativeStakingTransaction({
+      signature: 'function deposit() external payable',
+      ...args,
+    });
+  }
+
+  public async findValidatorsExitTransaction(args: {
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
+    return this.findNativeStakingTransaction({
+      signature: 'function requestValidatorsExit(bytes) external',
+      ...args,
+    });
+  }
+
+  public async findWithdrawTransaction(args: {
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
+    return this.findNativeStakingTransaction({
+      signature: 'function batchWithdrawCLFee(bytes) external',
+      ...args,
+    });
+  }
+
+  private async findNativeStakingTransaction(args: {
+    signature: string;
+    chainId: string;
+    to?: `0x${string}`;
+    data: `0x${string}`;
+  }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
     const transaction = this.transactionFinder.findTransaction(
       (transaction) =>
-        transaction.data.startsWith(toFunctionSelector(signature)),
+        transaction.data.startsWith(toFunctionSelector(args.signature)),
       args,
     );
 
