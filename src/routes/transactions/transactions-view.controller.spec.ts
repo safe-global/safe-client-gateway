@@ -30,7 +30,11 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { faker } from '@faker-js/faker';
-import { INestApplication, NotFoundException } from '@nestjs/common';
+import {
+  INestApplication,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Server } from 'net';
 import request from 'supertest';
@@ -659,6 +663,100 @@ describe('TransactionsViewController tests', () => {
             });
         });
 
+        it('returns the native staking `deposit` confirmation view using local decoding', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+          const networkStats = networkStatsBuilder().build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function deposit() external payable']),
+          });
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/kiln-stats`:
+                return Promise.resolve({
+                  data: { data: dedicatedStakingStats },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.reject(new ServiceUnavailableException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          const annualNrr =
+            dedicatedStakingStats.gross_apy.last_30d *
+            (1 - Number(deployment.product_fee));
+          const monthlyNrr = annualNrr / 12;
+          const expectedAnnualReward = (annualNrr / 100) * Number(value);
+          const expectedMonthlyReward = expectedAnnualReward / 12;
+          const expectedFiatAnnualReward =
+            (expectedAnnualReward * networkStats.eth_price_usd) /
+            Math.pow(10, chain.nativeCurrency.decimals);
+          const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+              value,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_NATIVE_STAKING_DEPOSIT',
+              method: 'deposit',
+              status: 'SIGNATURE_NEEDED',
+              parameters: [],
+              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              fee: +deployment.product_fee!,
+              monthlyNrr,
+              annualNrr,
+              value,
+              numValidators: 2,
+              expectedAnnualReward: getNumberString(expectedAnnualReward),
+              expectedMonthlyReward: getNumberString(expectedMonthlyReward),
+              expectedFiatAnnualReward,
+              expectedFiatMonthlyReward,
+              tokenInfo: {
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                logoUri: chain.nativeCurrency.logoUri,
+                name: chain.nativeCurrency.name,
+                symbol: chain.nativeCurrency.symbol,
+                trusted: true,
+              },
+            });
+        });
+
         it('returns the dedicated staking `deposit` confirmation view from batch', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
           const dataDecoded = dataDecodedBuilder().build();
@@ -1184,6 +1282,85 @@ describe('TransactionsViewController tests', () => {
             });
         });
 
+        it('returns the native staking `validators exit` confirmation view using local decoding', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const networkStats = networkStatsBuilder().build();
+          const validatorPublicKey = faker.string.hexadecimal({ length: 96 });
+          const data = encodeFunctionData({
+            abi: parseAbi(['function requestValidatorsExit(bytes)']),
+            functionName: 'requestValidatorsExit',
+            args: [validatorPublicKey as `0x${string}`],
+          });
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.reject(new ServiceUnavailableException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              data,
+              value,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_NATIVE_STAKING_VALIDATORS_EXIT',
+              method: 'requestValidatorsExit',
+              parameters: [
+                {
+                  name: '_publicKeys',
+                  type: 'bytes',
+                  value: validatorPublicKey.toLowerCase(),
+                  valueDecoded: null,
+                },
+              ],
+              status: 'SIGNATURE_NEEDED',
+              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedWithdrawalTime:
+                networkStats.estimated_withdrawal_time_seconds,
+              value,
+              numValidators: 2,
+              tokenInfo: {
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                logoUri: chain.nativeCurrency.logoUri,
+                name: chain.nativeCurrency.name,
+                symbol: chain.nativeCurrency.symbol,
+                trusted: true,
+              },
+            });
+        });
+
         it('returns the generic confirmation view if the deployment is not available', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
           const dataDecoded = dataDecodedBuilder().build();
@@ -1514,6 +1691,79 @@ describe('TransactionsViewController tests', () => {
               type: 'KILN_NATIVE_STAKING_WITHDRAW',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
+              value,
+              tokenInfo: {
+                address: NULL_ADDRESS,
+                decimals: chain.nativeCurrency.decimals,
+                logoUri: chain.nativeCurrency.logoUri,
+                name: chain.nativeCurrency.name,
+                symbol: chain.nativeCurrency.symbol,
+                trusted: true,
+              },
+            });
+        });
+
+        it('returns the native staking `withdraw` confirmation view using local decoding', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const validatorPublicKeys = [
+            faker.string.hexadecimal({ length: 96 }),
+            faker.string.hexadecimal({ length: 96 }),
+          ];
+          // Case where several validators holdings are being withdrawn
+          const concatPublicKeys = `0x${validatorPublicKeys[0].slice(2)}${validatorPublicKeys[1].slice(2)}`;
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safeAddress = faker.finance.ethereumAddress();
+          const data = encodeFunctionData({
+            abi: parseAbi(['function batchWithdrawCLFee(bytes)']),
+            functionName: 'batchWithdrawCLFee',
+            args: [`${concatPublicKeys}` as `0x${string}`],
+          });
+          const value = faker.string.numeric();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.reject(new ServiceUnavailableException());
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/safes/${safeAddress}/views/transaction-confirmation`,
+            )
+            .send({
+              to: deployment.address,
+              value,
+              data,
+            })
+            .expect(200)
+            .expect({
+              type: 'KILN_NATIVE_STAKING_WITHDRAW',
+              method: 'batchWithdrawCLFee',
+              parameters: [
+                {
+                  name: '_publicKeys',
+                  type: 'bytes',
+                  value: concatPublicKeys.toLowerCase(),
+                  valueDecoded: null,
+                },
+              ],
               value,
               tokenInfo: {
                 address: NULL_ADDRESS,
