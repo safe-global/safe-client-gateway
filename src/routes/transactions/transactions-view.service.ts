@@ -1,6 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { OrderStatus } from '@/domain/swaps/entities/order.entity';
@@ -43,6 +44,7 @@ export class TransactionsViewService {
     private readonly configurationService: IConfigurationService,
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
+    private readonly kilnDecoder: KilnDecoder,
   ) {
     this.isNativeStakingEnabled = this.configurationService.getOrThrow<boolean>(
       'features.nativeStaking',
@@ -61,7 +63,6 @@ export class TransactionsViewService {
         to: args.transactionDataDto.to,
       })
       .catch(() => {
-        // TODO: Get Kiln to verify all deployments
         // Fallback for unverified contracts
         return {
           method: '',
@@ -316,6 +317,13 @@ export class TransactionsViewService {
     dataDecoded: DataDecoded;
     value: string | null;
   }): Promise<NativeStakingDepositConfirmationView> {
+    const dataDecoded =
+      args.dataDecoded.method !== ''
+        ? args.dataDecoded
+        : this.kilnDecoder.decodeDeposit(args.data);
+    if (!dataDecoded) {
+      throw new Error('Transaction data could not be decoded');
+    }
     const depositInfo = await this.nativeStakingMapper.mapDepositInfo({
       chainId: args.chainId,
       to: args.to,
@@ -324,8 +332,8 @@ export class TransactionsViewService {
       depositExecutionDate: null,
     });
     return new NativeStakingDepositConfirmationView({
-      method: args.dataDecoded.method,
-      parameters: args.dataDecoded.parameters,
+      method: dataDecoded.method,
+      parameters: dataDecoded.parameters,
       ...depositInfo,
     });
   }
@@ -337,6 +345,13 @@ export class TransactionsViewService {
     dataDecoded: DataDecoded;
     value: string | null;
   }): Promise<NativeStakingValidatorsExitConfirmationView> {
+    const dataDecoded =
+      args.dataDecoded.method !== ''
+        ? args.dataDecoded
+        : this.kilnDecoder.decodeValidatorsExit(args.data);
+    if (!dataDecoded) {
+      throw new Error('Transaction data could not be decoded');
+    }
     const validatorsExitInfo =
       await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId: args.chainId,
@@ -345,8 +360,8 @@ export class TransactionsViewService {
         transaction: null,
       });
     return new NativeStakingValidatorsExitConfirmationView({
-      method: args.dataDecoded.method,
-      parameters: args.dataDecoded.parameters,
+      method: dataDecoded.method,
+      parameters: dataDecoded.parameters,
       ...validatorsExitInfo,
     });
   }
@@ -358,6 +373,13 @@ export class TransactionsViewService {
     dataDecoded: DataDecoded;
     value: string | null;
   }): Promise<NativeStakingWithdrawConfirmationView> {
+    const dataDecoded =
+      args.dataDecoded.method !== ''
+        ? args.dataDecoded
+        : this.kilnDecoder.decodeBatchWithdrawCLFee(args.data);
+    if (!dataDecoded) {
+      throw new Error('Transaction data could not be decoded');
+    }
     const withdrawInfo = await this.nativeStakingMapper.mapWithdrawInfo({
       chainId: args.chainId,
       to: args.to,
@@ -365,8 +387,8 @@ export class TransactionsViewService {
       transaction: null,
     });
     return new NativeStakingWithdrawConfirmationView({
-      method: args.dataDecoded.method,
-      parameters: args.dataDecoded.parameters,
+      method: dataDecoded.method,
+      parameters: dataDecoded.parameters,
       ...withdrawInfo,
     });
   }
