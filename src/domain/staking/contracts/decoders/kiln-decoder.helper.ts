@@ -43,7 +43,9 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     super(KilnAbi);
   }
 
-  decodeDeposit(data: `0x${string}`): { parameters: [] } | null {
+  decodeDeposit(
+    data: `0x${string}`,
+  ): { method: string; parameters: [] } | null {
     if (!this.helpers.isDeposit(data)) {
       return null;
     }
@@ -53,6 +55,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
         throw new Error('Data is not of deposit type');
       }
       return {
+        method: decoded.functionName,
         parameters: [],
       };
     } catch (e) {
@@ -62,6 +65,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
   }
 
   decodeValidatorsExit(data: `0x${string}`): {
+    method: string;
     parameters: KilnRequestValidatorsExitParameters[];
   } | null {
     if (!this.helpers.isRequestValidatorsExit(data)) {
@@ -73,6 +77,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
         throw new Error('Data is not of requestValidatorsExit type');
       }
       return {
+        method: decoded.functionName,
         parameters: [
           {
             name: '_publicKeys',
@@ -89,6 +94,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
   }
 
   decodeBatchWithdrawCLFee(data: `0x${string}`): {
+    method: string;
     parameters: KilnBatchWithdrawCLFeeParameters[];
   } | null {
     if (!this.helpers.isBatchWithdrawCLFee(data)) {
@@ -100,6 +106,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
         throw new Error('Data is not of batchWithdrawCLFee type');
       }
       return {
+        method: decoded.functionName,
         parameters: [
           {
             name: '_publicKeys',

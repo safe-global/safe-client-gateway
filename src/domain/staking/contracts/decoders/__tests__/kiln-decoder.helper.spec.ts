@@ -28,6 +28,7 @@ describe('KilnDecoder', () => {
         args: [],
       });
       expect(kilnDecoder.decodeDeposit(data)).toEqual({
+        method: 'deposit',
         parameters: [],
       });
     });
@@ -58,6 +59,7 @@ describe('KilnDecoder', () => {
         args: [validatorsPublicKeys],
       });
       expect(kilnDecoder.decodeValidatorsExit(data)).toEqual({
+        method: 'requestValidatorsExit',
         parameters: [
           {
             name: '_publicKeys',
@@ -95,6 +97,7 @@ describe('KilnDecoder', () => {
         args: [validatorsPublicKeys],
       });
       expect(kilnDecoder.decodeBatchWithdrawCLFee(data)).toEqual({
+        method: 'batchWithdrawCLFee',
         parameters: [
           {
             name: '_publicKeys',

@@ -636,7 +636,7 @@ describe('TransactionsViewController tests', () => {
             .expect(200)
             .expect({
               type: 'KILN_NATIVE_STAKING_DEPOSIT',
-              method: 'deposit',
+              method: dataDecoded.method,
               status: 'SIGNATURE_NEEDED',
               parameters: dataDecoded.parameters,
               estimatedEntryTime: networkStats.estimated_entry_time_seconds,
@@ -827,7 +827,7 @@ describe('TransactionsViewController tests', () => {
             .expect(200)
             .expect({
               type: 'KILN_NATIVE_STAKING_DEPOSIT',
-              method: 'deposit',
+              method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               status: 'SIGNATURE_NEEDED',
               estimatedEntryTime: networkStats.estimated_entry_time_seconds,
@@ -1263,7 +1263,7 @@ describe('TransactionsViewController tests', () => {
             .expect(200)
             .expect({
               type: 'KILN_NATIVE_STAKING_VALIDATORS_EXIT',
-              method: 'requestValidatorsExit',
+              method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               status: 'SIGNATURE_NEEDED',
               estimatedExitTime: networkStats.estimated_exit_time_seconds,
@@ -1689,7 +1689,7 @@ describe('TransactionsViewController tests', () => {
             .expect(200)
             .expect({
               type: 'KILN_NATIVE_STAKING_WITHDRAW',
-              method: 'batchWithdrawCLFee',
+              method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               value,
               tokenInfo: {

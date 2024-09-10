@@ -332,7 +332,7 @@ export class TransactionsViewService {
       depositExecutionDate: null,
     });
     return new NativeStakingDepositConfirmationView({
-      method: 'deposit',
+      method: dataDecoded.method,
       parameters: dataDecoded.parameters,
       ...depositInfo,
     });
@@ -360,7 +360,7 @@ export class TransactionsViewService {
         transaction: null,
       });
     return new NativeStakingValidatorsExitConfirmationView({
-      method: 'requestValidatorsExit',
+      method: dataDecoded.method,
       parameters: dataDecoded.parameters,
       ...validatorsExitInfo,
     });
@@ -387,7 +387,7 @@ export class TransactionsViewService {
       transaction: null,
     });
     return new NativeStakingWithdrawConfirmationView({
-      method: 'batchWithdrawCLFee',
+      method: dataDecoded.method,
       parameters: dataDecoded.parameters,
       ...withdrawInfo,
     });
