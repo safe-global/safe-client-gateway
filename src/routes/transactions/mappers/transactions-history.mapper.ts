@@ -52,7 +52,7 @@ export class TransactionsHistoryMapper {
     timezoneOffset: number,
     onlyTrusted: boolean,
     showImitations: boolean,
-    timezoneId?: string,
+    timezone?: string,
   ): Promise<Array<TransactionItem | DateLabel>> {
     if (transactionsDomain.length == 0) {
       return [];
@@ -79,7 +79,7 @@ export class TransactionsHistoryMapper {
     const transactionsByDay = this.groupByDay(
       mappedTransactions,
       timezoneOffset,
-      timezoneId,
+      timezone,
     );
     return transactionsByDay.reduce<Array<TransactionItem | DateLabel>>(
       (transactionList, transactionsOnDay) => {
@@ -164,7 +164,7 @@ export class TransactionsHistoryMapper {
   private groupByDay(
     transactions: TransactionItem[],
     timezoneOffset: number,
-    timezoneId?: string,
+    timezone?: string,
   ): TransactionItem[][] {
     const grouped = groupBy(transactions, ({ transaction }) => {
       // timestamp will always be defined for historical transactions
@@ -172,7 +172,7 @@ export class TransactionsHistoryMapper {
       return this.getDayStartForDate(
         date,
         timezoneOffset,
-        timezoneId,
+        timezone,
       ).getTime();
     });
     return Object.values(grouped);
@@ -183,17 +183,17 @@ export class TransactionsHistoryMapper {
    *
    * @param timestamp - date to convert
    * @param timezoneOffset - Offset of time zone in milliseconds
-   * @param {string} timezoneId - If timezone id is passed, timezoneOffset will be ignored
+   * @param {string} timezone - If timezone id is passed, timezoneOffset will be ignored
    */
   private getDayStartForDate(
     timestamp: Date,
     timezoneOffset: number,
-    timezoneId?: string,
+    timezone?: string,
   ): Date {
-    if (timezoneId) {
-      // The following check is there to make sure we do not get undefined if the timezoneId is invalid
+    if (timezone) {
+      // The following check is there to make sure we do not get undefined if the timezone is invalid
       // but it should never happen as we are already validating the timestamp
-      return convertToTimezone(timestamp, timezoneId) ?? timestamp;
+      return convertToTimezone(timestamp, timezone) ?? timestamp;
     }
 
     return calculateTimezoneOffset(timestamp, timezoneOffset);

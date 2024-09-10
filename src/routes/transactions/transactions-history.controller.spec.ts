@@ -433,9 +433,9 @@ describe('Transactions History Controller (Unit)', () => {
       });
   });
 
-  it('Should group transactions according to timezoneId', async () => {
+  it('Should group transactions according to timezone', async () => {
     const safeAddress = faker.finance.ethereumAddress();
-    const timezoneId = 'Europe/Berlin';
+    const timezone = 'Europe/Berlin';
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
     const moduleTransaction1 = moduleTransactionBuilder()
@@ -478,7 +478,7 @@ describe('Transactions History Controller (Unit)', () => {
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezoneId=${timezoneId}`,
+        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone=${timezone}`,
       )
       .expect(200)
       .then(({ body }) => {
