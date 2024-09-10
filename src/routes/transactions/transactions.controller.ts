@@ -247,7 +247,7 @@ export class TransactionsController {
     trusted: boolean,
     @Query('imitation', new DefaultValuePipe(true), ParseBoolPipe)
     imitation: boolean,
-    @Query('timezone', new ValidationPipe(TimezoneSchema))
+    @Query('timezone', new ValidationPipe(TimezoneSchema.optional()))
     timezone?: string,
   ): Promise<Partial<TransactionItemPage>> {
     return this.transactionsService.getTransactionHistory({

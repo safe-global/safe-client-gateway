@@ -169,11 +169,7 @@ export class TransactionsHistoryMapper {
     const grouped = groupBy(transactions, ({ transaction }) => {
       // timestamp will always be defined for historical transactions
       const date = new Date(transaction.timestamp ?? 0);
-      return this.getDayStartForDate(
-        date,
-        timezoneOffset,
-        timezone,
-      ).getTime();
+      return this.getDayStartForDate(date, timezoneOffset, timezone).getTime();
     });
     return Object.values(grouped);
   }
