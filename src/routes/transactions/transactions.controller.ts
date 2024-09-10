@@ -232,7 +232,12 @@ export class TransactionsController {
 
   @ApiOkResponse({ type: TransactionItemPage })
   @Get('chains/:chainId/safes/:safeAddress/transactions/history')
-  @ApiQuery({ name: 'timezone_offset', required: false, type: String })
+  @ApiQuery({
+    name: 'timezone_offset',
+    required: false,
+    type: String,
+    deprecated: true,
+  })
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'timezone', required: false, type: String })
   async getTransactionsHistory(
