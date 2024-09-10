@@ -64,15 +64,10 @@ export class TransactionsViewService {
       })
       .catch(() => {
         // Fallback for unverified contracts
-        const { data } = args.transactionDataDto;
-        const fallbackDataDecoded =
-          this.kilnDecoder.decodeDeposit(data) ??
-          this.kilnDecoder.decodeValidatorsExit(data) ??
-          this.kilnDecoder.decodeBatchWithdrawCLFee(data);
-        if (!fallbackDataDecoded) {
-          throw new Error('Transaction data could not be decoded');
-        }
-        return fallbackDataDecoded;
+        return {
+          method: '',
+          parameters: null,
+        };
       });
 
     const swapOrderData = this.swapOrderHelper.findSwapOrder(
@@ -322,6 +317,13 @@ export class TransactionsViewService {
     dataDecoded: DataDecoded;
     value: string | null;
   }): Promise<NativeStakingDepositConfirmationView> {
+    const dataDecoded =
+      args.dataDecoded.method !== ''
+        ? args.dataDecoded
+        : this.kilnDecoder.decodeDeposit(args.data);
+    if (!dataDecoded) {
+      throw new Error('Transaction data could not be decoded');
+    }
     const depositInfo = await this.nativeStakingMapper.mapDepositInfo({
       chainId: args.chainId,
       to: args.to,
@@ -330,8 +332,8 @@ export class TransactionsViewService {
       depositExecutionDate: null,
     });
     return new NativeStakingDepositConfirmationView({
-      method: args.dataDecoded.method,
-      parameters: args.dataDecoded.parameters,
+      method: 'deposit',
+      parameters: dataDecoded.parameters,
       ...depositInfo,
     });
   }
@@ -343,6 +345,13 @@ export class TransactionsViewService {
     dataDecoded: DataDecoded;
     value: string | null;
   }): Promise<NativeStakingValidatorsExitConfirmationView> {
+    const dataDecoded =
+      args.dataDecoded.method !== ''
+        ? args.dataDecoded
+        : this.kilnDecoder.decodeValidatorsExit(args.data);
+    if (!dataDecoded) {
+      throw new Error('Transaction data could not be decoded');
+    }
     const validatorsExitInfo =
       await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId: args.chainId,
@@ -351,8 +360,8 @@ export class TransactionsViewService {
         transaction: null,
       });
     return new NativeStakingValidatorsExitConfirmationView({
-      method: args.dataDecoded.method,
-      parameters: args.dataDecoded.parameters,
+      method: 'requestValidatorsExit',
+      parameters: dataDecoded.parameters,
       ...validatorsExitInfo,
     });
   }
@@ -364,6 +373,13 @@ export class TransactionsViewService {
     dataDecoded: DataDecoded;
     value: string | null;
   }): Promise<NativeStakingWithdrawConfirmationView> {
+    const dataDecoded =
+      args.dataDecoded.method !== ''
+        ? args.dataDecoded
+        : this.kilnDecoder.decodeBatchWithdrawCLFee(args.data);
+    if (!dataDecoded) {
+      throw new Error('Transaction data could not be decoded');
+    }
     const withdrawInfo = await this.nativeStakingMapper.mapWithdrawInfo({
       chainId: args.chainId,
       to: args.to,
@@ -371,8 +387,8 @@ export class TransactionsViewService {
       transaction: null,
     });
     return new NativeStakingWithdrawConfirmationView({
-      method: args.dataDecoded.method,
-      parameters: args.dataDecoded.parameters,
+      method: 'batchWithdrawCLFee',
+      parameters: dataDecoded.parameters,
       ...withdrawInfo,
     });
   }
