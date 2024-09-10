@@ -17,6 +17,10 @@ import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisi
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { TransferImitationMapper } from '@/routes/transactions/mappers/transfers/transfer-imitation.mapper';
+import {
+  calculateTimezoneOffset,
+  convertToTimezone,
+} from '@/routes/transactions/helpers/timezone.helper';
 
 @Injectable()
 export class TransactionsHistoryMapper {
@@ -48,6 +52,7 @@ export class TransactionsHistoryMapper {
     timezoneOffset: number,
     onlyTrusted: boolean,
     showImitations: boolean,
+    timezoneId?: string,
   ): Promise<Array<TransactionItem | DateLabel>> {
     if (transactionsDomain.length == 0) {
       return [];
@@ -74,6 +79,7 @@ export class TransactionsHistoryMapper {
     const transactionsByDay = this.groupByDay(
       mappedTransactions,
       timezoneOffset,
+      timezoneId,
     );
     return transactionsByDay.reduce<Array<TransactionItem | DateLabel>>(
       (transactionList, transactionsOnDay) => {
@@ -158,11 +164,16 @@ export class TransactionsHistoryMapper {
   private groupByDay(
     transactions: TransactionItem[],
     timezoneOffset: number,
+    timezoneId?: string,
   ): TransactionItem[][] {
     const grouped = groupBy(transactions, ({ transaction }) => {
       // timestamp will always be defined for historical transactions
       const date = new Date(transaction.timestamp ?? 0);
-      return this.getDayStartForDate(date, timezoneOffset).getTime();
+      return this.getDayStartForDate(
+        date,
+        timezoneOffset,
+        timezoneId,
+      ).getTime();
     });
     return Object.values(grouped);
   }
@@ -172,13 +183,20 @@ export class TransactionsHistoryMapper {
    *
    * @param timestamp - date to convert
    * @param timezoneOffset - Offset of time zone in milliseconds
+   * @param {string} timezoneId - If timezone id is passed, timezoneOffset will be ignored
    */
-  private getDayStartForDate(timestamp: Date, timezoneOffset: number): Date {
-    const date = structuredClone(timestamp);
-    date.setTime(date.getTime() + timezoneOffset);
-    return new Date(
-      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-    );
+  private getDayStartForDate(
+    timestamp: Date,
+    timezoneOffset: number,
+    timezoneId?: string,
+  ): Date {
+    if (timezoneId) {
+      // The following check is there to make sure we do not get undefined if the timezoneId is invalid
+      // but it should never happen as we are already validating the timestamp
+      return convertToTimezone(timestamp, timezoneId) ?? timestamp;
+    }
+
+    return calculateTimezoneOffset(timestamp, timezoneOffset);
   }
 
   private async mapTransfers(
