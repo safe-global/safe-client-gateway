@@ -16,12 +16,4 @@ describe('TimezoneSchema()', () => {
 
     expect(result.success).toBe(false);
   });
-
-  it('Should return true and not validate if the timezone is not provided', () => {
-    const input = undefined;
-
-    const result = TimezoneSchema.safeParse(input);
-
-    expect(result.success).toBe(true);
-  });
 });

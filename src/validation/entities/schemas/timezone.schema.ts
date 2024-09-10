@@ -4,16 +4,14 @@ import { z } from 'zod';
  * Validates a timezone schema
  *    i.e. whether or not our Node version supports timezone and the timezone is valid
  *
- * @param {string | undefined} timezone The timezone string to check for validity
+ * @param {string} timezone The timezone string to check for validity
  *
  * @returns {boolean} Returns 'true' if the timezone is valid, otherwise 'false'
  */
 export const TimezoneSchema = z.string().refine(
-  (timezone: string | undefined): boolean => {
-    if (timezone) {
-      if (!isTimezoneEnabled() || !isTimezoneValid(timezone)) {
-        return false;
-      }
+  (timezone: string): boolean => {
+    if (!isTimezoneEnabled() || !isTimezoneValid(timezone)) {
+      return false;
     }
 
     return true;
