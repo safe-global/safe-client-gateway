@@ -186,13 +186,9 @@ export class TransactionsHistoryMapper {
     timezoneOffset: number,
     timezone?: string,
   ): Date {
-    if (timezone) {
-      // The following check is there to make sure we do not get undefined if the timezone is invalid
-      // but it should never happen as we are already validating the timestamp
-      return convertToTimezone(timestamp, timezone) ?? timestamp;
-    }
-
-    return calculateTimezoneOffset(timestamp, timezoneOffset);
+    return timezone
+      ? convertToTimezone(timestamp, timezone)
+      : calculateTimezoneOffset(timestamp, timezoneOffset);
   }
 
   private async mapTransfers(

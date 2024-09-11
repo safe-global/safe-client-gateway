@@ -3,6 +3,13 @@ import {
   convertToTimezone,
 } from '@/routes/transactions/helpers/timezone.helper';
 
+describe('Intl', () => {
+  it('Should ensure Intl timezone is enabled on server', () => {
+    expect(Intl).toBeDefined();
+    expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBeDefined();
+  });
+});
+
 describe('convertToTimezone()', () => {
   it('Should correctly convert a date to the specified timezone', () => {
     const inputTimeZone = 'Europe/Berlin';
@@ -25,13 +32,13 @@ describe('convertToTimezone()', () => {
     expect(result?.toISOString()).toBe(expectedDate.toISOString());
   });
 
-  it('Should handle invalid timezones gracefully', () => {
+  it('Should throw if an invalid timezone provided', () => {
     const date = new Date('2024-09-09T12:00:00Z'); // UTC time
     const timeZone = 'Invalid/Timezone';
 
-    const result = convertToTimezone(date, timeZone);
+    const result = (): Date => convertToTimezone(date, timeZone);
 
-    expect(result).toBeUndefined();
+    expect(result).toThrow(RangeError);
   });
 
   it('Should handle a date at midnight UTC correctly', () => {

@@ -4,24 +4,21 @@
  * @param {Date} date The date object to be converted.
  * @param {string} timeZone The target timezone (e.g., "Europe/Berlin").
  *
- * @returns {Date | undefined} A new Date object representing the date converted to the specified timezone. If an error occurs returns undefined
+ * @returns {Date} A new Date object representing the date converted to the specified timezone
+ * @throws {RangeError} Throws if an invalid timezone is sent
  */
-export const convertToTimezone = (
-  date: Date,
-  timeZone: string,
-): Date | undefined => {
-  try {
-    const convertedDate = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(date);
+export const convertToTimezone = (date: Date, timeZone: string): Date => {
+  const convertedDate = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
 
-    return new Date(convertedDate);
-  } catch {
-    return undefined;
-  }
+  const [month, day, year] = convertedDate.split('/').map(Number);
+  const zeroBasedMonth = month - 1; // JavaScript months are zero-indexed (0 for January, 11 for December), so we subtract 1
+
+  return new Date(Date.UTC(year, zeroBasedMonth, day));
 };
 
 /**
@@ -39,8 +36,7 @@ export const calculateTimezoneOffset = (
   timestamp: Date,
   timezoneOffset: number,
 ): Date => {
-  const date = structuredClone(timestamp);
-  date.setTime(date.getTime() + timezoneOffset);
+  const date = new Date(timestamp.getTime() + timezoneOffset);
 
   return new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
