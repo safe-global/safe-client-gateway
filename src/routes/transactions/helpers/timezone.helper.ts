@@ -8,14 +8,18 @@
  * @throws {RangeError} Throws if an invalid timezone is sent
  */
 export const convertToTimezone = (date: Date, timeZone: string): Date => {
-  const convertedDate = new Intl.DateTimeFormat('en-US', {
+  const convertedDateParts = new Intl.DateTimeFormat(undefined, {
     timeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(date);
+  }).formatToParts(date);
 
-  const [month, day, year] = convertedDate.split('/').map(Number);
+  const year = ~~convertedDateParts.find((part) => part.type === 'year')!.value;
+  const month = ~~convertedDateParts.find((part) => part.type === 'month')!
+    .value;
+  const day = ~~convertedDateParts.find((part) => part.type === 'day')!.value;
+
   const zeroBasedMonth = month - 1; // JavaScript months are zero-indexed (0 for January, 11 for December), so we subtract 1
 
   return new Date(Date.UTC(year, zeroBasedMonth, day));
