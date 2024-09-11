@@ -40,6 +40,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { DeleteTransactionDtoSchema } from '@/routes/transactions/entities/schemas/delete-transaction.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { CreationTransaction } from '@/routes/transactions/entities/creation-transaction.entity';
+import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
 
 @ApiTags('transactions')
 @Controller({
@@ -231,8 +232,14 @@ export class TransactionsController {
 
   @ApiOkResponse({ type: TransactionItemPage })
   @Get('chains/:chainId/safes/:safeAddress/transactions/history')
-  @ApiQuery({ name: 'timezone_offset', required: false, type: String })
+  @ApiQuery({
+    name: 'timezone_offset',
+    required: false,
+    type: String,
+    deprecated: true,
+  })
   @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'timezone', required: false, type: String })
   async getTransactionsHistory(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -245,6 +252,8 @@ export class TransactionsController {
     trusted: boolean,
     @Query('imitation', new DefaultValuePipe(true), ParseBoolPipe)
     imitation: boolean,
+    @Query('timezone', new ValidationPipe(TimezoneSchema.optional()))
+    timezone?: string,
   ): Promise<Partial<TransactionItemPage>> {
     return this.transactionsService.getTransactionHistory({
       chainId,
@@ -254,6 +263,7 @@ export class TransactionsController {
       timezoneOffsetMs,
       onlyTrusted: trusted,
       showImitations: imitation,
+      timezone,
     });
   }
 
