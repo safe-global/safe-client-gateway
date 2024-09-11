@@ -21,5 +21,5 @@ export interface IStakingApi {
     vault: `0x${string}`;
   }): Promise<Array<DefiVaultStats>>;
 
-  getStakes(validatorsPublicKeys: `0x${string}`[]): Promise<Stake[]>;
+  getStakes(validatorsPublicKeys: string): Promise<Stake[]>;
 }

@@ -29,7 +29,7 @@ export interface IStakingRepository {
 
   getStakes(args: {
     chainId: string;
-    validatorsPublicKeys: `0x${string}`[];
+    validatorsPublicKeys: string;
   }): Promise<Stake[]>;
 
   clearApi(chainId: string): void;

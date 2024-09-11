@@ -1,0 +1,1 @@
+export const STAKING_PUBLIC_KEY_LENGTH = 96;

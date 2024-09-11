@@ -358,6 +358,7 @@ export class TransactionsViewService {
         to: args.to,
         value: args.value,
         transaction: null,
+        dataDecoded,
       });
     return new NativeStakingValidatorsExitConfirmationView({
       method: dataDecoded.method,
@@ -385,6 +386,7 @@ export class TransactionsViewService {
       to: args.to,
       value: args.value,
       transaction: null,
+      dataDecoded,
     });
     return new NativeStakingWithdrawConfirmationView({
       method: dataDecoded.method,

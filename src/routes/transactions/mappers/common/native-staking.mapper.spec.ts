@@ -13,6 +13,7 @@ import {
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { STAKING_PUBLIC_KEY_LENGTH } from '@/domain/staking/constants';
 import { StakingRepository } from '@/domain/staking/staking.repository';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
@@ -379,42 +380,36 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'dedicated')
         .build();
       const networkStats = networkStatsBuilder().build();
+      const stakes = [stakeBuilder().build()];
+      const validatorPublicKey = faker.string.hexadecimal({
+        length: STAKING_PUBLIC_KEY_LENGTH * 3,
+      }); // 3 validators
+      const dataDecoded = dataDecodedBuilder()
+        .with('method', 'requestValidatorsExit')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', '_publicKeys')
+            .with('type', 'bytes')
+            .with('value', validatorPublicKey)
+            .build(),
+        ])
+        .build();
       const transaction = multisigTransactionBuilder()
         .with('confirmationsRequired', 2) // 2 confirmations required
         .with('confirmations', [confirmationBuilder().build()]) // only 1 confirmation
-        .with(
-          'dataDecoded',
-          dataDecodedBuilder()
-            .with('method', 'requestValidatorsExit')
-            .with('parameters', [
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-            ])
-            .build(),
-        )
+        .with('dataDecoded', dataDecoded)
         .build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getStakes.mockResolvedValue(stakes);
 
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
         to: deployment.address,
         value: null,
         transaction,
+        dataDecoded,
       });
 
       expect(actual).toEqual(
@@ -426,6 +421,7 @@ describe('NativeStakingMapper', () => {
             networkStats.estimated_withdrawal_time_seconds,
           value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
           numValidators: 3, // 3 public keys in the transaction data => 3 validators
+          rewards: stakes[0].rewards,
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -444,6 +440,23 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'dedicated')
         .build();
       const networkStats = networkStatsBuilder().build();
+      const stakes = [
+        stakeBuilder().with('rewards', '2').build(),
+        stakeBuilder().with('rewards', '3').build(),
+      ];
+      const validatorPublicKey = faker.string.hexadecimal({
+        length: STAKING_PUBLIC_KEY_LENGTH * 3,
+      }); // 3 validators
+      const dataDecoded = dataDecodedBuilder()
+        .with('method', 'requestValidatorsExit')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', '_publicKeys')
+            .with('type', 'bytes')
+            .with('value', validatorPublicKey)
+            .build(),
+        ])
+        .build();
       const transaction = multisigTransactionBuilder()
         .with('confirmationsRequired', 2) // 2 confirmations required
         .with('confirmations', [
@@ -451,39 +464,19 @@ describe('NativeStakingMapper', () => {
           confirmationBuilder().build(),
         ]) // 2 confirmations received
         .with('executionDate', null) // not executed
-        .with(
-          'dataDecoded',
-          dataDecodedBuilder()
-            .with('method', 'requestValidatorsExit')
-            .with('parameters', [
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-            ])
-            .build(),
-        )
+        .with('dataDecoded', dataDecoded)
         .build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getStakes.mockResolvedValue(stakes);
 
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
         to: deployment.address,
         value: null,
         transaction,
+        dataDecoded,
       });
 
       expect(actual).toEqual(
@@ -495,6 +488,7 @@ describe('NativeStakingMapper', () => {
             networkStats.estimated_withdrawal_time_seconds,
           value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
           numValidators: 3, // 3 public keys in the transaction data => 3 validators
+          rewards: '5',
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -515,6 +509,20 @@ describe('NativeStakingMapper', () => {
       const networkStats = networkStatsBuilder()
         .with('estimated_exit_time_seconds', 2)
         .build();
+      const stakes = [stakeBuilder().build()];
+      const validatorPublicKey = faker.string.hexadecimal({
+        length: STAKING_PUBLIC_KEY_LENGTH * 3,
+      }); // 3 validators
+      const dataDecoded = dataDecodedBuilder()
+        .with('method', 'requestValidatorsExit')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', '_publicKeys')
+            .with('type', 'bytes')
+            .with('value', validatorPublicKey)
+            .build(),
+        ])
+        .build();
       const executionDate = jest.now();
       jest.advanceTimersByTime(1_000);
       const transaction = multisigTransactionBuilder()
@@ -524,39 +532,19 @@ describe('NativeStakingMapper', () => {
           confirmationBuilder().build(),
         ]) // 2 confirmations received
         .with('executionDate', new Date(executionDate)) // execution date < now + exit period
-        .with(
-          'dataDecoded',
-          dataDecodedBuilder()
-            .with('method', 'requestValidatorsExit')
-            .with('parameters', [
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-            ])
-            .build(),
-        )
+        .with('dataDecoded', dataDecoded)
         .build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getStakes.mockResolvedValue(stakes);
 
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
         to: deployment.address,
         value: null,
         transaction,
+        dataDecoded,
       });
 
       expect(actual).toEqual(
@@ -568,6 +556,7 @@ describe('NativeStakingMapper', () => {
             networkStats.estimated_withdrawal_time_seconds,
           value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
           numValidators: 3, // 3 public keys in the transaction data => 3 validators
+          rewards: stakes[0].rewards,
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -588,6 +577,20 @@ describe('NativeStakingMapper', () => {
       const networkStats = networkStatsBuilder()
         .with('estimated_exit_time_seconds', 2)
         .build();
+      const stakes = [stakeBuilder().build()];
+      const validatorPublicKey = faker.string.hexadecimal({
+        length: STAKING_PUBLIC_KEY_LENGTH * 2,
+      }); // 2 validators
+      const dataDecoded = dataDecodedBuilder()
+        .with('method', 'requestValidatorsExit')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', '_publicKeys')
+            .with('type', 'bytes')
+            .with('value', validatorPublicKey)
+            .build(),
+        ])
+        .build();
       const executionDate = jest.now();
       jest.advanceTimersByTime(3_000); // now > execution time + exit period
       const transaction = multisigTransactionBuilder()
@@ -597,39 +600,19 @@ describe('NativeStakingMapper', () => {
           confirmationBuilder().build(),
         ]) // 2 confirmations received
         .with('executionDate', new Date(executionDate))
-        .with(
-          'dataDecoded',
-          dataDecodedBuilder()
-            .with('method', 'requestValidatorsExit')
-            .with('parameters', [
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', faker.finance.ethereumAddress())
-                .build(),
-            ])
-            .build(),
-        )
+        .with('dataDecoded', dataDecoded)
         .build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getStakes.mockResolvedValue(stakes);
 
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
         to: deployment.address,
         value: null,
         transaction,
+        dataDecoded,
       });
 
       expect(actual).toEqual(
@@ -639,8 +622,9 @@ describe('NativeStakingMapper', () => {
           estimatedExitTime: networkStats.estimated_exit_time_seconds,
           estimatedWithdrawalTime:
             networkStats.estimated_withdrawal_time_seconds,
-          value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
-          numValidators: 3, // 3 public keys in the transaction data => 3 validators
+          value: '64000000000000000000', // 2 public keys in the transaction data => 2 validators * 32 eth
+          numValidators: 2, // 2 public keys in the transaction data => 2 validators
+          rewards: stakes[0].rewards,
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -659,7 +643,10 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'defi')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const transaction = multisigTransactionBuilder().build();
+      const dataDecoded = dataDecodedBuilder().build();
+      const transaction = multisigTransactionBuilder()
+        .with('dataDecoded', dataDecoded)
+        .build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -670,6 +657,7 @@ describe('NativeStakingMapper', () => {
           to: deployment.address,
           value: null,
           transaction,
+          dataDecoded,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });
@@ -681,7 +669,10 @@ describe('NativeStakingMapper', () => {
         .with('chain', 'unknown')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const transaction = multisigTransactionBuilder().build();
+      const dataDecoded = dataDecodedBuilder().build();
+      const transaction = multisigTransactionBuilder()
+        .with('dataDecoded', dataDecoded)
+        .build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -692,6 +683,7 @@ describe('NativeStakingMapper', () => {
           to: deployment.address,
           value: null,
           transaction,
+          dataDecoded,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });
@@ -703,7 +695,10 @@ describe('NativeStakingMapper', () => {
         .with('status', 'unknown')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const transaction = multisigTransactionBuilder().build();
+      const dataDecoded = dataDecodedBuilder().build();
+      const transaction = multisigTransactionBuilder()
+        .with('dataDecoded', dataDecoded)
+        .build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -714,6 +709,7 @@ describe('NativeStakingMapper', () => {
           to: deployment.address,
           value: null,
           transaction,
+          dataDecoded,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });
@@ -726,37 +722,23 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'dedicated')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const publicKeys = [
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
-        faker.finance.ethereumAddress(),
-      ];
+      const validatorPublicKey = faker.string.hexadecimal({
+        length: STAKING_PUBLIC_KEY_LENGTH * 2,
+      }); // 2 validators
+      const dataDecoded = dataDecodedBuilder()
+        .with('method', 'requestValidatorsExit')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', '_publicKeys')
+            .with('type', 'bytes')
+            .with('value', validatorPublicKey)
+            .build(),
+        ])
+        .build();
       const transaction = multisigTransactionBuilder()
         .with('confirmationsRequired', 2) // 2 confirmations required
         .with('confirmations', [confirmationBuilder().build()]) // only 1 confirmation
-        .with(
-          'dataDecoded',
-          dataDecodedBuilder()
-            .with('method', 'batchWithdrawCLFee')
-            .with('parameters', [
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', publicKeys[0])
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', publicKeys[1])
-                .build(),
-              dataDecodedParameterBuilder()
-                .with('name', '_publicKeys')
-                .with('type', 'bytes')
-                .with('value', publicKeys[2])
-                .build(),
-            ])
-            .build(),
-        )
+        .with('dataDecoded', dataDecoded)
         .build();
       const stakes = [
         stakeBuilder().with('rewards', '3.25').build(),
@@ -773,12 +755,14 @@ describe('NativeStakingMapper', () => {
         to: deployment.address,
         value: null,
         transaction,
+        dataDecoded,
       });
 
       expect(actual).toEqual(
         expect.objectContaining({
           type: 'NativeStakingWithdraw',
-          value: '5.5', // stakes rewards sum
+          value: '64000000000000000000',
+          rewards: '5.5', // stakes rewards sum
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -792,7 +776,7 @@ describe('NativeStakingMapper', () => {
 
       expect(mockStakingRepository.getStakes).toHaveBeenCalledWith({
         chainId: chain.chainId,
-        validatorsPublicKeys: publicKeys,
+        validatorsPublicKeys: `${validatorPublicKey.slice(2, STAKING_PUBLIC_KEY_LENGTH + 2)},${validatorPublicKey.slice(STAKING_PUBLIC_KEY_LENGTH + 2)}`,
       });
     });
 
@@ -803,6 +787,7 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const transaction = multisigTransactionBuilder().build();
+      const dataDecoded = dataDecodedBuilder().build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -813,6 +798,7 @@ describe('NativeStakingMapper', () => {
           to: deployment.address,
           value: null,
           transaction,
+          dataDecoded,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });
@@ -825,6 +811,7 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const transaction = multisigTransactionBuilder().build();
+      const dataDecoded = dataDecodedBuilder().build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -835,6 +822,7 @@ describe('NativeStakingMapper', () => {
           to: deployment.address,
           value: null,
           transaction,
+          dataDecoded,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });
@@ -847,6 +835,7 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const transaction = multisigTransactionBuilder().build();
+      const dataDecoded = dataDecodedBuilder().build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -857,6 +846,7 @@ describe('NativeStakingMapper', () => {
           to: deployment.address,
           value: null,
           transaction,
+          dataDecoded,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });

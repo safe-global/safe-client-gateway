@@ -598,14 +598,12 @@ export class CacheRouter {
    * cache key short and deterministic. Redis and other cache systems
    * may experience performance degradation with long keys.
    *
-   * @param validatorsPublicKeys - Array of validators public keys
+   * @param validatorsPublicKeys - Concatenated validators public keys
    * @returns {@link CacheDir} - Cache directory
    */
-  static getStakingStakesCacheDir(
-    validatorsPublicKeys: `0x${string}`[],
-  ): CacheDir {
+  static getStakingStakesCacheDir(validatorsPublicKeys: string): CacheDir {
     const hash = crypto.createHash('sha256');
-    hash.update(validatorsPublicKeys.join('_'));
+    hash.update(validatorsPublicKeys);
     return new CacheDir(`${this.STAKING_STAKES_KEY}_${hash.digest('hex')}`, '');
   }
 }

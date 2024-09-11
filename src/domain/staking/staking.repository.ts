@@ -93,7 +93,7 @@ export class StakingRepository implements IStakingRepository {
 
   public async getStakes(args: {
     chainId: string;
-    validatorsPublicKeys: `0x${string}`[];
+    validatorsPublicKeys: string;
   }): Promise<Stake[]> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const stakes = await stakingApi.getStakes(args.validatorsPublicKeys);

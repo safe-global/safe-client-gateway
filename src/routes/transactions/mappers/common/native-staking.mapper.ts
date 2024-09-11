@@ -9,6 +9,7 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { STAKING_PUBLIC_KEY_LENGTH } from '@/domain/staking/constants';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -126,8 +127,9 @@ export class NativeStakingMapper {
   public async mapValidatorsExitInfo(args: {
     chainId: string;
     to: `0x${string}`;
-    value: string | null;
+    value: string | null; // TODO: remove this
     transaction: MultisigTransaction | ModuleTransaction | null;
+    dataDecoded: DataDecoded | null;
   }): Promise<NativeStakingValidatorsExitTransactionInfo> {
     const [chain, deployment] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -142,15 +144,21 @@ export class NativeStakingMapper {
       args.chainId,
     );
 
-    const value = args.transaction?.dataDecoded
-      ? this.getValueFromDataDecoded(args.transaction.dataDecoded, chain)
+    const dataDecoded = args.transaction?.dataDecoded ?? args.dataDecoded;
+    const value = dataDecoded
+      ? this.getValueFromDataDecoded(dataDecoded, chain)
       : Number(args.value ?? 0);
 
+    // TODO: private getNumValidatorsFromDataDecoded(data: DataDecoded): number
     const numValidators = Math.floor(
       value /
         Math.pow(10, chain.nativeCurrency.decimals) /
         NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
     );
+
+    const rewards = dataDecoded
+      ? await this.getRewardsFromDataDecoded(dataDecoded, chain)
+      : Number(args.value ?? 0);
 
     return new NativeStakingValidatorsExitTransactionInfo({
       status: this.mapValidatorsExitStatus(networkStats, args.transaction),
@@ -158,6 +166,7 @@ export class NativeStakingMapper {
       estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
       value: getNumberString(value),
       numValidators,
+      rewards: getNumberString(rewards),
       tokenInfo: new TokenInfo({
         address: NULL_ADDRESS,
         decimals: chain.nativeCurrency.decimals,
@@ -182,8 +191,9 @@ export class NativeStakingMapper {
   public async mapWithdrawInfo(args: {
     chainId: string;
     to: `0x${string}`;
-    value: string | null;
+    value: string | null; // TODO: remove this
     transaction: MultisigTransaction | ModuleTransaction | null;
+    dataDecoded: DataDecoded | null;
   }): Promise<NativeStakingWithdrawTransactionInfo> {
     const [chain, deployment] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -194,24 +204,18 @@ export class NativeStakingMapper {
     ]);
     this.validateDeployment(deployment);
 
-    let value = Number(args.value ?? 0);
+    const dataDecoded = args.transaction?.dataDecoded ?? args.dataDecoded;
+    const value = dataDecoded
+      ? this.getValueFromDataDecoded(dataDecoded, chain)
+      : Number(args.value ?? 0);
 
-    if (args.transaction) {
-      const validatorsPublicKeys = args.transaction?.dataDecoded
-        ? this.getPublicKeysFromDataDecoded(args.transaction.dataDecoded)
-        : [];
-
-      if (validatorsPublicKeys.length > 0) {
-        const stakes = await this.stakingRepository.getStakes({
-          chainId: args.chainId,
-          validatorsPublicKeys,
-        });
-        value = stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
-      }
-    }
+    const rewards = dataDecoded
+      ? await this.getRewardsFromDataDecoded(dataDecoded, chain)
+      : Number(args.value ?? 0);
 
     return new NativeStakingWithdrawTransactionInfo({
       value: getNumberString(value),
+      rewards: getNumberString(rewards),
       tokenInfo: new TokenInfo({
         address: NULL_ADDRESS,
         decimals: chain.nativeCurrency.decimals,
@@ -308,27 +312,55 @@ export class NativeStakingMapper {
   }
   /**
    * Gets the total value to withdraw from the native staking deployment
-   * based on the amount of publicKey items in the transaction data.
+   * based on the length of the publicKeys field in the transaction data.
    *
-   * Each publicKey item represents a validator to withdraw, and each
-   * native staking validator has a fixed amount of 32 ETH to withdraw.
+   * Each {@link STAKING_PUBLIC_KEY_LENGTH} characters represent a validator to withdraw,
+   * and each native staking validator has a fixed amount of 32 ETH to withdraw.
    *
    * @param data - the decoded data of the transaction
    * @param chain - the chain where the native staking deployment lives
    * @returns the total value to withdraw from the native staking deployment
    */
   private getValueFromDataDecoded(data: DataDecoded, chain: Chain): number {
-    if (data.method === 'requestValidatorsExit') {
-      const publicKeys = this.getPublicKeysFromDataDecoded(data);
-      const decimals = chain.nativeCurrency.decimals;
-      return (
-        publicKeys.length *
-        Math.pow(10, decimals) *
-        NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR
-      );
+    const decimals = chain.nativeCurrency.decimals;
+    const publicKeys = this.getPublicKeysFromDataDecoded(data);
+    if (!publicKeys) {
+      return 0;
     }
+    const numValidators = Math.floor(
+      publicKeys.length / STAKING_PUBLIC_KEY_LENGTH,
+    ); // TODO: private getNumValidatorsFromDataDecoded(data: DataDecoded): number
+    return (
+      numValidators *
+      Math.pow(10, decimals) *
+      NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR
+    );
+  }
 
-    return 0;
+  /**
+   * Gets the rewards to withdraw from the native staking deployment
+   * based on the length of the publicKeys field in the transaction data.
+   *
+   * Each {@link STAKING_PUBLIC_KEY_LENGTH} characters represent a validator to withdraw,
+   * and each native staking validator has a fixed amount of 32 ETH to withdraw.
+   *
+   * @param data - the decoded data of the transaction
+   * @param chain - the chain where the native staking deployment lives
+   * @returns the rewards to withdraw from the native staking deployment
+   */
+  private async getRewardsFromDataDecoded(
+    data: DataDecoded,
+    chain: Chain,
+  ): Promise<number> {
+    const publicKeys = this.getPublicKeysFromDataDecoded(data);
+    if (!publicKeys) {
+      return 0;
+    }
+    const stakes = await this.stakingRepository.getStakes({
+      chainId: chain.chainId,
+      validatorsPublicKeys: this.splitPublicKeys(publicKeys).join(','),
+    });
+    return stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
   }
 
   /**
@@ -336,12 +368,37 @@ export class NativeStakingMapper {
    * @param data - the transaction decoded data.
    * @returns the public keys from the transaction decoded data.
    */
-  private getPublicKeysFromDataDecoded(data: DataDecoded): `0x${string}`[] {
-    const publicKeys =
-      data.parameters?.filter(
-        (parameter) => parameter.name === '_publicKeys',
-      ) ?? [];
-    return publicKeys.map((publicKey) => publicKey.value as `0x${string}`);
+  private getPublicKeysFromDataDecoded(
+    data: DataDecoded,
+  ): `0x${string}` | null {
+    const publicKeys = data.parameters?.find(
+      (parameter) => parameter.name === '_publicKeys',
+    );
+    return publicKeys ? (publicKeys.value as `0x${string}`) : null;
+  }
+
+  /**
+   * Splits the public keys into an array of public keys.
+   *
+   * Each {@link STAKING_PUBLIC_KEY_LENGTH} characters represent a validator to withdraw, so the public keys
+   * are split into an array of strings of length {@link STAKING_PUBLIC_KEY_LENGTH}. The initial `0x` is removed.
+   *
+   * @param publicKeys - the public keys to split
+   * @returns
+   */
+  private splitPublicKeys(publicKeys: `0x${string}`): string[] {
+    const publicKeysString = publicKeys.slice(2);
+    const publicKeysArray = [];
+    for (
+      let i = 0;
+      i < publicKeysString.length;
+      i += STAKING_PUBLIC_KEY_LENGTH
+    ) {
+      publicKeysArray.push(
+        `${publicKeysString.slice(i, i + STAKING_PUBLIC_KEY_LENGTH)}`,
+      );
+    }
+    return publicKeysArray;
   }
 }
 

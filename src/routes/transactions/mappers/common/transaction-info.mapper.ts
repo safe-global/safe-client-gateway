@@ -383,6 +383,7 @@ export class MultisigTransactionInfoMapper {
         to: nativeStakingValidatorsExitTransaction.to,
         value: transaction.value,
         transaction,
+        dataDecoded: transaction.dataDecoded,
       });
     } catch (error) {
       this.loggingService.warn(error);
@@ -415,6 +416,7 @@ export class MultisigTransactionInfoMapper {
         to: nativeStakingWithdrawTransaction.to,
         value: transaction.value,
         transaction,
+        dataDecoded: transaction.dataDecoded,
       });
     } catch (error) {
       this.loggingService.warn(error);

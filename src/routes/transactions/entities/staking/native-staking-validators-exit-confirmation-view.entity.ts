@@ -42,6 +42,9 @@ export class NativeStakingValidatorsExitConfirmationView
   numValidators: number;
 
   @ApiProperty()
+  rewards: string;
+
+  @ApiProperty()
   tokenInfo: TokenInfo;
 
   constructor(args: {
@@ -52,6 +55,7 @@ export class NativeStakingValidatorsExitConfirmationView
     estimatedWithdrawalTime: number;
     value: string;
     numValidators: number;
+    rewards: string;
     tokenInfo: TokenInfo;
   }) {
     this.method = args.method;
@@ -61,6 +65,7 @@ export class NativeStakingValidatorsExitConfirmationView
     this.estimatedWithdrawalTime = args.estimatedWithdrawalTime;
     this.value = args.value;
     this.numValidators = args.numValidators;
+    this.rewards = args.rewards;
     this.tokenInfo = args.tokenInfo;
   }
 }
