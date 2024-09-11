@@ -1,6 +1,6 @@
 import { Builder, IBuilder } from '@/__tests__/builder';
 import { Stake } from '@/datasources/staking-api/entities/stake.entity';
-import { STAKING_PUBLIC_KEY_LENGTH } from '@/domain/staking/constants';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { faker } from '@faker-js/faker';
 
 export function stakeBuilder(): IBuilder<Stake> {
@@ -8,7 +8,7 @@ export function stakeBuilder(): IBuilder<Stake> {
     .with(
       'validator_address',
       faker.string.hexadecimal({
-        length: STAKING_PUBLIC_KEY_LENGTH,
+        length: KilnDecoder.KilnPublicKeyLength,
       }) as `0x${string}`,
     )
     .with('state', faker.lorem.words())

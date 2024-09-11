@@ -1,3 +1,4 @@
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import {
@@ -107,7 +108,7 @@ export class KilnNativeStakingHelper {
 
 @Module({
   imports: [TransactionFinderModule, StakingRepositoryModule],
-  providers: [KilnNativeStakingHelper],
-  exports: [KilnNativeStakingHelper],
+  providers: [KilnNativeStakingHelper, KilnDecoder],
+  exports: [KilnNativeStakingHelper, KilnDecoder],
 })
 export class KilnNativeStakingHelperModule {}

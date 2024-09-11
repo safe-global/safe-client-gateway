@@ -9,7 +9,7 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { STAKING_PUBLIC_KEY_LENGTH } from '@/domain/staking/constants';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -22,6 +22,7 @@ import {
 } from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
+import { isHex } from 'viem';
 
 @Injectable()
 export class NativeStakingMapper {
@@ -319,11 +320,13 @@ export class NativeStakingMapper {
     );
   }
 
+  // TODO: move the following private functions to KilnApi/StakingRepository.
+
   /**
    * Gets the rewards to withdraw from the native staking deployment
    * based on the length of the publicKeys field in the transaction data.
    *
-   * Each {@link STAKING_PUBLIC_KEY_LENGTH} characters represent a validator to withdraw,
+   * Each {@link KilnDecoder.KilnPublicKeyLength} characters represent a validator to withdraw,
    * and each native staking validator has a fixed amount of 32 ETH to withdraw.
    *
    * @param data - the decoded data of the transaction
@@ -356,7 +359,7 @@ export class NativeStakingMapper {
     const publicKeys = data.parameters?.find(
       (parameter) => parameter.name === '_publicKeys',
     );
-    return publicKeys ? (publicKeys.value as `0x${string}`) : null;
+    return isHex(publicKeys?.value) ? publicKeys.value : null;
   }
 
   private getNumValidatorsFromDataDecoded(data: DataDecoded): number {
@@ -364,14 +367,14 @@ export class NativeStakingMapper {
     if (!publicKeys) {
       return 0;
     }
-    return Math.floor(publicKeys.length / STAKING_PUBLIC_KEY_LENGTH);
+    return Math.floor(publicKeys.length / KilnDecoder.KilnPublicKeyLength);
   }
 
   /**
    * Splits the public keys into an array of public keys.
    *
-   * Each {@link STAKING_PUBLIC_KEY_LENGTH} characters represent a validator to withdraw, so the public keys
-   * are split into an array of strings of length {@link STAKING_PUBLIC_KEY_LENGTH}. The initial `0x` is removed.
+   * Each {@link KilnDecoder.KilnPublicKeyLength} characters represent a validator to withdraw, so the public keys
+   * are split into an array of strings of length {@link KilnDecoder.KilnPublicKeyLength}. The initial `0x` is removed.
    *
    * @param publicKeys - the public keys to split
    * @returns
@@ -382,10 +385,10 @@ export class NativeStakingMapper {
     for (
       let i = 0;
       i < publicKeysString.length;
-      i += STAKING_PUBLIC_KEY_LENGTH
+      i += KilnDecoder.KilnPublicKeyLength
     ) {
       publicKeysArray.push(
-        `${publicKeysString.slice(i, i + STAKING_PUBLIC_KEY_LENGTH)}`,
+        `${publicKeysString.slice(i, i + KilnDecoder.KilnPublicKeyLength)}`,
       );
     }
     return publicKeysArray;

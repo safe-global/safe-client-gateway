@@ -13,7 +13,7 @@ import {
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { STAKING_PUBLIC_KEY_LENGTH } from '@/domain/staking/constants';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { StakingRepository } from '@/domain/staking/staking.repository';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
@@ -382,7 +382,7 @@ describe('NativeStakingMapper', () => {
       const networkStats = networkStatsBuilder().build();
       const stakes = [stakeBuilder().build()];
       const validatorPublicKey = faker.string.hexadecimal({
-        length: STAKING_PUBLIC_KEY_LENGTH * 3,
+        length: KilnDecoder.KilnPublicKeyLength * 3,
       }); // 3 validators
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
@@ -444,7 +444,7 @@ describe('NativeStakingMapper', () => {
         stakeBuilder().with('rewards', '3').build(),
       ];
       const validatorPublicKey = faker.string.hexadecimal({
-        length: STAKING_PUBLIC_KEY_LENGTH * 3,
+        length: KilnDecoder.KilnPublicKeyLength * 3,
       }); // 3 validators
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
@@ -509,7 +509,7 @@ describe('NativeStakingMapper', () => {
         .build();
       const stakes = [stakeBuilder().build()];
       const validatorPublicKey = faker.string.hexadecimal({
-        length: STAKING_PUBLIC_KEY_LENGTH * 3,
+        length: KilnDecoder.KilnPublicKeyLength * 3,
       }); // 3 validators
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
@@ -576,7 +576,7 @@ describe('NativeStakingMapper', () => {
         .build();
       const stakes = [stakeBuilder().build()];
       const validatorPublicKey = faker.string.hexadecimal({
-        length: STAKING_PUBLIC_KEY_LENGTH * 2,
+        length: KilnDecoder.KilnPublicKeyLength * 2,
       }); // 2 validators
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
@@ -716,7 +716,7 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const validatorPublicKey = faker.string.hexadecimal({
-        length: STAKING_PUBLIC_KEY_LENGTH * 2,
+        length: KilnDecoder.KilnPublicKeyLength * 2,
       }); // 2 validators
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
@@ -768,7 +768,7 @@ describe('NativeStakingMapper', () => {
 
       expect(mockStakingRepository.getStakes).toHaveBeenCalledWith({
         chainId: chain.chainId,
-        validatorsPublicKeys: `${validatorPublicKey.slice(2, STAKING_PUBLIC_KEY_LENGTH + 2)},${validatorPublicKey.slice(STAKING_PUBLIC_KEY_LENGTH + 2)}`,
+        validatorsPublicKeys: `${validatorPublicKey.slice(2, KilnDecoder.KilnPublicKeyLength + 2)},${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
       });
     });
 

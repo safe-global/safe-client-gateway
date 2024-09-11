@@ -12,7 +12,7 @@ import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { STAKING_PUBLIC_KEY_LENGTH } from '@/domain/staking/constants';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { faker } from '@faker-js/faker';
 
 const dataSource = {
@@ -450,7 +450,9 @@ describe('KilnApi', () => {
         { length: faker.number.int({ min: 1, max: 5 }) },
         () =>
           faker.string
-            .hexadecimal({ length: STAKING_PUBLIC_KEY_LENGTH })
+            .hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+            })
             .slice(2),
       );
       const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
@@ -492,7 +494,9 @@ describe('KilnApi', () => {
         { length: faker.number.int({ min: 1, max: 5 }) },
         () =>
           faker.string
-            .hexadecimal({ length: STAKING_PUBLIC_KEY_LENGTH })
+            .hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+            })
             .slice(2),
       );
       const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');

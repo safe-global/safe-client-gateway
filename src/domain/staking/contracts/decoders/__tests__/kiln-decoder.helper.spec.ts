@@ -1,4 +1,3 @@
-import { STAKING_PUBLIC_KEY_LENGTH } from '@/domain/staking/constants';
 import {
   KilnAbi,
   KilnDecoder,
@@ -52,7 +51,7 @@ describe('KilnDecoder', () => {
   describe('decodeValidatorsExit', () => {
     it('decodes a requestValidatorsExit function call correctly', () => {
       const validatorsPublicKeys = faker.string.hexadecimal({
-        length: STAKING_PUBLIC_KEY_LENGTH,
+        length: KilnDecoder.KilnPublicKeyLength,
       }) as `0x${string}`;
       const data = encodeFunctionData({
         abi: KilnAbi,
@@ -90,7 +89,7 @@ describe('KilnDecoder', () => {
   describe('decodeBatchWithdrawCLFee', () => {
     it('decodes a batchWithdrawCLFee function call correctly', () => {
       const validatorsPublicKeys = faker.string.hexadecimal({
-        length: STAKING_PUBLIC_KEY_LENGTH,
+        length: KilnDecoder.KilnPublicKeyLength,
       }) as `0x${string}`;
       const data = encodeFunctionData({
         abi: KilnAbi,
