@@ -362,7 +362,7 @@ export class MultisigTransactionInfoMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<NativeStakingValidatorsExitTransactionInfo | null> {
-    if (!transaction?.data) {
+    if (!transaction?.data || !transaction?.dataDecoded) {
       return null;
     }
 
@@ -394,7 +394,7 @@ export class MultisigTransactionInfoMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<NativeStakingWithdrawTransactionInfo | null> {
-    if (!transaction?.data) {
+    if (!transaction?.data || !transaction?.dataDecoded) {
       return null;
     }
 
