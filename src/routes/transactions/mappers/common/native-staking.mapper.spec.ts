@@ -407,7 +407,6 @@ describe('NativeStakingMapper', () => {
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
         to: deployment.address,
-        value: null,
         transaction,
         dataDecoded,
       });
@@ -474,7 +473,6 @@ describe('NativeStakingMapper', () => {
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
         to: deployment.address,
-        value: null,
         transaction,
         dataDecoded,
       });
@@ -542,7 +540,6 @@ describe('NativeStakingMapper', () => {
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
         to: deployment.address,
-        value: null,
         transaction,
         dataDecoded,
       });
@@ -610,7 +607,6 @@ describe('NativeStakingMapper', () => {
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
         to: deployment.address,
-        value: null,
         transaction,
         dataDecoded,
       });
@@ -655,7 +651,6 @@ describe('NativeStakingMapper', () => {
         target.mapValidatorsExitInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          value: null,
           transaction,
           dataDecoded,
         }),
@@ -681,7 +676,6 @@ describe('NativeStakingMapper', () => {
         target.mapValidatorsExitInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          value: null,
           transaction,
           dataDecoded,
         }),
@@ -707,7 +701,6 @@ describe('NativeStakingMapper', () => {
         target.mapValidatorsExitInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          value: null,
           transaction,
           dataDecoded,
         }),
@@ -753,7 +746,6 @@ describe('NativeStakingMapper', () => {
       const actual = await target.mapWithdrawInfo({
         chainId: chain.chainId,
         to: deployment.address,
-        value: null,
         transaction,
         dataDecoded,
       });
@@ -796,7 +788,6 @@ describe('NativeStakingMapper', () => {
         target.mapWithdrawInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          value: null,
           transaction,
           dataDecoded,
         }),
@@ -820,7 +811,6 @@ describe('NativeStakingMapper', () => {
         target.mapWithdrawInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          value: null,
           transaction,
           dataDecoded,
         }),
@@ -844,7 +834,6 @@ describe('NativeStakingMapper', () => {
         target.mapWithdrawInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          value: null,
           transaction,
           dataDecoded,
         }),

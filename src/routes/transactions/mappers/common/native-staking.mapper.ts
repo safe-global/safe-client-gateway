@@ -120,14 +120,13 @@ export class NativeStakingMapper {
    *
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.to - the address of the native staking deployment
-   * @param args.value - the value of the validators exit transaction
    * @param args.transaction - the transaction object for the validators exit
+   * @param args.dataDecoded - the decoded data of the transaction
    * @returns {@link NativeStakingValidatorsExitTransactionInfo} for the given native staking deployment
    */
   public async mapValidatorsExitInfo(args: {
     chainId: string;
     to: `0x${string}`;
-    value: string | null; // TODO: remove this
     transaction: MultisigTransaction | ModuleTransaction | null;
     dataDecoded: DataDecoded | null;
   }): Promise<NativeStakingValidatorsExitTransactionInfo> {
@@ -147,7 +146,7 @@ export class NativeStakingMapper {
     const dataDecoded = args.transaction?.dataDecoded ?? args.dataDecoded;
     const value = dataDecoded
       ? this.getValueFromDataDecoded(dataDecoded, chain)
-      : Number(args.value ?? 0);
+      : 0;
 
     // TODO: private getNumValidatorsFromDataDecoded(data: DataDecoded): number
     const numValidators = Math.floor(
@@ -158,7 +157,7 @@ export class NativeStakingMapper {
 
     const rewards = dataDecoded
       ? await this.getRewardsFromDataDecoded(dataDecoded, chain)
-      : Number(args.value ?? 0);
+      : 0;
 
     return new NativeStakingValidatorsExitTransactionInfo({
       status: this.mapValidatorsExitStatus(networkStats, args.transaction),
@@ -184,14 +183,13 @@ export class NativeStakingMapper {
    *
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.to - the address of the native staking deployment
-   * @param args.value - the value of the withdraw transaction
    * @param args.transaction - the transaction object for the withdraw
+   * @param args.dataDecoded - the decoded data of the transaction
    * @returns {@link NativeStakingWithdrawTransactionInfo} for the given native staking deployment
    */
   public async mapWithdrawInfo(args: {
     chainId: string;
     to: `0x${string}`;
-    value: string | null; // TODO: remove this
     transaction: MultisigTransaction | ModuleTransaction | null;
     dataDecoded: DataDecoded | null;
   }): Promise<NativeStakingWithdrawTransactionInfo> {
@@ -207,11 +205,11 @@ export class NativeStakingMapper {
     const dataDecoded = args.transaction?.dataDecoded ?? args.dataDecoded;
     const value = dataDecoded
       ? this.getValueFromDataDecoded(dataDecoded, chain)
-      : Number(args.value ?? 0);
+      : 0;
 
     const rewards = dataDecoded
       ? await this.getRewardsFromDataDecoded(dataDecoded, chain)
-      : Number(args.value ?? 0);
+      : 0;
 
     return new NativeStakingWithdrawTransactionInfo({
       value: getNumberString(value),

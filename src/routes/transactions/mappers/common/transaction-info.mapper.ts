@@ -381,7 +381,6 @@ export class MultisigTransactionInfoMapper {
       return await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId,
         to: nativeStakingValidatorsExitTransaction.to,
-        value: transaction.value,
         transaction,
         dataDecoded: transaction.dataDecoded,
       });
@@ -414,7 +413,6 @@ export class MultisigTransactionInfoMapper {
       return await this.nativeStakingMapper.mapWithdrawInfo({
         chainId,
         to: nativeStakingWithdrawTransaction.to,
-        value: transaction.value,
         transaction,
         dataDecoded: transaction.dataDecoded,
       });
