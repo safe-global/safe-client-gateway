@@ -1,5 +1,4 @@
 import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { GPv2DecoderModule } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { SwapsRepositoryModule } from '@/domain/swaps/swaps-repository.module';
@@ -95,7 +94,7 @@ export class TransactionsViewController {
     SwapsRepositoryModule,
     TwapOrderHelperModule,
   ],
-  providers: [TransactionsViewService, ComposableCowDecoder, KilnDecoder],
+  providers: [TransactionsViewService, ComposableCowDecoder],
   controllers: [TransactionsViewController],
 })
 export class TransactionsViewControllerModule {}
