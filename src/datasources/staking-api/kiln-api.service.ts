@@ -170,7 +170,9 @@ export class KilnApi implements IStakingApi {
     }
   }
 
-  async getStakes(validatorsPublicKeys: string): Promise<Stake[]> {
+  async getStakes(
+    validatorsPublicKeys: Array<`0x${string}`>,
+  ): Promise<Stake[]> {
     try {
       const url = `${this.baseUrl}/v1/eth/stakes`;
       const cacheDir =
@@ -186,7 +188,7 @@ export class KilnApi implements IStakingApi {
             Authorization: `Bearer ${this.apiKey}`,
           },
           params: {
-            validators: validatorsPublicKeys,
+            validators: validatorsPublicKeys.join(','),
           },
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,

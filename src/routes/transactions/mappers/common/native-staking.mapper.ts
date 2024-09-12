@@ -320,8 +320,6 @@ export class NativeStakingMapper {
     );
   }
 
-  // TODO: move the following private functions to KilnApi/StakingRepository.
-
   /**
    * Gets the rewards to withdraw from the native staking deployment
    * based on the length of the publicKeys field in the transaction data.
@@ -343,7 +341,7 @@ export class NativeStakingMapper {
     }
     const stakes = await this.stakingRepository.getStakes({
       chainId: chain.chainId,
-      validatorsPublicKeys: this.splitPublicKeys(publicKeys).join(','),
+      validatorsPublicKeys: this.splitPublicKeys(publicKeys),
     });
     return stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
   }
@@ -374,21 +372,22 @@ export class NativeStakingMapper {
    * Splits the public keys into an array of public keys.
    *
    * Each {@link KilnDecoder.KilnPublicKeyLength} characters represent a validator to withdraw, so the public keys
-   * are split into an array of strings of length {@link KilnDecoder.KilnPublicKeyLength}. The initial `0x` is removed.
+   * are split into an array of strings of length {@link KilnDecoder.KilnPublicKeyLength}.
    *
    * @param publicKeys - the public keys to split
    * @returns
    */
-  private splitPublicKeys(publicKeys: `0x${string}`): string[] {
+  private splitPublicKeys(publicKeys: `0x${string}`): `0x${string}`[] {
+    // Remove initial `0x` of decoded `_publicKeys`
     const publicKeysString = publicKeys.slice(2);
-    const publicKeysArray = [];
+    const publicKeysArray: `0x${string}`[] = [];
     for (
       let i = 0;
       i < publicKeysString.length;
       i += KilnDecoder.KilnPublicKeyLength
     ) {
       publicKeysArray.push(
-        `${publicKeysString.slice(i, i + KilnDecoder.KilnPublicKeyLength)}`,
+        `0x${publicKeysString.slice(i, i + KilnDecoder.KilnPublicKeyLength)}`,
       );
     }
     return publicKeysArray;
