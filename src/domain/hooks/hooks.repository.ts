@@ -77,7 +77,7 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
   }
 
   async onEvent(event: Event): Promise<unknown> {
-    const isSupportedChainId = await this.isSupportedChainId(event.chainId);
+    const isSupportedChainId = await this.isSupportedChainIdMemo(event.chainId);
     if (isSupportedChainId) {
       return Promise.allSettled([
         this.onEventClearCache(event),
