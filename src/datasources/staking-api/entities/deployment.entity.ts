@@ -4,11 +4,9 @@ import { z } from 'zod';
 
 export const DeploymentProductTypes = ['defi', 'pooling', 'dedicated'] as const;
 
-// TODO: Confirm all potential values
 export const DeploymentChains = ['eth', 'arb', 'bsc', 'matic', 'op'] as const;
 
-// TODO: Confirm all potential values
-export const DeploymentStatuses = ['active'] as const;
+export const DeploymentStatuses = ['active', 'pending', 'disabled'] as const;
 
 export const DeploymentSchema = z.object({
   id: z.string().uuid(),
@@ -20,7 +18,6 @@ export const DeploymentSchema = z.object({
   chain: z.enum([...DeploymentChains, 'unknown']).catch('unknown'),
   chain_id: z.number(),
   address: AddressSchema,
-  // TODO: Confirm all potential values
   status: z.enum([...DeploymentStatuses, 'unknown']).catch('unknown'),
   product_fee: NumericStringSchema.nullish().default(null),
 });
