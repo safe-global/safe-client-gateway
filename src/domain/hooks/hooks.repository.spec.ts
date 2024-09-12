@@ -83,22 +83,25 @@ const mockEventNotificationsHelper = jest.mocked({
 } as jest.MockedObjectDeep<EventNotificationsHelper>);
 
 describe('HooksRepository (Unit)', () => {
-  const hooksRepository = new HooksRepository(
-    mockBalancesRepository,
-    mockBlockchainRepository,
-    mockChainsRepository,
-    mockCollectiblesRepository,
-    mockMessagesRepository,
-    mockSafeAppsRepository,
-    mockSafeRepository,
-    mockStakingRepository,
-    mockTransactionsRepository,
-    mockLoggingService,
-    mockQueuesRepository,
-    mockConfigurationService,
-  );
+  let hooksRepository: HooksRepository;
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    hooksRepository = new HooksRepository(
+      mockBalancesRepository,
+      mockBlockchainRepository,
+      mockChainsRepository,
+      mockCollectiblesRepository,
+      mockMessagesRepository,
+      mockSafeAppsRepository,
+      mockSafeRepository,
+      mockStakingRepository,
+      mockTransactionsRepository,
+      mockLoggingService,
+      mockQueuesRepository,
+      mockConfigurationService,
+    );
+    jest.clearAllMocks();
+  });
 
   it('should process events for known chains and memoize the chain lookup', async () => {
     const chain = chainBuilder().build();
@@ -135,28 +138,31 @@ describe('HooksRepository (Unit)', () => {
     mockChainsRepository.getChain.mockResolvedValue(chain);
     mockChainsRepository.clearChain.mockResolvedValue();
 
+    await hooksRepository.onEvent(event);
+    await hooksRepository.onEvent(event);
+    await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(
       chainUpdateEventBuilder().with('chainId', chain.chainId).build(),
     );
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
 
-    // 2 calls to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(2);
+    // 3 calls to getChain
+    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(3);
 
-    // 2 calls to repositories
-    expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(2);
+    // 5 calls to repositories
+    expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(5);
     expect(mockCollectiblesRepository.clearCollectibles).toHaveBeenCalledTimes(
-      2,
+      5,
     );
     expect(
       mockSafeRepository.clearAllExecutedTransactions,
-    ).toHaveBeenCalledTimes(2);
+    ).toHaveBeenCalledTimes(5);
     expect(mockSafeRepository.clearMultisigTransactions).toHaveBeenCalledTimes(
-      2,
+      5,
     );
-    expect(mockSafeRepository.clearTransfers).toHaveBeenCalledTimes(2);
-    expect(mockSafeRepository.clearIncomingTransfers).toHaveBeenCalledTimes(2);
+    expect(mockSafeRepository.clearTransfers).toHaveBeenCalledTimes(5);
+    expect(mockSafeRepository.clearIncomingTransfers).toHaveBeenCalledTimes(5);
   });
 
   it('should not process events for unknown chains', async () => {
@@ -183,23 +189,26 @@ describe('HooksRepository (Unit)', () => {
 });
 
 describe('HooksRepositoryWithNotifications (Unit)', () => {
-  const hooksRepositoryWithNotifications = new HooksRepositoryWithNotifications(
-    mockBalancesRepository,
-    mockBlockchainRepository,
-    mockChainsRepository,
-    mockCollectiblesRepository,
-    mockMessagesRepository,
-    mockSafeAppsRepository,
-    mockSafeRepository,
-    mockStakingRepository,
-    mockTransactionsRepository,
-    mockLoggingService,
-    mockQueuesRepository,
-    mockConfigurationService,
-    mockEventNotificationsHelper,
-  );
+  let hooksRepositoryWithNotifications: HooksRepositoryWithNotifications;
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    hooksRepositoryWithNotifications = new HooksRepositoryWithNotifications(
+      mockBalancesRepository,
+      mockBlockchainRepository,
+      mockChainsRepository,
+      mockCollectiblesRepository,
+      mockMessagesRepository,
+      mockSafeAppsRepository,
+      mockSafeRepository,
+      mockStakingRepository,
+      mockTransactionsRepository,
+      mockLoggingService,
+      mockQueuesRepository,
+      mockConfigurationService,
+      mockEventNotificationsHelper,
+    );
+    jest.clearAllMocks();
+  });
 
   it('should process events for known chains and memoize the chain lookup', async () => {
     const chain = chainBuilder().build();
@@ -236,28 +245,31 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     mockChainsRepository.getChain.mockResolvedValue(chain);
     mockChainsRepository.clearChain.mockResolvedValue();
 
+    await hooksRepositoryWithNotifications.onEvent(event);
+    await hooksRepositoryWithNotifications.onEvent(event);
+    await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(
       chainUpdateEventBuilder().with('chainId', chain.chainId).build(),
     );
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
 
-    // 2 calls to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(2);
+    // 3 calls to getChain
+    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(3);
 
-    // 2 calls to repositories
-    expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(2);
+    // 5 calls to repositories
+    expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(5);
     expect(mockCollectiblesRepository.clearCollectibles).toHaveBeenCalledTimes(
-      2,
+      5,
     );
     expect(
       mockSafeRepository.clearAllExecutedTransactions,
-    ).toHaveBeenCalledTimes(2);
+    ).toHaveBeenCalledTimes(5);
     expect(mockSafeRepository.clearMultisigTransactions).toHaveBeenCalledTimes(
-      2,
+      5,
     );
-    expect(mockSafeRepository.clearTransfers).toHaveBeenCalledTimes(2);
-    expect(mockSafeRepository.clearIncomingTransfers).toHaveBeenCalledTimes(2);
+    expect(mockSafeRepository.clearTransfers).toHaveBeenCalledTimes(5);
+    expect(mockSafeRepository.clearIncomingTransfers).toHaveBeenCalledTimes(5);
   });
 
   it('should not process events for unknown chains', async () => {
