@@ -67,6 +67,7 @@ const mockTransactionsRepository = jest.mocked({
 const mockLoggingService = jest.mocked({
   error: jest.fn(),
   info: jest.fn(),
+  warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
 const mockQueuesRepository = jest.mocked({
