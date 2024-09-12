@@ -73,12 +73,23 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
   }
 
   async onEvent(event: Event): Promise<unknown> {
-    return Promise.allSettled([
-      this.onEventClearCache(event),
-      this.eventNotificationsHelper.onEventEnqueueNotifications(event),
-    ]).finally(() => {
-      this.onEventLog(event);
-    });
+    const isSupportedChainId = await this.isSupportedChainId(event.chainId);
+
+    if (isSupportedChainId) {
+      return Promise.allSettled([
+        this.onEventClearCache(event),
+        this.eventNotificationsHelper.onEventEnqueueNotifications(event),
+      ]).finally(() => {
+        this.onEventLog(event);
+      });
+    }
+  }
+
+  private async isSupportedChainId(chainId: string): Promise<boolean> {
+    return this.chainsRepository
+      .getChain(chainId)
+      .then(() => true)
+      .catch(() => false);
   }
 
   private async onEventClearCache(event: Event): Promise<void[]> {
