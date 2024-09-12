@@ -449,11 +449,9 @@ describe('KilnApi', () => {
       const validatorsPublicKeys = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
         () =>
-          faker.string
-            .hexadecimal({
-              length: KilnDecoder.KilnPublicKeyLength,
-            })
-            .slice(2),
+          faker.string.hexadecimal({
+            length: KilnDecoder.KilnPublicKeyLength,
+          }) as `0x${string}`,
       );
       const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
       const stakes = Array.from({ length: validatorsPublicKeys.length }, () =>
@@ -466,15 +464,13 @@ describe('KilnApi', () => {
         data: stakes,
       });
 
-      const actual = await target.getStakes(concatenatedValidatorsPublicKeys);
+      const actual = await target.getStakes(validatorsPublicKeys);
 
       expect(actual).toBe(stakes);
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: CacheRouter.getStakingStakesCacheDir(
-          concatenatedValidatorsPublicKeys,
-        ),
+        cacheDir: CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys),
         url: getStakesUrl,
         networkRequest: {
           headers: {
@@ -493,11 +489,9 @@ describe('KilnApi', () => {
       const validatorsPublicKeys = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
         () =>
-          faker.string
-            .hexadecimal({
-              length: KilnDecoder.KilnPublicKeyLength,
-            })
-            .slice(2),
+          faker.string.hexadecimal({
+            length: KilnDecoder.KilnPublicKeyLength,
+          }) as `0x${string}`,
       );
       const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
       const getStakesUrl = `${baseUrl}/v1/eth/stakes`;
@@ -515,15 +509,13 @@ describe('KilnApi', () => {
           new Error(errorMessage),
         ),
       );
-      await expect(
-        target.getStakes(concatenatedValidatorsPublicKeys),
-      ).rejects.toThrow(expected);
+      await expect(target.getStakes(validatorsPublicKeys)).rejects.toThrow(
+        expected,
+      );
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: CacheRouter.getStakingStakesCacheDir(
-          concatenatedValidatorsPublicKeys,
-        ),
+        cacheDir: CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys),
         url: getStakesUrl,
         networkRequest: {
           headers: {
