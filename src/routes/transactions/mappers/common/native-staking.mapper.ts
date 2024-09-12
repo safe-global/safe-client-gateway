@@ -367,8 +367,7 @@ export class NativeStakingMapper {
     }
     return Math.floor(
       // Ignore the `0x` prefix
-      (publicKeys.length - 2) /
-        KilnDecoder.KilnPublicKeyLength,
+      (publicKeys.length - 2) / KilnDecoder.KilnPublicKeyLength,
     );
   }
 
