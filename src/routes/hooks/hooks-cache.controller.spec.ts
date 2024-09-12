@@ -792,17 +792,25 @@ describe('Post Hook Events for Cache (Unit)', () => {
       type: 'CHAIN_UPDATE',
     },
   ])('$type clears chain', async (payload) => {
-    const chainId = faker.string.numeric();
-    const cacheDir = new CacheDir(`${chainId}_chain`, '');
+    const chain = chainBuilder().build();
+    const cacheDir = new CacheDir(`${chain.chainId}_chain`, '');
     await fakeCacheService.set(
       cacheDir,
-      faker.string.alpha(),
+      JSON.stringify(chain),
       faker.number.int({ min: 1 }),
     );
     const data = {
-      chainId: chainId,
+      chainId: chain.chainId,
       ...payload,
     };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: chain, status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
 
     await request(app.getHttpServer())
       .post(`/hooks/events`)
@@ -818,17 +826,28 @@ describe('Post Hook Events for Cache (Unit)', () => {
       type: 'CHAIN_UPDATE',
     },
   ])('$type clears chains', async (payload) => {
-    const chainId = faker.string.numeric();
+    const chain = chainBuilder().build();
     const cacheDir = new CacheDir(`chains`, '');
     await fakeCacheService.set(
       cacheDir,
-      faker.string.alpha(),
+      JSON.stringify(chain),
       faker.number.int({ min: 1 }),
     );
     const data = {
-      chainId: chainId,
+      chainId: chain.chainId,
       ...payload,
     };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', chain.chainId).build(),
+            status: 200,
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
 
     await request(app.getHttpServer())
       .post(`/hooks/events`)
@@ -977,17 +996,28 @@ describe('Post Hook Events for Cache (Unit)', () => {
       type: 'SAFE_APPS_UPDATE',
     },
   ])('$type clears safe apps', async (payload) => {
-    const chainId = faker.string.numeric();
-    const cacheDir = new CacheDir(`${chainId}_safe_apps`, '');
+    const chain = chainBuilder().build();
+    const cacheDir = new CacheDir(`${chain.chainId}_safe_apps`, '');
     await fakeCacheService.set(
       cacheDir,
-      faker.string.alpha(),
+      JSON.stringify(chain),
       faker.number.int({ min: 1 }),
     );
     const data = {
-      chainId: chainId,
+      chainId: chain.chainId,
       ...payload,
     };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', chain.chainId).build(),
+            status: 200,
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
 
     await request(app.getHttpServer())
       .post(`/hooks/events`)
@@ -1014,17 +1044,28 @@ describe('Post Hook Events for Cache (Unit)', () => {
         },
       });
       await initApp(testConfiguration);
-      const chainId = faker.string.numeric();
+      const chain = chainBuilder().build();
       const cacheDir = new CacheDir(`chains`, '');
       await fakeCacheService.set(
         cacheDir,
-        faker.string.alpha(),
+        JSON.stringify(chain),
         faker.number.int({ min: 1 }),
       );
       const data = {
-        chainId: chainId,
+        chainId: chain.chainId,
         ...payload,
       };
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({
+              data: chainBuilder().with('chainId', chain.chainId).build(),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
 
       await request(app.getHttpServer())
         .post(`/hooks/events`)
@@ -1052,17 +1093,29 @@ describe('Post Hook Events for Cache (Unit)', () => {
         },
       });
       await initApp(testConfiguration);
-      const chainId = faker.string.numeric();
-      const cacheDir = new CacheDir(`${chainId}_safe_apps`, '');
+      const chain = chainBuilder().build();
+      const cacheDir = new CacheDir(`${chain.chainId}_safe_apps`, '');
       await fakeCacheService.set(
         cacheDir,
-        faker.string.alpha(),
+        JSON.stringify(chain),
         faker.number.int({ min: 1 }),
       );
       const data = {
-        chainId: chainId,
+        chainId: chain.chainId,
         ...payload,
       };
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({
+              data: chainBuilder().with('chainId', chain.chainId).build(),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
 
       await request(app.getHttpServer())
         .post(`/hooks/events`)
