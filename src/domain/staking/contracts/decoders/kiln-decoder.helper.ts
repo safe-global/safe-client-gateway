@@ -37,6 +37,7 @@ export type KilnBatchWithdrawCLFeeParameters =
 
 @Injectable()
 export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
+  public static readonly KilnPublicKeyLength = 96;
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {

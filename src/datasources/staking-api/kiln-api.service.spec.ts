@@ -12,6 +12,7 @@ import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { faker } from '@faker-js/faker';
 
 const dataSource = {
@@ -447,8 +448,14 @@ describe('KilnApi', () => {
     it('should return stakes', async () => {
       const validatorsPublicKeys = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
-        () => faker.string.hexadecimal({ length: 66 }) as `0x${string}`,
+        () =>
+          faker.string
+            .hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+            })
+            .slice(2),
       );
+      const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
       const stakes = Array.from({ length: validatorsPublicKeys.length }, () =>
         stakeBuilder().build(),
       );
@@ -459,20 +466,22 @@ describe('KilnApi', () => {
         data: stakes,
       });
 
-      const actual = await target.getStakes(validatorsPublicKeys);
+      const actual = await target.getStakes(concatenatedValidatorsPublicKeys);
 
       expect(actual).toBe(stakes);
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys),
+        cacheDir: CacheRouter.getStakingStakesCacheDir(
+          concatenatedValidatorsPublicKeys,
+        ),
         url: getStakesUrl,
         networkRequest: {
           headers: {
             Authorization: `Bearer ${apiKey}`,
           },
           params: {
-            validators: validatorsPublicKeys,
+            validators: concatenatedValidatorsPublicKeys,
           },
         },
         expireTimeSeconds: stakingExpirationTimeInSeconds,
@@ -483,8 +492,14 @@ describe('KilnApi', () => {
     it('should forward errors', async () => {
       const validatorsPublicKeys = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
-        () => faker.string.hexadecimal({ length: 66 }) as `0x${string}`,
+        () =>
+          faker.string
+            .hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+            })
+            .slice(2),
       );
+      const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
       const getStakesUrl = `${baseUrl}/v1/eth/stakes`;
       const errorMessage = faker.lorem.sentence();
       const statusCode = faker.internet.httpStatusCode({
@@ -500,20 +515,22 @@ describe('KilnApi', () => {
           new Error(errorMessage),
         ),
       );
-      await expect(target.getStakes(validatorsPublicKeys)).rejects.toThrow(
-        expected,
-      );
+      await expect(
+        target.getStakes(concatenatedValidatorsPublicKeys),
+      ).rejects.toThrow(expected);
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys),
+        cacheDir: CacheRouter.getStakingStakesCacheDir(
+          concatenatedValidatorsPublicKeys,
+        ),
         url: getStakesUrl,
         networkRequest: {
           headers: {
             Authorization: `Bearer ${apiKey}`,
           },
           params: {
-            validators: validatorsPublicKeys,
+            validators: concatenatedValidatorsPublicKeys,
           },
         },
         expireTimeSeconds: stakingExpirationTimeInSeconds,

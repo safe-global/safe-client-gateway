@@ -141,14 +141,12 @@ export class TransactionsViewService {
           ...nativeStakingValidatorsExitTransaction,
           chainId: args.chainId,
           dataDecoded,
-          value: args.transactionDataDto.value ?? null,
         });
       } else if (nativeStakingWithdrawTransaction) {
         return await this.getNativeStakingWithdrawConfirmationView({
           ...nativeStakingWithdrawTransaction,
           chainId: args.chainId,
           dataDecoded,
-          value: args.transactionDataDto.value ?? null,
         });
       } else {
         // Should not reach here
@@ -343,7 +341,6 @@ export class TransactionsViewService {
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-    value: string | null;
   }): Promise<NativeStakingValidatorsExitConfirmationView> {
     const dataDecoded =
       args.dataDecoded.method !== ''
@@ -356,8 +353,8 @@ export class TransactionsViewService {
       await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId: args.chainId,
         to: args.to,
-        value: args.value,
         transaction: null,
+        dataDecoded,
       });
     return new NativeStakingValidatorsExitConfirmationView({
       method: dataDecoded.method,
@@ -371,7 +368,6 @@ export class TransactionsViewService {
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
-    value: string | null;
   }): Promise<NativeStakingWithdrawConfirmationView> {
     const dataDecoded =
       args.dataDecoded.method !== ''
@@ -383,8 +379,8 @@ export class TransactionsViewService {
     const withdrawInfo = await this.nativeStakingMapper.mapWithdrawInfo({
       chainId: args.chainId,
       to: args.to,
-      value: args.value,
       transaction: null,
+      dataDecoded,
     });
     return new NativeStakingWithdrawConfirmationView({
       method: dataDecoded.method,

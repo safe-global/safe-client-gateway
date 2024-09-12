@@ -29,6 +29,7 @@ import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -69,6 +70,7 @@ export class MultisigTransactionInfoMapper {
     private readonly twapOrderHelper: TwapOrderHelper,
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
+    private readonly kilnDecoder: KilnDecoder,
   ) {
     this.isRichFragmentsEnabled = this.configurationService.getOrThrow(
       'features.richFragments',
@@ -366,6 +368,14 @@ export class MultisigTransactionInfoMapper {
       return null;
     }
 
+    const dataDecoded = transaction?.dataDecoded
+      ? transaction.dataDecoded
+      : this.kilnDecoder.decodeValidatorsExit(transaction.data);
+
+    if (!dataDecoded) {
+      return null;
+    }
+
     const nativeStakingValidatorsExitTransaction =
       await this.kilnNativeStakingHelper.findValidatorsExitTransaction({
         chainId,
@@ -381,8 +391,8 @@ export class MultisigTransactionInfoMapper {
       return await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId,
         to: nativeStakingValidatorsExitTransaction.to,
-        value: transaction.value,
         transaction,
+        dataDecoded,
       });
     } catch (error) {
       this.loggingService.warn(error);
@@ -395,6 +405,14 @@ export class MultisigTransactionInfoMapper {
     transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<NativeStakingWithdrawTransactionInfo | null> {
     if (!transaction?.data) {
+      return null;
+    }
+
+    const dataDecoded = transaction?.dataDecoded
+      ? transaction.dataDecoded
+      : this.kilnDecoder.decodeBatchWithdrawCLFee(transaction.data);
+
+    if (!dataDecoded) {
       return null;
     }
 
@@ -413,8 +431,8 @@ export class MultisigTransactionInfoMapper {
       return await this.nativeStakingMapper.mapWithdrawInfo({
         chainId,
         to: nativeStakingWithdrawTransaction.to,
-        value: transaction.value,
         transaction,
+        dataDecoded,
       });
     } catch (error) {
       this.loggingService.warn(error);
