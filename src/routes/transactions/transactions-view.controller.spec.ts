@@ -1308,7 +1308,7 @@ describe('TransactionsViewController tests', () => {
             url: `${stakingApiUrl}/v1/eth/stakes`,
             networkRequest: expect.objectContaining({
               params: {
-                validators: `${validatorPublicKey.slice(2, KilnDecoder.KilnPublicKeyLength + 2)},${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
+                validators: `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)},0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
               },
             }),
           });
@@ -1407,7 +1407,7 @@ describe('TransactionsViewController tests', () => {
             url: `${stakingApiUrl}/v1/eth/stakes`,
             networkRequest: expect.objectContaining({
               params: {
-                validators: `${validatorPublicKey.toLowerCase().slice(2)}`,
+                validators: `${validatorPublicKey.toLowerCase()}`,
               },
             }),
           });
@@ -1766,7 +1766,7 @@ describe('TransactionsViewController tests', () => {
             url: `${stakingApiUrl}/v1/eth/stakes`,
             networkRequest: expect.objectContaining({
               params: {
-                validators: `${validatorPublicKey.slice(2, KilnDecoder.KilnPublicKeyLength + 2)},${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
+                validators: `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)},0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
               },
             }),
           });

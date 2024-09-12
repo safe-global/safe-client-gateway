@@ -768,7 +768,10 @@ describe('NativeStakingMapper', () => {
 
       expect(mockStakingRepository.getStakes).toHaveBeenCalledWith({
         chainId: chain.chainId,
-        validatorsPublicKeys: `${validatorPublicKey.slice(2, KilnDecoder.KilnPublicKeyLength + 2)},${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
+        validatorsPublicKeys: [
+          `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)}`,
+          `0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
+        ],
       });
     });
 
