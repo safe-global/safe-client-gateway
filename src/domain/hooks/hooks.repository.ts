@@ -20,11 +20,14 @@ import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository
 import { IHooksRepository } from '@/domain/hooks/hooks.repository.interface';
 import { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { memoize, MemoizedFunction } from 'lodash';
 
 @Injectable()
 export class HooksRepositoryWithNotifications implements IHooksRepository {
   private static readonly HOOK_TYPE = 'hook';
   private readonly queueName: string;
+  private isSupportedChainIdMemo: ((chainId: string) => Promise<boolean>) &
+    MemoizedFunction;
 
   constructor(
     @Inject(IBalancesRepository)
@@ -55,6 +58,7 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
     private readonly eventNotificationsHelper: EventNotificationsHelper,
   ) {
     this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
+    this.isSupportedChainIdMemo = memoize(this.isSupportedChainId);
   }
 
   onModuleInit(): Promise<void> {
@@ -338,6 +342,10 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
         );
         break;
       case ConfigEventType.CHAIN_UPDATE:
+        // As the chains have been updated, we need to clear the memoized function cache.
+        if (this.isSupportedChainIdMemo.cache.clear) {
+          this.isSupportedChainIdMemo.cache.clear();
+        }
         promises.push(
           this.chainsRepository.clearChain(event.chainId).then(() => {
             // RPC may have changed
@@ -441,6 +449,8 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
 export class HooksRepository implements IHooksRepository {
   private static readonly HOOK_TYPE = 'hook';
   private readonly queueName: string;
+  private isSupportedChainIdMemo: ((chainId: string) => Promise<boolean>) &
+    MemoizedFunction;
 
   constructor(
     @Inject(IBalancesRepository)
@@ -469,6 +479,7 @@ export class HooksRepository implements IHooksRepository {
     private readonly configurationService: IConfigurationService,
   ) {
     this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
+    this.isSupportedChainIdMemo = memoize(this.isSupportedChainId);
   }
 
   onModuleInit(): Promise<void> {
@@ -487,7 +498,7 @@ export class HooksRepository implements IHooksRepository {
   }
 
   async onEvent(event: Event): Promise<unknown> {
-    const isSupportedChainId = await this.isSupportedChainId(event.chainId);
+    const isSupportedChainId = await this.isSupportedChainIdMemo(event.chainId);
     if (isSupportedChainId) {
       return this.onEventClearCache(event).finally(() => {
         this.onEventLog(event);
@@ -749,6 +760,10 @@ export class HooksRepository implements IHooksRepository {
         );
         break;
       case ConfigEventType.CHAIN_UPDATE:
+        // As the chains have been updated, we need to clear the memoized function cache.
+        if (this.isSupportedChainIdMemo.cache.clear) {
+          this.isSupportedChainIdMemo.cache.clear();
+        }
         promises.push(
           this.chainsRepository.clearChain(event.chainId).then(() => {
             // RPC may have changed
