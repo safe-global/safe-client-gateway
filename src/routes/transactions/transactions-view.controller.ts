@@ -13,6 +13,7 @@ import {
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
 import { NativeStakingDepositConfirmationView } from '@/routes/transactions/entities/staking/native-staking-deposit-confirmation-view.entity';
 import { NativeStakingValidatorsExitConfirmationView } from '@/routes/transactions/entities/staking/native-staking-validators-exit-confirmation-view.entity';
+import { NativeStakingWithdrawConfirmationView } from '@/routes/transactions/entities/staking/native-staking-withdraw-confirmation-view.entity';
 import { KilnNativeStakingHelperModule } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { SwapAppsHelperModule } from '@/routes/transactions/helpers/swap-apps.helper';
 import { SwapOrderHelperModule } from '@/routes/transactions/helpers/swap-order.helper';
@@ -54,6 +55,7 @@ export class TransactionsViewController {
         { $ref: getSchemaPath(CowSwapConfirmationView) },
         { $ref: getSchemaPath(NativeStakingDepositConfirmationView) },
         { $ref: getSchemaPath(NativeStakingValidatorsExitConfirmationView) },
+        { $ref: getSchemaPath(NativeStakingWithdrawConfirmationView) },
       ],
     },
   })
@@ -62,6 +64,7 @@ export class TransactionsViewController {
     CowSwapConfirmationView,
     NativeStakingDepositConfirmationView,
     NativeStakingValidatorsExitConfirmationView,
+    NativeStakingWithdrawConfirmationView,
   )
   @ApiOperation({
     summary: 'Confirm Transaction View',
