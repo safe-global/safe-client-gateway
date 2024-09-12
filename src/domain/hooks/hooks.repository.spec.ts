@@ -105,7 +105,9 @@ describe('HooksRepository (Unit)', () => {
 
   it('should process events for known chains and memoize the chain lookup', async () => {
     const chain = chainBuilder().build();
-    const event = incomingTokenEventBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
     mockChainsRepository.getChain.mockResolvedValue(chain);
 
     // same event 3 times
@@ -134,7 +136,9 @@ describe('HooksRepository (Unit)', () => {
 
   it('should clear the chain lookup cache on a CHAIN_UPDATE event', async () => {
     const chain = chainBuilder().build();
-    const event = incomingTokenEventBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
     mockChainsRepository.getChain.mockResolvedValue(chain);
     mockChainsRepository.clearChain.mockResolvedValue();
 
@@ -147,8 +151,8 @@ describe('HooksRepository (Unit)', () => {
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
 
-    // 3 calls to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(3);
+    // 2 calls to getChain
+    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(2);
 
     // 5 calls to repositories
     expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(5);
@@ -166,7 +170,10 @@ describe('HooksRepository (Unit)', () => {
   });
 
   it('should not process events for unknown chains', async () => {
-    const event = incomingTokenEventBuilder().build();
+    const chain = chainBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
     mockChainsRepository.getChain.mockRejectedValue(new NotFoundException());
 
     await hooksRepository.onEvent(event);
@@ -212,7 +219,9 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
 
   it('should process events for known chains and memoize the chain lookup', async () => {
     const chain = chainBuilder().build();
-    const event = incomingTokenEventBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
     mockChainsRepository.getChain.mockResolvedValue(chain);
 
     // same event 3 times
@@ -241,7 +250,9 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
 
   it('should clear the chain lookup cache on a CHAIN_UPDATE event', async () => {
     const chain = chainBuilder().build();
-    const event = incomingTokenEventBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
     mockChainsRepository.getChain.mockResolvedValue(chain);
     mockChainsRepository.clearChain.mockResolvedValue();
 
@@ -254,8 +265,8 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
 
-    // 3 calls to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(3);
+    // 2 calls to getChain
+    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(2);
 
     // 5 calls to repositories
     expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(5);
@@ -273,7 +284,10 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
   });
 
   it('should not process events for unknown chains', async () => {
-    const event = incomingTokenEventBuilder().build();
+    const chain = chainBuilder().build();
+    const event = incomingTokenEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
     mockChainsRepository.getChain.mockRejectedValue(new NotFoundException());
 
     await hooksRepositoryWithNotifications.onEvent(event);
