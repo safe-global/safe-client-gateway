@@ -267,7 +267,7 @@ export class NativeStakingMapper {
    * - If the transaction is confirmed but the execution date is not available, the status
    * is {@link StakingValidatorsExitStatus.AwaitingExecution}.
    * - If the execution date is available, the status is {@link StakingValidatorsExitStatus.RequestPending} if the
-   * current date is before the estimated exit time, otherwise the status is {@link StakingValidatorsExitStatus.ReadyToWithdraw}.
+   * current date is before the estimated exit + withdrawal time, otherwise the status is {@link StakingValidatorsExitStatus.ReadyToWithdraw}.
    *
    * @param networkStats - the network stats for the chain where the native staking deployment lives.
    * @param transaction - the validators exit transaction.
