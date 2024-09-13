@@ -1,6 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
@@ -14,6 +15,7 @@ import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 
 const dataSource = {
   get: jest.fn(),
@@ -25,9 +27,17 @@ const configurationService = {
 } as jest.MockedObjectDeep<IConfigurationService>;
 const mockConfigurationService = jest.mocked(configurationService);
 
+const cacheService = {
+  deleteByKey: jest.fn(),
+  set: jest.fn(),
+  get: jest.fn(),
+} as jest.MockedObjectDeep<ICacheService>;
+const mockCacheService = jest.mocked(cacheService);
+
 describe('KilnApi', () => {
   let target: KilnApi;
 
+  let chainId: string;
   let baseUrl: string;
   let apiKey: string;
   let httpErrorFactory: HttpErrorFactory;
@@ -37,6 +47,7 @@ describe('KilnApi', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
+    chainId = faker.string.numeric();
     baseUrl = faker.internet.url({ appendSlash: false });
     apiKey = faker.string.hexadecimal({ length: 32 });
     httpErrorFactory = new HttpErrorFactory();
@@ -58,6 +69,8 @@ describe('KilnApi', () => {
       mockDataSource,
       httpErrorFactory,
       mockConfigurationService,
+      mockCacheService,
+      chainId,
     );
   });
 
@@ -446,6 +459,7 @@ describe('KilnApi', () => {
 
   describe('getStakes', () => {
     it('should return stakes', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const validatorsPublicKeys = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
         () =>
@@ -464,13 +478,20 @@ describe('KilnApi', () => {
         data: stakes,
       });
 
-      const actual = await target.getStakes(validatorsPublicKeys);
+      const actual = await target.getStakes({
+        safeAddress,
+        validatorsPublicKeys,
+      });
 
       expect(actual).toBe(stakes);
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys),
+        cacheDir: CacheRouter.getStakingStakesCacheDir({
+          chainId,
+          safeAddress,
+          validatorsPublicKeys,
+        }),
         url: getStakesUrl,
         networkRequest: {
           headers: {
@@ -486,6 +507,7 @@ describe('KilnApi', () => {
     });
 
     it('should forward errors', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const validatorsPublicKeys = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
         () =>
@@ -509,13 +531,20 @@ describe('KilnApi', () => {
           new Error(errorMessage),
         ),
       );
-      await expect(target.getStakes(validatorsPublicKeys)).rejects.toThrow(
-        expected,
-      );
+      await expect(
+        target.getStakes({
+          safeAddress,
+          validatorsPublicKeys,
+        }),
+      ).rejects.toThrow(expected);
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys),
+        cacheDir: CacheRouter.getStakingStakesCacheDir({
+          chainId,
+          safeAddress,
+          validatorsPublicKeys,
+        }),
         url: getStakesUrl,
         networkRequest: {
           headers: {
@@ -528,6 +557,20 @@ describe('KilnApi', () => {
         expireTimeSeconds: stakingExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
       });
+    });
+  });
+
+  describe('clearStakes', () => {
+    it('should clear Safe stakes cache', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      await target.clearStakes(safeAddress);
+
+      expect(cacheService.deleteByKey).toHaveBeenCalledTimes(1);
+      expect(cacheService.deleteByKey).toHaveBeenNthCalledWith(
+        1,
+        `${chainId}_staking_stakes_${safeAddress}`,
+      );
     });
   });
 });

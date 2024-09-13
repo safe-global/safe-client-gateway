@@ -591,21 +591,35 @@ export class CacheRouter {
     );
   }
 
+  static getStakingStakesCacheKey(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): string {
+    return `${args.chainId}_${CacheRouter.STAKING_STAKES_KEY}_${args.safeAddress}`;
+  }
+
   /**
    * Calculate cache directory for staking stakes.
    *
    * Note: This function hashes the validators' public keys to keep the
-   * cache key short and deterministic. Redis and other cache systems
-   * may experience performance degradation with long keys.
+   * cache field short and deterministic. Redis and other cache systems
+   * may experience performance degradation with long fields.
    *
+   * @param chainId - Chain ID
+   * @param safeAddress - Safe address
    * @param validatorsPublicKeys - Array of validators public keys
    * @returns {@link CacheDir} - Cache directory
    */
-  static getStakingStakesCacheDir(
-    validatorsPublicKeys: Array<`0x${string}`>,
-  ): CacheDir {
+  static getStakingStakesCacheDir(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    validatorsPublicKeys: Array<`0x${string}`>;
+  }): CacheDir {
     const hash = crypto.createHash('sha256');
-    hash.update(validatorsPublicKeys.join('_'));
-    return new CacheDir(`${this.STAKING_STAKES_KEY}_${hash.digest('hex')}`, '');
+    hash.update(args.validatorsPublicKeys.join('_'));
+    return new CacheDir(
+      CacheRouter.getStakingStakesCacheKey(args),
+      hash.digest('hex'),
+    );
   }
 }

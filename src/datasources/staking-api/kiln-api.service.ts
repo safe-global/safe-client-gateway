@@ -1,6 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
 import { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
@@ -20,6 +21,8 @@ export class KilnApi implements IStakingApi {
     private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
     private readonly configurationService: IConfigurationService,
+    private readonly cacheService: ICacheService,
+    private readonly chainId: string,
   ) {
     this.stakingExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -170,13 +173,28 @@ export class KilnApi implements IStakingApi {
     }
   }
 
-  async getStakes(
-    validatorsPublicKeys: Array<`0x${string}`>,
-  ): Promise<Stake[]> {
+  /**
+   * Gets the {@link Stake} for the given {@param args.validatorsPublicKeys}.
+   *
+   * The {@param args.safeAddress} is only used for caching purposes.
+   *
+   * @param args.safeAddress - Safe address
+   * @param args.validatorsPublicKeys - Validators public keys
+   *
+   * @returns {@link Stake} array
+   * @see https://docs.api.kiln.fi/reference/getethstakes
+   */
+  async getStakes(args: {
+    safeAddress: `0x${string}`;
+    validatorsPublicKeys: Array<`0x${string}`>;
+  }): Promise<Stake[]> {
     try {
       const url = `${this.baseUrl}/v1/eth/stakes`;
-      const cacheDir =
-        CacheRouter.getStakingStakesCacheDir(validatorsPublicKeys);
+      const cacheDir = CacheRouter.getStakingStakesCacheDir({
+        chainId: this.chainId,
+        safeAddress: args.safeAddress,
+        validatorsPublicKeys: args.validatorsPublicKeys,
+      });
       // Note: Kiln always return { data: T }
       const { data } = await this.dataSource.get<{
         data: Array<Stake>;
@@ -188,7 +206,7 @@ export class KilnApi implements IStakingApi {
             Authorization: `Bearer ${this.apiKey}`,
           },
           params: {
-            validators: validatorsPublicKeys.join(','),
+            validators: args.validatorsPublicKeys.join(','),
           },
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -200,6 +218,14 @@ export class KilnApi implements IStakingApi {
     }
   }
 
+  async clearStakes(safeAddress: `0x${string}`): Promise<void> {
+    const key = CacheRouter.getStakingStakesCacheKey({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
   /**
    * Converts array of chainId and vault to DeFi vault identifier
    * @param args.chainId - chain ID
@@ -209,9 +235,11 @@ export class KilnApi implements IStakingApi {
    * @see https://docs.api.kiln.fi/reference/getdefinetworkstats
    */
   private getDefiVaultIdentifier(args: {
+    // TODO: Can use this.chainId
     chainId: string;
     vault: `0x${string}`;
   }): string {
+    // TODO: Type this in accordance with DefiVaultStatsChains, throwing if this.chainId isn't supported
     const chainIdentifiers = {
       '1': 'eth',
       '42161': 'arb',

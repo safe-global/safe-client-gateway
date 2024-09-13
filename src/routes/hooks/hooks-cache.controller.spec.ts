@@ -31,6 +31,8 @@ import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.in
 import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
 import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 
 describe('Post Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;
@@ -434,6 +436,56 @@ describe('Post Hook Events for Cache (Unit)', () => {
     await fakeCacheService.set(
       cacheDir,
       faker.string.alpha(),
+      faker.number.int({ min: 1 }),
+    );
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      ...payload,
+    };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+          return Promise.resolve({
+            data: chainBuilder().with('chainId', chainId).build(),
+            status: 200,
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(`/hooks/events`)
+      .set('Authorization', `Basic ${authToken}`)
+      .send(data)
+      .expect(202);
+
+    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+  });
+
+  it.each([
+    {
+      type: 'EXECUTED_MULTISIG_TRANSACTION',
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+    },
+  ])('$type clears Safe stakes', async (payload) => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const chainId = faker.string.numeric();
+    const validatorsPublicKeys = faker.string.hexadecimal({
+      length: KilnDecoder.KilnPublicKeyLength,
+    });
+    const stakes = Array.from({ length: validatorsPublicKeys.length }, () =>
+      stakeBuilder().build(),
+    );
+    const cacheDir = new CacheDir(
+      `${chainId}_staking_stakes_${getAddress(safeAddress)}`,
+      validatorsPublicKeys,
+    );
+    await fakeCacheService.set(
+      cacheDir,
+      JSON.stringify(stakes),
       faker.number.int({ min: 1 }),
     );
     const data = {

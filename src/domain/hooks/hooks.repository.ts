@@ -167,6 +167,10 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
             chainId: event.chainId,
             address: event.address,
           }),
+          this.stakingRepository.clearStakes({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
         );
         break;
       // A new confirmation for a pending transaction affects:
@@ -567,6 +571,10 @@ export class HooksRepository implements IHooksRepository {
           this.safeRepository.clearSafe({
             chainId: event.chainId,
             address: event.address,
+          }),
+          this.stakingRepository.clearStakes({
+            chainId: event.chainId,
+            safeAddress: event.address,
           }),
         );
         break;

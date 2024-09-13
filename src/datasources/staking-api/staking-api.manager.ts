@@ -1,5 +1,9 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
@@ -17,6 +21,8 @@ export class StakingApiManager implements IStakingApiManager {
     private readonly configurationService: IConfigurationService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
   ) {}
 
   async getApi(chainId: string): Promise<IStakingApi> {
@@ -39,6 +45,8 @@ export class StakingApiManager implements IStakingApiManager {
       this.dataSource,
       this.httpErrorFactory,
       this.configurationService,
+      this.cacheService,
+      chain.chainId,
     );
 
     return Promise.resolve(this.apis[chainId]);

@@ -120,6 +120,7 @@ export class NativeStakingMapper {
    * native staking `requestValidatorsExit` transaction.
    *
    * @param args.chainId - the chain ID of the native staking deployment
+   * @param args.safeAddress - the Safe staking
    * @param args.to - the address of the native staking deployment
    * @param args.transaction - the transaction object for the validators exit
    * @param args.dataDecoded - the decoded data of the transaction
@@ -127,6 +128,7 @@ export class NativeStakingMapper {
    */
   public async mapValidatorsExitInfo(args: {
     chainId: string;
+    safeAddress: `0x${string}`;
     to: `0x${string}`;
     transaction: MultisigTransaction | ModuleTransaction | null;
     dataDecoded: DataDecoded;
@@ -146,10 +148,11 @@ export class NativeStakingMapper {
       args.dataDecoded,
     );
     const value = this.getValueFromNumValidators(numValidators, chain);
-    const rewards = await this.getRewardsFromDataDecoded(
-      args.dataDecoded,
-      chain,
-    );
+    const rewards = await this.getRewardsFromDataDecoded({
+      dataDecoded: args.dataDecoded,
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
 
     return new NativeStakingValidatorsExitTransactionInfo({
       status: this.mapValidatorsExitStatus(networkStats, args.transaction),
@@ -174,6 +177,7 @@ export class NativeStakingMapper {
    * native staking `batchWithdrawCLFee` transaction.
    *
    * @param args.chainId - the chain ID of the native staking deployment
+   * @param args.safeAddress - the Safe staking
    * @param args.to - the address of the native staking deployment
    * @param args.transaction - the transaction object for the withdraw
    * @param args.dataDecoded - the decoded data of the transaction
@@ -181,6 +185,7 @@ export class NativeStakingMapper {
    */
   public async mapWithdrawInfo(args: {
     chainId: string;
+    safeAddress: `0x${string}`;
     to: `0x${string}`;
     transaction: MultisigTransaction | ModuleTransaction | null;
     dataDecoded: DataDecoded;
@@ -197,10 +202,11 @@ export class NativeStakingMapper {
       args.dataDecoded,
     );
     const value = this.getValueFromNumValidators(numValidators, chain);
-    const rewards = await this.getRewardsFromDataDecoded(
-      args.dataDecoded,
-      chain,
-    );
+    const rewards = await this.getRewardsFromDataDecoded({
+      dataDecoded: args.dataDecoded,
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
 
     return new NativeStakingWithdrawTransactionInfo({
       value: getNumberString(value),
@@ -327,20 +333,23 @@ export class NativeStakingMapper {
    * Each {@link KilnDecoder.KilnPublicKeyLength} characters represent a validator to withdraw,
    * and each native staking validator has a fixed amount of 32 ETH to withdraw.
    *
-   * @param data - the decoded data of the transaction
-   * @param chain - the chain where the native staking deployment lives
+   * @param dataDecoded - the decoded data of the transaction
+   * @param chainId - the ID of the chain where the native staking deployment lives
+   * @param safeAddress - the Safe staking
    * @returns the rewards to withdraw from the native staking deployment
    */
-  private async getRewardsFromDataDecoded(
-    data: DataDecoded,
-    chain: Chain,
-  ): Promise<number> {
-    const publicKeys = this.getPublicKeysFromDataDecoded(data);
+  private async getRewardsFromDataDecoded(args: {
+    dataDecoded: DataDecoded;
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<number> {
+    const publicKeys = this.getPublicKeysFromDataDecoded(args.dataDecoded);
     if (!publicKeys) {
       return 0;
     }
     const stakes = await this.stakingRepository.getStakes({
-      chainId: chain.chainId,
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
       validatorsPublicKeys: this.splitPublicKeys(publicKeys),
     });
     return stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
