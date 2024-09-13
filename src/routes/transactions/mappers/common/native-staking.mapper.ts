@@ -293,7 +293,8 @@ export class NativeStakingMapper {
 
     const estimatedCompletionTime =
       transaction.executionDate.getTime() +
-      networkStats.estimated_exit_time_seconds * 1000;
+      networkStats.estimated_exit_time_seconds * 1000 +
+      networkStats.estimated_withdrawal_time_seconds * 1000;
 
     return Date.now() <= estimatedCompletionTime
       ? StakingValidatorsExitStatus.RequestPending
