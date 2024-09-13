@@ -58,4 +58,10 @@ export class ChainsRepository implements IChainsRepository {
     const indexingStatus = await transactionApi.getIndexingStatus();
     return IndexingStatusSchema.parse(indexingStatus);
   }
+
+  async isSupportedChain(chainId: string): Promise<boolean> {
+    return this.getChain(chainId)
+      .then(() => true)
+      .catch(() => false);
+  }
 }

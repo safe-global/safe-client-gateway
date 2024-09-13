@@ -18,7 +18,6 @@ import { TransactionsRepository } from '@/domain/transactions/transactions.repos
 import { ILoggingService } from '@/logging/logging.interface';
 import { chainUpdateEventBuilder } from '@/routes/hooks/entities/__tests__/chain-update.builder';
 import { incomingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-token.builder';
-import { NotFoundException } from '@nestjs/common';
 
 const mockBalancesRepository = jest.mocked({
   clearApi: jest.fn(),
@@ -32,6 +31,7 @@ const mockBlockchainRepository = jest.mocked({
 const mockChainsRepository = jest.mocked({
   getChain: jest.fn(),
   clearChain: jest.fn(),
+  isSupportedChain: jest.fn(),
 } as jest.MockedObjectDeep<ChainsRepository>);
 
 const mockCollectiblesRepository = jest.mocked({
@@ -108,16 +108,18 @@ describe('HooksRepository (Unit)', () => {
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)
       .build();
-    mockChainsRepository.getChain.mockResolvedValue(chain);
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
 
     // same event 3 times
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
 
-    // only one call to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(1);
-    expect(mockChainsRepository.getChain).toHaveBeenCalledWith(event.chainId);
+    // only one call to isSupportedChain
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledTimes(1);
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledWith(
+      event.chainId,
+    );
 
     // 3 calls to repositories
     expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(3);
@@ -139,7 +141,7 @@ describe('HooksRepository (Unit)', () => {
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)
       .build();
-    mockChainsRepository.getChain.mockResolvedValue(chain);
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
     mockChainsRepository.clearChain.mockResolvedValue();
 
     await hooksRepository.onEvent(event);
@@ -151,8 +153,8 @@ describe('HooksRepository (Unit)', () => {
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
 
-    // 2 calls to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(2);
+    // 2 calls to isSupportedChain
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledTimes(2);
 
     // 5 calls to repositories
     expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(5);
@@ -174,14 +176,14 @@ describe('HooksRepository (Unit)', () => {
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)
       .build();
-    mockChainsRepository.getChain.mockRejectedValue(new NotFoundException());
+    mockChainsRepository.isSupportedChain.mockResolvedValue(false);
 
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
 
-    // only one call to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(1);
+    // only one call to isSupportedChain
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledTimes(1);
 
     // event not processed, no calls to repositories
     expect(mockBalancesRepository.clearBalances).not.toHaveBeenCalled();
@@ -222,16 +224,18 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)
       .build();
-    mockChainsRepository.getChain.mockResolvedValue(chain);
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
 
     // same event 3 times
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
 
-    // only one call to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(1);
-    expect(mockChainsRepository.getChain).toHaveBeenCalledWith(event.chainId);
+    // only one call to isSupportedChain
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledTimes(1);
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledWith(
+      event.chainId,
+    );
 
     // 3 calls to repositories
     expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(3);
@@ -253,7 +257,7 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)
       .build();
-    mockChainsRepository.getChain.mockResolvedValue(chain);
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
     mockChainsRepository.clearChain.mockResolvedValue();
 
     await hooksRepositoryWithNotifications.onEvent(event);
@@ -265,8 +269,8 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
 
-    // 2 calls to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(2);
+    // 2 calls to isSupportedChain
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledTimes(2);
 
     // 5 calls to repositories
     expect(mockBalancesRepository.clearBalances).toHaveBeenCalledTimes(5);
@@ -288,14 +292,14 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)
       .build();
-    mockChainsRepository.getChain.mockRejectedValue(new NotFoundException());
+    mockChainsRepository.isSupportedChain.mockResolvedValue(false);
 
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
 
-    // only one call to getChain
-    expect(mockChainsRepository.getChain).toHaveBeenCalledTimes(1);
+    // only one call to isSupportedChain
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledTimes(1);
 
     // event not processed, no calls to repositories
     expect(mockBalancesRepository.clearBalances).not.toHaveBeenCalled();

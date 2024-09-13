@@ -58,7 +58,9 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
     private readonly eventNotificationsHelper: EventNotificationsHelper,
   ) {
     this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
-    this.isSupportedChainMemo = memoize(this.isSupportedChain);
+    this.isSupportedChainMemo = memoize(
+      this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
+    );
   }
 
   onModuleInit(): Promise<void> {
@@ -87,18 +89,11 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
       });
     } else {
       this.loggingService.warn({
-        type: 'unsupported_event_chain',
+        type: 'unsupported_chain_event',
         chainId: event.chainId,
         eventType: event.type,
       });
     }
-  }
-
-  private async isSupportedChain(chainId: string): Promise<boolean> {
-    return this.chainsRepository
-      .getChain(chainId)
-      .then(() => true)
-      .catch(() => false);
   }
 
   private async onEventClearCache(event: Event): Promise<void[]> {
@@ -485,7 +480,9 @@ export class HooksRepository implements IHooksRepository {
     private readonly configurationService: IConfigurationService,
   ) {
     this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
-    this.isSupportedChainMemo = memoize(this.isSupportedChain);
+    this.isSupportedChainMemo = memoize(
+      this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
+    );
   }
 
   onModuleInit(): Promise<void> {
@@ -511,18 +508,11 @@ export class HooksRepository implements IHooksRepository {
       });
     } else {
       this.loggingService.warn({
-        type: 'unsupported_event_chain',
+        type: 'unsupported_chain_event',
         chainId: event.chainId,
         eventType: event.type,
       });
     }
-  }
-
-  private async isSupportedChain(chainId: string): Promise<boolean> {
-    return this.chainsRepository
-      .getChain(chainId)
-      .then(() => true)
-      .catch(() => false);
   }
 
   private async onEventClearCache(event: Event): Promise<void[]> {
