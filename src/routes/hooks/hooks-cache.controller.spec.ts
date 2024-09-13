@@ -1059,7 +1059,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({
-              data: chainBuilder().with('chainId', chain.chainId).build(),
+              data: chain,
               status: 200,
             });
           default:
