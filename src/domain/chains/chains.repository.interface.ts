@@ -43,6 +43,13 @@ export interface IChainsRepository {
    * @param chainId
    */
   getIndexingStatus(chainId: string): Promise<IndexingStatus>;
+
+  /**
+   * Checks if the {@link Chain} associated with {@link chainId} is supported.
+   *
+   * @param chainId
+   */
+  isSupportedChain(chainId: string): Promise<boolean>;
 }
 
 @Module({

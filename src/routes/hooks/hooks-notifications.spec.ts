@@ -154,7 +154,18 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
+    const chain = chainBuilder().build();
     notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
+        return Promise.resolve({
+          data: chain,
+          status: 200,
+        });
+      } else {
+        return Promise.reject(`No matching rule for url: ${url}`);
+      }
+    });
 
     await request(app.getHttpServer())
       .post(`/hooks/events`)
@@ -1978,7 +1989,18 @@ describe('Post Hook Events for Notifications (Unit)', () => {
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
     );
+    const chain = chainBuilder().build();
     notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
+        return Promise.resolve({
+          data: chain,
+          status: 200,
+        });
+      } else {
+        return Promise.reject(`No matching rule for url: ${url}`);
+      }
+    });
 
     pushNotificationsApi.enqueueNotification
       // Specific error regarding unregistered/stale tokens

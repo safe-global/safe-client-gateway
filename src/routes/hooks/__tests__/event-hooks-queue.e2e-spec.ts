@@ -14,6 +14,7 @@ import { RedisClientType } from 'redis';
 import { getAddress } from 'viem';
 import { Server } from 'net';
 import { TEST_SAFE } from '@/routes/common/__tests__/constants';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;
@@ -492,14 +493,14 @@ describe('Events queue processing e2e tests', () => {
       type: 'CHAIN_UPDATE',
     },
   ])('$type clears chain', async (payload) => {
-    const chainId = faker.string.numeric();
-    const cacheDir = new CacheDir(`${chainId}_chain`, '');
+    const chain = chainBuilder().build();
+    const cacheDir = new CacheDir(`${chain.chainId}_chain`, '');
     await redisClient.hSet(
       `${cacheKeyPrefix}-${cacheDir.key}`,
       cacheDir.field,
-      faker.string.alpha(),
+      JSON.stringify(chain),
     );
-    const data = { chainId, ...payload };
+    const data = { chainId: chain.chainId, ...payload };
 
     await channel.sendToQueue(queueName, data);
 
