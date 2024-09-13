@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/routes/hooks/entities/event.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -10,7 +10,9 @@ import { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notificat
 import { EventCacheHelper } from '@/domain/hooks/helpers/event-cache.helper';
 
 @Injectable()
-export class HooksRepositoryWithNotifications implements IHooksRepository {
+export class HooksRepositoryWithNotifications
+  implements IHooksRepository, OnModuleInit
+{
   private readonly queueName: string;
 
   constructor(
@@ -52,14 +54,10 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
         this.eventCacheHelper.onEventClearCache(event),
         this.eventNotificationsHelper.onEventEnqueueNotifications(event),
       ]).finally(() => {
-        this.eventCacheHelper.onEventLog(event);
+        this.eventCacheHelper.onSupportChainEventLog(event);
       });
     } else {
-      this.loggingService.warn({
-        type: 'unsupported_chain_event',
-        chainId: event.chainId,
-        eventType: event.type,
-      });
+      return this.eventCacheHelper.onUnsupportedChainEventLog(event);
     }
   }
 }
@@ -106,14 +104,10 @@ export class HooksRepository implements IHooksRepository {
     );
     if (isSupportedChainId) {
       return this.eventCacheHelper.onEventClearCache(event).finally(() => {
-        this.eventCacheHelper.onEventLog(event);
+        this.eventCacheHelper.onSupportChainEventLog(event);
       });
     } else {
-      this.loggingService.warn({
-        type: 'unsupported_chain_event',
-        chainId: event.chainId,
-        eventType: event.type,
-      });
+      return this.eventCacheHelper.onUnsupportedChainEventLog(event);
     }
   }
 }
