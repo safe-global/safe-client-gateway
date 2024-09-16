@@ -591,6 +591,13 @@ export class CacheRouter {
     );
   }
 
+  /**
+   * Calculated the chain/Safe-specific cache key of {@link Stake}.
+   *
+   * @param {string} args.chainId - Chain ID
+   * @param {string} args.safeAddress - Safe address
+   * @returns {string} - Cache key
+   */
   static getStakingStakesCacheKey(args: {
     chainId: string;
     safeAddress: `0x${string}`;
