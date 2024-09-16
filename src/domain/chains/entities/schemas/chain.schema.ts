@@ -105,8 +105,16 @@ export const ChainSchema = z.object({
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
   balancesProvider: BalancesProviderSchema,
-  transactionService: z.string().url(),
-  vpcTransactionService: z.string().url(),
+  transactionService: z
+    .string()
+    .url()
+    // We expect the URL to be without trailing slash
+    .transform((url) => url.replace(/\/$/, '')),
+  vpcTransactionService: z
+    .string()
+    .url()
+    // We expect the URL to be without trailing slash
+    .transform((url) => url.replace(/\/$/, '')),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
   ensRegistryAddress: AddressSchema.nullish().default(null),
