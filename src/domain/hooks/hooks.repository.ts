@@ -124,6 +124,10 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
+          this.stakingRepository.clearStakes({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
           this.safeRepository.clearModuleTransactions({
             chainId: event.chainId,
             safeAddress: event.address,
@@ -526,6 +530,10 @@ export class HooksRepository implements IHooksRepository {
       case TransactionEventType.MODULE_TRANSACTION:
         promises.push(
           this.safeRepository.clearAllExecutedTransactions({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
+          this.stakingRepository.clearStakes({
             chainId: event.chainId,
             safeAddress: event.address,
           }),
