@@ -470,6 +470,11 @@ describe('Post Hook Events for Cache (Unit)', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
+    {
+      type: 'MODULE_TRANSACTION',
+      module: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+    },
   ])('$type clears Safe stakes', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainId = faker.string.numeric();
