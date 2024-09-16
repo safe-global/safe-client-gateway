@@ -573,6 +573,7 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder()
         .with('estimated_exit_time_seconds', 2)
+        .with('estimated_withdrawal_time_seconds', 1)
         .build();
       const stakes = [stakeBuilder().build()];
       const validatorPublicKey = faker.string.hexadecimal({
@@ -589,7 +590,11 @@ describe('NativeStakingMapper', () => {
         ])
         .build();
       const executionDate = jest.now();
-      jest.advanceTimersByTime(3_000); // now > execution time + exit period
+      jest.advanceTimersByTime(
+        networkStats.estimated_exit_time_seconds * 1_000 +
+          networkStats.estimated_withdrawal_time_seconds * 1_000 +
+          1_000,
+      ); // now > execution time + exit/withdrawal period
       const transaction = multisigTransactionBuilder()
         .with('confirmationsRequired', 2) // 2 confirmations required
         .with('confirmations', [
