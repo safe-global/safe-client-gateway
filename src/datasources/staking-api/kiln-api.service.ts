@@ -178,8 +178,8 @@ export class KilnApi implements IStakingApi {
    *
    * The {@param args.safeAddress} is only used for caching purposes.
    *
-   * @param args.safeAddress - Safe address
-   * @param args.validatorsPublicKeys - Validators public keys
+   * @param {string} args.safeAddress - Safe address
+   * @param {string} args.validatorsPublicKeys - Validators public keys
    *
    * @returns {@link Stake} array
    * @see https://docs.api.kiln.fi/reference/getethstakes
@@ -218,6 +218,11 @@ export class KilnApi implements IStakingApi {
     }
   }
 
+  /**
+   * Clears the {@link Stake} cache for the {@param safeAddress}.
+   *
+   * @param {string} safeAddress - Safe address
+   */
   async clearStakes(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getStakingStakesCacheKey({
       chainId: this.chainId,

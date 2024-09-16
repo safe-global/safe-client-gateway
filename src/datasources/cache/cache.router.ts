@@ -605,9 +605,9 @@ export class CacheRouter {
    * cache field short and deterministic. Redis and other cache systems
    * may experience performance degradation with long fields.
    *
-   * @param chainId - Chain ID
-   * @param safeAddress - Safe address
-   * @param validatorsPublicKeys - Array of validators public keys
+   * @param {string} args.chainId - Chain ID
+   * @param {string} args.safeAddress - Safe address
+   * @param {string} args.validatorsPublicKeys - Array of validators public keys
    * @returns {@link CacheDir} - Cache directory
    */
   static getStakingStakesCacheDir(args: {
