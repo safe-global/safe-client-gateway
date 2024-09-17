@@ -340,14 +340,21 @@ describe('KilnApi', () => {
 
   describe('getDefiVaultStats', () => {
     it('should return the defi vault stats', async () => {
-      const [chain, chainId] = faker.helpers.arrayElement(
-        Object.entries(KilnApi.DefiVaultStatsChains),
+      const chainIds = {
+        eth: 1,
+        arb: 42161,
+        bsc: 56,
+        matic: 137,
+        op: 10,
+      };
+      const [chain, chain_id] = faker.helpers.arrayElement(
+        Object.entries(chainIds) as Array<[keyof typeof chainIds, number]>,
       );
       // Ensure target is created with supported chain
-      createTarget(chainId);
+      createTarget(chain_id.toString());
       const defiVaultStats = defiVaultStatsBuilder()
-        .with('chain', chain as keyof typeof KilnApi.DefiVaultStatsChains)
-        .with('chain_id', +chainId)
+        .with('chain', chain)
+        .with('chain_id', chain_id)
         .build();
       dataSource.get.mockResolvedValue({
         status: 200,
@@ -396,14 +403,21 @@ describe('KilnApi', () => {
     });
 
     it('should forward errors', async () => {
-      const [chain, chainId] = faker.helpers.arrayElement(
-        Object.entries(KilnApi.DefiVaultStatsChains),
+      const chainIds = {
+        eth: 1,
+        arb: 42161,
+        bsc: 56,
+        matic: 137,
+        op: 10,
+      };
+      const [chain, chain_id] = faker.helpers.arrayElement(
+        Object.entries(chainIds) as Array<[keyof typeof chainIds, number]>,
       );
       // Ensure target is created with supported chain
-      createTarget(chainId);
+      createTarget(chain_id.toString());
       const defiVaultStats = defiVaultStatsBuilder()
-        .with('chain', chain as keyof typeof KilnApi.DefiVaultStatsChains)
-        .with('chain_id', +chainId)
+        .with('chain', chain)
+        .with('chain_id', chain_id)
         .build();
       const getDefiVaultStatsUrl = `${baseUrl}/v1/defi/network-stats`;
       const errorMessage = faker.lorem.sentence();
