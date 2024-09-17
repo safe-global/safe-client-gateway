@@ -15,6 +15,16 @@ import { Stake } from '@/datasources/staking-api/entities/stake.entity';
 import { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 
 export class KilnApi implements IStakingApi {
+  public static DefiVaultStatsChains: {
+    [key in (typeof DefiVaultStatsChains)[number]]: string;
+  } = {
+    eth: '1',
+    arb: '42161',
+    bsc: '56',
+    matic: '137',
+    op: '10',
+  };
+
   private readonly stakingExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
 
@@ -245,18 +255,11 @@ export class KilnApi implements IStakingApi {
    * @see https://docs.api.kiln.fi/reference/getdefinetworkstats
    */
   private getDefiVaultIdentifier(vault: `0x${string}`): string {
-    const chains: {
-      [key in (typeof DefiVaultStatsChains)[number]]: string;
-    } = {
-      eth: '1',
-      arb: '42161',
-      bsc: '56',
-      matic: '137',
-      op: '10',
-    };
-    const chain = Object.entries(chains).find(([, chainId]) => {
-      return chainId === this.chainId;
-    });
+    const chain = Object.entries(KilnApi.DefiVaultStatsChains).find(
+      ([, chainId]) => {
+        return chainId === this.chainId;
+      },
+    );
 
     if (chain) {
       const chainIdentifier = chain[0];

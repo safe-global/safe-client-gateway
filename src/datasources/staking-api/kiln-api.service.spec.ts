@@ -340,27 +340,15 @@ describe('KilnApi', () => {
   });
 
   describe('getDefiVaultStats', () => {
-    const defiVaultsStatsChainIdentifiers: {
-      [key in (typeof DefiVaultStatsChains)[number]]: number;
-    } = {
-      eth: 1,
-      arb: 42161,
-      bsc: 56,
-      matic: 137,
-      op: 10,
-    };
-
     it('should return the defi vault stats', async () => {
-      const [chain, chain_id] = faker.helpers.arrayElement(
-        Object.entries(defiVaultsStatsChainIdentifiers) as Array<
-          [keyof typeof defiVaultsStatsChainIdentifiers, number]
-        >,
+      const [chain, chainId] = faker.helpers.arrayElement(
+        Object.entries(KilnApi.DefiVaultStatsChains),
       );
       // Ensure target is created with supported chain
-      createTarget(chain_id.toString());
+      createTarget(chainId);
       const defiVaultStats = defiVaultStatsBuilder()
-        .with('chain', chain)
-        .with('chain_id', chain_id)
+        .with('chain', chain as keyof typeof KilnApi.DefiVaultStatsChains)
+        .with('chain_id', +chainId)
         .build();
       dataSource.get.mockResolvedValue({
         status: 200,
@@ -409,16 +397,14 @@ describe('KilnApi', () => {
     });
 
     it('should forward errors', async () => {
-      const [chain, chain_id] = faker.helpers.arrayElement(
-        Object.entries(defiVaultsStatsChainIdentifiers) as Array<
-          [keyof typeof defiVaultsStatsChainIdentifiers, number]
-        >,
+      const [chain, chainId] = faker.helpers.arrayElement(
+        Object.entries(KilnApi.DefiVaultStatsChains),
       );
       // Ensure target is created with supported chain
-      createTarget(chain_id.toString());
+      createTarget(chainId);
       const defiVaultStats = defiVaultStatsBuilder()
-        .with('chain', chain)
-        .with('chain_id', chain_id)
+        .with('chain', chain as keyof typeof KilnApi.DefiVaultStatsChains)
+        .with('chain_id', +chainId)
         .build();
       const getDefiVaultStatsUrl = `${baseUrl}/v1/defi/network-stats`;
       const errorMessage = faker.lorem.sentence();
