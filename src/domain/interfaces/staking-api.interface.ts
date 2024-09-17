@@ -16,10 +16,7 @@ export interface IStakingApi {
 
   getPooledStakingStats(pool: `0x${string}`): Promise<PooledStakingStats>;
 
-  getDefiVaultStats(args: {
-    chainId: string;
-    vault: `0x${string}`;
-  }): Promise<Array<DefiVaultStats>>;
+  getDefiVaultStats(vault: `0x${string}`): Promise<Array<DefiVaultStats>>;
 
   getStakes(args: {
     safeAddress: `0x${string}`;

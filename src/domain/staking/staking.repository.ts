@@ -84,7 +84,7 @@ export class StakingRepository implements IStakingRepository {
     vault: `0x${string}`;
   }): Promise<DefiVaultStats> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const defiStats = await stakingApi.getDefiVaultStats(args);
+    const defiStats = await stakingApi.getDefiVaultStats(args.vault);
     // Cannot be >1 contract deployed at the same address so return first element
     return defiStats.map((defiStats) =>
       DefiVaultStatsSchema.parse(defiStats),

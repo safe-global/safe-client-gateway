@@ -4,7 +4,10 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
-import { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
+import {
+  DefiVaultStats,
+  DefiVaultStatsChains,
+} from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
@@ -143,13 +146,15 @@ export class KilnApi implements IStakingApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
-  async getDefiVaultStats(args: {
-    chainId: string;
-    vault: `0x${string}`;
-  }): Promise<Array<DefiVaultStats>> {
+  async getDefiVaultStats(
+    vault: `0x${string}`,
+  ): Promise<Array<DefiVaultStats>> {
     try {
       const url = `${this.baseUrl}/v1/defi/network-stats`;
-      const cacheDir = CacheRouter.getStakingDefiVaultStatsCacheDir(args);
+      const cacheDir = CacheRouter.getStakingDefiVaultStatsCacheDir({
+        chainId: this.chainId,
+        vault,
+      });
       // Note: Kiln always return { data: T }
       const { data } = await this.dataSource.get<{
         data: Array<DefiVaultStats>;
@@ -161,7 +166,7 @@ export class KilnApi implements IStakingApi {
             Authorization: `Bearer ${this.apiKey}`,
           },
           params: {
-            vaults: this.getDefiVaultIdentifier(args),
+            vaults: this.getDefiVaultIdentifier(vault),
           },
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -239,32 +244,25 @@ export class KilnApi implements IStakingApi {
    * @returns array of DeFi vault identifiers - `chainIdentifier_vault`, e.g. `eth_0x123`
    * @see https://docs.api.kiln.fi/reference/getdefinetworkstats
    */
-  private getDefiVaultIdentifier(args: {
-    // TODO: Can use this.chainId
-    chainId: string;
-    vault: `0x${string}`;
-  }): string {
-    // TODO: Type this in accordance with DefiVaultStatsChains, throwing if this.chainId isn't supported
-    const chainIdentifiers = {
-      '1': 'eth',
-      '42161': 'arb',
-      '56': 'bsc',
-      '137': 'matic',
-      '10': 'op',
+  private getDefiVaultIdentifier(vault: `0x${string}`): string {
+    const chains: {
+      [key in (typeof DefiVaultStatsChains)[number]]: string;
+    } = {
+      eth: '1',
+      arb: '42161',
+      bsc: '56',
+      matic: '137',
+      op: '10',
     };
+    const chain = Object.entries(chains).find(([, chainId]) => {
+      return chainId === this.chainId;
+    });
 
-    // Note: cannot narrow without it being a separate type guard
-    const isDeFiSupportedChain = (
-      chainId: string,
-    ): chainId is keyof typeof chainIdentifiers => {
-      return chainId in chainIdentifiers;
-    };
-
-    if (isDeFiSupportedChain(args.chainId)) {
-      const chainIdentifier = chainIdentifiers[args.chainId];
-      return `${chainIdentifier}_${args.vault}`;
+    if (chain) {
+      const chainIdentifier = chain[0];
+      return `${chainIdentifier}_${vault}`;
     } else {
-      throw new Error(`${args.chainId} is not supported for DeFi by Kiln`);
+      throw new Error(`${this.chainId} is not supported for DeFi by Kiln`);
     }
   }
 }
