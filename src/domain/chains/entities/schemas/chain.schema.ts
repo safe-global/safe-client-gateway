@@ -89,6 +89,10 @@ export const ContractAddressesSchema = z
     safeWebAuthnSignerFactoryAddress: null,
   });
 
+function removeTrailingSlash(url: string): string {
+  return url.replace(/\/$/, '');
+}
+
 export const ChainSchema = z.object({
   chainId: z.string(),
   chainName: z.string(),
@@ -105,16 +109,8 @@ export const ChainSchema = z.object({
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
   balancesProvider: BalancesProviderSchema,
-  transactionService: z
-    .string()
-    .url()
-    // We expect the URL to be without trailing slash
-    .transform((url) => url.replace(/\/$/, '')),
-  vpcTransactionService: z
-    .string()
-    .url()
-    // We expect the URL to be without trailing slash
-    .transform((url) => url.replace(/\/$/, '')),
+  transactionService: z.string().url().transform(removeTrailingSlash),
+  vpcTransactionService: z.string().url().transform(removeTrailingSlash),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
   ensRegistryAddress: AddressSchema.nullish().default(null),
