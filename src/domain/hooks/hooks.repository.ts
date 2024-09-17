@@ -139,6 +139,10 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
+          this.stakingRepository.clearStakes({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
           this.safeRepository.clearModuleTransactions({
             chainId: event.chainId,
             safeAddress: event.address,
@@ -181,6 +185,10 @@ export class HooksRepositoryWithNotifications implements IHooksRepository {
           this.safeRepository.clearSafe({
             chainId: event.chainId,
             address: event.address,
+          }),
+          this.stakingRepository.clearStakes({
+            chainId: event.chainId,
+            safeAddress: event.address,
           }),
         );
         break;
@@ -558,6 +566,10 @@ export class HooksRepository implements IHooksRepository {
             chainId: event.chainId,
             safeAddress: event.address,
           }),
+          this.stakingRepository.clearStakes({
+            chainId: event.chainId,
+            safeAddress: event.address,
+          }),
           this.safeRepository.clearModuleTransactions({
             chainId: event.chainId,
             safeAddress: event.address,
@@ -600,6 +612,10 @@ export class HooksRepository implements IHooksRepository {
           this.safeRepository.clearSafe({
             chainId: event.chainId,
             address: event.address,
+          }),
+          this.stakingRepository.clearStakes({
+            chainId: event.chainId,
+            safeAddress: event.address,
           }),
         );
         break;

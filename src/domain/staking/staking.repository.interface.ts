@@ -29,8 +29,14 @@ export interface IStakingRepository {
 
   getStakes(args: {
     chainId: string;
+    safeAddress: `0x${string}`;
     validatorsPublicKeys: Array<`0x${string}`>;
   }): Promise<Stake[]>;
+
+  clearStakes(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<void>;
 
   clearApi(chainId: string): void;
 }

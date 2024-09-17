@@ -390,6 +390,7 @@ export class MultisigTransactionInfoMapper {
     try {
       return await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId,
+        safeAddress: transaction.safe,
         to: nativeStakingValidatorsExitTransaction.to,
         transaction,
         dataDecoded,
@@ -430,6 +431,7 @@ export class MultisigTransactionInfoMapper {
     try {
       return await this.nativeStakingMapper.mapWithdrawInfo({
         chainId,
+        safeAddress: transaction.safe,
         to: nativeStakingWithdrawTransaction.to,
         transaction,
         dataDecoded,

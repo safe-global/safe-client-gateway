@@ -406,6 +406,7 @@ describe('NativeStakingMapper', () => {
 
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
+        safeAddress: transaction.safe,
         to: deployment.address,
         transaction,
         dataDecoded,
@@ -472,6 +473,7 @@ describe('NativeStakingMapper', () => {
 
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
+        safeAddress: transaction.safe,
         to: deployment.address,
         transaction,
         dataDecoded,
@@ -539,6 +541,7 @@ describe('NativeStakingMapper', () => {
 
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
+        safeAddress: transaction.safe,
         to: deployment.address,
         transaction,
         dataDecoded,
@@ -611,6 +614,7 @@ describe('NativeStakingMapper', () => {
 
       const actual = await target.mapValidatorsExitInfo({
         chainId: chain.chainId,
+        safeAddress: transaction.safe,
         to: deployment.address,
         transaction,
         dataDecoded,
@@ -655,6 +659,7 @@ describe('NativeStakingMapper', () => {
       await expect(
         target.mapValidatorsExitInfo({
           chainId: chain.chainId,
+          safeAddress: transaction.safe,
           to: deployment.address,
           transaction,
           dataDecoded,
@@ -680,6 +685,7 @@ describe('NativeStakingMapper', () => {
       await expect(
         target.mapValidatorsExitInfo({
           chainId: chain.chainId,
+          safeAddress: transaction.safe,
           to: deployment.address,
           transaction,
           dataDecoded,
@@ -705,6 +711,7 @@ describe('NativeStakingMapper', () => {
       await expect(
         target.mapValidatorsExitInfo({
           chainId: chain.chainId,
+          safeAddress: transaction.safe,
           to: deployment.address,
           transaction,
           dataDecoded,
@@ -750,6 +757,7 @@ describe('NativeStakingMapper', () => {
 
       const actual = await target.mapWithdrawInfo({
         chainId: chain.chainId,
+        safeAddress: transaction.safe,
         to: deployment.address,
         transaction,
         dataDecoded,
@@ -773,6 +781,7 @@ describe('NativeStakingMapper', () => {
 
       expect(mockStakingRepository.getStakes).toHaveBeenCalledWith({
         chainId: chain.chainId,
+        safeAddress: transaction.safe,
         validatorsPublicKeys: [
           `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)}`,
           `0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
@@ -795,6 +804,7 @@ describe('NativeStakingMapper', () => {
       await expect(
         target.mapWithdrawInfo({
           chainId: chain.chainId,
+          safeAddress: transaction.safe,
           to: deployment.address,
           transaction,
           dataDecoded,
@@ -818,6 +828,7 @@ describe('NativeStakingMapper', () => {
       await expect(
         target.mapWithdrawInfo({
           chainId: chain.chainId,
+          safeAddress: transaction.safe,
           to: deployment.address,
           transaction,
           dataDecoded,
@@ -841,6 +852,7 @@ describe('NativeStakingMapper', () => {
       await expect(
         target.mapWithdrawInfo({
           chainId: chain.chainId,
+          safeAddress: transaction.safe,
           to: deployment.address,
           transaction,
           dataDecoded,
