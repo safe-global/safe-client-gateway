@@ -11,7 +11,6 @@ import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
 import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/pooled-staking-stats.entity.builder';
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
-import { DefiVaultStatsChains } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
