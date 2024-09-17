@@ -550,6 +550,30 @@ describe('Chain schemas', () => {
       },
     );
 
+    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
+      'accept non-trailing slash %s as is',
+      (field) => {
+        const url = faker.internet.url({ appendSlash: false });
+        const chain = chainBuilder().with(field, url).build();
+
+        const result = ChainSchema.safeParse(chain);
+
+        expect(result.success && result.data[field]).toBe(url);
+      },
+    );
+
+    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
+      'should remove trailing slashes from %s',
+      (field) => {
+        const url = faker.internet.url({ appendSlash: false });
+        const chain = chainBuilder().with(field, `${url}/`).build();
+
+        const result = ChainSchema.safeParse(chain);
+
+        expect(result.success && result.data[field]).toBe(url);
+      },
+    );
+
     it.each([
       ['chainId' as const],
       ['chainName' as const],
