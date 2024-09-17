@@ -208,10 +208,15 @@ export class EventCacheHelper {
   ): Array<Promise<void>> {
     // An executed module transaction might affect:
     // - the list of all executed transactions for the safe
+    // - the stakes of a safe
     // - the list of module transactions for the safe
     // - the safe configuration
     return [
       this.safeRepository.clearAllExecutedTransactions({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
+      this.stakingRepository.clearStakes({
         chainId: event.chainId,
         safeAddress: event.address,
       }),
@@ -239,6 +244,7 @@ export class EventCacheHelper {
     // - queued transactions and history – clear multisig transactions
     // - the transaction executed – clear multisig transaction
     // - the safe configuration - clear safe info
+    // - the stakes of a safe
     return [
       this.collectiblesRepository.clearCollectibles({
         chainId: event.chainId,
@@ -263,6 +269,10 @@ export class EventCacheHelper {
       this.safeRepository.clearSafe({
         chainId: event.chainId,
         address: event.address,
+      }),
+      this.stakingRepository.clearStakes({
+        chainId: event.chainId,
+        safeAddress: event.address,
       }),
     ];
   }

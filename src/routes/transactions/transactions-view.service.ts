@@ -140,11 +140,13 @@ export class TransactionsViewService {
         return await this.getNativeStakingValidatorsExitConfirmationView({
           ...nativeStakingValidatorsExitTransaction,
           chainId: args.chainId,
+          safeAddress: args.safeAddress,
           dataDecoded,
         });
       } else if (nativeStakingWithdrawTransaction) {
         return await this.getNativeStakingWithdrawConfirmationView({
           ...nativeStakingWithdrawTransaction,
+          safeAddress: args.safeAddress,
           chainId: args.chainId,
           dataDecoded,
         });
@@ -338,6 +340,7 @@ export class TransactionsViewService {
 
   private async getNativeStakingValidatorsExitConfirmationView(args: {
     chainId: string;
+    safeAddress: `0x${string}`;
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
@@ -352,6 +355,7 @@ export class TransactionsViewService {
     const validatorsExitInfo =
       await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId: args.chainId,
+        safeAddress: args.safeAddress,
         to: args.to,
         transaction: null,
         dataDecoded,
@@ -365,6 +369,7 @@ export class TransactionsViewService {
 
   private async getNativeStakingWithdrawConfirmationView(args: {
     chainId: string;
+    safeAddress: `0x${string}`;
     to: `0x${string}`;
     data: `0x${string}`;
     dataDecoded: DataDecoded;
@@ -378,6 +383,7 @@ export class TransactionsViewService {
     }
     const withdrawInfo = await this.nativeStakingMapper.mapWithdrawInfo({
       chainId: args.chainId,
+      safeAddress: args.safeAddress,
       to: args.to,
       transaction: null,
       dataDecoded,

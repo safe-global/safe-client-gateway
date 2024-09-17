@@ -93,11 +93,20 @@ export class StakingRepository implements IStakingRepository {
 
   public async getStakes(args: {
     chainId: string;
+    safeAddress: `0x${string}`;
     validatorsPublicKeys: Array<`0x${string}`>;
   }): Promise<Stake[]> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const stakes = await stakingApi.getStakes(args.validatorsPublicKeys);
+    const stakes = await stakingApi.getStakes(args);
     return stakes.map((stake) => StakeSchema.parse(stake));
+  }
+
+  public async clearStakes(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<void> {
+    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
+    await stakingApi.clearStakes(args.safeAddress);
   }
 
   public clearApi(chainId: string): void {

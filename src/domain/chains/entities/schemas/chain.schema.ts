@@ -89,6 +89,10 @@ export const ContractAddressesSchema = z
     safeWebAuthnSignerFactoryAddress: null,
   });
 
+function removeTrailingSlash(url: string): string {
+  return url.replace(/\/$/, '');
+}
+
 export const ChainSchema = z.object({
   chainId: z.string(),
   chainName: z.string(),
@@ -105,8 +109,8 @@ export const ChainSchema = z.object({
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
   balancesProvider: BalancesProviderSchema,
-  transactionService: z.string().url(),
-  vpcTransactionService: z.string().url(),
+  transactionService: z.string().url().transform(removeTrailingSlash),
+  vpcTransactionService: z.string().url().transform(removeTrailingSlash),
   theme: ThemeSchema,
   gasPrice: GasPriceSchema,
   ensRegistryAddress: AddressSchema.nullish().default(null),
