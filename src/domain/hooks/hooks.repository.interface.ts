@@ -1,4 +1,4 @@
-import { EventCacheHelperModule } from '@/domain/hooks/helpers/event-cache.helper';
+import { EventCacheHelperModule } from '@/domain/hooks/helpers/event-cache.helper.module';
 import { EventNotificationsHelperModule } from '@/domain/hooks/helpers/event-notifications.helper';
 import {
   HooksRepository,

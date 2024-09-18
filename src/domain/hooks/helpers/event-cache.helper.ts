@@ -1,45 +1,20 @@
-import { Inject, Injectable, Module } from '@nestjs/common';
-import {
-  BalancesRepositoryModule,
-  IBalancesRepository,
-} from '@/domain/balances/balances.repository.interface';
-import {
-  ChainsRepositoryModule,
-  IChainsRepository,
-} from '@/domain/chains/chains.repository.interface';
-import {
-  CollectiblesRepositoryModule,
-  ICollectiblesRepository,
-} from '@/domain/collectibles/collectibles.repository.interface';
-import {
-  IMessagesRepository,
-  MessagesRepositoryModule,
-} from '@/domain/messages/messages.repository.interface';
-import {
-  ISafeAppsRepository,
-  SafeAppsRepositoryModule,
-} from '@/domain/safe-apps/safe-apps.repository.interface';
-import {
-  ISafeRepository,
-  SafeRepositoryModule,
-} from '@/domain/safe/safe.repository.interface';
-import {
-  ITransactionsRepository,
-  TransactionsRepositoryModule,
-} from '@/domain/transactions/transactions.repository.interface';
+import { Inject, Injectable } from '@nestjs/common';
+import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
+import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
+import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { ITransactionsRepository } from '@/domain/transactions/transactions.repository.interface';
 import {
   TransactionEventType,
   ConfigEventType,
 } from '@/routes/hooks/entities/event-type.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { Event } from '@/routes/hooks/entities/event.entity';
-import {
-  BlockchainRepositoryModule,
-  IBlockchainRepository,
-} from '@/domain/blockchain/blockchain.repository.interface';
+import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository.interface';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { memoize, MemoizedFunction } from 'lodash';
-import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 
 @Injectable()
 export class EventCacheHelper {
@@ -70,65 +45,52 @@ export class EventCacheHelper {
     private readonly loggingService: ILoggingService,
   ) {
     this.isSupportedChainMemo = memoize(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
     );
   }
 
-  public async onEventClearCache(event: Event): Promise<void[]> {
-    const promises: Promise<void>[] = [];
-    switch (event.type) {
-      case TransactionEventType.PENDING_MULTISIG_TRANSACTION:
-        promises.push(
-          ...this.onTransactionEventPendingMultisigTransaction(event),
-        );
-        break;
-      case TransactionEventType.DELETED_MULTISIG_TRANSACTION:
-        promises.push(
-          ...this.onTransactionEventDeletedMultisigTransaction(event),
-        );
-        break;
-      case TransactionEventType.MODULE_TRANSACTION:
-        promises.push(...this.onTransactionEventModuleTransaction(event));
-        break;
+  // TODO: Split service into multiple classes, each handling Config/Transactions events
+  private readonly EventTypeHandler: {
+    [Type in Event['type']]: (
+      event: Extract<Event, { type: Type }>,
+    ) => Array<Promise<void>>;
+  } = {
+    [TransactionEventType.PENDING_MULTISIG_TRANSACTION]:
+      this.onTransactionEventPendingMultisigTransaction.bind(this),
+    [TransactionEventType.DELETED_MULTISIG_TRANSACTION]:
+      this.onTransactionEventDeletedMultisigTransaction.bind(this),
+    [TransactionEventType.MODULE_TRANSACTION]:
+      this.onTransactionEventModuleTransaction.bind(this),
+    [TransactionEventType.EXECUTED_MULTISIG_TRANSACTION]:
+      this.onTransactionEventExecutedMultisigTransaction.bind(this),
+    [TransactionEventType.NEW_CONFIRMATION]:
+      this.onTransactionEventNewConfirmation.bind(this),
+    [TransactionEventType.INCOMING_ETHER]:
+      this.onTransactionEventIncomingEther.bind(this),
+    [TransactionEventType.OUTGOING_ETHER]:
+      this.onTransactionEventOutgoingEther.bind(this),
+    [TransactionEventType.INCOMING_TOKEN]:
+      this.onTransactionEventIncomingToken.bind(this),
+    [TransactionEventType.OUTGOING_TOKEN]:
+      this.onTransactionEventOutgoingToken.bind(this),
+    [TransactionEventType.MESSAGE_CREATED]:
+      this.onTransactionEventMessageCreated.bind(this),
+    [TransactionEventType.MESSAGE_CONFIRMATION]:
+      this.onTransactionEventMessageConfirmation.bind(this),
+    [TransactionEventType.SAFE_CREATED]:
+      this.onTransactionEventSafeCreated.bind(this),
+    [ConfigEventType.CHAIN_UPDATE]: this.onConfigEventChainUpdate.bind(this),
+    [ConfigEventType.SAFE_APPS_UPDATE]:
+      this.onConfigEventSafeAppsUpdate.bind(this),
+  };
 
-      case TransactionEventType.EXECUTED_MULTISIG_TRANSACTION:
-        promises.push(
-          ...this.onTransactionEventExecutedMultisigTransaction(event),
-        );
-        break;
-      case TransactionEventType.NEW_CONFIRMATION:
-        promises.push(...this.onTransactionEventNewConfirmation(event));
-        break;
-      case TransactionEventType.INCOMING_ETHER:
-        promises.push(...this.onTransactionEventIncomingEther(event));
-        break;
-      case TransactionEventType.OUTGOING_ETHER:
-        promises.push(...this.onTransactionEventOutgoingEther(event));
-        break;
-      case TransactionEventType.INCOMING_TOKEN:
-        promises.push(...this.onTransactionEventIncomingToken(event));
-        break;
-      case TransactionEventType.OUTGOING_TOKEN:
-        promises.push(...this.onTransactionEventOutgoingToken(event));
-        break;
-      case TransactionEventType.MESSAGE_CREATED:
-        promises.push(...this.onTransactionEventMessageCreated(event));
-        break;
-      case TransactionEventType.MESSAGE_CONFIRMATION:
-        promises.push(...this.onTransactionEventMessageConfirmation(event));
-        break;
-      case ConfigEventType.CHAIN_UPDATE:
-        promises.push(...this.onConfigEventChainUpdate(event));
-        break;
-      case ConfigEventType.SAFE_APPS_UPDATE:
-        promises.push(...this.onConfigEventSafeAppsUpdate(event));
-        break;
-      case TransactionEventType.SAFE_CREATED:
-        promises.push(...this.onTransactionEventSafeCreated(event));
-        break;
-    }
-    return Promise.all(promises);
+  public async onEventClearCache<
+    E extends Extract<Event, { type: Event['type'] }>,
+  >(event: E): Promise<Array<void>> {
+    const eventHandler = this.EventTypeHandler[event.type] as (
+      event: E,
+    ) => Array<Promise<void>>;
+    return Promise.all(eventHandler(event));
   }
 
   public onEventLog(event: Event): void {
@@ -534,20 +496,3 @@ export class EventCacheHelper {
     });
   }
 }
-
-@Module({
-  imports: [
-    BalancesRepositoryModule,
-    BlockchainRepositoryModule,
-    ChainsRepositoryModule,
-    CollectiblesRepositoryModule,
-    MessagesRepositoryModule,
-    SafeAppsRepositoryModule,
-    SafeRepositoryModule,
-    StakingRepositoryModule,
-    TransactionsRepositoryModule,
-  ],
-  providers: [EventCacheHelper],
-  exports: [EventCacheHelper],
-})
-export class EventCacheHelperModule {}
