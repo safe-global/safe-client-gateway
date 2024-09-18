@@ -50,6 +50,7 @@ export class CacheRouter {
   private static readonly TOKENS_KEY = 'tokens';
   private static readonly TRANSFER_KEY = 'transfer';
   private static readonly TRANSFERS_KEY = 'transfers';
+  private static readonly UNSUPPORTED_CHAIN_EVENT = 'unsupported_chain_event';
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
 
@@ -628,5 +629,9 @@ export class CacheRouter {
       CacheRouter.getStakingStakesCacheKey(args),
       hash.digest('hex'),
     );
+  }
+
+  static getUnsupportedChainEventCacheDir(chainId: string): CacheDir {
+    return new CacheDir(`${chainId}_${this.UNSUPPORTED_CHAIN_EVENT}`, '');
   }
 }
