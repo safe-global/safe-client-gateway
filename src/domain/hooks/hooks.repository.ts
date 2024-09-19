@@ -54,10 +54,10 @@ export class HooksRepositoryWithNotifications
         this.eventCacheHelper.onEventClearCache(event),
         this.eventNotificationsHelper.onEventEnqueueNotifications(event),
       ]).finally(() => {
-        this.eventCacheHelper.onSupportChainEventLog(event);
+        this.eventCacheHelper.onEventLog(event);
       });
     } else {
-      return this.eventCacheHelper.onUnsupportedChainEventLog(event);
+      return this.eventCacheHelper.onUnsupportedChainEvent(event);
     }
   }
 }
@@ -104,10 +104,10 @@ export class HooksRepository implements IHooksRepository {
     );
     if (isSupportedChainId) {
       return this.eventCacheHelper.onEventClearCache(event).finally(() => {
-        this.eventCacheHelper.onSupportChainEventLog(event);
+        this.eventCacheHelper.onEventLog(event);
       });
     } else {
-      return this.eventCacheHelper.onUnsupportedChainEventLog(event);
+      return this.eventCacheHelper.onUnsupportedChainEvent(event);
     }
   }
 }
