@@ -121,6 +121,7 @@ export class EventCacheHelper {
     }
   }
 
+  // TODO: Split service into multiple classes, each handling a specific type of event
   // Transaction Service events
 
   private onTransactionEventPendingMultisigTransaction(
