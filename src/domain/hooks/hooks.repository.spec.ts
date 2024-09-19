@@ -4,6 +4,7 @@ import { BlockchainRepository } from '@/domain/blockchain/blockchain.repository'
 import { ChainsRepository } from '@/domain/chains/chains.repository';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
+import { EventCacheHelper } from '@/domain/hooks/helpers/event-cache.helper';
 import { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
 import {
   HooksRepository,
@@ -86,7 +87,7 @@ describe('HooksRepository (Unit)', () => {
   let hooksRepository: HooksRepository;
 
   beforeEach(() => {
-    hooksRepository = new HooksRepository(
+    const eventCacheHelper = new EventCacheHelper(
       mockBalancesRepository,
       mockBlockchainRepository,
       mockChainsRepository,
@@ -97,8 +98,12 @@ describe('HooksRepository (Unit)', () => {
       mockStakingRepository,
       mockTransactionsRepository,
       mockLoggingService,
+    );
+    hooksRepository = new HooksRepository(
+      mockLoggingService,
       mockQueuesRepository,
       mockConfigurationService,
+      eventCacheHelper,
     );
     jest.clearAllMocks();
   });
@@ -201,7 +206,7 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
   let hooksRepositoryWithNotifications: HooksRepositoryWithNotifications;
 
   beforeEach(() => {
-    hooksRepositoryWithNotifications = new HooksRepositoryWithNotifications(
+    const eventCacheHelper = new EventCacheHelper(
       mockBalancesRepository,
       mockBlockchainRepository,
       mockChainsRepository,
@@ -212,9 +217,13 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
       mockStakingRepository,
       mockTransactionsRepository,
       mockLoggingService,
+    );
+    hooksRepositoryWithNotifications = new HooksRepositoryWithNotifications(
+      mockLoggingService,
       mockQueuesRepository,
       mockConfigurationService,
       mockEventNotificationsHelper,
+      eventCacheHelper,
     );
     jest.clearAllMocks();
   });
