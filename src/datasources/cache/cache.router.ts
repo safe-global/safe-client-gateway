@@ -631,7 +631,7 @@ export class CacheRouter {
     );
   }
 
-  static getUnsupportedChainEventCacheDir(chainId: string): CacheDir {
-    return new CacheDir(`${chainId}_${this.UNSUPPORTED_CHAIN_EVENT}`, '');
+  static getUnsupportedChainEventCacheKey(chainId: string): string {
+    return `${chainId}_${this.UNSUPPORTED_CHAIN_EVENT}`;
   }
 }

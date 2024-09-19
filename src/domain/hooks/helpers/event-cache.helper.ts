@@ -148,15 +148,15 @@ export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Increases the counter of unsupported chain events for the given chain.
+   * @param event {@link Event} object
+   */
   public async onUnsupportedChainEvent(event: Event): Promise<void> {
-    const cacheDir = CacheRouter.getUnsupportedChainEventCacheDir(
+    const cacheKey = CacheRouter.getUnsupportedChainEventCacheKey(
       event.chainId,
     );
-    const cachedCount = await this.cacheService.get(cacheDir).then((count) => {
-      return count ? +count : 0;
-    });
-    const newCount = cachedCount + 1;
-    await this.cacheService.set(cacheDir, newCount.toString(), MAX_TTL);
+    await this.cacheService.increment(cacheKey, MAX_TTL);
   }
 
   // Transaction Service events
@@ -496,19 +496,18 @@ export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
     const chains = await this.chainsRepository.getChains();
     await Promise.all(
       chains.results.map(async (chain) => {
-        const cacheDir = CacheRouter.getUnsupportedChainEventCacheDir(
+        const cacheKey = CacheRouter.getUnsupportedChainEventCacheKey(
           chain.chainId,
         );
-        const cachedCount = await this.cacheService.get(cacheDir);
-        if (!cachedCount) {
-          return;
+        const count = await this.cacheService.getCounter(cacheKey);
+        if (count) {
+          this.loggingService.warn({
+            type: EventCacheHelper.UNSUPPORTED_CHAIN_EVENT,
+            chainId: chain.chainId,
+            count,
+          });
+          await this.cacheService.deleteByKey(cacheKey);
         }
-        this.loggingService.warn({
-          type: EventCacheHelper.UNSUPPORTED_CHAIN_EVENT,
-          chainId: chain.chainId,
-          count: +cachedCount,
-        });
-        await this.cacheService.deleteByKey(cacheDir.key);
       }),
     );
   }

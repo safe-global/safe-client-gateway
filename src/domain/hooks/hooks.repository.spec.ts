@@ -1,6 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { BalancesRepository } from '@/domain/balances/balances.repository';
 import { BlockchainRepository } from '@/domain/blockchain/blockchain.repository';
 import { ChainsRepository } from '@/domain/chains/chains.repository';
@@ -225,10 +224,7 @@ describe('HooksRepository (Unit)', () => {
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)
       .build();
-    const cacheDir = new CacheDir(
-      `${chain.chainId}_unsupported_chain_event`,
-      '',
-    );
+    const cacheKey = `${chain.chainId}_unsupported_chain_event`;
     mockChainsRepository.isSupportedChain.mockResolvedValue(false);
     mockChainsRepository.getChains.mockResolvedValue(chains);
 
@@ -237,7 +233,6 @@ describe('HooksRepository (Unit)', () => {
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toEqual('4');
     await jest.advanceTimersByTimeAsync(
       EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL - 1,
     );
@@ -251,6 +246,8 @@ describe('HooksRepository (Unit)', () => {
       chainId: chain.chainId,
       count: 4,
     });
+    // cache should be cleared after logging
+    await expect(fakeCacheService.getCounter(cacheKey)).resolves.toBeNull();
   });
 });
 
@@ -393,19 +390,15 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     const event = incomingTokenEventBuilder()
       .with('chainId', chain.chainId)
       .build();
-    const cacheDir = new CacheDir(
-      `${chain.chainId}_unsupported_chain_event`,
-      '',
-    );
+    const cacheKey = `${chain.chainId}_unsupported_chain_event`;
     mockChainsRepository.isSupportedChain.mockResolvedValue(false);
     mockChainsRepository.getChains.mockResolvedValue(chains);
 
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
-    await hooksRepositoryWithNotifications.onEvent(event);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toEqual('4');
+    await expect(fakeCacheService.getCounter(cacheKey)).resolves.toEqual(3);
     await jest.advanceTimersByTimeAsync(
       EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL - 1,
     );
@@ -417,7 +410,59 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     expect(mockLoggingService.warn).toHaveBeenCalledWith({
       type: 'unsupported_chain_event',
       chainId: chain.chainId,
+      count: 3,
+    });
+    // cache should be cleared after logging
+    await expect(fakeCacheService.getCounter(cacheKey)).resolves.toBeNull();
+  });
+
+  it('should store the unsupported chain events for several chains and log them after UNSUPPORTED_EVENTS_LOG_INTERVAL', async () => {
+    eventCacheHelper.onModuleInit();
+    const chains = [chainBuilder().build(), chainBuilder().build()];
+    const chainsPage = pageBuilder<(typeof chains)[0]>()
+      .with('results', chains)
+      .build();
+    const events = [
+      incomingTokenEventBuilder().with('chainId', chains[0].chainId).build(),
+      incomingTokenEventBuilder().with('chainId', chains[1].chainId).build(),
+    ];
+    const cacheKeys = [
+      `${chains[0].chainId}_unsupported_chain_event`,
+      `${chains[1].chainId}_unsupported_chain_event`,
+    ];
+    mockChainsRepository.isSupportedChain.mockResolvedValue(false);
+    mockChainsRepository.getChains.mockResolvedValue(chainsPage);
+
+    await hooksRepositoryWithNotifications.onEvent(events[0]);
+    await hooksRepositoryWithNotifications.onEvent(events[0]);
+    await hooksRepositoryWithNotifications.onEvent(events[1]);
+    await hooksRepositoryWithNotifications.onEvent(events[1]);
+    await hooksRepositoryWithNotifications.onEvent(events[0]);
+    await hooksRepositoryWithNotifications.onEvent(events[0]);
+    await hooksRepositoryWithNotifications.onEvent(events[1]);
+
+    await expect(fakeCacheService.getCounter(cacheKeys[0])).resolves.toEqual(4);
+    await expect(fakeCacheService.getCounter(cacheKeys[1])).resolves.toEqual(3);
+    await jest.advanceTimersByTimeAsync(
+      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL - 1,
+    );
+    expect(mockLoggingService.warn).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(
+      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL + 1,
+    );
+    expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
+    expect(mockLoggingService.warn).toHaveBeenCalledWith({
+      type: 'unsupported_chain_event',
+      chainId: chains[0].chainId,
       count: 4,
     });
+    expect(mockLoggingService.warn).toHaveBeenCalledWith({
+      type: 'unsupported_chain_event',
+      chainId: chains[1].chainId,
+      count: 3,
+    });
+    // cache should be cleared after logging
+    await expect(fakeCacheService.getCounter(cacheKeys[0])).resolves.toBeNull();
+    await expect(fakeCacheService.getCounter(cacheKeys[1])).resolves.toBeNull();
   });
 });
