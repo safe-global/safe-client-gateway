@@ -44,10 +44,8 @@ describe('KilnApi', () => {
   let stakingExpirationTimeInSeconds: number;
   let notFoundExpireTimeSeconds: number;
 
-  beforeEach(() => {
-    jest.resetAllMocks();
-
-    chainId = faker.string.numeric();
+  function createTarget(_chainId = faker.string.numeric()): void {
+    chainId = _chainId;
     baseUrl = faker.internet.url({ appendSlash: false });
     apiKey = faker.string.hexadecimal({ length: 32 });
     httpErrorFactory = new HttpErrorFactory();
@@ -72,6 +70,12 @@ describe('KilnApi', () => {
       mockCacheService,
       chainId,
     );
+  }
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+
+    createTarget();
   });
 
   describe('getDeployments', () => {
@@ -346,6 +350,8 @@ describe('KilnApi', () => {
       const [chain, chain_id] = faker.helpers.arrayElement(
         Object.entries(chainIds) as Array<[keyof typeof chainIds, number]>,
       );
+      // Ensure target is created with supported chain
+      createTarget(chain_id.toString());
       const defiVaultStats = defiVaultStatsBuilder()
         .with('chain', chain)
         .with('chain_id', chain_id)
@@ -356,10 +362,7 @@ describe('KilnApi', () => {
         data: [defiVaultStats],
       });
 
-      const actual = await target.getDefiVaultStats({
-        chainId: defiVaultStats.chain_id.toString(),
-        vault: defiVaultStats.vault,
-      });
+      const actual = await target.getDefiVaultStats(defiVaultStats.vault);
 
       expect(actual).toStrictEqual([defiVaultStats]);
 
@@ -384,16 +387,16 @@ describe('KilnApi', () => {
     });
 
     it('should throw if the chainId is not supported by Kiln', async () => {
+      // Not Ethereum (1) or Optimism (10)
+      const chainId = faker.number.int({ min: 2, max: 9 });
+      // Ensure target is created with unsupported chain
+      createTarget(chainId.toString());
       const defiVaultStats = defiVaultStatsBuilder()
-        // Not Ethereum (1) or Optimism (10)
-        .with('chain_id', faker.number.int({ min: 2, max: 9 }))
+        .with('chain_id', chainId)
         .build();
 
       await expect(
-        target.getDefiVaultStats({
-          chainId: defiVaultStats.chain_id.toString(),
-          vault: defiVaultStats.vault,
-        }),
+        target.getDefiVaultStats(defiVaultStats.vault),
       ).rejects.toThrow();
 
       expect(dataSource.get).not.toHaveBeenCalled();
@@ -410,6 +413,8 @@ describe('KilnApi', () => {
       const [chain, chain_id] = faker.helpers.arrayElement(
         Object.entries(chainIds) as Array<[keyof typeof chainIds, number]>,
       );
+      // Ensure target is created with supported chain
+      createTarget(chain_id.toString());
       const defiVaultStats = defiVaultStatsBuilder()
         .with('chain', chain)
         .with('chain_id', chain_id)
@@ -430,10 +435,7 @@ describe('KilnApi', () => {
         ),
       );
       await expect(
-        target.getDefiVaultStats({
-          chainId: defiVaultStats.chain_id.toString(),
-          vault: defiVaultStats.vault,
-        }),
+        target.getDefiVaultStats(defiVaultStats.vault),
       ).rejects.toThrow(expected);
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
