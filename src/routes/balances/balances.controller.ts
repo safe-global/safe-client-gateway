@@ -6,7 +6,7 @@ import {
   ParseBoolPipe,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { BalancesService } from '@/routes/balances/balances.service';
 import { Balances } from '@/routes/balances/entities/balances.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -21,6 +21,8 @@ export class BalancesController {
   constructor(private readonly balancesService: BalancesService) {}
 
   @ApiOkResponse({ type: Balances })
+  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
+  @ApiQuery({ name: 'exclude_spam', required: false, type: Boolean })
   @Get('chains/:chainId/safes/:safeAddress/balances/:fiatCode')
   async getBalances(
     @Param('chainId') chainId: string,

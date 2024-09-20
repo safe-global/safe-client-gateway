@@ -118,6 +118,7 @@ export class TransactionsController {
   @ApiQuery({ name: 'to', required: false, type: String })
   @ApiQuery({ name: 'module', required: false, type: String })
   @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'transaction_hash', required: false, type: String })
   async getModuleTransactions(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -163,6 +164,7 @@ export class TransactionsController {
   @ApiQuery({ name: 'value', required: false, type: String })
   @ApiQuery({ name: 'token_address', required: false, type: String })
   @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
   async getIncomingTransfers(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
@@ -240,6 +242,8 @@ export class TransactionsController {
   })
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'timezone', required: false, type: String })
+  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
+  @ApiQuery({ name: 'imitation', required: false, type: Boolean })
   async getTransactionsHistory(
     @Param('chainId') chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
