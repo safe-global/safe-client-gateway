@@ -4,7 +4,6 @@ import {
   ChainsRepositoryModule,
   IChainsRepository,
 } from '@/domain/chains/chains.repository.interface';
-import { Chain } from '@/domain/chains/entities/chain.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
@@ -147,20 +146,17 @@ export class NativeStakingMapper {
     const numValidators = this.getNumValidatorsFromDataDecoded(
       args.dataDecoded,
     );
-    const value = this.getValueFromNumValidators(numValidators, chain);
-    const rewards = await this.getRewardsFromDataDecoded({
+    const value = await this.getValueFromDataDecoded({
       dataDecoded: args.dataDecoded,
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
-
     return new NativeStakingValidatorsExitTransactionInfo({
       status: this.mapValidatorsExitStatus(networkStats, args.transaction),
       estimatedExitTime: networkStats.estimated_exit_time_seconds,
       estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
       value: getNumberString(value),
       numValidators,
-      rewards: getNumberString(rewards),
       tokenInfo: new TokenInfo({
         address: NULL_ADDRESS,
         decimals: chain.nativeCurrency.decimals,
@@ -198,11 +194,7 @@ export class NativeStakingMapper {
       }),
     ]);
     this.validateDeployment(deployment);
-    const numValidators = this.getNumValidatorsFromDataDecoded(
-      args.dataDecoded,
-    );
-    const value = this.getValueFromNumValidators(numValidators, chain);
-    const rewards = await this.getRewardsFromDataDecoded({
+    const value = await this.getValueFromDataDecoded({
       dataDecoded: args.dataDecoded,
       chainId: args.chainId,
       safeAddress: args.safeAddress,
@@ -210,7 +202,6 @@ export class NativeStakingMapper {
 
     return new NativeStakingWithdrawTransactionInfo({
       value: getNumberString(value),
-      rewards: getNumberString(rewards),
       tokenInfo: new TokenInfo({
         address: NULL_ADDRESS,
         decimals: chain.nativeCurrency.decimals,
@@ -308,27 +299,7 @@ export class NativeStakingMapper {
   }
 
   /**
-   * Gets the value staked in the native staking deployment based on the number of validators.
-   * Each validator has a fixed amount of 32 ETH staked.
-   *
-   * @param numValidators - the number of validators
-   * @param chain - the chain where the native staking deployment lives
-   * @returns - the value staked in the native staking deployment
-   */
-  private getValueFromNumValidators(
-    numValidators: number,
-    chain: Chain,
-  ): number {
-    const decimals = chain.nativeCurrency.decimals;
-    return (
-      numValidators *
-      Math.pow(10, decimals) *
-      NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR
-    );
-  }
-
-  /**
-   * Gets the rewards to withdraw from the native staking deployment
+   * Gets the net value (staked + rewards) to withdraw from the native staking deployment
    * based on the length of the publicKeys field in the transaction data.
    *
    * Each {@link KilnDecoder.KilnPublicKeyLength} characters represent a validator to withdraw,
@@ -337,9 +308,9 @@ export class NativeStakingMapper {
    * @param dataDecoded - the decoded data of the transaction
    * @param chainId - the ID of the chain where the native staking deployment lives
    * @param safeAddress - the Safe staking
-   * @returns the rewards to withdraw from the native staking deployment
+   * @returns the net value to withdraw from the native staking deployment
    */
-  private async getRewardsFromDataDecoded(args: {
+  private async getValueFromDataDecoded(args: {
     dataDecoded: DataDecoded;
     chainId: string;
     safeAddress: `0x${string}`;
@@ -353,7 +324,10 @@ export class NativeStakingMapper {
       safeAddress: args.safeAddress,
       validatorsPublicKeys: this.splitPublicKeys(publicKeys),
     });
-    return stakes.reduce((acc, stake) => acc + Number(stake.rewards), 0);
+    return stakes.reduce((acc, stake) => {
+      const netValue = stake.net_claimable_consensus_rewards ?? '0';
+      return acc + Number(netValue);
+    }, 0);
   }
 
   /**

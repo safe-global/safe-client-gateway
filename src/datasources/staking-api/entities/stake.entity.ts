@@ -7,6 +7,8 @@ export const StakeSchema = z.object({
   state: z.string(),
   effective_balance: NumericStringSchema,
   rewards: NumericStringSchema,
+  // Only returned if onchain_v1_include_net_rewards query is true
+  net_claimable_consensus_rewards: NumericStringSchema.nullish().default(null),
 });
 
 export type Stake = z.infer<typeof StakeSchema>;

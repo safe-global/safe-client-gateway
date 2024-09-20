@@ -207,6 +207,8 @@ export class KilnApi implements IStakingApi {
           },
           params: {
             validators: args.validatorsPublicKeys.join(','),
+            // Adds net_claimable_consensus_rewards to response
+            onchain_v1_include_net_rewards: true,
           },
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,

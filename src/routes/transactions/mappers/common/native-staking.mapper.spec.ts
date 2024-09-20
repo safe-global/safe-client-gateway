@@ -419,9 +419,8 @@ describe('NativeStakingMapper', () => {
           estimatedExitTime: networkStats.estimated_exit_time_seconds,
           estimatedWithdrawalTime:
             networkStats.estimated_withdrawal_time_seconds,
-          value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
+          value: stakes[0].net_claimable_consensus_rewards,
           numValidators: 3, // 3 public keys in the transaction data => 3 validators
-          rewards: stakes[0].rewards,
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -441,8 +440,8 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const stakes = [
-        stakeBuilder().with('rewards', '2').build(),
-        stakeBuilder().with('rewards', '3').build(),
+        stakeBuilder().with('net_claimable_consensus_rewards', '2').build(),
+        stakeBuilder().with('net_claimable_consensus_rewards', '3').build(),
       ];
       const validatorPublicKey = faker.string.hexadecimal({
         length: KilnDecoder.KilnPublicKeyLength * 3,
@@ -486,9 +485,11 @@ describe('NativeStakingMapper', () => {
           estimatedExitTime: networkStats.estimated_exit_time_seconds,
           estimatedWithdrawalTime:
             networkStats.estimated_withdrawal_time_seconds,
-          value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
+          value: (
+            +stakes[0].net_claimable_consensus_rewards! +
+            +stakes[1].net_claimable_consensus_rewards!
+          ).toString(),
           numValidators: 3, // 3 public keys in the transaction data => 3 validators
-          rewards: '5',
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -554,9 +555,8 @@ describe('NativeStakingMapper', () => {
           estimatedExitTime: networkStats.estimated_exit_time_seconds,
           estimatedWithdrawalTime:
             networkStats.estimated_withdrawal_time_seconds,
-          value: '96000000000000000000', // 3 public keys in the transaction data => 3 validators * 32 eth
+          value: stakes[0].net_claimable_consensus_rewards,
           numValidators: 3, // 3 public keys in the transaction data => 3 validators
-          rewards: stakes[0].rewards,
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -627,9 +627,8 @@ describe('NativeStakingMapper', () => {
           estimatedExitTime: networkStats.estimated_exit_time_seconds,
           estimatedWithdrawalTime:
             networkStats.estimated_withdrawal_time_seconds,
-          value: '64000000000000000000', // 2 public keys in the transaction data => 2 validators * 32 eth
+          value: stakes[0].net_claimable_consensus_rewards!.toString(),
           numValidators: 2, // 2 public keys in the transaction data => 2 validators
-          rewards: stakes[0].rewards,
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
@@ -746,9 +745,9 @@ describe('NativeStakingMapper', () => {
         .with('dataDecoded', dataDecoded)
         .build();
       const stakes = [
-        stakeBuilder().with('rewards', '3.25').build(),
-        stakeBuilder().with('rewards', '1.25').build(),
-        stakeBuilder().with('rewards', '1').build(),
+        stakeBuilder().with('net_claimable_consensus_rewards', '3.25').build(),
+        stakeBuilder().with('net_claimable_consensus_rewards', '1.25').build(),
+        stakeBuilder().with('net_claimable_consensus_rewards', '1').build(),
       ];
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
@@ -766,8 +765,11 @@ describe('NativeStakingMapper', () => {
       expect(actual).toEqual(
         expect.objectContaining({
           type: 'NativeStakingWithdraw',
-          value: '64000000000000000000',
-          rewards: '5.5', // stakes rewards sum
+          value: (
+            +stakes[0].net_claimable_consensus_rewards! +
+            +stakes[1].net_claimable_consensus_rewards! +
+            +stakes[2].net_claimable_consensus_rewards!
+          ).toString(),
           tokenInfo: {
             address: NULL_ADDRESS,
             decimals: chain.nativeCurrency.decimals,
