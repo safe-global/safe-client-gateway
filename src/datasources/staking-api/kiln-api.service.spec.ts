@@ -498,6 +498,7 @@ describe('KilnApi', () => {
             Authorization: `Bearer ${apiKey}`,
           },
           params: {
+            onchain_v1_include_net_rewards: true,
             validators: concatenatedValidatorsPublicKeys,
           },
         },
@@ -551,6 +552,7 @@ describe('KilnApi', () => {
             Authorization: `Bearer ${apiKey}`,
           },
           params: {
+            onchain_v1_include_net_rewards: true,
             validators: concatenatedValidatorsPublicKeys,
           },
         },

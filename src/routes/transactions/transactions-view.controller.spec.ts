@@ -1240,8 +1240,12 @@ describe('TransactionsViewController tests', () => {
             ])
             .build();
           const stakes = [
-            stakeBuilder().with('rewards', '1000000').build(),
-            stakeBuilder().with('rewards', '2000000').build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '1000000')
+              .build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '2000000')
+              .build(),
           ];
           networkService.get.mockImplementation(({ url }) => {
             switch (url) {
@@ -1290,8 +1294,10 @@ describe('TransactionsViewController tests', () => {
               estimatedExitTime: networkStats.estimated_exit_time_seconds,
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds,
-              value: '64000000000000000000',
-              rewards: '3000000',
+              value: (
+                +stakes[0].net_claimable_consensus_rewards! +
+                +stakes[1].net_claimable_consensus_rewards!
+              ).toString(),
               numValidators: 2,
               tokenInfo: {
                 address: NULL_ADDRESS,
@@ -1308,6 +1314,7 @@ describe('TransactionsViewController tests', () => {
             url: `${stakingApiUrl}/v1/eth/stakes`,
             networkRequest: expect.objectContaining({
               params: {
+                onchain_v1_include_net_rewards: true,
                 validators: `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)},0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
               },
             }),
@@ -1332,8 +1339,12 @@ describe('TransactionsViewController tests', () => {
             args: [validatorPublicKey as `0x${string}`],
           });
           const stakes = [
-            stakeBuilder().with('rewards', '4000000').build(),
-            stakeBuilder().with('rewards', '2000000').build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '4000000')
+              .build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '2000000')
+              .build(),
           ];
           networkService.get.mockImplementation(({ url }) => {
             switch (url) {
@@ -1389,9 +1400,11 @@ describe('TransactionsViewController tests', () => {
               estimatedExitTime: networkStats.estimated_exit_time_seconds,
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds,
-              value: '32000000000000000000',
+              value: (
+                +stakes[0].net_claimable_consensus_rewards! +
+                +stakes[1].net_claimable_consensus_rewards!
+              ).toString(),
               numValidators: 1,
-              rewards: '6000000',
               tokenInfo: {
                 address: NULL_ADDRESS,
                 decimals: chain.nativeCurrency.decimals,
@@ -1407,6 +1420,7 @@ describe('TransactionsViewController tests', () => {
             url: `${stakingApiUrl}/v1/eth/stakes`,
             networkRequest: expect.objectContaining({
               params: {
+                onchain_v1_include_net_rewards: true,
                 validators: `${validatorPublicKey.toLowerCase()}`,
               },
             }),
@@ -1766,6 +1780,7 @@ describe('TransactionsViewController tests', () => {
             url: `${stakingApiUrl}/v1/eth/stakes`,
             networkRequest: expect.objectContaining({
               params: {
+                onchain_v1_include_net_rewards: true,
                 validators: `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)},0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
               },
             }),
@@ -1802,8 +1817,12 @@ describe('TransactionsViewController tests', () => {
             ])
             .build();
           const stakes = [
-            stakeBuilder().with('rewards', '1000000').build(),
-            stakeBuilder().with('rewards', '2000000').build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '1000000')
+              .build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '2000000')
+              .build(),
           ];
           networkService.get.mockImplementation(({ url }) => {
             switch (url) {
@@ -1843,8 +1862,10 @@ describe('TransactionsViewController tests', () => {
               type: 'KILN_NATIVE_STAKING_WITHDRAW',
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
-              value: '96000000000000000000',
-              rewards: '3000000',
+              value: (
+                +stakes[0].net_claimable_consensus_rewards! +
+                +stakes[1].net_claimable_consensus_rewards!
+              ).toString(),
               tokenInfo: {
                 address: NULL_ADDRESS,
                 decimals: chain.nativeCurrency.decimals,
@@ -1873,8 +1894,12 @@ describe('TransactionsViewController tests', () => {
             args: [`${validatorPublicKey}` as `0x${string}`],
           });
           const stakes = [
-            stakeBuilder().with('rewards', '6000000').build(),
-            stakeBuilder().with('rewards', '2000000').build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '6000000')
+              .build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '2000000')
+              .build(),
           ];
           networkService.get.mockImplementation(({ url }) => {
             switch (url) {
@@ -1921,8 +1946,10 @@ describe('TransactionsViewController tests', () => {
                   valueDecoded: null,
                 },
               ],
-              value: '64000000000000000000',
-              rewards: '8000000',
+              value: (
+                +stakes[0].net_claimable_consensus_rewards! +
+                +stakes[1].net_claimable_consensus_rewards!
+              ).toString(),
               tokenInfo: {
                 address: NULL_ADDRESS,
                 decimals: chain.nativeCurrency.decimals,

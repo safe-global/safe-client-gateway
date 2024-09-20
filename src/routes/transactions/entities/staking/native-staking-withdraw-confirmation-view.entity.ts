@@ -22,22 +22,17 @@ export class NativeStakingWithdrawConfirmationView implements Baseline {
   value: string;
 
   @ApiProperty()
-  rewards: string;
-
-  @ApiProperty()
   tokenInfo: TokenInfo;
 
   constructor(args: {
     method: string;
     parameters: DataDecodedParameter[] | null;
     value: string;
-    rewards: string;
     tokenInfo: TokenInfo;
   }) {
     this.method = args.method;
     this.parameters = args.parameters;
     this.value = args.value;
-    this.rewards = args.rewards;
     this.tokenInfo = args.tokenInfo;
   }
 }

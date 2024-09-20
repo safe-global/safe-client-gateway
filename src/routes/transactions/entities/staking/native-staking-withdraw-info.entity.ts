@@ -13,15 +13,11 @@ export class NativeStakingWithdrawTransactionInfo extends TransactionInfo {
   value: string;
 
   @ApiProperty()
-  rewards: string;
-
-  @ApiProperty()
   tokenInfo: TokenInfo;
 
-  constructor(args: { value: string; rewards: string; tokenInfo: TokenInfo }) {
+  constructor(args: { value: string; tokenInfo: TokenInfo }) {
     super(TransactionInfoType.NativeStakingWithdraw, null, null);
     this.value = args.value;
-    this.rewards = args.rewards;
     this.tokenInfo = args.tokenInfo;
   }
 }
