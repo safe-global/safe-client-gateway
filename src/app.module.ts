@@ -50,6 +50,9 @@ import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
 import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
 import { TargetedMessagingModule } from '@/routes/targeted-messaging/targeted-messaging.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { postgresFactory } from '@/config/entities';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -123,6 +126,12 @@ export class AppModule implements NestModule {
           // If we do not exclude these paths, the service will try to find the file and
           // return 500 for files that do not exist instead of a 404
           exclude: ['/(.*)'],
+        }),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          useFactory: (configService: ConfigService) =>
+            postgresFactory(configService),
+          inject: [ConfigService],
         }),
       ],
       providers: [
