@@ -7,8 +7,8 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
-import { NotificationsService } from '@/routes/notifications/notifications.service';
+import { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
+import { NotificationsService } from '@/routes/notifications/v1/notifications.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 

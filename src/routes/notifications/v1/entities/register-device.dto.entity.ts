@@ -4,8 +4,8 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { DeviceType } from '@/domain/notifications/entities/device.entity';
-import { SafeRegistration } from '@/routes/notifications/entities/safe-registration.entity';
+import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
+import { SafeRegistration } from '@/routes/notifications/v1/entities/safe-registration.entity';
 
 @ApiExtraModels(SafeRegistration)
 export class RegisterDeviceDto {

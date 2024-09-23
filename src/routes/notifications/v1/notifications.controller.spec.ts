@@ -18,9 +18,9 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { registerDeviceDtoBuilder } from '@/routes/notifications/entities/__tests__/register-device.dto.builder';
-import { safeRegistrationBuilder } from '@/routes/notifications/entities/__tests__/safe-registration.builder';
-import { RegisterDeviceDto } from '@/routes/notifications/entities/register-device.dto.entity';
+import { registerDeviceDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/register-device.dto.builder';
+import { safeRegistrationBuilder } from '@/routes/notifications/v1/entities/__tests__/safe-registration.builder';
+import { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';

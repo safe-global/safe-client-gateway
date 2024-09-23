@@ -1,5 +1,5 @@
-import { DeviceType } from '@/domain/notifications/entities-v2/device-type.entity';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
+import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { z } from 'zod';

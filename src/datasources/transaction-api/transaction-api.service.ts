@@ -17,7 +17,7 @@ import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.d
 import { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
 import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { Message } from '@/domain/messages/entities/message.entity';
-import { Device } from '@/domain/notifications/entities/device.entity';
+import { Device } from '@/domain/notifications/v1/entities/device.entity';
 import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';

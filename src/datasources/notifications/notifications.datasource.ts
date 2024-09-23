@@ -1,4 +1,4 @@
-import { NotificationType as DomainNotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { NotificationType as DomainNotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { UUID } from 'crypto';
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
@@ -10,7 +10,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
-import { UpsertSubscriptionsDto } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
 
 @Injectable()
 export class NotificationsDatasource implements INotificationsDatasource {
