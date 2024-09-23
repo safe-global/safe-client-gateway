@@ -86,6 +86,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   db: {
     postgres: {
+      schema: faker.string.sample(),
       host: process.env.POSTGRES_TEST_HOST || 'localhost',
       port: process.env.POSTGRES_TEST_PORT || '5433',
       database: process.env.POSTGRES_TEST_DB || 'test-db',
