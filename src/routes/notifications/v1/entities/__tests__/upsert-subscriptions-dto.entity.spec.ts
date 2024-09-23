@@ -1,5 +1,5 @@
-import { DeviceType } from '@/domain/notifications/entities-v2/device-type.entity';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
+import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/upsert-subscriptions.dto.entity.builder';
 import { UpsertSubscriptionsDtoSchema } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
 import { faker } from '@faker-js/faker';

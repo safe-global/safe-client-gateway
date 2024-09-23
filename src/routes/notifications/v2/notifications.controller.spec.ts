@@ -27,7 +27,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';

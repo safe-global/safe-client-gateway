@@ -4,9 +4,9 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Device } from '@/domain/notifications/entities/device.entity';
-import { SafeRegistration as DomainSafeRegistration } from '@/domain/notifications/entities/safe-registration.entity';
-import { INotificationsRepository } from '@/domain/notifications/notifications.repository.interface';
+import { Device } from '@/domain/notifications/v1/entities/device.entity';
+import { SafeRegistration as DomainSafeRegistration } from '@/domain/notifications/v1/entities/safe-registration.entity';
+import { INotificationsRepository } from '@/domain/notifications/v1/notifications.repository.interface';
 import { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
 import { SafeRegistration } from '@/routes/notifications/v1/entities/safe-registration.entity';
 

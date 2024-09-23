@@ -1,7 +1,7 @@
-import { Device } from '@/domain/notifications/entities/device.entity';
-import { SafeRegistration } from '@/domain/notifications/entities/safe-registration.entity';
+import { Device } from '@/domain/notifications/v1/entities/device.entity';
+import { SafeRegistration } from '@/domain/notifications/v1/entities/safe-registration.entity';
 import { Module } from '@nestjs/common';
-import { NotificationsRepository } from '@/domain/notifications/notifications.repository';
+import { NotificationsRepository } from '@/domain/notifications/v1/notifications.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 
 export const INotificationsRepository = Symbol('INotificationsRepository');

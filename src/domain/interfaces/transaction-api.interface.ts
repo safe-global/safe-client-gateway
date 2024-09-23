@@ -8,7 +8,7 @@ import { Estimation } from '@/domain/estimations/entities/estimation.entity';
 import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
 import { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
 import { Message } from '@/domain/messages/entities/message.entity';
-import { Device } from '@/domain/notifications/entities/device.entity';
+import { Device } from '@/domain/notifications/v1/entities/device.entity';
 import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';

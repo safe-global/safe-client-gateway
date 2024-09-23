@@ -2,10 +2,10 @@ import { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upser
 import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
 import { UUID } from 'crypto';
-import { NotificationsRepositoryV2 } from '@/domain/notifications/notifications.repository.v2';
+import { NotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository';
 import { Module } from '@nestjs/common';
 import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 export const INotificationsRepositoryV2 = Symbol('INotificationsRepositoryV2');

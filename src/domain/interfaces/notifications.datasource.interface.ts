@@ -1,5 +1,5 @@
 import { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { UUID } from 'crypto';
 
 export const INotificationsDatasource = Symbol('INotificationsDatasource');

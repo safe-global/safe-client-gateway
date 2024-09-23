@@ -22,7 +22,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
+import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
@@ -50,7 +50,7 @@ export class NotificationsControllerV2 {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
     @Auth() authPayload: AuthPayload,
-  ): Promise<NotificationType[]> {
+  ): Promise<Array<NotificationType>> {
     return this.notificationsService.getSafeSubscription({
       authPayload,
       deviceUuid,

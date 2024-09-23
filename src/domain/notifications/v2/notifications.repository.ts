@@ -3,7 +3,7 @@ import { FirebaseNotification } from '@/datasources/push-notifications-api/entit
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { UUID } from 'crypto';
-import { INotificationsRepositoryV2 } from '@/domain/notifications/notifications.repository.v2.interface';
+import { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
 import {
   Inject,
   Injectable,
@@ -11,7 +11,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification.entity';
+import { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 import { get } from 'lodash';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 

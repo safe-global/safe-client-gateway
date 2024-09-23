@@ -2,7 +2,6 @@ import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entit
 import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { Uuid } from '@/domain/notifications/v2/entities/uuid.entity';
 
-// TODO: Move to domain
 export type UpsertSubscriptionsDto = {
   cloudMessagingToken: string;
   safes: Array<{
