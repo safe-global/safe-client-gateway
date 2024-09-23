@@ -1,9 +1,9 @@
-import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
-import { NotificationsRepositoryV2Module } from '@/domain/notifications/notifications.repository.v2.interface';
-import { AuthGuard } from '@/routes/auth/guards/auth.guard';
-import { NotificationsControllerV2 } from '@/routes/notifications/notifications.controller.v2';
-import { NotificationsServiceV2 } from '@/routes/notifications/notifications.service.v2';
 import { Module } from '@nestjs/common';
+import { AuthGuard } from '@/routes/auth/guards/auth.guard';
+import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
+import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
+import { NotificationsControllerV2 } from '@/routes/notifications/v2/notifications.controller';
+import { NotificationsRepositoryV2Module } from '@/domain/notifications/notifications.repository.v2.interface';
 
 @Module({
   imports: [NotificationsRepositoryV2Module, AuthRepositoryModule],

@@ -1,6 +1,6 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/entities/__tests__/upsert-subscriptions.dto.entity.builder';
+import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/upsert-subscriptions.dto.entity.builder';
 import { NotificationsDatasource } from '@/datasources/notifications/notifications.datasource';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';

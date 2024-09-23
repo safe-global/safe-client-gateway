@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Builder, IBuilder } from '@/__tests__/builder';
-import { SafeRegistration } from '@/routes/notifications/entities/safe-registration.entity';
+import { SafeRegistration } from '@/routes/notifications/v1/entities/safe-registration.entity';
 
 export function safeRegistrationBuilder(): IBuilder<SafeRegistration> {
   return new Builder<SafeRegistration>()

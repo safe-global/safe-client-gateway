@@ -1,10 +1,9 @@
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import {
   UpsertSubscriptionsDto,
   UpsertSubscriptionsDtoSchema,
-} from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
-import { NotificationsServiceV2 } from '@/routes/notifications/notifications.service.v2';
+} from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
+import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -23,6 +22,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
+import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
@@ -50,7 +50,7 @@ export class NotificationsControllerV2 {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
     @Auth() authPayload: AuthPayload,
-  ): Promise<Array<NotificationType>> {
+  ): Promise<NotificationType[]> {
     return this.notificationsService.getSafeSubscription({
       authPayload,
       deviceUuid,

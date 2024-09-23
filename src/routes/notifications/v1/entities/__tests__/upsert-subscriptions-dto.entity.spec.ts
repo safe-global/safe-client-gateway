@@ -1,7 +1,7 @@
 import { DeviceType } from '@/domain/notifications/entities-v2/device-type.entity';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
-import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/entities/__tests__/upsert-subscriptions.dto.entity.builder';
-import { UpsertSubscriptionsDtoSchema } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
+import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/upsert-subscriptions.dto.entity.builder';
+import { UpsertSubscriptionsDtoSchema } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
 import { faker } from '@faker-js/faker';
 import { UUID } from 'crypto';
 import { getAddress } from 'viem';

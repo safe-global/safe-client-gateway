@@ -1,4 +1,4 @@
-import { UpsertSubscriptionsDto } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
 import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
 import { UUID } from 'crypto';
 

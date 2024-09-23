@@ -1,4 +1,4 @@
-import { UpsertSubscriptionsDto } from '@/routes/notifications/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
 import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
