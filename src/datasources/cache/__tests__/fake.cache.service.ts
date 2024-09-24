@@ -32,6 +32,13 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     return Promise.resolve(1);
   }
 
+  getCounter(key: string): Promise<number | null> {
+    const value = this.cache[key];
+    return Number.isInteger(value) && typeof value === 'number'
+      ? Promise.resolve(value)
+      : Promise.resolve(null);
+  }
+
   hGet(cacheDir: CacheDir): Promise<string | undefined> {
     const fields = this.cache[cacheDir.key];
     if (fields === undefined) return Promise.resolve(undefined);
@@ -70,5 +77,15 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     currentValue = currentValue ? currentValue + 1 : 1;
     this.cache[cacheKey] = currentValue;
     return Promise.resolve(currentValue);
+  }
+
+  setCounter(
+    key: string,
+    value: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    expireTimeSeconds: number | undefined,
+  ): Promise<void> {
+    this.cache[key] = value;
+    return Promise.resolve();
   }
 }

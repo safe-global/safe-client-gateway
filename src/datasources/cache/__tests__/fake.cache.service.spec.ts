@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-
 describe('FakeCacheService', () => {
   let target: FakeCacheService;
 
@@ -85,5 +84,25 @@ describe('FakeCacheService', () => {
       const result = await target.increment(key, undefined);
       expect(result).toEqual(initialValue + i);
     }
+  });
+
+  it('sets and gets the value of a counter key', async () => {
+    const key = faker.string.alphanumeric();
+    const value = faker.number.int({ min: 100 });
+    await target.setCounter(key, value, undefined);
+
+    await expect(target.getCounter(key)).resolves.toBe(value);
+  });
+
+  it('sets, increments and gets the value of a counter key', async () => {
+    const key = faker.string.alphanumeric();
+    const value = faker.number.int({ min: 100 });
+    await target.setCounter(key, value, undefined);
+
+    await target.increment(key, undefined);
+    await target.increment(key, undefined);
+    await target.increment(key, undefined);
+
+    await expect(target.getCounter(key)).resolves.toBe(value + 3);
   });
 });

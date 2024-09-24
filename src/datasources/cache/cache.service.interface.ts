@@ -3,6 +3,8 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 export const CacheService = Symbol('ICacheService');
 
 export interface ICacheService {
+  getCounter(key: string): Promise<number | null>;
+
   hSet(
     cacheDir: CacheDir,
     value: string,
@@ -17,4 +19,10 @@ export interface ICacheService {
     cacheKey: string,
     expireTimeSeconds: number | undefined,
   ): Promise<number>;
+
+  setCounter(
+    key: string,
+    value: number,
+    expireTimeSeconds: number | undefined,
+  ): Promise<void>;
 }
