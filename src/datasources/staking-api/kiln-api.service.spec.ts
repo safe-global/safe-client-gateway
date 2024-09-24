@@ -11,6 +11,7 @@ import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
 import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/pooled-staking-stats.entity.builder';
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
+import { transactionStatusBuilder } from '@/datasources/staking-api/entities/__tests__/transaction-status.entity.builder';
 import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
@@ -575,6 +576,83 @@ describe('KilnApi', () => {
         1,
         `${chainId}_staking_stakes_${safeAddress}`,
       );
+    });
+  });
+
+  describe('getTransactionStatus', () => {
+    it('should return the transaction status', async () => {
+      const txHash = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
+      const transactionStatus = transactionStatusBuilder().build();
+      const getTransactionStatusUrl = `${baseUrl}/v1/eth/transaction/status`;
+      dataSource.get.mockResolvedValue({
+        status: 200,
+        // Note: Kiln always return { data: T }
+        data: transactionStatus,
+      });
+
+      const actual = await target.getTransactionStatus(txHash);
+
+      expect(actual).toBe(transactionStatus);
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: CacheRouter.getStakingTransactionStatusCacheDir({
+          chainId,
+          txHash,
+        }),
+        url: getTransactionStatusUrl,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            tx_hash: txHash,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+
+    it('should forward errors', async () => {
+      const txHash = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
+      const getTransactionStatusUrl = `${baseUrl}/v1/eth/transaction/status`;
+      const errorMessage = faker.lorem.sentence();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      dataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getTransactionStatusUrl),
+          {
+            status: statusCode,
+          } as Response,
+          new Error(errorMessage),
+        ),
+      );
+      await expect(target.getTransactionStatus(txHash)).rejects.toThrow(
+        expected,
+      );
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: CacheRouter.getStakingTransactionStatusCacheDir({
+          chainId,
+          txHash,
+        }),
+        url: getTransactionStatusUrl,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            tx_hash: txHash,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
     });
   });
 });

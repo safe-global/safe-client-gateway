@@ -25,6 +25,10 @@ import {
   Stake,
   StakeSchema,
 } from '@/datasources/staking-api/entities/stake.entity';
+import {
+  TransactionStatus,
+  TransactionStatusSchema,
+} from '@/datasources/staking-api/entities/transaction-status.entity';
 
 @Injectable()
 export class StakingRepository implements IStakingRepository {
@@ -107,6 +111,15 @@ export class StakingRepository implements IStakingRepository {
   }): Promise<void> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     await stakingApi.clearStakes(args.safeAddress);
+  }
+
+  public async getTransactionStatus(args: {
+    chainId: string;
+    txHash: `0x${string}`;
+  }): Promise<TransactionStatus> {
+    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
+    const txStatus = await stakingApi.getTransactionStatus(args.txHash);
+    return TransactionStatusSchema.parse(txStatus);
   }
 
   public clearApi(chainId: string): void {
