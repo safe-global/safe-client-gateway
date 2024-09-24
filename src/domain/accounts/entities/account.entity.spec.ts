@@ -112,6 +112,13 @@ describe('AccountSchema', () => {
         path: ['address'],
         received: 'undefined',
       },
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Required',
+        path: ['name'],
+        received: 'undefined',
+      },
     ]);
   });
 });

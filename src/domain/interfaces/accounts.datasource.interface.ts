@@ -1,13 +1,14 @@
 import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';
+import { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.entity';
 import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 
 export const IAccountsDatasource = Symbol('IAccountsDatasource');
 
 export interface IAccountsDatasource {
   createAccount(args: {
-    address: `0x${string}`;
+    createAccountDto: CreateAccountDto;
     clientIp: string;
   }): Promise<Account>;
 

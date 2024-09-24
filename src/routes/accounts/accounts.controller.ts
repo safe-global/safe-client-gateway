@@ -1,4 +1,4 @@
-import { CreateAccountDtoSchema } from '@/domain/accounts/entities/schemas/create-account.dto.schema';
+import { CreateAccountDtoSchema } from '@/domain/accounts/entities/create-account.dto.entity';
 import { UpsertAccountDataSettingsDtoSchema } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { AccountsService } from '@/routes/accounts/accounts.service';

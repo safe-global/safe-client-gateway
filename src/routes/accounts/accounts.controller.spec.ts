@@ -21,6 +21,7 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { accountDataSettingBuilder } from '@/domain/accounts/entities/__tests__/account-data-setting.builder';
 import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/account-data-type.builder';
 import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.builder';
+import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/create-account.dto.builder';
 import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -111,11 +112,11 @@ describe('AccountsController', () => {
 
   describe('Create accounts', () => {
     it('should create an account', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
+      const createAccountDto = createAccountDtoBuilder().build();
       const chain = chainBuilder().build();
       const authPayloadDto = authPayloadDtoBuilder()
         .with('chain_id', chain.chainId)
-        .with('signer_address', address)
+        .with('signer_address', createAccountDto.address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const account = accountBuilder().build();
@@ -124,13 +125,12 @@ describe('AccountsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/accounts`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ address: address.toLowerCase() })
+        .send(createAccountDto)
         .expect(201);
 
       expect(accountDataSource.createAccount).toHaveBeenCalledTimes(1);
-      // Check the address was checksummed
       expect(accountDataSource.createAccount).toHaveBeenCalledWith({
-        address,
+        createAccountDto,
         clientIp: expect.any(String),
       });
     });
@@ -143,6 +143,9 @@ describe('AccountsController', () => {
         .with('signer_address', address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
+      const createAccountDto = createAccountDtoBuilder()
+        .with('address', address)
+        .build();
       accountDataSource.createAccount.mockRejectedValue(
         new UnprocessableEntityException('Datasource error'),
       );
@@ -150,7 +153,7 @@ describe('AccountsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/accounts`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ address: address.toLowerCase() })
+        .send(createAccountDto)
         .expect(422);
 
       accountDataSource.createAccount.mockRejectedValue(
@@ -160,7 +163,7 @@ describe('AccountsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/accounts`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ address: address.toLowerCase() })
+        .send(createAccountDto)
         .expect(409);
 
       expect(accountDataSource.createAccount).toHaveBeenCalledTimes(2);
@@ -254,13 +257,16 @@ describe('AccountsController', () => {
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
       const account = accountBuilder().build();
+      const createAccountDto = createAccountDtoBuilder()
+        .with('address', address)
+        .build();
       accountDataSource.createAccount.mockResolvedValue(account);
       accountDataSource.deleteAccount.mockResolvedValue();
 
       await request(app.getHttpServer())
         .post(`/v1/accounts`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ address: address.toLowerCase() })
+        .send(createAccountDto)
         .expect(201);
 
       await request(app.getHttpServer())
