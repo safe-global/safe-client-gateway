@@ -107,7 +107,6 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     }
   }
 
-  // TODO: Add test
   decodeDepositEvent(args: {
     data: `0x${string}`;
     topics: [signature: `0x${string}`, ...args: `0x${string}`[]];
