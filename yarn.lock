@@ -1388,9 +1388,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/swagger@npm:^7.4.1":
-  version: 7.4.1
-  resolution: "@nestjs/swagger@npm:7.4.1"
+"@nestjs/swagger@npm:^7.4.2":
+  version: 7.4.2
+  resolution: "@nestjs/swagger@npm:7.4.2"
   dependencies:
     "@microsoft/tsdoc": "npm:^0.15.0"
     "@nestjs/mapped-types": "npm:2.0.5"
@@ -1412,7 +1412,7 @@ __metadata:
       optional: true
     class-validator:
       optional: true
-  checksum: 10/ae962b8ad765f63bd6664358494dd562f314e5cd2002f4c516c6f78e19aae1bdad5a20c8eea33ceb34a99ceb697a1c668a138e6686aaddfd6433f3d3673ac669
+  checksum: 10/e3f9cac6a092442461fe7e4edd45b8af3377a02c626bb2b9f7da2e0ffe4999c3c20f32240aa1a67e9999a919946e6ed6c0da01c703e7d83d49823f1d7b9caf09
   languageName: node
   linkType: hard
 
@@ -7263,7 +7263,7 @@ __metadata:
     "@nestjs/platform-express": "npm:^10.4.4"
     "@nestjs/schematics": "npm:^10.1.4"
     "@nestjs/serve-static": "npm:^4.0.2"
-    "@nestjs/swagger": "npm:^7.4.1"
+    "@nestjs/swagger": "npm:^7.4.2"
     "@nestjs/testing": "npm:^10.4.4"
     "@safe-global/safe-deployments": "npm:^1.37.9"
     "@types/amqplib": "npm:^0"
