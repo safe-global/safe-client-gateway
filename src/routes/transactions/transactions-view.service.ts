@@ -328,8 +328,7 @@ export class TransactionsViewService {
       chainId: args.chainId,
       to: args.to,
       value: args.value,
-      isConfirmed: false,
-      depositExecutionDate: null,
+      transaction: null,
     });
     return new NativeStakingDepositConfirmationView({
       method: dataDecoded.method,

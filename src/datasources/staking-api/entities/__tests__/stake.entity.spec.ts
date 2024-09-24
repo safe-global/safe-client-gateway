@@ -55,22 +55,21 @@ describe('StakeSchema', () => {
     });
   });
 
-  it.each([
-    'effective_balance' as const,
-    'rewards' as const,
-    'net_claimable_consensus_rewards' as const,
-  ])('should not validate non-numeric string %s values', (key) => {
-    const stake = stakeBuilder().with(key, faker.lorem.word()).build();
+  it.each(['rewards' as const, 'net_claimable_consensus_rewards' as const])(
+    'should not validate non-numeric string %s values',
+    (key) => {
+      const stake = stakeBuilder().with(key, faker.lorem.word()).build();
 
-    const result = StakeSchema.safeParse(stake);
+      const result = StakeSchema.safeParse(stake);
 
-    expect(!result.success && result.error.issues.length).toBe(1);
-    expect(!result.success && result.error.issues[0]).toStrictEqual({
-      code: 'custom',
-      message: 'Invalid base-10 numeric string',
-      path: [key],
-    });
-  });
+      expect(!result.success && result.error.issues.length).toBe(1);
+      expect(!result.success && result.error.issues[0]).toStrictEqual({
+        code: 'custom',
+        message: 'Invalid base-10 numeric string',
+        path: [key],
+      });
+    },
+  );
 
   it('should not validate an invalid Stake object', () => {
     const stake = { invalid: 'Stake' };
@@ -83,13 +82,6 @@ describe('StakeSchema', () => {
         expected: 'string',
         message: 'Required',
         path: ['validator_address'],
-        received: 'undefined',
-      },
-      {
-        code: 'invalid_type',
-        expected: 'string',
-        message: 'Required',
-        path: ['effective_balance'],
         received: 'undefined',
       },
       {

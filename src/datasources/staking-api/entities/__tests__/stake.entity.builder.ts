@@ -15,7 +15,6 @@ export function stakeBuilder(): IBuilder<Stake> {
       }) as `0x${string}`,
     )
     .with('state', faker.helpers.arrayElement(Object.values(StakeState)))
-    .with('effective_balance', faker.string.numeric())
     .with('rewards', faker.string.numeric())
     .with('net_claimable_consensus_rewards', faker.string.numeric());
 }
