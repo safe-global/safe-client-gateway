@@ -41,12 +41,12 @@ import {
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import {
-  getMultiSendCallOnlyDeployment,
-  getMultiSendDeployment,
-  getProxyFactoryDeployment,
-  getSafeL2SingletonDeployment,
-  getSafeSingletonDeployment,
-} from '@safe-global/safe-deployments';
+  getMultiSendCallOnlyDeployments,
+  getMultiSendDeployments,
+  getProxyFactoryDeployments,
+  getSafeL2SingletonDeployments,
+  getSafeSingletonDeployments,
+} from '@/domain/common/utils/deployments';
 import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
@@ -374,10 +374,12 @@ describe('Relay controller', () => {
                     multiSendTransactionsEncoder(transactions),
                   )
                   .encode();
-                const to = getMultiSendCallOnlyDeployment({
-                  version,
-                  network: chainId,
-                })!.networkAddresses[chainId];
+                const to = faker.helpers.arrayElement(
+                  getMultiSendCallOnlyDeployments({
+                    version,
+                    chainId,
+                  }),
+                );
                 const taskId = faker.string.uuid();
                 networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
@@ -442,10 +444,12 @@ describe('Relay controller', () => {
                     multiSendTransactionsEncoder(transactions),
                   )
                   .encode();
-                const to = getMultiSendDeployment({
-                  version,
-                  network: chainId,
-                })!.networkAddresses[chainId];
+                const to = faker.helpers.arrayElement(
+                  getMultiSendDeployments({
+                    version,
+                    chainId,
+                  }),
+                );
                 const taskId = faker.string.uuid();
                 networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
@@ -494,17 +498,20 @@ describe('Relay controller', () => {
                     getAddress(faker.finance.ethereumAddress()),
                     getAddress(faker.finance.ethereumAddress()),
                   ];
-                  const singleton = getSafeSingletonDeployment({
-                    version,
-                    network: chainId,
-                  })!.networkAddresses[chainId];
-                  const proxyFactory = getProxyFactoryDeployment({
-                    version,
-                    network: chainId,
-                  })!.networkAddresses[chainId];
-                  const to = getAddress(proxyFactory);
+                  const singleton = faker.helpers.arrayElement(
+                    getSafeSingletonDeployments({
+                      version,
+                      chainId,
+                    }),
+                  );
+                  const to = faker.helpers.arrayElement(
+                    getProxyFactoryDeployments({
+                      version,
+                      chainId,
+                    }),
+                  );
                   const data = createProxyWithNonceEncoder()
-                    .with('singleton', getAddress(singleton))
+                    .with('singleton', singleton)
                     .with(
                       'initializer',
                       setupEncoder().with('owners', owners).encode(),
@@ -554,14 +561,16 @@ describe('Relay controller', () => {
                     getAddress(faker.finance.ethereumAddress()),
                     getAddress(faker.finance.ethereumAddress()),
                   ];
-                  const singleton = getSafeSingletonDeployment({
-                    version,
-                    network: chainId,
-                  })!.networkAddresses[chainId];
+                  const singleton = faker.helpers.arrayElement(
+                    getSafeSingletonDeployments({
+                      version,
+                      chainId,
+                    }),
+                  );
                   // Unofficial ProxyFactory
                   const to = getAddress(faker.finance.ethereumAddress());
                   const data = createProxyWithNonceEncoder()
-                    .with('singleton', getAddress(singleton))
+                    .with('singleton', singleton)
                     .with(
                       'initializer',
                       setupEncoder().with('owners', owners).encode(),
@@ -614,17 +623,20 @@ describe('Relay controller', () => {
                     getAddress(faker.finance.ethereumAddress()),
                     getAddress(faker.finance.ethereumAddress()),
                   ];
-                  const singleton = getSafeL2SingletonDeployment({
-                    version,
-                    network: chainId,
-                  })!.networkAddresses[chainId];
-                  const proxyFactory = getProxyFactoryDeployment({
-                    version,
-                    network: chainId,
-                  })!.networkAddresses[chainId];
-                  const to = getAddress(proxyFactory);
+                  const singleton = faker.helpers.arrayElement(
+                    getSafeL2SingletonDeployments({
+                      version,
+                      chainId,
+                    }),
+                  );
+                  const to = faker.helpers.arrayElement(
+                    getProxyFactoryDeployments({
+                      version,
+                      chainId,
+                    }),
+                  );
                   const data = createProxyWithNonceEncoder()
-                    .with('singleton', getAddress(singleton))
+                    .with('singleton', singleton)
                     .with(
                       'initializer',
                       setupEncoder().with('owners', owners).encode(),
@@ -674,14 +686,16 @@ describe('Relay controller', () => {
                     getAddress(faker.finance.ethereumAddress()),
                     getAddress(faker.finance.ethereumAddress()),
                   ];
-                  const singleton = getSafeL2SingletonDeployment({
-                    version,
-                    network: chainId,
-                  })!.networkAddresses[chainId];
+                  const singleton = faker.helpers.arrayElement(
+                    getSafeL2SingletonDeployments({
+                      version,
+                      chainId,
+                    }),
+                  );
                   // Unofficial ProxyFactory
                   const to = getAddress(faker.finance.ethereumAddress());
                   const data = createProxyWithNonceEncoder()
-                    .with('singleton', getAddress(singleton))
+                    .with('singleton', singleton)
                     .with(
                       'initializer',
                       setupEncoder().with('owners', owners).encode(),
@@ -986,10 +1000,12 @@ describe('Relay controller', () => {
                     multiSendTransactionsEncoder(transactions),
                   )
                   .encode();
-                const to = getMultiSendCallOnlyDeployment({
-                  version,
-                  network: chainId,
-                })!.networkAddresses[chainId];
+                const to = faker.helpers.arrayElement(
+                  getMultiSendCallOnlyDeployments({
+                    version,
+                    chainId,
+                  }),
+                );
                 const taskId = faker.string.uuid();
                 networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
@@ -1052,10 +1068,12 @@ describe('Relay controller', () => {
                     multiSendTransactionsEncoder(transactions),
                   )
                   .encode();
-                const to = getMultiSendCallOnlyDeployment({
-                  version,
-                  network: chainId,
-                })!.networkAddresses[chainId];
+                const to = faker.helpers.arrayElement(
+                  getMultiSendCallOnlyDeployments({
+                    version,
+                    chainId,
+                  }),
+                );
                 networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
@@ -1103,10 +1121,12 @@ describe('Relay controller', () => {
                     multiSendTransactionsEncoder(transactions),
                   )
                   .encode();
-                const to = getMultiSendCallOnlyDeployment({
-                  version,
-                  network: chainId,
-                })!.networkAddresses[chainId];
+                const to = faker.helpers.arrayElement(
+                  getMultiSendCallOnlyDeployments({
+                    version,
+                    chainId,
+                  }),
+                );
                 networkService.get.mockImplementation(({ url }) => {
                   switch (url) {
                     case `${safeConfigUrl}/api/v1/chains/${chainId}`:
@@ -1374,10 +1394,12 @@ describe('Relay controller', () => {
                   multiSendTransactionsEncoder(transactions),
                 )
                 .encode();
-              const to = getMultiSendCallOnlyDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
+              const to = faker.helpers.arrayElement(
+                getMultiSendCallOnlyDeployments({
+                  version,
+                  chainId,
+                }),
+              );
               const taskId = faker.string.uuid();
               networkService.get.mockImplementation(({ url }) => {
                 switch (url) {
@@ -1428,15 +1450,18 @@ describe('Relay controller', () => {
                 getAddress(faker.finance.ethereumAddress()),
                 getAddress(faker.finance.ethereumAddress()),
               ];
-              const singleton = getSafeSingletonDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
-              const proxyFactory = getProxyFactoryDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
-              const to = getAddress(proxyFactory);
+              const singleton = faker.helpers.arrayElement(
+                getSafeSingletonDeployments({
+                  version,
+                  chainId,
+                }),
+              );
+              const to = faker.helpers.arrayElement(
+                getProxyFactoryDeployments({
+                  version,
+                  chainId,
+                }),
+              );
               const data = createProxyWithNonceEncoder()
                 .with('singleton', getAddress(singleton))
                 .with(

@@ -32,7 +32,7 @@ import { transactionAddedEventBuilder } from '@/domain/alerts/contracts/__tests_
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { getAddress } from 'viem';
-import { getMultiSendCallOnlyDeployment } from '@safe-global/safe-deployments';
+import { getMultiSendCallOnlyDeployments } from '@/domain/common/utils/deployments';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -396,7 +396,12 @@ describe('Alerts (Unit)', () => {
             .with('data', multiSend.encode())
             .with(
               'to',
-              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
+              faker.helpers.arrayElement(
+                getMultiSendCallOnlyDeployments({
+                  chainId: chain.chainId,
+                  version: '1.3.0',
+                }),
+              ),
             )
             .encode();
 
@@ -634,7 +639,12 @@ describe('Alerts (Unit)', () => {
             .with('data', multiSend.encode())
             .with(
               'to',
-              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
+              faker.helpers.arrayElement(
+                getMultiSendCallOnlyDeployments({
+                  chainId: chain.chainId,
+                  version: '1.3.0',
+                }),
+              ),
             )
             .encode();
 
@@ -704,7 +714,12 @@ describe('Alerts (Unit)', () => {
             .with('data', multiSend.encode())
             .with(
               'to',
-              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
+              faker.helpers.arrayElement(
+                getMultiSendCallOnlyDeployments({
+                  chainId: chain.chainId,
+                  version: '1.3.0',
+                }),
+              ),
             )
             .encode();
 

@@ -4,12 +4,12 @@ import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/decoders/proxy-factory-decoder.helper';
 import {
-  getSafeSingletonDeployment,
-  getSafeL2SingletonDeployment,
-  getMultiSendCallOnlyDeployment,
-  getMultiSendDeployment,
-  getProxyFactoryDeployment,
-} from '@safe-global/safe-deployments';
+  getSafeSingletonDeployments,
+  getSafeL2SingletonDeployments,
+  getMultiSendCallOnlyDeployments,
+  getMultiSendDeployments,
+  getProxyFactoryDeployments,
+} from '@/domain/common/utils/deployments';
 import { SafeDecoder } from '@/domain/contracts/decoders/safe-decoder.helper';
 import { UnofficialMasterCopyError } from '@/domain/relay/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/domain/relay/errors/unofficial-multisend.error';
@@ -228,28 +228,15 @@ export class LimitAddressesMapper {
     chainId: string;
     address: `0x${string}`;
   }): boolean {
-    const multiSendCallOnlyDeployment = getMultiSendCallOnlyDeployment({
-      version: args.version,
-      network: args.chainId,
-    });
-
-    const isCallOnly =
-      multiSendCallOnlyDeployment?.networkAddresses[args.chainId] ===
-        args.address ||
-      multiSendCallOnlyDeployment?.defaultAddress === args.address;
+    const multiSendCallOnlyDeployments = getMultiSendCallOnlyDeployments(args);
+    const isCallOnly = multiSendCallOnlyDeployments.includes(args.address);
 
     if (isCallOnly) {
       return true;
     }
 
-    const multiSendCallDeployment = getMultiSendDeployment({
-      version: args.version,
-      network: args.chainId,
-    });
-    return (
-      multiSendCallDeployment?.networkAddresses[args.chainId] ===
-        args.address || multiSendCallDeployment?.defaultAddress === args.address
-    );
+    const multiSendCallDeployments = getMultiSendDeployments(args);
+    return multiSendCallDeployments.includes(args.address);
   }
 
   private getSafeAddressFromMultiSend = (
@@ -286,15 +273,8 @@ export class LimitAddressesMapper {
     chainId: string;
     address: `0x${string}`;
   }): boolean {
-    const proxyFactoryDeployment = getProxyFactoryDeployment({
-      version: args.version,
-      network: args.chainId,
-    });
-
-    return (
-      proxyFactoryDeployment?.networkAddresses[args.chainId] === args.address ||
-      proxyFactoryDeployment?.defaultAddress === args.address
-    );
+    const proxyFactoryDeployments = getProxyFactoryDeployments(args);
+    return proxyFactoryDeployments.includes(args.address);
   }
 
   private isValidCreateProxyWithNonceCall(args: {
@@ -302,7 +282,7 @@ export class LimitAddressesMapper {
     chainId: string;
     data: `0x${string}`;
   }): boolean {
-    let singleton: string | null = null;
+    let singleton: `0x${string}` | null = null;
 
     try {
       const decoded = this.proxyFactoryDecoder.decodeFunctionData({
@@ -318,19 +298,11 @@ export class LimitAddressesMapper {
       return false;
     }
 
-    const safeL1Deployment = getSafeSingletonDeployment({
-      version: args.version,
-      network: args.chainId,
-    });
-    const safeL2Deployment = getSafeL2SingletonDeployment({
-      version: args.version,
-      network: args.chainId,
-    });
+    const safeL1Deployments = getSafeSingletonDeployments(args);
+    const safeL2Deployments = getSafeL2SingletonDeployments(args);
 
-    const isL1Singleton =
-      safeL1Deployment?.networkAddresses[args.chainId] === singleton;
-    const isL2Singleton =
-      safeL2Deployment?.networkAddresses[args.chainId] === singleton;
+    const isL1Singleton = safeL1Deployments.includes(singleton);
+    const isL2Singleton = safeL2Deployments.includes(singleton);
 
     return isL1Singleton || isL2Singleton;
   }
