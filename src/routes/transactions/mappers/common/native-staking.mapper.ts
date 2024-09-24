@@ -190,9 +190,7 @@ export class NativeStakingMapper {
       }),
       this.stakingRepository.getNetworkStats(args.chainId),
     ]);
-    const numValidators = this.getNumValidatorsFromDataDecoded(
-      args.dataDecoded,
-    );
+    const numValidators = publicKeys.length;
     // We don't include this in Promise.all as getStatus may cache Stakes to be reused
     const value = await this.getValueFromDataDecoded({
       dataDecoded: args.dataDecoded,
@@ -433,22 +431,6 @@ export class NativeStakingMapper {
     return isHex(publicKeys?.value)
       ? this.splitPublicKeys(publicKeys.value)
       : [];
-  }
-
-  /**
-   * Gets number of validators from decoded `validatorsExit` or `batchWithdrawCLFee` transactions
-   * @param data - the transaction decoded data.
-   * @returns the number of validators from the transaction decoded data.
-   */
-  private getNumValidatorsFromDataDecoded(data: DataDecoded): number {
-    const publicKeys = this.getPublicKeysFromDataDecoded(data);
-    if (publicKeys.length === 0) {
-      return 0;
-    }
-    return Math.floor(
-      // Ignore the `0x` prefix
-      (publicKeys.length - 2) / KilnDecoder.KilnPublicKeyLength,
-    );
   }
 
   /**
