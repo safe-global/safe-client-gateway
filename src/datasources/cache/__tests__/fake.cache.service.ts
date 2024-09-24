@@ -1,7 +1,6 @@
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
-import { isNumber } from 'lodash';
 
 export class FakeCacheService implements ICacheService, ICacheReadiness {
   private cache: Record<string, Record<string, string> | number> = {};
@@ -35,7 +34,9 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
 
   getCounter(key: string): Promise<number | null> {
     const value = this.cache[key];
-    return isNumber(value) ? Promise.resolve(value) : Promise.resolve(null);
+    return Number.isInteger(value) && typeof value === 'number'
+      ? Promise.resolve(value)
+      : Promise.resolve(null);
   }
 
   hGet(cacheDir: CacheDir): Promise<string | undefined> {
