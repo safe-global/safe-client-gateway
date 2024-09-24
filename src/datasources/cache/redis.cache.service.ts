@@ -31,6 +31,12 @@ export class RedisCacheService
     return this.client.ping();
   }
 
+  async getCounter(key: string): Promise<number | null> {
+    const keyWithPrefix = this._prefixKey(key);
+    const value = await this.client.get(keyWithPrefix);
+    return value ? Number(value) : null;
+  }
+
   async hSet(
     cacheDir: CacheDir,
     value: string,
@@ -80,6 +86,14 @@ export class RedisCacheService
     }
     const [incrRes] = await transaction.get(cacheKey).exec();
     return Number(incrRes);
+  }
+
+  async setCounter(
+    key: string,
+    value: number,
+    expireTimeSeconds: number,
+  ): Promise<void> {
+    await this.client.set(key, value, { EX: expireTimeSeconds, NX: true });
   }
 
   /**

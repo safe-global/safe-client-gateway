@@ -1,6 +1,7 @@
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
+import { isNumber } from 'lodash';
 
 export class FakeCacheService implements ICacheService, ICacheReadiness {
   private cache: Record<string, Record<string, string> | number> = {};
@@ -30,6 +31,11 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
       1, // non-falsy expireTimeSeconds, otherwise it wouldn't be written
     );
     return Promise.resolve(1);
+  }
+
+  getCounter(key: string): Promise<number | null> {
+    const value = this.cache[key];
+    return isNumber(value) ? Promise.resolve(value) : Promise.resolve(null);
   }
 
   hGet(cacheDir: CacheDir): Promise<string | undefined> {
@@ -70,5 +76,15 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     currentValue = currentValue ? currentValue + 1 : 1;
     this.cache[cacheKey] = currentValue;
     return Promise.resolve(currentValue);
+  }
+
+  setCounter(
+    key: string,
+    value: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    expireTimeSeconds: number | undefined,
+  ): Promise<void> {
+    this.cache[key] = value;
+    return Promise.resolve();
   }
 }
