@@ -1,4 +1,4 @@
-import { StakingValidatorsExitStatus } from '@/routes/transactions/entities/staking/staking.entity';
+import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
@@ -10,8 +10,8 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingValidatorsExit] })
   override type = TransactionInfoType.NativeStakingValidatorsExit;
 
-  @ApiProperty({ enum: StakingValidatorsExitStatus })
-  status: StakingValidatorsExitStatus;
+  @ApiProperty({ enum: StakingStatus })
+  status: StakingStatus;
 
   @ApiProperty()
   estimatedExitTime: number;
@@ -29,7 +29,7 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
   tokenInfo: TokenInfo;
 
   constructor(args: {
-    status: StakingValidatorsExitStatus;
+    status: StakingStatus;
     estimatedExitTime: number;
     estimatedWithdrawalTime: number;
     value: string;
