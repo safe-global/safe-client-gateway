@@ -112,14 +112,14 @@ describe('FirebaseCloudMessagingApiService', () => {
     // Cached OAuth2 token
     expect(fakeCacheService.keyCount()).toBe(1);
     await expect(
-      fakeCacheService.get(new CacheDir('firebase_oauth2_token', '')),
+      fakeCacheService.hGet(new CacheDir('firebase_oauth2_token', '')),
     ).resolves.toBe(oauth2Token);
   });
 
   it('should use an OAuth2 token from cache if available', async () => {
     const oauth2Token = faker.string.alphanumeric();
     const oauth2TokenExpiresIn = faker.number.int();
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       new CacheDir('firebase_oauth2_token', ''),
       oauth2Token,
       oauth2TokenExpiresIn,

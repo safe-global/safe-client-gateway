@@ -24,7 +24,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
 
   async deleteByKey(key: string): Promise<number> {
     delete this.cache[key];
-    await this.set(
+    await this.hSet(
       new CacheDir(`invalidationTimeMs:${key}`, ''),
       Date.now().toString(),
       1, // non-falsy expireTimeSeconds, otherwise it wouldn't be written
@@ -32,7 +32,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     return Promise.resolve(1);
   }
 
-  get(cacheDir: CacheDir): Promise<string | undefined> {
+  hGet(cacheDir: CacheDir): Promise<string | undefined> {
     const fields = this.cache[cacheDir.key];
     if (fields === undefined) return Promise.resolve(undefined);
     return Promise.resolve(
@@ -40,7 +40,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     );
   }
 
-  set(
+  hSet(
     cacheDir: CacheDir,
     value: string | number,
     expireTimeSeconds: number | undefined,

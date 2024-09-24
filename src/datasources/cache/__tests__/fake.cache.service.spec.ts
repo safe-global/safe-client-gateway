@@ -16,9 +16,9 @@ describe('FakeCacheService', () => {
     );
     const value = faker.string.alphanumeric();
 
-    await target.set(cacheDir, value, faker.number.int({ min: 1 }));
+    await target.hSet(cacheDir, value, faker.number.int({ min: 1 }));
 
-    await expect(target.get(cacheDir)).resolves.toBe(value);
+    await expect(target.hGet(cacheDir)).resolves.toBe(value);
     expect(target.keyCount()).toBe(1);
   });
 
@@ -30,12 +30,12 @@ describe('FakeCacheService', () => {
     const cacheDir = new CacheDir(key, field);
     const value = faker.string.alphanumeric();
 
-    await target.set(cacheDir, value, faker.number.int({ min: 1 }));
+    await target.hSet(cacheDir, value, faker.number.int({ min: 1 }));
     await target.deleteByKey(key);
 
-    await expect(target.get(cacheDir)).resolves.toBe(undefined);
+    await expect(target.hGet(cacheDir)).resolves.toBe(undefined);
     await expect(
-      target.get(new CacheDir(`invalidationTimeMs:${cacheDir.key}`, '')),
+      target.hGet(new CacheDir(`invalidationTimeMs:${cacheDir.key}`, '')),
     ).resolves.toBe(now.toString());
     expect(target.keyCount()).toBe(1);
     jest.useRealTimers();
@@ -45,7 +45,7 @@ describe('FakeCacheService', () => {
     const actions: Promise<void>[] = [];
     for (let i = 0; i < 5; i++) {
       actions.push(
-        target.set(
+        target.hSet(
           new CacheDir(`key${i}`, `field${i}`),
           `value${i}`,
           faker.number.int({ min: 1 }),
@@ -75,7 +75,7 @@ describe('FakeCacheService', () => {
   it('increments the value of an existing key', async () => {
     const key = faker.string.alphanumeric();
     const initialValue = faker.number.int({ min: 100 });
-    await target.set(
+    await target.hSet(
       new CacheDir(key, ''),
       initialValue,
       faker.number.int({ min: 1 }),

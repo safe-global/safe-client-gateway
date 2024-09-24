@@ -31,7 +31,7 @@ export class RedisCacheService
     return this.client.ping();
   }
 
-  async set(
+  async hSet(
     cacheDir: CacheDir,
     value: string,
     expireTimeSeconds: number | undefined,
@@ -53,7 +53,7 @@ export class RedisCacheService
     }
   }
 
-  async get(cacheDir: CacheDir): Promise<string | undefined> {
+  async hGet(cacheDir: CacheDir): Promise<string | undefined> {
     const key = this._prefixKey(cacheDir.key);
     return await this.client.hGet(key, cacheDir.field);
   }
@@ -62,7 +62,7 @@ export class RedisCacheService
     const keyWithPrefix = this._prefixKey(key);
     // see https://redis.io/commands/unlink/
     const result = await this.client.unlink(keyWithPrefix);
-    await this.set(
+    await this.hSet(
       new CacheDir(`invalidationTimeMs:${key}`, ''),
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,

@@ -90,7 +90,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
         })(),
       });
 
-      const cache = await this.cacheService.get(cacheDir);
+      const cache = await this.cacheService.hGet(cacheDir);
 
       if (cache != null) {
         return cache;
@@ -112,7 +112,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
         });
       }
 
-      await this.cacheService.set(
+      await this.cacheService.hSet(
         cacheDir,
         result,
         this.rpcExpirationTimeInSeconds,

@@ -36,7 +36,7 @@ export class CachedQueryResolver implements ICachedQueryResolver {
     ttl: number;
   }): Promise<T> {
     const { key, field } = args.cacheDir;
-    const cached = await this.cacheService.get(args.cacheDir);
+    const cached = await this.cacheService.hGet(args.cacheDir);
     if (cached != null) {
       this.loggingService.debug({ type: 'cache_hit', key, field });
       return JSON.parse(cached);
@@ -46,7 +46,7 @@ export class CachedQueryResolver implements ICachedQueryResolver {
     try {
       const result = await args.query.execute();
       if (result.count > 0) {
-        await this.cacheService.set(
+        await this.cacheService.hSet(
           args.cacheDir,
           JSON.stringify(result),
           args.ttl,

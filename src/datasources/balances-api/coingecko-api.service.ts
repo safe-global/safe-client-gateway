@@ -251,7 +251,7 @@ export class CoingeckoApi implements IPricesApi {
         ...args,
         tokenAddress,
       });
-      const cached = await this.cacheService.get(cacheDir);
+      const cached = await this.cacheService.hGet(cacheDir);
       const { key, field } = cacheDir;
       if (cached != null) {
         this.loggingService.debug({ type: 'cache_hit', key, field });
@@ -284,7 +284,7 @@ export class CoingeckoApi implements IPricesApi {
         const price: AssetPrice = validPrice
           ? { [tokenAddress]: { [args.fiatCode]: validPrice } }
           : { [tokenAddress]: { [args.fiatCode]: null } };
-        await this.cacheService.set(
+        await this.cacheService.hSet(
           CacheRouter.getTokenPriceCacheDir({ ...args, tokenAddress }),
           JSON.stringify(price),
           this._getTtl(validPrice, tokenAddress),

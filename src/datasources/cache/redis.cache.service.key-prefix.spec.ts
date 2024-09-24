@@ -61,7 +61,7 @@ describe('RedisCacheService with a Key Prefix', () => {
     const value = fakeJson();
     const expireTime = faker.number.int();
 
-    await redisCacheService.set(cacheDir, value, expireTime);
+    await redisCacheService.hSet(cacheDir, value, expireTime);
 
     expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,
@@ -80,7 +80,7 @@ describe('RedisCacheService with a Key Prefix', () => {
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
-    await redisCacheService.get(cacheDir);
+    await redisCacheService.hGet(cacheDir);
 
     expect(redisClientTypeMock.hGet).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,
