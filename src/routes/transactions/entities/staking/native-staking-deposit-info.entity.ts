@@ -1,6 +1,5 @@
 import {
-  StakingDepositStatus,
-  StakingDepositStatusInfo,
+  StakingStatus,
   StakingTimeInfo,
   StakingFinancialInfo,
 } from '@/routes/transactions/entities/staking/staking.entity';
@@ -11,9 +10,7 @@ import {
 } from '@/routes/transactions/entities/transaction-info.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-export type NativeStakingDepositInfo = StakingDepositStatusInfo &
-  StakingTimeInfo &
-  StakingFinancialInfo;
+export type NativeStakingDepositInfo = StakingTimeInfo & StakingFinancialInfo;
 
 export class NativeStakingDepositTransactionInfo
   extends TransactionInfo
@@ -22,8 +19,8 @@ export class NativeStakingDepositTransactionInfo
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingDeposit] })
   override type = TransactionInfoType.NativeStakingDeposit;
 
-  @ApiProperty({ enum: StakingDepositStatus })
-  status: StakingDepositStatus;
+  @ApiProperty({ enum: StakingStatus })
+  status: StakingStatus;
 
   @ApiProperty()
   estimatedEntryTime: number;
@@ -65,7 +62,7 @@ export class NativeStakingDepositTransactionInfo
   tokenInfo: TokenInfo;
 
   constructor(args: {
-    status: StakingDepositStatus;
+    status: StakingStatus;
     estimatedEntryTime: number;
     estimatedExitTime: number;
     estimatedWithdrawalTime: number;
