@@ -4,7 +4,7 @@ import {
   DecodedType,
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
 import { NativeStakingDepositInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
-import { StakingDepositStatus } from '@/routes/transactions/entities/staking/staking.entity';
+import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -17,9 +17,9 @@ export class NativeStakingDepositConfirmationView
   type = DecodedType.KilnNativeStakingDeposit;
 
   @ApiProperty({
-    enum: StakingDepositStatus,
+    enum: StakingStatus,
   })
-  status: StakingDepositStatus;
+  status: StakingStatus;
 
   @ApiProperty()
   method: string;
@@ -69,7 +69,7 @@ export class NativeStakingDepositConfirmationView
   constructor(args: {
     method: string;
     parameters: DataDecodedParameter[] | null;
-    status: StakingDepositStatus;
+    status: StakingStatus;
     estimatedEntryTime: number;
     estimatedExitTime: number;
     estimatedWithdrawalTime: number;
