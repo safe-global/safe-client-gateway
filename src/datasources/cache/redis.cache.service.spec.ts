@@ -197,6 +197,14 @@ describe('RedisCacheService', () => {
     expect(result).toEqual(value + 3);
   });
 
+  it('returns null for a non-numeric counter value', async () => {
+    const key = faker.string.alphanumeric();
+    await redisClient.set(key, faker.string.sample());
+
+    const result = await redisCacheService.getCounter(key);
+    expect(result).toBeNull();
+  });
+
   it('stores a key for MAX_TTL seconds', async () => {
     const key = faker.string.alphanumeric();
     const value = faker.string.sample();
