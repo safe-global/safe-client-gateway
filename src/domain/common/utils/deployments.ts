@@ -7,6 +7,11 @@ import {
   getSafeSingletonDeployments as _getSafeSingletonDeployments,
 } from '@safe-global/safe-deployments';
 
+type Filter = {
+  chainId: string;
+  version: string;
+};
+
 /**
  * Returns a list of official ProxyFactory addresses based on given {@link Filter}.
  *
@@ -73,16 +78,11 @@ export function getMultiSendDeployments(args: Filter): Array<`0x${string}`> {
   return formatDeployments(_getMultiSendDeployments, args);
 }
 
-type Filter = {
-  chainId: string;
-  version: string;
-};
-
 /**
  * Helper to remap {@link SingletonDeploymentV2} to a list of checksummed addresses.
  *
- * @param getDeployments - deployment getters from @safe-global/safe-deployments
- * @param filter - {@link Filter} to filter deployments by
+ * @param {Function} getDeployments - function to get deployments
+ * @param {Filter} filter - filter to apply to deployments
  *
  * @returns {Array<`0x${string}`>} - a list of checksummed addresses
  */
