@@ -34,7 +34,7 @@ describe('CachedQueryResolver', () => {
       const cacheDir = { key: 'key', field: 'field' };
       const ttl = faker.number.int({ min: 1, max: 1000 });
       const value = fakeJson();
-      await fakeCacheService.set(cacheDir, JSON.stringify(value), ttl);
+      await fakeCacheService.hSet(cacheDir, JSON.stringify(value), ttl);
 
       const actual = await target.get({
         cacheDir,
@@ -68,7 +68,7 @@ describe('CachedQueryResolver', () => {
         key: 'key',
         field: 'field',
       });
-      const cacheContent = await fakeCacheService.get(cacheDir);
+      const cacheContent = await fakeCacheService.hGet(cacheDir);
       expect(cacheContent).toBe(JSON.stringify(dbResult));
     });
 

@@ -198,7 +198,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
 
-    const cached = await this.cacheService.get(cacheDir).catch(() => null);
+    const cached = await this.cacheService.hGet(cacheDir).catch(() => null);
 
     if (cached != null) {
       this.loggingService.debug({
@@ -234,7 +234,7 @@ export class TransactionApi implements ITransactionApi {
       }
     })();
 
-    await this.cacheService.set(
+    await this.cacheService.hSet(
       cacheDir,
       JSON.stringify(isSafe),
       // We can indefinitely cache this as an address cannot "un-Safe" itself

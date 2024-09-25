@@ -120,7 +120,7 @@ describe('AuthController', () => {
           });
 
           const cacheDir = new CacheDir(`auth_nonce_${body.nonce}`, '');
-          await expect(cacheService.get(cacheDir)).resolves.toBe(body.nonce);
+          await expect(cacheService.hGet(cacheDir)).resolves.toBe(body.nonce);
         });
     });
   });
@@ -153,7 +153,7 @@ describe('AuthController', () => {
       });
       const maxAge = getSecondsUntil(expirationTime);
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
       );
       await request(app.getHttpServer())
@@ -175,7 +175,7 @@ describe('AuthController', () => {
       // Verified off-chain as EOA
       expect(verifySiweMessageMock).not.toHaveBeenCalled();
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should verify a smart contract signer', async () => {
@@ -201,7 +201,7 @@ describe('AuthController', () => {
       verifySiweMessageMock.mockResolvedValue(true);
       const maxAge = getSecondsUntil(expirationTime);
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
       );
       await request(app.getHttpServer())
@@ -223,7 +223,7 @@ describe('AuthController', () => {
       // Verified on-chain as could not verify EOA
       expect(verifySiweMessageMock).toHaveBeenCalledTimes(1);
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should set SameSite=none if application.env is not production', async () => {
@@ -268,7 +268,7 @@ describe('AuthController', () => {
       });
       const maxAge = getSecondsUntil(expirationTime);
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
       );
 
@@ -291,7 +291,7 @@ describe('AuthController', () => {
       // Verified off-chain as EOA
       expect(verifySiweMessageMock).not.toHaveBeenCalled();
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should not verify a signer if expirationTime is too high', async () => {
@@ -316,7 +316,7 @@ describe('AuthController', () => {
         message,
       });
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(nonce);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
       await request(app.getHttpServer())
         .post('/v1/auth/verify')
         .send({
@@ -333,7 +333,7 @@ describe('AuthController', () => {
           });
         });
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should not verify a signer if using an unsigned nonce', async () => {
@@ -353,7 +353,7 @@ describe('AuthController', () => {
         message,
       });
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
       await request(app.getHttpServer())
         .post('/v1/auth/verify')
         .send({
@@ -370,7 +370,7 @@ describe('AuthController', () => {
           });
         });
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should not verify a signer if the nonce has expired', async () => {
@@ -398,7 +398,7 @@ describe('AuthController', () => {
       // Mimic ttl expiration
       await cacheService.deleteByKey(cacheDir.key);
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
       await request(app.getHttpServer())
         .post('/v1/auth/verify')
         .set(
@@ -419,7 +419,7 @@ describe('AuthController', () => {
           });
         });
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should not verify a (smart contract) signer if the signature is invalid', async () => {
@@ -441,7 +441,7 @@ describe('AuthController', () => {
       const signature = faker.string.hexadecimal({ length: 132 });
       verifySiweMessageMock.mockResolvedValue(false);
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(nonce);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
       await request(app.getHttpServer())
         .post('/v1/auth/verify')
         .send({
@@ -460,7 +460,7 @@ describe('AuthController', () => {
       // Tried to verify off-/on-chain but failed
       expect(verifySiweMessageMock).toHaveBeenCalledTimes(1);
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should not verify a signer if the message has expired', async () => {
@@ -483,7 +483,7 @@ describe('AuthController', () => {
         message,
       });
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(nonce);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
       await request(app.getHttpServer())
         .post('/v1/auth/verify')
         .send({
@@ -500,7 +500,7 @@ describe('AuthController', () => {
           });
         });
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
     it('should get the max expirationTime if not specified on the SiWE message', async () => {
@@ -529,7 +529,7 @@ describe('AuthController', () => {
       );
       const maxAge = getSecondsUntil(expectedExpirationTime);
 
-      await expect(cacheService.get(cacheDir)).resolves.toBe(
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(
         nonceResponse.body.nonce,
       );
       await request(app.getHttpServer())
@@ -551,7 +551,7 @@ describe('AuthController', () => {
       // Verified off-chain as EOA
       expect(verifySiweMessageMock).not.toHaveBeenCalled();
       // Nonce deleted
-      await expect(cacheService.get(cacheDir)).resolves.toBe(undefined);
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
   });
 });

@@ -158,7 +158,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       .expect(200);
 
     await expect(
-      fakeCacheService.get(
+      fakeCacheService.hGet(
         new CacheDir(
           `${chain.chainId}_multisig_transaction_${tx.safeTxHash}`,
           '',
@@ -166,7 +166,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       ),
     ).resolves.toBeUndefined();
     await expect(
-      fakeCacheService.get(
+      fakeCacheService.hGet(
         new CacheDir(`${chain.chainId}_multisig_transactions_${tx.safe}`, ''),
       ),
     ).resolves.toBeUndefined();

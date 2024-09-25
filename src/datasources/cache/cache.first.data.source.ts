@@ -71,7 +71,7 @@ export class CacheFirstDataSource {
     networkRequest?: NetworkRequest;
     expireTimeSeconds?: number;
   }): Promise<T> {
-    const cached = await this.cacheService.get(args.cacheDir);
+    const cached = await this.cacheService.hGet(args.cacheDir);
     if (cached != null) return this._getFromCachedData(args.cacheDir, cached);
 
     try {
@@ -128,7 +128,7 @@ export class CacheFirstDataSource {
 
     const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
     if (shouldBeCached) {
-      await this.cacheService.set(
+      await this.cacheService.hSet(
         args.cacheDir,
         JSON.stringify(data),
         args.expireTimeSeconds,
@@ -182,7 +182,7 @@ export class CacheFirstDataSource {
     key: string,
     startTimeMs: number,
   ): Promise<boolean> {
-    const invalidationTimeMsStr = await this.cacheService.get(
+    const invalidationTimeMsStr = await this.cacheService.hGet(
       new CacheDir(`invalidationTimeMs:${key}`, ''),
     );
 
@@ -203,7 +203,7 @@ export class CacheFirstDataSource {
     error: NetworkResponseError,
     notFoundExpireTimeSeconds?: number,
   ): Promise<void> {
-    return this.cacheService.set(
+    return this.cacheService.hSet(
       cacheDir,
       JSON.stringify({
         data: error.data,

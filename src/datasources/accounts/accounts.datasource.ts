@@ -81,7 +81,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       },
     );
     const cacheDir = CacheRouter.getAccountCacheDir(args.address);
-    await this.cacheService.set(
+    await this.cacheService.hSet(
       cacheDir,
       JSON.stringify([account]),
       this.defaultExpirationTimeInSeconds,
@@ -185,7 +185,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     });
 
     const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(args.address);
-    await this.cacheService.set(
+    await this.cacheService.hSet(
       cacheDir,
       JSON.stringify(result),
       this.defaultExpirationTimeInSeconds,

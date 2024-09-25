@@ -22,12 +22,12 @@ export class SiweApi implements ISiweApi {
   }
   async storeNonce(nonce: string): Promise<void> {
     const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
-    await this.cacheService.set(cacheDir, nonce, this.nonceTtlInSeconds);
+    await this.cacheService.hSet(cacheDir, nonce, this.nonceTtlInSeconds);
   }
 
   async getNonce(nonce: string): Promise<string | undefined> {
     const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
-    return this.cacheService.get(cacheDir);
+    return this.cacheService.hGet(cacheDir);
   }
 
   async clearNonce(nonce: string): Promise<void> {

@@ -268,7 +268,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_safe_balances_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -298,7 +298,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -327,7 +327,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_multisig_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -355,7 +355,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -384,7 +384,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_multisig_transaction_${payload.safeTxHash}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -412,7 +412,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -433,7 +433,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_safe_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -461,7 +461,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -488,7 +488,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_staking_stakes_${getAddress(safeAddress)}`,
       validatorsPublicKeys,
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       JSON.stringify(stakes),
       faker.number.int({ min: 1 }),
@@ -516,7 +516,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -548,7 +548,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_safe_collectibles_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -578,7 +578,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -604,7 +604,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_transfers_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -632,7 +632,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -653,7 +653,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_incoming_transfers_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -681,7 +681,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -697,7 +697,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_module_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -725,7 +725,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -766,7 +766,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_all_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -794,7 +794,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -813,7 +813,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       `${chainId}_messages_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -841,7 +841,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -851,7 +851,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
   ])('$type clears chain', async (payload) => {
     const chain = chainBuilder().build();
     const cacheDir = new CacheDir(`${chain.chainId}_chain`, '');
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       JSON.stringify(chain),
       faker.number.int({ min: 1 }),
@@ -875,7 +875,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -885,7 +885,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
   ])('$type clears chains', async (payload) => {
     const chain = chainBuilder().build();
     const cacheDir = new CacheDir(`chains`, '');
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       JSON.stringify(chain),
       faker.number.int({ min: 1 }),
@@ -912,7 +912,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -1055,7 +1055,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
   ])('$type clears safe apps', async (payload) => {
     const chain = chainBuilder().build();
     const cacheDir = new CacheDir(`${chain.chainId}_safe_apps`, '');
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       JSON.stringify(chain),
       faker.number.int({ min: 1 }),
@@ -1082,7 +1082,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 
   it.each([
@@ -1103,7 +1103,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       await initApp(testConfiguration);
       const chain = chainBuilder().build();
       const cacheDir = new CacheDir(`chains`, '');
-      await fakeCacheService.set(
+      await fakeCacheService.hSet(
         cacheDir,
         JSON.stringify(chain),
         faker.number.int({ min: 1 }),
@@ -1130,7 +1130,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
         .send(data)
         .expect(202);
 
-      await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
     },
   );
 
@@ -1152,7 +1152,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
       await initApp(testConfiguration);
       const chain = chainBuilder().build();
       const cacheDir = new CacheDir(`${chain.chainId}_safe_apps`, '');
-      await fakeCacheService.set(
+      await fakeCacheService.hSet(
         cacheDir,
         JSON.stringify(chain),
         faker.number.int({ min: 1 }),
@@ -1180,7 +1180,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
         .send(data)
         .expect(202);
 
-      await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
     },
   );
 
@@ -1205,7 +1205,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -1217,6 +1217,6 @@ describe('Post Hook Events for Cache (Unit)', () => {
       .send(data)
       .expect(202);
 
-    await expect(fakeCacheService.get(cacheDir)).resolves.toBeUndefined();
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
 });
