@@ -4,6 +4,7 @@ import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.e
 import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import { Stake } from '@/datasources/staking-api/entities/stake.entity';
+import { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
 
 export const IStakingApi = Symbol('IStakingApi');
 
@@ -24,4 +25,6 @@ export interface IStakingApi {
   }): Promise<Stake[]>;
 
   clearStakes(safeAddress: `0x${string}`): Promise<void>;
+
+  getTransactionStatus(txHash: `0x${string}`): Promise<TransactionStatus>;
 }
