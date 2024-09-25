@@ -1,4 +1,3 @@
-import { depositEventEventBuilder } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import {
   batchWithdrawCLFeeEncoder,
   depositEncoder,
