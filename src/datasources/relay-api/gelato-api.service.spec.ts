@@ -172,7 +172,7 @@ describe('GelatoApi', () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
       const count = faker.number.int({ min: 1 });
-      await fakeCacheService.set(
+      await fakeCacheService.hSet(
         new CacheDir(`${chainId}_relay_${address}`, ''),
         count.toString(),
         ttlSeconds,
@@ -211,7 +211,7 @@ describe('GelatoApi', () => {
         count,
       });
 
-      const result = await fakeCacheService.get(
+      const result = await fakeCacheService.hGet(
         new CacheDir(`${chainId}_relay_${address}`, ''),
       );
       expect(result).toBe(count.toString());

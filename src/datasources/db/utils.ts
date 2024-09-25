@@ -28,7 +28,7 @@ export async function getFromCacheOrExecuteAndCache<
   ttl: number,
 ): Promise<T> {
   const { key, field } = cacheDir;
-  const cached = await cacheService.get(cacheDir);
+  const cached = await cacheService.hGet(cacheDir);
   if (cached != null) {
     loggingService.debug({ type: 'cache_hit', key, field });
     return JSON.parse(cached);
@@ -42,7 +42,7 @@ export async function getFromCacheOrExecuteAndCache<
   });
 
   if (result.count > 0) {
-    await cacheService.set(cacheDir, JSON.stringify(result), ttl);
+    await cacheService.hSet(cacheDir, JSON.stringify(result), ttl);
   }
   return result;
 }

@@ -1,3 +1,4 @@
+import { depositEventEventBuilder } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import {
   batchWithdrawCLFeeEncoder,
   depositEncoder,
@@ -15,6 +16,7 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
+// TODO: Move function encoding to kiln-encoder.builder.ts
 describe('KilnDecoder', () => {
   let kilnDecoder: KilnDecoder;
 

@@ -30,8 +30,8 @@ const mockConfigurationService = jest.mocked(configurationService);
 
 const cacheService = {
   deleteByKey: jest.fn(),
-  set: jest.fn(),
-  get: jest.fn(),
+  hSet: jest.fn(),
+  hGet: jest.fn(),
 } as jest.MockedObjectDeep<ICacheService>;
 const mockCacheService = jest.mocked(cacheService);
 

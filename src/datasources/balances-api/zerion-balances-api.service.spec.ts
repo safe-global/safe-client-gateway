@@ -11,8 +11,8 @@ import { getAddress } from 'viem';
 
 const mockCacheService = jest.mocked({
   increment: jest.fn(),
-  get: jest.fn(),
-  set: jest.fn(),
+  hGet: jest.fn(),
+  hSet: jest.fn(),
 } as jest.MockedObjectDeep<ICacheService>);
 
 const mockLoggingService = {

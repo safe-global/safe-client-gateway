@@ -146,7 +146,7 @@ describe('BlockchainApiManager', () => {
         signal: expect.any(AbortSignal),
       });
       expect(fakeCacheService.keyCount()).toBe(1);
-      await expect(fakeCacheService.get(cacheDir)).resolves.toBe(chainId);
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBe(chainId);
 
       fetchSpy.mockRestore();
     });
