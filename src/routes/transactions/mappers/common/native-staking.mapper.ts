@@ -1,5 +1,5 @@
 import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
-import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
+import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
 import {
   ChainsRepositoryModule,
   IChainsRepository,
@@ -15,10 +15,7 @@ import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
-import {
-  StakingDepositStatus,
-  StakingValidatorsExitStatus,
-} from '@/routes/transactions/entities/staking/staking.entity';
+import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
 import { isHex } from 'viem';
@@ -62,7 +59,12 @@ export class NativeStakingMapper {
     ]);
     this.validateDeployment(deployment);
 
-    const [nativeStakingStats, networkStats] = await Promise.all([
+    const [status, nativeStakingStats, networkStats] = await Promise.all([
+      this._getStatus({
+        chainId: args.chainId,
+        safeAddress: args.to,
+        publicKeys: [],
+      }),
       this.stakingRepository.getDedicatedStakingStats(args.chainId),
       this.stakingRepository.getNetworkStats(args.chainId),
     ]);
@@ -85,11 +87,7 @@ export class NativeStakingMapper {
     const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
     return new NativeStakingDepositTransactionInfo({
-      status: this.mapDepositStatus(
-        networkStats,
-        args.isConfirmed,
-        args.depositExecutionDate,
-      ),
+      status,
       estimatedEntryTime: networkStats.estimated_entry_time_seconds,
       estimatedExitTime: networkStats.estimated_exit_time_seconds,
       estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
@@ -140,19 +138,28 @@ export class NativeStakingMapper {
       }),
     ]);
     this.validateDeployment(deployment);
-    const networkStats = await this.stakingRepository.getNetworkStats(
-      args.chainId,
-    );
+    const _publicKeys = this.getPublicKeysFromDataDecoded(args.dataDecoded);
+    const publicKeys = _publicKeys ? this.splitPublicKeys(_publicKeys) : [];
+
+    const [status, networkStats] = await Promise.all([
+      this._getStatus({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        publicKeys,
+      }),
+      this.stakingRepository.getNetworkStats(args.chainId),
+    ]);
     const numValidators = this.getNumValidatorsFromDataDecoded(
       args.dataDecoded,
     );
+    // We don't include this in Promise.all as getStatus may cache Stakes to be reused
     const value = await this.getValueFromDataDecoded({
       dataDecoded: args.dataDecoded,
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
     return new NativeStakingValidatorsExitTransactionInfo({
-      status: this.mapValidatorsExitStatus(networkStats, args.transaction),
+      status,
       estimatedExitTime: networkStats.estimated_exit_time_seconds,
       estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
       value: getNumberString(value),
@@ -224,78 +231,116 @@ export class NativeStakingMapper {
   }
 
   /**
-   * Maps the {@link StakingDepositStatus} for the given native staking deployment's `deposit` call.
-   * - If the deposit transaction is not confirmed, the status is {@link StakingDepositStatus.SignatureNeeded}.
-   * - If the deposit transaction is confirmed but the deposit execution date is not available,
-   * the status is {@link StakingDepositStatus.AwaitingExecution}.
-   * - If the deposit execution date is available, the status is {@link StakingDepositStatus.AwaitingEntry} if the current
-   * date is before the estimated entry time, otherwise the status is {@link StakingDepositStatus.ValidationStarted}.
+   * Gets the status of given {@link publicKeys} from the returned {@link Stake}s.
    *
-   * @param networkStats - the network stats for the chain where the native staking deployment lives.
-   * @param isConfirmed - whether the deposit transaction is confirmed.
-   * @param depositExecutionDate - the date when the deposit transaction was executed.
-   * @returns - the {@link StakingDepositStatus} status of the deposit transaction.
-   */
-  private mapDepositStatus(
-    networkStats: NetworkStats,
-    isConfirmed: boolean,
-    depositExecutionDate: Date | null,
-  ): StakingDepositStatus {
-    if (!isConfirmed) {
-      return StakingDepositStatus.SignatureNeeded;
-    }
-
-    if (!depositExecutionDate) {
-      return StakingDepositStatus.AwaitingExecution;
-    }
-
-    const estimatedDepositEntryTime =
-      depositExecutionDate.getTime() +
-      networkStats.estimated_entry_time_seconds * 1000;
-
-    return Date.now() <= estimatedDepositEntryTime
-      ? StakingDepositStatus.AwaitingEntry
-      : StakingDepositStatus.ValidationStarted;
-  }
-
-  /**
-   * Maps the {@link StakingValidatorsExitStatus} for the given native staking `requestValidatorsExit` transaction.
-   * - If the transaction is not confirmed, the status is {@link StakingValidatorsExitStatus.SignatureNeeded}.
-   * - If the transaction is confirmed but the execution date is not available, the status
-   * is {@link StakingValidatorsExitStatus.AwaitingExecution}.
-   * - If the execution date is available, the status is {@link StakingValidatorsExitStatus.RequestPending} if the
-   * current date is before the estimated exit + withdrawal time, otherwise the status is {@link StakingValidatorsExitStatus.ReadyToWithdraw}.
+   * If not {@link publicKeys} are provided, or no {@link Stake}s found, then
+   * {@link StakingStatus.NotStaked} is returned.
    *
-   * @param networkStats - the network stats for the chain where the native staking deployment lives.
-   * @param transaction - the validators exit transaction.
-   * @returns - the {@link StakingValidatorsExitStatus} status of the validators exit transaction.
+   * If there are multiple {@link Stake}s, then the status is determined by the
+   * earliest {@link StakeState} according to the staking process.
+   *
+   * @param {string} args.chainId - the chain ID of the native staking deployment
+   * @param {string} args.safeAddress - the Safe staking
+   * @param {Array<string>} args.publicKeys - the public keys to get the status for
+   *
+   * @returns {Promise<StakingStatus>} the status of the given {@link publicKeys}
+   *
+   * Note: this is only public for testing purposes.
    */
-  private mapValidatorsExitStatus(
-    networkStats: NetworkStats,
-    transaction: MultisigTransaction | ModuleTransaction | null,
-  ): StakingValidatorsExitStatus {
-    const isConfirmed =
-      transaction &&
-      'confirmations' in transaction &&
-      !!transaction.confirmations &&
-      transaction.confirmations.length >= transaction.confirmationsRequired;
-
-    if (!isConfirmed) {
-      return StakingValidatorsExitStatus.SignatureNeeded;
+  public async _getStatus(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    publicKeys: Array<`0x${string}`>;
+  }): Promise<StakingStatus> {
+    if (args.publicKeys.length === 0) {
+      return StakingStatus.NotStaked;
     }
 
-    if (!transaction.executionDate) {
-      return StakingValidatorsExitStatus.AwaitingExecution;
+    const stakes = await this.stakingRepository.getStakes({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      validatorsPublicKeys: args.publicKeys,
+    });
+
+    if (stakes.length === 0) {
+      return StakingStatus.NotStaked;
     }
 
-    const estimatedCompletionTime =
-      transaction.executionDate.getTime() +
-      networkStats.estimated_exit_time_seconds * 1000 +
-      networkStats.estimated_withdrawal_time_seconds * 1000;
+    /**
+     * As there can be multiple {@link State}s but we return a singular status
+     * we get the "overall" status based on the "earliest" state according to
+     * the ordered staking process.
+     */
+    const OrderedStakingStates = [
+      StakeState.Unknown,
+      StakeState.Unstaked,
+      StakeState.PendingQueued,
+      StakeState.DepositInProgress,
+      StakeState.PendingInitialized,
+      StakeState.ActiveOngoing,
+      StakeState.ExitRequested,
+      StakeState.ActiveExiting,
+      StakeState.ExitedUnslashed,
+      StakeState.WithdrawalPossible,
+      StakeState.WithdrawalDone,
+      StakeState.ActiveSlashed,
+      StakeState.ExitedSlashed,
+    ];
 
-    return Date.now() <= estimatedCompletionTime
-      ? StakingValidatorsExitStatus.RequestPending
-      : StakingValidatorsExitStatus.ReadyToWithdraw;
+    const [stake] = stakes.sort((a, b) => {
+      return (
+        OrderedStakingStates.indexOf(a.state) -
+        OrderedStakingStates.indexOf(b.state)
+      );
+    });
+
+    /**
+     * Certain {@link StakeState}s, fall under the same {@link StakingStatus}
+     * as they are inherently the same for the UI.
+     *
+     * @see https://github.com/kilnfi/staking-dapp/blob/343ca9c2313676c6a31d6fef6aa5fd9cd4e03278/services/apps/ledger-live-app/types/eth.ts#L23-L97
+     */
+    //
+    switch (stake.state) {
+      // Validation key generated but not staked
+      case StakeState.Unknown:
+      case StakeState.Unstaked: {
+        return StakingStatus.NotStaked;
+      }
+      // Validator in chain activation queue
+      case StakeState.PendingQueued: {
+        return StakingStatus.Activating;
+      }
+      // Validator staked and will be processed by chain soon
+      case StakeState.DepositInProgress:
+      case StakeState.PendingInitialized: {
+        return StakingStatus.DepositInProgress;
+      }
+      // Validator online and collecting rewards
+      case StakeState.ActiveOngoing: {
+        return StakingStatus.Active;
+      }
+      // Requested to exit validator
+      case StakeState.ExitRequested: {
+        return StakingStatus.ExitRequested;
+      }
+      // Validator in process of leaving validator pool and being withdrawn
+      case StakeState.ActiveExiting:
+      case StakeState.ExitedUnslashed:
+      case StakeState.WithdrawalPossible: {
+        return StakingStatus.Exiting;
+      }
+      // Validator properly exited and no longer collecting rewards
+      case StakeState.WithdrawalDone: {
+        return StakingStatus.Exited;
+      }
+      // Validator slashed because it signed wrong attestations or proposed incorrect block
+      // Note: it is no longer collecting rewards
+      case StakeState.ActiveSlashed:
+      case StakeState.ExitedSlashed: {
+        return StakingStatus.Slashed;
+      }
+    }
   }
 
   /**
