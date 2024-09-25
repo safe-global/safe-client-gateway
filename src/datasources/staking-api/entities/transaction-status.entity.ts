@@ -1,3 +1,4 @@
+import { EventTopicsSchema } from '@/validation/entities/schemas/event-topics.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { z } from 'zod';
 
@@ -5,7 +6,7 @@ import { z } from 'zod';
 // of native staking `deposit` transactions.
 
 export const TransactionStatusReceiptLogSchema = z.object({
-  topics: z.array(HexSchema),
+  topics: EventTopicsSchema,
   data: HexSchema,
 });
 
