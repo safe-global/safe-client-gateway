@@ -67,7 +67,7 @@ export class HooksRepositoryWithNotifications
 // due to config injection issues from the ConfigurationService so this is a
 // temporary solution
 @Injectable()
-export class HooksRepository implements IHooksRepository {
+export class HooksRepository implements IHooksRepository, OnModuleInit {
   private readonly queueName: string;
 
   constructor(
