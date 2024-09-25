@@ -418,7 +418,10 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
 
   it('should store the unsupported chain events for several chains and log them after UNSUPPORTED_EVENTS_LOG_INTERVAL', async () => {
     eventCacheHelper.onModuleInit();
-    const chains = [chainBuilder().build(), chainBuilder().build()];
+    const chains = [
+      chainBuilder().with('chainId', '1').build(),
+      chainBuilder().with('chainId', '2').build(),
+    ];
     const chainsPage = pageBuilder<(typeof chains)[0]>()
       .with('results', chains)
       .build();
