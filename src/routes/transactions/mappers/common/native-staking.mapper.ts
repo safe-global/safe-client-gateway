@@ -91,9 +91,10 @@ export class NativeStakingMapper {
 
     return new NativeStakingDepositTransactionInfo({
       status,
-      estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-      estimatedExitTime: networkStats.estimated_exit_time_seconds,
-      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
+      estimatedEntryTime: networkStats.estimated_entry_time_seconds * 1_000,
+      estimatedExitTime: networkStats.estimated_exit_time_seconds * 1_000,
+      estimatedWithdrawalTime:
+        networkStats.estimated_withdrawal_time_seconds * 1_000,
       fee,
       monthlyNrr: nrr / 12,
       annualNrr: nrr,
@@ -205,8 +206,9 @@ export class NativeStakingMapper {
     });
     return new NativeStakingValidatorsExitTransactionInfo({
       status,
-      estimatedExitTime: networkStats.estimated_exit_time_seconds,
-      estimatedWithdrawalTime: networkStats.estimated_withdrawal_time_seconds,
+      estimatedExitTime: networkStats.estimated_exit_time_seconds * 1_000,
+      estimatedWithdrawalTime:
+        networkStats.estimated_withdrawal_time_seconds * 1_000,
       value: getNumberString(value),
       numValidators,
       tokenInfo: new TokenInfo({
