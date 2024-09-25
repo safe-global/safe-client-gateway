@@ -15,9 +15,9 @@ export function alertLogBuilder(): IBuilder<AlertLog> {
       'topics',
       Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () =>
         faker.string.hexadecimal(),
-      ),
+      ) as [`0x${string}`, ...Array<`0x${string}`>],
     )
-    .with('data', faker.string.hexadecimal());
+    .with('data', faker.string.hexadecimal() as `0x${string}`);
 }
 
 export function alertTransactionBuilder(): IBuilder<AlertTransaction> {

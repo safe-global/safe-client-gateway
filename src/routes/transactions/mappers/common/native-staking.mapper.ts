@@ -137,15 +137,7 @@ export class NativeStakingMapper {
     });
 
     const depositEvents = txStatus.receipt.logs
-      .map((log) => {
-        return this.kilnDecoder.decodeDepositEvent({
-          data: log.data,
-          topics: log.topics as [
-            signature: `0x${string}`,
-            ...args: `0x${string}`[],
-          ],
-        });
-      })
+      .map((log) => this.kilnDecoder.decodeDepositEvent(log))
       .filter(<T>(event: T | null): event is T => event !== null);
 
     if (depositEvents.length === 0) {
