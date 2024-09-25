@@ -33,7 +33,8 @@ export class RedisCacheService
 
   async getCounter(key: string): Promise<number | null> {
     const value = await this.client.get(this._prefixKey(key));
-    return value ? Number(value) || null : null;
+    const numericValue = Number(value);
+    return Number.isInteger(numericValue) ? numericValue : null;
   }
 
   async hSet(

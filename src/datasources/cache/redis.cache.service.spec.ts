@@ -184,7 +184,22 @@ describe('RedisCacheService', () => {
     expect(result).toEqual(value);
   });
 
-  it('sets, increments and gets the value of a counter key', async () => {
+  it('sets and gets the value of a zero-value counter', async () => {
+    const key = faker.string.alphanumeric();
+    await redisCacheService.setCounter(key, 0, MAX_TTL);
+
+    const result = await redisCacheService.getCounter(key);
+    expect(result).toEqual(0);
+
+    await redisCacheService.increment(key, undefined);
+    await redisCacheService.increment(key, undefined);
+    await redisCacheService.increment(key, undefined);
+
+    const result2 = await redisCacheService.getCounter(key);
+    expect(result2).toEqual(3);
+  });
+
+  it('increments and gets the value of an existing non-zero counter', async () => {
     const key = faker.string.alphanumeric();
     const value = faker.number.int({ min: 100 });
     await redisCacheService.setCounter(key, value, MAX_TTL);
