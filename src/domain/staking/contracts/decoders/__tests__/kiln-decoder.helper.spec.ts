@@ -1,11 +1,12 @@
-import { depositEventEventBuilder } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import {
-  KilnAbi,
-  KilnDecoder,
-} from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+  batchWithdrawCLFeeEncoder,
+  depositEncoder,
+  depositEventEventBuilder,
+  requestValidatorsExitEncoder,
+} from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
+import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData } from 'viem';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -14,7 +15,6 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
-// TODO: Move function encoding to kiln-encoder.builder.ts
 describe('KilnDecoder', () => {
   let kilnDecoder: KilnDecoder;
 
@@ -24,11 +24,7 @@ describe('KilnDecoder', () => {
 
   describe('decodeDeposit', () => {
     it('decodes a deposit function call correctly', () => {
-      const data = encodeFunctionData({
-        abi: KilnAbi,
-        functionName: 'deposit',
-        args: [],
-      });
+      const data = depositEncoder().encode();
       expect(kilnDecoder.decodeDeposit(data)).toEqual({
         method: 'deposit',
         parameters: [],
@@ -41,32 +37,23 @@ describe('KilnDecoder', () => {
     });
 
     it('returns null if the data is another Kiln function call', () => {
-      const data = encodeFunctionData({
-        abi: KilnAbi,
-        functionName: 'requestValidatorsExit',
-        args: [faker.string.hexadecimal({ length: 1 }) as `0x${string}`],
-      });
+      const data = requestValidatorsExitEncoder().encode();
       expect(kilnDecoder.decodeDeposit(data)).toBeNull();
     });
   });
 
   describe('decodeValidatorsExit', () => {
     it('decodes a requestValidatorsExit function call correctly', () => {
-      const validatorsPublicKeys = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength,
-      }) as `0x${string}`;
-      const data = encodeFunctionData({
-        abi: KilnAbi,
-        functionName: 'requestValidatorsExit',
-        args: [validatorsPublicKeys],
-      });
+      const requestValidatorsExist = requestValidatorsExitEncoder();
+      const { _publicKeys } = requestValidatorsExist.build();
+      const data = requestValidatorsExist.encode();
       expect(kilnDecoder.decodeValidatorsExit(data)).toEqual({
         method: 'requestValidatorsExit',
         parameters: [
           {
             name: '_publicKeys',
             type: 'bytes',
-            value: validatorsPublicKeys.toLocaleLowerCase(),
+            value: _publicKeys,
             valueDecoded: null,
           },
         ],
@@ -79,32 +66,23 @@ describe('KilnDecoder', () => {
     });
 
     it('returns null if the data is another Kiln function call', () => {
-      const data = encodeFunctionData({
-        abi: KilnAbi,
-        functionName: 'batchWithdrawCLFee',
-        args: [faker.string.hexadecimal({ length: 1 }) as `0x${string}`],
-      });
+      const data = depositEncoder().encode();
       expect(kilnDecoder.decodeValidatorsExit(data)).toBeNull();
     });
   });
 
   describe('decodeBatchWithdrawCLFee', () => {
     it('decodes a batchWithdrawCLFee function call correctly', () => {
-      const validatorsPublicKeys = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength,
-      }) as `0x${string}`;
-      const data = encodeFunctionData({
-        abi: KilnAbi,
-        functionName: 'batchWithdrawCLFee',
-        args: [validatorsPublicKeys],
-      });
+      const decodeBatchWithdrawCLFee = batchWithdrawCLFeeEncoder();
+      const { _publicKeys } = decodeBatchWithdrawCLFee.build();
+      const data = decodeBatchWithdrawCLFee.encode();
       expect(kilnDecoder.decodeBatchWithdrawCLFee(data)).toEqual({
         method: 'batchWithdrawCLFee',
         parameters: [
           {
             name: '_publicKeys',
             type: 'bytes',
-            value: validatorsPublicKeys.toLocaleLowerCase(),
+            value: _publicKeys,
             valueDecoded: null,
           },
         ],
@@ -117,11 +95,7 @@ describe('KilnDecoder', () => {
     });
 
     it('returns null if the data is another Kiln function call', () => {
-      const data = encodeFunctionData({
-        abi: KilnAbi,
-        functionName: 'requestValidatorsExit',
-        args: [faker.string.hexadecimal({ length: 1 }) as `0x${string}`],
-      });
+      const data = depositEncoder().encode();
       expect(kilnDecoder.decodeBatchWithdrawCLFee(data)).toBeNull();
     });
   });
