@@ -342,17 +342,11 @@ export class MultisigTransactionInfoMapper {
     }
 
     try {
-      const isConfirmed =
-        'confirmations' in transaction &&
-        !!transaction.confirmations &&
-        transaction.confirmations.length >= transaction.confirmationsRequired;
-
       return await this.nativeStakingMapper.mapDepositInfo({
         chainId,
         to: nativeStakingDepositTransaction.to,
         value: transaction.value,
-        isConfirmed,
-        depositExecutionDate: transaction.executionDate,
+        transaction,
       });
     } catch (error) {
       this.loggingService.warn(error);

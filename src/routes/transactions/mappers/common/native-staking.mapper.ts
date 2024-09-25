@@ -11,6 +11,7 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
@@ -29,6 +30,8 @@ export class NativeStakingMapper {
     private readonly stakingRepository: IStakingRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    private readonly kilnDecoder: KilnDecoder,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -47,8 +50,7 @@ export class NativeStakingMapper {
     chainId: string;
     to: `0x${string}`;
     value: string | null;
-    isConfirmed: boolean;
-    depositExecutionDate: Date | null;
+    transaction: MultisigTransaction | ModuleTransaction | null;
   }): Promise<NativeStakingDepositTransactionInfo> {
     const [chain, deployment] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -59,15 +61,16 @@ export class NativeStakingMapper {
     ]);
     this.validateDeployment(deployment);
 
-    const [status, nativeStakingStats, networkStats] = await Promise.all([
-      this._getStatus({
-        chainId: args.chainId,
-        safeAddress: args.to,
-        publicKeys: [],
-      }),
+    const [publicKeys, nativeStakingStats, networkStats] = await Promise.all([
+      this.getDepositPublicKeys(args),
       this.stakingRepository.getDedicatedStakingStats(args.chainId),
       this.stakingRepository.getNetworkStats(args.chainId),
     ]);
+    const status = await this._getStatus({
+      chainId: args.chainId,
+      safeAddress: args.to,
+      publicKeys,
+    });
 
     const value = args.value ? Number(args.value) : 0;
     const numValidators = Math.floor(
@@ -113,6 +116,51 @@ export class NativeStakingMapper {
   }
 
   /**
+   * Gets the validator public keys from logs of `deposit` transaction.
+   *
+   * @param args.transaction - the transaction object for the deposit
+   * @param args.chainId - the chain ID of the native staking deployment
+   *
+   * @returns {Array<`0x${string}`>} the validator public keys
+   */
+  private async getDepositPublicKeys(args: {
+    transaction: MultisigTransaction | ModuleTransaction | null;
+    chainId: string;
+  }): Promise<Array<`0x${string}`>> {
+    if (!args.transaction?.transactionHash) {
+      return [];
+    }
+
+    const txStatus = await this.stakingRepository.getTransactionStatus({
+      chainId: args.chainId,
+      txHash: args.transaction.transactionHash,
+    });
+
+    const depositEvents = txStatus.receipt.logs
+      .map((log) => {
+        return this.kilnDecoder.decodeDepositEvent({
+          data: log.data,
+          topics: log.topics as [
+            signature: `0x${string}`,
+            ...args: `0x${string}`[],
+          ],
+        });
+      })
+      .filter(<T>(event: T | null): event is T => event !== null);
+
+    if (depositEvents.length === 0) {
+      return [];
+    }
+
+    if (depositEvents.length > 1) {
+      // This should theoretically never happen but we warn just in case
+      this.loggingService.warn('Multiple DepositEvents found in transaction');
+    }
+
+    return this.splitPublicKeys(depositEvents[0].pubkey);
+  }
+
+  /**
    * Maps the {@link NativeStakingValidatorsExitTransactionInfo} for the given
    * native staking `requestValidatorsExit` transaction.
    *
@@ -138,8 +186,7 @@ export class NativeStakingMapper {
       }),
     ]);
     this.validateDeployment(deployment);
-    const _publicKeys = this.getPublicKeysFromDataDecoded(args.dataDecoded);
-    const publicKeys = _publicKeys ? this.splitPublicKeys(_publicKeys) : [];
+    const publicKeys = this.getPublicKeysFromDataDecoded(args.dataDecoded);
 
     const [status, networkStats] = await Promise.all([
       this._getStatus({
@@ -149,9 +196,7 @@ export class NativeStakingMapper {
       }),
       this.stakingRepository.getNetworkStats(args.chainId),
     ]);
-    const numValidators = this.getNumValidatorsFromDataDecoded(
-      args.dataDecoded,
-    );
+    const numValidators = publicKeys.length;
     // We don't include this in Promise.all as getStatus may cache Stakes to be reused
     const value = await this.getValueFromDataDecoded({
       dataDecoded: args.dataDecoded,
@@ -347,6 +392,9 @@ export class NativeStakingMapper {
    * Gets the net value (staked + rewards) to withdraw from the native staking deployment
    * based on the length of the publicKeys field in the transaction data.
    *
+   * Note: this can only be used with `validatorsExit` or `batchWithdrawCLFee` transactions
+   * as the have `_publicKeys` field in the decoded data.
+   *
    * Each {@link KilnDecoder.KilnPublicKeyLength} characters represent a validator to withdraw,
    * and each native staking validator has a fixed amount of 32 ETH to withdraw.
    *
@@ -361,13 +409,13 @@ export class NativeStakingMapper {
     safeAddress: `0x${string}`;
   }): Promise<number> {
     const publicKeys = this.getPublicKeysFromDataDecoded(args.dataDecoded);
-    if (!publicKeys) {
+    if (publicKeys.length === 0) {
       return 0;
     }
     const stakes = await this.stakingRepository.getStakes({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
-      validatorsPublicKeys: this.splitPublicKeys(publicKeys),
+      validatorsPublicKeys: publicKeys,
     });
     return stakes.reduce((acc, stake) => {
       const netValue = stake.net_claimable_consensus_rewards ?? '0';
@@ -376,28 +424,19 @@ export class NativeStakingMapper {
   }
 
   /**
-   * Gets the public keys from the transaction decoded data.
+   * Gets public keys from decoded `validatorsExit` or `batchWithdrawCLFee` transactions
    * @param data - the transaction decoded data.
    * @returns the public keys from the transaction decoded data.
    */
   private getPublicKeysFromDataDecoded(
     data: DataDecoded,
-  ): `0x${string}` | null {
+  ): Array<`0x${string}`> {
     const publicKeys = data.parameters?.find(
       (parameter) => parameter.name === '_publicKeys',
     );
-    return isHex(publicKeys?.value) ? publicKeys.value : null;
-  }
-
-  private getNumValidatorsFromDataDecoded(data: DataDecoded): number {
-    const publicKeys = this.getPublicKeysFromDataDecoded(data);
-    if (!publicKeys) {
-      return 0;
-    }
-    return Math.floor(
-      // Ignore the `0x` prefix
-      (publicKeys.length - 2) / KilnDecoder.KilnPublicKeyLength,
-    );
+    return isHex(publicKeys?.value)
+      ? this.splitPublicKeys(publicKeys.value)
+      : [];
   }
 
   /**
@@ -428,7 +467,7 @@ export class NativeStakingMapper {
 
 @Module({
   imports: [StakingRepositoryModule, ChainsRepositoryModule],
-  providers: [NativeStakingMapper],
+  providers: [NativeStakingMapper, KilnDecoder],
   exports: [NativeStakingMapper],
 })
 export class NativeStakingMapperModule {}

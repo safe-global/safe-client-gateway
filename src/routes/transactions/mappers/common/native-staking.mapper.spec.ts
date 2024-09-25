@@ -5,6 +5,11 @@ import {
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
+import {
+  transactionStatusBuilder,
+  transactionStatusReceiptBuilder,
+  transactionStatusReceiptLogBuilder,
+} from '@/datasources/staking-api/entities/__tests__/transaction-status.entity.builder';
 import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
 import { ChainsRepository } from '@/domain/chains/chains.repository';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -14,8 +19,10 @@ import {
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { depositEventEventBuilder } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { StakingRepository } from '@/domain/staking/staking.repository';
+import { ILoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
@@ -27,11 +34,17 @@ const mockStakingRepository = jest.mocked({
   getDedicatedStakingStats: jest.fn(),
   getNetworkStats: jest.fn(),
   getStakes: jest.fn(),
+  getTransactionStatus: jest.fn(),
 } as jest.MockedObjectDeep<StakingRepository>);
 
 const mockChainsRepository = jest.mocked({
   getChain: jest.fn(),
 } as jest.MockedObjectDeep<ChainsRepository>);
+
+const mockLoggingService = {
+  debug: jest.fn(),
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 
 // This matches NativeStakingMapper['_getStatus'] but is localized
 // to ensure any later changes accordingly break tests
@@ -57,9 +70,13 @@ describe('NativeStakingMapper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     jest.useFakeTimers();
+
+    const kilnDecoder = new KilnDecoder(mockLoggingService);
     target = new NativeStakingMapper(
       mockStakingRepository,
       mockChainsRepository,
+      kilnDecoder,
+      mockLoggingService,
     );
   });
 
@@ -96,14 +113,94 @@ describe('NativeStakingMapper', () => {
         chainId: chain.chainId,
         to: deployment.address,
         value: '64000000000000000000',
-        isConfirmed: false, // not confirmed
-        depositExecutionDate: null,
+        transaction: null,
       });
 
       expect(actual).toEqual(
         expect.objectContaining({
           type: 'NativeStakingDeposit',
           status: 'NOT_STAKED',
+          estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedWithdrawalTime:
+            networkStats.estimated_withdrawal_time_seconds,
+          fee: 0.5,
+          monthlyNrr: 1.5 / 12,
+          annualNrr: 1.5,
+          value: '64000000000000000000',
+          numValidators: 2,
+          expectedAnnualReward: '960000000000000000',
+          expectedMonthlyReward: '80000000000000000',
+          expectedFiatAnnualReward: 9600,
+          expectedFiatMonthlyReward: 800,
+          tokenInfo: {
+            address: NULL_ADDRESS,
+            decimals: chain.nativeCurrency.decimals,
+            logoUri: chain.nativeCurrency.logoUri,
+            name: chain.nativeCurrency.name,
+            symbol: chain.nativeCurrency.symbol,
+            trusted: true,
+          },
+        }),
+      );
+    });
+
+    it('should map a native staking deposit info', async () => {
+      const chain = chainBuilder().build();
+      const productFee = '0.5';
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('product_fee', productFee)
+        .build();
+      const networkStats = networkStatsBuilder()
+        .with('eth_price_usd', 10_000)
+        .build();
+      const dedicatedStakingStats = dedicatedStakingStatsBuilder()
+        .with(
+          'gross_apy',
+          dedicatedStakingStatsGrossApyBuilder().with('last_30d', 3).build(),
+        )
+        .build();
+      const stakes = [
+        stakeBuilder().with('state', StakeState.DepositInProgress).build(),
+      ];
+      const depositEventEvent = depositEventEventBuilder().encode();
+      const transactionStatus = transactionStatusBuilder()
+        .with(
+          'receipt',
+          transactionStatusReceiptBuilder()
+            .with('logs', [
+              transactionStatusReceiptLogBuilder()
+                .with('data', depositEventEvent.data)
+                .with('topics', depositEventEvent.topics)
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+      const transaction = multisigTransactionBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
+        dedicatedStakingStats,
+      );
+      mockStakingRepository.getTransactionStatus.mockResolvedValue(
+        transactionStatus,
+      );
+      mockStakingRepository.getStakes.mockResolvedValue(stakes);
+
+      const actual = await target.mapDepositInfo({
+        chainId: chain.chainId,
+        to: deployment.address,
+        value: '64000000000000000000',
+        transaction,
+      });
+
+      expect(actual).toEqual(
+        expect.objectContaining({
+          type: 'NativeStakingDeposit',
+          status: 'DEPOSIT_IN_PROGRESS',
           estimatedEntryTime: networkStats.estimated_entry_time_seconds,
           estimatedExitTime: networkStats.estimated_exit_time_seconds,
           estimatedWithdrawalTime:
@@ -148,8 +245,7 @@ describe('NativeStakingMapper', () => {
           chainId: chain.chainId,
           to: deployment.address,
           value: '64000000000000000000',
-          isConfirmed: false,
-          depositExecutionDate: null,
+          transaction: null,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });
@@ -175,8 +271,7 @@ describe('NativeStakingMapper', () => {
           chainId: chain.chainId,
           to: deployment.address,
           value: '64000000000000000000',
-          isConfirmed: false,
-          depositExecutionDate: null,
+          transaction: null,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });
@@ -202,8 +297,7 @@ describe('NativeStakingMapper', () => {
           chainId: chain.chainId,
           to: deployment.address,
           value: '64000000000000000000',
-          isConfirmed: false,
-          depositExecutionDate: null,
+          transaction: null,
         }),
       ).rejects.toThrow('Native staking deployment not found');
     });
