@@ -45,6 +45,8 @@ export class CacheRouter {
   private static readonly STAKING_POOLED_STAKING_STATS_KEY =
     'staking_pooled_staking_stats';
   private static readonly STAKING_STAKES_KEY = 'staking_stakes';
+  private static readonly STAKING_TRANSACTION_STATUS_KEY =
+    'staking_transaction_status';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
@@ -633,5 +635,15 @@ export class CacheRouter {
 
   static getUnsupportedChainEventCacheKey(chainId: string): string {
     return `${chainId}_${this.UNSUPPORTED_CHAIN_EVENT}`;
+  }
+
+  static getStakingTransactionStatusCacheDir(args: {
+    chainId: string;
+    txHash: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.STAKING_TRANSACTION_STATUS_KEY}_${args.txHash}`,
+      '',
+    );
   }
 }

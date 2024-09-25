@@ -12,6 +12,7 @@ import { Deployment } from '@/datasources/staking-api/entities/deployment.entity
 import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { Stake } from '@/datasources/staking-api/entities/stake.entity';
+import { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
 import { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 
 export class KilnApi implements IStakingApi {
@@ -246,6 +247,38 @@ export class KilnApi implements IStakingApi {
       safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+  }
+
+  async getTransactionStatus(
+    txHash: `0x${string}`,
+  ): Promise<TransactionStatus> {
+    try {
+      const url = `${this.baseUrl}/v1/eth/transaction/status`;
+      const cacheDir = CacheRouter.getStakingTransactionStatusCacheDir({
+        chainId: this.chainId,
+        txHash,
+      });
+      // Note: Kiln always return { data: T }
+      const { data } = await this.dataSource.get<{
+        data: TransactionStatus;
+      }>({
+        cacheDir,
+        url,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+          params: {
+            tx_hash: txHash,
+          },
+        },
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.stakingExpirationTimeInSeconds,
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
   }
 
   /**
