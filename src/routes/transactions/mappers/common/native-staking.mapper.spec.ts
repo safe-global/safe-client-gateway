@@ -43,6 +43,7 @@ const mockChainsRepository = jest.mocked({
 
 const mockLoggingService = {
   debug: jest.fn(),
+  warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
 // This matches NativeStakingMapper['_getStatus'] but is localized
@@ -75,6 +76,7 @@ describe('NativeStakingMapper', () => {
       mockStakingRepository,
       mockChainsRepository,
       kilnDecoder,
+      mockLoggingService,
     );
   });
 

@@ -11,6 +11,7 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
@@ -30,6 +31,7 @@ export class NativeStakingMapper {
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly kilnDecoder: KilnDecoder,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -150,7 +152,11 @@ export class NativeStakingMapper {
       return [];
     }
 
-    // There is only one DepositEvent per transaction
+    if (depositEvents.length > 1) {
+      // This should theoretically never happen but we warn just in case
+      this.loggingService.warn('Multiple DepositEvents found in transaction');
+    }
+
     return this.splitPublicKeys(depositEvents[0].pubkey);
   }
 
