@@ -116,6 +116,7 @@ export class NativeStakingMapper {
         symbol: chain.nativeCurrency.symbol,
         trusted: true,
       }),
+      validators: publicKeys,
     });
   }
 
@@ -211,6 +212,7 @@ export class NativeStakingMapper {
         symbol: chain.nativeCurrency.symbol,
         trusted: true,
       }),
+      validators: publicKeys,
     });
   }
 
@@ -246,6 +248,10 @@ export class NativeStakingMapper {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
+    const publicKeys =
+      this.kilnNativeStakingHelper.getPublicKeysFromDataDecoded(
+        args.dataDecoded,
+      );
 
     return new NativeStakingWithdrawTransactionInfo({
       value: getNumberString(value),
@@ -257,6 +263,7 @@ export class NativeStakingMapper {
         symbol: chain.nativeCurrency.symbol,
         trusted: true,
       }),
+      validators: publicKeys,
     });
   }
 

@@ -6,7 +6,7 @@ import { StakingRepository } from '@/domain/staking/staking.repository';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { concat, getAddress } from 'viem';
 
 const mockStakingRepository = jest.mocked({
   getStakes: jest.fn(),
@@ -134,9 +134,22 @@ describe('KilnNativeStakingHelper', () => {
         'requestValidatorsExit',
         'batchWithdrawCLFee',
       ]);
-      const _publicKeys = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 3,
-      }) as `0x${string}`; // 3 validators
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const _publicKeys = concat(validators);
       const dataDecoded = dataDecodedBuilder()
         .with('method', method)
         .with('parameters', [
@@ -201,9 +214,22 @@ describe('KilnNativeStakingHelper', () => {
         'requestValidatorsExit',
         'batchWithdrawCLFee',
       ]);
-      const _publicKeys = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 3,
-      }) as `0x${string}`; // 3 validators
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const _publicKeys = concat(validators);
       const dataDecoded = dataDecodedBuilder()
         .with('method', method)
         .with('parameters', [
@@ -218,11 +244,7 @@ describe('KilnNativeStakingHelper', () => {
 
       const result = target.getPublicKeysFromDataDecoded(dataDecoded);
 
-      expect(result).toStrictEqual([
-        `0x${_publicKeys.slice(2, 2 + KilnDecoder.KilnPublicKeyLength)}`,
-        `0x${_publicKeys.slice(2 + KilnDecoder.KilnPublicKeyLength, 2 + KilnDecoder.KilnPublicKeyLength * 2)}`,
-        `0x${_publicKeys.slice(2 + KilnDecoder.KilnPublicKeyLength * 2, 2 + KilnDecoder.KilnPublicKeyLength * 3)}`,
-      ]);
+      expect(result).toStrictEqual(validators);
     });
 
     it('should return an empty array if non-hex _publicKeys is found', () => {
@@ -253,17 +275,26 @@ describe('KilnNativeStakingHelper', () => {
 
   describe('splitPublicKeys', () => {
     it('should split the _publicKeys into an array of strings of correct length', () => {
-      const _publicKeys = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 3,
-      }) as `0x${string}`;
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const _publicKeys = concat(validators);
 
       const result = target.splitPublicKeys(_publicKeys);
 
-      expect(result).toStrictEqual([
-        `0x${_publicKeys.slice(2, 2 + KilnDecoder.KilnPublicKeyLength)}`,
-        `0x${_publicKeys.slice(2 + KilnDecoder.KilnPublicKeyLength, 2 + KilnDecoder.KilnPublicKeyLength * 2)}`,
-        `0x${_publicKeys.slice(2 + KilnDecoder.KilnPublicKeyLength * 2, 2 + KilnDecoder.KilnPublicKeyLength * 3)}`,
-      ]);
+      expect(result).toStrictEqual(validators);
     });
   });
 });

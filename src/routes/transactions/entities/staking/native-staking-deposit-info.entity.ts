@@ -61,6 +61,9 @@ export class NativeStakingDepositTransactionInfo
   @ApiProperty()
   tokenInfo: TokenInfo;
 
+  @ApiProperty()
+  validators: Array<`0x${string}`>;
+
   constructor(args: {
     status: StakingStatus;
     estimatedEntryTime: number;
@@ -76,6 +79,7 @@ export class NativeStakingDepositTransactionInfo
     expectedFiatAnnualReward: number;
     expectedFiatMonthlyReward: number;
     tokenInfo: TokenInfo;
+    validators: Array<`0x${string}`>;
   }) {
     super(TransactionInfoType.NativeStakingDeposit, null, null);
     this.status = args.status;
@@ -92,5 +96,6 @@ export class NativeStakingDepositTransactionInfo
     this.expectedFiatAnnualReward = args.expectedFiatAnnualReward;
     this.expectedFiatMonthlyReward = args.expectedFiatMonthlyReward;
     this.tokenInfo = args.tokenInfo;
+    this.validators = args.validators;
   }
 }

@@ -32,7 +32,7 @@ import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-nati
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { concat, getAddress } from 'viem';
 
 const mockStakingRepository = jest.mocked({
   getDeployment: jest.fn(),
@@ -323,9 +323,22 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const stakes = [stakeBuilder().build()];
-      const validatorPublicKey = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 3,
-      }); // 3 validators
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const validatorPublicKey = concat(validators);
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
         .with('parameters', [
@@ -457,9 +470,18 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'dedicated')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const validatorPublicKey = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 2,
-      }); // 2 validators
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const validatorPublicKey = concat(validators);
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
         .with('parameters', [
@@ -520,10 +542,7 @@ describe('NativeStakingMapper', () => {
       expect(mockStakingRepository.getStakes).toHaveBeenCalledWith({
         chainId: chain.chainId,
         safeAddress,
-        validatorsPublicKeys: [
-          `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)}`,
-          `0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
-        ],
+        validatorsPublicKeys: validators,
       });
     });
 
@@ -533,9 +552,18 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'dedicated')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const validatorPublicKey = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 2,
-      }); // 2 validators
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const validatorPublicKey = concat(validators);
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
         .with('parameters', [
