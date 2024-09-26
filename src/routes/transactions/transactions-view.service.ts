@@ -24,7 +24,6 @@ import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { Inject, Injectable } from '@nestjs/common';
-import { getNumberString } from '@/domain/common/utils/utils';
 
 @Injectable({})
 export class TransactionsViewService {
@@ -352,26 +351,18 @@ export class TransactionsViewService {
     if (!dataDecoded) {
       throw new Error('Transaction data could not be decoded');
     }
-    const [validatorsExitInfo, value] = await Promise.all([
-      this.nativeStakingMapper.mapValidatorsExitInfo({
+    const validatorsExitInfo =
+      await this.nativeStakingMapper.mapValidatorsExitInfo({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         to: args.to,
         transaction: null,
         dataDecoded,
-      }),
-      this.kilnNativeStakingHelper.getValueFromDataDecoded({
-        dataDecoded,
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      }),
-    ]);
+      });
 
     return new NativeStakingValidatorsExitConfirmationView({
       method: dataDecoded.method,
       parameters: dataDecoded.parameters,
-      // Kiln's API only has a value until stake has been withdrawn
-      value: getNumberString(value),
       ...validatorsExitInfo,
     });
   }

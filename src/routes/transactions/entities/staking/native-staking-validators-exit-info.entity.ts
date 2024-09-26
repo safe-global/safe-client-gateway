@@ -6,11 +6,6 @@ import {
 } from '@/routes/transactions/entities/transaction-info.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-/**
- * Compared to {@link NativeStakingValidatorsExitConfirmationView}, this has no value
- * as Kiln's API only returns the current `net_claimable_consensus_rewards`. After
- * withdrawal, `net_claimable_consensus_rewards` resets to 0.
- */
 export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.NativeStakingValidatorsExit] })
   override type = TransactionInfoType.NativeStakingValidatorsExit;
@@ -25,6 +20,9 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
   estimatedWithdrawalTime: number;
 
   @ApiProperty()
+  value: string;
+
+  @ApiProperty()
   numValidators: number;
 
   @ApiProperty()
@@ -37,6 +35,7 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
     status: StakingStatus;
     estimatedExitTime: number;
     estimatedWithdrawalTime: number;
+    value: string;
     numValidators: number;
     tokenInfo: TokenInfo;
     validators: Array<`0x${string}`>;
@@ -45,6 +44,7 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
     this.status = args.status;
     this.estimatedExitTime = args.estimatedExitTime;
     this.estimatedWithdrawalTime = args.estimatedWithdrawalTime;
+    this.value = args.value;
     this.numValidators = args.numValidators;
     this.tokenInfo = args.tokenInfo;
     this.validators = args.validators;
