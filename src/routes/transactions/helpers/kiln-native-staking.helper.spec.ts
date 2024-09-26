@@ -1,6 +1,16 @@
+import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import {
+  batchWithdrawCLFeeEncoder,
+  depositEncoder,
+  requestValidatorsExitEncoder,
+} from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { StakingRepository } from '@/domain/staking/staking.repository';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
@@ -10,6 +20,7 @@ import { getAddress } from 'viem';
 
 const mockStakingRepository = jest.mocked({
   getStakes: jest.fn(),
+  getDeployment: jest.fn(),
 } as jest.MockedObjectDeep<StakingRepository>);
 
 describe('KilnNativeStakingHelper', () => {
@@ -26,70 +37,252 @@ describe('KilnNativeStakingHelper', () => {
     );
   });
 
-  describe('findDepositTransaction', () => {
-    it.todo('should return a `deposit` transaction');
+  describe.each([
+    { name: 'findDepositTransaction', encoder: depositEncoder } as const,
+    {
+      name: 'findValidatorsExitTransaction',
+      encoder: requestValidatorsExitEncoder,
+    } as const,
+    {
+      name: 'findWithdrawTransaction',
+      encoder: batchWithdrawCLFeeEncoder,
+    } as const,
+  ])('$name', ({ name, encoder }) => {
+    it('should return a transaction', async () => {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'eth')
+        .build();
+      const data = encoder().encode();
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
 
-    it.todo('should return a batched `deposit` transaction');
+      const result = await target[name]({
+        chainId: deployment.chain_id.toString(),
+        to: deployment.address,
+        data,
+      });
 
-    it.todo(
-      'should return null if a `deposit` transaction is not from a known staking contract',
-    );
+      expect(result).toStrictEqual({ to: deployment.address, data });
+    });
 
-    it.todo(
-      'should return null if a batched `deposit` transaction is not from a known staking contract',
-    );
+    it('should return a batched transaction', async () => {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'eth')
+        .build();
+      const depositData = encoder().encode();
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: 0,
+              data: depositData,
+              to: deployment.address,
+              value: faker.number.bigInt(0),
+            },
+          ]),
+        )
+        .encode();
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
 
-    it.todo(
-      'should return null if the transaction is not a `deposit` transaction',
-    );
+      const result = await target[name]({
+        chainId: deployment.chain_id.toString(),
+        // MultiSend address mock
+        to: getAddress(faker.finance.ethereumAddress()),
+        data,
+      });
 
-    it.todo(
-      'should return null if the transaction batch contains no `deposit` transaction',
-    );
-  });
+      expect(result).toStrictEqual({
+        to: deployment.address,
+        data: depositData,
+      });
+    });
 
-  describe('findValidatorsExitTransaction', () => {
-    it.todo('should return a `requestValidatorsExit` transaction');
+    it('should return null if a transaction is not from a known staking contract', async () => {
+      const chainId = faker.string.numeric();
+      const data = encoder().encode();
+      mockStakingRepository.getDeployment.mockRejectedValue(
+        new Error('Deployment not found'),
+      );
 
-    it.todo('should return a batched `requestValidatorsExit` transaction');
+      const result = await target[name]({
+        chainId,
+        to: getAddress(faker.finance.ethereumAddress()),
+        data,
+      });
 
-    it.todo(
-      'should return null if a `requestValidatorsExit` transaction is not from a known staking contract',
-    );
+      expect(result).toBe(null);
+    });
 
-    it.todo(
-      'should return null if a requestValidatorsExit `deposit` transaction is not from a known staking contract',
-    );
+    it('should return null if a batched transaction is not from a known staking contract', async () => {
+      const chainId = faker.string.numeric();
+      const to = getAddress(faker.finance.ethereumAddress());
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: 0,
+              data: encoder().encode(),
+              to: getAddress(faker.finance.ethereumAddress()),
+              value: faker.number.bigInt(0),
+            },
+          ]),
+        )
+        .encode();
+      mockStakingRepository.getDeployment.mockRejectedValue(
+        new Error('Deployment not found'),
+      );
 
-    it.todo(
-      'should return null if the transaction is not a `requestValidatorsExit` transaction',
-    );
+      const result = await target[name]({
+        chainId,
+        to,
+        data,
+      });
 
-    it.todo(
-      'should return null if the transaction batch contains no `requestValidatorsExit` transaction',
-    );
-  });
+      expect(result).toBe(null);
+    });
 
-  describe('findWithdrawTransaction', () => {
-    it.todo('should return a `batchWithdrawCLFee` transaction');
+    it('should return a is from a known non-dedicated staking contract', async () => {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'defi')
+        .with('chain', 'eth')
+        .build();
+      const data = encoder().encode();
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
 
-    it.todo('should return a batched `batchWithdrawCLFee` transaction');
+      const result = await target[name]({
+        chainId: deployment.chain_id.toString(),
+        to: deployment.address,
+        data,
+      });
 
-    it.todo(
-      'should return null if a `batchWithdrawCLFee` transaction is not from a known staking contract',
-    );
+      expect(result).toBe(null);
+    });
 
-    it.todo(
-      'should return null if a batchWithdrawCLFee `deposit` transaction is not from a known staking contract',
-    );
+    it('should return a is from an unknown chain', async () => {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'unknown')
+        .build();
+      const data = encoder().encode();
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
 
-    it.todo(
-      'should return null if the transaction is not a `batchWithdrawCLFee` transaction',
-    );
+      const result = await target[name]({
+        chainId: deployment.chain_id.toString(),
+        to: deployment.address,
+        data,
+      });
 
-    it.todo(
-      'should return null if the transaction batch contains no `batchWithdrawCLFee` transaction',
-    );
+      expect(result).toBe(null);
+    });
+
+    it('should return null if a batched transaction is from a known non-dedicated staking contract', async () => {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'defi')
+        .with('chain', 'eth')
+        .build();
+      const depositData = encoder().encode();
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: 0,
+              data: depositData,
+              to: deployment.address,
+              value: faker.number.bigInt(0),
+            },
+          ]),
+        )
+        .encode();
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+
+      const result = await target[name]({
+        chainId: deployment.chain_id.toString(),
+        // MultiSend address mock
+        to: getAddress(faker.finance.ethereumAddress()),
+        data,
+      });
+
+      expect(result).toBe(null);
+    });
+
+    it('should return null if a batched transaction is from an unknown chain', async () => {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'unknown')
+        .build();
+      const depositData = encoder().encode();
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: 0,
+              data: depositData,
+              to: deployment.address,
+              value: faker.number.bigInt(0),
+            },
+          ]),
+        )
+        .encode();
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+
+      const result = await target[name]({
+        chainId: deployment.chain_id.toString(),
+        // MultiSend address mock
+        to: getAddress(faker.finance.ethereumAddress()),
+        data,
+      });
+
+      expect(result).toBe(null);
+    });
+
+    it('should return null if the transaction is not a transaction', async () => {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'eth')
+        .build();
+      const data = faker.string.hexadecimal() as `0x${string}`;
+
+      const result = await target[name]({
+        chainId: deployment.chain_id.toString(),
+        to: deployment.address,
+        data,
+      });
+
+      expect(result).toBe(null);
+    });
+
+    it('should return null if the transaction batch contains no transaction', async () => {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('chain', 'eth')
+        .build();
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: 0,
+              data: faker.string.hexadecimal() as `0x${string}`,
+              to: deployment.address,
+              value: faker.number.bigInt(0),
+            },
+          ]),
+        )
+        .encode();
+
+      const result = await target[name]({
+        chainId: deployment.chain_id.toString(),
+        to: deployment.address,
+        data,
+      });
+
+      expect(result).toBe(null);
+    });
   });
 
   describe('getValueFromDataDecoded', () => {
