@@ -1,3 +1,4 @@
+import { fakeJson } from '@/__tests__/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { BlockchainApiManager } from '@/datasources/blockchain/blockchain-api.manager';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -101,7 +102,7 @@ describe('BlockchainApiManager', () => {
   });
 
   describe('createCachedRpcClient', () => {
-    it('caches RPC requests', async () => {
+    it('caches string response RPC requests', async () => {
       const chain = chainBuilder().build();
       const client = target._createCachedRpcClient(chain);
       const fetchSpy = jest.spyOn(global, 'fetch');
@@ -147,6 +148,59 @@ describe('BlockchainApiManager', () => {
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       await expect(fakeCacheService.hGet(cacheDir)).resolves.toBe(chainId);
+
+      fetchSpy.mockRestore();
+    });
+
+    it('caches non-string response RPC requests', async () => {
+      const chain = chainBuilder().build();
+      const client = target._createCachedRpcClient(chain);
+      const fetchSpy = jest.spyOn(global, 'fetch');
+      const blockByNumber = fakeJson();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      fetchSpy.mockImplementation((_: unknown) => {
+        return Promise.resolve({
+          headers: new Headers({ 'Content-Type': 'application/json' }),
+          ok: true,
+          status: 200,
+          json: () => {
+            // Return chain ID
+            return Promise.resolve({
+              result: blockByNumber,
+            });
+          },
+        } as Response);
+      });
+      const body = {
+        jsonrpc: '2.0',
+        id: 0,
+        method: 'eth_getBlockByNumber',
+        params: ['latest', false],
+      };
+      const cacheDir = new CacheDir(
+        `${chain.chainId}_rpc_requests`,
+        `${body.method}_${JSON.stringify(body.params)}`,
+      );
+
+      await client.getBlock();
+
+      // Should be cached
+      await client.getBlock();
+      await client.getBlock();
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenNthCalledWith(1, chain.rpcUri.value, {
+        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        signal: expect.any(AbortSignal),
+      });
+      expect(fakeCacheService.keyCount()).toBe(1);
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBe(
+        JSON.stringify(blockByNumber),
+      );
 
       fetchSpy.mockRestore();
     });
