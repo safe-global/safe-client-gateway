@@ -26,46 +26,70 @@ describe('KilnNativeStakingHelper', () => {
     );
   });
 
-  describe.skip('findDepositTransaction', () => {
-    it('should return a `deposit` transaction', () => {});
+  describe('findDepositTransaction', () => {
+    it.todo('should return a `deposit` transaction');
 
-    it('should return a batched `deposit` transaction', () => {});
+    it.todo('should return a batched `deposit` transaction');
 
-    it('should return null if a `deposit` transaction is not from a known staking contract', () => {});
+    it.todo(
+      'should return null if a `deposit` transaction is not from a known staking contract',
+    );
 
-    it('should return null if a batched `deposit` transaction is not from a known staking contract', () => {});
+    it.todo(
+      'should return null if a batched `deposit` transaction is not from a known staking contract',
+    );
 
-    it('should return null if the transaction is not a `deposit` transaction', () => {});
+    it.todo(
+      'should return null if the transaction is not a `deposit` transaction',
+    );
 
-    it('should return null if the transaction batch contains no `deposit` transaction', () => {});
+    it.todo(
+      'should return null if the transaction batch contains no `deposit` transaction',
+    );
   });
 
-  describe.skip('findValidatorsExitTransaction', () => {
-    it('should return a `requestValidatorsExit` transaction', () => {});
+  describe('findValidatorsExitTransaction', () => {
+    it.todo('should return a `requestValidatorsExit` transaction');
 
-    it('should return a batched `requestValidatorsExit` transaction', () => {});
+    it.todo('should return a batched `requestValidatorsExit` transaction');
 
-    it('should return null if a `requestValidatorsExit` transaction is not from a known staking contract', () => {});
+    it.todo(
+      'should return null if a `requestValidatorsExit` transaction is not from a known staking contract',
+    );
 
-    it('should return null if a requestValidatorsExit `deposit` transaction is not from a known staking contract', () => {});
+    it.todo(
+      'should return null if a requestValidatorsExit `deposit` transaction is not from a known staking contract',
+    );
 
-    it('should return null if the transaction is not a `requestValidatorsExit` transaction', () => {});
+    it.todo(
+      'should return null if the transaction is not a `requestValidatorsExit` transaction',
+    );
 
-    it('should return null if the transaction batch contains no `requestValidatorsExit` transaction', () => {});
+    it.todo(
+      'should return null if the transaction batch contains no `requestValidatorsExit` transaction',
+    );
   });
 
-  describe.skip('findWithdrawTransaction', () => {
-    it('should return a `batchWithdrawCLFee` transaction', () => {});
+  describe('findWithdrawTransaction', () => {
+    it.todo('should return a `batchWithdrawCLFee` transaction');
 
-    it('should return a batched `batchWithdrawCLFee` transaction', () => {});
+    it.todo('should return a batched `batchWithdrawCLFee` transaction');
 
-    it('should return null if a `batchWithdrawCLFee` transaction is not from a known staking contract', () => {});
+    it.todo(
+      'should return null if a `batchWithdrawCLFee` transaction is not from a known staking contract',
+    );
 
-    it('should return null if a batchWithdrawCLFee `deposit` transaction is not from a known staking contract', () => {});
+    it.todo(
+      'should return null if a batchWithdrawCLFee `deposit` transaction is not from a known staking contract',
+    );
 
-    it('should return null if the transaction is not a `batchWithdrawCLFee` transaction', () => {});
+    it.todo(
+      'should return null if the transaction is not a `batchWithdrawCLFee` transaction',
+    );
 
-    it('should return null if the transaction batch contains no `batchWithdrawCLFee` transaction', () => {});
+    it.todo(
+      'should return null if the transaction batch contains no `batchWithdrawCLFee` transaction',
+    );
   });
 
   describe('getValueFromDataDecoded', () => {
