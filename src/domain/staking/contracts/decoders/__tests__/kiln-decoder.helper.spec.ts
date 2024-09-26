@@ -3,6 +3,7 @@ import {
   depositEncoder,
   depositEventEventBuilder,
   requestValidatorsExitEncoder,
+  withdrawalEventBuilder,
 } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { ILoggingService } from '@/logging/logging.interface';
@@ -15,7 +16,6 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
-// TODO: Move function encoding to kiln-encoder.builder.ts
 describe('KilnDecoder', () => {
   let kilnDecoder: KilnDecoder;
 
@@ -102,7 +102,7 @@ describe('KilnDecoder', () => {
   });
 
   describe('decodeDepositEvent', () => {
-    it('decodes a deposit event correctly', () => {
+    it('decodes a DepositEvent correctly', () => {
       const depositEventEvent = depositEventEventBuilder();
       const { data, topics } = depositEventEvent.encode();
 
@@ -114,8 +114,11 @@ describe('KilnDecoder', () => {
       ).toStrictEqual(depositEventEvent.build());
     });
 
-    // Note: we cannot test whether null is returned for a non-DepositEvent
-    // as only DepositEvent is included in the ABI
+    it('returns null if the data is not a DepositEvent', () => {
+      const { data, topics } = withdrawalEventBuilder().encode();
+
+      expect(kilnDecoder.decodeDepositEvent({ data, topics })).toBe(null);
+    });
 
     it('returns null if the data is not a DepositEvent', () => {
       const data = faker.string.hexadecimal({ length: 514 }) as `0x${string}`;
@@ -124,6 +127,35 @@ describe('KilnDecoder', () => {
       ] as [signature: `0x${string}`, ...args: `0x${string}`[]];
 
       expect(kilnDecoder.decodeDepositEvent({ data, topics })).toBe(null);
+    });
+  });
+
+  describe('decodeWithdrawalEvent', () => {
+    it('decodes a Withdrawal correctly', () => {
+      const withdrawalEvent = withdrawalEventBuilder();
+      const { data, topics } = withdrawalEvent.encode();
+
+      expect(
+        kilnDecoder.decodeWithdrawal({
+          data,
+          topics,
+        }),
+      ).toStrictEqual(withdrawalEvent.build());
+    });
+
+    it('returns null if the data is not a Withdrawal', () => {
+      const { data, topics } = depositEventEventBuilder().encode();
+
+      expect(kilnDecoder.decodeWithdrawal({ data, topics })).toBe(null);
+    });
+
+    it('returns null if the data is not a Withdrawal', () => {
+      const data = faker.string.hexadecimal({ length: 514 }) as `0x${string}`;
+      const topics = [
+        faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
+      ] as [signature: `0x${string}`, ...args: `0x${string}`[]];
+
+      expect(kilnDecoder.decodeWithdrawal({ data, topics })).toBe(null);
     });
   });
 });

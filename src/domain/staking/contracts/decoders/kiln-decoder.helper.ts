@@ -5,6 +5,7 @@ import { parseAbi } from 'viem';
 
 export const KilnAbi = parseAbi([
   'event DepositEvent(bytes pubkey, bytes withdrawal_credentials, bytes amount, bytes signature, bytes index)',
+  'event Withdrawal(address indexed withdrawer, address indexed feeRecipient, bytes32 pubKeyRoot, uint256 rewards, uint256 nodeOperatorFee, uint256 treasuryFee)',
   'function deposit()',
   'function requestValidatorsExit(bytes _publicKeys)',
   'function batchWithdrawCLFee(bytes _publicKeys)',
@@ -121,6 +122,29 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
       const decoded = this.decodeEventLog(args);
       if (decoded.eventName !== 'DepositEvent') {
         throw new Error('Data is not of DepositEvent type');
+      }
+      return decoded.args;
+    } catch (e) {
+      this.loggingService.debug(e);
+      return null;
+    }
+  }
+
+  decodeWithdrawal(args: {
+    data: `0x${string}`;
+    topics: [signature: `0x${string}`, ...args: `0x${string}`[]];
+  }): {
+    withdrawer: `0x${string}`;
+    feeRecipient: `0x${string}`;
+    pubKeyRoot: `0x${string}`;
+    rewards: bigint;
+    nodeOperatorFee: bigint;
+    treasuryFee: bigint;
+  } | null {
+    try {
+      const decoded = this.decodeEventLog(args);
+      if (decoded.eventName !== 'Withdrawal') {
+        throw new Error('Data is not of Withdrawal type');
       }
       return decoded.args;
     } catch (e) {
