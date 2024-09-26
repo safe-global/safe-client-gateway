@@ -192,14 +192,17 @@ class WithdrawalEventBuilder<T extends WithdrawalArgs>
   extends Builder<T>
   implements IEncoder<Withdrawal>
 {
-  encode(): Withdrawal {
-    const item = getAbiItem({ abi: KilnAbi, name: 'Withdrawal' });
+  private readonly item = getAbiItem({
+    abi: KilnAbi,
+    name: 'Withdrawal',
+  });
 
+  encode(): Withdrawal {
     const args = this.build();
 
     const data = encodeAbiParameters(
-      // Only indexed parameters
-      item.inputs.filter((input) => {
+      // Only non-indexed parameters
+      this.item.inputs.filter((input) => {
         return !('indexed' in input) || !input.indexed;
       }),
       [args.pubKeyRoot, args.rewards, args.nodeOperatorFee, args.treasuryFee],
