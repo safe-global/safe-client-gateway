@@ -191,6 +191,10 @@ export class NativeStakingMapper {
         args.dataDecoded,
       );
 
+    const value =
+      publicKeys.length *
+      NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR *
+      Math.pow(10, chain.nativeCurrency.decimals);
     const [status, networkStats] = await Promise.all([
       this._getStatus({
         chainId: args.chainId,
@@ -205,6 +209,7 @@ export class NativeStakingMapper {
       estimatedExitTime: networkStats.estimated_exit_time_seconds * 1_000,
       estimatedWithdrawalTime:
         networkStats.estimated_withdrawal_time_seconds * 1_000,
+      value: getNumberString(value),
       numValidators,
       tokenInfo: new TokenInfo({
         address: NULL_ADDRESS,
