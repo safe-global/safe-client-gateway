@@ -13,6 +13,7 @@ import {
   toHex,
   encodeFunctionData,
   getAbiItem,
+  getAddress,
 } from 'viem';
 
 // deposit
@@ -169,4 +170,71 @@ export function depositEventEventBuilder(): DepositEventBuilder<DepositEventEven
     .with('amount', toHex(faker.string.hexadecimal({ length: 16 })))
     .with('signature', toHex(faker.string.hexadecimal({ length: 192 })))
     .with('index', toHex(faker.string.hexadecimal({ length: 16 })));
+}
+
+// Withdrawal
+
+type WithdrawalArgs = {
+  withdrawer: `0x${string}`;
+  feeRecipient: `0x${string}`;
+  pubKeyRoot: `0x${string}`;
+  rewards: bigint;
+  nodeOperatorFee: bigint;
+  treasuryFee: bigint;
+};
+
+type Withdrawal = {
+  data: `0x${string}`;
+  topics: [signature: `0x${string}`, ...args: Array<`0x${string}`>];
+};
+
+class WithdrawalEventBuilder<T extends WithdrawalArgs>
+  extends Builder<T>
+  implements IEncoder<Withdrawal>
+{
+  encode(): Withdrawal {
+    const item = getAbiItem({ abi: KilnAbi, name: 'Withdrawal' });
+
+    const args = this.build();
+
+    const data = encodeAbiParameters(
+      // Only indexed parameters
+      item.inputs.filter((input) => {
+        return !('indexed' in input) || !input.indexed;
+      }),
+      [args.pubKeyRoot, args.rewards, args.nodeOperatorFee, args.treasuryFee],
+    );
+
+    const topics = encodeEventTopics({
+      abi: KilnAbi,
+      eventName: 'Withdrawal',
+      args: {
+        // Only indexed parameters
+        withdrawer: args.withdrawer,
+        feeRecipient: args.feeRecipient,
+      },
+    }) as Withdrawal['topics'];
+
+    return {
+      data,
+      topics,
+    };
+  }
+}
+
+export function withdrawalEventBuilder(): WithdrawalEventBuilder<WithdrawalArgs> {
+  return new WithdrawalEventBuilder()
+    .with('withdrawer', getAddress(faker.finance.ethereumAddress()))
+    .with('feeRecipient', getAddress(faker.finance.ethereumAddress()))
+    .with(
+      'pubKeyRoot',
+      toHex(
+        faker.string.hexadecimal({
+          length: 30,
+        }),
+      ),
+    )
+    .with('rewards', faker.number.bigInt())
+    .with('nodeOperatorFee', BigInt(0))
+    .with('treasuryFee', faker.number.bigInt());
 }

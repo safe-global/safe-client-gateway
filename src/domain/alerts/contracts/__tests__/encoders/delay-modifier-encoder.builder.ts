@@ -32,6 +32,7 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
   extends Builder<T>
   implements IEncoder<TransactionAddedEvent>
 {
+  // TODO: Extract ABI and non-indexed params as done in Kiln's WithdrawalEventBuilder
   static readonly NON_INDEXED_PARAMS =
     'address to, uint256 value, bytes data, uint8 operation' as const;
   static readonly EVENT_SIGNATURE =
