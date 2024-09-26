@@ -132,10 +132,10 @@ describe('NativeStakingMapper', () => {
         expect.objectContaining({
           type: 'NativeStakingDeposit',
           status: 'NOT_STAKED',
-          estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedEntryTime: networkStats.estimated_entry_time_seconds * 1_000,
+          estimatedExitTime: networkStats.estimated_exit_time_seconds * 1_000,
           estimatedWithdrawalTime:
-            networkStats.estimated_withdrawal_time_seconds,
+            networkStats.estimated_withdrawal_time_seconds * 1_000,
           fee: 0.5,
           monthlyNrr: 1.5 / 12,
           annualNrr: 1.5,
@@ -285,10 +285,10 @@ describe('NativeStakingMapper', () => {
         expect.objectContaining({
           type: 'NativeStakingDeposit',
           status: 'DEPOSIT_IN_PROGRESS',
-          estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedEntryTime: networkStats.estimated_entry_time_seconds * 1_000,
+          estimatedExitTime: networkStats.estimated_exit_time_seconds * 1_000,
           estimatedWithdrawalTime:
-            networkStats.estimated_withdrawal_time_seconds,
+            networkStats.estimated_withdrawal_time_seconds * 1_000,
           fee: 0.5,
           monthlyNrr: 1.5 / 12,
           annualNrr: 1.5,
@@ -442,9 +442,9 @@ describe('NativeStakingMapper', () => {
         expect.objectContaining({
           type: 'NativeStakingValidatorsExit',
           status: statusMap[stakes[0].state],
-          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedExitTime: networkStats.estimated_exit_time_seconds * 1_000,
           estimatedWithdrawalTime:
-            networkStats.estimated_withdrawal_time_seconds,
+            networkStats.estimated_withdrawal_time_seconds * 1_000,
           numValidators: 3, // 3 public keys in the transaction data => 3 validators
           tokenInfo: {
             address: NULL_ADDRESS,

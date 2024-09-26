@@ -652,10 +652,12 @@ describe('TransactionsViewController tests', () => {
               method: dataDecoded.method,
               status: 'NOT_STAKED',
               parameters: dataDecoded.parameters,
-              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedEntryTime:
+                networkStats.estimated_entry_time_seconds * 1_000,
+              estimatedExitTime:
+                networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
-                networkStats.estimated_withdrawal_time_seconds,
+                networkStats.estimated_withdrawal_time_seconds * 1_000,
               fee: +deployment.product_fee!,
               monthlyNrr,
               annualNrr,
@@ -754,10 +756,12 @@ describe('TransactionsViewController tests', () => {
               method: dataDecoded.method,
               status: 'NOT_STAKED',
               parameters: dataDecoded.parameters,
-              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedEntryTime:
+                networkStats.estimated_entry_time_seconds * 1_000,
+              estimatedExitTime:
+                networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
-                networkStats.estimated_withdrawal_time_seconds,
+                networkStats.estimated_withdrawal_time_seconds * 1_000,
               fee: +deployment.product_fee!,
               monthlyNrr,
               annualNrr,
@@ -855,10 +859,12 @@ describe('TransactionsViewController tests', () => {
               method: 'deposit',
               status: 'NOT_STAKED',
               parameters: [],
-              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedEntryTime:
+                networkStats.estimated_entry_time_seconds * 1_000,
+              estimatedExitTime:
+                networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
-                networkStats.estimated_withdrawal_time_seconds,
+                networkStats.estimated_withdrawal_time_seconds * 1_000,
               fee: +deployment.product_fee!,
               monthlyNrr,
               annualNrr,
@@ -960,10 +966,12 @@ describe('TransactionsViewController tests', () => {
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               status: 'NOT_STAKED',
-              estimatedEntryTime: networkStats.estimated_entry_time_seconds,
-              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedEntryTime:
+                networkStats.estimated_entry_time_seconds * 1_000,
+              estimatedExitTime:
+                networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
-                networkStats.estimated_withdrawal_time_seconds,
+                networkStats.estimated_withdrawal_time_seconds * 1_000,
               fee: +deployment.product_fee!,
               monthlyNrr:
                 (dedicatedStakingStats.gross_apy.last_30d *
@@ -1430,9 +1438,10 @@ describe('TransactionsViewController tests', () => {
               method: dataDecoded.method,
               parameters: dataDecoded.parameters,
               status: 'ACTIVE',
-              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedExitTime:
+                networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
-                networkStats.estimated_withdrawal_time_seconds,
+                networkStats.estimated_withdrawal_time_seconds * 1_000,
               value: (
                 +stakes[0].net_claimable_consensus_rewards! +
                 +stakes[1].net_claimable_consensus_rewards!
@@ -1541,9 +1550,10 @@ describe('TransactionsViewController tests', () => {
                 },
               ],
               status: 'ACTIVE',
-              estimatedExitTime: networkStats.estimated_exit_time_seconds,
+              estimatedExitTime:
+                networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
-                networkStats.estimated_withdrawal_time_seconds,
+                networkStats.estimated_withdrawal_time_seconds * 1_000,
               value: (
                 +stakes[0].net_claimable_consensus_rewards! +
                 +stakes[1].net_claimable_consensus_rewards!
