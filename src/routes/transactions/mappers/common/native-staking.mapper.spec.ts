@@ -609,6 +609,7 @@ describe('NativeStakingMapper', () => {
             symbol: chain.nativeCurrency.symbol,
             trusted: true,
           },
+          validators,
         }),
       );
 
@@ -708,6 +709,7 @@ describe('NativeStakingMapper', () => {
             symbol: chain.nativeCurrency.symbol,
             trusted: true,
           },
+          validators,
         }),
       );
 
