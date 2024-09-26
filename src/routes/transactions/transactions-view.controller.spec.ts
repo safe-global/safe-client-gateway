@@ -1385,14 +1385,8 @@ describe('TransactionsViewController tests', () => {
             ])
             .build();
           const stakes = [
-            stakeBuilder()
-              .with('net_claimable_consensus_rewards', '1000000')
-              .with('state', StakeState.ActiveOngoing)
-              .build(),
-            stakeBuilder()
-              .with('net_claimable_consensus_rewards', '2000000')
-              .with('state', StakeState.ActiveOngoing)
-              .build(),
+            stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
+            stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
           ];
           networkService.get.mockImplementation(({ url }) => {
             switch (url) {
@@ -1442,10 +1436,7 @@ describe('TransactionsViewController tests', () => {
                 networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds * 1_000,
-              value: (
-                +stakes[0].net_claimable_consensus_rewards! +
-                +stakes[1].net_claimable_consensus_rewards!
-              ).toString(),
+              value: '64000000000000000000', // 2 x 32 ETH,
               numValidators: 2,
               tokenInfo: {
                 address: NULL_ADDRESS,
@@ -1490,14 +1481,8 @@ describe('TransactionsViewController tests', () => {
             args: [validatorPublicKey as `0x${string}`],
           });
           const stakes = [
-            stakeBuilder()
-              .with('net_claimable_consensus_rewards', '4000000')
-              .with('state', StakeState.ActiveOngoing)
-              .build(),
-            stakeBuilder()
-              .with('net_claimable_consensus_rewards', '2000000')
-              .with('state', StakeState.ActiveOngoing)
-              .build(),
+            stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
+            stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
           ];
           networkService.get.mockImplementation(({ url }) => {
             switch (url) {
@@ -1554,10 +1539,7 @@ describe('TransactionsViewController tests', () => {
                 networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds * 1_000,
-              value: (
-                +stakes[0].net_claimable_consensus_rewards! +
-                +stakes[1].net_claimable_consensus_rewards!
-              ).toString(),
+              value: '32000000000000000000', // 32 ETH,
               numValidators: 1,
               tokenInfo: {
                 address: NULL_ADDRESS,
