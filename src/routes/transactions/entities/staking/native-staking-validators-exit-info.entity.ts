@@ -30,12 +30,16 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
   @ApiProperty()
   tokenInfo: TokenInfo;
 
+  @ApiProperty()
+  validators: Array<`0x${string}`>;
+
   constructor(args: {
     status: StakingStatus;
     estimatedExitTime: number;
     estimatedWithdrawalTime: number;
     numValidators: number;
     tokenInfo: TokenInfo;
+    validators: Array<`0x${string}`>;
   }) {
     super(TransactionInfoType.NativeStakingValidatorsExit, null, null);
     this.status = args.status;
@@ -43,5 +47,6 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
     this.estimatedWithdrawalTime = args.estimatedWithdrawalTime;
     this.numValidators = args.numValidators;
     this.tokenInfo = args.tokenInfo;
+    this.validators = args.validators;
   }
 }

@@ -32,7 +32,7 @@ import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-nati
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { concat, getAddress } from 'viem';
 
 const mockStakingRepository = jest.mocked({
   getDeployment: jest.fn(),
@@ -157,6 +157,71 @@ describe('NativeStakingMapper', () => {
       );
     });
 
+    it('should map a queued native staking deposit info', async () => {
+      const chain = chainBuilder().build();
+      const productFee = '0.5';
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .with('product_fee', productFee)
+        .build();
+      const networkStats = networkStatsBuilder()
+        .with('eth_price_usd', 10_000)
+        .build();
+      const dedicatedStakingStats = dedicatedStakingStatsBuilder()
+        .with(
+          'gross_apy',
+          dedicatedStakingStatsGrossApyBuilder().with('last_30d', 3).build(),
+        )
+        .build();
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
+        dedicatedStakingStats,
+      );
+      mockStakingRepository.getStakes.mockResolvedValue([]);
+      const transaction = multisigTransactionBuilder()
+        .with('executionDate', null)
+        .with('transactionHash', null)
+        .build();
+
+      const actual = await target.mapDepositInfo({
+        chainId: chain.chainId,
+        to: deployment.address,
+        value: '64000000000000000000',
+        transaction,
+      });
+
+      expect(actual).toEqual(
+        expect.objectContaining({
+          type: 'NativeStakingDeposit',
+          status: 'NOT_STAKED',
+          estimatedEntryTime: networkStats.estimated_entry_time_seconds,
+          estimatedExitTime: networkStats.estimated_exit_time_seconds,
+          estimatedWithdrawalTime:
+            networkStats.estimated_withdrawal_time_seconds,
+          fee: 0.5,
+          monthlyNrr: 1.5 / 12,
+          annualNrr: 1.5,
+          value: '64000000000000000000',
+          numValidators: 2,
+          expectedAnnualReward: '960000000000000000',
+          expectedMonthlyReward: '80000000000000000',
+          expectedFiatAnnualReward: 9600,
+          expectedFiatMonthlyReward: 800,
+          tokenInfo: {
+            address: NULL_ADDRESS,
+            decimals: chain.nativeCurrency.decimals,
+            logoUri: chain.nativeCurrency.logoUri,
+            name: chain.nativeCurrency.name,
+            symbol: chain.nativeCurrency.symbol,
+            trusted: true,
+          },
+          validators: null,
+        }),
+      );
+    });
+
     it('should map a native staking deposit info', async () => {
       const chain = chainBuilder().build();
       const productFee = '0.5';
@@ -176,7 +241,14 @@ describe('NativeStakingMapper', () => {
       const stakes = [
         stakeBuilder().with('state', StakeState.DepositInProgress).build(),
       ];
-      const depositEventEvent = depositEventEventBuilder().encode();
+      const pubkey = faker.string.hexadecimal({
+        length: KilnDecoder.KilnPublicKeyLength,
+        // Transaction Service returns _publicKeys lowercase
+        casing: 'lower',
+      });
+      const depositEventEvent = depositEventEventBuilder()
+        .with('pubkey', pubkey as `0x${string}`)
+        .encode();
       const transactionStatus = transactionStatusBuilder()
         .with(
           'receipt',
@@ -234,6 +306,7 @@ describe('NativeStakingMapper', () => {
             symbol: chain.nativeCurrency.symbol,
             trusted: true,
           },
+          validators: [pubkey],
         }),
       );
     });
@@ -323,9 +396,22 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const stakes = [stakeBuilder().build()];
-      const validatorPublicKey = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 3,
-      }); // 3 validators
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const validatorPublicKey = concat(validators);
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
         .with('parameters', [
@@ -457,9 +543,18 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'dedicated')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const validatorPublicKey = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 2,
-      }); // 2 validators
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const validatorPublicKey = concat(validators);
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
         .with('parameters', [
@@ -514,16 +609,14 @@ describe('NativeStakingMapper', () => {
             symbol: chain.nativeCurrency.symbol,
             trusted: true,
           },
+          validators,
         }),
       );
 
       expect(mockStakingRepository.getStakes).toHaveBeenCalledWith({
         chainId: chain.chainId,
         safeAddress,
-        validatorsPublicKeys: [
-          `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)}`,
-          `0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
-        ],
+        validatorsPublicKeys: validators,
       });
     });
 
@@ -533,9 +626,18 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'dedicated')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const validatorPublicKey = faker.string.hexadecimal({
-        length: KilnDecoder.KilnPublicKeyLength * 2,
-      }); // 2 validators
+      const validators = [
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          // Transaction Service returns _publicKeys lowercase
+          casing: 'lower',
+        }),
+        faker.string.hexadecimal({
+          length: KilnDecoder.KilnPublicKeyLength,
+          casing: 'lower',
+        }),
+      ] as Array<`0x${string}`>;
+      const validatorPublicKey = concat(validators);
       const dataDecoded = dataDecodedBuilder()
         .with('method', 'requestValidatorsExit')
         .with('parameters', [
@@ -607,6 +709,7 @@ describe('NativeStakingMapper', () => {
             symbol: chain.nativeCurrency.symbol,
             trusted: true,
           },
+          validators,
         }),
       );
 

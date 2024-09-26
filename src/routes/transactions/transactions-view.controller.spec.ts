@@ -44,7 +44,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { Server } from 'net';
 import request from 'supertest';
-import { encodeFunctionData, getAddress, parseAbi } from 'viem';
+import { concat, encodeFunctionData, getAddress, parseAbi } from 'viem';
 
 describe('TransactionsViewController tests', () => {
   let app: INestApplication<Server>;
@@ -1348,13 +1348,22 @@ describe('TransactionsViewController tests', () => {
             .build();
           const safeAddress = faker.finance.ethereumAddress();
           const networkStats = networkStatsBuilder().build();
-          const validatorPublicKey = faker.string.hexadecimal({
-            length: KilnDecoder.KilnPublicKeyLength * 2,
-          }); // 2 validators
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              // Transaction Service returns _publicKeys lowercase
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const validatorPublicKey = concat(validators);
           const data = encodeFunctionData({
             abi: parseAbi(['function requestValidatorsExit(bytes)']),
             functionName: 'requestValidatorsExit',
-            args: [validatorPublicKey as `0x${string}`],
+            args: [validatorPublicKey],
           });
           const dataDecoded = dataDecodedBuilder()
             .with('method', 'requestValidatorsExit')
@@ -1437,6 +1446,7 @@ describe('TransactionsViewController tests', () => {
                 symbol: chain.nativeCurrency.symbol,
                 trusted: true,
               },
+              validators,
             });
 
           // check the public keys are passed to the staking service in the expected format
@@ -1445,7 +1455,7 @@ describe('TransactionsViewController tests', () => {
             networkRequest: expect.objectContaining({
               params: {
                 onchain_v1_include_net_rewards: true,
-                validators: `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)},0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
+                validators: validators.join(','),
               },
             }),
           });
@@ -1460,9 +1470,11 @@ describe('TransactionsViewController tests', () => {
             .build();
           const safeAddress = faker.finance.ethereumAddress();
           const networkStats = networkStatsBuilder().build();
-          const validatorPublicKey = faker.string.hexadecimal({
-            length: KilnDecoder.KilnPublicKeyLength,
-          });
+          const validatorPublicKey = faker.string
+            .hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+            })
+            .toLowerCase();
           const data = encodeFunctionData({
             abi: parseAbi(['function requestValidatorsExit(bytes)']),
             functionName: 'requestValidatorsExit',
@@ -1524,7 +1536,7 @@ describe('TransactionsViewController tests', () => {
                 {
                   name: '_publicKeys',
                   type: 'bytes',
-                  value: validatorPublicKey.toLowerCase(),
+                  value: validatorPublicKey,
                   valueDecoded: null,
                 },
               ],
@@ -1545,6 +1557,7 @@ describe('TransactionsViewController tests', () => {
                 symbol: chain.nativeCurrency.symbol,
                 trusted: true,
               },
+              validators: [validatorPublicKey],
             });
 
           // check the public keys are passed to the staking service in the expected format
@@ -1553,7 +1566,7 @@ describe('TransactionsViewController tests', () => {
             networkRequest: expect.objectContaining({
               params: {
                 onchain_v1_include_net_rewards: true,
-                validators: `${validatorPublicKey.toLowerCase()}`,
+                validators: validatorPublicKey,
               },
             }),
           });
@@ -1846,13 +1859,22 @@ describe('TransactionsViewController tests', () => {
             .build();
           const safeAddress = faker.finance.ethereumAddress();
           const networkStats = networkStatsBuilder().build();
-          const validatorPublicKey = faker.string.hexadecimal({
-            length: KilnDecoder.KilnPublicKeyLength * 2,
-          }); // 2 validators
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              // Transaction Service returns _publicKeys lowercase
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const validatorPublicKey = concat(validators);
           const data = encodeFunctionData({
             abi: parseAbi(['function requestValidatorsExit(bytes)']),
             functionName: 'requestValidatorsExit',
-            args: [validatorPublicKey as `0x${string}`],
+            args: [validatorPublicKey],
           });
           const dataDecoded = dataDecodedBuilder()
             .with('method', 'requestValidatorsExit')
@@ -1913,7 +1935,7 @@ describe('TransactionsViewController tests', () => {
             networkRequest: expect.objectContaining({
               params: {
                 onchain_v1_include_net_rewards: true,
-                validators: `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)},0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
+                validators: validators.join(','),
               },
             }),
           });
@@ -1929,13 +1951,26 @@ describe('TransactionsViewController tests', () => {
             .with('product_fee', faker.number.float().toString())
             .build();
           const safeAddress = faker.finance.ethereumAddress();
-          const validatorPublicKey = faker.string.hexadecimal({
-            length: KilnDecoder.KilnPublicKeyLength * 3,
-          }); // 3 validators
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              // Transaction Service returns _publicKeys lowercase
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const validatorPublicKey = concat(validators);
           const data = encodeFunctionData({
             abi: parseAbi(['function batchWithdrawCLFee(bytes)']),
             functionName: 'batchWithdrawCLFee',
-            args: [validatorPublicKey as `0x${string}`],
+            args: [validatorPublicKey],
           });
           const dataDecoded = dataDecodedBuilder()
             .with('method', 'batchWithdrawCLFee')
@@ -2006,14 +2041,24 @@ describe('TransactionsViewController tests', () => {
                 symbol: chain.nativeCurrency.symbol,
                 trusted: true,
               },
+              validators,
             });
         });
 
         it('returns the native staking `withdraw` confirmation view using local decoding', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
-          const validatorPublicKey = faker.string.hexadecimal({
-            length: KilnDecoder.KilnPublicKeyLength * 2,
-          }); // 2 validators
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              // Transaction Service returns _publicKeys lowercase
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const validatorPublicKey = concat(validators);
           const deployment = deploymentBuilder()
             .with('chain_id', +chain.chainId)
             .with('product_type', 'dedicated')
@@ -2023,7 +2068,7 @@ describe('TransactionsViewController tests', () => {
           const data = encodeFunctionData({
             abi: parseAbi(['function batchWithdrawCLFee(bytes)']),
             functionName: 'batchWithdrawCLFee',
-            args: [`${validatorPublicKey}` as `0x${string}`],
+            args: [validatorPublicKey],
           });
           const stakes = [
             stakeBuilder()
@@ -2074,7 +2119,7 @@ describe('TransactionsViewController tests', () => {
                 {
                   name: '_publicKeys',
                   type: 'bytes',
-                  value: validatorPublicKey.toLowerCase(),
+                  value: validatorPublicKey,
                   valueDecoded: null,
                 },
               ],
@@ -2090,6 +2135,7 @@ describe('TransactionsViewController tests', () => {
                 symbol: chain.nativeCurrency.symbol,
                 trusted: true,
               },
+              validators,
             });
         });
 
@@ -2301,9 +2347,22 @@ describe('TransactionsViewController tests', () => {
 
         it('returns the generic confirmation view if the stakes are not available', async () => {
           const chain = chainBuilder().with('isTestnet', false).build();
-          const validatorPublicKey = faker.string.hexadecimal({
-            length: KilnDecoder.KilnPublicKeyLength * 3,
-          }); // 3 validators
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              // Transaction Service returns _publicKeys lowercase
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const validatorPublicKey = concat(validators);
           const dataDecoded = dataDecodedBuilder()
             .with('method', 'batchWithdrawCLFee')
             .with('parameters', [
@@ -2324,7 +2383,7 @@ describe('TransactionsViewController tests', () => {
           const data = encodeFunctionData({
             abi: parseAbi(['function batchWithdrawCLFee(bytes)']),
             functionName: 'batchWithdrawCLFee',
-            args: [validatorPublicKey as `0x${string}`],
+            args: [validatorPublicKey],
           });
           networkService.get.mockImplementation(({ url }) => {
             switch (url) {
