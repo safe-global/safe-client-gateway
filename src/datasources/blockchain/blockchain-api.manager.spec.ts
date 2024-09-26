@@ -173,7 +173,7 @@ describe('BlockchainApiManager', () => {
       });
       const body = {
         jsonrpc: '2.0',
-        id: 0,
+        id: 1,
         method: 'eth_getBlockByNumber',
         params: ['latest', false],
       };
@@ -199,7 +199,7 @@ describe('BlockchainApiManager', () => {
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       await expect(fakeCacheService.hGet(cacheDir)).resolves.toBe(
-        JSON.stringify(blockByNumber),
+        blockByNumber,
       );
 
       fetchSpy.mockRestore();

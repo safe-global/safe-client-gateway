@@ -110,7 +110,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
 
       await this.cacheService.hSet(
         cacheDir,
-        JSON.stringify(result),
+        typeof result === 'string' ? result : JSON.stringify(result),
         this.rpcExpirationTimeInSeconds,
       );
 
