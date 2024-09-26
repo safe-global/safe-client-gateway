@@ -2,15 +2,106 @@
 
 import { Builder } from '@/__tests__/builder';
 import { IEncoder } from '@/__tests__/encoder-builder';
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+import {
+  KilnAbi,
+  KilnDecoder,
+} from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { faker } from '@faker-js/faker/.';
 import {
-  parseAbi,
   encodeAbiParameters,
-  parseAbiParameters,
   encodeEventTopics,
   toHex,
+  encodeFunctionData,
+  getAbiItem,
+  getAddress,
 } from 'viem';
+
+// deposit
+
+type DepositArgs = never;
+
+class DepositEncoder<T extends DepositArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): `0x${string}` {
+    return encodeFunctionData({
+      abi: KilnAbi,
+      functionName: 'deposit',
+      args: [],
+    });
+  }
+}
+
+export function depositEncoder(): DepositEncoder<DepositArgs> {
+  return new DepositEncoder();
+}
+
+// requestValidatorsExit
+
+type RequestValidatorsExitArgs = {
+  _publicKeys: `0x${string}`;
+};
+
+class RequestValidatorsExitEncoder<T extends RequestValidatorsExitArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): `0x${string}` {
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi: KilnAbi,
+      functionName: 'requestValidatorsExit',
+      args: [args._publicKeys],
+    });
+  }
+}
+
+export function requestValidatorsExitEncoder(): RequestValidatorsExitEncoder<RequestValidatorsExitArgs> {
+  return new RequestValidatorsExitEncoder().with(
+    '_publicKeys',
+    toHex(
+      faker.string.hexadecimal({
+        length: KilnDecoder.KilnPublicKeyLength,
+      }),
+    ),
+  );
+}
+
+// batchWithdrawCLFee
+
+type BatchWithdrawCLFeeArgs = {
+  _publicKeys: `0x${string}`;
+};
+
+class BatchWithdrawCLFeeEncoder<T extends BatchWithdrawCLFeeArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): `0x${string}` {
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi: KilnAbi,
+      functionName: 'batchWithdrawCLFee',
+      args: [args._publicKeys],
+    });
+  }
+}
+
+export function batchWithdrawCLFeeEncoder(): BatchWithdrawCLFeeEncoder<BatchWithdrawCLFeeArgs> {
+  return new BatchWithdrawCLFeeEncoder().with(
+    '_publicKeys',
+    toHex(
+      faker.string.hexadecimal({
+        length: KilnDecoder.KilnPublicKeyLength,
+      }),
+    ),
+  );
+}
+
+// DepositEvent
 
 type DepositEventEventArgs = {
   pubkey: `0x${string}`;
@@ -29,29 +120,22 @@ class DepositEventBuilder<T extends DepositEventEventArgs>
   extends Builder<T>
   implements IEncoder<DepositEventEvent>
 {
-  static readonly NON_INDEXED_PARAMS =
-    'bytes pubkey, bytes withdrawal_credentials, bytes amount, bytes signature, bytes index' as const;
-  static readonly EVENT_SIGNATURE =
-    `event DepositEvent(${DepositEventBuilder.NON_INDEXED_PARAMS})` as const;
-
   encode(): DepositEventEvent {
-    const abi = parseAbi([DepositEventBuilder.EVENT_SIGNATURE]);
+    const item = getAbiItem({ abi: KilnAbi, name: 'DepositEvent' });
 
     const args = this.build();
 
-    const data = encodeAbiParameters(
-      parseAbiParameters(DepositEventBuilder.NON_INDEXED_PARAMS),
-      [
-        args.pubkey,
-        args.withdrawal_credentials,
-        args.amount,
-        args.signature,
-        args.index,
-      ],
-    );
+    // No parameters are indexed so we can use them directly
+    const data = encodeAbiParameters(item.inputs, [
+      args.pubkey,
+      args.withdrawal_credentials,
+      args.amount,
+      args.signature,
+      args.index,
+    ]);
 
     const topics = encodeEventTopics({
-      abi,
+      abi: KilnAbi,
       eventName: 'DepositEvent',
       args: {
         pubkey: args.pubkey,
@@ -86,4 +170,71 @@ export function depositEventEventBuilder(): DepositEventBuilder<DepositEventEven
     .with('amount', toHex(faker.string.hexadecimal({ length: 16 })))
     .with('signature', toHex(faker.string.hexadecimal({ length: 192 })))
     .with('index', toHex(faker.string.hexadecimal({ length: 16 })));
+}
+
+// Withdrawal
+
+type WithdrawalArgs = {
+  withdrawer: `0x${string}`;
+  feeRecipient: `0x${string}`;
+  pubKeyRoot: `0x${string}`;
+  rewards: bigint;
+  nodeOperatorFee: bigint;
+  treasuryFee: bigint;
+};
+
+type Withdrawal = {
+  data: `0x${string}`;
+  topics: [signature: `0x${string}`, ...args: Array<`0x${string}`>];
+};
+
+class WithdrawalEventBuilder<T extends WithdrawalArgs>
+  extends Builder<T>
+  implements IEncoder<Withdrawal>
+{
+  encode(): Withdrawal {
+    const item = getAbiItem({ abi: KilnAbi, name: 'Withdrawal' });
+
+    const args = this.build();
+
+    const data = encodeAbiParameters(
+      // Only indexed parameters
+      item.inputs.filter((input) => {
+        return !('indexed' in input) || !input.indexed;
+      }),
+      [args.pubKeyRoot, args.rewards, args.nodeOperatorFee, args.treasuryFee],
+    );
+
+    const topics = encodeEventTopics({
+      abi: KilnAbi,
+      eventName: 'Withdrawal',
+      args: {
+        // Only indexed parameters
+        withdrawer: args.withdrawer,
+        feeRecipient: args.feeRecipient,
+      },
+    }) as Withdrawal['topics'];
+
+    return {
+      data,
+      topics,
+    };
+  }
+}
+
+export function withdrawalEventBuilder(): WithdrawalEventBuilder<WithdrawalArgs> {
+  return new WithdrawalEventBuilder()
+    .with('withdrawer', getAddress(faker.finance.ethereumAddress()))
+    .with('feeRecipient', getAddress(faker.finance.ethereumAddress()))
+    .with(
+      'pubKeyRoot',
+      toHex(
+        faker.string.hexadecimal({
+          length: 30,
+        }),
+      ),
+    )
+    .with('rewards', faker.number.bigInt())
+    .with('nodeOperatorFee', BigInt(0))
+    .with('treasuryFee', faker.number.bigInt());
 }

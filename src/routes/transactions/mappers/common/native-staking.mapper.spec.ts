@@ -13,18 +13,23 @@ import {
 import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
 import { ChainsRepository } from '@/domain/chains/chains.repository';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { depositEventEventBuilder } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
+import {
+  depositEventEventBuilder,
+  withdrawalEventBuilder,
+} from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { StakingRepository } from '@/domain/staking/staking.repository';
 import { ILoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
+import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
+import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -71,11 +76,18 @@ describe('NativeStakingMapper', () => {
     jest.resetAllMocks();
     jest.useFakeTimers();
 
+    const multiSendDecoder = new MultiSendDecoder();
+    const transactionFinder = new TransactionFinder(multiSendDecoder);
+    const kilnNativeStakingHelper = new KilnNativeStakingHelper(
+      transactionFinder,
+      mockStakingRepository,
+    );
     const kilnDecoder = new KilnDecoder(mockLoggingService);
     target = new NativeStakingMapper(
       mockStakingRepository,
       mockChainsRepository,
       kilnDecoder,
+      kilnNativeStakingHelper,
       mockLoggingService,
     );
   });
@@ -325,8 +337,6 @@ describe('NativeStakingMapper', () => {
         ])
         .build();
       const transaction = multisigTransactionBuilder()
-        .with('confirmationsRequired', 2) // 2 confirmations required
-        .with('confirmations', [confirmationBuilder().build()]) // only 1 confirmation
         .with('dataDecoded', dataDecoded)
         .build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
@@ -349,7 +359,6 @@ describe('NativeStakingMapper', () => {
           estimatedExitTime: networkStats.estimated_exit_time_seconds * 1_000,
           estimatedWithdrawalTime:
             networkStats.estimated_withdrawal_time_seconds * 1_000,
-          value: stakes[0].net_claimable_consensus_rewards,
           numValidators: 3, // 3 public keys in the transaction data => 3 validators
           tokenInfo: {
             address: NULL_ADDRESS,
@@ -442,7 +451,7 @@ describe('NativeStakingMapper', () => {
   });
 
   describe('mapWithdrawInfo', () => {
-    it('should map a native staking withdraw info', async () => {
+    it('should map a proposed native staking withdraw info', async () => {
       const chain = chainBuilder().build();
       const deployment = deploymentBuilder()
         .with('product_type', 'dedicated')
@@ -461,11 +470,7 @@ describe('NativeStakingMapper', () => {
             .build(),
         ])
         .build();
-      const transaction = multisigTransactionBuilder()
-        .with('confirmationsRequired', 2) // 2 confirmations required
-        .with('confirmations', [confirmationBuilder().build()]) // only 1 confirmation
-        .with('dataDecoded', dataDecoded)
-        .build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const stakes = [
         stakeBuilder()
           .with('net_claimable_consensus_rewards', '3.25')
@@ -487,9 +492,9 @@ describe('NativeStakingMapper', () => {
 
       const actual = await target.mapWithdrawInfo({
         chainId: chain.chainId,
-        safeAddress: transaction.safe,
+        safeAddress: safeAddress,
         to: deployment.address,
-        transaction,
+        transaction: null,
         dataDecoded,
       });
 
@@ -514,11 +519,101 @@ describe('NativeStakingMapper', () => {
 
       expect(mockStakingRepository.getStakes).toHaveBeenCalledWith({
         chainId: chain.chainId,
-        safeAddress: transaction.safe,
+        safeAddress,
         validatorsPublicKeys: [
           `${validatorPublicKey.slice(0, KilnDecoder.KilnPublicKeyLength + 2)}`,
           `0x${validatorPublicKey.slice(KilnDecoder.KilnPublicKeyLength + 2)}`,
         ],
+      });
+    });
+
+    it('should map a native staking withdraw info', async () => {
+      const chain = chainBuilder().build();
+      const deployment = deploymentBuilder()
+        .with('product_type', 'dedicated')
+        .build();
+      const networkStats = networkStatsBuilder().build();
+      const validatorPublicKey = faker.string.hexadecimal({
+        length: KilnDecoder.KilnPublicKeyLength * 2,
+      }); // 2 validators
+      const dataDecoded = dataDecodedBuilder()
+        .with('method', 'requestValidatorsExit')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', '_publicKeys')
+            .with('type', 'bytes')
+            .with('value', validatorPublicKey)
+            .build(),
+        ])
+        .build();
+      const withdrawalEvent = withdrawalEventBuilder();
+      const withdrawalEventParams = withdrawalEvent.build();
+      const withdrawalEventEncoded = withdrawalEvent.encode();
+      const transactionStatus = transactionStatusBuilder()
+        .with(
+          'receipt',
+          transactionStatusReceiptBuilder()
+            .with('logs', [
+              transactionStatusReceiptLogBuilder()
+                .with('data', withdrawalEventEncoded.data)
+                .with('topics', withdrawalEventEncoded.topics)
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+      const transaction = multisigTransactionBuilder()
+        .with('dataDecoded', dataDecoded)
+        .build();
+      const stakes = [
+        stakeBuilder()
+          .with('net_claimable_consensus_rewards', '3.25')
+          .with('state', StakeState.WithdrawalDone)
+          .build(),
+        stakeBuilder()
+          .with('net_claimable_consensus_rewards', '1.25')
+          .with('state', StakeState.WithdrawalDone)
+          .build(),
+        stakeBuilder()
+          .with('net_claimable_consensus_rewards', '1')
+          .with('state', StakeState.WithdrawalDone)
+          .build(),
+      ];
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getStakes.mockResolvedValue(stakes);
+      mockStakingRepository.getTransactionStatus.mockResolvedValue(
+        transactionStatus,
+      );
+
+      const actual = await target.mapWithdrawInfo({
+        chainId: chain.chainId,
+        safeAddress: transaction.safe,
+        to: deployment.address,
+        transaction,
+        dataDecoded,
+      });
+
+      expect(actual).toEqual(
+        expect.objectContaining({
+          type: 'NativeStakingWithdraw',
+          value: withdrawalEventParams.rewards.toString(),
+          tokenInfo: {
+            address: NULL_ADDRESS,
+            decimals: chain.nativeCurrency.decimals,
+            logoUri: chain.nativeCurrency.logoUri,
+            name: chain.nativeCurrency.name,
+            symbol: chain.nativeCurrency.symbol,
+            trusted: true,
+          },
+        }),
+      );
+
+      expect(mockStakingRepository.getStakes).not.toHaveBeenCalled();
+      expect(mockStakingRepository.getTransactionStatus).toHaveBeenCalledWith({
+        chainId: chain.chainId,
+        txHash: transaction.transactionHash,
       });
     });
 

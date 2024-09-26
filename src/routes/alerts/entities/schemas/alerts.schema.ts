@@ -1,11 +1,13 @@
 import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { EventTopicsSchema } from '@/validation/entities/schemas/event-topics.schema';
 
 export const AlertLogSchema = z.object({
   address: AddressSchema,
-  topics: z.array(z.string()),
-  data: z.string(),
+  topics: EventTopicsSchema,
+  data: HexSchema,
 });
 
 export const AlertTransactionSchema = z.object({

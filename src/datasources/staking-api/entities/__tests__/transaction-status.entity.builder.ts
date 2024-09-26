@@ -8,9 +8,9 @@ export function transactionStatusReceiptLogBuilder(): IBuilder<
   return new Builder<TransactionStatus['receipt']['logs'][number]>()
     .with(
       'topics',
-      Array.from({ length: faker.number.int({ min: 0, max: 10 }) }, () => {
+      Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () => {
         return faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
-      }),
+      }) as [`0x${string}`, ...Array<`0x${string}`>],
     )
     .with(
       'data',
