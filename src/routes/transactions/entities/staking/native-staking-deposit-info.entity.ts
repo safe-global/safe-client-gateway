@@ -61,8 +61,10 @@ export class NativeStakingDepositTransactionInfo
   @ApiProperty()
   tokenInfo: TokenInfo;
 
-  @ApiProperty()
-  validators: Array<`0x${string}`>;
+  @ApiProperty({
+    description: 'Populated after transaction has been executed',
+  })
+  validators: Array<`0x${string}`> | null;
 
   constructor(args: {
     status: StakingStatus;
@@ -79,7 +81,7 @@ export class NativeStakingDepositTransactionInfo
     expectedFiatAnnualReward: number;
     expectedFiatMonthlyReward: number;
     tokenInfo: TokenInfo;
-    validators: Array<`0x${string}`>;
+    validators: Array<`0x${string}`> | null;
   }) {
     super(TransactionInfoType.NativeStakingDeposit, null, null);
     this.status = args.status;

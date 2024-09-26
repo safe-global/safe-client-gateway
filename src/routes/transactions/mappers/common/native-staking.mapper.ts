@@ -116,7 +116,7 @@ export class NativeStakingMapper {
         symbol: chain.nativeCurrency.symbol,
         trusted: true,
       }),
-      validators: publicKeys,
+      validators: args.transaction?.executionDate ? publicKeys : null,
     });
   }
 
