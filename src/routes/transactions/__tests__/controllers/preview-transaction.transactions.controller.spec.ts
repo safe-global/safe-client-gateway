@@ -886,40 +886,41 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
         jest.useRealTimers();
       });
 
+      const ComposableCowAddress = '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74';
+
+      /**
+       * @see https://sepolia.etherscan.io/address/0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74
+       */
+      const safe = safeBuilder()
+        .with('address', '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381')
+        .build();
+      const data =
+        '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a500000000000000000000000000000000000000000000000000000019011f294a00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b1400000000000000000000000031eac7f0141837b266de30f4dc9af15629bd538100000000000000000000000000000000000000000000000b941d039eed310b36000000000000000000000000000000000000000000000000087bbc924df9167e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000007080000000000000000000000000000000000000000000000000000000000000000f7be7261f56698c258bf75f888d68a00c85b22fb21958b9009c719eb88aebda00000000000000000000000000000000000000000000000000000000000000000';
+      const appDataHash =
+        '0xf7be7261f56698c258bf75f888d68a00c85b22fb21958b9009c719eb88aebda0';
+      const appData = { appCode: swapsVerifiedApp };
+      const fullAppData = {
+        fullAppData: JSON.stringify(appData),
+      };
+      const buyToken = tokenBuilder()
+        .with(
+          'address',
+          getAddress('0xfff9976782d46cc05630d1f6ebab18b2324d6b14'),
+        )
+        .build();
+      const sellToken = tokenBuilder()
+        .with(
+          'address',
+          getAddress('0xbe72e441bf55620febc26715db68d3494213d8cb'),
+        )
+        .build();
+
       it('should preview a transaction', async () => {
         const now = new Date();
         jest.setSystemTime(now);
 
-        const ComposableCowAddress =
-          '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74';
-        /**
-         * @see https://sepolia.etherscan.io/address/0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74
-         */
         const chain = chainBuilder().with('chainId', swapsChainId).build();
-        const safe = safeBuilder()
-          .with('address', '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381')
-          .build();
-        const data =
-          '0x0d0d9800000000000000000000000000000000000000000000000000000000000000008000000000000000000000000052ed56da04309aca4c3fecc595298d80c2f16bac000000000000000000000000000000000000000000000000000000000000024000000000000000000000000000000000000000000000000000000000000000010000000000000000000000006cf1e9ca41f7611def408122793c358a3d11e5a500000000000000000000000000000000000000000000000000000019011f294a00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000140000000000000000000000000be72e441bf55620febc26715db68d3494213d8cb000000000000000000000000fff9976782d46cc05630d1f6ebab18b2324d6b1400000000000000000000000031eac7f0141837b266de30f4dc9af15629bd538100000000000000000000000000000000000000000000000b941d039eed310b36000000000000000000000000000000000000000000000000087bbc924df9167e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000007080000000000000000000000000000000000000000000000000000000000000000f7be7261f56698c258bf75f888d68a00c85b22fb21958b9009c719eb88aebda00000000000000000000000000000000000000000000000000000000000000000';
-        const appDataHash =
-          '0xf7be7261f56698c258bf75f888d68a00c85b22fb21958b9009c719eb88aebda0';
-        const appData = { appCode: swapsVerifiedApp };
-        const fullAppData = {
-          fullAppData: JSON.stringify(appData),
-        };
         const dataDecoded = dataDecodedBuilder().build();
-        const buyToken = tokenBuilder()
-          .with(
-            'address',
-            getAddress('0xfff9976782d46cc05630d1f6ebab18b2324d6b14'),
-          )
-          .build();
-        const sellToken = tokenBuilder()
-          .with(
-            'address',
-            getAddress('0xbe72e441bf55620febc26715db68d3494213d8cb'),
-          )
-          .build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('to', ComposableCowAddress)
           .with('data', data)
@@ -1033,21 +1034,198 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           });
       });
 
-      it.todo(
-        'should return a "standard" transaction preview if order data is not available',
-      );
+      it('should return a "standard" transaction preview if buy token is not available', async () => {
+        const chain = chainBuilder().with('chainId', swapsChainId).build();
+        const dataDecoded = dataDecodedBuilder().build();
+        const previewTransactionDto = previewTransactionDtoBuilder()
+          .with('to', ComposableCowAddress)
+          .with('data', data)
+          .with('operation', Operation.CALL)
+          .build();
+        const contract = contractBuilder()
+          .with('address', ComposableCowAddress)
+          .build();
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          ) {
+            return Promise.reject({ status: 500 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          ) {
+            return Promise.resolve({ data: sellToken, status: 200 });
+          }
+          if (url === `${swapsApiUrl}/api/v1/app_data/${appDataHash}`) {
+            return Promise.resolve({ data: fullAppData, status: 200 });
+          }
+          if (
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          ) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/contracts/${contract.address}`
+          ) {
+            return Promise.resolve({ data: contract, status: 200 });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url }) => {
+          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+            return Promise.resolve({
+              data: dataDecoded,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
 
-      it.todo(
-        'should return a "standard" transaction preview if buy token is not available',
-      );
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+          )
+          .send(previewTransactionDto)
+          .expect(200)
+          .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+      });
 
-      it.todo(
-        'should return a "standard" transaction preview if sell token is not available',
-      );
+      it('should return a "standard" transaction preview if sell token is not available', async () => {
+        const chain = chainBuilder().with('chainId', swapsChainId).build();
+        const dataDecoded = dataDecodedBuilder().build();
+        const previewTransactionDto = previewTransactionDtoBuilder()
+          .with('to', ComposableCowAddress)
+          .with('data', data)
+          .with('operation', Operation.CALL)
+          .build();
+        const contract = contractBuilder()
+          .with('address', ComposableCowAddress)
+          .build();
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          ) {
+            return Promise.resolve({ data: buyToken, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          ) {
+            return Promise.reject({ status: 500 });
+          }
+          if (url === `${swapsApiUrl}/api/v1/app_data/${appDataHash}`) {
+            return Promise.resolve({ data: fullAppData, status: 200 });
+          }
+          if (
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          ) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/contracts/${contract.address}`
+          ) {
+            return Promise.resolve({ data: contract, status: 200 });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url }) => {
+          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+            return Promise.resolve({
+              data: dataDecoded,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
 
-      it.todo(
-        'should return a "standard" transaction preview if the swap app is restricted',
-      );
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+          )
+          .send(previewTransactionDto)
+          .expect(200)
+          .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+      });
+
+      it('should return a "standard" transaction preview if the swap app is restricted', async () => {
+        const chain = chainBuilder().with('chainId', swapsChainId).build();
+        const dataDecoded = dataDecodedBuilder().build();
+        const previewTransactionDto = previewTransactionDtoBuilder()
+          .with('to', ComposableCowAddress)
+          .with('data', data)
+          .with('operation', Operation.CALL)
+          .build();
+        const contract = contractBuilder()
+          .with('address', ComposableCowAddress)
+          .build();
+        const fullAppData = {
+          fullAppData: JSON.stringify({
+            appCode:
+              // We don't use buzzNoun here as it can generate the same value as swapsVerifiedApp
+              'restricted app code',
+          }),
+        };
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          ) {
+            return Promise.resolve({ data: buyToken, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          ) {
+            return Promise.resolve({ data: sellToken, status: 200 });
+          }
+          if (url === `${swapsApiUrl}/api/v1/app_data/${appDataHash}`) {
+            return Promise.resolve({ data: fullAppData, status: 200 });
+          }
+          if (
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          ) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/contracts/${contract.address}`
+          ) {
+            return Promise.resolve({ data: contract, status: 200 });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url }) => {
+          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+            return Promise.resolve({
+              data: dataDecoded,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+          )
+          .send(previewTransactionDto)
+          .expect(200)
+          .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+      });
     });
   });
 
