@@ -266,7 +266,7 @@ export default () => ({
       process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.digital',
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
     ttlSeconds: parseInt(
-      process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60}`,
+      process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
     ),
     apiKey: {
       100: process.env.RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN,
