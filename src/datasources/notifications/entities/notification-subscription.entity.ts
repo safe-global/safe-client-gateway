@@ -1,5 +1,5 @@
-import { NotificationDevice } from '@/routes/notifications/v2/entities/notificationDevices.entity';
-import type { NotificationSubscriptionNotificationType } from '@/routes/notifications/v2/entities/notificationSubscriptionNotificationType.entity';
+import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity';
+import { type NotificationSubscriptionNotificationType } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity';
 import {
   Column,
   Entity,
@@ -39,9 +39,10 @@ export class NotificationSubscription {
 
   @Column({
     type: 'varchar',
+    nullable: true,
     length: 42,
   })
-  signer_address!: string;
+  signer_address!: string | null;
 
   @Column({
     type: 'timestamp with time zone',

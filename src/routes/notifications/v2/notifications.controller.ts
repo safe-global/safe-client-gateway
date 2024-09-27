@@ -22,7 +22,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
-import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
+import type { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
