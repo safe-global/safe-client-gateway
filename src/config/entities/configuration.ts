@@ -292,8 +292,7 @@ export default () => ({
       apiKey: process.env.STAKING_TESTNET_API_KEY,
     },
     mainnet: {
-      baseUri:
-        process.env.STAKING_API_BASE_URI || 'https://api.testnet.kiln.fi',
+      baseUri: process.env.STAKING_API_BASE_URI || 'https://api.kiln.fi',
       apiKey: process.env.STAKING_API_KEY,
     },
   },
