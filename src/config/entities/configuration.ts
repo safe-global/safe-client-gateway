@@ -131,6 +131,7 @@ export default () => ({
       apiKey: process.env.INFURA_API_KEY,
     },
   },
+  typeorm: { autoLoadEntities: true, manualInitialization: true },
   db: {
     migrator: {
       numberOfRetries: 5,
