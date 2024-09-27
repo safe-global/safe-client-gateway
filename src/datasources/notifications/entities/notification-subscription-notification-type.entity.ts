@@ -1,6 +1,6 @@
 import { Entity, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { NotificationType } from '@/routes/notifications/v2/entities/notificationType.entity';
-import { NotificationSubscription } from '@/routes/notifications/v2/entities/notificationSubscription.entity';
+import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity';
+import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity';
 
 @Entity('notification_subscription_notification_types')
 @Unique(['notification_subscription', 'notification_type'])
