@@ -23,8 +23,16 @@ describe('Configuration validator', () => {
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: faker.internet.email(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY:
       faker.string.alphanumeric(),
-    RELAY_PROVIDER_API_KEY_ARBITRUM_ONE: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_OPTIMISM: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_BSC: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_POLYGON: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_POLYGON_ZKEVM: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_BASE: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_ARBITRUM_ONE: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_AVALANCHE: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_LINEA: faker.string.uuid(),
+    RELAY_PROVIDER_API_KEY_BLAST: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
   };
 
@@ -56,8 +64,16 @@ describe('Configuration validator', () => {
     { key: 'PUSH_NOTIFICATIONS_API_PROJECT' },
     { key: 'PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL' },
     { key: 'PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY' },
-    { key: 'RELAY_PROVIDER_API_KEY_ARBITRUM_ONE' },
+    { key: 'RELAY_PROVIDER_API_KEY_OPTIMISM' },
+    { key: 'RELAY_PROVIDER_API_KEY_BSC' },
     { key: 'RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN' },
+    { key: 'RELAY_PROVIDER_API_KEY_POLYGON' },
+    { key: 'RELAY_PROVIDER_API_KEY_POLYGON_ZKEVM' },
+    { key: 'RELAY_PROVIDER_API_KEY_BASE' },
+    { key: 'RELAY_PROVIDER_API_KEY_ARBITRUM_ONE' },
+    { key: 'RELAY_PROVIDER_API_KEY_AVALANCHE' },
+    { key: 'RELAY_PROVIDER_API_KEY_LINEA' },
+    { key: 'RELAY_PROVIDER_API_KEY_BLAST' },
     { key: 'RELAY_PROVIDER_API_KEY_SEPOLIA' },
   ])(
     'should detect that $key is missing in the configuration in production environment',
@@ -94,8 +110,16 @@ describe('Configuration validator', () => {
         faker.internet.email(),
       PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY:
         faker.string.alphanumeric(),
-      RELAY_PROVIDER_API_KEY_ARBITRUM_ONE: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_OPTIMISM: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_BSC: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_POLYGON: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_POLYGON_ZKEVM: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_BASE: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_ARBITRUM_ONE: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_AVALANCHE: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_LINEA: faker.string.uuid(),
+      RELAY_PROVIDER_API_KEY_BLAST: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
     };
     expect(() =>
