@@ -1,4 +1,5 @@
-import { NotificationSubscription } from '@/routes/notifications/v2/entities/notificationSubscription.entity';
+import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity';
+import type { UUID } from 'crypto';
 import {
   Check,
   Column,
@@ -22,7 +23,7 @@ export class NotificationDevice {
   device_type!: string;
 
   @Column({ type: 'uuid' })
-  device_uuid!: string;
+  device_uuid!: UUID;
 
   @Column({ type: 'varchar', length: 255 })
   cloud_messaging_token!: string;

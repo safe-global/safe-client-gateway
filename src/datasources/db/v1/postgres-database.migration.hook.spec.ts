@@ -1,7 +1,7 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseMigrationHook } from '@/datasources/db/postgres-database.migration.hook';
-import type { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { PostgresDatabaseMigrationHook } from '@/datasources/db/v1/postgres-database.migration.hook';
+import type { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';

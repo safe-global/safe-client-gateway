@@ -1,4 +1,4 @@
-import { NotificationSubscriptionNotificationType } from '@/routes/notifications/v2/entities/notificationSubscriptionNotificationType.entity';
+import { NotificationSubscriptionNotificationType } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity';
 import {
   Column,
   Entity,
