@@ -85,7 +85,6 @@ export class TransactionsViewService {
     const nativeStakingDepositTransaction =
       this.isNativeStakingEnabled &&
       this.kilnNativeStakingHelper.findDepositTransaction({
-        chainId: args.chainId,
         to: args.transactionDataDto.to,
         data: args.transactionDataDto.data,
         // Value is always defined
@@ -95,7 +94,6 @@ export class TransactionsViewService {
     const nativeStakingValidatorsExitTransaction =
       this.isNativeStakingEnabled &&
       this.kilnNativeStakingHelper.findValidatorsExitTransaction({
-        chainId: args.chainId,
         to: args.transactionDataDto.to,
         data: args.transactionDataDto.data,
         // Value is always defined
@@ -105,7 +103,6 @@ export class TransactionsViewService {
     const nativeStakingWithdrawTransaction =
       this.isNativeStakingEnabled &&
       this.kilnNativeStakingHelper.findWithdrawTransaction({
-        chainId: args.chainId,
         to: args.transactionDataDto.to,
         data: args.transactionDataDto.data,
         // Value is always defined

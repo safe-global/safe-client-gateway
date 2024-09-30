@@ -332,7 +332,6 @@ export class MultisigTransactionInfoMapper {
 
     const nativeStakingDepositTransaction =
       this.kilnNativeStakingHelper.findDepositTransaction({
-        chainId,
         to: transaction.to,
         data: transaction.data,
         value: transaction.value,
@@ -365,7 +364,6 @@ export class MultisigTransactionInfoMapper {
 
     const nativeStakingValidatorsExitTransaction =
       this.kilnNativeStakingHelper.findValidatorsExitTransaction({
-        chainId,
         to: transaction.to,
         data: transaction.data,
         value: transaction.value,
@@ -398,7 +396,6 @@ export class MultisigTransactionInfoMapper {
 
     const nativeStakingWithdrawTransaction =
       this.kilnNativeStakingHelper.findWithdrawTransaction({
-        chainId,
         to: transaction.to,
         data: transaction.data,
         value: transaction.value,
