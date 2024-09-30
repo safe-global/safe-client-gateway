@@ -235,8 +235,7 @@ export class LimitAddressesMapper {
       return true;
     }
 
-    const multiSendCallDeployments = getMultiSendDeployments(args);
-    return multiSendCallDeployments.includes(args.address);
+    return getMultiSendDeployments(args).includes(args.address);
   }
 
   private getSafeAddressFromMultiSend = (
@@ -298,13 +297,10 @@ export class LimitAddressesMapper {
       return false;
     }
 
-    const safeL1Deployments = getSafeSingletonDeployments(args);
-    const safeL2Deployments = getSafeL2SingletonDeployments(args);
-
-    const isL1Singleton = safeL1Deployments.includes(singleton);
-    const isL2Singleton = safeL2Deployments.includes(singleton);
-
-    return isL1Singleton || isL2Singleton;
+    return (
+      getSafeSingletonDeployments(args).includes(singleton) ||
+      getSafeL2SingletonDeployments(args).includes(singleton)
+    );
   }
 
   private getOwnersFromCreateProxyWithNonce(
