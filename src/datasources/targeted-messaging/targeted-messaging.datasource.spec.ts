@@ -256,7 +256,7 @@ describe('TargetedMessagingDataSource tests', () => {
         id: expect.any(Number),
         outreachId: outreach.id,
         targetedSafeId: targetedSafes[0].id,
-        signerAddress: expect.any(String),
+        signerAddress,
         completionDate: expect.any(Date),
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
