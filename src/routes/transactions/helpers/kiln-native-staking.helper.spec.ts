@@ -1,9 +1,18 @@
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
+import {
+  batchWithdrawCLFeeEncoder,
+  depositEncoder,
+  requestValidatorsExitEncoder,
+} from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';
-import { concat } from 'viem';
+import { concat, getAddress } from 'viem';
 
 describe('KilnNativeStakingHelper', () => {
   let target: KilnNativeStakingHelper;
@@ -16,70 +25,62 @@ describe('KilnNativeStakingHelper', () => {
     target = new KilnNativeStakingHelper(transactionFinder);
   });
 
-  describe('findDepositTransaction', () => {
-    it.todo('should return a `deposit` transaction');
+  describe.each([
+    { name: 'findDepositTransaction', encoder: depositEncoder } as const,
+    {
+      name: 'findValidatorsExitTransaction',
+      encoder: requestValidatorsExitEncoder,
+    } as const,
+    {
+      name: 'findWithdrawTransaction',
+      encoder: batchWithdrawCLFeeEncoder,
+    } as const,
+  ])('$name', ({ name, encoder }) => {
+    it('should return a transaction', () => {
+      const to = getAddress(faker.finance.ethereumAddress());
+      const data = encoder().encode();
+      const value = faker.string.numeric();
 
-    it.todo('should return a batched `deposit` transaction');
+      const result = target[name]({
+        to,
+        data,
+        value,
+      });
 
-    it.todo(
-      'should return null if a `deposit` transaction is not from a known staking contract',
-    );
+      expect(result).toStrictEqual({ to, data, value });
+    });
 
-    it.todo(
-      'should return null if a batched `deposit` transaction is not from a known staking contract',
-    );
+    it('should return a batched transaction', () => {
+      const depositTo = getAddress(faker.finance.ethereumAddress());
+      const depositData = encoder().encode();
+      const depositValue = faker.number.bigInt();
+      const multiSendTo = getAddress(faker.finance.ethereumAddress());
+      const mulitSendData = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: 0,
+              data: depositData,
+              to: depositTo,
+              value: depositValue,
+            },
+          ]),
+        )
+        .encode();
 
-    it.todo(
-      'should return null if the transaction is not a `deposit` transaction',
-    );
+      const result = target[name]({
+        to: multiSendTo,
+        data: mulitSendData,
+        value: faker.string.numeric(),
+      });
 
-    it.todo(
-      'should return null if the transaction batch contains no `deposit` transaction',
-    );
-  });
-
-  describe('findValidatorsExitTransaction', () => {
-    it.todo('should return a `requestValidatorsExit` transaction');
-
-    it.todo('should return a batched `requestValidatorsExit` transaction');
-
-    it.todo(
-      'should return null if a `requestValidatorsExit` transaction is not from a known staking contract',
-    );
-
-    it.todo(
-      'should return null if a requestValidatorsExit `deposit` transaction is not from a known staking contract',
-    );
-
-    it.todo(
-      'should return null if the transaction is not a `requestValidatorsExit` transaction',
-    );
-
-    it.todo(
-      'should return null if the transaction batch contains no `requestValidatorsExit` transaction',
-    );
-  });
-
-  describe('findWithdrawTransaction', () => {
-    it.todo('should return a `batchWithdrawCLFee` transaction');
-
-    it.todo('should return a batched `batchWithdrawCLFee` transaction');
-
-    it.todo(
-      'should return null if a `batchWithdrawCLFee` transaction is not from a known staking contract',
-    );
-
-    it.todo(
-      'should return null if a batchWithdrawCLFee `deposit` transaction is not from a known staking contract',
-    );
-
-    it.todo(
-      'should return null if the transaction is not a `batchWithdrawCLFee` transaction',
-    );
-
-    it.todo(
-      'should return null if the transaction batch contains no `batchWithdrawCLFee` transaction',
-    );
+      expect(result).toStrictEqual({
+        to: depositTo,
+        data: depositData,
+        value: depositValue.toString(),
+      });
+    });
   });
 
   describe('splitPublicKeys', () => {

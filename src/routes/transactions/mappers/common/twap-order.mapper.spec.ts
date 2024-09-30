@@ -1478,7 +1478,6 @@ describe('TwapOrderMapper', () => {
           if (order) {
             return Promise.resolve(order);
           }
-          console.log('Order not found', orderUid);
           return Promise.reject(new NotFoundException());
         },
       );

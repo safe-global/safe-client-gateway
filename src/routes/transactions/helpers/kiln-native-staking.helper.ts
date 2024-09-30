@@ -1,25 +1,32 @@
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+import {
+  KilnAbi,
+  KilnDecoder,
+} from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import {
   TransactionFinder,
   TransactionFinderModule,
 } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { Injectable, Module } from '@nestjs/common';
-import { toFunctionSelector } from 'viem';
+import { getAbiItem, toFunctionSelector } from 'viem';
 
 @Injectable()
 export class KilnNativeStakingHelper {
-  // TODO: Extract from KilnAbi
-  private static readonly DEPOSIT_SIGNATURE =
-    'function deposit() external payable';
-  private static readonly VALIDATORS_EXIT_SIGNATURE =
-    'function requestValidatorsExit(bytes) external';
-  private static readonly WITHDRAW_SIGNATURE =
-    'function batchWithdrawCLFee(bytes) external';
+  private static readonly DEPOSIT_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'deposit',
+  });
+  private static readonly VALIDATORS_EXIT_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'requestValidatorsExit',
+  });
+  private static readonly WITHDRAW_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'batchWithdrawCLFee',
+  });
 
   constructor(private readonly transactionFinder: TransactionFinder) {}
 
   public findDepositTransaction(args: {
-    chainId: string;
     to?: `0x${string}`;
     data: `0x${string}`;
     value: string;
@@ -34,7 +41,6 @@ export class KilnNativeStakingHelper {
   }
 
   public findValidatorsExitTransaction(args: {
-    chainId: string;
     to?: `0x${string}`;
     data: `0x${string}`;
     value: string;
@@ -49,7 +55,6 @@ export class KilnNativeStakingHelper {
   }
 
   public findWithdrawTransaction(args: {
-    chainId: string;
     to?: `0x${string}`;
     data: `0x${string}`;
     value: string;

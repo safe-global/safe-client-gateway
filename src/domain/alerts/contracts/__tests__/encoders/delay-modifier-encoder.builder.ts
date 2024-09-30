@@ -3,14 +3,14 @@ import { faker } from '@faker-js/faker';
 import {
   encodeAbiParameters,
   encodeEventTopics,
+  getAbiItem,
   getAddress,
   Hex,
   keccak256,
-  parseAbi,
-  parseAbiParameters,
   toBytes,
 } from 'viem';
 import { Builder } from '@/__tests__/builder';
+import { TRANSACTION_ADDED_ABI } from '@/domain/alerts/contracts/decoders/delay-modifier-decoder.helper';
 
 // TransactionAdded
 
@@ -32,26 +32,27 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
   extends Builder<T>
   implements IEncoder<TransactionAddedEvent>
 {
-  // TODO: Extract ABI and non-indexed params as done in Kiln's WithdrawalEventBuilder
-  static readonly NON_INDEXED_PARAMS =
-    'address to, uint256 value, bytes data, uint8 operation' as const;
-  static readonly EVENT_SIGNATURE =
-    `event TransactionAdded(uint256 indexed queueNonce, bytes32 indexed txHash, ${TransactionAddedEventBuilder.NON_INDEXED_PARAMS})` as const;
+  private readonly item = getAbiItem({
+    abi: TRANSACTION_ADDED_ABI,
+    name: 'TransactionAdded',
+  });
 
   encode(): TransactionAddedEvent {
-    const abi = parseAbi([TransactionAddedEventBuilder.EVENT_SIGNATURE]);
-
     const args = this.build();
 
     const data = encodeAbiParameters(
-      parseAbiParameters(TransactionAddedEventBuilder.NON_INDEXED_PARAMS),
+      // Only non-indexed parameters
+      this.item.inputs.filter((input) => {
+        return !('indexed' in input) || !input.indexed;
+      }),
       [args.to, args.value, args.data, args.operation],
     );
 
     const topics = encodeEventTopics({
-      abi,
+      abi: TRANSACTION_ADDED_ABI,
       eventName: 'TransactionAdded',
       args: {
+        // Only indexed params
         queueNonce: args.queueNonce,
         txHash: args.txHash,
       },
