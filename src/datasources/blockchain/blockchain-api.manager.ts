@@ -93,7 +93,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
       const cache = await this.cacheService.hGet(cacheDir);
 
       if (cache != null) {
-        return cache;
+        return JSON.parse(cache);
       }
 
       const { error, result } = await rpcClient.request({
@@ -110,11 +110,11 @@ export class BlockchainApiManager implements IBlockchainApiManager {
 
       await this.cacheService.hSet(
         cacheDir,
-        typeof result === 'string' ? result : JSON.stringify(result),
+        JSON.stringify(result),
         this.rpcExpirationTimeInSeconds,
       );
 
-      return result;
+      return JSON.parse(result);
     };
 
     return createPublicClient({

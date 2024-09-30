@@ -8,7 +8,7 @@ import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builde
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { faker } from '@faker-js/faker';
-import { toHex } from 'viem';
+import { hexToBigInt, hexToNumber, toHex } from 'viem';
 
 const configApiMock = jest.mocked({
   getChain: jest.fn(),
@@ -131,7 +131,7 @@ describe('BlockchainApiManager', () => {
         `${body.method}_undefined`,
       );
 
-      await client.getChainId();
+      await expect(client.getChainId()).resolves.toBe(hexToNumber(chainId));
 
       // Should be cached
       await client.getChainId();
@@ -147,7 +147,8 @@ describe('BlockchainApiManager', () => {
         signal: expect.any(AbortSignal),
       });
       expect(fakeCacheService.keyCount()).toBe(1);
-      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBe(chainId);
+      const cached = await fakeCacheService.hGet(cacheDir);
+      expect(JSON.parse(cached!)).toBe(chainId);
 
       fetchSpy.mockRestore();
     });
@@ -182,7 +183,10 @@ describe('BlockchainApiManager', () => {
         `${body.method}_${JSON.stringify(body.params)}`,
       );
 
-      await client.getBlock();
+      await expect(client.getBlock()).resolves.toStrictEqual(
+        // Object containing in order not to mock entire return type
+        expect.objectContaining(JSON.parse(blockByNumber)),
+      );
 
       // Should be cached
       await client.getBlock();
@@ -198,9 +202,8 @@ describe('BlockchainApiManager', () => {
         signal: expect.any(AbortSignal),
       });
       expect(fakeCacheService.keyCount()).toBe(1);
-      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBe(
-        blockByNumber,
-      );
+      const cached = await fakeCacheService.hGet(cacheDir);
+      expect(JSON.parse(cached!)).toBe(blockByNumber);
 
       fetchSpy.mockRestore();
     });
