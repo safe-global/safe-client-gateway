@@ -27,6 +27,7 @@ export const BeaconChainExplorerUriTemplateSchema = z
   .object({
     publicKey: z.string().nullish().default(null),
   })
+  // TODO: Remove after `beaconChainExplorerUriTemplate` field is deployed on Config Service
   .catch({
     publicKey: null,
   });
