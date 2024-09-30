@@ -84,8 +84,10 @@ export default (): ReturnType<typeof configuration> => ({
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
   },
+  typeorm: { autoLoadEntities: true, manualInitialization: true },
   db: {
     postgres: {
+      schema: process.env.POSTGRES_SCHEMA || 'main',
       host: process.env.POSTGRES_TEST_HOST || 'localhost',
       port: process.env.POSTGRES_TEST_PORT || '5433',
       database: process.env.POSTGRES_TEST_DB || 'test-db',

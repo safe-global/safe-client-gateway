@@ -25,7 +25,10 @@ type TestResult<BeforeType, AfterType> = {
  */
 @Injectable()
 export class PostgresDatabaseMigrator {
-  private static readonly MIGRATIONS_FOLDER = join(process.cwd(), 'migrations');
+  private static readonly MIGRATIONS_FOLDER = join(
+    process.cwd(),
+    'migrations/deprecated',
+  );
   private static readonly SQL_MIGRATION_FILE = 'index.sql';
   private static readonly JS_MIGRATION_FILE = 'index.js';
   private static readonly MIGRATIONS_TABLE = 'migrations';

@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import postgres from 'postgres';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { asError } from '@/logging/utils';
 
