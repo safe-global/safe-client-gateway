@@ -207,20 +207,21 @@ describe('TargetedMessagingDataSource tests', () => {
           getAddress(faker.finance.ethereumAddress()),
         ])
         .build();
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
       const targetedSafes = await target.createTargetedSafes(
         createTargetedSafesDto,
       );
 
       const result = await target.createSubmission({
         targetedSafe: targetedSafes[0],
-        signerAddress: getAddress(faker.finance.ethereumAddress()),
+        signerAddress,
       });
 
       expect(result).toStrictEqual({
         id: expect.any(Number),
         outreachId: outreach.id,
         targetedSafeId: targetedSafes[0].id,
-        signerAddress: expect.any(String),
+        signerAddress,
         completionDate: expect.any(Date),
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
