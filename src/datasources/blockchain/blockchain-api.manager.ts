@@ -114,7 +114,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
         this.rpcExpirationTimeInSeconds,
       );
 
-      return JSON.parse(result);
+      return result;
     };
 
     return createPublicClient({

@@ -1,4 +1,3 @@
-import { fakeJson } from '@/__tests__/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { BlockchainApiManager } from '@/datasources/blockchain/blockchain-api.manager';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -8,7 +7,7 @@ import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builde
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { faker } from '@faker-js/faker';
-import { hexToBigInt, hexToNumber, toHex } from 'viem';
+import { hexToNumber, toHex } from 'viem';
 
 const configApiMock = jest.mocked({
   getChain: jest.fn(),
@@ -157,7 +156,14 @@ describe('BlockchainApiManager', () => {
       const chain = chainBuilder().build();
       const client = target._createCachedRpcClient(chain);
       const fetchSpy = jest.spyOn(global, 'fetch');
-      const blockByNumber = fakeJson();
+      const blockByNumber = {
+        baseFeePerGas: null,
+        hash: null,
+        logsBloom: null,
+        nonce: null,
+        number: null,
+        totalDifficulty: null,
+      };
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       fetchSpy.mockImplementation((_: unknown) => {
         return Promise.resolve({
@@ -185,7 +191,7 @@ describe('BlockchainApiManager', () => {
 
       await expect(client.getBlock()).resolves.toStrictEqual(
         // Object containing in order not to mock entire return type
-        expect.objectContaining(JSON.parse(blockByNumber)),
+        expect.objectContaining(blockByNumber),
       );
 
       // Should be cached
@@ -203,7 +209,7 @@ describe('BlockchainApiManager', () => {
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
-      expect(JSON.parse(cached!)).toBe(blockByNumber);
+      expect(JSON.parse(cached!)).toStrictEqual(blockByNumber);
 
       fetchSpy.mockRestore();
     });
