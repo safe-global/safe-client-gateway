@@ -228,14 +228,10 @@ export class LimitAddressesMapper {
     chainId: string;
     address: `0x${string}`;
   }): boolean {
-    const multiSendCallOnlyDeployments = getMultiSendCallOnlyDeployments(args);
-    const isCallOnly = multiSendCallOnlyDeployments.includes(args.address);
-
-    if (isCallOnly) {
-      return true;
-    }
-
-    return getMultiSendDeployments(args).includes(args.address);
+    return (
+      getMultiSendCallOnlyDeployments(args).includes(args.address) ||
+      getMultiSendDeployments(args).includes(args.address)
+    );
   }
 
   private getSafeAddressFromMultiSend = (
