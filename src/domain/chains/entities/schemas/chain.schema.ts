@@ -23,6 +23,14 @@ export const BlockExplorerUriTemplateSchema = z.object({
   api: z.string(),
 });
 
+export const BeaconChainExplorerUriTemplateSchema = z
+  .object({
+    publicKey: z.string().nullish().default(null),
+  })
+  .catch({
+    publicKey: null,
+  });
+
 export const ThemeSchema = z.object({
   textColor: z.string(),
   backgroundColor: z.string(),
@@ -105,6 +113,7 @@ export const ChainSchema = z.object({
   safeAppsRpcUri: RpcUriSchema,
   publicRpcUri: RpcUriSchema,
   blockExplorerUriTemplate: BlockExplorerUriTemplateSchema,
+  beaconChainExplorerUriTemplate: BeaconChainExplorerUriTemplateSchema,
   contractAddresses: ContractAddressesSchema,
   nativeCurrency: NativeCurrencySchema,
   pricesProvider: PricesProviderSchema,
