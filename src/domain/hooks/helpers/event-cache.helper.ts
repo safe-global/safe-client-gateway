@@ -35,6 +35,7 @@ export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
   public isSupportedChainMemo: ((chainId: string) => Promise<boolean>) &
     MemoizedFunction;
   private unsupportedEventsLogTimer: NodeJS.Timeout | undefined;
+  private unsupportedChains: Array<string> = [];
 
   constructor(
     @Inject(IBalancesRepository)
@@ -153,6 +154,9 @@ export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
    * @param event {@link Event} object
    */
   public async onUnsupportedChainEvent(event: Event): Promise<void> {
+    if (!this.unsupportedChains.includes(event.chainId)) {
+      this.unsupportedChains.push(event.chainId);
+    }
     const cacheKey = CacheRouter.getUnsupportedChainEventCacheKey(
       event.chainId,
     );
@@ -489,27 +493,26 @@ export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
   ): Array<Promise<void>> {
     return [this.safeRepository.clearIsSafe(event)];
   }
+
   /**
    * Logs the number of unsupported chain events for each chain and clears the store.
    */
   private async _logUnsupportedEvents(): Promise<void> {
-    const chains = await this.chainsRepository.getChains();
     await Promise.all(
-      chains.results.map(async (chain) => {
-        const cacheKey = CacheRouter.getUnsupportedChainEventCacheKey(
-          chain.chainId,
-        );
+      this.unsupportedChains.map(async (chainId) => {
+        const cacheKey = CacheRouter.getUnsupportedChainEventCacheKey(chainId);
         const count = await this.cacheService.getCounter(cacheKey);
         if (count) {
           this.loggingService.warn({
             type: EventCacheHelper.UNSUPPORTED_CHAIN_EVENT,
-            chainId: chain.chainId,
+            chainId,
             count,
           });
           await this.cacheService.deleteByKey(cacheKey);
         }
       }),
     );
+    this.unsupportedChains = [];
   }
 
   private _logSafeTxEvent(
