@@ -25,7 +25,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { previewTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/preview-transaction.dto.builder';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { concat, encodeFunctionData, getAddress, parseAbi } from 'viem';
+import { concat, getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { Server } from 'net';
@@ -43,6 +43,15 @@ import { getNumberString } from '@/domain/common/utils/utils';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
+import {
+  batchWithdrawCLFeeEncoder,
+  depositEncoder,
+  requestValidatorsExitEncoder,
+} from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 
 describe('Preview transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -64,6 +73,8 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
         ...baseConfig.features,
         nativeStaking: true,
         nativeStakingDecoding: true,
+        swapsDecoding: true,
+        twapsDecoding: true,
       },
       swaps: {
         ...baseConfig.swaps,
@@ -456,6 +467,146 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
             `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
           ) {
             return Promise.resolve({ data: contractResponse, status: 200 });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url }) => {
+          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+            return Promise.resolve({
+              data: dataDecoded,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+          )
+          .send(previewTransactionDto)
+          .expect(200)
+          .expect({
+            txInfo: {
+              type: 'SwapOrder',
+              humanDescription: null,
+              richDecodedInfo: null,
+              uid: order.uid,
+              status: order.status,
+              kind: order.kind,
+              orderClass: order.class,
+              validUntil: order.validTo,
+              sellAmount: order.sellAmount.toString(),
+              buyAmount: order.buyAmount.toString(),
+              executedSellAmount: order.executedSellAmount.toString(),
+              executedBuyAmount: order.executedBuyAmount.toString(),
+              explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
+              executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
+              sellToken: {
+                address: sellToken.address,
+                decimals: sellToken.decimals,
+                logoUri: sellToken.logoUri,
+                name: sellToken.name,
+                symbol: sellToken.symbol,
+                trusted: sellToken.trusted,
+              },
+              buyToken: {
+                address: buyToken.address,
+                decimals: buyToken.decimals,
+                logoUri: buyToken.logoUri,
+                name: buyToken.name,
+                symbol: buyToken.symbol,
+                trusted: buyToken.trusted,
+              },
+              receiver: order.receiver,
+              owner: order.owner,
+              fullAppData: JSON.parse(order.fullAppData as string),
+            },
+            txData: {
+              hexData: previewTransactionDto.data,
+              dataDecoded,
+              to: {
+                value: previewTransactionDto.to,
+                name: contractResponse.displayName,
+                logoUri: contractResponse.logoUri,
+              },
+              value: previewTransactionDto.value,
+              operation: previewTransactionDto.operation,
+              trustedDelegateCallTarget: null,
+              addressInfoIndex: null,
+            },
+          });
+      });
+
+      it('should preview a batched transaction', async () => {
+        const chain = chainBuilder().with('chainId', swapsChainId).build();
+        const safe = safeBuilder().build();
+        const preSignatureEncoder = setPreSignatureEncoder();
+        const preSignature = preSignatureEncoder.build();
+        const order = orderBuilder()
+          .with('uid', preSignature.orderUid)
+          .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
+          .build();
+        const buyToken = tokenBuilder().with('address', order.buyToken).build();
+        const sellToken = tokenBuilder()
+          .with('address', order.sellToken)
+          .build();
+        const swapTransaction = {
+          operation: Operation.CALL,
+          data: preSignatureEncoder.encode(),
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: BigInt(0),
+        };
+        const multiSendTransaction = multiSendEncoder().with(
+          'transactions',
+          multiSendTransactionsEncoder([swapTransaction]),
+        );
+        const previewTransactionDto = previewTransactionDtoBuilder()
+          .with('data', multiSendTransaction.encode())
+          .with('operation', Operation.CALL)
+          .build();
+        const dataDecoded = dataDecodedBuilder().build();
+        const contractResponse = contractBuilder()
+          .with('address', previewTransactionDto.to)
+          .build();
+        const tokenResponse = tokenBuilder()
+          .with('address', swapTransaction.to)
+          .build();
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (url === `${swapsApiUrl}/api/v1/orders/${order.uid}`) {
+            return Promise.resolve({ data: order, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${order.buyToken}`
+          ) {
+            return Promise.resolve({ data: buyToken, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${order.sellToken}`
+          ) {
+            return Promise.resolve({ data: sellToken, status: 200 });
+          }
+          if (
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          ) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
+          ) {
+            return Promise.resolve({ data: contractResponse, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${swapTransaction.to}`
+          ) {
+            return Promise.resolve({ data: tokenResponse, status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -1034,6 +1185,143 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           });
       });
 
+      it('should preview a batched transaction', async () => {
+        const now = new Date();
+        jest.setSystemTime(now);
+
+        const chain = chainBuilder().with('chainId', swapsChainId).build();
+        const twapTransaction = {
+          operation: Operation.CALL,
+          data,
+          to: ComposableCowAddress,
+          value: BigInt(0),
+        } as const;
+        const multiSendTransaction = multiSendEncoder().with(
+          'transactions',
+          multiSendTransactionsEncoder([twapTransaction]),
+        );
+        const previewTransactionDto = previewTransactionDtoBuilder()
+          .with('data', multiSendTransaction.encode())
+          .with('operation', Operation.CALL)
+          .build();
+        const dataDecoded = dataDecodedBuilder().build();
+        const contract = contractBuilder()
+          .with('address', previewTransactionDto.to)
+          .build();
+        const tokenResponse = tokenBuilder()
+          .with('address', ComposableCowAddress)
+          .build();
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${buyToken.address}`
+          ) {
+            return Promise.resolve({ data: buyToken, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${sellToken.address}`
+          ) {
+            return Promise.resolve({ data: sellToken, status: 200 });
+          }
+          if (url === `${swapsApiUrl}/api/v1/app_data/${appDataHash}`) {
+            return Promise.resolve({ data: fullAppData, status: 200 });
+          }
+          if (
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          ) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/contracts/${contract.address}`
+          ) {
+            return Promise.resolve({ data: contract, status: 200 });
+          }
+          if (
+            url ===
+            `${chain.transactionService}/api/v1/tokens/${twapTransaction.to}`
+          ) {
+            return Promise.resolve({ data: tokenResponse, status: 200 });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url }) => {
+          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+            return Promise.resolve({
+              data: dataDecoded,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+          )
+          .send(previewTransactionDto)
+          .expect(200)
+          .expect({
+            txInfo: {
+              type: 'TwapOrder',
+              humanDescription: null,
+              richDecodedInfo: null,
+              status: 'presignaturePending',
+              kind: 'sell',
+              class: 'limit',
+              activeOrderUid: null,
+              validUntil: Math.ceil(now.getTime() / 1_000) + 3599,
+              sellAmount: '427173750967724283500',
+              buyAmount: '1222579021996502268',
+              executedSellAmount: '0',
+              executedBuyAmount: '0',
+              executedSurplusFee: '0',
+              sellToken: {
+                address: sellToken.address,
+                decimals: sellToken.decimals,
+                logoUri: sellToken.logoUri,
+                name: sellToken.name,
+                symbol: sellToken.symbol,
+                trusted: sellToken.trusted,
+              },
+              buyToken: {
+                address: buyToken.address,
+                decimals: buyToken.decimals,
+                logoUri: buyToken.logoUri,
+                name: buyToken.name,
+                symbol: buyToken.symbol,
+                trusted: buyToken.trusted,
+              },
+              receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
+              owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
+              fullAppData: appData,
+              numberOfParts: '2',
+              partSellAmount: '213586875483862141750',
+              minPartLimit: '611289510998251134',
+              timeBetweenParts: 1800,
+              durationOfPart: { durationType: 'AUTO' },
+              startTime: { startType: 'AT_MINING_TIME' },
+            },
+            txData: {
+              hexData: previewTransactionDto.data,
+              dataDecoded,
+              to: {
+                value: previewTransactionDto.to,
+                name: contract.displayName,
+                logoUri: contract.logoUri,
+              },
+              value: previewTransactionDto.value,
+              operation: previewTransactionDto.operation,
+              trustedDelegateCallTarget: null,
+              addressInfoIndex: null,
+            },
+          });
+      });
+
       it('should return a "standard" transaction preview if buy token is not available', async () => {
         const chain = chainBuilder().with('chainId', swapsChainId).build();
         const dataDecoded = dataDecodedBuilder().build();
@@ -1245,9 +1533,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           // Transaction being proposed (no stakes exists)
           const stakes: Array<Stake> = [];
           const safe = safeBuilder().build();
-          const data = encodeFunctionData({
-            abi: parseAbi(['function deposit() external payable']),
-          });
+          const data = depositEncoder().encode();
           const value = getNumberString(64 * 10 ** 18 + 1);
           const previewTransactionDto = previewTransactionDtoBuilder()
             .with('data', data)
@@ -1367,35 +1653,644 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
             });
         });
 
-        it.todo('should preview a transaction with local data decoding');
+        it('should preview a batched transaction', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const data = depositEncoder().encode();
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          const depositTransaction = {
+            operation: Operation.CALL,
+            data,
+            to: deployment.address,
+            value: BigInt(value),
+          };
+          const multiSendTransaction = multiSendEncoder().with(
+            'transactions',
+            multiSendTransactionsEncoder([depositTransaction]),
+          );
+          const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+          const networkStats = networkStatsBuilder().build();
+          // Transaction being proposed (no stakes exists)
+          const stakes: Array<Stake> = [];
+          const safe = safeBuilder().build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', multiSendTransaction.encode())
+            .with('operation', Operation.CALL)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const depositContractResponse = contractBuilder()
+            .with('address', depositTransaction.to)
+            .build();
+          const depositTokenResponse = tokenBuilder()
+            .with('address', depositTransaction.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/kiln-stats`:
+                return Promise.resolve({
+                  data: { data: dedicatedStakingStats },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/stakes`:
+                return Promise.resolve({
+                  data: { data: stakes },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${depositContractResponse.address}`:
+                return Promise.resolve({
+                  data: depositContractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${depositTokenResponse.address}`:
+                return Promise.resolve({
+                  data: depositTokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is unavailable',
-        );
+          const annualNrr =
+            dedicatedStakingStats.gross_apy.last_30d *
+            (1 - Number(deployment.product_fee));
+          const monthlyNrr = annualNrr / 12;
+          const expectedAnnualReward = (annualNrr / 100) * Number(value);
+          const expectedMonthlyReward = expectedAnnualReward / 12;
+          const expectedFiatAnnualReward =
+            (expectedAnnualReward * networkStats.eth_price_usd) /
+            Math.pow(10, chain.nativeCurrency.decimals);
+          const expectedFiatMonthlyReward = expectedFiatAnnualReward / 12;
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is not dedicated-specific',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect({
+              txInfo: {
+                type: 'NativeStakingDeposit',
+                humanDescription: null,
+                richDecodedInfo: null,
+                status: 'NOT_STAKED',
+                estimatedEntryTime:
+                  networkStats.estimated_entry_time_seconds * 1_000,
+                estimatedExitTime:
+                  networkStats.estimated_exit_time_seconds * 1_000,
+                estimatedWithdrawalTime:
+                  networkStats.estimated_withdrawal_time_seconds * 1_000,
+                fee: +deployment.product_fee!,
+                monthlyNrr,
+                annualNrr,
+                value,
+                numValidators: 2,
+                expectedAnnualReward: getNumberString(expectedAnnualReward),
+                expectedMonthlyReward: getNumberString(expectedMonthlyReward),
+                expectedFiatAnnualReward,
+                expectedFiatMonthlyReward,
+                tokenInfo: {
+                  address: NULL_ADDRESS,
+                  decimals: chain.nativeCurrency.decimals,
+                  logoUri: chain.nativeCurrency.logoUri,
+                  name: chain.nativeCurrency.name,
+                  symbol: chain.nativeCurrency.symbol,
+                  trusted: true,
+                },
+                validators: null,
+              },
+              txData: {
+                hexData: previewTransactionDto.data,
+                dataDecoded,
+                to: {
+                  value: contractResponse.address,
+                  name: contractResponse.displayName,
+                  logoUri: contractResponse.logoUri,
+                },
+                value: previewTransactionDto.value,
+                operation: previewTransactionDto.operation,
+                trustedDelegateCallTarget: null,
+                addressInfoIndex: null,
+              },
+            });
+        });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is on an unknown chain',
-        );
+        it('should return a "standard" transaction preview if the deployment is unavailable', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const safe = safeBuilder().build();
+          const data = depositEncoder().encode();
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('value', value)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.reject({
+                  status: 500,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if not transacting with a deployment address',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment has no product fee',
-        );
+        it('should return a "standard" transaction preview if the deployment is not dedicated-specific', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safe = safeBuilder().build();
+          const data = depositEncoder().encode();
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .with('value', value)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if the dedicated staking stats are not available',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
 
-        it.todo(
-          'should return a "standard" transaction preview if the network stats are not available',
-        );
+        it('should return a "standard" transaction preview if the deployment is on an unknown chain', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('chain', 'unknown')
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safe = safeBuilder().build();
+          const data = depositEncoder().encode();
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .with('value', value)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if not transacting with a deployment address', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safe = safeBuilder().build();
+          const data = depositEncoder().encode();
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('value', value)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if the deployment has no product fee', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', null)
+            .build();
+          const safe = safeBuilder().build();
+          const data = depositEncoder().encode();
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .with('value', value)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if the dedicated staking stats are not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const networkStats = networkStatsBuilder().build();
+          const safe = safeBuilder().build();
+          const data = depositEncoder().encode();
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .with('value', value)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/kiln-stats`:
+                return Promise.reject({
+                  status: 500,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if the network stats are not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+          const safe = safeBuilder().build();
+          const data = depositEncoder().encode();
+          const value = getNumberString(64 * 10 ** 18 + 1);
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .with('value', value)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/kiln-stats`:
+                return Promise.resolve({
+                  data: { data: dedicatedStakingStats },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.reject({
+                  status: 500,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
       });
 
       describe('requestValidatorsExit', () => {
@@ -1411,7 +2306,6 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           const validators = [
             faker.string.hexadecimal({
               length: KilnDecoder.KilnPublicKeyLength,
-              // Transaction Service returns _publicKeys lowercase
               casing: 'lower',
             }),
             faker.string.hexadecimal({
@@ -1419,23 +2313,10 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
               casing: 'lower',
             }),
           ] as Array<`0x${string}`>;
-          const validatorPublicKey = concat(validators);
-          const data = encodeFunctionData({
-            abi: parseAbi(['function requestValidatorsExit(bytes)']),
-            functionName: 'requestValidatorsExit',
-            args: [validatorPublicKey],
-          });
-          const dataDecoded = dataDecodedBuilder()
-            .with('method', 'requestValidatorsExit')
-            .with('parameters', [
-              {
-                name: '_publicKeys',
-                type: 'bytes',
-                value: validatorPublicKey,
-                valueDecoded: null,
-              },
-            ])
-            .build();
+          const data = requestValidatorsExitEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
           const stakes = [
             stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
             stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
@@ -1532,31 +2413,634 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
             });
         });
 
-        it.todo('should preview a transaction with local data decoding');
+        it('should preview a batched transaction', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safe = safeBuilder().build();
+          const networkStats = networkStatsBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = requestValidatorsExitEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const stakes = [
+            stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
+            stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
+          ];
+          const requestValidatorsExitTransaction = {
+            operation: Operation.CALL,
+            data,
+            to: deployment.address,
+            value: BigInt(0),
+          };
+          const multiSendTransaction = multiSendEncoder().with(
+            'transactions',
+            multiSendTransactionsEncoder([requestValidatorsExitTransaction]),
+          );
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', multiSendTransaction.encode())
+            .with('operation', Operation.CALL)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const requestValidatorsExiContractResponse = contractBuilder()
+            .with('address', deployment.address)
+            .build();
+          const requestValidatorsExitTokenResponse = tokenBuilder()
+            .with('address', deployment.address)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/stakes`:
+                return Promise.resolve({
+                  data: { data: stakes },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${requestValidatorsExiContractResponse.address}`:
+                return Promise.resolve({
+                  data: requestValidatorsExiContractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${requestValidatorsExitTokenResponse.address}`:
+                return Promise.resolve({
+                  data: requestValidatorsExitTokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is unavailable',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect({
+              txInfo: {
+                type: 'NativeStakingValidatorsExit',
+                humanDescription: null,
+                richDecodedInfo: null,
+                status: 'ACTIVE',
+                estimatedExitTime:
+                  networkStats.estimated_exit_time_seconds * 1_000,
+                estimatedWithdrawalTime:
+                  networkStats.estimated_withdrawal_time_seconds * 1_000,
+                value: '64000000000000000000', // 2 x 32 ETH,
+                numValidators: 2,
+                tokenInfo: {
+                  address: NULL_ADDRESS,
+                  decimals: chain.nativeCurrency.decimals,
+                  logoUri: chain.nativeCurrency.logoUri,
+                  name: chain.nativeCurrency.name,
+                  symbol: chain.nativeCurrency.symbol,
+                  trusted: true,
+                },
+                validators,
+              },
+              txData: {
+                hexData: previewTransactionDto.data,
+                dataDecoded,
+                to: {
+                  value: contractResponse.address,
+                  name: contractResponse.displayName,
+                  logoUri: contractResponse.logoUri,
+                },
+                value: previewTransactionDto.value,
+                operation: previewTransactionDto.operation,
+                trustedDelegateCallTarget: null,
+                addressInfoIndex: null,
+              },
+            });
+        });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is not dedicated-specific',
-        );
+        it('should return a "standard" transaction preview if the deployment is unavailable', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const safe = safeBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = requestValidatorsExitEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.reject({
+                  status: 500,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is on an unknown chain',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
 
-        it.todo(
-          'should return a "standard" transaction preview if not transacting with a deployment address',
-        );
+        it('should return a "standard" transaction preview if the deployment is not dedicated-specific', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const safe = safeBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = requestValidatorsExitEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if the network stats are not available',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
 
-        it.todo(
-          'should return a "standard" transaction preview if the stakes are not available',
-        );
+        it('should return a "standard" transaction preview if the deployment is on an unknown chain', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const safe = safeBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = requestValidatorsExitEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('chain', 'unknown')
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('to', deployment.address)
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if not transacting with a deployment address', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const safe = safeBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = requestValidatorsExitEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if the network stats are not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safe = safeBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = requestValidatorsExitEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const stakes = [
+            stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
+            stakeBuilder().with('state', StakeState.ActiveOngoing).build(),
+          ];
+          const contractResponse = contractBuilder()
+            .with('address', deployment.address)
+            .build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.reject({
+                  status: 500,
+                });
+              case `${stakingApiUrl}/v1/eth/stakes`:
+                return Promise.resolve({
+                  data: { data: stakes },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if the stakes are not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safe = safeBuilder().build();
+          const networkStats = networkStatsBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = requestValidatorsExitEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const contractResponse = contractBuilder()
+            .with('address', deployment.address)
+            .build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/network-stats`:
+                return Promise.resolve({
+                  data: { data: networkStats },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/stakes`:
+                return Promise.reject({
+                  status: 500,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
       });
 
       describe('batchWithdrawCLFee', () => {
@@ -1571,7 +3055,6 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           const validators = [
             faker.string.hexadecimal({
               length: KilnDecoder.KilnPublicKeyLength,
-              // Transaction Service returns _publicKeys lowercase
               casing: 'lower',
             }),
             faker.string.hexadecimal({
@@ -1583,23 +3066,10 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
               casing: 'lower',
             }),
           ] as Array<`0x${string}`>;
-          const validatorPublicKey = concat(validators);
-          const data = encodeFunctionData({
-            abi: parseAbi(['function batchWithdrawCLFee(bytes)']),
-            functionName: 'batchWithdrawCLFee',
-            args: [validatorPublicKey],
-          });
-          const dataDecoded = dataDecodedBuilder()
-            .with('method', 'batchWithdrawCLFee')
-            .with('parameters', [
-              {
-                name: '_publicKeys',
-                type: 'bytes',
-                value: validatorPublicKey,
-                valueDecoded: null,
-              },
-            ])
-            .build();
+          const data = batchWithdrawCLFeeEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
           const stakes = [
             stakeBuilder()
               .with('net_claimable_consensus_rewards', '1000000')
@@ -1692,27 +3162,550 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
             });
         });
 
-        it.todo('should preview a transaction with local data decoding');
+        it('should preview a batched transaction', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safe = safeBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = batchWithdrawCLFeeEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const batchWithdrawCLFeeTransaction = {
+            operation: Operation.CALL,
+            data,
+            to: deployment.address,
+            value: BigInt(0),
+          };
+          const multiSendTransaction = multiSendEncoder().with(
+            'transactions',
+            multiSendTransactionsEncoder([batchWithdrawCLFeeTransaction]),
+          );
+          const stakes = [
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '1000000')
+              .build(),
+            stakeBuilder()
+              .with('net_claimable_consensus_rewards', '2000000')
+              .build(),
+          ];
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', multiSendTransaction.encode())
+            .with('operation', Operation.CALL)
+            .build();
+          const dataDecoded = dataDecodedBuilder().build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const batchWithdrawCLFeeContractResponse = contractBuilder()
+            .with('address', batchWithdrawCLFeeTransaction.to)
+            .build();
+          const batchWithdrawCLFeeTokenResponse = tokenBuilder()
+            .with('address', batchWithdrawCLFeeTransaction.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/stakes`:
+                return Promise.resolve({
+                  data: { data: stakes },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${batchWithdrawCLFeeContractResponse.address}`:
+                return Promise.resolve({
+                  data: batchWithdrawCLFeeContractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${batchWithdrawCLFeeTokenResponse.address}`:
+                return Promise.resolve({
+                  data: batchWithdrawCLFeeTokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is unavailable',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect({
+              txInfo: {
+                type: 'NativeStakingWithdraw',
+                humanDescription: null,
+                richDecodedInfo: null,
+                value: (
+                  +stakes[0].net_claimable_consensus_rewards! +
+                  +stakes[1].net_claimable_consensus_rewards!
+                ).toString(),
+                tokenInfo: {
+                  address: NULL_ADDRESS,
+                  decimals: chain.nativeCurrency.decimals,
+                  logoUri: chain.nativeCurrency.logoUri,
+                  name: chain.nativeCurrency.name,
+                  symbol: chain.nativeCurrency.symbol,
+                  trusted: true,
+                },
+                validators,
+              },
+              txData: {
+                hexData: previewTransactionDto.data,
+                dataDecoded,
+                to: {
+                  value: contractResponse.address,
+                  name: contractResponse.displayName,
+                  logoUri: contractResponse.logoUri,
+                },
+                value: previewTransactionDto.value,
+                operation: previewTransactionDto.operation,
+                trustedDelegateCallTarget: null,
+                addressInfoIndex: null,
+              },
+            });
+        });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is not dedicated-specific',
-        );
+        it('should return a "standard" transaction preview if the deployment is unavailable', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const safe = safeBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = batchWithdrawCLFeeEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.reject({
+                  status: 500,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if the deployment is on an unknown chain',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
 
-        it.todo(
-          'should return a "standard" transaction preview if not transacting with a deployment address',
-        );
+        it('should return a "standard" transaction preview if the deployment is not dedicated-specific', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const safe = safeBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'defi')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = batchWithdrawCLFeeEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
 
-        it.todo(
-          'should return a "standard" transaction preview if the stakes are not available',
-        );
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if the deployment is on an unknown chain', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const safe = safeBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('chain', 'unknown')
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = batchWithdrawCLFeeEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if not transacting with a deployment address', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const safe = safeBuilder().build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = batchWithdrawCLFeeEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .build();
+          const contractResponse = contractBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          const tokenResponse = tokenBuilder()
+            .with('address', previewTransactionDto.to)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
+                return Promise.resolve({
+                  data: tokenResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
+
+        it('should return a "standard" transaction preview if the stakes are not available', async () => {
+          const chain = chainBuilder().with('isTestnet', false).build();
+          const deployment = deploymentBuilder()
+            .with('chain_id', +chain.chainId)
+            .with('product_type', 'dedicated')
+            .with('product_fee', faker.number.float().toString())
+            .build();
+          const safe = safeBuilder().build();
+          const validators = [
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+            faker.string.hexadecimal({
+              length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
+            }),
+          ] as Array<`0x${string}`>;
+          const data = batchWithdrawCLFeeEncoder()
+            .with('_publicKeys', concat(validators))
+            .encode();
+          const dataDecoded = dataDecodedBuilder().build();
+          const contractResponse = contractBuilder()
+            .with('address', deployment.address)
+            .build();
+          const previewTransactionDto = previewTransactionDtoBuilder()
+            .with('data', data)
+            .with('operation', Operation.CALL)
+            .with('to', deployment.address)
+            .build();
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: chain, status: 200 });
+              case `${stakingApiUrl}/v1/deployments`:
+                return Promise.resolve({
+                  data: { data: [deployment] },
+                  status: 200,
+                });
+              case `${stakingApiUrl}/v1/eth/stakes`:
+                return Promise.reject({
+                  status: 500,
+                });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: safe,
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+                return Promise.resolve({
+                  data: contractResponse,
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+          networkService.post.mockImplementation(({ url }) => {
+            if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+              return Promise.resolve({ data: dataDecoded, status: 200 });
+            }
+            return Promise.reject(new Error(`Could not match ${url}`));
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+            )
+            .send(previewTransactionDto)
+            .expect(200)
+            .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
+        });
       });
     });
   });

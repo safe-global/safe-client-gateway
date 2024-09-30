@@ -1359,7 +1359,6 @@ describe('TransactionsViewController tests', () => {
           const validators = [
             faker.string.hexadecimal({
               length: KilnDecoder.KilnPublicKeyLength,
-              // Transaction Service returns _publicKeys lowercase
               casing: 'lower',
             }),
             faker.string.hexadecimal({
@@ -1473,6 +1472,7 @@ describe('TransactionsViewController tests', () => {
           const validatorPublicKey = faker.string
             .hexadecimal({
               length: KilnDecoder.KilnPublicKeyLength,
+              casing: 'lower',
             })
             .toLowerCase();
           const data = encodeFunctionData({
@@ -1854,7 +1854,6 @@ describe('TransactionsViewController tests', () => {
           const validators = [
             faker.string.hexadecimal({
               length: KilnDecoder.KilnPublicKeyLength,
-              // Transaction Service returns _publicKeys lowercase
               casing: 'lower',
             }),
             faker.string.hexadecimal({
@@ -1946,7 +1945,6 @@ describe('TransactionsViewController tests', () => {
           const validators = [
             faker.string.hexadecimal({
               length: KilnDecoder.KilnPublicKeyLength,
-              // Transaction Service returns _publicKeys lowercase
               casing: 'lower',
             }),
             faker.string.hexadecimal({
@@ -2042,7 +2040,6 @@ describe('TransactionsViewController tests', () => {
           const validators = [
             faker.string.hexadecimal({
               length: KilnDecoder.KilnPublicKeyLength,
-              // Transaction Service returns _publicKeys lowercase
               casing: 'lower',
             }),
             faker.string.hexadecimal({
@@ -2342,7 +2339,6 @@ describe('TransactionsViewController tests', () => {
           const validators = [
             faker.string.hexadecimal({
               length: KilnDecoder.KilnPublicKeyLength,
-              // Transaction Service returns _publicKeys lowercase
               casing: 'lower',
             }),
             faker.string.hexadecimal({

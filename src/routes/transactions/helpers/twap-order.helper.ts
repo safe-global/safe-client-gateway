@@ -49,13 +49,21 @@ export class TwapOrderHelper {
     data: `0x${string}`;
   }): `0x${string}` | null {
     return (
-      this.transactionFinder.findTransaction(({ to, data }) => {
-        return (
-          !!to &&
-          isAddressEqual(to, TwapOrderHelper.ComposableCowAddress) &&
-          this.composableCowDecoder.helpers.isCreateWithContext(data)
-        );
-      }, args)?.data ?? null
+      this.transactionFinder.findTransaction(
+        ({ to, data }) => {
+          return (
+            !!to &&
+            isAddressEqual(to, TwapOrderHelper.ComposableCowAddress) &&
+            this.composableCowDecoder.helpers.isCreateWithContext(data)
+          );
+        },
+        {
+          to: args.to,
+          data: args.data,
+          // Placeholder as we are only interested in the data
+          value: '0',
+        },
+      )?.data ?? null
     );
   }
 
