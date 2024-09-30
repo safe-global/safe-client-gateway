@@ -72,8 +72,9 @@ export class TransactionsViewController {
     NativeStakingWithdrawConfirmationView,
   )
   @ApiOperation({
-    summary: 'Confirm Transaction View',
-    description: 'This endpoint is experimental and may change.',
+    description:
+      'Deprecated in favour of /v1/chains/:chainId/transactions/:safeAddress/preview.',
+    deprecated: true,
   })
   @Post('chains/:chainId/safes/:safeAddress/views/transaction-confirmation')
   async getTransactionConfirmationView(
