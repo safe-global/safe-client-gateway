@@ -30,6 +30,18 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-floating-promises': 'warn',
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@safe-global/safe-deployments',
+              message:
+                'Please import from @/domain/common/utils/deployments instead.',
+            },
+          ],
+        },
+      ],
       // TODO: Address these rules: (added to update to ESLint 9)
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
