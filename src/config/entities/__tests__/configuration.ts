@@ -84,7 +84,6 @@ export default (): ReturnType<typeof configuration> => ({
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
   },
-  typeorm: { autoLoadEntities: true, manualInitialization: true },
   db: {
     migrator: {
       numberOfRetries: 5,

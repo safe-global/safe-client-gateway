@@ -54,6 +54,7 @@ import { TargetedMessagingModule } from '@/routes/targeted-messaging/targeted-me
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { postgresConfig } from '@/config/entities/postgres.config';
+import { PostgresDatabaseModule } from '@/datasources/db/v2/postgres-database.module';
 
 @Module({})
 export class AppModule implements NestModule {
