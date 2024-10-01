@@ -13,6 +13,7 @@ import {
 } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { StakingRepository } from '@/domain/staking/staking.repository';
+import { ILoggingService } from '@/logging/logging.interface';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';
@@ -23,13 +24,17 @@ const mockStakingRepository = jest.mocked({
   getDeployment: jest.fn(),
 } as jest.MockedObjectDeep<StakingRepository>);
 
+const mockLoggingService = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+
 describe('KilnNativeStakingHelper', () => {
   let target: KilnNativeStakingHelper;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const multiSendDecoder = new MultiSendDecoder();
+    const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
     const transactionFinder = new TransactionFinder(multiSendDecoder);
     target = new KilnNativeStakingHelper(
       transactionFinder,
