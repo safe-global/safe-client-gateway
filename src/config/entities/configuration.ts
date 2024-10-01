@@ -44,8 +44,8 @@ export default () => ({
   application: {
     isProduction: process.env.CGW_ENV === 'production',
     // Enables/disables the execution of migrations on startup.
-    // Defaults to true.
-    runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() !== 'false',
+    // Defaults to false.
+    runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() === 'true',
     port: process.env.APPLICATION_PORT || '3000',
   },
   auth: {
@@ -131,26 +131,36 @@ export default () => ({
       apiKey: process.env.INFURA_API_KEY,
     },
   },
-  typeorm: { autoLoadEntities: true, manualInitialization: true },
   db: {
-    postgres: {
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: process.env.POSTGRES_PORT || '5432',
-      database: process.env.POSTGRES_DB || 'safe-client-gateway',
-      schema: process.env.POSTGRES_SCHEMA || 'main', //@TODO: use this schema
-      username: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
-      ssl: {
-        enabled: process.env.POSTGRES_SSL_ENABLED?.toLowerCase() === 'true',
-        requestCert:
-          process.env.POSTGRES_SSL_REQUEST_CERT?.toLowerCase() !== 'false',
-        // If the value is not explicitly set to false, default should be true
-        // If not false the server will reject any connection which is not authorized with the list of supplied CAs
-        // https://nodejs.org/docs/latest-v20.x/api/tls.html#tlscreateserveroptions-secureconnectionlistener
-        rejectUnauthorized:
-          process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
-          'false',
-        caPath: process.env.POSTGRES_SSL_CA_PATH,
+    migrator: {
+      numberOfRetries: 5,
+      retryAfter: 1 * 1000, // Milliseconds
+    },
+    orm: {
+      migrationsRun: false,
+      autoLoadEntities: true,
+      manualInitialization: true,
+    },
+    connection: {
+      postgres: {
+        host: process.env.POSTGRES_HOST || 'localhost',
+        port: process.env.POSTGRES_PORT || '5432',
+        database: process.env.POSTGRES_DB || 'safe-client-gateway',
+        schema: process.env.POSTGRES_SCHEMA || 'main', //@TODO: use this schema
+        username: process.env.POSTGRES_USER || 'postgres',
+        password: process.env.POSTGRES_PASSWORD || 'postgres',
+        ssl: {
+          enabled: process.env.POSTGRES_SSL_ENABLED?.toLowerCase() === 'true',
+          requestCert:
+            process.env.POSTGRES_SSL_REQUEST_CERT?.toLowerCase() !== 'false',
+          // If the value is not explicitly set to false, default should be true
+          // If not false the server will reject any connection which is not authorized with the list of supplied CAs
+          // https://nodejs.org/docs/latest-v20.x/api/tls.html#tlscreateserveroptions-secureconnectionlistener
+          rejectUnauthorized:
+            process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
+            'false',
+          caPath: process.env.POSTGRES_SSL_CA_PATH,
+        },
       },
     },
   },
