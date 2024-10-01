@@ -52,6 +52,7 @@ import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.m
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { postgresConfig } from '@/config/entities/postgres.config';
+import { PostgresDatabaseModule } from '@/datasources/db/v2/postgres-database.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -117,6 +118,7 @@ export class AppModule implements NestModule {
         ConfigurationModule.register(configFactory),
         NetworkModule,
         RequestScopedLoggingModule,
+        PostgresDatabaseModule,
         ServeStaticModule.forRoot({
           rootPath: join(__dirname, '..', 'assets'),
           // Excludes the paths under '/' (base url) from being served as static content
@@ -127,9 +129,9 @@ export class AppModule implements NestModule {
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
           useFactory: async (configService: ConfigService) => {
-            const typeormConfig = await configService.getOrThrow('typeorm');
+            const typeormConfig = await configService.getOrThrow('db.orm');
             const postgresConfigObject = postgresConfig(
-              await configService.getOrThrow('db.postgres'),
+              await configService.getOrThrow('db.connection.postgres'),
             );
 
             return {
