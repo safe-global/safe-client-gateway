@@ -1,4 +1,4 @@
-import type { IBuilder} from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { faker } from '@faker-js/faker';

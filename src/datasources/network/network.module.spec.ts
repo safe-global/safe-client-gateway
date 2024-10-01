@@ -5,11 +5,8 @@ import { ClsModule } from 'nestjs-cls';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
-import type {
-  FetchClient} from '@/datasources/network/network.module';
-import {
-  NetworkModule,
-} from '@/datasources/network/network.module';
+import type { FetchClient } from '@/datasources/network/network.module';
+import { NetworkModule } from '@/datasources/network/network.module';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import {

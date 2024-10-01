@@ -1,4 +1,4 @@
-import type { IBuilder} from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { CounterfactualSafe } from '@/domain/accounts/counterfactual-safes/entities/counterfactual-safe.entity';
 import { faker } from '@faker-js/faker';

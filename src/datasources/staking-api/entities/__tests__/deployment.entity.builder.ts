@@ -1,7 +1,6 @@
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type {
-  Deployment} from '@/datasources/staking-api/entities/deployment.entity';
+import type { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
 import {
   DeploymentChains,
   DeploymentProductTypes,

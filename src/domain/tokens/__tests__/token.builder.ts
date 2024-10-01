@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { Token} from '@/domain/tokens/entities/token.entity';
+import type { Token } from '@/domain/tokens/entities/token.entity';
 import { TokenType } from '@/domain/tokens/entities/token.entity';
 import { getAddress } from 'viem';
 

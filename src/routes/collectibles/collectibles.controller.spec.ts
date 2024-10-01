@@ -15,11 +15,8 @@ import {
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { collectibleBuilder } from '@/domain/collectibles/entities/__tests__/collectible.builder';
 import type { Collectible } from '@/domain/collectibles/entities/collectible.entity';

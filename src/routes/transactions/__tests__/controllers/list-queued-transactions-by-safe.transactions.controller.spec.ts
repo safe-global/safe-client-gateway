@@ -20,11 +20,8 @@ import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { getAddress } from 'viem';
 import type { Server } from 'net';

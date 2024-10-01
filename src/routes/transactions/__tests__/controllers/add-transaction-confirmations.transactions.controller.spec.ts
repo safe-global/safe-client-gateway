@@ -22,11 +22,8 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { addConfirmationDtoBuilder } from '@/routes/transactions/__tests__/entities/add-confirmation.dto.builder';
 import { getAddress } from 'viem';
 import type { Server } from 'net';

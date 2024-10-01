@@ -18,7 +18,7 @@ import {
   alertTransactionBuilder,
 } from '@/routes/alerts/entities/__tests__/alerts.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { Alert} from '@/routes/alerts/entities/alert.dto.entity';
+import type { Alert } from '@/routes/alerts/entities/alert.dto.entity';
 import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';

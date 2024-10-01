@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Hex} from 'viem';
+import type { Hex } from 'viem';
 import { encodeFunctionData, parseAbi } from 'viem';
 import { _generateHelpers } from '@/domain/contracts/decoders/abi-decoder.helper';
 

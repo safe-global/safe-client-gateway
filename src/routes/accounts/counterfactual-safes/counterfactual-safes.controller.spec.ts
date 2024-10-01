@@ -34,7 +34,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { CounterfactualSafesController } from '@/routes/accounts/counterfactual-safes/counterfactual-safes.controller';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import type { INestApplication} from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { NotFoundException } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';

@@ -4,10 +4,9 @@ import type {
   RichAddressFragment,
   RichTokenValueFragment,
   RichTextFragment,
-  RichDecodedInfoFragment} from '@/routes/transactions/entities/human-description.entity';
-import {
-  RichFragmentType,
+  RichDecodedInfoFragment,
 } from '@/routes/transactions/entities/human-description.entity';
+import { RichFragmentType } from '@/routes/transactions/entities/human-description.entity';
 import { faker } from '@faker-js/faker';
 
 function richTokenValueFragmentBuilder(): IBuilder<RichTokenValueFragment> {

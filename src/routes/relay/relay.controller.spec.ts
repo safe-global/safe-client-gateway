@@ -11,11 +11,8 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import type { INestApplication } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';

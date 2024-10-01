@@ -9,11 +9,8 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';

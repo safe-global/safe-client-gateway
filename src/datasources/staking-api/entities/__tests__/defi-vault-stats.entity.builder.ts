@@ -1,7 +1,6 @@
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type {
-  DefiVaultStats} from '@/datasources/staking-api/entities/defi-vault-stats.entity';
+import type { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import {
   DefiVaultStatsChains,
   DefiVaultStatsProtocols,

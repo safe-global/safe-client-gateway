@@ -1,5 +1,4 @@
-import type {
-  Order} from '@/domain/swaps/entities/order.entity';
+import type { Order } from '@/domain/swaps/entities/order.entity';
 import {
   BuyTokenBalance,
   OrderClass,

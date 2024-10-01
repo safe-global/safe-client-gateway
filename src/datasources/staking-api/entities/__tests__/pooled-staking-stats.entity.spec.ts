@@ -1,9 +1,6 @@
 import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/pooled-staking-stats.entity.builder';
-import type {
-  PooledStakingStats} from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
-import {
-  PooledStakingStatsSchema,
-} from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
+import type { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
+import { PooledStakingStatsSchema } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

@@ -1,10 +1,9 @@
 import { decodeFunctionData, isHex, parseAbi } from 'viem';
 import type {
   HumanDescriptionFragment,
-  TextFragment} from '@/domain/human-description/entities/human-description.entity';
-import {
-  ValueType,
+  TextFragment,
 } from '@/domain/human-description/entities/human-description.entity';
+import { ValueType } from '@/domain/human-description/entities/human-description.entity';
 
 type SafeRegExpExecArray = RegExpExecArray & {
   groups: NonNullable<RegExpExecArray['groups']>;

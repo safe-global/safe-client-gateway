@@ -4,7 +4,8 @@ import type {
   ContractFunctionName,
   DecodeEventLogParameters,
   DecodeFunctionDataParameters,
-  Hex} from 'viem';
+  Hex,
+} from 'viem';
 import {
   decodeEventLog as _decodeEventLog,
   decodeFunctionData as _decodeFunctionData,

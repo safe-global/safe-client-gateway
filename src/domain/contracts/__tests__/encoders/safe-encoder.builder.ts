@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import type { Hex} from 'viem';
+import type { Hex } from 'viem';
 import { encodeFunctionData, getAddress, pad } from 'viem';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import type { Safe } from '@/domain/safe/entities/safe.entity';

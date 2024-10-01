@@ -16,11 +16,8 @@ import {
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
@@ -35,8 +32,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/upsert-subscriptions.dto.entity.builder';
 import type { Chain } from '@/routes/chains/entities/chain.entity';
 import { faker } from '@faker-js/faker';
-import type {
-  INestApplication} from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import {
   NotFoundException,
   UnprocessableEntityException,

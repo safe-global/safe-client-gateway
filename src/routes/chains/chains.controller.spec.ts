@@ -12,11 +12,8 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.builder';
 import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -28,7 +25,7 @@ import type { Page } from '@/domain/entities/page.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import type { GetBlockReturnType} from 'viem';
+import type { GetBlockReturnType } from 'viem';
 import { getAddress, HttpRequestError } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';

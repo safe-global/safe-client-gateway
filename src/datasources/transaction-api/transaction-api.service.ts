@@ -23,11 +23,8 @@ import type { ModuleTransaction } from '@/domain/safe/entities/module-transactio
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { SafeList } from '@/domain/safe/entities/safe-list.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
-import type {
-  Transaction} from '@/domain/safe/entities/transaction.entity';
-import {
-  isMultisigTransaction
-} from '@/domain/safe/entities/transaction.entity';
+import type { Transaction } from '@/domain/safe/entities/transaction.entity';
+import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
 import type { Transfer } from '@/domain/safe/entities/transfer.entity';
 import type { Token } from '@/domain/tokens/entities/token.entity';
 import type { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';

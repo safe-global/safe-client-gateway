@@ -4,8 +4,7 @@ import type { IEncoder } from '@/__tests__/encoder-builder';
 import { fakeJson } from '@/__tests__/faker';
 import { ComposableCowAbi } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { faker } from '@faker-js/faker';
-import type {
-  Hex} from 'viem';
+import type { Hex } from 'viem';
 import {
   encodeAbiParameters,
   encodeFunctionData,

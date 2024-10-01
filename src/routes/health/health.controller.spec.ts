@@ -15,11 +15,8 @@ import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.
 import request from 'supertest';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import type {
-  IQueueReadiness} from '@/domain/interfaces/queue-readiness.interface';
-import {
-  QueueReadiness,
-} from '@/domain/interfaces/queue-readiness.interface';
+import type { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
+import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import type { Server } from 'net';
 
 describe('Health Controller tests', () => {

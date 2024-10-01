@@ -25,11 +25,8 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenType } from '@/domain/tokens/entities/token.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';

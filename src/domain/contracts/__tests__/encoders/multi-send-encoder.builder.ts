@@ -1,7 +1,6 @@
 import type { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
-import type {
-  Hex} from 'viem';
+import type { Hex } from 'viem';
 import {
   concat,
   encodeFunctionData,

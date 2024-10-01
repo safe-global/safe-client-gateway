@@ -31,8 +31,7 @@ import { AccountsController } from '@/routes/accounts/accounts.controller';
 import type { Account } from '@/routes/accounts/entities/account.entity';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import type {
-  INestApplication} from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import {
   ConflictException,
   NotFoundException,

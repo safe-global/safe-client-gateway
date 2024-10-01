@@ -31,11 +31,8 @@ import { TestPushNotificationsApiModule } from '@/datasources/push-notifications
 import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
 import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

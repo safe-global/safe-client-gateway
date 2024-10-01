@@ -8,12 +8,11 @@ import type {
 import type {
   LockEventItemSchema,
   UnlockEventItemSchema,
-  WithdrawEventItemSchema} from '@/domain/community/entities/schemas/locking-event.schema';
-import {
-  LockingEventType
+  WithdrawEventItemSchema,
 } from '@/domain/community/entities/schemas/locking-event.schema';
+import { LockingEventType } from '@/domain/community/entities/schemas/locking-event.schema';
 import { faker } from '@faker-js/faker';
-import type { Hex} from 'viem';
+import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { z } from 'zod';
 

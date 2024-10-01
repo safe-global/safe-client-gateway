@@ -2,7 +2,7 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { GelatoApi } from '@/datasources/relay-api/gelato-api.service';
 import { faker } from '@faker-js/faker';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { Hex} from 'viem';
+import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';

@@ -4,10 +4,9 @@ import { Builder } from '@/__tests__/builder';
 import type {
   AlertLog,
   AlertTransaction,
-  Alert} from '@/routes/alerts/entities/alert.dto.entity';
-import {
-  EventType,
+  Alert,
 } from '@/routes/alerts/entities/alert.dto.entity';
+import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
 import { getAddress } from 'viem';
 
 export function alertLogBuilder(): IBuilder<AlertLog> {
