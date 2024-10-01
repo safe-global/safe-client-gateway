@@ -5,7 +5,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { faker } from '@faker-js/faker';
 import { hexToNumber, toHex } from 'viem';
 

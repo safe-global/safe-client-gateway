@@ -1,6 +1,6 @@
-import { Operation } from '@/domain/safe/entities/operation.entity';
-import { ProposeTransactionDtoSchema } from '@/routes/transactions/entities/schemas/propose-transaction.dto.schema';
-import { z } from 'zod';
+import type { Operation } from '@/domain/safe/entities/operation.entity';
+import type { ProposeTransactionDtoSchema } from '@/routes/transactions/entities/schemas/propose-transaction.dto.schema';
+import type { z } from 'zod';
 
 export class ProposeTransactionDto
   implements z.infer<typeof ProposeTransactionDtoSchema>

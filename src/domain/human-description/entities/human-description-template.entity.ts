@@ -1,7 +1,8 @@
 import { decodeFunctionData, isHex, parseAbi } from 'viem';
-import {
+import type {
   HumanDescriptionFragment,
-  TextFragment,
+  TextFragment} from '@/domain/human-description/entities/human-description.entity';
+import {
   ValueType,
 } from '@/domain/human-description/entities/human-description.entity';
 

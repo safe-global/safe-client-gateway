@@ -1,6 +1,7 @@
-import { INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -14,8 +15,9 @@ import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import type {
+  INetworkService} from '@/datasources/network/network.service.interface';
 import {
-  INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { faker } from '@faker-js/faker';
@@ -30,7 +32,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 describe('Safes Controller Overview (Unit)', () => {
   let app: INestApplication<Server>;

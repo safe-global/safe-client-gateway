@@ -1,5 +1,5 @@
-import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import type { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 
 export const NetworkService = Symbol('INetworkService');
 

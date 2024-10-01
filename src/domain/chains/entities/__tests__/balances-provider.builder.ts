@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { BalancesProvider } from '@/domain/chains/entities/balances-provider.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { BalancesProvider } from '@/domain/chains/entities/balances-provider.entity';
 import { faker } from '@faker-js/faker';
 
 export function balancesProviderBuilder(): IBuilder<BalancesProvider> {

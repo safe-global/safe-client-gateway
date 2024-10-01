@@ -1,7 +1,9 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type {
+  SafeAppAccessControl} from '@/domain/safe-apps/entities/safe-app-access-control.entity';
 import {
-  SafeAppAccessControl,
   SafeAppAccessControlPolicies,
 } from '@/domain/safe-apps/entities/safe-app-access-control.entity';
 

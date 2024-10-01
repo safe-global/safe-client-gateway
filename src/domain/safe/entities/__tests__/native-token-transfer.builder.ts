@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { NativeTokenTransfer } from '@/domain/safe/entities/transfer.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { NativeTokenTransfer } from '@/domain/safe/entities/transfer.entity';
 import { getAddress } from 'viem';
 
 export function nativeTokenTransferBuilder(): IBuilder<NativeTokenTransfer> {

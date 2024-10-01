@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
@@ -8,8 +9,9 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import type {
+  INetworkService} from '@/datasources/network/network.service.interface';
 import {
-  INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -21,10 +23,10 @@ import {
   toJson as multisigTransactionToJson,
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 describe('Safes Controller Nonces (Unit)', () => {
   let app: INestApplication<Server>;

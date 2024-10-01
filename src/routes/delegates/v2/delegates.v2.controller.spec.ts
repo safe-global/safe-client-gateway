@@ -7,8 +7,9 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
+import type {
+  INetworkService} from '@/datasources/network/network.service.interface';
 import {
-  INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
@@ -21,10 +22,11 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { createDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateV2DtoBuilder } from '@/routes/delegates/v2/entities/__tests__/delete-delegate.v2.dto.builder';
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { omit } from 'lodash';
-import { Server } from 'net';
+import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
 

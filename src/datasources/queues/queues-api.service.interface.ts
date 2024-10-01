@@ -1,4 +1,4 @@
-import { ConsumeMessage } from 'amqplib';
+import type { ConsumeMessage } from 'amqplib';
 
 export const IQueuesApiService = Symbol('IQueuesApiService');
 

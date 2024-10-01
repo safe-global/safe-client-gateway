@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Singleton } from '@/domain/chains/entities/singleton.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { getAddress } from 'viem';
 
 export function singletonBuilder(): IBuilder<Singleton> {

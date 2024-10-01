@@ -1,5 +1,5 @@
-import { TokenSchema } from '@/domain/tokens/entities/schemas/token.schema';
-import { z } from 'zod';
+import type { TokenSchema } from '@/domain/tokens/entities/schemas/token.schema';
+import type { z } from 'zod';
 
 export enum TokenType {
   Erc721 = 'ERC721',

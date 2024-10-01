@@ -8,7 +8,7 @@ import { nativeCurrencyBuilder } from '@/domain/chains/entities/__tests__/native
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
 import { themeBuilder } from '@/domain/chains/entities/__tests__/theme.builder';
-import { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Chain } from '@/domain/chains/entities/chain.entity';
 import {
   ChainSchema,
   BalancesProviderSchema,

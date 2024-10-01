@@ -6,8 +6,9 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import type {
+  INetworkService} from '@/datasources/network/network.service.interface';
 import {
-  INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
@@ -16,8 +17,9 @@ import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
+import type {
+  Stake} from '@/datasources/staking-api/entities/stake.entity';
 import {
-  Stake,
   StakeState,
 } from '@/datasources/staking-api/entities/stake.entity';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -36,13 +38,15 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { faker } from '@faker-js/faker';
+import type {
+  INestApplication} from '@nestjs/common';
 import {
-  INestApplication,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Server } from 'net';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import type { Server } from 'net';
 import request from 'supertest';
 import { concat, encodeFunctionData, getAddress, parseAbi } from 'viem';
 

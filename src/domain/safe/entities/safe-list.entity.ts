@@ -1,4 +1,4 @@
-import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
-import { z } from 'zod';
+import type { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
+import type { z } from 'zod';
 
 export type SafeList = z.infer<typeof SafeListSchema>;

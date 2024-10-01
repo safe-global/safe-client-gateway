@@ -1,13 +1,13 @@
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import type { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { transactionDataDtoBuilder } from '@/routes/data-decode/entities/__tests__/transaction-data.dto.builder';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 describe('Data decode e2e tests', () => {
   let app: INestApplication<Server>;

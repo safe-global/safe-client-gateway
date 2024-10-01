@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { CreateOutreachDto } from '@/domain/targeted-messaging/entities/create-outreach.dto.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { CreateOutreachDto } from '@/domain/targeted-messaging/entities/create-outreach.dto.entity';
 import { faker } from '@faker-js/faker/.';
 
 export function createOutreachDtoBuilder(): IBuilder<CreateOutreachDto> {

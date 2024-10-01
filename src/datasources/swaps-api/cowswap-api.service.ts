@@ -1,8 +1,8 @@
-import { INetworkService } from '@/datasources/network/network.service.interface';
-import { Order } from '@/domain/swaps/entities/order.entity';
-import { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { FullAppData } from '@/domain/swaps/entities/full-app-data.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { Order } from '@/domain/swaps/entities/order.entity';
+import type { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { FullAppData } from '@/domain/swaps/entities/full-app-data.entity';
 
 export class CowSwapApi implements ISwapsApi {
   constructor(

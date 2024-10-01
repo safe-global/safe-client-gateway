@@ -1,4 +1,4 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
@@ -10,11 +10,11 @@ import {
 } from '@/domain/swaps/entities/order.entity';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenType } from '@/domain/tokens/entities/token.entity';
-import { TokenRepository } from '@/domain/tokens/token.repository';
-import { ILoggingService } from '@/logging/logging.interface';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { TokenRepository } from '@/domain/tokens/token.repository';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+import type { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { TransactionInfoType } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
@@ -23,7 +23,7 @@ import {
   TransferTransactionInfo,
 } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { TransferType } from '@/routes/transactions/entities/transfers/transfer.entity';
-import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
+import type { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
 import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/transfer-info.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { faker } from '@faker-js/faker';

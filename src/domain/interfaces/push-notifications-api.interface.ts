@@ -1,4 +1,4 @@
-import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
+import type { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 
 export const IPushNotificationsApi = Symbol('IPushNotificationsApi');
 

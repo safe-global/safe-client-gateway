@@ -1,5 +1,5 @@
 import { RowSchema } from '@/datasources/db/entities/row.entity';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export type Group = z.infer<typeof GroupSchema>;
 
