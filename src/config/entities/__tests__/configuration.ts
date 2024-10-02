@@ -23,7 +23,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   application: {
     isProduction: faker.datatype.boolean(),
-    runMigrations: true,
+    runMigrations: false,
     port: faker.internet.port().toString(),
   },
   auth: {
@@ -84,20 +84,30 @@ export default (): ReturnType<typeof configuration> => ({
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
   },
-  typeorm: { autoLoadEntities: true, manualInitialization: true },
   db: {
-    postgres: {
-      schema: process.env.POSTGRES_SCHEMA || 'main',
-      host: process.env.POSTGRES_TEST_HOST || 'localhost',
-      port: process.env.POSTGRES_TEST_PORT || '5433',
-      database: process.env.POSTGRES_TEST_DB || 'test-db',
-      username: process.env.POSTGRES_TEST_USER || 'postgres',
-      password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
-      ssl: {
-        enabled: true,
-        requestCert: true,
-        rejectUnauthorized: true,
-        caPath: process.env.POSTGRES_SSL_CA_PATH,
+    migrator: {
+      numberOfRetries: 5,
+      retryAfter: 1 * 1000,
+    },
+    orm: {
+      autoLoadEntities: true,
+      manualInitialization: true,
+      migrationsRun: false,
+    },
+    connection: {
+      postgres: {
+        schema: process.env.POSTGRES_SCHEMA || 'main',
+        host: process.env.POSTGRES_TEST_HOST || 'localhost',
+        port: process.env.POSTGRES_TEST_PORT || '5433',
+        database: process.env.POSTGRES_TEST_DB || 'test-db',
+        username: process.env.POSTGRES_TEST_USER || 'postgres',
+        password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
+        ssl: {
+          enabled: true,
+          requestCert: true,
+          rejectUnauthorized: true,
+          caPath: process.env.POSTGRES_SSL_CA_PATH,
+        },
       },
     },
   },

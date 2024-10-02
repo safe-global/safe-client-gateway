@@ -94,8 +94,7 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "roots": [
-      "./src",
-      "./migrations"
+      "./src"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
@@ -105,7 +104,8 @@
       "index.ts",
       ".+\\/__tests__\\/.+\\.builder.(t|j)s",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      ".e2e-spec.ts"
+      ".e2e-spec.ts",
+      "dist"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {

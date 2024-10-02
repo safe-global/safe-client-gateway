@@ -1,3 +1,4 @@
+import { PostgresqlLogger } from '@/datasources/db/v2/postgresql-logger.service';
 import { readFileSync } from 'fs';
 import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
@@ -37,7 +38,7 @@ export const postgresConfig = (
     password: postgresEnvConfig.password,
     database: postgresEnvConfig.database,
     migrations: ['dist/migrations/*.js'],
-    // logging: !isCIContext,
+    logger: new PostgresqlLogger(),
     ssl: isSslEnabled
       ? {
           ca: postgresCa,
