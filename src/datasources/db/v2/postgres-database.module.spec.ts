@@ -61,6 +61,10 @@ describe('PostgresDatabaseModuleV2', () => {
     );
   });
 
+  afterAll(async () => {
+    await postgresqlService.destroyDatabaseConnection();
+  });
+
   it('Should establish a successful connection', async () => {
     const connection = await postgresqlService.initializeDatabaseConnection();
 
