@@ -14,6 +14,7 @@ import {
 } from '@/logging/logging.interface';
 
 describe('PostgresDatabaseService', () => {
+  let postgresqlService: PostgresDatabaseService;
   let databaseMigratorService: DatabaseMigrator;
   let loggingService: ILoggingService;
 
@@ -66,8 +67,15 @@ describe('PostgresDatabaseService', () => {
       providers: [PostgresDatabaseService, DatabaseMigrator],
     }).compile();
 
+    postgresqlService = moduleRef.get<PostgresDatabaseService>(
+      PostgresDatabaseService,
+    );
     databaseMigratorService = moduleRef.get<DatabaseMigrator>(DatabaseMigrator);
     loggingService = moduleRef.get<ILoggingService>(LoggingService);
+  });
+
+  afterAll(async () => {
+    await postgresqlService.destroyDatabaseConnection();
   });
 
   describe('migrate()', () => {

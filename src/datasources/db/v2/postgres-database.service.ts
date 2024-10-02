@@ -46,6 +46,20 @@ export class PostgresDatabaseService {
   }
 
   /**
+   * Destroys the database connection. If the connection is not initialized, it initializes the connection.
+   *
+   * @returns {Promise<DataSource>} The database connection.
+   */
+  public async destroyDatabaseConnection(): Promise<DataSource> {
+    if (this.dataSource.isInitialized) {
+      this.loggingService.info('PostgresDatabaseService Destroyed...');
+      await this.dataSource.destroy();
+    }
+
+    return this.dataSource;
+  }
+
+  /**
    * Fetches a repository for the given entity.
    *
    * @param {Object} entity - The entity class.

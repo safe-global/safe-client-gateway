@@ -62,6 +62,10 @@ describe('PostgresDatabaseService', () => {
     );
   });
 
+  afterAll(async () => {
+    await postgresqlService.destroyDatabaseConnection();
+  });
+
   describe('fetchDatabaseConnection', () => {
     it('Should initialize the data source if not initialized', async () => {
       const isPrematurelyInitialized = postgresqlService.isInitialized();
