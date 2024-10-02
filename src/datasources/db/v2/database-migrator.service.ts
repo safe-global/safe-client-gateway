@@ -40,7 +40,8 @@ export class DatabaseMigrator {
   public async migrate(): Promise<void> {
     this.loggingService.info('Migrations: Running...');
 
-    const connection = await this.databaseService.fetchDatabaseConnection();
+    const connection =
+      await this.databaseService.initializeDatabaseConnection();
     await this.createLockTableIfNotExists(connection);
 
     let numberOfIterations = 0;
