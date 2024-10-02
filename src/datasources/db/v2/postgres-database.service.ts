@@ -14,11 +14,29 @@ export class PostgresDatabaseService {
   ) {}
 
   /**
-   * Fetches the database connection. If the connection is not initialized, it initializes the connection.
+   * Returns the datasource object
+   *
+   * @returns {DataSource} Datasource object
+   */
+  public getDataSource(): DataSource {
+    return this.dataSource;
+  }
+
+  /**
+   * Checks whether the datasource has been initialized or not
+   *
+   * @returns {boolean} True if the datasource has already been initialized
+   */
+  public isInitialized(): boolean {
+    return this.dataSource.isInitialized;
+  }
+
+  /**
+   * Initializes the database connection. If the connection is not initialized, it initializes the connection.
    *
    * @returns {Promise<DataSource>} The database connection.
    */
-  public async fetchDatabaseConnection(): Promise<DataSource> {
+  public async initializeDatabaseConnection(): Promise<DataSource> {
     if (!this.dataSource.isInitialized) {
       this.loggingService.info('PostgresDatabaseService initialized...');
       await this.dataSource.initialize();
@@ -37,7 +55,7 @@ export class PostgresDatabaseService {
   public async getRepository<T extends ObjectLiteral>(entity: {
     new (): T;
   }): Promise<Repository<T>> {
-    const connection = await this.fetchDatabaseConnection();
+    const connection = await this.initializeDatabaseConnection();
 
     return connection.getRepository<T>(entity);
   }
