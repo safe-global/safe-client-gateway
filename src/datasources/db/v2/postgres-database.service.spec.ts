@@ -7,7 +7,7 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import type { Repository } from 'typeorm';
+import { DataSource, type Repository } from 'typeorm';
 
 describe('PostgresDatabaseService', () => {
   let postgresqlService: PostgresDatabaseService;
@@ -66,7 +66,31 @@ describe('PostgresDatabaseService', () => {
     await postgresqlService.destroyDatabaseConnection();
   });
 
-  describe('fetchDatabaseConnection', () => {
+  describe('getDataSource()', () => {
+    it('Should return the datasource', () => {
+      const result = postgresqlService.getDataSource();
+
+      expect(result).toBeInstanceOf(DataSource);
+    });
+  });
+
+  describe('isInitialized()', () => {
+    it('Should return true if the datasource has been initialized', async () => {
+      await postgresqlService.initializeDatabaseConnection();
+
+      const isInitialized = postgresqlService.isInitialized();
+
+      expect(isInitialized).toBe(true);
+    });
+
+    it('should return false if the data source has not been initialized', () => {
+      const isInitialized = postgresqlService.isInitialized();
+
+      expect(isInitialized).toBe(false);
+    });
+  });
+
+  describe('initializeDatabaseConnection()', () => {
     it('Should initialize the data source if not initialized', async () => {
       const isPrematurelyInitialized = postgresqlService.isInitialized();
       await postgresqlService.initializeDatabaseConnection();
@@ -84,7 +108,20 @@ describe('PostgresDatabaseService', () => {
     });
   });
 
-  describe('getRepository', () => {
+  describe('destroyDatabaseConnection()', () => {
+    it('Should destroy the data source if initialized', async () => {
+      await postgresqlService.initializeDatabaseConnection();
+      const isInitialized = postgresqlService.isInitialized();
+
+      await postgresqlService.destroyDatabaseConnection();
+      const isDatasourceAlive = postgresqlService.isInitialized();
+
+      expect(isInitialized).toBe(true);
+      expect(isDatasourceAlive).toBe(false);
+    });
+  });
+
+  describe('getRepository()', () => {
     class MockEntity {}
 
     it('Should return a repository for the given entity', async () => {
