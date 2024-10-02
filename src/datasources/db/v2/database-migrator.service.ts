@@ -45,7 +45,10 @@ export class DatabaseMigrator {
     await this.createLockTableIfNotExists(connection);
 
     let numberOfIterations = 0;
-    while (true) {
+    const numberOfRetries = await this.configService.getOrThrow(
+      'db.migrator.numberOfRetries',
+    );
+    while (numberOfRetries >= numberOfIterations) {
       ++numberOfIterations;
       if (!(await this.lockExists(connection))) {
         await this.insertLock(connection);
@@ -55,8 +58,11 @@ export class DatabaseMigrator {
         this.loggingService.info('Migrations: Finished.');
         break;
       } else {
-        await this.validateIterationCount(numberOfIterations);
-
+        if (numberOfIterations === numberOfRetries) {
+          throw new Error(
+            'Migrations: Migrations are still running in another instance!',
+          );
+        }
         this.loggingService.info('Migrations: Running in another instance...');
         const retryAfter = this.configService.getOrThrow<number>(
           'db.migrator.retryAfter',
@@ -146,27 +152,6 @@ export class DatabaseMigrator {
       );
     } else {
       this.loggingService.info('Migrations: No migrations to execute.');
-    }
-  }
-
-  /**
-   * Validates whether the iteration has been running for more than a specified amount of time.
-   *
-   * @param {number} numberOfIterations - The number of iterations to validate.
-   *
-   * @throws {Error} Throws an error if the iteration has been running for more than a specified amount of time.
-   *
-   * @returns {Promise<void>} An empty promise that resolves when validation is complete.
-   */
-  private async validateIterationCount(
-    numberOfIterations: number,
-  ): Promise<void> {
-    const numberOfRetries = await this.configService.getOrThrow(
-      'db.migrator.numberOfRetries',
-    );
-
-    if (numberOfIterations >= numberOfRetries) {
-      throw new Error('Migrations: Could not run migrations...');
     }
   }
 }
