@@ -209,6 +209,8 @@ export default () => ({
     nativeStaking: process.env.FF_NATIVE_STAKING?.toLowerCase() === 'true',
     nativeStakingDecoding:
       process.env.FF_NATIVE_STAKING_DECODING?.toLowerCase() === 'true',
+    targetedMessaging:
+      process.env.FF_TARGETED_MESSAGING?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
