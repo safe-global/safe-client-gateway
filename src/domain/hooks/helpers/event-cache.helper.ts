@@ -1,40 +1,35 @@
-import {
-  Inject,
-  Injectable,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
-import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
-import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
-import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
-import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { ITransactionsRepository } from '@/domain/transactions/transactions.repository.interface';
-import {
-  TransactionEventType,
-  ConfigEventType,
-} from '@/routes/hooks/entities/event-type.entity';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { Event } from '@/routes/hooks/entities/event.entity';
-import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository.interface';
-import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
-import { memoize, MemoizedFunction } from 'lodash';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
+import { IBalancesRepository } from '@/domain/balances/balances.repository.interface';
+import { IBlockchainRepository } from '@/domain/blockchain/blockchain.repository.interface';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { ICollectiblesRepository } from '@/domain/collectibles/collectibles.repository.interface';
+import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
+import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { ITransactionsRepository } from '@/domain/transactions/transactions.repository.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  ConfigEventType,
+  TransactionEventType,
+} from '@/routes/hooks/entities/event-type.entity';
+import { Event } from '@/routes/hooks/entities/event.entity';
+import { Inject, Injectable } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
+import { memoize, MemoizedFunction } from 'lodash';
 
 @Injectable()
-export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
+export class EventCacheHelper {
   private static readonly HOOK_TYPE = 'hook';
   private static readonly UNSUPPORTED_CHAIN_EVENT = 'unsupported_chain_event';
   public static readonly UNSUPPORTED_EVENTS_LOG_INTERVAL = 60 * 1000; // 1 minute
   public isSupportedChainMemo: ((chainId: string) => Promise<boolean>) &
     MemoizedFunction;
-  private unsupportedEventsLogTimer: NodeJS.Timeout | undefined;
   private unsupportedChains: Array<string> = [];
 
   constructor(
@@ -64,17 +59,6 @@ export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
     this.isSupportedChainMemo = memoize(
       this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
     );
-  }
-
-  onModuleInit(): void {
-    this.unsupportedEventsLogTimer = setInterval(
-      () => void this._logUnsupportedEvents(),
-      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL,
-    );
-  }
-
-  onModuleDestroy(): void {
-    clearInterval(this.unsupportedEventsLogTimer);
   }
 
   // TODO: Split service into multiple classes, each handling Config/Transactions events
@@ -161,6 +145,29 @@ export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
       event.chainId,
     );
     await this.cacheService.increment(cacheKey, MAX_TTL);
+  }
+
+  /**
+   * Logs the number of unsupported chain events for each chain and clears the store.
+   * This function is public just for testing purposes.
+   */
+  @Interval(EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL)
+  public async logUnsupportedEvents(): Promise<void> {
+    await Promise.all(
+      this.unsupportedChains.map(async (chainId) => {
+        const cacheKey = CacheRouter.getUnsupportedChainEventCacheKey(chainId);
+        const count = await this.cacheService.getCounter(cacheKey);
+        if (count) {
+          this.loggingService.warn({
+            type: EventCacheHelper.UNSUPPORTED_CHAIN_EVENT,
+            chainId,
+            count,
+          });
+          await this.cacheService.deleteByKey(cacheKey);
+        }
+      }),
+    );
+    this.unsupportedChains = [];
   }
 
   // Transaction Service events
@@ -492,27 +499,6 @@ export class EventCacheHelper implements OnModuleInit, OnModuleDestroy {
     event: Extract<Event, { type: TransactionEventType.SAFE_CREATED }>,
   ): Array<Promise<void>> {
     return [this.safeRepository.clearIsSafe(event)];
-  }
-
-  /**
-   * Logs the number of unsupported chain events for each chain and clears the store.
-   */
-  private async _logUnsupportedEvents(): Promise<void> {
-    await Promise.all(
-      this.unsupportedChains.map(async (chainId) => {
-        const cacheKey = CacheRouter.getUnsupportedChainEventCacheKey(chainId);
-        const count = await this.cacheService.getCounter(cacheKey);
-        if (count) {
-          this.loggingService.warn({
-            type: EventCacheHelper.UNSUPPORTED_CHAIN_EVENT,
-            chainId,
-            count,
-          });
-          await this.cacheService.deleteByKey(cacheKey);
-        }
-      }),
-    );
-    this.unsupportedChains = [];
   }
 
   private _logSafeTxEvent(

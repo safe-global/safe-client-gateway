@@ -49,6 +49,7 @@ import { TransactionsViewControllerModule } from '@/routes/transactions/transact
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
 import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -114,6 +115,7 @@ export class AppModule implements NestModule {
         ConfigurationModule.register(configFactory),
         NetworkModule,
         RequestScopedLoggingModule,
+        ScheduleModule.forRoot(),
         ServeStaticModule.forRoot({
           rootPath: join(__dirname, '..', 'assets'),
           // Excludes the paths under '/' (base url) from being served as static content

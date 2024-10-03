@@ -91,10 +91,6 @@ describe('HooksRepository (Unit)', () => {
   let fakeCacheService: FakeCacheService;
   let eventCacheHelper: EventCacheHelper;
 
-  beforeAll(() => {
-    jest.useFakeTimers();
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -118,10 +114,6 @@ describe('HooksRepository (Unit)', () => {
       mockConfigurationService,
       eventCacheHelper,
     );
-  });
-
-  afterAll(() => {
-    jest.useRealTimers();
   });
 
   it('should process events for known chains and memoize the chain lookup', async () => {
@@ -218,7 +210,6 @@ describe('HooksRepository (Unit)', () => {
   });
 
   it('should store the unsupported chain events and log them after UNSUPPORTED_EVENTS_LOG_INTERVAL', async () => {
-    eventCacheHelper.onModuleInit();
     const chain = chainBuilder().build();
     const chains = pageBuilder<typeof chain>().with('results', [chain]).build();
     const event = incomingTokenEventBuilder()
@@ -233,13 +224,8 @@ describe('HooksRepository (Unit)', () => {
     await hooksRepository.onEvent(event);
     await hooksRepository.onEvent(event);
 
-    await jest.advanceTimersByTimeAsync(
-      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL - 1,
-    );
     expect(mockLoggingService.warn).not.toHaveBeenCalled();
-    await jest.advanceTimersByTimeAsync(
-      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL + 1,
-    );
+    await eventCacheHelper.logUnsupportedEvents();
     expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
     expect(mockLoggingService.warn).toHaveBeenCalledWith({
       type: 'unsupported_chain_event',
@@ -255,10 +241,6 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
   let hooksRepositoryWithNotifications: HooksRepositoryWithNotifications;
   let fakeCacheService: FakeCacheService;
   let eventCacheHelper: EventCacheHelper;
-
-  beforeAll(() => {
-    jest.useFakeTimers();
-  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -284,10 +266,6 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
       mockEventNotificationsHelper,
       eventCacheHelper,
     );
-  });
-
-  afterAll(() => {
-    jest.useRealTimers();
   });
 
   it('should process events for known chains and memoize the chain lookup', async () => {
@@ -384,7 +362,6 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
   });
 
   it('should store the unsupported chain events and log them after UNSUPPORTED_EVENTS_LOG_INTERVAL', async () => {
-    eventCacheHelper.onModuleInit();
     const chain = chainBuilder().build();
     const chains = pageBuilder<typeof chain>().with('results', [chain]).build();
     const event = incomingTokenEventBuilder()
@@ -399,13 +376,8 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     await hooksRepositoryWithNotifications.onEvent(event);
 
     await expect(fakeCacheService.getCounter(cacheKey)).resolves.toEqual(3);
-    await jest.advanceTimersByTimeAsync(
-      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL - 1,
-    );
     expect(mockLoggingService.warn).not.toHaveBeenCalled();
-    await jest.advanceTimersByTimeAsync(
-      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL + 1,
-    );
+    await eventCacheHelper.logUnsupportedEvents();
     expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
     expect(mockLoggingService.warn).toHaveBeenCalledWith({
       type: 'unsupported_chain_event',
@@ -417,7 +389,6 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
   });
 
   it('should store the unsupported chain events for several chains and log them after UNSUPPORTED_EVENTS_LOG_INTERVAL', async () => {
-    eventCacheHelper.onModuleInit();
     const chains = [
       chainBuilder().with('chainId', '1').build(),
       chainBuilder().with('chainId', '2').build(),
@@ -446,13 +417,8 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
 
     await expect(fakeCacheService.getCounter(cacheKeys[0])).resolves.toEqual(4);
     await expect(fakeCacheService.getCounter(cacheKeys[1])).resolves.toEqual(3);
-    await jest.advanceTimersByTimeAsync(
-      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL - 1,
-    );
     expect(mockLoggingService.warn).not.toHaveBeenCalled();
-    await jest.advanceTimersByTimeAsync(
-      EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL + 1,
-    );
+    await eventCacheHelper.logUnsupportedEvents();
     expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
     expect(mockLoggingService.warn).toHaveBeenCalledWith({
       type: 'unsupported_chain_event',
