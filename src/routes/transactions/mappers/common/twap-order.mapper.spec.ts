@@ -45,7 +45,7 @@ const mockChainsRepository = {
 
 describe('TwapOrderMapper', () => {
   const configurationService = new FakeConfigurationService();
-  const multiSendDecoder = new MultiSendDecoder();
+  const multiSendDecoder = new MultiSendDecoder(loggingService);
   const transactionFinder = new TransactionFinder(multiSendDecoder);
   const gpv2Decoder = new GPv2Decoder(mockLoggingService);
   const allowedApps = new Set<string>();

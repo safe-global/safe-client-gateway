@@ -122,6 +122,8 @@ describe('Chains Controller (Unit)', () => {
               publicRpcUri: chainsResponse.results[0].publicRpcUri,
               blockExplorerUriTemplate:
                 chainsResponse.results[0].blockExplorerUriTemplate,
+              beaconChainExplorerUriTemplate:
+                chainsResponse.results[0].beaconChainExplorerUriTemplate,
               nativeCurrency: chainsResponse.results[0].nativeCurrency,
               transactionService: chainsResponse.results[0].transactionService,
               theme: chainsResponse.results[0].theme,
@@ -147,6 +149,8 @@ describe('Chains Controller (Unit)', () => {
               publicRpcUri: chainsResponse.results[1].publicRpcUri,
               blockExplorerUriTemplate:
                 chainsResponse.results[1].blockExplorerUriTemplate,
+              beaconChainExplorerUriTemplate:
+                chainsResponse.results[1].beaconChainExplorerUriTemplate,
               nativeCurrency: chainsResponse.results[1].nativeCurrency,
               transactionService: chainsResponse.results[1].transactionService,
               theme: chainsResponse.results[1].theme,
@@ -233,6 +237,8 @@ describe('Chains Controller (Unit)', () => {
               publicRpcUri: chainsResponse.results[0].publicRpcUri,
               blockExplorerUriTemplate:
                 chainsResponse.results[0].blockExplorerUriTemplate,
+              beaconChainExplorerUriTemplate:
+                chainsResponse.results[0].beaconChainExplorerUriTemplate,
               nativeCurrency: chainsResponse.results[0].nativeCurrency,
               transactionService: chainsResponse.results[0].transactionService,
               theme: chainsResponse.results[0].theme,
@@ -258,6 +264,8 @@ describe('Chains Controller (Unit)', () => {
               publicRpcUri: chainsResponse.results[1].publicRpcUri,
               blockExplorerUriTemplate:
                 chainsResponse.results[1].blockExplorerUriTemplate,
+              beaconChainExplorerUriTemplate:
+                chainsResponse.results[1].beaconChainExplorerUriTemplate,
               nativeCurrency: chainsResponse.results[1].nativeCurrency,
               transactionService: chainsResponse.results[1].transactionService,
               theme: chainsResponse.results[1].theme,
@@ -325,6 +333,8 @@ describe('Chains Controller (Unit)', () => {
         nativeCurrency: chainDomain.nativeCurrency,
         transactionService: chainDomain.transactionService,
         blockExplorerUriTemplate: chainDomain.blockExplorerUriTemplate,
+        beaconChainExplorerUriTemplate:
+          chainDomain.beaconChainExplorerUriTemplate,
         disabledWallets: chainDomain.disabledWallets,
         features: chainDomain.features,
         gasPrice: chainDomain.gasPrice,

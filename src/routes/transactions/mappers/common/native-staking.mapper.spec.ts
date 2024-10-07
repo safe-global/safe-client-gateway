@@ -74,7 +74,7 @@ describe('NativeStakingMapper', () => {
     jest.resetAllMocks();
     jest.useFakeTimers();
 
-    const multiSendDecoder = new MultiSendDecoder();
+    const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
     const transactionFinder = new TransactionFinder(multiSendDecoder);
     const kilnNativeStakingHelper = new KilnNativeStakingHelper(
       transactionFinder,
