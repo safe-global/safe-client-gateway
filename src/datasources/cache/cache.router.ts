@@ -47,6 +47,8 @@ export class CacheRouter {
   private static readonly STAKING_STAKES_KEY = 'staking_stakes';
   private static readonly STAKING_TRANSACTION_STATUS_KEY =
     'staking_transaction_status';
+  private static readonly SUBMISSION = 'submission';
+  private static readonly TARGETED_SAFE = 'targeted_safe';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
@@ -644,6 +646,31 @@ export class CacheRouter {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.STAKING_TRANSACTION_STATUS_KEY}_${args.txHash}`,
       '',
+    );
+  }
+
+  static getTargetedSafeCacheKey(args: { outreachId: number }): string {
+    return `${CacheRouter.TARGETED_SAFE}_${args.outreachId}`;
+  }
+
+  static getTargetedSafeCacheDir(args: {
+    outreachId: number;
+    safeAddress: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getTargetedSafeCacheKey({ outreachId: args.outreachId }),
+      args.safeAddress,
+    );
+  }
+
+  static getSubmissionCacheDir(args: {
+    outreachId: number;
+    safeAddress: `0x${string}`;
+    signerAddress: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      `${CacheRouter.SUBMISSION}_${args.outreachId}`,
+      `${args.safeAddress}_${args.signerAddress}`,
     );
   }
 }

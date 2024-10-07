@@ -1,3 +1,11 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
+import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { CreateOutreachDto } from '@/domain/targeted-messaging/entities/create-outreach.dto.entity';
 import { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entities/create-targeted-safes.dto.entity';
@@ -14,10 +22,22 @@ import postgres from 'postgres';
 export class TargetedMessagingDatasource
   implements ITargetedMessagingDatasource
 {
+  private readonly defaultExpirationTimeInSeconds: number;
+
   constructor(
+    @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(ICachedQueryResolver)
+    private readonly cachedQueryResolver: CachedQueryResolver,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+  }
 
   async createOutreach(
     createOutreachDto: CreateOutreachDto,
@@ -45,7 +65,7 @@ export class TargetedMessagingDatasource
   async createTargetedSafes(
     createTargetedSafesDto: CreateTargetedSafesDto,
   ): Promise<Array<TargetedSafe>> {
-    return await this.sql.begin(async (sql) => {
+    const targetedSafes = await this.sql.begin(async (sql) => {
       const inserted = await sql<[{ id: number }]>`
         INSERT INTO targeted_safes
         ${sql(
@@ -72,15 +92,27 @@ export class TargetedMessagingDatasource
         updated_at: targetedSafe.updated_at,
       }));
     });
+
+    await this.cacheService.deleteByKey(
+      CacheRouter.getTargetedSafeCacheKey({
+        outreachId: createTargetedSafesDto.outreachId,
+      }),
+    );
+
+    return targetedSafes;
   }
 
   async getTargetedSafe(args: {
     outreachId: number;
     safeAddress: `0x${string}`;
   }): Promise<TargetedSafe> {
-    const [targetedSafe] = await this.sql`
-      SELECT * FROM targeted_safes
-      WHERE outreach_id = ${args.outreachId} AND address = ${args.safeAddress}`;
+    const [targetedSafe] = await this.cachedQueryResolver.get<TargetedSafe[]>({
+      cacheDir: CacheRouter.getTargetedSafeCacheDir(args),
+      query: this.sql`
+        SELECT * FROM targeted_safes
+        WHERE outreach_id = ${args.outreachId} AND address = ${args.safeAddress}`,
+      ttl: this.defaultExpirationTimeInSeconds,
+    });
 
     if (!targetedSafe) {
       throw new TargetedSafeNotFoundError();
@@ -89,7 +121,7 @@ export class TargetedMessagingDatasource
     return {
       id: targetedSafe.id,
       address: targetedSafe.address,
-      outreachId: targetedSafe.outreach_id,
+      outreachId: args.outreachId,
       created_at: targetedSafe.created_at,
       updated_at: targetedSafe.updated_at,
     };
@@ -108,6 +140,12 @@ export class TargetedMessagingDatasource
       );
       throw new UnprocessableEntityException('Error creating submission');
     });
+    const { key } = CacheRouter.getSubmissionCacheDir({
+      outreachId: args.targetedSafe.outreachId,
+      safeAddress: args.targetedSafe.address,
+      signerAddress: args.signerAddress,
+    });
+    await this.cacheService.deleteByKey(key);
 
     return {
       id: submission.id,
@@ -124,9 +162,17 @@ export class TargetedMessagingDatasource
     targetedSafe: TargetedSafe;
     signerAddress: `0x${string}`;
   }): Promise<Submission> {
-    const [submission] = await this.sql`
-      SELECT * FROM submissions
-      WHERE targeted_safe_id = ${args.targetedSafe.id} AND signer_address = ${args.signerAddress}`;
+    const [submission] = await this.cachedQueryResolver.get({
+      cacheDir: CacheRouter.getSubmissionCacheDir({
+        outreachId: args.targetedSafe.outreachId,
+        safeAddress: args.targetedSafe.address,
+        signerAddress: args.signerAddress,
+      }),
+      query: this.sql`
+        SELECT * FROM submissions
+        WHERE targeted_safe_id = ${args.targetedSafe.id} AND signer_address = ${args.signerAddress}`,
+      ttl: this.defaultExpirationTimeInSeconds,
+    });
 
     if (!submission) {
       throw new SubmissionNotFoundError();
@@ -135,8 +181,8 @@ export class TargetedMessagingDatasource
     return {
       id: submission.id,
       outreachId: args.targetedSafe.outreachId,
-      targetedSafeId: submission.targeted_safe_id,
-      signerAddress: submission.signer_address,
+      targetedSafeId: args.targetedSafe.id,
+      signerAddress: args.signerAddress,
       completionDate: submission.completion_date,
       created_at: submission.created_at,
       updated_at: submission.updated_at,
