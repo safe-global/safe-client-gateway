@@ -11,7 +11,6 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
   Controller,
-  DefaultValuePipe,
   Get,
   HttpStatus,
   NotFoundException,
@@ -25,7 +24,7 @@ import { Response } from 'express';
 
 @ApiTags('targeted-messaging')
 @Controller({
-  path: 'targeted-messaging',
+  path: 'targeted-messaging/outreaches',
   version: '1',
 })
 export class TargetedMessagingController {
@@ -33,11 +32,11 @@ export class TargetedMessagingController {
 
   @ApiOkResponse({ type: Submission })
   @Get(
-    'outreaches/:outreachId/chains/:chainId/safes/:safeAddress/signers/:signerAddress/submissions',
+    ':outreachId/chains/:chainId/safes/:safeAddress/signers/:signerAddress/submissions',
   )
   async getSubmission(
     @Res() res: Response,
-    @Param('outreachId', new DefaultValuePipe(0), ParseIntPipe)
+    @Param('outreachId', ParseIntPipe)
     outreachId: number,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -69,10 +68,10 @@ export class TargetedMessagingController {
 
   @ApiCreatedResponse({ type: Submission })
   @Post(
-    'outreaches/:outreachId/chains/:chainId/safes/:safeAddress/signers/:signerAddress/submissions',
+    ':outreachId/chains/:chainId/safes/:safeAddress/signers/:signerAddress/submissions',
   )
   async createSubmission(
-    @Param('outreachId', new DefaultValuePipe(0), ParseIntPipe)
+    @Param('outreachId', ParseIntPipe)
     outreachId: number,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
