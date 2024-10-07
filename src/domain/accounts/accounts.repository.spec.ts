@@ -1,7 +1,7 @@
 import { AccountsRepository } from '@/domain/accounts/accounts.repository';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
+import type { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
 import { faker } from '@faker-js/faker/.';
 import { UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';

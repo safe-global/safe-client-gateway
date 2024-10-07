@@ -9,7 +9,7 @@ import {
   requestValidatorsExitEncoder,
 } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';

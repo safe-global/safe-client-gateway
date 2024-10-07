@@ -1,11 +1,10 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
-import {
-  TransferTransactionInfo,
-  TransferDirection,
-} from '@/routes/transactions/entities/transfer-transaction-info.entity';
+import type { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
+import { TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { TransactionInfoType } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransferType } from '@/routes/transactions/entities/transfers/transfer.entity';
 

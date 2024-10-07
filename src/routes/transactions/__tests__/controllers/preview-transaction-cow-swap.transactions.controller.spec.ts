@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
@@ -14,8 +15,9 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import type {
+  INetworkService} from '@/datasources/network/network.service.interface';
 import {
-  INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -25,7 +27,7 @@ import { NetworkModule } from '@/datasources/network/network.module';
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
 import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/gp-v2-encoder.builder';
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';

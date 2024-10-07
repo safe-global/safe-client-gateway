@@ -3,7 +3,7 @@ import {
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem';

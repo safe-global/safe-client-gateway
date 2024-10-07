@@ -1,10 +1,10 @@
-import {
+import type {
   LockEventItemSchema,
   LockingEventSchema,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
 } from '@/domain/community/entities/schemas/locking-event.schema';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export type LockEventItem = z.infer<typeof LockEventItemSchema>;
 

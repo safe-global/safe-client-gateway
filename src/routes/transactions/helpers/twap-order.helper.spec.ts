@@ -14,7 +14,7 @@ import { TransactionFinder } from '@/routes/transactions/helpers/transaction-fin
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockLoggingService = {
   warn: jest.fn(),

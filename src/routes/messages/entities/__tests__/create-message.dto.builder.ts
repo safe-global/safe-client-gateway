@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
 
 export function createMessageDtoBuilder(): IBuilder<CreateMessageDto> {
   return new Builder<CreateMessageDto>()

@@ -1,5 +1,6 @@
-import { IBuilder, Builder } from '@/__tests__/builder';
-import { DeletedMultisigTransaction } from '@/routes/hooks/entities/deleted-multisig-transaction.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { DeletedMultisigTransaction } from '@/routes/hooks/entities/deleted-multisig-transaction.entity';
 import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

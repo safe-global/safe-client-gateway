@@ -3,7 +3,7 @@ import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-tra
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { transferTransactionInfoBuilder } from '@/routes/transactions/entities/__tests__/transfer-transaction-info.builder';
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
-import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/transfer-info.mapper';
+import type { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/transfer-info.mapper';
 
 const transferInfoMapper = jest.mocked({
   mapTransferInfo: jest.fn(),

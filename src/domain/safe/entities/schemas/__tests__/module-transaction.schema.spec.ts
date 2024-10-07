@@ -1,7 +1,7 @@
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { Page } from '@/domain/entities/page.entity';
+import type { Page } from '@/domain/entities/page.entity';
 import { moduleTransactionBuilder } from '@/domain/safe/entities/__tests__/module-transaction.builder';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import type { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import {
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,

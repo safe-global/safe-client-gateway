@@ -1,5 +1,5 @@
-import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
-import { Chain } from '@/domain/chains/entities/chain.entity';
+import type { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
+import type { Chain } from '@/domain/chains/entities/chain.entity';
 
 export const IPricesApi = Symbol('IPricesApi');
 

@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import {
   AppProvider,

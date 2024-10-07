@@ -1,10 +1,11 @@
 import { fakeJson } from '@/__tests__/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { InternalServerErrorException } from '@nestjs/common';
-import postgres, { MaybeRow } from 'postgres';
+import type { MaybeRow } from 'postgres';
+import type postgres from 'postgres';
 
 const mockLoggingService = jest.mocked({
   debug: jest.fn(),

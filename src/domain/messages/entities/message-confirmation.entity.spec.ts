@@ -1,4 +1,4 @@
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import type { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 import { MessageConfirmationSchema } from '@/domain/messages/entities/message-confirmation.entity';
 import { faker } from '@faker-js/faker';

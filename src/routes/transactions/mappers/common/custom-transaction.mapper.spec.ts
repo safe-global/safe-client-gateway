@@ -4,7 +4,7 @@ import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { buildHumanDescription } from '@/routes/transactions/entities/__tests__/human-description.builder';

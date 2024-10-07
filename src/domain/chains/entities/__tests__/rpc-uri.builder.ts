@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { RpcUri } from '@/domain/chains/entities/rpc-uri.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { RpcUri } from '@/domain/chains/entities/rpc-uri.entity';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
 
 export function rpcUriBuilder(): IBuilder<RpcUri> {

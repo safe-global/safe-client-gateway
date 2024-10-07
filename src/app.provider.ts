@@ -1,4 +1,5 @@
-import { INestApplication, VersioningType } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
+import { VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';

@@ -1,8 +1,9 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
-import {
+import type {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
 } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';

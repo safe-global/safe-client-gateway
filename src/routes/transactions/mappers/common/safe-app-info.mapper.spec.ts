@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
+import type { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
 import { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app-info.mapper';
-import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
+import type { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 
 describe('SafeAppInfo mapper (Unit)', () => {
   const safeAppsRepositoryMock = jest.mocked({

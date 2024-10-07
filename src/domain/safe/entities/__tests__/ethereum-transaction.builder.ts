@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
 import { getAddress } from 'viem';
 
 export function ethereumTransactionBuilder(): IBuilder<EthereumTransaction> {

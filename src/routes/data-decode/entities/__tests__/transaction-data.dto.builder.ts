@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
 import { getAddress } from 'viem';
 
 export function transactionDataDtoBuilder(): IBuilder<TransactionDataDto> {

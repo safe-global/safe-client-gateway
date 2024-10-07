@@ -1,7 +1,8 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
-import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import type { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { getAddress } from 'viem';
 
 export function creationTransactionBuilder(): IBuilder<CreationTransaction> {

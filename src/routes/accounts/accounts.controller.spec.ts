@@ -28,17 +28,18 @@ import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.int
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { AccountsController } from '@/routes/accounts/accounts.controller';
-import { Account } from '@/routes/accounts/entities/account.entity';
+import type { Account } from '@/routes/accounts/entities/account.entity';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
 import {
   ConflictException,
-  INestApplication,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Server } from 'net';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
 

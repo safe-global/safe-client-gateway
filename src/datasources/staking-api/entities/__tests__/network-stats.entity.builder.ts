@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import { faker } from '@faker-js/faker';
 
 export function networkStatsBuilder(): IBuilder<NetworkStats> {
