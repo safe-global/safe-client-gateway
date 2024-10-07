@@ -13,6 +13,10 @@ import {
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
 } from '@/routes/chains/entities/block-explorer-uri-template.entity';
 import {
+  BeaconChainExplorerUriTemplate,
+  BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
+} from '@/domain/chains/entities/beacon-chain-explorer-uri-template.entity';
+import {
   GasPriceOracle,
   GasPriceOracle as ApiGasPriceOracle,
 } from '@/routes/chains/entities/gas-price-oracle.entity';
@@ -56,6 +60,8 @@ export class Chain {
   @ApiProperty()
   blockExplorerUriTemplate: ApiBlockExplorerUriTemplate;
   @ApiProperty()
+  beaconChainExplorerUriTemplate: ApiBeaconChainExplorerUriTemplate;
+  @ApiProperty()
   disabledWallets: string[];
   @ApiPropertyOptional({ type: String, nullable: true })
   ensRegistryAddress: `0x${string}` | null;
@@ -97,6 +103,7 @@ export class Chain {
     nativeCurrency: NativeCurrency;
     transactionService: string;
     blockExplorerUriTemplate: BlockExplorerUriTemplate;
+    beaconChainExplorerUriTemplate: BeaconChainExplorerUriTemplate;
     disabledWallets: string[];
     features: string[];
     gasPrice: Array<GasPriceOracle | GasPriceFixed | GasPriceFixedEIP1559>;
@@ -120,6 +127,7 @@ export class Chain {
     this.nativeCurrency = args.nativeCurrency;
     this.transactionService = args.transactionService;
     this.blockExplorerUriTemplate = args.blockExplorerUriTemplate;
+    this.beaconChainExplorerUriTemplate = args.beaconChainExplorerUriTemplate;
     this.disabledWallets = args.disabledWallets;
     this.ensRegistryAddress = args.ensRegistryAddress;
     this.features = args.features;

@@ -12,6 +12,7 @@ import type { Chain } from '@/domain/chains/entities/chain.entity';
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
 import { contractAddressesBuilder } from '@/domain/chains/entities/__tests__/contract-addresses.builder';
+import { beaconChainExplorerUriTemplateBuilder } from '@/domain/chains/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 
 export function chainBuilder(): IBuilder<Chain> {
   return new Builder<Chain>()
@@ -26,6 +27,10 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('safeAppsRpcUri', rpcUriBuilder().build())
     .with('publicRpcUri', rpcUriBuilder().build())
     .with('blockExplorerUriTemplate', blockExplorerUriTemplateBuilder().build())
+    .with(
+      'beaconChainExplorerUriTemplate',
+      beaconChainExplorerUriTemplateBuilder().build(),
+    )
     .with('nativeCurrency', nativeCurrencyBuilder().build())
     .with('pricesProvider', pricesProviderBuilder().build())
     .with('balancesProvider', balancesProviderBuilder().build())
