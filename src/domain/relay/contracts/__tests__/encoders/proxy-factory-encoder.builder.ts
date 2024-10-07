@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { encodeFunctionData, getAddress } from 'viem';
 import ProxyFactory130 from '@/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
-import { IEncoder } from '@/__tests__/encoder-builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
 import { setupEncoder } from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
 

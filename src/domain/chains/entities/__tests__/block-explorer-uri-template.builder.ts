@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { BlockExplorerUriTemplate } from '@/domain/chains/entities/block-explorer-uri-template.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { BlockExplorerUriTemplate } from '@/domain/chains/entities/block-explorer-uri-template.entity';
 
 export function blockExplorerUriTemplateBuilder(): IBuilder<BlockExplorerUriTemplate> {
   const explorerUrl = faker.internet.url({ appendSlash: false });

@@ -1,6 +1,7 @@
-import { IBuilder, Builder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { activityMetadataBuilder } from '@/domain/community/entities/__tests__/activity-metadata.builder';
-import { Campaign } from '@/domain/community/entities/campaign.entity';
+import type { Campaign } from '@/domain/community/entities/campaign.entity';
 import { faker } from '@faker-js/faker';
 
 export function campaignBuilder(): IBuilder<Campaign> {

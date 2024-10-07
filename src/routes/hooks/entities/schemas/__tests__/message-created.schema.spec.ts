@@ -1,5 +1,5 @@
 import { messageCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/message-created.builder';
-import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { MessageCreatedEventSchema } from '@/routes/hooks/entities/schemas/message-created.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

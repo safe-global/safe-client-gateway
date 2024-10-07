@@ -1,9 +1,9 @@
-import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
+import type { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/upsert-subscriptions.dto.entity.builder';
 import { UpsertSubscriptionsDtoSchema } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
 import { faker } from '@faker-js/faker';
-import { UUID } from 'crypto';
+import type { UUID } from 'crypto';
 import { getAddress } from 'viem';
 
 describe('UpsertSubscriptionsDtoSchema', () => {

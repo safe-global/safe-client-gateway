@@ -11,7 +11,7 @@ import {
   transactionStatusReceiptLogBuilder,
 } from '@/datasources/staking-api/entities/__tests__/transaction-status.entity.builder';
 import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
-import { ChainsRepository } from '@/domain/chains/chains.repository';
+import type { ChainsRepository } from '@/domain/chains/chains.repository';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import {
@@ -24,8 +24,8 @@ import {
   withdrawalEventBuilder,
 } from '@/domain/staking/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
-import { StakingRepository } from '@/domain/staking/staking.repository';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { StakingRepository } from '@/domain/staking/staking.repository';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';

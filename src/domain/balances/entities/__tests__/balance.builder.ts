@@ -1,7 +1,8 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker';
 import { balanceTokenBuilder } from '@/domain/balances/entities/__tests__/balance.token.builder';
-import { Balance } from '@/domain/balances/entities/balance.entity';
+import type { Balance } from '@/domain/balances/entities/balance.entity';
 import { getAddress } from 'viem';
 
 export function balanceBuilder(): IBuilder<Balance> {

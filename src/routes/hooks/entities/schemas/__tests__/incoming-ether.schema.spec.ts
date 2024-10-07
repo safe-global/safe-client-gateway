@@ -1,5 +1,5 @@
 import { incomingEtherEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-ether.builder';
-import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { IncomingEtherEventSchema } from '@/routes/hooks/entities/schemas/incoming-ether.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

@@ -1,9 +1,9 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { INetworkService } from '@/datasources/network/network.service.interface';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { firebaseNotificationBuilder } from '@/datasources/push-notifications-api/__tests__/firebase-notification.builder';
 import { FirebaseCloudMessagingApiService } from '@/datasources/push-notifications-api/firebase-cloud-messaging-api.service';
 import { faker } from '@faker-js/faker';

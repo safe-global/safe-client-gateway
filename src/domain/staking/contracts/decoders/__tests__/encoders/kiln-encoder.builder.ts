@@ -1,7 +1,7 @@
 // DepositEvent
 
 import { Builder } from '@/__tests__/builder';
-import { IEncoder } from '@/__tests__/encoder-builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 import {
   KilnAbi,
   KilnDecoder,

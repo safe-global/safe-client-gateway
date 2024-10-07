@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Safe } from '@/domain/safe/entities/safe.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Safe } from '@/domain/safe/entities/safe.entity';
 import { getAddress } from 'viem';
 
 export function safeBuilder(): IBuilder<Safe> {

@@ -1,4 +1,4 @@
-import { Hex } from 'viem/types/misc';
+import type { Hex } from 'viem/types/misc';
 
 export enum ValueType {
   Text = 'text',

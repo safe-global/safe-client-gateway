@@ -2,12 +2,12 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CoingeckoApi } from '@/datasources/balances-api/coingecko-api.service';
 import { faker } from '@faker-js/faker';
-import { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { INetworkService } from '@/datasources/network/network.service.interface';
+import type { CacheFirstDataSource } from '../cache/cache.first.data.source';
+import type { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { sortBy } from 'lodash';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 

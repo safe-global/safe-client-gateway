@@ -1,5 +1,5 @@
 import { safeAppsEventBuilder } from '@/routes/hooks/entities/__tests__/safe-apps-update.builder';
-import { ConfigEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { ConfigEventType } from '@/routes/hooks/entities/event-type.entity';
 import { SafeAppsUpdateEventSchema } from '@/routes/hooks/entities/schemas/safe-apps-update.schema';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';

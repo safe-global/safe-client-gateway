@@ -1,10 +1,10 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseMigrationHook } from '@/datasources/db/postgres-database.migration.hook';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 
 const migrator = jest.mocked({
   migrate: jest.fn(),

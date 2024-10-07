@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { ClsService } from 'nestjs-cls';
-import winston from 'winston';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { ClsService } from 'nestjs-cls';
+import type winston from 'winston';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { RequestScopedLoggingService } from '@/logging/logging.service';
 
 const mockClsService = jest.mocked({

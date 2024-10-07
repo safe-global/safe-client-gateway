@@ -1,7 +1,7 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { QueueConsumer } from '@/datasources/queues/queues-api.module';
+import type { QueueConsumer } from '@/datasources/queues/queues-api.module';
 import { QueueApiService } from '@/datasources/queues/queues-api.service';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 
 const mockQueueConsumer = {

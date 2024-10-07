@@ -1,5 +1,6 @@
-import { IBuilder, Builder } from '@/__tests__/builder';
-import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { faker } from '@faker-js/faker';
 
 export function accountDataSettingBuilder(): IBuilder<AccountDataSetting> {

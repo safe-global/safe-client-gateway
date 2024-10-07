@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Message } from '@/domain/messages/entities/message.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Message } from '@/domain/messages/entities/message.entity';
 import {
   messageConfirmationBuilder,
   toJson as messageConfirmationToJson,

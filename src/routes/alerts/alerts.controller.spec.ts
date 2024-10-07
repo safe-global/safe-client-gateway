@@ -1,5 +1,6 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import crypto from 'crypto';
@@ -17,7 +18,8 @@ import {
   alertTransactionBuilder,
 } from '@/routes/alerts/entities/__tests__/alerts.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Alert, EventType } from '@/routes/alerts/entities/alert.dto.entity';
+import type { Alert } from '@/routes/alerts/entities/alert.dto.entity';
+import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
@@ -54,7 +56,7 @@ import {
 } from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.

@@ -1,7 +1,7 @@
-import { Balance } from '@/domain/balances/entities/balance.entity';
-import { Chain } from '@/domain/chains/entities/chain.entity';
-import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
-import { Page } from '@/domain/entities/page.entity';
+import type { Balance } from '@/domain/balances/entities/balance.entity';
+import type { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import type { Page } from '@/domain/entities/page.entity';
 
 export interface IBalancesApi {
   getBalances(args: {

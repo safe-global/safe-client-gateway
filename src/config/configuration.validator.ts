@@ -1,4 +1,4 @@
-import { ZodType } from 'zod';
+import type { ZodType } from 'zod';
 
 /**
  * Validates the configuration against the provided schema
