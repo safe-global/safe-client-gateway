@@ -1,8 +1,8 @@
-import { Hex } from 'viem';
+import type { Hex } from 'viem';
 import { faker } from '@faker-js/faker';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { setPreSignatureEncoder } from '@/domain/swaps/contracts/__tests__/encoders/gp-v2-encoder.builder';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const loggingService = {
   debug: jest.fn(),

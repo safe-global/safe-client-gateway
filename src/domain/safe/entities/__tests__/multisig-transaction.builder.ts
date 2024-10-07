@@ -1,12 +1,13 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import {
   confirmationBuilder,
   toJson as confirmationToJson,
 } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import type { Operation } from '@/domain/safe/entities/operation.entity';
 import { getAddress } from 'viem';
 
 const HASH_LENGTH = 10;

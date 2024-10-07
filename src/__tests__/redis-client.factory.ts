@@ -1,4 +1,5 @@
-import { RedisClientType, createClient } from 'redis';
+import type { RedisClientType } from 'redis';
+import { createClient } from 'redis';
 
 export async function redisClientFactory(): Promise<RedisClientType> {
   const { REDIS_HOST = 'localhost', REDIS_PORT = 6379 } = process.env;

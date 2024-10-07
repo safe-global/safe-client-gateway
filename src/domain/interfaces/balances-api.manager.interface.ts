@@ -1,5 +1,5 @@
-import { IApiManager } from '@/domain/interfaces/api.manager.interface';
-import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
+import type { IApiManager } from '@/domain/interfaces/api.manager.interface';
+import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 
 export const IBalancesApiManager = Symbol('IBalancesApiManager');
 

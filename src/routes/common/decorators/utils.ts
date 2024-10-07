@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 
 export function getRouteUrl(request: Request): URL {
   const protocol = request.get('X-Forwarded-Proto') ?? request.protocol;

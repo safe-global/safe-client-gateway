@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { getRouteUrl } from '@/routes/common/decorators/utils';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 describe('utils tests', () => {
   describe('getRouteUrl tests', () => {

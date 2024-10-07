@@ -1,18 +1,20 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import {
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type {
   LockEventItem,
   UnlockEventItem,
   WithdrawEventItem,
 } from '@/domain/community/entities/locking-event.entity';
-import {
+import type {
   LockEventItemSchema,
-  LockingEventType,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
 } from '@/domain/community/entities/schemas/locking-event.schema';
+import { LockingEventType } from '@/domain/community/entities/schemas/locking-event.schema';
 import { faker } from '@faker-js/faker';
-import { Hex, getAddress } from 'viem';
-import { z } from 'zod';
+import type { Hex } from 'viem';
+import { getAddress } from 'viem';
+import type { z } from 'zod';
 
 export function lockEventItemBuilder(): IBuilder<LockEventItem> {
   return new Builder<z.infer<typeof LockEventItemSchema>>()

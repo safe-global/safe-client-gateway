@@ -1,5 +1,5 @@
 import { chainUpdateEventBuilder } from '@/routes/hooks/entities/__tests__/chain-update.builder';
-import { ConfigEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { ConfigEventType } from '@/routes/hooks/entities/event-type.entity';
 import { ChainUpdateEventSchema } from '@/routes/hooks/entities/schemas/chain-update.schema';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';

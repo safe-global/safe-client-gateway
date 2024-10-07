@@ -1,10 +1,11 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { IEncoder } from '@/__tests__/encoder-builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 import { fakeJson } from '@/__tests__/faker';
 import { ComposableCowAbi } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { faker } from '@faker-js/faker';
+import type { Hex } from 'viem';
 import {
-  Hex,
   encodeAbiParameters,
   encodeFunctionData,
   getAddress,

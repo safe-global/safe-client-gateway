@@ -1,5 +1,6 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -10,7 +11,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
 import { chainUpdateEventBuilder } from '@/routes/hooks/entities/__tests__/chain-update.builder';
 import { safeAppsEventBuilder } from '@/routes/hooks/entities/__tests__/safe-apps-update.builder';
 import { outgoingEtherEventBuilder } from '@/routes/hooks/entities/__tests__/outgoing-ether.builder';
@@ -30,10 +31,8 @@ import { TestPushNotificationsApiModule } from '@/datasources/push-notifications
 import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
 import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -49,7 +48,7 @@ import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-t
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import { messageCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/message-created.builder';
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
-import { UUID } from 'crypto';
+import type { UUID } from 'crypto';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 import {
   JWT_CONFIGURATION_MODULE,

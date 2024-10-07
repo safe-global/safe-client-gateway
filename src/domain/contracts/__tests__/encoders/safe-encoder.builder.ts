@@ -1,8 +1,9 @@
 import { faker } from '@faker-js/faker';
-import { encodeFunctionData, getAddress, Hex, pad } from 'viem';
+import type { Hex } from 'viem';
+import { encodeFunctionData, getAddress, pad } from 'viem';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
-import { Safe } from '@/domain/safe/entities/safe.entity';
-import { IEncoder } from '@/__tests__/encoder-builder';
+import type { Safe } from '@/domain/safe/entities/safe.entity';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
 
 const ZERO_ADDRESS = pad('0x0', { size: 20 });
