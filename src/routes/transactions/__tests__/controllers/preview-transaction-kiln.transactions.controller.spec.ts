@@ -15,11 +15,8 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type {
-  INetworkService} from '@/datasources/network/network.service.interface';
-import {
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { previewTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/preview-transaction.dto.builder';
 import { CacheModule } from '@/datasources/cache/cache.module';
@@ -32,11 +29,8 @@ import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
-import type {
-  Stake} from '@/datasources/staking-api/entities/stake.entity';
-import {
-  StakeState,
-} from '@/datasources/staking-api/entities/stake.entity';
+import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
+import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
