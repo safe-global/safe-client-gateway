@@ -20,14 +20,13 @@ import {
 } from '@/routes/hooks/entities/event-type.entity';
 import { Event } from '@/routes/hooks/entities/event.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import { Interval } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { memoize, MemoizedFunction } from 'lodash';
 
 @Injectable()
 export class EventCacheHelper {
   private static readonly HOOK_TYPE = 'hook';
   private static readonly UNSUPPORTED_CHAIN_EVENT = 'unsupported_chain_event';
-  public static readonly UNSUPPORTED_EVENTS_LOG_INTERVAL = 60 * 1000; // 1 minute
   public isSupportedChainMemo: ((chainId: string) => Promise<boolean>) &
     MemoizedFunction;
   private unsupportedChains: Array<string> = [];
@@ -151,7 +150,7 @@ export class EventCacheHelper {
    * Logs the number of unsupported chain events for each chain and clears the store.
    * This function is public just for testing purposes.
    */
-  @Interval(EventCacheHelper.UNSUPPORTED_EVENTS_LOG_INTERVAL)
+  @Cron(CronExpression.EVERY_MINUTE)
   public async logUnsupportedEvents(): Promise<void> {
     await Promise.all(
       this.unsupportedChains.map(async (chainId) => {
