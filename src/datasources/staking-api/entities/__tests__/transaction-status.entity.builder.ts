@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
 import { faker } from '@faker-js/faker';
 
 export function transactionStatusReceiptLogBuilder(): IBuilder<

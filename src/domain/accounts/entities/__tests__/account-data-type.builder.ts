@@ -1,8 +1,7 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import {
-  AccountDataType,
-  AccountDataTypeNames,
-} from '@/domain/accounts/entities/account-data-type.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
+import { AccountDataTypeNames } from '@/domain/accounts/entities/account-data-type.entity';
 import { faker } from '@faker-js/faker';
 
 export function accountDataTypeBuilder(): IBuilder<AccountDataType> {

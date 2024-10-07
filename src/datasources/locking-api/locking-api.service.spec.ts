@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { INetworkService } from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { LockingApi } from '@/datasources/locking-api/locking-api.service';
@@ -15,7 +15,7 @@ import { getAddress } from 'viem';
 import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
 import { campaignBuilder } from '@/domain/community/entities/__tests__/campaign.builder';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
-import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
+import type { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { campaignActivityBuilder } from '@/domain/community/entities/__tests__/campaign-activity.builder';
 
 const networkService = {

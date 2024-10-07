@@ -1,6 +1,7 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
-import { SafeCreated } from '@/routes/hooks/entities/safe-created.entity';
+import type { SafeCreated } from '@/routes/hooks/entities/safe-created.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

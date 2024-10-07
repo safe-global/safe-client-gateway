@@ -1,10 +1,12 @@
-import {
+import type {
   Abi,
   ContractEventName,
   ContractFunctionName,
   DecodeEventLogParameters,
   DecodeFunctionDataParameters,
   Hex,
+} from 'viem';
+import {
   decodeEventLog as _decodeEventLog,
   decodeFunctionData as _decodeFunctionData,
   toFunctionSelector,

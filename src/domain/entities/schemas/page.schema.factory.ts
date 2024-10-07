@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Page } from '@/domain/entities/page.entity';
+import type { Page } from '@/domain/entities/page.entity';
 
 const BasePageSchema = z.object({
   count: z.number().nullable(),

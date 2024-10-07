@@ -1,24 +1,24 @@
-import { Backbone } from '@/domain/backbone/entities/backbone.entity';
-import { Singleton } from '@/domain/chains/entities/singleton.entity';
-import { Contract } from '@/domain/contracts/entities/contract.entity';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { Delegate } from '@/domain/delegate/entities/delegate.entity';
-import { Page } from '@/domain/entities/page.entity';
-import { Estimation } from '@/domain/estimations/entities/estimation.entity';
-import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
-import { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
-import { Message } from '@/domain/messages/entities/message.entity';
-import { Device } from '@/domain/notifications/v1/entities/device.entity';
-import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { SafeList } from '@/domain/safe/entities/safe-list.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
-import { Transaction } from '@/domain/safe/entities/transaction.entity';
-import { Transfer } from '@/domain/safe/entities/transfer.entity';
-import { Token } from '@/domain/tokens/entities/token.entity';
-import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
-import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
+import type { Singleton } from '@/domain/chains/entities/singleton.entity';
+import type { Contract } from '@/domain/contracts/entities/contract.entity';
+import type { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import type { Page } from '@/domain/entities/page.entity';
+import type { Estimation } from '@/domain/estimations/entities/estimation.entity';
+import type { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
+import type { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
+import type { Message } from '@/domain/messages/entities/message.entity';
+import type { Device } from '@/domain/notifications/v1/entities/device.entity';
+import type { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import type { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import type { SafeList } from '@/domain/safe/entities/safe-list.entity';
+import type { Safe } from '@/domain/safe/entities/safe.entity';
+import type { Transaction } from '@/domain/safe/entities/transaction.entity';
+import type { Transfer } from '@/domain/safe/entities/transfer.entity';
+import type { Token } from '@/domain/tokens/entities/token.entity';
+import type { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
+import type { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 
 export interface ITransactionApi {
   getDataDecoded(args: {

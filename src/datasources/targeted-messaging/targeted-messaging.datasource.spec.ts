@@ -5,9 +5,9 @@ import { createOutreachDtoBuilder } from '@/domain/targeted-messaging/entities/t
 import { createTargetedSafesDtoBuilder } from '@/domain/targeted-messaging/entities/tests/create-target-safes.dto.builder';
 import { SubmissionNotFoundError } from '@/domain/targeted-messaging/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 import { getAddress } from 'viem';
 
 const mockLoggingService = {

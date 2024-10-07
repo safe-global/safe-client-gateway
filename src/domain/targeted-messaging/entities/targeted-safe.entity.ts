@@ -1,7 +1,7 @@
 import { RowSchema } from '@/datasources/db/entities/row.entity';
 import { OutreachSchema } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export type TargetedSafe = z.infer<typeof TargetedSafeSchema>;
 

@@ -1,6 +1,6 @@
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenSchema } from '@/domain/tokens/entities/schemas/token.schema';
-import { Token } from '@/domain/tokens/entities/token.entity';
+import type { Token } from '@/domain/tokens/entities/token.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

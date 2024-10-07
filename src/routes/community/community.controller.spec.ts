@@ -1,7 +1,8 @@
 import request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -9,10 +10,8 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -24,7 +23,7 @@ import {
   withdrawEventItemBuilder,
   toJson as lockingEventToJson,
 } from '@/domain/community/entities/__tests__/locking-event.builder';
-import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
+import type { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import { getAddress } from 'viem';
 import { lockingRankBuilder } from '@/domain/community/entities/__tests__/locking-rank.builder';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
@@ -34,10 +33,10 @@ import {
   campaignBuilder,
   toJson as campaignToJson,
 } from '@/domain/community/entities/__tests__/campaign.builder';
-import { Campaign } from '@/domain/community/entities/campaign.entity';
-import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
+import type { Campaign } from '@/domain/community/entities/campaign.entity';
+import type { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { campaignRankBuilder } from '@/domain/community/entities/__tests__/campaign-rank.builder';
-import { Server } from 'net';
+import type { Server } from 'net';
 import {
   campaignActivityBuilder,
   toJson as campaignActivityToJson,

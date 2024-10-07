@@ -1,5 +1,5 @@
 import { deletedMultisigTransactionEventBuilder } from '@/routes/hooks/entities/__tests__/deleted-multisig-transaction.builder';
-import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { DeletedMultisigTransactionEventSchema } from '@/routes/hooks/entities/schemas/deleted-multisig-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

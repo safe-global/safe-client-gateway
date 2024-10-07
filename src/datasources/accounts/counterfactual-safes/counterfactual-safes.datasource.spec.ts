@@ -1,5 +1,5 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { CounterfactualSafesDatasource } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -7,10 +7,10 @@ import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import { createCounterfactualSafeDtoBuilder } from '@/domain/accounts/counterfactual-safes/entities/__tests__/create-counterfactual-safe.dto.entity.builder';
 import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.builder';
-import { Account } from '@/domain/accounts/entities/account.entity';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { Account } from '@/domain/accounts/entities/account.entity';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 import { getAddress } from 'viem';
 
 const mockLoggingService = {

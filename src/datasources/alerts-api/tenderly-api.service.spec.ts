@@ -2,11 +2,11 @@ import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { TenderlyApi } from '@/datasources/alerts-api/tenderly-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { INetworkService } from '@/datasources/network/network.service.interface';
-import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
+import type { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
 import { getAddress } from 'viem';
 
 const networkService = {

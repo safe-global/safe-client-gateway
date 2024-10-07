@@ -1,9 +1,9 @@
-import {
+import type {
   AlertLogSchema,
   AlertSchema,
   AlertTransactionSchema,
 } from '@/routes/alerts/entities/schemas/alerts.schema';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export class AlertLog implements z.infer<typeof AlertLogSchema> {
   address!: `0x${string}`;

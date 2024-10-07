@@ -1,11 +1,11 @@
 import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
-import { DeletedMultisigTransactionEvent } from '@/routes/hooks/entities/schemas/deleted-multisig-transaction.schema';
-import { ExecutedTransactionEvent } from '@/routes/hooks/entities/schemas/executed-transaction.schema';
-import { IncomingEtherEvent } from '@/routes/hooks/entities/schemas/incoming-ether.schema';
-import { IncomingTokenEvent } from '@/routes/hooks/entities/schemas/incoming-token.schema';
-import { MessageCreatedEvent } from '@/routes/hooks/entities/schemas/message-created.schema';
-import { ModuleTransactionEvent } from '@/routes/hooks/entities/schemas/module-transaction.schema';
-import { PendingTransactionEvent } from '@/routes/hooks/entities/schemas/pending-transaction.schema';
+import type { DeletedMultisigTransactionEvent } from '@/routes/hooks/entities/schemas/deleted-multisig-transaction.schema';
+import type { ExecutedTransactionEvent } from '@/routes/hooks/entities/schemas/executed-transaction.schema';
+import type { IncomingEtherEvent } from '@/routes/hooks/entities/schemas/incoming-ether.schema';
+import type { IncomingTokenEvent } from '@/routes/hooks/entities/schemas/incoming-token.schema';
+import type { MessageCreatedEvent } from '@/routes/hooks/entities/schemas/message-created.schema';
+import type { ModuleTransactionEvent } from '@/routes/hooks/entities/schemas/module-transaction.schema';
+import type { PendingTransactionEvent } from '@/routes/hooks/entities/schemas/pending-transaction.schema';
 
 export enum NotificationType {
   CONFIRMATION_REQUEST = 'CONFIRMATION_REQUEST', // TransactionEventType.PENDING_MULTISIG_TRANSACTION

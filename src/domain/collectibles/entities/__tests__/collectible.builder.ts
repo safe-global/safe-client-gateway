@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { getAddress } from 'viem';
 
 export function collectibleBuilder(): IBuilder<Collectible> {

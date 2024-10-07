@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import { getAddress } from 'viem';
 
 export function delegateBuilder(): IBuilder<Delegate> {

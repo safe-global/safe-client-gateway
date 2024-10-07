@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

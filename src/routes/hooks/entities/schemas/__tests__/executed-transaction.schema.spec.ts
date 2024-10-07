@@ -1,5 +1,5 @@
 import { executedTransactionEventBuilder } from '@/routes/hooks/entities/__tests__/executed-transaction.builder';
-import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { ExecutedTransactionEventSchema } from '@/routes/hooks/entities/schemas/executed-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

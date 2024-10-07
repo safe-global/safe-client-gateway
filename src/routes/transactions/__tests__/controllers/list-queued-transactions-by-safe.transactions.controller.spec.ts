@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
@@ -8,7 +9,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
@@ -19,13 +20,11 @@ import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { getAddress } from 'viem';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;

@@ -1,19 +1,19 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
-import {
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
+import type {
   DefiVaultStats,
   DefiVaultStatsChains,
 } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
-import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
-import { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
-import { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
-import { Stake } from '@/datasources/staking-api/entities/stake.entity';
-import { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
-import { IStakingApi } from '@/domain/interfaces/staking-api.interface';
+import type { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
+import type { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
+import type { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
+import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
+import type { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
+import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 
 export class KilnApi implements IStakingApi {
   public static DefiVaultStatsChains: {

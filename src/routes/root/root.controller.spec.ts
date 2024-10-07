@@ -1,5 +1,6 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -8,7 +9,7 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import request from 'supertest';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 describe('Root Controller tests', () => {
   let app: INestApplication<Server>;

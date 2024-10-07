@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import {
+import type {
   DataDecoded,
   DataDecodedParameter,
 } from '@/domain/data-decoder/entities/data-decoded.entity';

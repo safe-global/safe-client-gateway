@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
@@ -14,13 +15,11 @@ import {
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { collectibleBuilder } from '@/domain/collectibles/entities/__tests__/collectible.builder';
-import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import type { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
@@ -30,7 +29,7 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
 import { getAddress } from 'viem';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 

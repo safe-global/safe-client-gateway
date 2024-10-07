@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import '@/__tests__/matchers/to-be-string-or-null';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
@@ -7,9 +7,9 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
-import { Order } from '@/domain/swaps/entities/order.entity';
+import type { Order } from '@/domain/swaps/entities/order.entity';
 import configuration from '@/config/entities/configuration';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 const orderIds = {
   '1': {

@@ -1,5 +1,5 @@
 import { newConfirmationEventBuilder } from '@/routes/hooks/entities/__tests__/new-confirmation.builder';
-import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { NewConfirmationEventSchema } from '@/routes/hooks/entities/schemas/new-confirmation.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

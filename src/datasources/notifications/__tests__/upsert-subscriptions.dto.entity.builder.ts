@@ -1,10 +1,11 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { getAddress } from 'viem';
-import { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
+import type { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
 import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
-import { UUID } from 'crypto';
+import type { UUID } from 'crypto';
 
 export function upsertSubscriptionsDtoBuilder(): IBuilder<UpsertSubscriptionsDto> {
   return new Builder<UpsertSubscriptionsDto>()

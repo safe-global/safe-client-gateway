@@ -1,6 +1,6 @@
-import { Chain } from '@/domain/chains/entities/chain.entity';
-import { Page } from '@/domain/entities/page.entity';
-import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
+import type { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Page } from '@/domain/entities/page.entity';
+import type { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 
 export const IConfigApi = Symbol('IConfigApi');
 

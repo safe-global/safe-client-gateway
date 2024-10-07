@@ -1,4 +1,4 @@
-import { z } from 'zod';
-import { GasPriceFixedSchema } from '@/domain/chains/entities/schemas/chain.schema';
+import type { z } from 'zod';
+import type { GasPriceFixedSchema } from '@/domain/chains/entities/schemas/chain.schema';
 
 export type GasPriceFixed = z.infer<typeof GasPriceFixedSchema>;

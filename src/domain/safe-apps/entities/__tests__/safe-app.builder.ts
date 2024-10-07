@@ -1,9 +1,10 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { safeAppAccessControlBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-access-control.builder';
 import { safeAppProviderBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-provider.builder';
 import { safeAppSocialProfileBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-social-profile.builder';
-import { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
+import type { SafeApp } from '@/domain/safe-apps/entities/safe-app.entity';
 
 export function safeAppBuilder(): IBuilder<SafeApp> {
   return new Builder<SafeApp>()

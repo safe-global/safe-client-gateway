@@ -1,11 +1,11 @@
-import { IEncoder } from '@/__tests__/encoder-builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 import { faker } from '@faker-js/faker';
+import type { Hex } from 'viem';
 import {
   encodeAbiParameters,
   encodeEventTopics,
   getAbiItem,
   getAddress,
-  Hex,
   keccak256,
   toBytes,
 } from 'viem';

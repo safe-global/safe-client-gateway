@@ -1,15 +1,15 @@
-import { SwapsRepository } from '@/domain/swaps/swaps.repository';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
+import type { SwapsRepository } from '@/domain/swaps/swaps.repository';
+import type { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import type { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
 import { faker } from '@faker-js/faker';
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { getAddress } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { OrderKind, OrderStatus } from '@/domain/swaps/entities/order.entity';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
-import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import type { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
+import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 
 const swapsRepository = {
