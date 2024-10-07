@@ -1,5 +1,5 @@
 import { ModuleTransactionEventSchema } from '@/routes/hooks/entities/schemas/module-transaction.schema';
-import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { ZodError } from 'zod';

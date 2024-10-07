@@ -13,12 +13,17 @@ import {
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
+
+const mockLoggingService = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('MultiSendDecoder', () => {
   let target: MultiSendDecoder;
 
   beforeEach(() => {
-    target = new MultiSendDecoder();
+    target = new MultiSendDecoder(mockLoggingService);
   });
 
   describe('mapMultiSendTransactions', () => {
@@ -99,6 +104,15 @@ describe('MultiSendDecoder', () => {
           value: BigInt('2000000'),
         },
       ]);
+    });
+
+    it("doesn't map malformed multiSend transactions (real world edge case)", () => {
+      // Ethereum safeTxHash 0x1f6e641ba0d13906745eddfd54731319e5837f4bec5c804a693e35a54d5bbea9
+      // (this is the same behavior as the Transaction Service /data-decoder endpoint)
+      const data =
+        '0x8d80ff0a00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000014d6c123eb801f385f401825e5e6f61bd5b2d44caf000000000000000000000000';
+
+      expect(target.mapMultiSendTransactions(data)).toStrictEqual([]);
     });
   });
 

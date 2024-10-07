@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import configuration from '@/config/entities/configuration';
+import type configuration from '@/config/entities/configuration';
 
 export default (): ReturnType<typeof configuration> => ({
   about: {

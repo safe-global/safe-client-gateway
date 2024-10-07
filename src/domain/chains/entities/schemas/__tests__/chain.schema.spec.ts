@@ -1,4 +1,5 @@
 import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
+import { beaconChainExplorerUriTemplateBuilder } from '@/domain/chains/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractAddressesBuilder } from '@/domain/chains/entities/__tests__/contract-addresses.builder';
 import { gasPriceFixedEIP1559Builder } from '@/domain/chains/entities/__tests__/gas-price-fixed-eip-1559.builder';
@@ -8,7 +9,7 @@ import { nativeCurrencyBuilder } from '@/domain/chains/entities/__tests__/native
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
 import { themeBuilder } from '@/domain/chains/entities/__tests__/theme.builder';
-import { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Chain } from '@/domain/chains/entities/chain.entity';
 import {
   ChainSchema,
   BalancesProviderSchema,
@@ -22,6 +23,7 @@ import {
   ThemeSchema,
   ContractAddressesSchema,
   ChainLenientPageSchema,
+  BeaconChainExplorerUriTemplateSchema,
 } from '@/domain/chains/entities/schemas/chain.schema';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
@@ -113,6 +115,73 @@ describe('Chain schemas', () => {
           },
         ]),
       );
+    });
+  });
+
+  describe('BeaconChainExplorerUriTemplate', () => {
+    it('should validate a BeaconChainExplorerUriTemplate', () => {
+      const beaconChainExplorerUriTemplate =
+        beaconChainExplorerUriTemplateBuilder().build();
+
+      const result = BeaconChainExplorerUriTemplateSchema.safeParse(
+        beaconChainExplorerUriTemplate,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should allow a string publicKey', () => {
+      const beaconChainExplorerUriTemplate =
+        beaconChainExplorerUriTemplateBuilder()
+          .with(
+            'publicKey',
+            `${faker.internet.url({ appendSlash: false })}/{{publicKey}}`,
+          )
+          .build();
+
+      const result = BeaconChainExplorerUriTemplateSchema.safeParse(
+        beaconChainExplorerUriTemplate,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should allow a null publicKey', () => {
+      const beaconChainExplorerUriTemplate =
+        beaconChainExplorerUriTemplateBuilder().with('publicKey', null).build();
+
+      const result = BeaconChainExplorerUriTemplateSchema.safeParse(
+        beaconChainExplorerUriTemplate,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should default publicKey to null', () => {
+      const beaconChainExplorerUriTemplate = {
+        publicKey: null,
+      };
+
+      const result = BeaconChainExplorerUriTemplateSchema.safeParse(
+        beaconChainExplorerUriTemplate,
+      );
+
+      expect(result.success && result.data.publicKey).toBe(null);
+    });
+
+    // TODO: Remove after `beaconChainExplorerUriTemplate` field is deployed on Config Service
+    it('should default beaconChainExplorerUriTemplate to have null publicKey', () => {
+      const chain = chainBuilder().build();
+      // @ts-expect-error - inferred types don't allow optional fields
+      delete chain.beaconChainExplorerUriTemplate;
+
+      const result = ChainSchema.safeParse(chain);
+
+      expect(
+        result.success && result.data.beaconChainExplorerUriTemplate,
+      ).toStrictEqual({
+        publicKey: null,
+      });
     });
   });
 
@@ -606,6 +675,8 @@ describe('Chain schemas', () => {
       ['safeAppsRpcUri' as const],
       ['publicRpcUri' as const],
       ['blockExplorerUriTemplate' as const],
+      // TODO: Include after `beaconChainExplorerUriTemplate` field is deployed on Config Service
+      // ['beaconChainExplorerUriTemplate' as const],
       ['nativeCurrency' as const],
       ['pricesProvider' as const],
       ['balancesProvider' as const],

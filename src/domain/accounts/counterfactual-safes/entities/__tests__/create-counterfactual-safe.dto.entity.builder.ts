@@ -1,5 +1,6 @@
-import { IBuilder, Builder } from '@/__tests__/builder';
-import { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { CreateCounterfactualSafeDto } from '@/domain/accounts/counterfactual-safes/entities/create-counterfactual-safe.dto.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

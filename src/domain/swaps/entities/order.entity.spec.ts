@@ -1,7 +1,8 @@
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { Order, OrderSchema } from '@/domain/swaps/entities/order.entity';
+import type { Order } from '@/domain/swaps/entities/order.entity';
+import { OrderSchema } from '@/domain/swaps/entities/order.entity';
 
 describe('OrderSchema', () => {
   it('should validate a valid order', () => {

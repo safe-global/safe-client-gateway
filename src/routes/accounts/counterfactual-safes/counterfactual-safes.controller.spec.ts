@@ -18,7 +18,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
+import type { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
 import { counterfactualSafeBuilder } from '@/domain/accounts/counterfactual-safes/entities/__tests__/counterfactual-safe.builder';
 import { createCounterfactualSafeDtoBuilder } from '@/domain/accounts/counterfactual-safes/entities/__tests__/create-counterfactual-safe.dto.entity.builder';
 import { accountDataSettingBuilder } from '@/domain/accounts/entities/__tests__/account-data-setting.builder';
@@ -34,9 +34,11 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { CounterfactualSafesController } from '@/routes/accounts/counterfactual-safes/counterfactual-safes.controller';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import { INestApplication, NotFoundException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Server } from 'http';
+import type { INestApplication } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import type { Server } from 'http';
 import request from 'supertest';
 import { getAddress } from 'viem';
 

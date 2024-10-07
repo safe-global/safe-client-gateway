@@ -1,12 +1,13 @@
+import type { Order } from '@/domain/swaps/entities/order.entity';
 import {
   BuyTokenBalance,
-  Order,
   OrderClass,
   OrderKind,
   OrderStatus,
   SellTokenBalance,
 } from '@/domain/swaps/entities/order.entity';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

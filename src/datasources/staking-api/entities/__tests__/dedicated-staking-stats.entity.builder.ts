@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
 import { faker } from '@faker-js/faker';
 
 export function dedicatedStakingStatsGrossApyBuilder(): IBuilder<

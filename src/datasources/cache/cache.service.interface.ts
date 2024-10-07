@@ -1,4 +1,4 @@
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export const CacheService = Symbol('ICacheService');
 

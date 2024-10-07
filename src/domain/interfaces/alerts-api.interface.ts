@@ -1,5 +1,5 @@
-import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
-import { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
+import type { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
+import type { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
 
 export const IAlertsApi = Symbol('IAlertsApi');
 

@@ -1,4 +1,4 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { fullAppDataBuilder } from '@/domain/swaps/entities/__tests__/full-app-data.builder';
 import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
 

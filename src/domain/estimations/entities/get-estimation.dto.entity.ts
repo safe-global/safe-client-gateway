@@ -1,6 +1,6 @@
-import { Operation } from '@/domain/safe/entities/operation.entity';
-import { GetEstimationDtoSchema } from '@/routes/estimations/entities/schemas/get-estimation.dto.schema';
-import { z } from 'zod';
+import type { Operation } from '@/domain/safe/entities/operation.entity';
+import type { GetEstimationDtoSchema } from '@/routes/estimations/entities/schemas/get-estimation.dto.schema';
+import type { z } from 'zod';
 
 export class GetEstimationDto
   implements z.infer<typeof GetEstimationDtoSchema>

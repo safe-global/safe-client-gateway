@@ -2,11 +2,11 @@ import { faker } from '@faker-js/faker';
 import { fakeJson } from '@/__tests__/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { INetworkService } from '@/datasources/network/network.service.interface';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {

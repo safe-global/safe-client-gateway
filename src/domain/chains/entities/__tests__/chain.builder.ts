@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { blockExplorerUriTemplateBuilder } from '@/domain/chains/entities/__tests__/block-explorer-uri-template.builder';
 import { gasPriceFixedEIP1559Builder } from '@/domain/chains/entities/__tests__/gas-price-fixed-eip-1559.builder';
 import { gasPriceFixedBuilder } from '@/domain/chains/entities/__tests__/gas-price-fixed.builder';
@@ -7,10 +8,11 @@ import { gasPriceOracleBuilder } from '@/domain/chains/entities/__tests__/gas-pr
 import { nativeCurrencyBuilder } from '@/domain/chains/entities/__tests__/native.currency.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
 import { themeBuilder } from '@/domain/chains/entities/__tests__/theme.builder';
-import { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Chain } from '@/domain/chains/entities/chain.entity';
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
 import { contractAddressesBuilder } from '@/domain/chains/entities/__tests__/contract-addresses.builder';
+import { beaconChainExplorerUriTemplateBuilder } from '@/domain/chains/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 
 export function chainBuilder(): IBuilder<Chain> {
   return new Builder<Chain>()
@@ -25,6 +27,10 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('safeAppsRpcUri', rpcUriBuilder().build())
     .with('publicRpcUri', rpcUriBuilder().build())
     .with('blockExplorerUriTemplate', blockExplorerUriTemplateBuilder().build())
+    .with(
+      'beaconChainExplorerUriTemplate',
+      beaconChainExplorerUriTemplateBuilder().build(),
+    )
     .with('nativeCurrency', nativeCurrencyBuilder().build())
     .with('pricesProvider', pricesProviderBuilder().build())
     .with('balancesProvider', balancesProviderBuilder().build())

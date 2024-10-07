@@ -1,7 +1,8 @@
 import { faker } from '@faker-js/faker';
 import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
 import { safeRegistrationBuilder } from '@/routes/notifications/v1/entities/__tests__/safe-registration.builder';
 
 export function registerDeviceDtoBuilder(): IBuilder<RegisterDeviceDto> {

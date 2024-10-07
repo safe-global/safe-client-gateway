@@ -1,16 +1,16 @@
 import { faker } from '@faker-js/faker';
-import { ContractsRepository } from '@/domain/contracts/contracts.repository';
+import type { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MULTI_SEND_METHOD_NAME } from '@/routes/transactions/constants';
-import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
+import type { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
 import { getAddress } from 'viem';
 

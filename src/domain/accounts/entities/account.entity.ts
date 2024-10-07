@@ -1,7 +1,7 @@
 import { RowSchema } from '@/datasources/db/entities/row.entity';
 import { GroupSchema } from '@/domain/accounts/entities/group.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export type Account = z.infer<typeof AccountSchema>;
 

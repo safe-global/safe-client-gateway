@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

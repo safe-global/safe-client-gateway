@@ -1,6 +1,6 @@
-import { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
-import { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
-import { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
+import type { AlertsDeletion } from '@/domain/alerts/entities/alerts-deletion.entity';
+import type { AlertsRegistration } from '@/domain/alerts/entities/alerts-registration.entity';
+import type { AlertLog } from '@/routes/alerts/entities/alert.dto.entity';
 
 export const IAlertsRepository = Symbol('IAlertsRepository');
 

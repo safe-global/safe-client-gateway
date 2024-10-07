@@ -1,5 +1,8 @@
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+import {
+  KilnAbi,
+  KilnDecoder,
+} from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import {
@@ -12,17 +15,22 @@ import {
   Module,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { isHex, toFunctionSelector } from 'viem';
+import { AbiFunction, getAbiItem, isHex, toFunctionSelector } from 'viem';
 
 @Injectable()
 export class KilnNativeStakingHelper {
-  // TODO: Extract from KilnAbi
-  private static readonly DEPOSIT_SIGNATURE =
-    'function deposit() external payable';
-  private static readonly VALIDATORS_EXIT_SIGNATURE =
-    'function requestValidatorsExit(bytes) external';
-  private static readonly WITHDRAW_SIGNATURE =
-    'function batchWithdrawCLFee(bytes) external';
+  private static readonly DEPOSIT_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'deposit',
+  });
+  private static readonly VALIDATORS_EXIT_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'requestValidatorsExit',
+  });
+  private static readonly WITHDRAW_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'batchWithdrawCLFee',
+  });
 
   constructor(
     private readonly transactionFinder: TransactionFinder,
@@ -36,7 +44,7 @@ export class KilnNativeStakingHelper {
     data: `0x${string}`;
   }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
     return this.findNativeStakingTransaction({
-      signature: KilnNativeStakingHelper.DEPOSIT_SIGNATURE,
+      item: KilnNativeStakingHelper.DEPOSIT_SIGNATURE,
       ...args,
     });
   }
@@ -47,7 +55,7 @@ export class KilnNativeStakingHelper {
     data: `0x${string}`;
   }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
     return this.findNativeStakingTransaction({
-      signature: KilnNativeStakingHelper.VALIDATORS_EXIT_SIGNATURE,
+      item: KilnNativeStakingHelper.VALIDATORS_EXIT_SIGNATURE,
       ...args,
     });
   }
@@ -58,20 +66,20 @@ export class KilnNativeStakingHelper {
     data: `0x${string}`;
   }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
     return this.findNativeStakingTransaction({
-      signature: KilnNativeStakingHelper.WITHDRAW_SIGNATURE,
+      item: KilnNativeStakingHelper.WITHDRAW_SIGNATURE,
       ...args,
     });
   }
 
   private async findNativeStakingTransaction(args: {
-    signature: string;
+    item: AbiFunction;
     chainId: string;
     to?: `0x${string}`;
     data: `0x${string}`;
   }): Promise<{ to: `0x${string}`; data: `0x${string}` } | null> {
     const transaction = this.transactionFinder.findTransaction(
       (transaction) =>
-        transaction.data.startsWith(toFunctionSelector(args.signature)),
+        transaction.data.startsWith(toFunctionSelector(args.item)),
       args,
     );
 
@@ -100,8 +108,8 @@ export class KilnNativeStakingHelper {
       .catch(() => null);
 
     if (
-      deployment?.product_type !== 'dedicated' &&
-      deployment?.chain !== 'unknown'
+      deployment?.product_type !== 'dedicated' ||
+      deployment?.chain === 'unknown'
     ) {
       return null;
     }
