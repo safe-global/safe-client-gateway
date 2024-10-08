@@ -4,6 +4,10 @@ import type { Outreach } from '@/domain/targeted-messaging/entities/outreach.ent
 import type { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
 import type { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 
+export const ITargetedMessagingDatasource = Symbol(
+  'ITargetedMessagingDatasource',
+);
+
 export interface ITargetedMessagingDatasource {
   createOutreach(createOutreachDto: CreateOutreachDto): Promise<Outreach>;
 

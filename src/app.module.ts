@@ -49,6 +49,7 @@ import { TransactionsViewControllerModule } from '@/routes/transactions/transact
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
 import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
+import { TargetedMessagingModule } from '@/routes/targeted-messaging/targeted-messaging.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -63,6 +64,7 @@ export class AppModule implements NestModule {
       confirmationView: isConfirmationViewEnabled,
       delegatesV2: isDelegatesV2Enabled,
       pushNotifications: isPushNotificationsEnabled,
+      targetedMessaging: isTargetedMessagingFeatureEnabled,
     } = configFactory()['features'];
 
     return {
@@ -97,6 +99,7 @@ export class AppModule implements NestModule {
         RootModule,
         SafeAppsModule,
         SafesModule,
+        ...(isTargetedMessagingFeatureEnabled ? [TargetedMessagingModule] : []),
         TransactionsModule,
         ...(isConfirmationViewEnabled
           ? [TransactionsViewControllerModule]

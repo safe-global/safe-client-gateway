@@ -4,13 +4,11 @@ import { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entities/cre
 import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
 import { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
+import { SubmissionNotFoundError } from '@/domain/targeted-messaging/errors/submission-not-found.error';
+import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
-import {
-  Inject,
-  NotFoundException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { Inject, UnprocessableEntityException } from '@nestjs/common';
 import postgres from 'postgres';
 
 export class TargetedMessagingDatasource
@@ -85,7 +83,7 @@ export class TargetedMessagingDatasource
       WHERE outreach_id = ${args.outreachId} AND address = ${args.safeAddress}`;
 
     if (!targetedSafe) {
-      throw new NotFoundException();
+      throw new TargetedSafeNotFoundError();
     }
 
     return {
@@ -131,7 +129,7 @@ export class TargetedMessagingDatasource
       WHERE targeted_safe_id = ${args.targetedSafe.id} AND signer_address = ${args.signerAddress}`;
 
     if (!submission) {
-      throw new NotFoundException();
+      throw new SubmissionNotFoundError();
     }
 
     return {
