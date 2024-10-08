@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { PreviewTransactionDto } from '@/routes/transactions/entities/preview-transaction.dto.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { PreviewTransactionDto } from '@/routes/transactions/entities/preview-transaction.dto.entity';
 import { getAddress } from 'viem';
 
 export function previewTransactionDtoBuilder(): IBuilder<PreviewTransactionDto> {

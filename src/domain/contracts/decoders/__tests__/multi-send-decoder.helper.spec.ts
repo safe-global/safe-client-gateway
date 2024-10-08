@@ -13,7 +13,7 @@ import {
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockLoggingService = {
   warn: jest.fn(),

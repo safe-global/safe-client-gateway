@@ -1,4 +1,4 @@
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 
 export const IJwtService = Symbol('IJwtService');
 

@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 import { get } from 'lodash';
 
 const HEADER_IP_ADDRESS = 'X-Real-IP';

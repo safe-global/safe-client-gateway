@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import {
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type {
   ZerionCollectible,
   ZerionCollectibleAttributes,
   ZerionCollectibles,

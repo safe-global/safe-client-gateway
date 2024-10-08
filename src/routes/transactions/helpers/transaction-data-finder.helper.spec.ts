@@ -3,7 +3,7 @@ import {
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { faker } from '@faker-js/faker';
 import { encodeFunctionData, erc20Abi, getAddress } from 'viem';
@@ -28,13 +28,17 @@ describe('TransactionFinder', () => {
         functionName: 'transfer',
         args: [getAddress(faker.finance.ethereumAddress()), BigInt(0)],
       }),
+      value: faker.string.numeric(),
     };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => true;
 
     const result = target.findTransaction(isTransactionData, transaction);
 
-    expect(result).toStrictEqual({ data: transaction.data });
+    expect(result).toStrictEqual({
+      data: transaction.data,
+      value: transaction.value,
+    });
   });
 
   it('should return the transaction data if it is found in a MultiSend transaction', () => {
@@ -46,7 +50,7 @@ describe('TransactionFinder', () => {
       }),
       to: getAddress(faker.finance.ethereumAddress()),
       operation: 0,
-      value: BigInt(0),
+      value: faker.number.bigInt(),
     };
     const multiSend = multiSendEncoder().with(
       'transactions',
@@ -58,11 +62,13 @@ describe('TransactionFinder', () => {
 
     const result = target.findTransaction(isTransactionData, {
       data: multiSend.encode(),
+      value: faker.string.numeric(),
     });
 
     expect(result).toStrictEqual({
       to: transaction.to,
       data: transaction.data,
+      value: transaction.value.toString(),
     });
   });
 
@@ -73,6 +79,7 @@ describe('TransactionFinder', () => {
         functionName: 'transfer',
         args: [getAddress(faker.finance.ethereumAddress()), BigInt(0)],
       }),
+      value: faker.string.numeric(),
     };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const isTransactionData = (_: unknown): boolean => false;

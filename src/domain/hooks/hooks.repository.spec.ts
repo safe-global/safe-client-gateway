@@ -1,24 +1,24 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { BalancesRepository } from '@/domain/balances/balances.repository';
-import { BlockchainRepository } from '@/domain/blockchain/blockchain.repository';
-import { ChainsRepository } from '@/domain/chains/chains.repository';
+import type { BalancesRepository } from '@/domain/balances/balances.repository';
+import type { BlockchainRepository } from '@/domain/blockchain/blockchain.repository';
+import type { ChainsRepository } from '@/domain/chains/chains.repository';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
+import type { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { EventCacheHelper } from '@/domain/hooks/helpers/event-cache.helper';
-import { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
+import type { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
 import {
   HooksRepository,
   HooksRepositoryWithNotifications,
 } from '@/domain/hooks/hooks.repository';
-import { MessagesRepository } from '@/domain/messages/messages.repository';
-import { QueuesRepository } from '@/domain/queues/queues-repository';
-import { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
-import { SafeRepository } from '@/domain/safe/safe.repository';
-import { StakingRepository } from '@/domain/staking/staking.repository';
-import { TransactionsRepository } from '@/domain/transactions/transactions.repository';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { MessagesRepository } from '@/domain/messages/messages.repository';
+import type { QueuesRepository } from '@/domain/queues/queues-repository';
+import type { SafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository';
+import type { SafeRepository } from '@/domain/safe/safe.repository';
+import type { StakingRepository } from '@/domain/staking/staking.repository';
+import type { TransactionsRepository } from '@/domain/transactions/transactions.repository';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { chainUpdateEventBuilder } from '@/routes/hooks/entities/__tests__/chain-update.builder';
 import { incomingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-token.builder';
 
@@ -147,6 +147,33 @@ describe('HooksRepository (Unit)', () => {
     );
     expect(mockSafeRepository.clearTransfers).toHaveBeenCalledTimes(3);
     expect(mockSafeRepository.clearIncomingTransfers).toHaveBeenCalledTimes(3);
+  });
+
+  it('should process CHAIN_UPDATE events for unsupported chains', async () => {
+    const chain = chainBuilder().build();
+    const event = chainUpdateEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(false);
+    mockChainsRepository.clearChain.mockResolvedValue();
+
+    // same event 3 times
+    await hooksRepository.onEvent(event);
+    await hooksRepository.onEvent(event);
+    await hooksRepository.onEvent(event);
+
+    // 3 calls to isSupportedChain
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledTimes(3);
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledWith(
+      event.chainId,
+    );
+
+    // 3 calls to repositories
+    expect(mockChainsRepository.clearChain).toHaveBeenCalledTimes(3);
+    expect(mockBlockchainRepository.clearApi).toHaveBeenCalledTimes(3);
+    expect(mockStakingRepository.clearApi).toHaveBeenCalledTimes(3);
+    expect(mockTransactionsRepository.clearApi).toHaveBeenCalledTimes(3);
+    expect(mockBalancesRepository.clearApi).toHaveBeenCalledTimes(3);
   });
 
   it('should clear the chain lookup cache on a CHAIN_UPDATE event', async () => {

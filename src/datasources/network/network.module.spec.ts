@@ -1,21 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { ClsModule } from 'nestjs-cls';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
-import {
-  FetchClient,
-  NetworkModule,
-} from '@/datasources/network/network.module';
+import type { FetchClient } from '@/datasources/network/network.module';
+import { NetworkModule } from '@/datasources/network/network.module';
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import {
   NetworkRequestError,
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import { fakeJson } from '@/__tests__/faker';
-import { Server } from 'net';
+import type { Server } from 'net';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;

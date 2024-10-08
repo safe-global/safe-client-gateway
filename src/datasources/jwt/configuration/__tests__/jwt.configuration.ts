@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config';
 import { faker } from '@faker-js/faker';
-import { JwtConfiguration } from '@/datasources/jwt/configuration/jwt.configuration';
+import type { JwtConfiguration } from '@/datasources/jwt/configuration/jwt.configuration';
 
 export default registerAs(
   'jwt',

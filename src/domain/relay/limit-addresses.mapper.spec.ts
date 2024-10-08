@@ -26,7 +26,7 @@ import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.h
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/decoders/proxy-factory-decoder.helper';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import type { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { faker } from '@faker-js/faker';
 import {
   getMultiSendCallOnlyDeployments,
@@ -38,7 +38,7 @@ import {
 import { getAddress } from 'viem';
 import configuration from '@/config/entities/configuration';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 

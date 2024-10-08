@@ -1,4 +1,4 @@
-import { Operation } from '@/domain/safe/entities/operation.entity';
+import type { Operation } from '@/domain/safe/entities/operation.entity';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { ProposeTransactionDtoSchema } from '@/routes/transactions/entities/schemas/propose-transaction.dto.schema';
 import { faker } from '@faker-js/faker';

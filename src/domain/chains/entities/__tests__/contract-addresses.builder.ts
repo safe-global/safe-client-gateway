@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { ContractAddresses } from '@/domain/chains/entities/contract-addresses.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { ContractAddresses } from '@/domain/chains/entities/contract-addresses.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

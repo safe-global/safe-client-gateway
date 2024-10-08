@@ -474,6 +474,10 @@ export class EventCacheHelper {
     // As the chains have been updated, we need to clear the memoized function cache.
     if (this.isSupportedChainMemo.cache.clear) {
       this.isSupportedChainMemo.cache.clear();
+      // Remove the chain from the unsupported chains list
+      this.unsupportedChains = this.unsupportedChains.filter(
+        (unsupportedChain) => unsupportedChain !== event.chainId,
+      );
     }
     return [
       this.chainsRepository.clearChain(event.chainId).then(() => {

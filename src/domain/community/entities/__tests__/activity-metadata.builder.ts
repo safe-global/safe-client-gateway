@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { ActivityMetadata } from '@/domain/community/entities/activity-metadata.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { ActivityMetadata } from '@/domain/community/entities/activity-metadata.entity';
 import { faker } from '@faker-js/faker';
 
 export function activityMetadataBuilder(): IBuilder<ActivityMetadata> {

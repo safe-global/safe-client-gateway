@@ -5,7 +5,7 @@ import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.modul
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { Test } from '@nestjs/testing';
 import { join } from 'path';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 
 describe('PostgresDatabaseModule tests', () => {
   let sql: postgres.Sql;

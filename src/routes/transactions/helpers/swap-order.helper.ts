@@ -58,7 +58,11 @@ export class SwapOrderHelper {
       this.transactionFinder.findTransaction(
         (transaction) =>
           this.gpv2Decoder.helpers.isSetPreSignature(transaction.data),
-        { data },
+        {
+          data,
+          // Placeholder as we are only interested in the data
+          value: '0',
+        },
       )?.data ?? null
     );
   }

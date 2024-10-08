@@ -1,6 +1,7 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entities/create-targeted-safes.dto.entity';
+import type { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entities/create-targeted-safes.dto.entity';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 

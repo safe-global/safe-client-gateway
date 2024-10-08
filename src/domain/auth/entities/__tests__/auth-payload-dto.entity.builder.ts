@@ -1,5 +1,6 @@
-import { IBuilder, Builder } from '@/__tests__/builder';
-import { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { AuthPayloadDto } from '@/domain/auth/entities/auth-payload.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

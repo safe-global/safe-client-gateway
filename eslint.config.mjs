@@ -28,6 +28,7 @@ export default tseslint.config(
         'warn',
         { assertionStyle: 'as' },
       ],
+      '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-floating-promises': 'warn',
       'no-restricted-imports': [

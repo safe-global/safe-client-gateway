@@ -6,6 +6,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { join } from 'path';
 import { ChainsModule } from '@/routes/chains/chains.module';
@@ -49,7 +50,7 @@ import { TransactionsViewControllerModule } from '@/routes/transactions/transact
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
 import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
-import { ScheduleModule } from '@nestjs/schedule';
+import { TargetedMessagingModule } from '@/routes/targeted-messaging/targeted-messaging.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -64,6 +65,7 @@ export class AppModule implements NestModule {
       confirmationView: isConfirmationViewEnabled,
       delegatesV2: isDelegatesV2Enabled,
       pushNotifications: isPushNotificationsEnabled,
+      targetedMessaging: isTargetedMessagingFeatureEnabled,
     } = configFactory()['features'];
 
     return {
@@ -98,6 +100,7 @@ export class AppModule implements NestModule {
         RootModule,
         SafeAppsModule,
         SafesModule,
+        ...(isTargetedMessagingFeatureEnabled ? [TargetedMessagingModule] : []),
         TransactionsModule,
         ...(isConfirmationViewEnabled
           ? [TransactionsViewControllerModule]

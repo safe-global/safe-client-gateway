@@ -326,18 +326,18 @@ export class MultisigTransactionInfoMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<NativeStakingDepositTransactionInfo | null> {
-    if (!transaction?.data) {
+    if (!transaction?.data || !transaction.value) {
       return null;
     }
 
     const nativeStakingDepositTransaction =
-      await this.kilnNativeStakingHelper.findDepositTransaction({
-        chainId,
+      this.kilnNativeStakingHelper.findDepositTransaction({
         to: transaction.to,
         data: transaction.data,
+        value: transaction.value,
       });
 
-    if (!nativeStakingDepositTransaction) {
+    if (!nativeStakingDepositTransaction?.to) {
       return null;
     }
 
@@ -345,8 +345,8 @@ export class MultisigTransactionInfoMapper {
       return await this.nativeStakingMapper.mapDepositInfo({
         chainId,
         to: nativeStakingDepositTransaction.to,
-        value: transaction.value,
-        transaction,
+        value: nativeStakingDepositTransaction.value,
+        txHash: transaction.transactionHash,
       });
     } catch (error) {
       this.loggingService.warn(error);
@@ -358,26 +358,18 @@ export class MultisigTransactionInfoMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<NativeStakingValidatorsExitTransactionInfo | null> {
-    if (!transaction?.data) {
-      return null;
-    }
-
-    const dataDecoded = transaction?.dataDecoded
-      ? transaction.dataDecoded
-      : this.kilnDecoder.decodeValidatorsExit(transaction.data);
-
-    if (!dataDecoded) {
+    if (!transaction?.data || !transaction.value) {
       return null;
     }
 
     const nativeStakingValidatorsExitTransaction =
-      await this.kilnNativeStakingHelper.findValidatorsExitTransaction({
-        chainId,
+      this.kilnNativeStakingHelper.findValidatorsExitTransaction({
         to: transaction.to,
         data: transaction.data,
+        value: transaction.value,
       });
 
-    if (!nativeStakingValidatorsExitTransaction) {
+    if (!nativeStakingValidatorsExitTransaction?.to) {
       return null;
     }
 
@@ -386,8 +378,7 @@ export class MultisigTransactionInfoMapper {
         chainId,
         safeAddress: transaction.safe,
         to: nativeStakingValidatorsExitTransaction.to,
-        transaction,
-        dataDecoded,
+        data: nativeStakingValidatorsExitTransaction.data,
       });
     } catch (error) {
       this.loggingService.warn(error);
@@ -399,26 +390,18 @@ export class MultisigTransactionInfoMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
   ): Promise<NativeStakingWithdrawTransactionInfo | null> {
-    if (!transaction?.data) {
-      return null;
-    }
-
-    const dataDecoded = transaction?.dataDecoded
-      ? transaction.dataDecoded
-      : this.kilnDecoder.decodeBatchWithdrawCLFee(transaction.data);
-
-    if (!dataDecoded) {
+    if (!transaction?.data || !transaction.value) {
       return null;
     }
 
     const nativeStakingWithdrawTransaction =
-      await this.kilnNativeStakingHelper.findWithdrawTransaction({
-        chainId,
+      this.kilnNativeStakingHelper.findWithdrawTransaction({
         to: transaction.to,
         data: transaction.data,
+        value: transaction.value,
       });
 
-    if (!nativeStakingWithdrawTransaction) {
+    if (!nativeStakingWithdrawTransaction?.to) {
       return null;
     }
 
@@ -427,8 +410,8 @@ export class MultisigTransactionInfoMapper {
         chainId,
         safeAddress: transaction.safe,
         to: nativeStakingWithdrawTransaction.to,
-        transaction,
-        dataDecoded,
+        txHash: transaction.transactionHash,
+        data: nativeStakingWithdrawTransaction.data,
       });
     } catch (error) {
       this.loggingService.warn(error);

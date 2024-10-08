@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-message-signature.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-message-signature.entity';
 
 export function updateMessageSignatureDtoBuilder(): IBuilder<UpdateMessageSignatureDto> {
   return new Builder<UpdateMessageSignatureDto>().with(

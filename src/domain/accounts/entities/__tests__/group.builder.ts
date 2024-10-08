@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Group } from '@/domain/accounts/entities/group.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Group } from '@/domain/accounts/entities/group.entity';
 import { faker } from '@faker-js/faker';
 
 export function groupBuilder(): IBuilder<Group> {

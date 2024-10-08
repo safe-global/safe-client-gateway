@@ -1,6 +1,6 @@
 import { fakeJson } from '@/__tests__/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { JwtClient } from '@/datasources/jwt/jwt.module';
+import type { JwtClient } from '@/datasources/jwt/jwt.module';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import { faker } from '@faker-js/faker';
 

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { AddOwner } from '@/routes/transactions/entities/settings-changes/add-owner.entity';
 import { ChangeMasterCopy } from '@/routes/transactions/entities/settings-changes/change-master-copy.entity';

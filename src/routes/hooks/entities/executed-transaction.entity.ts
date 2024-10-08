@@ -1,5 +1,5 @@
-import { ExecutedTransactionEventSchema } from '@/routes/hooks/entities/schemas/executed-transaction.schema';
-import { z } from 'zod';
+import type { ExecutedTransactionEventSchema } from '@/routes/hooks/entities/schemas/executed-transaction.schema';
+import type { z } from 'zod';
 
 export type ExecutedTransaction = z.infer<
   typeof ExecutedTransactionEventSchema

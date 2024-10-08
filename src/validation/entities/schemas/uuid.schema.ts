@@ -1,4 +1,4 @@
-import { UUID } from 'crypto';
+import type { UUID } from 'crypto';
 import { z } from 'zod';
 
 export const UuidSchema = z

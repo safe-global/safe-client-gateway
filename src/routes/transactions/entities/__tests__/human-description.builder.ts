@@ -1,11 +1,12 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import {
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type {
   RichAddressFragment,
   RichTokenValueFragment,
   RichTextFragment,
   RichDecodedInfoFragment,
-  RichFragmentType,
 } from '@/routes/transactions/entities/human-description.entity';
+import { RichFragmentType } from '@/routes/transactions/entities/human-description.entity';
 import { faker } from '@faker-js/faker';
 
 function richTokenValueFragmentBuilder(): IBuilder<RichTokenValueFragment> {

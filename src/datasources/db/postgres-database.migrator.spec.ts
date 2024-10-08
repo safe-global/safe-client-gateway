@@ -3,7 +3,7 @@ import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.mig
 import { faker } from '@faker-js/faker';
 import fs from 'node:fs';
 import path from 'node:path';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 
 const folder = path.join(__dirname, 'migrations');
 const migrations: Array<{

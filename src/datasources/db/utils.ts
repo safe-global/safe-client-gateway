@@ -1,9 +1,9 @@
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { InternalServerErrorException } from '@nestjs/common';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 
 /**
  * Returns the content from cache or executes the query and caches the result.

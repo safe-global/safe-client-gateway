@@ -1,8 +1,6 @@
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
-import {
-  NetworkStats,
-  NetworkStatsSchema,
-} from '@/datasources/staking-api/entities/network-stats.entity';
+import type { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
+import { NetworkStatsSchema } from '@/datasources/staking-api/entities/network-stats.entity';
 import { faker } from '@faker-js/faker';
 
 describe('NetworkStatsSchema', () => {

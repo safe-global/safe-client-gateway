@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { GasPriceFixed } from '@/domain/chains/entities/gas-price-fixed.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { GasPriceFixed } from '@/domain/chains/entities/gas-price-fixed.entity';
 
 export function gasPriceFixedBuilder(): IBuilder<GasPriceFixed> {
   return new Builder<GasPriceFixed>()
