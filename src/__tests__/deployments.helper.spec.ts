@@ -98,6 +98,42 @@ describe('Deployments helper', () => {
       });
     });
 
+    it('should return all SafeMigration versions for the specified chain ID', () => {
+      const versions = getDeploymentVersionsByChainIds('SafeMigration', [
+        '100',
+        '11155111',
+      ]);
+
+      expect(versions).toStrictEqual({
+        '100': ['1.4.1'],
+        '11155111': ['1.4.1'],
+      });
+    });
+
+    it('should return all SafeToL2Migration versions for the specified chain ID', () => {
+      const versions = getDeploymentVersionsByChainIds('SafeToL2Migration', [
+        '100',
+        '11155111',
+      ]);
+
+      expect(versions).toStrictEqual({
+        '100': ['1.4.1'],
+        '11155111': ['1.4.1'],
+      });
+    });
+
+    it('should return all SafeToL2Setup versions for the specified chain ID', () => {
+      const versions = getDeploymentVersionsByChainIds('SafeToL2Setup', [
+        '100',
+        '11155111',
+      ]);
+
+      expect(versions).toStrictEqual({
+        '100': ['1.4.1'],
+        '11155111': ['1.4.1'],
+      });
+    });
+
     it('should return all SignMessageLib versions for the specified chain ID', () => {
       const versions = getDeploymentVersionsByChainIds('SignMessageLib', [
         '100',
