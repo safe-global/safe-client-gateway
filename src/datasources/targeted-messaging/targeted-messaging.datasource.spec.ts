@@ -166,6 +166,7 @@ describe('TargetedMessagingDataSource tests', () => {
     });
 
     it('should clear the cache on targetedSafes creation', async () => {
+      let cacheContent: string | undefined;
       const createOutreachDto = createOutreachDtoBuilder().build();
       const outreach = await target.createOutreach(createOutreachDto);
       const createTargetedSafesDto = createTargetedSafesDtoBuilder()
@@ -176,12 +177,22 @@ describe('TargetedMessagingDataSource tests', () => {
         ])
         .build();
       await target.createTargetedSafes(createTargetedSafesDto);
+      const cacheDir = new CacheDir(
+        `targeted_safe_${outreach.id}`,
+        createTargetedSafesDto.addresses[0],
+      );
 
-      // first call is not cached
+      // cache is empty
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
       await target.getTargetedSafe({
         outreachId: outreach.id,
         safeAddress: createTargetedSafesDto.addresses[0],
       });
+      // cache is updated
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toHaveLength(1);
+
       // second call is cached
       await target.getTargetedSafe({
         outreachId: outreach.id,
@@ -189,6 +200,8 @@ describe('TargetedMessagingDataSource tests', () => {
       });
 
       // Clear the cache by creating new targetedSafes
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toHaveLength(1);
       const anotherCreateTargetedSafesDto = createTargetedSafesDtoBuilder()
         .with('outreachId', outreach.id)
         .with('addresses', [
@@ -197,35 +210,18 @@ describe('TargetedMessagingDataSource tests', () => {
         ])
         .build();
       await target.createTargetedSafes(anotherCreateTargetedSafesDto);
+      // cache is cleared
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
 
       // third call is not cached
       await target.getTargetedSafe({
         outreachId: outreach.id,
         safeAddress: createTargetedSafesDto.addresses[0],
       });
-
-      const cacheDir = new CacheDir(
-        `targeted_safe_${outreach.id}`,
-        createTargetedSafesDto.addresses[0],
-      );
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      // cache is updated
+      cacheContent = await fakeCacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
-      expect(mockLoggingService.debug).toHaveBeenCalledTimes(3);
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
-        key: `targeted_safe_${outreach.id}`,
-        field: createTargetedSafesDto.addresses[0],
-      });
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_hit',
-        key: `targeted_safe_${outreach.id}`,
-        field: createTargetedSafesDto.addresses[0],
-      });
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(3, {
-        type: 'cache_miss',
-        key: `targeted_safe_${outreach.id}`,
-        field: createTargetedSafesDto.addresses[0],
-      });
     });
   });
 
@@ -259,6 +255,7 @@ describe('TargetedMessagingDataSource tests', () => {
     });
 
     it('gets a targetedSafe from cache', async () => {
+      let cacheContent: string | undefined;
       const createOutreachDto = createOutreachDtoBuilder().build();
       const outreach = await target.createOutreach(createOutreachDto);
       const createTargetedSafesDto = createTargetedSafesDtoBuilder()
@@ -271,12 +268,22 @@ describe('TargetedMessagingDataSource tests', () => {
       const targetedSafes = await target.createTargetedSafes(
         createTargetedSafesDto,
       );
+      const cacheDir = new CacheDir(
+        `targeted_safe_${outreach.id}`,
+        createTargetedSafesDto.addresses[0],
+      );
 
       // first call is not cached
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
       await target.getTargetedSafe({
         outreachId: outreach.id,
         safeAddress: createTargetedSafesDto.addresses[0],
       });
+      // cache is updated
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toHaveLength(1);
+
       // second call is cached
       const result = await target.getTargetedSafe({
         outreachId: outreach.id,
@@ -290,32 +297,23 @@ describe('TargetedMessagingDataSource tests', () => {
           outreachId: outreach.id,
         }),
       );
-
-      const cacheDir = new CacheDir(
-        `targeted_safe_${outreach.id}`,
-        createTargetedSafesDto.addresses[0],
-      );
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      cacheContent = await fakeCacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
-      expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
-        key: `targeted_safe_${outreach.id}`,
-        field: createTargetedSafesDto.addresses[0],
-      });
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_hit',
-        key: `targeted_safe_${outreach.id}`,
-        field: createTargetedSafesDto.addresses[0],
-      });
     });
 
     it('should not cache if the targetedSafe does not exist', async () => {
+      let cacheContent: string | undefined;
       const createOutreachDto = createOutreachDtoBuilder().build();
       const outreach = await target.createOutreach(createOutreachDto);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const cacheDir = new CacheDir(
+        `targeted_safe_${outreach.id}`,
+        safeAddress,
+      );
 
       // first call is not cached
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
       await expect(
         target.getTargetedSafe({
           outreachId: outreach.id,
@@ -323,30 +321,17 @@ describe('TargetedMessagingDataSource tests', () => {
         }),
       ).rejects.toThrow(TargetedSafeNotFoundError);
       // second call is also not cached
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
       await expect(
         target.getTargetedSafe({
           outreachId: outreach.id,
           safeAddress,
         }),
       ).rejects.toThrow(TargetedSafeNotFoundError);
-
-      const cacheDir = new CacheDir(
-        `targeted_safe_${outreach.id}`,
-        safeAddress,
-      );
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      // cache is still empty
+      cacheContent = await fakeCacheService.hGet(cacheDir);
       expect(cacheContent).toBeUndefined();
-      expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
-        key: `targeted_safe_${outreach.id}`,
-        field: safeAddress,
-      });
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_miss',
-        key: `targeted_safe_${outreach.id}`,
-        field: safeAddress,
-      });
     });
 
     it('throws if the targetedSafe does not exist', async () => {
@@ -439,6 +424,7 @@ describe('TargetedMessagingDataSource tests', () => {
     });
 
     it('gets a submission from cache', async () => {
+      let cacheContent: string | undefined;
       const createOutreachDto = createOutreachDtoBuilder().build();
       const outreach = await target.createOutreach(createOutreachDto);
       const createTargetedSafesDto = createTargetedSafesDtoBuilder()
@@ -452,6 +438,10 @@ describe('TargetedMessagingDataSource tests', () => {
         createTargetedSafesDto,
       );
       const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const cacheDir = new CacheDir(
+        `submission_${outreach.id}`,
+        `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
+      );
 
       await target.createSubmission({
         targetedSafe: targetedSafes[0],
@@ -459,42 +449,28 @@ describe('TargetedMessagingDataSource tests', () => {
       });
 
       // first call is not cached
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
       await target.getSubmission({
         targetedSafe: targetedSafes[0],
         signerAddress,
       });
       // second call is cached
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(JSON.parse(cacheContent as string)).toHaveLength(1);
       const result = await target.getSubmission({
         targetedSafe: targetedSafes[0],
         signerAddress,
       });
 
-      expect(result).toStrictEqual(
-        expect.objectContaining({
-          id: expect.any(Number),
-          outreachId: outreach.id,
-          targetedSafeId: targetedSafes[0].id,
-          signerAddress,
-          completionDate: expect.any(String),
-        }),
-      );
-
-      const cacheDir = new CacheDir(
-        `submission_${outreach.id}`,
-        `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
-      );
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(JSON.parse(cacheContent as string)).toHaveLength(1);
-      expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
-        key: `submission_${outreach.id}`,
-        field: `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
-      });
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_hit',
-        key: `submission_${outreach.id}`,
-        field: `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
+      expect(result).toStrictEqual({
+        id: expect.any(Number),
+        outreachId: outreach.id,
+        targetedSafeId: targetedSafes[0].id,
+        signerAddress,
+        completionDate: expect.any(String),
+        created_at: expect.any(String),
+        updated_at: expect.any(String),
       });
     });
 
@@ -521,6 +497,7 @@ describe('TargetedMessagingDataSource tests', () => {
     });
 
     it('should not cache if the submission does not exist', async () => {
+      let cacheContent: string | undefined;
       const createOutreachDto = createOutreachDtoBuilder().build();
       const outreach = await target.createOutreach(createOutreachDto);
       const createTargetedSafesDto = createTargetedSafesDtoBuilder()
@@ -534,8 +511,14 @@ describe('TargetedMessagingDataSource tests', () => {
         createTargetedSafesDto,
       );
       const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const cacheDir = new CacheDir(
+        `submission_${outreach.id}`,
+        `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
+      );
 
       // first call is not cached
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
       await expect(
         target.getSubmission({
           targetedSafe: targetedSafes[0],
@@ -543,30 +526,17 @@ describe('TargetedMessagingDataSource tests', () => {
         }),
       ).rejects.toThrow(SubmissionNotFoundError);
       // second call is also not  cached
+      cacheContent = await fakeCacheService.hGet(cacheDir);
+      expect(cacheContent).toBeUndefined();
       await expect(
         target.getSubmission({
           targetedSafe: targetedSafes[0],
           signerAddress,
         }),
       ).rejects.toThrow(SubmissionNotFoundError);
-
-      const cacheDir = new CacheDir(
-        `submission_${outreach.id}`,
-        `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
-      );
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      // cache is still empty
+      cacheContent = await fakeCacheService.hGet(cacheDir);
       expect(cacheContent).toBeUndefined();
-      expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
-        key: `submission_${outreach.id}`,
-        field: `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
-      });
-      expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_miss',
-        key: `submission_${outreach.id}`,
-        field: `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
-      });
     });
 
     it('throws if trying to create a submission for the same targetedSafe and signerAddress', async () => {

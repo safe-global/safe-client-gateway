@@ -94,9 +94,7 @@ export class TargetedMessagingDatasource
     });
 
     await this.cacheService.deleteByKey(
-      CacheRouter.getTargetedSafeCacheKey({
-        outreachId: createTargetedSafesDto.outreachId,
-      }),
+      CacheRouter.getTargetedSafeCacheKey(createTargetedSafesDto.outreachId),
     );
 
     return targetedSafes;
@@ -140,12 +138,9 @@ export class TargetedMessagingDatasource
       );
       throw new UnprocessableEntityException('Error creating submission');
     });
-    const { key } = CacheRouter.getSubmissionCacheDir({
-      outreachId: args.targetedSafe.outreachId,
-      safeAddress: args.targetedSafe.address,
-      signerAddress: args.signerAddress,
-    });
-    await this.cacheService.deleteByKey(key);
+    await this.cacheService.deleteByKey(
+      CacheRouter.getSubmissionCacheKey(args.targetedSafe.outreachId),
+    );
 
     return {
       id: submission.id,

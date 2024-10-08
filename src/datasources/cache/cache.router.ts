@@ -649,8 +649,8 @@ export class CacheRouter {
     );
   }
 
-  static getTargetedSafeCacheKey(args: { outreachId: number }): string {
-    return `${CacheRouter.TARGETED_SAFE}_${args.outreachId}`;
+  static getTargetedSafeCacheKey(outreachId: number): string {
+    return `${CacheRouter.TARGETED_SAFE}_${outreachId}`;
   }
 
   static getTargetedSafeCacheDir(args: {
@@ -658,9 +658,13 @@ export class CacheRouter {
     safeAddress: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      CacheRouter.getTargetedSafeCacheKey({ outreachId: args.outreachId }),
+      CacheRouter.getTargetedSafeCacheKey(args.outreachId),
       args.safeAddress,
     );
+  }
+
+  static getSubmissionCacheKey(outreachId: number): string {
+    return `${CacheRouter.SUBMISSION}_${outreachId}`;
   }
 
   static getSubmissionCacheDir(args: {
@@ -669,7 +673,7 @@ export class CacheRouter {
     signerAddress: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      `${CacheRouter.SUBMISSION}_${args.outreachId}`,
+      CacheRouter.getSubmissionCacheKey(args.outreachId),
       `${args.safeAddress}_${args.signerAddress}`,
     );
   }
