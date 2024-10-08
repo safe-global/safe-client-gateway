@@ -82,7 +82,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       });
   });
 
-  it('should preview a transaction', async () => {
+  it('should preview a "standard" transaction', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', Operation.CALL)
       .build();
@@ -150,7 +150,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       });
   });
 
-  it('should preview a transaction with an unknown "to" address', async () => {
+  it('should preview a "standard" transaction with an unknown "to" address', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', Operation.CALL)
       .build();
@@ -217,7 +217,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       });
   });
 
-  it('should preview a transaction even if the data cannot be decoded', async () => {
+  it('should preview a "standard" transaction even if the data cannot be decoded', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', Operation.CALL)
       .build();
@@ -283,7 +283,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       });
   });
 
-  it('should preview a transaction with a nested call', async () => {
+  it('should preview a "standard" transaction with a nested call', async () => {
     const previewTransactionDto = previewTransactionDtoBuilder()
       .with('operation', Operation.DELEGATE)
       .build();

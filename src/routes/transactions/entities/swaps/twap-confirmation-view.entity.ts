@@ -43,6 +43,8 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
   @ApiProperty({
     description:
       'The order UID of the active order, null as it is not an active order',
+    // Prevent bidirectional dependency
+    type: typeof null,
   })
   activeOrderUid: null;
 
