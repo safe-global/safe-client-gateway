@@ -5,9 +5,6 @@ import {
   IChainsRepository,
 } from '@/domain/chains/chains.repository.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
@@ -45,8 +42,7 @@ export class NativeStakingMapper {
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.to - the address of the native staking deployment
    * @param args.value - the value of the deposit transaction
-   * @param args.isConfirmed - whether the deposit transaction is confirmed
-   * @param args.depositExecutionDate - the date when the deposit transaction was executed
+   * @param args.txHash - the transaction hash of the deposit transaction
    *
    * @returns {@link NativeStakingDepositTransactionInfo} for the given native staking deployment
    */
@@ -54,7 +50,7 @@ export class NativeStakingMapper {
     chainId: string;
     to: `0x${string}`;
     value: string | null;
-    transaction: MultisigTransaction | ModuleTransaction | null;
+    txHash: `0x${string}` | null;
   }): Promise<NativeStakingDepositTransactionInfo> {
     const [chain, deployment] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -117,29 +113,29 @@ export class NativeStakingMapper {
         symbol: chain.nativeCurrency.symbol,
         trusted: true,
       }),
-      validators: args.transaction?.executionDate ? publicKeys : null,
+      validators: publicKeys,
     });
   }
 
   /**
    * Gets the validator public keys from logs of `deposit` transaction.
    *
-   * @param args.transaction - the transaction object for the deposit
+   * @param args.txHash - the transaction hash of the deposit transaction
    * @param args.chainId - the chain ID of the native staking deployment
    *
-   * @returns {Array<`0x${string}`>} the validator public keys
+   * @returns {Array<`0x${string}`> | null} the public keys of the validators
    */
   private async getDepositPublicKeys(args: {
-    transaction: MultisigTransaction | ModuleTransaction | null;
+    txHash: `0x${string}` | null;
     chainId: string;
-  }): Promise<Array<`0x${string}`>> {
-    if (!args.transaction?.transactionHash) {
-      return [];
+  }): Promise<Array<`0x${string}`> | null> {
+    if (!args.txHash) {
+      return null;
     }
 
     const txStatus = await this.stakingRepository.getTransactionStatus({
       chainId: args.chainId,
-      txHash: args.transaction.transactionHash,
+      txHash: args.txHash,
     });
 
     const depositEvents = txStatus.receipt.logs
@@ -167,16 +163,14 @@ export class NativeStakingMapper {
    * @param args.chainId - the chain ID of the native staking deployment
    * @param args.safeAddress - the Safe staking
    * @param args.to - the address of the native staking deployment
-   * @param args.transaction - the transaction object for the validators exit
-   * @param args.dataDecoded - the decoded data of the transaction
+   * @param args.data - the data of the `requestValidatorsExit` transaction
    * @returns {@link NativeStakingValidatorsExitTransactionInfo} for the given native staking deployment
    */
   public async mapValidatorsExitInfo(args: {
     chainId: string;
     safeAddress: `0x${string}`;
     to: `0x${string}`;
-    transaction: MultisigTransaction | ModuleTransaction | null;
-    dataDecoded: DataDecoded;
+    data: `0x${string}`;
   }): Promise<NativeStakingValidatorsExitTransactionInfo> {
     const [chain, deployment] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -186,10 +180,9 @@ export class NativeStakingMapper {
       }),
     ]);
     this.validateDeployment(deployment);
-    const publicKeys =
-      this.kilnNativeStakingHelper.getPublicKeysFromDataDecoded(
-        args.dataDecoded,
-      );
+    const publicKeys = this.kilnNativeStakingHelper.splitPublicKeys(
+      this.kilnDecoder.decodeValidatorsExit(args.data)!.parameters[0].value,
+    );
 
     const value =
       publicKeys.length *
@@ -231,15 +224,16 @@ export class NativeStakingMapper {
    * @param args.safeAddress - the Safe staking
    * @param args.to - the address of the native staking deployment
    * @param args.transaction - the transaction object for the withdraw
-   * @param args.dataDecoded - the decoded data of the transaction
+   * @param args.txHash - the transaction hash of the withdraw transaction
+   * @param args.data - the data of the `batchWithdrawCLFee` transaction
    * @returns {@link NativeStakingWithdrawTransactionInfo} for the given native staking deployment
    */
   public async mapWithdrawInfo(args: {
     chainId: string;
     safeAddress: `0x${string}`;
     to: `0x${string}`;
-    transaction: MultisigTransaction | ModuleTransaction | null;
-    dataDecoded: DataDecoded;
+    txHash: `0x${string}` | null;
+    data: `0x${string}`;
   }): Promise<NativeStakingWithdrawTransactionInfo> {
     const [chain, deployment] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
@@ -249,16 +243,16 @@ export class NativeStakingMapper {
       }),
     ]);
     this.validateDeployment(deployment);
+
+    const publicKeys = this.kilnNativeStakingHelper.splitPublicKeys(
+      this.kilnDecoder.decodeBatchWithdrawCLFee(args.data)!.parameters[0].value,
+    );
     const value = await this.getWithdrawValue({
-      transaction: args.transaction,
-      dataDecoded: args.dataDecoded,
+      txHash: args.txHash,
+      publicKeys: publicKeys,
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
-    const publicKeys =
-      this.kilnNativeStakingHelper.getPublicKeysFromDataDecoded(
-        args.dataDecoded,
-      );
 
     return new NativeStakingWithdrawTransactionInfo({
       value: getNumberString(value),
@@ -283,29 +277,34 @@ export class NativeStakingMapper {
    * and after execution it returns 0. Therefore, if the transaction was executed
    * we return the value get the exact value from the transaction logs instead.
    *
-   * @param {MultisigTransaction | ModuleTransaction | null} args.transaction - the `batchWithdrawCLFee` transaction
-   * @param {DataDecoded} args.dataDecoded - the decoded data of the transaction
+   * @param {string | nulle} args.txHash - the transaction hash of the withdraw transaction
+   * @param {Array<`0x${string}`>} args.publicKeys - the public keys to get the value for
    * @param {string} args.chainId - the chain ID of the native staking deployment
+   * @param {string} args.safeAddress - the Safe staking
    *
    * @returns {number} the value to withdraw or withdrawn
    */
   private async getWithdrawValue(args: {
-    transaction: MultisigTransaction | ModuleTransaction | null;
-    dataDecoded: DataDecoded;
+    txHash: `0x${string}` | null;
+    publicKeys: Array<`0x${string}`>;
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<number> {
-    if (!args.transaction?.transactionHash) {
-      return this.kilnNativeStakingHelper.getValueFromDataDecoded({
+    if (!args.txHash) {
+      const stakes = await this.stakingRepository.getStakes({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
-        dataDecoded: args.dataDecoded,
+        validatorsPublicKeys: args.publicKeys,
       });
+      return stakes.reduce((acc, stake) => {
+        const netValue = stake.net_claimable_consensus_rewards ?? '0';
+        return acc + Number(netValue);
+      }, 0);
     }
 
     const txStatus = await this.stakingRepository.getTransactionStatus({
       chainId: args.chainId,
-      txHash: args.transaction.transactionHash,
+      txHash: args.txHash,
     });
 
     const value = txStatus.receipt.logs
@@ -341,7 +340,7 @@ export class NativeStakingMapper {
    *
    * @param {string} args.chainId - the chain ID of the native staking deployment
    * @param {string} args.safeAddress - the Safe staking
-   * @param {Array<string>} args.publicKeys - the public keys to get the status for
+   * @param {Array<string> | null} args.publicKeys - the public keys to get the status for
    *
    * @returns {Promise<StakingStatus>} the status of the given {@link publicKeys}
    *
@@ -350,9 +349,9 @@ export class NativeStakingMapper {
   public async _getStatus(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    publicKeys: Array<`0x${string}`>;
+    publicKeys: Array<`0x${string}`> | null;
   }): Promise<StakingStatus> {
-    if (args.publicKeys.length === 0) {
+    if (!args.publicKeys || args.publicKeys.length === 0) {
       return StakingStatus.NotStaked;
     }
 

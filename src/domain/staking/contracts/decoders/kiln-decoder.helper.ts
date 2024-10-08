@@ -29,6 +29,8 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     super(KilnAbi);
   }
 
+  // TODO: When confirmation view endpoint is removed, remove this
+  // and use this.helpers.isDeposit instead
   decodeDeposit(
     data: `0x${string}`,
   ): { method: string; parameters: [] } | null {
@@ -50,6 +52,8 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     }
   }
 
+  // TODO: When confirmation view endpoint is removed, return only
+  // publicKeys and don't format it like DataDecoded
   decodeValidatorsExit(data: `0x${string}`): {
     method: string;
     parameters: KilnRequestValidatorsExitParameters[];
@@ -79,6 +83,8 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     }
   }
 
+  // TODO: When confirmation view endpoint is removed, return only
+  // publicKeys and don't format it like DataDecoded
   decodeBatchWithdrawCLFee(data: `0x${string}`): {
     method: string;
     parameters: KilnBatchWithdrawCLFeeParameters[];

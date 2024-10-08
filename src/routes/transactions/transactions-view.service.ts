@@ -63,6 +63,7 @@ export class TransactionsViewService {
         to: args.transactionDataDto.to,
       })
       .catch(() => {
+        // TODO: Remove after Kiln has verified contracts
         // Fallback for unverified contracts
         return {
           method: '',
@@ -83,24 +84,30 @@ export class TransactionsViewService {
 
     const nativeStakingDepositTransaction =
       this.isNativeStakingEnabled &&
-      (await this.kilnNativeStakingHelper.findDepositTransaction({
-        chainId: args.chainId,
-        ...args.transactionDataDto,
-      }));
+      this.kilnNativeStakingHelper.findDepositTransaction({
+        to: args.transactionDataDto.to,
+        data: args.transactionDataDto.data,
+        // Value is always defined
+        value: args.transactionDataDto.value ?? '0',
+      });
 
     const nativeStakingValidatorsExitTransaction =
       this.isNativeStakingEnabled &&
-      (await this.kilnNativeStakingHelper.findValidatorsExitTransaction({
-        chainId: args.chainId,
-        ...args.transactionDataDto,
-      }));
+      this.kilnNativeStakingHelper.findValidatorsExitTransaction({
+        to: args.transactionDataDto.to,
+        data: args.transactionDataDto.data,
+        // Value is always defined
+        value: args.transactionDataDto.value ?? '0',
+      });
 
     const nativeStakingWithdrawTransaction =
       this.isNativeStakingEnabled &&
-      (await this.kilnNativeStakingHelper.findWithdrawTransaction({
-        chainId: args.chainId,
-        ...args.transactionDataDto,
-      }));
+      this.kilnNativeStakingHelper.findWithdrawTransaction({
+        to: args.transactionDataDto.to,
+        data: args.transactionDataDto.data,
+        // Value is always defined
+        value: args.transactionDataDto.value ?? '0',
+      });
 
     if (
       !swapOrderData &&
@@ -129,23 +136,35 @@ export class TransactionsViewService {
           data: twapSwapOrderData,
           dataDecoded,
         });
-      } else if (nativeStakingDepositTransaction) {
+      } else if (
+        nativeStakingDepositTransaction &&
+        nativeStakingDepositTransaction.to
+      ) {
         return await this.getNativeStakingDepositConfirmationView({
-          ...nativeStakingDepositTransaction,
+          to: nativeStakingDepositTransaction.to,
+          data: nativeStakingDepositTransaction.data,
           chainId: args.chainId,
           dataDecoded,
-          value: args.transactionDataDto.value ?? null,
+          value: nativeStakingDepositTransaction.value,
         });
-      } else if (nativeStakingValidatorsExitTransaction) {
+      } else if (
+        nativeStakingValidatorsExitTransaction &&
+        nativeStakingValidatorsExitTransaction.to
+      ) {
         return await this.getNativeStakingValidatorsExitConfirmationView({
-          ...nativeStakingValidatorsExitTransaction,
+          to: nativeStakingValidatorsExitTransaction.to,
+          data: nativeStakingValidatorsExitTransaction.data,
           chainId: args.chainId,
           safeAddress: args.safeAddress,
           dataDecoded,
         });
-      } else if (nativeStakingWithdrawTransaction) {
+      } else if (
+        nativeStakingWithdrawTransaction &&
+        nativeStakingWithdrawTransaction.to
+      ) {
         return await this.getNativeStakingWithdrawConfirmationView({
-          ...nativeStakingWithdrawTransaction,
+          to: nativeStakingWithdrawTransaction.to,
+          data: nativeStakingWithdrawTransaction.data,
           safeAddress: args.safeAddress,
           chainId: args.chainId,
           dataDecoded,
@@ -328,7 +347,7 @@ export class TransactionsViewService {
       chainId: args.chainId,
       to: args.to,
       value: args.value,
-      transaction: null,
+      txHash: null,
     });
     return new NativeStakingDepositConfirmationView({
       method: dataDecoded.method,
@@ -356,8 +375,7 @@ export class TransactionsViewService {
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         to: args.to,
-        transaction: null,
-        dataDecoded,
+        data: args.data,
       });
 
     return new NativeStakingValidatorsExitConfirmationView({
@@ -385,8 +403,8 @@ export class TransactionsViewService {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       to: args.to,
-      transaction: null,
-      dataDecoded,
+      data: args.data,
+      txHash: null,
     });
     return new NativeStakingWithdrawConfirmationView({
       method: dataDecoded.method,
