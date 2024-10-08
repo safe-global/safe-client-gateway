@@ -6,6 +6,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { join } from 'path';
 import { ChainsModule } from '@/routes/chains/chains.module';
@@ -117,6 +118,7 @@ export class AppModule implements NestModule {
         ConfigurationModule.register(configFactory),
         NetworkModule,
         RequestScopedLoggingModule,
+        ScheduleModule.forRoot(),
         ServeStaticModule.forRoot({
           rootPath: join(__dirname, '..', 'assets'),
           // Excludes the paths under '/' (base url) from being served as static content
