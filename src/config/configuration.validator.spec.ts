@@ -34,6 +34,8 @@ describe('Configuration validator', () => {
     RELAY_PROVIDER_API_KEY_LINEA: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_BLAST: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
+    STAKING_API_KEY: faker.string.uuid(),
+    STAKING_TESTNET_API_KEY: faker.string.uuid(),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -75,6 +77,8 @@ describe('Configuration validator', () => {
     { key: 'RELAY_PROVIDER_API_KEY_LINEA' },
     { key: 'RELAY_PROVIDER_API_KEY_BLAST' },
     { key: 'RELAY_PROVIDER_API_KEY_SEPOLIA' },
+    { key: 'STAKING_API_KEY' },
+    { key: 'STAKING_TESTNET_API_KEY' },
   ])(
     'should detect that $key is missing in the configuration in production environment',
     ({ key }) => {
@@ -121,6 +125,8 @@ describe('Configuration validator', () => {
       RELAY_PROVIDER_API_KEY_LINEA: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_BLAST: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
+      STAKING_API_KEY: faker.string.uuid(),
+      STAKING_TESTNET_API_KEY: faker.string.uuid(),
     };
     expect(() =>
       configurationValidator(invalidConfiguration, RootConfigurationSchema),

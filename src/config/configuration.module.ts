@@ -62,4 +62,6 @@ export const RootConfigurationSchema = z.object({
   RELAY_PROVIDER_API_KEY_LINEA: z.string(),
   RELAY_PROVIDER_API_KEY_BLAST: z.string(),
   RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
+  STAKING_API_KEY: z.string(),
+  STAKING_TESTNET_API_KEY: z.string(),
 });
