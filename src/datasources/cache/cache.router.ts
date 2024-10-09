@@ -47,8 +47,8 @@ export class CacheRouter {
   private static readonly STAKING_STAKES_KEY = 'staking_stakes';
   private static readonly STAKING_TRANSACTION_STATUS_KEY =
     'staking_transaction_status';
-  private static readonly SUBMISSION = 'submission';
-  private static readonly TARGETED_SAFE = 'targeted_safe';
+  private static readonly SUBMISSION = 'targeted_messaging_submission';
+  private static readonly TARGETED_SAFE = 'targeted_messaging_targeted_safe';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';

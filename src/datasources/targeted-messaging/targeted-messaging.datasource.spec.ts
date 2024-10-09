@@ -178,7 +178,7 @@ describe('TargetedMessagingDataSource tests', () => {
         .build();
       await target.createTargetedSafes(createTargetedSafesDto);
       const cacheDir = new CacheDir(
-        `targeted_safe_${outreach.id}`,
+        `targeted_messaging_targeted_safe_${outreach.id}`,
         createTargetedSafesDto.addresses[0],
       );
 
@@ -269,7 +269,7 @@ describe('TargetedMessagingDataSource tests', () => {
         createTargetedSafesDto,
       );
       const cacheDir = new CacheDir(
-        `targeted_safe_${outreach.id}`,
+        `targeted_messaging_targeted_safe_${outreach.id}`,
         createTargetedSafesDto.addresses[0],
       );
 
@@ -307,7 +307,7 @@ describe('TargetedMessagingDataSource tests', () => {
       const outreach = await target.createOutreach(createOutreachDto);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const cacheDir = new CacheDir(
-        `targeted_safe_${outreach.id}`,
+        `targeted_messaging_targeted_safe_${outreach.id}`,
         safeAddress,
       );
 
@@ -439,7 +439,7 @@ describe('TargetedMessagingDataSource tests', () => {
       );
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const cacheDir = new CacheDir(
-        `submission_${outreach.id}`,
+        `targeted_messaging_submission_${outreach.id}`,
         `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
       );
 
@@ -512,7 +512,7 @@ describe('TargetedMessagingDataSource tests', () => {
       );
       const signerAddress = getAddress(faker.finance.ethereumAddress());
       const cacheDir = new CacheDir(
-        `submission_${outreach.id}`,
+        `targeted_messaging_submission_${outreach.id}`,
         `${createTargetedSafesDto.addresses[0]}_${signerAddress}`,
       );
 
