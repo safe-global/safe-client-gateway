@@ -12,6 +12,9 @@ import { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entities/cre
 import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
 import { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
+import { TargetedSafe as DbTargetedSafe } from '@/datasources/targeted-messaging/entities/targeted-safe.entity';
+import { Submission as DbSubmission } from '@/datasources/targeted-messaging/entities/submission.entity';
+import { Outreach as DbOutreach } from '@/datasources/targeted-messaging/entities/outreach.entity';
 import { SubmissionNotFoundError } from '@/domain/targeted-messaging/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -42,7 +45,7 @@ export class TargetedMessagingDatasource
   async createOutreach(
     createOutreachDto: CreateOutreachDto,
   ): Promise<Outreach> {
-    const [outreach] = await this.sql`
+    const [outreach] = await this.sql<DbOutreach[]>`
       INSERT INTO outreaches (name, start_date, end_date)
       VALUES (${createOutreachDto.name}, ${createOutreachDto.startDate}, ${createOutreachDto.endDate})
       RETURNING *`.catch((err) => {
@@ -55,10 +58,10 @@ export class TargetedMessagingDatasource
     return {
       id: outreach.id,
       name: outreach.name,
-      startDate: outreach.start_date,
-      endDate: outreach.end_date,
-      created_at: outreach.created_at,
-      updated_at: outreach.updated_at,
+      startDate: new Date(outreach.start_date),
+      endDate: new Date(outreach.end_date),
+      created_at: new Date(outreach.created_at),
+      updated_at: new Date(outreach.updated_at),
     };
   }
 
@@ -81,15 +84,16 @@ export class TargetedMessagingDatasource
         throw new UnprocessableEntityException('Error adding targeted Safes');
       });
 
-      const targetedSafes =
-        await sql`SELECT * FROM targeted_safes WHERE id = ANY(${inserted.map((i) => i.id)})`;
+      const targetedSafes = await sql<
+        DbTargetedSafe[]
+      >`SELECT * FROM targeted_safes WHERE id = ANY(${inserted.map((i) => i.id)})`;
 
       return targetedSafes.map((targetedSafe) => ({
         id: targetedSafe.id,
         outreachId: targetedSafe.outreach_id,
         address: targetedSafe.address,
-        created_at: targetedSafe.created_at,
-        updated_at: targetedSafe.updated_at,
+        created_at: new Date(targetedSafe.created_at),
+        updated_at: new Date(targetedSafe.updated_at),
       }));
     });
 
@@ -104,13 +108,15 @@ export class TargetedMessagingDatasource
     outreachId: number;
     safeAddress: `0x${string}`;
   }): Promise<TargetedSafe> {
-    const [targetedSafe] = await this.cachedQueryResolver.get<TargetedSafe[]>({
-      cacheDir: CacheRouter.getTargetedSafeCacheDir(args),
-      query: this.sql`
+    const [targetedSafe] = await this.cachedQueryResolver.get<DbTargetedSafe[]>(
+      {
+        cacheDir: CacheRouter.getTargetedSafeCacheDir(args),
+        query: this.sql`
         SELECT * FROM targeted_safes
         WHERE outreach_id = ${args.outreachId} AND address = ${args.safeAddress}`,
-      ttl: this.defaultExpirationTimeInSeconds,
-    });
+        ttl: this.defaultExpirationTimeInSeconds,
+      },
+    );
 
     if (!targetedSafe) {
       throw new TargetedSafeNotFoundError();
@@ -119,9 +125,9 @@ export class TargetedMessagingDatasource
     return {
       id: targetedSafe.id,
       address: targetedSafe.address,
-      outreachId: args.outreachId,
-      created_at: targetedSafe.created_at,
-      updated_at: targetedSafe.updated_at,
+      outreachId: targetedSafe.outreach_id,
+      created_at: new Date(targetedSafe.created_at),
+      updated_at: new Date(targetedSafe.updated_at),
     };
   }
 
@@ -129,7 +135,7 @@ export class TargetedMessagingDatasource
     targetedSafe: TargetedSafe;
     signerAddress: `0x${string}`;
   }): Promise<Submission> {
-    const [submission] = await this.sql`
+    const [submission] = await this.sql<DbSubmission[]>`
       INSERT INTO submissions (targeted_safe_id, signer_address, completion_date)
       VALUES (${args.targetedSafe.id}, ${args.signerAddress}, ${new Date()})
       RETURNING *`.catch((err) => {
@@ -147,9 +153,9 @@ export class TargetedMessagingDatasource
       outreachId: args.targetedSafe.outreachId,
       targetedSafeId: submission.targeted_safe_id,
       signerAddress: submission.signer_address,
-      completionDate: submission.completion_date,
-      created_at: submission.created_at,
-      updated_at: submission.updated_at,
+      completionDate: new Date(submission.completion_date),
+      created_at: new Date(submission.created_at),
+      updated_at: new Date(submission.updated_at),
     };
   }
 
@@ -157,7 +163,7 @@ export class TargetedMessagingDatasource
     targetedSafe: TargetedSafe;
     signerAddress: `0x${string}`;
   }): Promise<Submission> {
-    const [submission] = await this.cachedQueryResolver.get({
+    const [submission] = await this.cachedQueryResolver.get<DbSubmission[]>({
       cacheDir: CacheRouter.getSubmissionCacheDir({
         outreachId: args.targetedSafe.outreachId,
         safeAddress: args.targetedSafe.address,
@@ -178,9 +184,9 @@ export class TargetedMessagingDatasource
       outreachId: args.targetedSafe.outreachId,
       targetedSafeId: args.targetedSafe.id,
       signerAddress: args.signerAddress,
-      completionDate: submission.completion_date,
-      created_at: submission.created_at,
-      updated_at: submission.updated_at,
+      completionDate: new Date(submission.completion_date),
+      created_at: new Date(submission.created_at),
+      updated_at: new Date(submission.updated_at),
     };
   }
 }

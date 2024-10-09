@@ -468,9 +468,9 @@ describe('TargetedMessagingDataSource tests', () => {
         outreachId: outreach.id,
         targetedSafeId: targetedSafes[0].id,
         signerAddress,
-        completionDate: expect.any(String),
-        created_at: expect.any(String),
-        updated_at: expect.any(String),
+        completionDate: expect.any(Date),
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
       });
     });
 
