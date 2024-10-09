@@ -16,6 +16,7 @@ import {
 } from '@/domain/indexing/entities/indexing-status.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { differenceBy } from 'lodash';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
@@ -45,6 +46,28 @@ export class ChainsRepository implements IChainsRepository {
       });
     }
     return valid;
+  }
+
+  async getAllChains(): Promise<Array<Chain>> {
+    const chains: Array<Chain> = [];
+
+    let offset: number | undefined;
+
+    while (true) {
+      const result = await this.getChains(undefined, offset);
+      chains.push(...result.results);
+
+      if (!result.next) {
+        break;
+      }
+
+      const url = new URL(result.next);
+      const paginationData = PaginationData.fromLimitAndOffset(url);
+      offset ??= 0;
+      offset += paginationData.offset;
+    }
+
+    return chains;
   }
 
   async getSingletons(chainId: string): Promise<Singleton[]> {
