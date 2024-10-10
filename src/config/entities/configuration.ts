@@ -298,6 +298,14 @@ export default () => ({
   safeConfig: {
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
+    chains: {
+      // According to the limits of the Config Service
+      // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
+      maxLimit: parseInt(process.env.SAFE_CONFIG_CHAINS_MAX_LIMIT ?? `${40}`),
+      maxSequentialPages: parseInt(
+        process.env.SAFE_CONFIG_CHAINS_MAX_SEQUENTIAL_PAGES ?? `${3}`,
+      ),
+    },
   },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',

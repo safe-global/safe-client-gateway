@@ -18,7 +18,10 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { getAddress } from 'viem';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import {
+  limitAndOffsetUrlFactory,
+  pageBuilder,
+} from '@/domain/entities/__tests__/page.builder';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
@@ -26,6 +29,7 @@ import type { Server } from 'net';
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let maxLimit: number;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -48,6 +52,7 @@ describe('Owners Controller (Unit)', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    maxLimit = configurationService.getOrThrow('safeConfig.chains.maxLimit');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -185,7 +190,7 @@ describe('Owners Controller (Unit)', () => {
   });
 
   describe('GET all safes by owner address', () => {
-    it('Success', async () => {
+    it('Success for singular chain page', async () => {
       const ownerAddress = faker.finance.ethereumAddress();
 
       const chainId1 = faker.string.numeric();
@@ -209,7 +214,10 @@ describe('Owners Controller (Unit)', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains`: {
             return Promise.resolve({
-              data: pageBuilder().with('results', [chain1, chain2]).build(),
+              data: pageBuilder()
+                .with('results', [chain1, chain2])
+                .with('next', null)
+                .build(),
               status: 200,
             });
           }
@@ -259,6 +267,98 @@ describe('Owners Controller (Unit)', () => {
         });
     });
 
+    it('Success for multiple chain pages', async () => {
+      const ownerAddress = faker.finance.ethereumAddress();
+
+      const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric({ exclude: [chainId1] });
+
+      const chain1 = chainBuilder().with('chainId', chainId1).build();
+      const chain2 = chainBuilder().with('chainId', chainId2).build();
+
+      const chainsUrl = `${safeConfigUrl}/api/v1/chains`;
+      const offset = 1;
+      const chainsPage1 = pageBuilder()
+        .with('results', [chain1])
+        .with('next', limitAndOffsetUrlFactory(undefined, offset, chainsUrl))
+        .build();
+      const chainsPage2 = pageBuilder()
+        .with('results', [chain2])
+        .with('next', null)
+        .build();
+
+      const safesOnChain1 = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+      const safesOnChain2 = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+
+      networkService.get.mockImplementation(({ url, networkRequest }) => {
+        if (url === chainsUrl && !networkRequest!.params!.offset) {
+          return Promise.resolve({
+            data: chainsPage1,
+            status: 200,
+          });
+        }
+        if (url === chainsUrl && networkRequest!.params!.offset === offset) {
+          return Promise.resolve({
+            data: chainsPage2,
+            status: 200,
+          });
+        }
+        if (url === `${safeConfigUrl}/api/v1/chains/${chainId1}`) {
+          return Promise.resolve({
+            data: chain1,
+            status: 200,
+          });
+        }
+
+        if (url === `${safeConfigUrl}/api/v1/chains/${chainId2}`) {
+          return Promise.resolve({
+            data: chain2,
+            status: 200,
+          });
+        }
+
+        // ValidationPipe checksums ownerAddress param
+        if (
+          url ===
+          `${chain1.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`
+        ) {
+          return Promise.resolve({
+            data: { safes: safesOnChain1 },
+            status: 200,
+          });
+        }
+
+        if (
+          url ===
+          `${chain2.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`
+        ) {
+          return Promise.resolve({
+            data: { safes: safesOnChain2 },
+            status: 200,
+          });
+        }
+
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/owners/${ownerAddress}/safes`)
+        .expect(200)
+        .expect({
+          // Validation schema checksums addresses
+          [chainId1]: safesOnChain1.map((safe) => getAddress(safe)),
+          [chainId2]: safesOnChain2.map((safe) => getAddress(safe)),
+        });
+    });
+
     it('Failure: Config API fails', async () => {
       const ownerAddress = faker.finance.ethereumAddress();
 
@@ -286,7 +386,7 @@ describe('Owners Controller (Unit)', () => {
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${safeConfigUrl}/api/v1/chains`,
-        networkRequest: { params: { limit: undefined, offset: undefined } },
+        networkRequest: { params: { limit: maxLimit, offset: 0 } },
       });
     });
 
