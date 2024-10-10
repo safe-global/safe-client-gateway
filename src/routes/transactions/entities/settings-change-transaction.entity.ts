@@ -10,7 +10,7 @@ import {
 export class SettingsChangeTransaction extends TransactionInfo {
   @ApiProperty()
   dataDecoded: DataDecoded;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: SettingsChange, nullable: true })
   settingsInfo: SettingsChange | null;
 
   constructor(

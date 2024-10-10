@@ -75,7 +75,8 @@ export class TwapOrderTransactionInfo
   @ApiPropertyOptional({ enum: OrderClass })
   class: OrderClass.Limit;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description: 'The order UID of the active order, or null if none is active',
   })
@@ -95,6 +96,7 @@ export class TwapOrderTransactionInfo
   buyAmount: string;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description:
       'The executed sell token raw amount (no decimals), or null if there are too many parts',
@@ -102,6 +104,7 @@ export class TwapOrderTransactionInfo
   executedSellAmount: string | null;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description:
       'The executed buy token raw amount (no decimals), or null if there are too many parts',
@@ -109,6 +112,7 @@ export class TwapOrderTransactionInfo
   executedBuyAmount: string | null;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description:
       'The executed surplus fee raw amount (no decimals), or null if there are too many parts',

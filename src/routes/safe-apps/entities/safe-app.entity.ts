@@ -10,7 +10,7 @@ export class SafeApp {
   url: string;
   @ApiProperty()
   name: string;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   iconUrl: string | null;
   @ApiProperty()
   description: string;
