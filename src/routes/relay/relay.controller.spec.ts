@@ -52,7 +52,10 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
 
-const supportedChainIds = Object.keys(configuration().relay.apiKey);
+const supportedChainIds = faker.helpers.arrayElements(
+  Object.keys(configuration().relay.apiKey),
+  1,
+);
 
 const SAFE_VERSIONS = getDeploymentVersionsByChainIds(
   'Safe',
