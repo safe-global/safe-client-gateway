@@ -5,7 +5,7 @@ import { z } from 'zod';
 export class CreateDelegateDto
   implements z.infer<typeof CreateDelegateDtoSchema>
 {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   safe!: `0x${string}` | null;
   @ApiProperty()
   delegate!: `0x${string}`;

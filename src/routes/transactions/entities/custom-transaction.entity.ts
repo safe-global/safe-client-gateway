@@ -11,7 +11,7 @@ export class CustomTransactionInfo extends TransactionInfo {
   to: AddressInfo;
   @ApiProperty()
   dataSize: string;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   value: string | null;
   @ApiProperty()
   isCancellation: boolean;

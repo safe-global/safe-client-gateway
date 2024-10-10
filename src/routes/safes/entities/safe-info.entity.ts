@@ -30,13 +30,13 @@ export class SafeState {
   readonly version: string | null;
   @ApiProperty({ enum: Object.values(MasterCopyVersionState) })
   readonly implementationVersionState: MasterCopyVersionState;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   readonly collectiblesTag: string | null;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   readonly txQueuedTag: string | null;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   readonly txHistoryTag: string | null;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   readonly messagesTag: string | null;
 
   constructor(

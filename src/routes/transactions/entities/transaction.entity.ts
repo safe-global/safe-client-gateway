@@ -37,9 +37,9 @@ import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/enti
 export class Transaction {
   @ApiProperty()
   id: string;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   txHash: `0x${string}` | null;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: Number, nullable: true })
   timestamp: number | null;
   @ApiProperty()
   txStatus: string;
