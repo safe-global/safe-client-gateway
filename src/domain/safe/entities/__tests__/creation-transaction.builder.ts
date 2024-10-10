@@ -13,6 +13,7 @@ export function creationTransactionBuilder(): IBuilder<CreationTransaction> {
     .with('factoryAddress', getAddress(faker.finance.ethereumAddress()))
     .with('masterCopy', getAddress(faker.finance.ethereumAddress()))
     .with('setupData', faker.string.hexadecimal() as `0x${string}`)
+    .with('saltNonce', faker.string.numeric())
     .with('dataDecoded', dataDecodedBuilder().build());
 }
 

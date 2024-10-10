@@ -101,6 +101,7 @@ describe('CreationTransactionSchema', () => {
     'creator' as const,
     'transactionHash' as const,
     'factoryAddress' as const,
+    'saltNonce' as const,
   ])('should not allow an undefined %s', (field) => {
     const creationTransaction = creationTransactionBuilder().build();
     delete creationTransaction[field];
