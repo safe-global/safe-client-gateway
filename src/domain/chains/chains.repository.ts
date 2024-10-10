@@ -63,8 +63,7 @@ export class ChainsRepository implements IChainsRepository {
 
       const url = new URL(result.next);
       const paginationData = PaginationData.fromLimitAndOffset(url);
-      offset ??= 0;
-      offset += paginationData.offset;
+      offset = paginationData.offset;
     }
 
     return chains;
