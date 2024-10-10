@@ -29,6 +29,7 @@ import type { Server } from 'net';
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let maxLimit: number;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -51,6 +52,7 @@ describe('Owners Controller (Unit)', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    maxLimit = configurationService.getOrThrow('safeConfig.chains.maxLimit');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -384,7 +386,7 @@ describe('Owners Controller (Unit)', () => {
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${safeConfigUrl}/api/v1/chains`,
-        networkRequest: { params: { limit: undefined, offset: undefined } },
+        networkRequest: { params: { limit: maxLimit, offset: 0 } },
       });
     });
 
