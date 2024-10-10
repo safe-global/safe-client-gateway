@@ -47,6 +47,10 @@ export class CacheRouter {
   private static readonly STAKING_STAKES_KEY = 'staking_stakes';
   private static readonly STAKING_TRANSACTION_STATUS_KEY =
     'staking_transaction_status';
+  private static readonly TARGETED_MESSAGING_SUBMISSION_KEY =
+    'targeted_messaging_submission';
+  private static readonly TARGETED_MESSAGING_TARGETED_SAFE_KEY =
+    'targeted_messaging_targeted_safe';
   private static readonly TOKEN_KEY = 'token';
   private static readonly TOKEN_PRICE_KEY = 'token_price';
   private static readonly TOKENS_KEY = 'tokens';
@@ -644,6 +648,35 @@ export class CacheRouter {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.STAKING_TRANSACTION_STATUS_KEY}_${args.txHash}`,
       '',
+    );
+  }
+
+  static getTargetedSafeCacheKey(outreachId: number): string {
+    return `${CacheRouter.TARGETED_MESSAGING_TARGETED_SAFE_KEY}_${outreachId}`;
+  }
+
+  static getTargetedSafeCacheDir(args: {
+    outreachId: number;
+    safeAddress: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getTargetedSafeCacheKey(args.outreachId),
+      args.safeAddress,
+    );
+  }
+
+  static getSubmissionCacheKey(outreachId: number): string {
+    return `${CacheRouter.TARGETED_MESSAGING_SUBMISSION_KEY}_${outreachId}`;
+  }
+
+  static getSubmissionCacheDir(args: {
+    outreachId: number;
+    safeAddress: `0x${string}`;
+    signerAddress: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getSubmissionCacheKey(args.outreachId),
+      `${args.safeAddress}_${args.signerAddress}`,
     );
   }
 }
