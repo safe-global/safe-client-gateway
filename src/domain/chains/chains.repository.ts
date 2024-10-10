@@ -17,15 +17,28 @@ import {
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { differenceBy } from 'lodash';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
+  private readonly maxLimit: number;
+  private readonly maxSequentialPages: number;
+
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxLimit = this.configurationService.getOrThrow<number>(
+      'safeConfig.chains.maxLimit',
+    );
+    this.maxSequentialPages = this.configurationService.getOrThrow<number>(
+      'safeConfig.chains.maxSequentialPages',
+    );
+  }
 
   async getChain(chainId: string): Promise<Chain> {
     const chain = await this.configApi.getChain(chainId);
@@ -51,19 +64,28 @@ export class ChainsRepository implements IChainsRepository {
   async getAllChains(): Promise<Array<Chain>> {
     const chains: Array<Chain> = [];
 
-    let offset: number | undefined;
+    let offset = 0;
+    let next = null;
 
-    while (true) {
-      const result = await this.getChains(undefined, offset);
+    for (let i = 0; i < this.maxSequentialPages; i++) {
+      const result = await this.getChains(this.maxLimit, offset);
+
+      next = result.next;
       chains.push(...result.results);
 
-      if (!result.next) {
+      if (!next) {
         break;
       }
 
-      const url = new URL(result.next);
+      const url = new URL(next);
       const paginationData = PaginationData.fromLimitAndOffset(url);
       offset = paginationData.offset;
+    }
+
+    if (next) {
+      this.loggingService.error(
+        'More chains available despite request limit reached',
+      );
     }
 
     return chains;
