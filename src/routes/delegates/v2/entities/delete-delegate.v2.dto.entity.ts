@@ -5,9 +5,9 @@ import { z } from 'zod';
 export class DeleteDelegateV2Dto
   implements z.infer<typeof DeleteDelegateV2DtoSchema>
 {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   delegator!: `0x${string}` | null;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   safe!: `0x${string}` | null;
   @ApiProperty()
   signature!: string;
