@@ -46,8 +46,8 @@ export class TargetedMessagingDatasource
     createOutreachDto: CreateOutreachDto,
   ): Promise<Outreach> {
     const [outreach] = await this.sql<DbOutreach[]>`
-      INSERT INTO outreaches (name, start_date, end_date)
-      VALUES (${createOutreachDto.name}, ${createOutreachDto.startDate}, ${createOutreachDto.endDate})
+      INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name)
+      VALUES (${createOutreachDto.name}, ${createOutreachDto.startDate}, ${createOutreachDto.endDate}, ${createOutreachDto.sourceId}, ${createOutreachDto.type}, ${createOutreachDto.teamName})
       RETURNING *`.catch((err) => {
       this.loggingService.warn(
         `Error creating outreach: ${asError(err).message}`,
@@ -60,6 +60,9 @@ export class TargetedMessagingDatasource
       name: outreach.name,
       startDate: new Date(outreach.start_date),
       endDate: new Date(outreach.end_date),
+      sourceId: outreach.source_id,
+      type: outreach.type,
+      teamName: outreach.team_name,
       created_at: new Date(outreach.created_at),
       updated_at: new Date(outreach.updated_at),
     };

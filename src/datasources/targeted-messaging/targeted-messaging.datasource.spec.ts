@@ -70,6 +70,9 @@ describe('TargetedMessagingDataSource tests', () => {
         name: dto.name,
         startDate: dto.startDate,
         endDate: dto.endDate,
+        sourceId: dto.sourceId,
+        type: dto.type,
+        teamName: dto.teamName,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
