@@ -25,11 +25,11 @@ import {
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
+import { ChainsRepository } from '@/domain/chains/chains.repository';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let maxLimit: number;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -52,7 +52,6 @@ describe('Owners Controller (Unit)', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-    maxLimit = configurationService.getOrThrow('safeConfig.chains.maxLimit');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -386,7 +385,9 @@ describe('Owners Controller (Unit)', () => {
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${safeConfigUrl}/api/v1/chains`,
-        networkRequest: { params: { limit: maxLimit, offset: 0 } },
+        networkRequest: {
+          params: { limit: ChainsRepository.MAX_LIMIT, offset: 0 },
+        },
       });
     });
 

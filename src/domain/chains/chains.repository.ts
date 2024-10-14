@@ -21,7 +21,10 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
-  private readonly maxLimit: number;
+  // According to the limits of the Config Service
+  // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
+  static readonly MAX_LIMIT = 40;
+
   private readonly maxSequentialPages: number;
 
   constructor(
@@ -32,9 +35,6 @@ export class ChainsRepository implements IChainsRepository {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.maxLimit = this.configurationService.getOrThrow<number>(
-      'safeConfig.chains.maxLimit',
-    );
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.chains.maxSequentialPages',
     );
@@ -68,7 +68,7 @@ export class ChainsRepository implements IChainsRepository {
     let next = null;
 
     for (let i = 0; i < this.maxSequentialPages; i++) {
-      const result = await this.getChains(this.maxLimit, offset);
+      const result = await this.getChains(ChainsRepository.MAX_LIMIT, offset);
 
       next = result.next;
       chains.push(...result.results);

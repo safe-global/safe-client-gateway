@@ -32,16 +32,17 @@ const mockConfigurationService = jest.mocked({
  * tests are required to cover all edge cases.
  */
 describe('ChainsRepository', () => {
-  let target: ChainsRepository;
+  // According to the limits of the Config Service
+  // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
+  const OFFSET = 40;
 
-  const maxLimit = 40;
+  let target: ChainsRepository;
   const maxSequentialPages = 3;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'safeConfig.chains.maxLimit') return maxLimit;
       if (key === 'safeConfig.chains.maxSequentialPages')
         return maxSequentialPages;
     });
@@ -55,37 +56,46 @@ describe('ChainsRepository', () => {
   });
 
   it('should return all chains across pages below request limit', async () => {
-    const offset = 40;
     const url = faker.internet.url({ appendSlash: true });
     const chains = Array.from(
       {
-        length: maxLimit * (maxSequentialPages - 1), // One page less than request limit
+        length: ChainsRepository.MAX_LIMIT * (maxSequentialPages - 1), // One page less than request limit
       },
       (_, i) => chainBuilder().with('chainId', i.toString()).build(),
     );
-    const pages = chunk(chains, maxLimit).map((results, i, arr) => {
-      const pageOffset = (i + 1) * offset;
+    const pages = chunk(chains, ChainsRepository.MAX_LIMIT).map(
+      (results, i, arr) => {
+        const pageOffset = (i + 1) * OFFSET;
 
-      const previous = ((): string | null => {
-        if (i === 0) {
-          return null;
-        }
-        return limitAndOffsetUrlFactory(maxLimit, pageOffset, url);
-      })();
-      const next = ((): string | null => {
-        if (i === arr.length - 1) {
-          return null;
-        }
-        return limitAndOffsetUrlFactory(maxLimit, pageOffset, url);
-      })();
+        const previous = ((): string | null => {
+          if (i === 0) {
+            return null;
+          }
+          return limitAndOffsetUrlFactory(
+            ChainsRepository.MAX_LIMIT,
+            pageOffset,
+            url,
+          );
+        })();
+        const next = ((): string | null => {
+          if (i === arr.length - 1) {
+            return null;
+          }
+          return limitAndOffsetUrlFactory(
+            ChainsRepository.MAX_LIMIT,
+            pageOffset,
+            url,
+          );
+        })();
 
-      return pageBuilder<Chain>()
-        .with('results', results)
-        .with('count', chains.length)
-        .with('previous', previous)
-        .with('next', next)
-        .build();
-    });
+        return pageBuilder<Chain>()
+          .with('results', results)
+          .with('count', chains.length)
+          .with('previous', previous)
+          .with('next', next)
+          .build();
+      },
+    );
     mockConfigApi.getChains.mockImplementation(
       ({ offset }): Promise<Page<Chain>> => {
         if (offset === 0) {
@@ -123,37 +133,46 @@ describe('ChainsRepository', () => {
   });
 
   it('should return all chains across pages up request limit', async () => {
-    const offset = 40;
     const url = faker.internet.url({ appendSlash: true });
     const chains = Array.from(
       {
-        length: maxLimit * maxSequentialPages, // Exactly request limit
+        length: ChainsRepository.MAX_LIMIT * maxSequentialPages, // Exactly request limit
       },
       (_, i) => chainBuilder().with('chainId', i.toString()).build(),
     );
-    const pages = chunk(chains, maxLimit).map((results, i, arr) => {
-      const pageOffset = (i + 1) * offset;
+    const pages = chunk(chains, ChainsRepository.MAX_LIMIT).map(
+      (results, i, arr) => {
+        const pageOffset = (i + 1) * OFFSET;
 
-      const previous = ((): string | null => {
-        if (i === 0) {
-          return null;
-        }
-        return limitAndOffsetUrlFactory(maxLimit, pageOffset, url);
-      })();
-      const next = ((): string | null => {
-        if (i === arr.length - 1) {
-          return null;
-        }
-        return limitAndOffsetUrlFactory(maxLimit, pageOffset, url);
-      })();
+        const previous = ((): string | null => {
+          if (i === 0) {
+            return null;
+          }
+          return limitAndOffsetUrlFactory(
+            ChainsRepository.MAX_LIMIT,
+            pageOffset,
+            url,
+          );
+        })();
+        const next = ((): string | null => {
+          if (i === arr.length - 1) {
+            return null;
+          }
+          return limitAndOffsetUrlFactory(
+            ChainsRepository.MAX_LIMIT,
+            pageOffset,
+            url,
+          );
+        })();
 
-      return pageBuilder<Chain>()
-        .with('results', results)
-        .with('count', chains.length)
-        .with('previous', previous)
-        .with('next', next)
-        .build();
-    });
+        return pageBuilder<Chain>()
+          .with('results', results)
+          .with('count', chains.length)
+          .with('previous', previous)
+          .with('next', next)
+          .build();
+      },
+    );
     mockConfigApi.getChains.mockImplementation(
       ({ offset }): Promise<Page<Chain>> => {
         if (offset === 0) {
@@ -195,37 +214,46 @@ describe('ChainsRepository', () => {
   });
 
   it('should return all chains across pages up to request limit and notify if there are more', async () => {
-    const offset = 40;
     const url = faker.internet.url({ appendSlash: true });
     const chains = Array.from(
       {
-        length: maxLimit * (maxSequentialPages + 1), // One page more than request limit
+        length: ChainsRepository.MAX_LIMIT * (maxSequentialPages + 1), // One page more than request limit
       },
       (_, i) => chainBuilder().with('chainId', i.toString()).build(),
     );
-    const pages = chunk(chains, maxLimit).map((results, i, arr) => {
-      const pageOffset = (i + 1) * offset;
+    const pages = chunk(chains, ChainsRepository.MAX_LIMIT).map(
+      (results, i, arr) => {
+        const pageOffset = (i + 1) * OFFSET;
 
-      const previous = ((): string | null => {
-        if (i === 0) {
-          return null;
-        }
-        return limitAndOffsetUrlFactory(maxLimit, pageOffset, url);
-      })();
-      const next = ((): string | null => {
-        if (i === arr.length - 1) {
-          return null;
-        }
-        return limitAndOffsetUrlFactory(maxLimit, pageOffset, url);
-      })();
+        const previous = ((): string | null => {
+          if (i === 0) {
+            return null;
+          }
+          return limitAndOffsetUrlFactory(
+            ChainsRepository.MAX_LIMIT,
+            pageOffset,
+            url,
+          );
+        })();
+        const next = ((): string | null => {
+          if (i === arr.length - 1) {
+            return null;
+          }
+          return limitAndOffsetUrlFactory(
+            ChainsRepository.MAX_LIMIT,
+            pageOffset,
+            url,
+          );
+        })();
 
-      return pageBuilder<Chain>()
-        .with('results', results)
-        .with('count', chains.length)
-        .with('previous', previous)
-        .with('next', next)
-        .build();
-    });
+        return pageBuilder<Chain>()
+          .with('results', results)
+          .with('count', chains.length)
+          .with('previous', previous)
+          .with('next', next)
+          .build();
+      },
+    );
     mockConfigApi.getChains.mockImplementation(
       ({ offset }): Promise<Page<Chain>> => {
         if (offset === 0) {
@@ -244,12 +272,14 @@ describe('ChainsRepository', () => {
     const result = await target.getAllChains();
 
     expect(result).toStrictEqual(
-      chains.slice(0, maxLimit * maxSequentialPages).map((chain) => {
-        return {
-          ...chain,
-          ensRegistryAddress: getAddress(chain.ensRegistryAddress!),
-        };
-      }),
+      chains
+        .slice(0, ChainsRepository.MAX_LIMIT * maxSequentialPages)
+        .map((chain) => {
+          return {
+            ...chain,
+            ensRegistryAddress: getAddress(chain.ensRegistryAddress!),
+          };
+        }),
     );
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(1, {
       limit: 40,
