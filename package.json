@@ -36,7 +36,7 @@
     "@safe-global/safe-deployments": "^1.37.10",
     "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.4",
-    "cookie-parser": "^1.4.6",
+    "cookie-parser": "^1.4.7",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "nestjs-cls": "^4.4.1",
