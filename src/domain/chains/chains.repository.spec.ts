@@ -35,6 +35,7 @@ describe('ChainsRepository', () => {
   // According to the limits of the Config Service
   // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
   const OFFSET = 40;
+  const MAX_LIMIT = 40;
 
   let target: ChainsRepository;
   const maxSequentialPages = 3;
@@ -101,10 +102,10 @@ describe('ChainsRepository', () => {
         if (offset === 0) {
           return Promise.resolve(pages[0]);
         }
-        if (offset === 40) {
+        if (offset === OFFSET) {
           return Promise.resolve(pages[1]);
         }
-        if (offset === 80) {
+        if (offset === OFFSET * 2) {
           return Promise.resolve(pages[2]);
         }
         return Promise.reject(new Error('Invalid offset'));
@@ -123,12 +124,12 @@ describe('ChainsRepository', () => {
     );
     expect(mockConfigApi.getChains).toHaveBeenCalledTimes(2);
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(1, {
-      limit: 40,
+      limit: MAX_LIMIT,
       offset: 0,
     });
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(2, {
-      limit: 40,
-      offset: 40,
+      limit: MAX_LIMIT,
+      offset: OFFSET,
     });
   });
 
@@ -178,10 +179,10 @@ describe('ChainsRepository', () => {
         if (offset === 0) {
           return Promise.resolve(pages[0]);
         }
-        if (offset === 40) {
+        if (offset === OFFSET) {
           return Promise.resolve(pages[1]);
         }
-        if (offset === 80) {
+        if (offset === OFFSET * 2) {
           return Promise.resolve(pages[2]);
         }
         return Promise.reject(new Error('Invalid offset'));
@@ -200,16 +201,16 @@ describe('ChainsRepository', () => {
     );
     expect(mockConfigApi.getChains).toHaveBeenCalledTimes(3);
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(1, {
-      limit: 40,
+      limit: MAX_LIMIT,
       offset: 0,
     });
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(2, {
-      limit: 40,
-      offset: 40,
+      limit: MAX_LIMIT,
+      offset: OFFSET,
     });
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(3, {
-      limit: 40,
-      offset: 80,
+      limit: MAX_LIMIT,
+      offset: OFFSET * 2,
     });
   });
 
@@ -259,10 +260,10 @@ describe('ChainsRepository', () => {
         if (offset === 0) {
           return Promise.resolve(pages[0]);
         }
-        if (offset === 40) {
+        if (offset === OFFSET) {
           return Promise.resolve(pages[1]);
         }
-        if (offset === 80) {
+        if (offset === OFFSET * 2) {
           return Promise.resolve(pages[2]);
         }
         return Promise.reject(new Error('Invalid offset'));
@@ -282,16 +283,16 @@ describe('ChainsRepository', () => {
         }),
     );
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(1, {
-      limit: 40,
+      limit: MAX_LIMIT,
       offset: 0,
     });
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(2, {
-      limit: 40,
-      offset: 40,
+      limit: MAX_LIMIT,
+      offset: OFFSET,
     });
     expect(mockConfigApi.getChains).toHaveBeenNthCalledWith(3, {
-      limit: 40,
-      offset: 80,
+      limit: MAX_LIMIT,
+      offset: OFFSET * 2,
     });
     expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
     expect(mockLoggingService.error).toHaveBeenNthCalledWith(
