@@ -42,6 +42,23 @@ export class TargetedMessagingDatasource
       );
   }
 
+  async getUnprocessedOutreaches(): Promise<Outreach[]> {
+    const outreaches = await this.cachedQueryResolver.get<DbOutreach[]>({
+      cacheDir: CacheRouter.getOutreachesCacheDir(),
+      query: this.sql`SELECT * FROM outreaches`,
+      ttl: this.defaultExpirationTimeInSeconds,
+    });
+
+    return outreaches.map((outreach) => ({
+      id: outreach.id,
+      name: outreach.name,
+      startDate: new Date(outreach.start_date),
+      endDate: new Date(outreach.end_date),
+      created_at: new Date(outreach.created_at),
+      updated_at: new Date(outreach.updated_at),
+    }));
+  }
+
   async createOutreach(
     createOutreachDto: CreateOutreachDto,
   ): Promise<Outreach> {
