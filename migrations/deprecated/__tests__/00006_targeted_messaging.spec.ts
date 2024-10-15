@@ -1,5 +1,5 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import type { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import type { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
 import type { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
