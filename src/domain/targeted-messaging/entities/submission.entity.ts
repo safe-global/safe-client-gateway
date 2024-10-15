@@ -1,4 +1,4 @@
-import { RowSchema } from '@/datasources/db/entities/row.entity';
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { OutreachSchema } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { TargetedSafeSchema } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';

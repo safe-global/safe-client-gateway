@@ -4,8 +4,8 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
-import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
+import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
+import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { CreateOutreachDto } from '@/domain/targeted-messaging/entities/create-outreach.dto.entity';
 import { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entities/create-targeted-safes.dto.entity';
