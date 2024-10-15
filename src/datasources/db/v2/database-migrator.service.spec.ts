@@ -12,13 +12,16 @@ import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
+import { DatabaseShutdownHook } from '@/datasources/db/v2/database-shutdown.hook';
+import { DatabaseInitializeHook } from '@/datasources/db/v2/database-initialize.hook';
 
 describe('PostgresDatabaseService', () => {
-  let postgresqlService: PostgresDatabaseService;
+  let moduleRef: TestingModule;
+  let postgresDatabaseService: PostgresDatabaseService;
   let databaseMigratorService: DatabaseMigrator;
   let loggingService: ILoggingService;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     // We should not require an SSL connection if using the database provided
     // by GitHub actions
     const isCIContext = process.env.CI?.toLowerCase() === 'true';
@@ -40,20 +43,21 @@ describe('PostgresDatabaseService', () => {
       },
     });
 
-    const moduleRef: TestingModule = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
-          useFactory: async (configService: ConfigService) => {
-            const typeormConfig = await configService.getOrThrow('db.orm');
+          useFactory: (configService: ConfigService) => {
+            const typeormConfig = configService.getOrThrow('db.orm');
             const postgresConfigObject = postgresConfig(
-              await configService.getOrThrow('db.connection.postgres'),
+              configService.getOrThrow('db.connection.postgres'),
             );
 
             return {
               ...typeormConfig,
               ...postgresConfigObject,
               ...{
+                keepAlive: true,
                 migrations: ['dist/migrations/test/*.js'],
               },
             };
@@ -64,18 +68,27 @@ describe('PostgresDatabaseService', () => {
         ConfigurationModule.register(testConfiguration),
         ConfigModule,
       ],
-      providers: [PostgresDatabaseService, DatabaseMigrator],
+      providers: [
+        PostgresDatabaseService,
+        DatabaseMigrator,
+        DatabaseInitializeHook,
+        DatabaseShutdownHook,
+        // DatabaseMigrationHook,
+      ],
     }).compile();
 
-    postgresqlService = moduleRef.get<PostgresDatabaseService>(
+    databaseMigratorService = moduleRef.get<DatabaseMigrator>(DatabaseMigrator);
+    postgresDatabaseService = moduleRef.get<PostgresDatabaseService>(
       PostgresDatabaseService,
     );
-    databaseMigratorService = moduleRef.get<DatabaseMigrator>(DatabaseMigrator);
     loggingService = moduleRef.get<ILoggingService>(LoggingService);
+
+    await postgresDatabaseService.initializeDatabaseConnection();
   });
 
   afterAll(async () => {
-    await postgresqlService.destroyDatabaseConnection();
+    await postgresDatabaseService.destroyDatabaseConnection();
+    await moduleRef.close();
   });
 
   describe('migrate()', () => {

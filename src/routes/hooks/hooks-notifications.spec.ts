@@ -96,6 +96,8 @@ describe('Post Hook Events for Notifications (Unit)', () => {
       .useModule(TestPostgresDatabaseModuleV2)
       .overrideModule(PushNotificationsApiModule)
       .useModule(TestPushNotificationsApiModule)
+      .overrideModule(NotificationsDatasourceModule)
+      .useModule(TestNotificationsDatasourceModule)
       .compile();
     app = moduleFixture.createNestApplication();
 

@@ -1,4 +1,5 @@
 // Custom configuration for the application
+
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default () => ({
   about: {
@@ -133,13 +134,16 @@ export default () => ({
   },
   db: {
     migrator: {
-      numberOfRetries: 5,
-      retryAfter: 1 * 1000, // Milliseconds
+      migrationsExecute:
+        process.env.DB_MIGRATIONS_EXECUTE?.toLowerCase() !== 'false',
+      numberOfRetries: process.env.DB_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
+      retryAfter: process.env.DB_MIGRATIONS_RETRY_AFTER ?? 1000, // Milliseconds
     },
     orm: {
       migrationsRun: false,
       autoLoadEntities: true,
       manualInitialization: true,
+      migrationsTableName: 'migrations_typeorm',
     },
     connection: {
       postgres: {

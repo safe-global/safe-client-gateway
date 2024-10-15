@@ -7,11 +7,15 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
+import { DatabaseShutdownHook } from '@/datasources/db/v2/database-shutdown.hook';
+import { DatabaseInitializeHook } from '@/datasources/db/v2/database-initialize.hook';
 
 describe('PostgresDatabaseModuleV2', () => {
+  let moduleRef: TestingModule;
   let postgresqlService: PostgresDatabaseService;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     // We should not require an SSL connection if using the database provided
     // by GitHub actions
     const isCIContext = process.env.CI?.toLowerCase() === 'true';
@@ -33,7 +37,7 @@ describe('PostgresDatabaseModuleV2', () => {
       },
     });
 
-    const moduleRef: TestingModule = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
@@ -52,8 +56,14 @@ describe('PostgresDatabaseModuleV2', () => {
         }),
         TestLoggingModule,
         ConfigurationModule.register(testConfiguration),
+        ConfigModule,
       ],
-      providers: [PostgresDatabaseService],
+      providers: [
+        DatabaseMigrator,
+        DatabaseInitializeHook,
+        DatabaseShutdownHook,
+        PostgresDatabaseService,
+      ],
     }).compile();
 
     postgresqlService = moduleRef.get<PostgresDatabaseService>(
@@ -62,12 +72,13 @@ describe('PostgresDatabaseModuleV2', () => {
   });
 
   afterAll(async () => {
-    await postgresqlService.destroyDatabaseConnection();
+    await moduleRef.close();
   });
 
   it('Should establish a successful connection', async () => {
     const connection = await postgresqlService.initializeDatabaseConnection();
 
     await connection.query('SELECT now() as current_timestamp');
+    await postgresqlService.destroyDatabaseConnection();
   });
 });

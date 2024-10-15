@@ -86,13 +86,15 @@ export default (): ReturnType<typeof configuration> => ({
   },
   db: {
     migrator: {
-      numberOfRetries: 5,
-      retryAfter: 1 * 1000,
+      migrationsExecute: true,
+      numberOfRetries: process.env.DB_TEST_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
+      retryAfter: process.env.DB_TEST_MIGRATIONS_RETRY_AFTER ?? 1000, // Milliseconds
     },
     orm: {
       autoLoadEntities: true,
       manualInitialization: true,
       migrationsRun: false,
+      migrationsTableName: 'migrations_typeorm',
     },
     connection: {
       postgres: {

@@ -1,10 +1,24 @@
+import type { ILoggingService } from '@/logging/logging.interface';
 import { Injectable } from '@nestjs/common';
-import { AbstractLogger, type LogLevel, type LogMessage } from 'typeorm';
+import {
+  AbstractLogger,
+  type LoggerOptions,
+  type LogLevel,
+  type LogMessage,
+} from 'typeorm';
 
 @Injectable()
 export class PostgresqlLogger extends AbstractLogger {
+  public constructor(
+    public options?: LoggerOptions,
+    private readonly loggingService?: ILoggingService,
+  ) {
+    super(options);
+  }
   /**
    * Write log to specific output.
+   *
+   * This is taken from the TypeOrm default implementation, check out {@link https://orkhan.gitbook.io/typeorm/docs/logging}
    */
   protected writeLog(
     level: LogLevel,
@@ -60,6 +74,16 @@ export class PostgresqlLogger extends AbstractLogger {
    * @returns {void} This method does not return anything.
    */
   public logQuery(query: string): void {
-    console.log('executing query: ' + query);
+    if (this.loggingService) {
+      this.loggingService.debug(`executing query: '${query}'`);
+    } else {
+      console.log({
+        message: `executing query: '${query}'`,
+        build_number: null,
+        request_id: null,
+        timestamp: new Date().toISOString(),
+        version: null,
+      });
+    }
   }
 }

@@ -5,7 +5,7 @@ export class Notification1726752966034 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "push_notification_devices" ("id" SERIAL NOT NULL, "device_type" character varying(255) NOT NULL CHECK (device_type IN ('ANDROID', 'IOS', 'WEB')), "device_uuid" uuid NOT NULL, "cloud_messaging_token" character varying(255) NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "device_uuid" UNIQUE ("device_uuid"), CONSTRAINT "PK_e387f5cc5b4f66d63804d596c64" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "push_notification_devices" ("id" SERIAL NOT NULL, "device_type" character varying(255) NOT NULL, "device_uuid" uuid NOT NULL, "cloud_messaging_token" character varying(255) NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "device_uuid" UNIQUE ("device_uuid"), CONSTRAINT "PK_e387f5cc5b4f66d63804d596c64" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
       `CREATE TABLE "notification_subscriptions" ("id" SERIAL NOT NULL, "chain_id" character varying(255) NOT NULL, "safe_address" character varying(42) NOT NULL, "signer_address" character varying(42), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "pushNotificationDeviceId" integer, CONSTRAINT "UQ_3c2531929422835e4f2717ec5db" UNIQUE ("chain_id", "safe_address", "pushNotificationDeviceId", "signer_address"), CONSTRAINT "PK_8cfec5d2a549ff20d1f4e648226" PRIMARY KEY ("id"))`,

@@ -7,12 +7,16 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { DataSource, type Repository } from 'typeorm';
+import { DataSource, type ObjectLiteral, type Repository } from 'typeorm';
+import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
+import { DatabaseShutdownHook } from '@/datasources/db/v2/database-shutdown.hook';
+import { DatabaseInitializeHook } from '@/datasources/db/v2/database-initialize.hook';
 
 describe('PostgresDatabaseService', () => {
+  let moduleRef: TestingModule;
   let postgresqlService: PostgresDatabaseService;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     // We should not require an SSL connection if using the database provided
     // by GitHub actions
     const isCIContext = process.env.CI?.toLowerCase() === 'true';
@@ -34,7 +38,7 @@ describe('PostgresDatabaseService', () => {
       },
     });
 
-    const moduleRef: TestingModule = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
@@ -53,8 +57,14 @@ describe('PostgresDatabaseService', () => {
         }),
         TestLoggingModule,
         ConfigurationModule.register(testConfiguration),
+        ConfigModule,
       ],
-      providers: [PostgresDatabaseService],
+      providers: [
+        DatabaseMigrator,
+        DatabaseShutdownHook,
+        DatabaseInitializeHook,
+        PostgresDatabaseService,
+      ],
     }).compile();
 
     postgresqlService = moduleRef.get<PostgresDatabaseService>(
@@ -64,6 +74,11 @@ describe('PostgresDatabaseService', () => {
 
   afterAll(async () => {
     await postgresqlService.destroyDatabaseConnection();
+    await moduleRef.close();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('getDataSource()', () => {
@@ -83,8 +98,10 @@ describe('PostgresDatabaseService', () => {
       expect(isInitialized).toBe(true);
     });
 
-    it('should return false if the data source has not been initialized', () => {
+    it('Should return false if the data source has not been initialized', async () => {
+      await postgresqlService.destroyDatabaseConnection();
       const isInitialized = postgresqlService.isInitialized();
+      await postgresqlService.initializeDatabaseConnection();
 
       expect(isInitialized).toBe(false);
     });
@@ -92,6 +109,7 @@ describe('PostgresDatabaseService', () => {
 
   describe('initializeDatabaseConnection()', () => {
     it('Should initialize the data source if not initialized', async () => {
+      await postgresqlService.destroyDatabaseConnection();
       const isPrematurelyInitialized = postgresqlService.isInitialized();
       await postgresqlService.initializeDatabaseConnection();
 
@@ -101,7 +119,7 @@ describe('PostgresDatabaseService', () => {
       expect(isInitialized).toBe(true);
     });
 
-    it('should return the data source if already initialized', async () => {
+    it('Should return the data source if already initialized', async () => {
       const result = await postgresqlService.initializeDatabaseConnection();
 
       expect(result.query).not.toBeUndefined();
@@ -125,18 +143,20 @@ describe('PostgresDatabaseService', () => {
     class MockEntity {}
 
     it('Should return a repository for the given entity', async () => {
-      const mockRepository = {} as Repository<MockEntity>;
-      postgresqlService.getRepository = jest
-        .fn()
+      const mockRepository = {} as Promise<Repository<ObjectLiteral>>;
+      jest
+        .spyOn(postgresqlService, 'getRepository')
         .mockReturnValue(mockRepository);
 
-      const result = await postgresqlService.getRepository(MockEntity);
+      const result =
+        await postgresqlService.getRepository<MockEntity>(MockEntity);
 
       expect(postgresqlService.getRepository).toHaveBeenCalledWith(MockEntity);
       expect(result).toBe(mockRepository);
     });
 
     it('Should fetch the database connection before returning the repository', async () => {
+      await postgresqlService.destroyDatabaseConnection();
       const fetchConnectionSpy = jest.spyOn(
         postgresqlService,
         'initializeDatabaseConnection',

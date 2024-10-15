@@ -12,7 +12,7 @@ interface LockSchema {
   name: number;
 }
 
-enum migrationStatus {
+enum MigrationStatus {
   RUNNING = 1,
 }
 
@@ -40,12 +40,11 @@ export class DatabaseMigrator {
   public async migrate(): Promise<void> {
     this.loggingService.info('Migrations: Running...');
 
-    const connection =
-      await this.databaseService.initializeDatabaseConnection();
+    const connection = this.databaseService.getDataSource();
     await this.createLockTableIfNotExists(connection);
 
     let numberOfIterations = 0;
-    const numberOfRetries = await this.configService.getOrThrow(
+    const numberOfRetries = this.configService.getOrThrow<number>(
       'db.migrator.numberOfRetries',
     );
     while (numberOfRetries >= numberOfIterations) {
@@ -97,7 +96,7 @@ export class DatabaseMigrator {
    */
   private async insertLock(connection: DataSource): Promise<void> {
     await connection.query('INSERT INTO "_lock" (status) VALUES ($1);', [
-      migrationStatus.RUNNING,
+      MigrationStatus.RUNNING,
     ]);
   }
 
@@ -114,6 +113,10 @@ export class DatabaseMigrator {
 
   /**
    * Selects and retrieves locks from the database.
+   *
+   * `pg_advisory_lock` are not being used since they locks are session-based,
+   *    For our usecase this case they are quite unreliable.
+   *    If the session is terminated, the lock is released, which could potentially cause issues in the database.
    *
    * @param {DataSource} connection The database connection to select locks from.
    *

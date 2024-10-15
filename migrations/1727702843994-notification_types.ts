@@ -1,6 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class NotificationTypes1726754508107 implements MigrationInterface {
+export class NotificationTypes1727702843994 implements MigrationInterface {
+  name = 'NotificationTypes1727702843994';
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `INSERT INTO "notification_types" ("name") VALUES ('CONFIRMATION_REQUEST'),('DELETED_MULTISIG_TRANSACTION'),('EXECUTED_MULTISIG_TRANSACTION'),('INCOMING_ETHER'),('INCOMING_TOKEN'),('MESSAGE_CONFIRMATION_REQUEST'),('MODULE_TRANSACTION');`,
