@@ -15,4 +15,6 @@ export const OutreachSchema = RowSchema.extend({
     .lte(DB_MAX_SAFE_INTEGER - 1),
   type: z.string(),
   teamName: z.string(),
+  sourceFile: z.string().nullish().default(null),
+  sourceFileProcessedDate: z.coerce.date().nullish().default(null),
 });

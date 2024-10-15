@@ -6,6 +6,8 @@ export class Outreach {
   source_id: number;
   type: string;
   team_name: string;
+  source_file: string;
+  source_file_processed_date: string;
   created_at: string;
   updated_at: string;
 
@@ -17,6 +19,8 @@ export class Outreach {
     source_id: number,
     type: string,
     team_name: string,
+    source_file: string,
+    source_file_processed_date: string,
     created_at: string,
     updated_at: string,
   ) {
@@ -27,6 +31,8 @@ export class Outreach {
     this.source_id = source_id;
     this.type = type;
     this.team_name = team_name;
+    this.source_file = source_file;
+    this.source_file_processed_date = source_file_processed_date;
     this.created_at = created_at;
     this.updated_at = updated_at;
   }

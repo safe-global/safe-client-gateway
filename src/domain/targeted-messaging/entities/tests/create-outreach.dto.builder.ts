@@ -13,5 +13,7 @@ export function createOutreachDtoBuilder(): IBuilder<CreateOutreachDto> {
     .with('endDate', faker.date.future({ refDate: startDate }))
     .with('sourceId', faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }))
     .with('type', faker.string.alphanumeric(5))
-    .with('teamName', faker.string.alphanumeric(5));
+    .with('teamName', faker.string.alphanumeric(5))
+    .with('sourceFile', faker.string.alphanumeric(5))
+    .with('sourceFileProcessedDate', null);
 }

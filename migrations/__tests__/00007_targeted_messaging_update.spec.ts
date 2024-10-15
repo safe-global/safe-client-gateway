@@ -46,6 +46,8 @@ describe('Migration 00007_targeted_messaging_update', () => {
           { column_name: 'source_id' },
           { column_name: 'type' },
           { column_name: 'team_name' },
+          { column_name: 'source_file' },
+          { column_name: 'source_file_processed_date' },
         ]),
         rows: [],
       },
@@ -60,15 +62,48 @@ describe('Migration 00007_targeted_messaging_update', () => {
         migration: '00007_targeted_messaging_update',
         after: async (sql: Sql) => {
           const [outreach] = await sql<[Outreach]>`
-            INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name)
-            VALUES (${faker.string.alphanumeric({ length: 10 })}, ${faker.date.recent()}, ${faker.date.future()}, ${faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER })}, ${faker.string.alphanumeric({ length: 10 })}, ${faker.string.alphanumeric({ length: 10 })})
+            INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name, source_file)
+            VALUES (
+              ${faker.string.alphanumeric({ length: 10 })}, 
+              ${faker.date.recent()}, ${faker.date.future()}, 
+              ${faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER })},
+              ${faker.string.alphanumeric({ length: 10 })},
+              ${faker.string.alphanumeric({ length: 10 })},
+              ${faker.string.alphanumeric({ length: 10 })})
             RETURNING *`;
           await expect(
             sql<[Outreach]>`
             INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name)
-            VALUES (${faker.string.alphanumeric({ length: 10 })}, ${faker.date.recent()}, ${faker.date.future()}, ${outreach.source_id}, ${faker.string.alphanumeric({ length: 10 })}, ${faker.string.alphanumeric({ length: 10 })})
+            VALUES (
+            ${faker.string.alphanumeric({ length: 10 })},
+            ${faker.date.recent()},
+            ${faker.date.future()},
+            ${outreach.source_id},
+            ${faker.string.alphanumeric({ length: 10 })},
+            ${faker.string.alphanumeric({ length: 10 })})
             `,
           ).rejects.toThrow('duplicate key value violates unique constraint');
+        },
+      });
+    });
+
+    it('should default to null for source_file and source_file_processed_date', async () => {
+      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
+
+      await migrator.test({
+        migration: '00007_targeted_messaging_update',
+        after: async (sql: Sql) => {
+          const [outreach] = await sql<[Outreach]>`
+            INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name)
+            VALUES (
+              ${faker.string.alphanumeric({ length: 10 })}, 
+              ${faker.date.recent()}, ${faker.date.future()}, 
+              ${faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER })},
+              ${faker.string.alphanumeric({ length: 10 })},
+              ${faker.string.alphanumeric({ length: 10 })})
+            RETURNING *`;
+          expect(outreach.source_file).toBeNull();
+          expect(outreach.source_file_processed_date).toBeNull();
         },
       });
     });
