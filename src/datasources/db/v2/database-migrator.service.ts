@@ -32,6 +32,9 @@ export class DatabaseMigrator {
 
   /**
    * Performs the migration operation.
+   *    Since pg_advisory_lock locks are session-based, they seem to be quite unreliable for our use case.
+   *    If the session is terminated, the lock is released, which could potentially cause issues in the database.
+   *    For that reason we are implementing a lock mechanism
    *
    * @returns {Promise<void>} A promise that resolves when the migration is complete.
    *
