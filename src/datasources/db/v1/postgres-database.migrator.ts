@@ -107,7 +107,7 @@ export class PostgresDatabaseMigrator {
 
     let before: BeforeType | undefined;
 
-    for await (const migration of migrationsToTest) {
+    for (const migration of migrationsToTest) {
       const isMigrationBeingTested = migration.path.includes(args.migration);
 
       if (isMigrationBeingTested && args.before) {
