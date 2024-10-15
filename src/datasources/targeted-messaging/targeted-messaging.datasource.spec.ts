@@ -59,6 +59,39 @@ describe('TargetedMessagingDataSource tests', () => {
     await testDbFactory.destroyTestDatabase(sql);
   });
 
+  describe('getUnprocessedOutreaches', () => {
+    it('gets unprocessed outreaches successfully', async () => {
+      const outreaches = [
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', null)
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', null)
+          .build(),
+      ];
+      for (const outreach of outreaches) {
+        await target.createOutreach(outreach);
+      }
+
+      const result = await target.getUnprocessedOutreaches();
+
+      // Only the outreaches with sourceFileProcessedDate as null are returned
+      expect(result).toStrictEqual([
+        expect.objectContaining(outreaches[2]),
+        expect.objectContaining(outreaches[4]),
+      ]);
+    });
+  });
+
   describe('createOutreach', () => {
     it('creates an outreach successfully', async () => {
       const dto = createOutreachDtoBuilder().build();

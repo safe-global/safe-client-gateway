@@ -45,7 +45,8 @@ export class TargetedMessagingDatasource
   async getUnprocessedOutreaches(): Promise<Outreach[]> {
     const outreaches = await this.cachedQueryResolver.get<DbOutreach[]>({
       cacheDir: CacheRouter.getOutreachesCacheDir(),
-      query: this.sql`SELECT * FROM outreaches`,
+      query: this
+        .sql`SELECT * FROM outreaches WHERE source_file_processed_date IS NULL`,
       ttl: this.defaultExpirationTimeInSeconds,
     });
 
@@ -54,6 +55,13 @@ export class TargetedMessagingDatasource
       name: outreach.name,
       startDate: new Date(outreach.start_date),
       endDate: new Date(outreach.end_date),
+      sourceId: outreach.source_id,
+      type: outreach.type,
+      teamName: outreach.team_name,
+      sourceFile: outreach.source_file,
+      sourceFileProcessedDate: outreach.source_file_processed_date
+        ? new Date(outreach.source_file_processed_date)
+        : null,
       created_at: new Date(outreach.created_at),
       updated_at: new Date(outreach.updated_at),
     }));
