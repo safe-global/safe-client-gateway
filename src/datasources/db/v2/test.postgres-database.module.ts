@@ -1,10 +1,17 @@
 import { Module } from '@nestjs/common';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 
+const postgresDataSourceMock = jest.fn().mockReturnValue({
+  query: jest.fn(),
+  runMigrations: jest.fn(),
+});
+
 const postgresDatabaseServiceMock = {
-  getDataSource: jest.fn(),
+  getDataSource: jest.fn().mockImplementation(postgresDataSourceMock),
   isInitialized: jest.fn(),
-  initializeDatabaseConnection: jest.fn(),
+  initializeDatabaseConnection: jest
+    .fn()
+    .mockImplementation(postgresDataSourceMock),
   destroyDatabaseConnection: jest.fn(),
   getRepository: jest.fn(),
   transaction: jest.fn(),

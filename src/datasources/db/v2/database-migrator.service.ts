@@ -40,11 +40,12 @@ export class DatabaseMigrator {
   public async migrate(): Promise<void> {
     this.loggingService.info('Migrations: Running...');
 
-    const connection = this.databaseService.getDataSource();
+    const connection =
+      await this.databaseService.initializeDatabaseConnection();
     await this.createLockTableIfNotExists(connection);
 
     let numberOfIterations = 0;
-    const numberOfRetries = this.configService.getOrThrow<number>(
+    const numberOfRetries = await this.configService.getOrThrow(
       'db.migrator.numberOfRetries',
     );
     while (numberOfRetries >= numberOfIterations) {
@@ -113,10 +114,6 @@ export class DatabaseMigrator {
 
   /**
    * Selects and retrieves locks from the database.
-   *
-   * `pg_advisory_lock` are not being used since they locks are session-based,
-   *    For our usecase this case they are quite unreliable.
-   *    If the session is terminated, the lock is released, which could potentially cause issues in the database.
    *
    * @param {DataSource} connection The database connection to select locks from.
    *
