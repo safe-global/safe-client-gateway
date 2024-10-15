@@ -62,7 +62,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

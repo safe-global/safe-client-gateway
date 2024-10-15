@@ -51,7 +51,7 @@ describe('Post Hook Events (Unit)', () => {
     await initApp(configuration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

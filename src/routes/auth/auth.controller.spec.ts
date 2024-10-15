@@ -102,11 +102,8 @@ describe('AuthController', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
-  });
-
-  afterEach(() => {
     jest.useRealTimers();
   });
 

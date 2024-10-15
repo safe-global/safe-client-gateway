@@ -128,7 +128,7 @@ describe('Alerts (Unit)', () => {
       await app.init();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await app.close();
     });
 
@@ -908,7 +908,7 @@ describe('Alerts (Unit)', () => {
         await app.init();
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await app.close();
       });
 

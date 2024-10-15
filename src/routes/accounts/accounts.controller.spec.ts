@@ -89,12 +89,9 @@ describe('AccountsController', () => {
     jest.useFakeTimers();
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
+    jest.useRealTimers();
   });
 
   describe('AuthGuard', () => {

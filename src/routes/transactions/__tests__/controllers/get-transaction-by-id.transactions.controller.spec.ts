@@ -72,7 +72,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
   it('Failure: Config API fails', async () => {

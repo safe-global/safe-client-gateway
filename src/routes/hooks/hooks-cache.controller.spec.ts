@@ -83,7 +83,7 @@ describe('Post Hook Events for Cache (Unit)', () => {
     await initApp(configuration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

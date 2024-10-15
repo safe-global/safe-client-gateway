@@ -69,7 +69,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

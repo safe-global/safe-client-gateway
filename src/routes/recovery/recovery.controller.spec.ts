@@ -100,11 +100,8 @@ describe('Recovery (Unit)', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
-  });
-
-  afterEach(() => {
     jest.useRealTimers();
   });
 

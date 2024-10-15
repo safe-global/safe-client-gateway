@@ -56,7 +56,7 @@ describe('Get creation transaction', () => {
 
   beforeEach(() => jest.resetAllMocks());
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

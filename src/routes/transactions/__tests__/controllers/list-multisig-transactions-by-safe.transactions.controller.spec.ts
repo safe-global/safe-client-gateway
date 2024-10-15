@@ -68,7 +68,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

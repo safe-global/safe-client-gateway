@@ -91,7 +91,7 @@ describe('CounterfactualSafesController', () => {
     jest.resetAllMocks();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
