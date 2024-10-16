@@ -75,6 +75,7 @@ describe('TargetedMessagingDataSource tests', () => {
         teamName: dto.teamName,
         sourceFile: dto.sourceFile,
         sourceFileProcessedDate: null,
+        sourceFileChecksum: null,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });

@@ -15,5 +15,6 @@ export function createOutreachDtoBuilder(): IBuilder<CreateOutreachDto> {
     .with('type', faker.string.alphanumeric(5))
     .with('teamName', faker.string.alphanumeric(5))
     .with('sourceFile', faker.string.alphanumeric(5))
-    .with('sourceFileProcessedDate', null);
+    .with('sourceFileProcessedDate', null)
+    .with('sourceFileChecksum', null);
 }

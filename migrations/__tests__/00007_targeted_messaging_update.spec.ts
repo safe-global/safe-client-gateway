@@ -48,6 +48,7 @@ describe('Migration 00007_targeted_messaging_update', () => {
           { column_name: 'team_name' },
           { column_name: 'source_file' },
           { column_name: 'source_file_processed_date' },
+          { column_name: 'source_file_checksum' },
         ]),
         rows: [],
       },
@@ -87,7 +88,7 @@ describe('Migration 00007_targeted_messaging_update', () => {
       });
     });
 
-    it('should default to null for source_file and source_file_processed_date', async () => {
+    it('should default to null for source_file, source_file_processed_date, and source_file_checksum', async () => {
       await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
 
       await migrator.test({
@@ -104,6 +105,7 @@ describe('Migration 00007_targeted_messaging_update', () => {
             RETURNING *`;
           expect(outreach.source_file).toBeNull();
           expect(outreach.source_file_processed_date).toBeNull();
+          expect(outreach.source_file_checksum).toBeNull();
         },
       });
     });
