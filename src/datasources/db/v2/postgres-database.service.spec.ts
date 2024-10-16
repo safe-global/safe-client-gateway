@@ -16,7 +16,7 @@ describe('PostgresDatabaseService', () => {
   let moduleRef: TestingModule;
   let postgresqlService: PostgresDatabaseService;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // We should not require an SSL connection if using the database provided
     // by GitHub actions
     const isCIContext = process.env.CI?.toLowerCase() === 'true';
@@ -72,13 +72,10 @@ describe('PostgresDatabaseService', () => {
     );
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
+    jest.restoreAllMocks();
     await postgresqlService.destroyDatabaseConnection();
     await moduleRef.close();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   describe('getDataSource()', () => {
@@ -99,7 +96,6 @@ describe('PostgresDatabaseService', () => {
     });
 
     it('Should return false if the data source has not been initialized', async () => {
-      await postgresqlService.destroyDatabaseConnection();
       const isInitialized = postgresqlService.isInitialized();
       await postgresqlService.initializeDatabaseConnection();
 
@@ -109,7 +105,6 @@ describe('PostgresDatabaseService', () => {
 
   describe('initializeDatabaseConnection()', () => {
     it('Should initialize the data source if not initialized', async () => {
-      await postgresqlService.destroyDatabaseConnection();
       const isPrematurelyInitialized = postgresqlService.isInitialized();
       await postgresqlService.initializeDatabaseConnection();
 
@@ -156,7 +151,6 @@ describe('PostgresDatabaseService', () => {
     });
 
     it('Should fetch the database connection before returning the repository', async () => {
-      await postgresqlService.destroyDatabaseConnection();
       const fetchConnectionSpy = jest.spyOn(
         postgresqlService,
         'initializeDatabaseConnection',
