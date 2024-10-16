@@ -27,6 +27,7 @@ export class TransferImitationMapper {
   private readonly prefixLength: number;
   private readonly suffixLength: number;
   private readonly valueTolerance: bigint;
+  private readonly echoLimit = BigInt(10);
 
   constructor(
     @Inject(IConfigurationService)
@@ -43,6 +44,9 @@ export class TransferImitationMapper {
     );
     this.valueTolerance = configurationService.getOrThrow(
       'mappings.imitation.valueTolerance',
+    );
+    this.echoLimit = configurationService.getOrThrow(
+      'mappings.imitation.echoLimit',
     );
   }
 
@@ -113,7 +117,10 @@ export class TransferImitationMapper {
           return false;
         }
 
-        return this.isSpoofedEvent(txInfo, prevTxInfo);
+        return (
+          this.isSpoofedEvent(txInfo, prevTxInfo) ||
+          this.isEchoImitation(txInfo, prevTxInfo)
+        );
       });
 
       txInfo.transferInfo.imitation = isImitation;
@@ -153,6 +160,38 @@ export class TransferImitationMapper {
     const refAddress = this.getReferenceAddress(txInfo);
     const prevRefAddress = this.getReferenceAddress(prevTxInfo);
     return this.isImitatorAddress(refAddress, prevRefAddress);
+  }
+
+  /**
+   * Returns whether {@link txInfo} is incoming transfer imitating {@link prevTxInfo}
+   *
+   * A low-value (below a defined threshold) incoming transfer of the same token
+   * previously sent is deemed an imitation.
+   *
+   * @param {Erc20TransferTransactionInfo} txInfo - transaction info to compare
+   * @param {Erc20TransferTransactionInfo} prevTxInfo - previous transaction info
+   * @returns {boolean} - whether the transaction is an imitation
+   */
+  isEchoImitation(
+    txInfo: Erc20TransferTransactionInfo,
+    prevTxInfo: Erc20TransferTransactionInfo,
+  ): boolean {
+    // Incoming transfer imitations must be of the same token
+    const isSameToken =
+      txInfo.transferInfo.tokenAddress === txInfo.transferInfo.tokenAddress;
+    const isIncoming = txInfo.direction === TransferDirection.Incoming;
+    const isPrevOutgoing = prevTxInfo.direction === TransferDirection.Outgoing;
+    if (!isSameToken || !isIncoming || !isPrevOutgoing) {
+      return false;
+    }
+
+    // Is imitation if value is lower than the specified threshold
+    const value = this.formatValue(txInfo.transferInfo);
+    const prevValue = this.formatValue(prevTxInfo.transferInfo);
+    return (
+      // Imitations generally follow high transfer values
+      prevValue >= this.echoLimit && value <= this.echoLimit
+    );
   }
 
   /**

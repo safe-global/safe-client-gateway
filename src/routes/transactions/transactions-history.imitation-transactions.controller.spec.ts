@@ -41,7 +41,7 @@ import {
   erc20TransferBuilder,
   toJson as erc20TransferToJson,
 } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
-import { getAddress, zeroAddress } from 'viem';
+import { getAddress, parseUnits, zeroAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
@@ -57,6 +57,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
   const prefixLength = 3;
   const suffixLength = 4;
   const valueTolerance = BigInt(1);
+  const echoLimit = BigInt(10);
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -70,6 +71,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           valueTolerance,
           prefixLength,
           suffixLength,
+          echoLimit,
         },
       },
       features: {
@@ -105,6 +107,9 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     await app.close();
   });
 
+  const chain = chainBuilder().build();
+  const safe = safeBuilder().build();
+
   describe('Event spoofing', () => {
     function parseUnits(value: bigint, decimals: number): bigint {
       return value * BigInt(10 ** decimals);
@@ -117,8 +122,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       const imitator = `${prefix}${faker.finance.ethereumAddress().slice(prefixLength + 2, -suffixLength)}${suffix}`;
       return getAddress(imitator);
     }
-    const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
 
     const multisigExecutionDate = new Date('2024-03-20T09:41:25Z');
     const multisigToken = tokenBuilder().with('type', TokenType.Erc20).build();
@@ -2685,6 +2688,1382 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             },
           ]);
         });
+    });
+  });
+
+  describe('Echo transfers', () => {
+    const multisigExecutionDate = new Date('2024-03-20T09:42:58Z');
+    const multisigToken = tokenBuilder().with('type', TokenType.Erc20).build();
+    const multisigTransfer = {
+      ...erc20TransferBuilder()
+        .with('executionDate', multisigExecutionDate)
+        .with('from', safe.address)
+        .with('tokenAddress', multisigToken.address)
+        .with(
+          'value',
+          parseUnits(
+            // Value vastly above echo limit for testing flagging
+            (echoLimit * faker.number.bigInt({ min: 3, max: 9 })).toString(),
+            multisigToken.decimals!,
+          ).toString(),
+        )
+        .build(),
+      tokenInfo: multisigToken,
+    };
+    const multisigTransaction = {
+      ...(multisigTransactionToJson(
+        multisigTransactionBuilder()
+          .with('executionDate', multisigExecutionDate)
+          .with('safe', safe.address)
+          .with('to', multisigToken.address)
+          .with('value', '0')
+          .with('operation', 0)
+          .with('gasToken', zeroAddress)
+          .with('safeTxGas', 0)
+          .with('baseGas', 0)
+          .with('gasPrice', '0')
+          .with('refundReceiver', zeroAddress)
+          .with('proposer', safe.owners[0])
+          .with('executor', safe.owners[0])
+          .with('isExecuted', true)
+          .with('isSuccessful', true)
+          .with('origin', null)
+          .with(
+            'dataDecoded',
+            dataDecodedBuilder()
+              .with('method', 'transfer')
+              .with('parameters', [
+                dataDecodedParameterBuilder()
+                  .with('name', 'to')
+                  .with('type', 'address')
+                  .with('value', multisigTransfer.to)
+                  .build(),
+                dataDecodedParameterBuilder()
+                  .with('name', 'value')
+                  .with('type', 'uint256')
+                  .with('value', multisigTransfer.value)
+                  .build(),
+              ])
+              .build(),
+          )
+          .with('confirmationsRequired', 1)
+          .with('confirmations', [
+            confirmationBuilder().with('owner', safe.owners[0]).build(),
+          ])
+          .with('trusted', true)
+          .build(),
+      ) as MultisigTransaction),
+      // TODO: Update type to include transfers
+      transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
+    } as MultisigTransaction;
+
+    const notImitatedMultisigToken = tokenBuilder()
+      .with('type', TokenType.Erc20)
+      .with('decimals', multisigToken.decimals)
+      .build();
+    const notImitatedMultisigTransfer = {
+      ...erc20TransferBuilder()
+        .with('executionDate', multisigExecutionDate)
+        .with('from', safe.address)
+        .with('tokenAddress', notImitatedMultisigToken.address)
+        .with('value', faker.string.numeric({ exclude: ['0'] }))
+        .build(),
+      tokenInfo: multisigToken,
+    };
+    const notImitatedMultisigTransaction = {
+      ...(multisigTransactionToJson(
+        multisigTransactionBuilder()
+          .with('executionDate', multisigExecutionDate)
+          .with('safe', safe.address)
+          .with('to', notImitatedMultisigToken.address)
+          .with('value', '0')
+          .with('operation', 0)
+          .with('gasToken', zeroAddress)
+          .with('safeTxGas', 0)
+          .with('baseGas', 0)
+          .with('gasPrice', '0')
+          .with('refundReceiver', zeroAddress)
+          .with('proposer', safe.owners[0])
+          .with('executor', safe.owners[0])
+          .with('isExecuted', true)
+          .with('isSuccessful', true)
+          .with('origin', null)
+          .with(
+            'dataDecoded',
+            dataDecodedBuilder()
+              .with('method', 'transfer')
+              .with('parameters', [
+                dataDecodedParameterBuilder()
+                  .with('name', 'to')
+                  .with('type', 'address')
+                  .with('value', notImitatedMultisigTransfer.to)
+                  .build(),
+                dataDecodedParameterBuilder()
+                  .with('name', 'value')
+                  .with('type', 'uint256')
+                  .with('value', notImitatedMultisigTransfer.value)
+                  .build(),
+              ])
+              .build(),
+          )
+          .with('confirmationsRequired', 1)
+          .with('confirmations', [
+            confirmationBuilder().with('owner', safe.owners[0]).build(),
+          ])
+          .with('trusted', true)
+          .build(),
+      ) as MultisigTransaction),
+      // TODO: Update type to include transfers
+      transfers: [erc20TransferToJson(notImitatedMultisigTransfer) as Transfer],
+    } as MultisigTransaction;
+
+    const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
+    const getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
+
+    describe('Below limit', () => {
+      const imitationExecutionDate = new Date('2024-03-20T09:42:58Z');
+      const imitationIncomingTransfer = {
+        ...erc20TransferBuilder()
+          .with('to', safe.address)
+          .with('tokenAddress', multisigToken.address)
+          .with(
+            'value',
+            parseUnits(
+              faker.number.bigInt({ min: 1, max: echoLimit }).toString(),
+              multisigToken.decimals!,
+            ).toString(),
+          )
+          .with('executionDate', imitationExecutionDate)
+          .build(),
+        // TODO: Update type to include tokenInfo
+        tokenInfo: multisigToken,
+      };
+      const imitationIncomingErc20Transfer = erc20TransferEncoder()
+        .with('to', safe.address)
+        .with('value', BigInt(imitationIncomingTransfer.value));
+      const imitationIncomingTransaction = ethereumTransactionToJson(
+        ethereumTransactionBuilder()
+          .with('executionDate', imitationIncomingTransfer.executionDate)
+          .with('data', imitationIncomingErc20Transfer.encode())
+          .with('transfers', [
+            erc20TransferToJson(imitationIncomingTransfer) as Transfer,
+          ])
+          .build(),
+      ) as EthereumTransaction;
+
+      it('should flag imitation incoming transfers with a below-limit value within the lookup distance', async () => {
+        const results = [imitationIncomingTransaction, multisigTransaction];
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (url === getAllTransactionsUrl) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', results).build(),
+              status: 200,
+            });
+          }
+          if (url === getSafeUrl) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (url === getTokenAddressUrl) {
+            return Promise.resolve({
+              data: multisigToken,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false`,
+          )
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.results).toStrictEqual([
+              {
+                timestamp: 1710927778000,
+                type: 'DATE_LABEL',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: null,
+                  // @ts-expect-error - Type does not contain transfers
+                  id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'INCOMING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: imitationIncomingTransaction.transfers![0].from,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: true,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: multisigToken.trusted,
+                      type: 'ERC20',
+                      value: imitationIncomingTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash:
+                    imitationIncomingTransaction.transfers![0].transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: multisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: multisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: multisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: multisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+            ]);
+          });
+      });
+
+      it('should not flag imitation incoming transfers with a below-limit value outside the lookup distance', async () => {
+        const results = [
+          imitationIncomingTransaction,
+          notImitatedMultisigTransaction,
+          notImitatedMultisigTransaction,
+          notImitatedMultisigTransaction,
+          multisigTransaction,
+        ];
+
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (url === getAllTransactionsUrl) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', results).build(),
+              status: 200,
+            });
+          }
+          if (url === getSafeUrl) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (url === getTokenAddressUrl) {
+            return Promise.resolve({
+              data: multisigToken,
+              status: 200,
+            });
+          }
+          if (url === getNotImitatedTokenAddressUrl) {
+            return Promise.resolve({
+              data: notImitatedMultisigToken,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false`,
+          )
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.results).toStrictEqual([
+              {
+                timestamp: 1710927778000,
+                type: 'DATE_LABEL',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: null,
+                  // @ts-expect-error - Type does not contain transfers
+                  id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'INCOMING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: imitationIncomingTransaction.transfers![0].from,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: multisigToken.trusted,
+                      type: 'ERC20',
+                      value: imitationIncomingTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash:
+                    imitationIncomingTransaction.transfers![0].transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: multisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: multisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: multisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: multisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+            ]);
+          });
+      });
+
+      it('should filter out imitation incoming transfers with a below-limit value within the lookup distance', async () => {
+        const results = [imitationIncomingTransaction, multisigTransaction];
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (url === getAllTransactionsUrl) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', results).build(),
+              status: 200,
+            });
+          }
+          if (url === getSafeUrl) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (url === getTokenAddressUrl) {
+            return Promise.resolve({
+              data: multisigToken,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false&imitation=false`,
+          )
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.results).toStrictEqual([
+              {
+                timestamp: 1710927778000,
+                type: 'DATE_LABEL',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: multisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: multisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: multisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: multisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+            ]);
+          });
+      });
+
+      it('should not filter out imitation incoming transfers with a below-limit value outside the lookup distance', async () => {
+        const results = [
+          imitationIncomingTransaction,
+          notImitatedMultisigTransaction,
+          notImitatedMultisigTransaction,
+          notImitatedMultisigTransaction,
+          multisigTransaction,
+        ];
+
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (url === getAllTransactionsUrl) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', results).build(),
+              status: 200,
+            });
+          }
+          if (url === getSafeUrl) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (url === getTokenAddressUrl) {
+            return Promise.resolve({
+              data: multisigToken,
+              status: 200,
+            });
+          }
+          if (url === getNotImitatedTokenAddressUrl) {
+            return Promise.resolve({
+              data: notImitatedMultisigToken,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false&imitation=false`,
+          )
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.results).toStrictEqual([
+              {
+                timestamp: 1710927778000,
+                type: 'DATE_LABEL',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: null,
+                  // @ts-expect-error - Type does not contain transfers
+                  id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'INCOMING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: imitationIncomingTransaction.transfers![0].from,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: multisigToken.trusted,
+                      type: 'ERC20',
+                      value: imitationIncomingTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash:
+                    imitationIncomingTransaction.transfers![0].transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: multisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: multisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: multisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: multisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+            ]);
+          });
+      });
+    });
+
+    describe('Above limit', () => {
+      const aboveLimitExecutionDate = new Date('2024-03-20T09:42:58Z');
+      const aboveLimitIncomingTransfer = {
+        ...erc20TransferBuilder()
+          .with('to', safe.address)
+          .with('tokenAddress', multisigToken.address)
+          .with(
+            'value',
+            parseUnits(
+              faker.number.bigInt({ min: echoLimit }).toString(),
+              multisigToken.decimals!,
+            ).toString(),
+          )
+          .with('executionDate', aboveLimitExecutionDate)
+          .build(),
+        // TODO: Update type to include tokenInfo
+        tokenInfo: multisigToken,
+      };
+      const aboveLimitErc20Transfer = erc20TransferEncoder()
+        .with('to', safe.address)
+        .with('value', BigInt(aboveLimitIncomingTransfer.value));
+      const aboveLimitIncomingTransaction = ethereumTransactionToJson(
+        ethereumTransactionBuilder()
+          .with('executionDate', aboveLimitIncomingTransfer.executionDate)
+          .with('data', aboveLimitErc20Transfer.encode())
+          .with('transfers', [
+            erc20TransferToJson(aboveLimitIncomingTransfer) as Transfer,
+          ])
+          .build(),
+      ) as EthereumTransaction;
+
+      it.each([
+        [
+          'should not flag imitation incoming transfers with an above-limit value within the lookup distance',
+          true,
+        ],
+        [
+          'should not filter out imitation incoming transfers with an above-limit value within the lookup distance',
+          false,
+        ],
+      ])(`%s`, async (_, filter) => {
+        const results = [aboveLimitIncomingTransaction, multisigTransaction];
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (url === getAllTransactionsUrl) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', results).build(),
+              status: 200,
+            });
+          }
+          if (url === getSafeUrl) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (url === getTokenAddressUrl) {
+            return Promise.resolve({
+              data: multisigToken,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false&imitation=${filter}`,
+          )
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.results).toStrictEqual([
+              {
+                timestamp: 1710927778000,
+                type: 'DATE_LABEL',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: null,
+                  // @ts-expect-error - Type does not contain transfers
+                  id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'INCOMING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: aboveLimitIncomingTransaction.transfers![0].from,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: multisigToken.trusted,
+                      type: 'ERC20',
+                      value: aboveLimitIncomingTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash:
+                    aboveLimitIncomingTransaction.transfers![0].transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: multisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: multisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: multisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: multisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+            ]);
+          });
+      });
+
+      it.each([
+        [
+          'should not flag imitation incoming transfers with an above-limit value outside the lookup distance',
+          true,
+        ],
+        [
+          'should not filter out imitation incoming transfers with an above-limit value outside the lookup distance',
+          false,
+        ],
+      ])(`%s`, async (_, filter) => {
+        const results = [
+          aboveLimitIncomingTransaction,
+          notImitatedMultisigTransaction,
+          notImitatedMultisigTransaction,
+          notImitatedMultisigTransaction,
+          multisigTransaction,
+        ];
+
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: chain, status: 200 });
+          }
+          if (url === getAllTransactionsUrl) {
+            return Promise.resolve({
+              data: pageBuilder().with('results', results).build(),
+              status: 200,
+            });
+          }
+          if (url === getSafeUrl) {
+            return Promise.resolve({ data: safe, status: 200 });
+          }
+          if (url === getTokenAddressUrl) {
+            return Promise.resolve({
+              data: multisigToken,
+              status: 200,
+            });
+          }
+          if (url === getNotImitatedTokenAddressUrl) {
+            return Promise.resolve({
+              data: notImitatedMultisigToken,
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history?trusted=false&imitation=${filter}`,
+          )
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.results).toStrictEqual([
+              {
+                timestamp: 1710927778000,
+                type: 'DATE_LABEL',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: null,
+                  // @ts-expect-error - Type does not contain transfers
+                  id: `transfer_${safe.address}_${results[0].transfers[0].transferId}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'INCOMING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: aboveLimitIncomingTransaction.transfers![0].from,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: multisigToken.trusted,
+                      type: 'ERC20',
+                      value: aboveLimitIncomingTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash:
+                    aboveLimitIncomingTransaction.transfers![0].transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: notImitatedMultisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${notImitatedMultisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp:
+                    notImitatedMultisigTransfer.executionDate.getTime(),
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: notImitatedMultisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: notImitatedMultisigToken.decimals,
+                      imitation: false,
+                      logoUri: notImitatedMultisigToken.logoUri,
+                      tokenAddress: notImitatedMultisigToken.address,
+                      tokenName: notImitatedMultisigToken.name,
+                      tokenSymbol: notImitatedMultisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: notImitatedMultisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: notImitatedMultisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+              {
+                conflictType: 'None',
+                transaction: {
+                  executionInfo: {
+                    confirmationsRequired: 1,
+                    confirmationsSubmitted: 1,
+                    missingSigners: null,
+                    nonce: multisigTransaction.nonce,
+                    type: 'MULTISIG',
+                  },
+                  id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+                  safeAppInfo: null,
+                  timestamp: 1710927778000,
+                  txInfo: {
+                    direction: 'OUTGOING',
+                    humanDescription: null,
+                    recipient: {
+                      logoUri: null,
+                      name: null,
+                      value: multisigTransfer.to,
+                    },
+                    richDecodedInfo: null,
+                    sender: {
+                      logoUri: null,
+                      name: null,
+                      value: safe.address,
+                    },
+                    transferInfo: {
+                      decimals: multisigToken.decimals,
+                      imitation: false,
+                      logoUri: multisigToken.logoUri,
+                      tokenAddress: multisigToken.address,
+                      tokenName: multisigToken.name,
+                      tokenSymbol: multisigToken.symbol,
+                      trusted: null,
+                      type: 'ERC20',
+                      value: multisigTransfer.value,
+                    },
+                    type: 'Transfer',
+                  },
+                  txStatus: 'SUCCESS',
+                  txHash: multisigTransaction.transactionHash,
+                },
+                type: 'TRANSACTION',
+              },
+            ]);
+          });
+      });
     });
   });
 });
