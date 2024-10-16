@@ -1,16 +1,15 @@
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { MAX_TTL } from '@/datasources/cache/constants';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
+import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 
 @Injectable()
 export class OutreachFileProcessor implements OnModuleInit {
-  private readonly ttl = 10; // TODO:
-  private readonly lockCacheDir = new CacheDir('outreach', 'file-processor'); // TODO:
-
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(ITargetedMessagingDatasource)
@@ -18,21 +17,27 @@ export class OutreachFileProcessor implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    const lockCacheDir = CacheRouter.getOutreachFileProcessorCacheDir();
     try {
-      const lock = await this.cacheService.hGet(this.lockCacheDir);
+      const lock = await this.cacheService.hGet(lockCacheDir);
       if (!lock) {
-        await this.cacheService.hSet(this.lockCacheDir, 'true', this.ttl);
+        await this.cacheService.hSet(lockCacheDir, 'true', MAX_TTL);
         await this.processOutreachFiles();
       }
     } finally {
-      await this.cacheService.deleteByKey('outreach'); // TODO:
+      await this.cacheService.deleteByKey(lockCacheDir.key);
     }
   }
 
   private async processOutreachFiles(): Promise<void> {
     const outreaches = await this.datasource.getUnprocessedOutreaches();
-    console.log(outreaches);
-    // TODO: Get outreaches that have not been processed
-    // and process their associated files.
+    for (const outreach of outreaches) {
+      await this.processOutreach(outreach);
+    }
+  }
+
+  private async processOutreach(outreach: Outreach): Promise<void> {
+    // TODO: business logic to process outreach
+    await this.datasource.markOutreachAsProcessed(outreach);
   }
 }

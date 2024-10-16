@@ -9,9 +9,11 @@ export const ITargetedMessagingDatasource = Symbol(
 );
 
 export interface ITargetedMessagingDatasource {
+  createOutreach(createOutreachDto: CreateOutreachDto): Promise<Outreach>;
+
   getUnprocessedOutreaches(): Promise<Outreach[]>;
 
-  createOutreach(createOutreachDto: CreateOutreachDto): Promise<Outreach>;
+  markOutreachAsProcessed(outreach: Outreach): Promise<Outreach>;
 
   createTargetedSafes(
     createTargetedSafesDto: CreateTargetedSafesDto,

@@ -42,31 +42,6 @@ export class TargetedMessagingDatasource
       );
   }
 
-  async getUnprocessedOutreaches(): Promise<Outreach[]> {
-    const outreaches = await this.cachedQueryResolver.get<DbOutreach[]>({
-      cacheDir: CacheRouter.getOutreachesCacheDir(),
-      query: this
-        .sql`SELECT * FROM outreaches WHERE source_file_processed_date IS NULL`,
-      ttl: this.defaultExpirationTimeInSeconds,
-    });
-
-    return outreaches.map((outreach) => ({
-      id: outreach.id,
-      name: outreach.name,
-      startDate: new Date(outreach.start_date),
-      endDate: new Date(outreach.end_date),
-      sourceId: outreach.source_id,
-      type: outreach.type,
-      teamName: outreach.team_name,
-      sourceFile: outreach.source_file,
-      sourceFileProcessedDate: outreach.source_file_processed_date
-        ? new Date(outreach.source_file_processed_date)
-        : null,
-      created_at: new Date(outreach.created_at),
-      updated_at: new Date(outreach.updated_at),
-    }));
-  }
-
   async createOutreach(
     createOutreachDto: CreateOutreachDto,
   ): Promise<Outreach> {
@@ -103,6 +78,59 @@ export class TargetedMessagingDatasource
         : null,
       created_at: new Date(outreach.created_at),
       updated_at: new Date(outreach.updated_at),
+    };
+  }
+
+  async getUnprocessedOutreaches(): Promise<Outreach[]> {
+    const outreaches = await this.sql<
+      DbOutreach[]
+    >`SELECT * FROM outreaches WHERE source_file_processed_date IS NULL`;
+
+    return outreaches.map((outreach) => ({
+      id: outreach.id,
+      name: outreach.name,
+      startDate: new Date(outreach.start_date),
+      endDate: new Date(outreach.end_date),
+      sourceId: outreach.source_id,
+      type: outreach.type,
+      teamName: outreach.team_name,
+      sourceFile: outreach.source_file,
+      sourceFileProcessedDate: outreach.source_file_processed_date
+        ? new Date(outreach.source_file_processed_date)
+        : null,
+      created_at: new Date(outreach.created_at),
+      updated_at: new Date(outreach.updated_at),
+    }));
+  }
+
+  async markOutreachAsProcessed(outreach: Outreach): Promise<Outreach> {
+    const [updatedOutreach] = await this.sql<DbOutreach[]>`
+      UPDATE outreaches
+      SET source_file_processed_date = ${new Date()}
+      WHERE id = ${outreach.id}
+      RETURNING *`.catch((err) => {
+      this.loggingService.warn(
+        `Error marking outreach as processed: ${asError(err).message}`,
+      );
+      throw new UnprocessableEntityException(
+        'Error marking outreach as processed',
+      );
+    });
+
+    return {
+      id: updatedOutreach.id,
+      name: updatedOutreach.name,
+      startDate: new Date(updatedOutreach.start_date),
+      endDate: new Date(updatedOutreach.end_date),
+      sourceId: updatedOutreach.source_id,
+      type: updatedOutreach.type,
+      teamName: updatedOutreach.team_name,
+      sourceFile: updatedOutreach.source_file,
+      sourceFileProcessedDate: updatedOutreach.source_file_processed_date
+        ? new Date(updatedOutreach.source_file_processed_date)
+        : null,
+      created_at: new Date(updatedOutreach.created_at),
+      updated_at: new Date(updatedOutreach.updated_at),
     };
   }
 
