@@ -3,7 +3,7 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
+import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {

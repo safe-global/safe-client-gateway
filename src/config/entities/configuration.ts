@@ -131,11 +131,13 @@ export default () => ({
       apiKey: process.env.INFURA_API_KEY,
     },
   },
+  typeorm: { autoLoadEntities: true, manualInitialization: true },
   db: {
     postgres: {
       host: process.env.POSTGRES_HOST || 'localhost',
       port: process.env.POSTGRES_PORT || '5432',
       database: process.env.POSTGRES_DB || 'safe-client-gateway',
+      schema: process.env.POSTGRES_SCHEMA || 'main', //@TODO: use this schema
       username: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD || 'postgres',
       ssl: {
