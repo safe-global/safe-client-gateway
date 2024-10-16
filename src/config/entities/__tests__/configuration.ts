@@ -195,6 +195,9 @@ export default (): ReturnType<typeof configuration> => ({
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
+    chains: {
+      maxSequentialPages: faker.number.int(),
+    },
   },
   safeTransaction: {
     useVpcUrl: false,
