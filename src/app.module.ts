@@ -51,6 +51,7 @@ import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
 import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
 import { TargetedMessagingModule } from '@/routes/targeted-messaging/targeted-messaging.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -71,6 +72,7 @@ export class AppModule implements NestModule {
     return {
       module: AppModule,
       imports: [
+        PostgresDatabaseModule,
         // features
         AboutModule,
         ...(isAccountsFeatureEnabled ? [AccountsModule] : []),
