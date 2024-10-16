@@ -9,7 +9,7 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 
 @Injectable()
 export class DatabaseMigrationHook implements OnModuleInit {
-  private readonly migrationsExecute: boolean;
+  private readonly executeMigrations: boolean;
 
   public constructor(
     @Inject(PostgresDatabaseService)
@@ -21,13 +21,13 @@ export class DatabaseMigrationHook implements OnModuleInit {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
-    this.migrationsExecute = this.configurationService.getOrThrow<boolean>(
-      'db.migrator.migrationsExecute',
+    this.executeMigrations = this.configurationService.getOrThrow<boolean>(
+      'db.migrator.executeMigrations',
     );
   }
 
   public async onModuleInit(): Promise<void> {
-    if (!this.migrationsExecute) {
+    if (!this.executeMigrations) {
       return this.loggingService.info('TypeOrm migrations are disabled!');
     }
 

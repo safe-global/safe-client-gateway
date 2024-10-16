@@ -11,6 +11,6 @@ export class DatabaseInitializeHook implements OnModuleInit {
   }
 
   public async onModuleInit(): Promise<void> {
-    // await this.postgresDatabaseService.initializeDatabaseConnection();
+    await this.postgresDatabaseService.initializeDatabaseConnection();
   }
 }

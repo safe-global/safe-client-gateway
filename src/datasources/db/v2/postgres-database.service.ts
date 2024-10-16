@@ -36,7 +36,6 @@ export class PostgresDatabaseService {
    * @returns {boolean} True if the datasource has already been initialized
    */
   public isInitialized(): boolean {
-    console.log(this.dataSource.isInitialized);
     return this.dataSource.isInitialized;
   }
 

@@ -1,4 +1,4 @@
-import type { ILoggingService } from '@/logging/logging.interface';
+import { type ILoggingService } from '@/logging/logging.interface';
 import { Injectable } from '@nestjs/common';
 import {
   AbstractLogger,
@@ -10,8 +10,8 @@ import {
 @Injectable()
 export class PostgresqlLogger extends AbstractLogger {
   public constructor(
+    private readonly loggingService: ILoggingService,
     public options?: LoggerOptions,
-    private readonly loggingService?: ILoggingService,
   ) {
     super(options);
   }
@@ -33,33 +33,33 @@ export class PostgresqlLogger extends AbstractLogger {
         case 'log':
         case 'schema-build':
         case 'migration':
-          console.log(message.message);
+          this.loggingService.info(`${message.prefix} - ${message.message}`);
           break;
 
         case 'info':
         case 'query':
           if (message.prefix) {
-            console.info(message.prefix, message.message);
+            this.loggingService.info(`${message.prefix} - ${message.message}`);
           } else {
-            console.info(message.message);
+            this.loggingService.info(message.message);
           }
           break;
 
         case 'warn':
         case 'query-slow':
           if (message.prefix) {
-            console.warn(message.prefix, message.message);
+            this.loggingService.warn(`${message.prefix} - ${message.message}`);
           } else {
-            console.warn(message.message);
+            this.loggingService.warn(message.message);
           }
           break;
 
         case 'error':
         case 'query-error':
           if (message.prefix) {
-            console.error(message.prefix, message.message);
+            this.loggingService.error(`${message.prefix} - ${message.message}`);
           } else {
-            console.error(message.message);
+            this.loggingService.error(message.message);
           }
           break;
       }
@@ -76,14 +76,6 @@ export class PostgresqlLogger extends AbstractLogger {
   public logQuery(query: string): void {
     if (this.loggingService) {
       this.loggingService.debug(`executing query: '${query}'`);
-    } else {
-      console.log({
-        message: `executing query: '${query}'`,
-        build_number: null,
-        request_id: null,
-        timestamp: new Date().toISOString(),
-        version: null,
-      });
     }
   }
 }

@@ -95,7 +95,8 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "roots": [
-      "./src"
+      "./src",
+      "./migrations"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"

@@ -45,8 +45,8 @@ export default () => ({
   application: {
     isProduction: process.env.CGW_ENV === 'production',
     // Enables/disables the execution of migrations on startup.
-    // Defaults to false.
-    runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() === 'true',
+    // Defaults to true.
+    runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() === 'false',
     port: process.env.APPLICATION_PORT || '3000',
   },
   auth: {
@@ -134,7 +134,7 @@ export default () => ({
   },
   db: {
     migrator: {
-      migrationsExecute:
+      executeMigrations:
         process.env.DB_MIGRATIONS_EXECUTE?.toLowerCase() !== 'false',
       numberOfRetries: process.env.DB_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
       retryAfter: process.env.DB_MIGRATIONS_RETRY_AFTER ?? 1000, // Milliseconds
@@ -143,7 +143,8 @@ export default () => ({
       migrationsRun: false,
       autoLoadEntities: true,
       manualInitialization: true,
-      migrationsTableName: 'migrations_typeorm',
+      migrationsTableName:
+        process.env.ORM_MIGRATION_TABLE_NAME || '_migrations',
     },
     connection: {
       postgres: {

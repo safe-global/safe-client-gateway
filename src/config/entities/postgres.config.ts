@@ -40,7 +40,7 @@ export const postgresConfig = (
     password: postgresEnvConfig.password,
     database: postgresEnvConfig.database,
     migrations: ['dist/migrations/*.js'],
-    logger: new PostgresqlLogger(undefined, logger),
+    logger: logger ? new PostgresqlLogger(logger, undefined) : undefined,
     ssl: isSslEnabled
       ? {
           ca: postgresCa,

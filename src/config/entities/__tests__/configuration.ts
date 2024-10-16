@@ -23,7 +23,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   application: {
     isProduction: faker.datatype.boolean(),
-    runMigrations: false,
+    runMigrations: true,
     port: faker.internet.port().toString(),
   },
   auth: {
@@ -86,7 +86,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   db: {
     migrator: {
-      migrationsExecute: true,
+      executeMigrations: true,
       numberOfRetries: process.env.DB_TEST_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
       retryAfter: process.env.DB_TEST_MIGRATIONS_RETRY_AFTER ?? 1000, // Milliseconds
     },
@@ -94,7 +94,7 @@ export default (): ReturnType<typeof configuration> => ({
       autoLoadEntities: true,
       manualInitialization: true,
       migrationsRun: false,
-      migrationsTableName: 'migrations_typeorm',
+      migrationsTableName: '_migrations',
     },
     connection: {
       postgres: {

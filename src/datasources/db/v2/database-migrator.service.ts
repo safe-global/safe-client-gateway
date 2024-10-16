@@ -18,6 +18,8 @@ enum MigrationStatus {
 
 @Injectable()
 export class DatabaseMigrator {
+  private readonly LOCK_TABLE_NAME = '_lock';
+
   public constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
 
@@ -87,7 +89,7 @@ export class DatabaseMigrator {
     connection: DataSource,
   ): Promise<void> {
     await connection.query(
-      'CREATE TABLE IF NOT EXISTS "_lock" ("id" SERIAL NOT NULL, "status" int NOT NULL, PRIMARY KEY ("id"))',
+      `CREATE TABLE IF NOT EXISTS "${this.LOCK_TABLE_NAME}" ("id" SERIAL NOT NULL, "status" int NOT NULL, PRIMARY KEY ("id"))`,
     );
   }
 
@@ -99,9 +101,10 @@ export class DatabaseMigrator {
    * @returns {Promise<void>} A promise that resolves when the lock has been inserted.
    */
   private async insertLock(connection: DataSource): Promise<void> {
-    await connection.query('INSERT INTO "_lock" (status) VALUES ($1);', [
-      MigrationStatus.RUNNING,
-    ]);
+    await connection.query(
+      `INSERT INTO "${this.LOCK_TABLE_NAME}" (status) VALUES ($1);`,
+      [MigrationStatus.RUNNING],
+    );
   }
 
   /**
@@ -112,7 +115,7 @@ export class DatabaseMigrator {
    * @returns {Promise<void>} A promise that resolves when the locks table has been truncated.
    */
   private async truncateLocks(connection: DataSource): Promise<void> {
-    await connection.query('TRUNCATE TABLE "_lock";');
+    await connection.query(`TRUNCATE TABLE "${this.LOCK_TABLE_NAME}";`);
   }
 
   /**
@@ -123,7 +126,9 @@ export class DatabaseMigrator {
    * @returns {Promise<Array<LockSchema>>} A promise that resolves to an array of LockSchema objects.
    */
   private async selectLock(connection: DataSource): Promise<Array<LockSchema>> {
-    return await connection.query('SELECT "id", "status" FROM "_lock";');
+    return await connection.query(
+      `SELECT "id", "status" FROM "${this.LOCK_TABLE_NAME}";`,
+    );
   }
 
   /**
