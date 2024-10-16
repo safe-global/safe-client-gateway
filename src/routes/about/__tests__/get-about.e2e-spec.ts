@@ -1,11 +1,13 @@
+import '@/__tests__/matchers/to-be-string-or-null';
+import { AppModule } from '@/app.module';
+import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
+import { expect } from '@jest/globals';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import request from 'supertest';
-import { AppModule } from '@/app.module';
-import { expect } from '@jest/globals';
-import '@/__tests__/matchers/to-be-string-or-null';
-import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import type { Server } from 'net';
+import request from 'supertest';
 
 describe('Get about e2e test', () => {
   let app: INestApplication<Server>;
@@ -15,6 +17,8 @@ describe('Get about e2e test', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule.register()],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideProvider(CacheKeyPrefix)
       .useValue(cacheKeyPrefix)
       .compile();

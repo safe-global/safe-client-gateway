@@ -18,6 +18,8 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import type { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import type { Server } from 'net';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
 describe('Health Controller tests', () => {
   let app: INestApplication<Server>;
@@ -30,6 +32,8 @@ describe('Health Controller tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
