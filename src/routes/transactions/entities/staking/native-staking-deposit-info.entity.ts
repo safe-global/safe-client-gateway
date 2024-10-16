@@ -8,7 +8,7 @@ import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export type NativeStakingDepositInfo = StakingTimeInfo & StakingFinancialInfo;
 
@@ -61,7 +61,10 @@ export class NativeStakingDepositTransactionInfo
   @ApiProperty()
   tokenInfo: TokenInfo;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    type: String,
+    isArray: true,
+    nullable: true,
     description: 'Populated after transaction has been executed',
   })
   validators: Array<`0x${string}`> | null;

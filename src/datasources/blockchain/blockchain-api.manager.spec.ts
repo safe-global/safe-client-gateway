@@ -144,6 +144,7 @@ describe('BlockchainApiManager', () => {
         },
         method: 'POST',
         signal: expect.any(AbortSignal),
+        url: chain.rpcUri.value,
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
@@ -206,6 +207,7 @@ describe('BlockchainApiManager', () => {
         },
         method: 'POST',
         signal: expect.any(AbortSignal),
+        url: chain.rpcUri.value,
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);

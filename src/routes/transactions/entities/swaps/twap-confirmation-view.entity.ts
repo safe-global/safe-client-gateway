@@ -24,7 +24,11 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
   @ApiProperty()
   method: string;
 
-  @ApiPropertyOptional({ type: [DataDecodedParameter], nullable: true })
+  @ApiPropertyOptional({
+    type: DataDecodedParameter,
+    isArray: true,
+    nullable: true,
+  })
   parameters: DataDecodedParameter[] | null;
 
   // TwapOrderInfo implementation
@@ -62,6 +66,7 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
   buyAmount: string;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description:
       'The executed sell token raw amount (no decimals), or null if there are too many parts',
@@ -69,6 +74,7 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
   executedSellAmount: string | null;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description:
       'The executed surplus fee raw amount (no decimals), or null if there are too many parts',
@@ -76,6 +82,7 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
   executedSurplusFee: string | null;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description:
       'The executed buy token raw amount (no decimals), or null if there are too many parts',

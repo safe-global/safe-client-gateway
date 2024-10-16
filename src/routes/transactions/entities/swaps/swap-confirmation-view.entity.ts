@@ -20,7 +20,11 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   @ApiProperty()
   method: string;
 
-  @ApiPropertyOptional({ type: [DataDecodedParameter], nullable: true })
+  @ApiPropertyOptional({
+    type: DataDecodedParameter,
+    isArray: true,
+    nullable: true,
+  })
   parameters: DataDecodedParameter[] | null;
 
   // OrderInfo implementation

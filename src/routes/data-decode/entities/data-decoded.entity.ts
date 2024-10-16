@@ -5,7 +5,11 @@ import { DataDecoded as DomainDataDecoded } from '@/domain/data-decoder/entities
 export class DataDecoded implements DomainDataDecoded {
   @ApiProperty()
   method: string;
-  @ApiPropertyOptional({ type: [DataDecodedParameter], nullable: true })
+  @ApiPropertyOptional({
+    type: DataDecodedParameter,
+    isArray: true,
+    nullable: true,
+  })
   parameters: DataDecodedParameter[] | null;
 
   constructor(method: string, parameters: DataDecodedParameter[] | null) {
