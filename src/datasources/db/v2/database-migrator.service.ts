@@ -69,11 +69,11 @@ export class DatabaseMigrator {
           );
         }
         this.loggingService.info('Migrations: Running in another instance...');
-        const retryAfter = this.configService.getOrThrow<number>(
-          'db.migrator.retryAfter',
+        const retryAfterMs = this.configService.getOrThrow<number>(
+          'db.migrator.retryAfterMs',
         );
 
-        await new Promise((resolve) => setTimeout(resolve, retryAfter));
+        await new Promise((resolve) => setTimeout(resolve, retryAfterMs));
       }
     }
   }

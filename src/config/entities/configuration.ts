@@ -46,7 +46,7 @@ export default () => ({
     isProduction: process.env.CGW_ENV === 'production',
     // Enables/disables the execution of migrations on startup.
     // Defaults to true.
-    runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() === 'false',
+    runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() !== 'false',
     port: process.env.APPLICATION_PORT || '3000',
   },
   auth: {
@@ -140,7 +140,7 @@ export default () => ({
       // The number of times to retry running migrations in case of failure. Defaults to 5 retries.
       numberOfRetries: process.env.DB_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
       // The time interval (in milliseconds) to wait before retrying a failed migration. Defaults to 1000ms (1 second).
-      retryAfter: process.env.DB_MIGRATIONS_RETRY_AFTER ?? 1000, // Milliseconds
+      retryAfterMs: process.env.DB_MIGRATIONS_RETRY_AFTER_MS ?? 1000, // Milliseconds
     },
     orm: {
       // Indicates if migrations should be automatically run when the ORM initializes. Set to false to control this behavior manually.

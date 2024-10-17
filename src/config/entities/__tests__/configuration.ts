@@ -88,7 +88,7 @@ export default (): ReturnType<typeof configuration> => ({
     migrator: {
       executeMigrations: true,
       numberOfRetries: process.env.DB_TEST_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
-      retryAfter: process.env.DB_TEST_MIGRATIONS_RETRY_AFTER ?? 1000, // Milliseconds
+      retryAfterMs: process.env.DB_TEST_MIGRATIONS_RETRY_AFTER_MS ?? 1000, // Milliseconds
     },
     orm: {
       autoLoadEntities: true,

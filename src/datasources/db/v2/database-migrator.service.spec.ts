@@ -43,7 +43,7 @@ describe('PostgresDatabaseService', () => {
         migrator: {
           numberOfRetries: NUMBER_OF_RETRIES,
           executeMigrations: false,
-          retryAfter: 10,
+          retryAfterMs: 10,
         },
         connection: {
           postgres: {
