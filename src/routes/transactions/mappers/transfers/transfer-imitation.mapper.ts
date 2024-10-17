@@ -1,14 +1,24 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransactionItem } from '@/routes/transactions/entities/transaction-item.entity';
 import {
   isTransferTransactionInfo,
   TransferDirection,
   TransferTransactionInfo,
 } from '@/routes/transactions/entities/transfer-transaction-info.entity';
-import { isErc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
+import {
+  Erc20Transfer,
+  isErc20Transfer,
+} from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
 import { isSwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
 import { Inject } from '@nestjs/common';
-import { formatUnits } from 'viem';
+
+type Erc20TransferTransactionInfo = Omit<
+  TransferTransactionInfo,
+  'transferInfo'
+> & {
+  transferInfo: Erc20Transfer;
+};
 
 export class TransferImitationMapper {
   private static ETH_DECIMALS = 18;
@@ -16,6 +26,7 @@ export class TransferImitationMapper {
   private readonly lookupDistance: number;
   private readonly prefixLength: number;
   private readonly suffixLength: number;
+  private readonly valueTolerance: bigint;
 
   constructor(
     @Inject(IConfigurationService)
@@ -29,6 +40,9 @@ export class TransferImitationMapper {
     );
     this.suffixLength = configurationService.getOrThrow(
       'mappings.imitation.suffixLength',
+    );
+    this.valueTolerance = configurationService.getOrThrow(
+      'mappings.imitation.valueTolerance',
     );
   }
 
@@ -65,13 +79,7 @@ export class TransferImitationMapper {
 
       const txInfo = item.transaction.txInfo;
       // Only transfers can be imitated, of which we are only interested in ERC20s
-      if (
-        !(
-          isTransferTransactionInfo(txInfo) ||
-          isSwapTransferTransactionInfo(txInfo)
-        ) ||
-        !isErc20Transfer(txInfo.transferInfo)
-      ) {
+      if (!this.isErc20TransferTransactionInfo(txInfo)) {
         mappedTransactions.unshift(item);
         continue;
       }
@@ -95,42 +103,17 @@ export class TransferImitationMapper {
         continue;
       }
 
-      // Imitation transfers often employ differing decimals to prevent direct
-      // comparison of values. Here we normalize the value
-      const formattedValue = this.formatValue(
-        txInfo.transferInfo.value,
-        txInfo.transferInfo.decimals,
-      );
-      // Either sender or recipient according to "direction" of transaction
-      const refAddress = this.getReferenceAddress(txInfo);
-
       const isImitation = prevItems.some((prevItem) => {
         const prevTxInfo = prevItem.transaction.txInfo;
         if (
-          !(
-            isTransferTransactionInfo(prevTxInfo) ||
-            isSwapTransferTransactionInfo(prevTxInfo)
-          ) ||
-          !isErc20Transfer(prevTxInfo.transferInfo) ||
+          !this.isErc20TransferTransactionInfo(prevTxInfo) ||
           // Do not compare against previously identified imitations
           prevTxInfo.transferInfo.imitation
         ) {
           return false;
         }
 
-        const prevFormattedValue = this.formatValue(
-          prevTxInfo.transferInfo.value,
-          prevTxInfo.transferInfo.decimals,
-        );
-
-        // Imitation transfers match in value
-        if (formattedValue !== prevFormattedValue) {
-          return false;
-        }
-
-        // Imitation transfers match in vanity of address
-        const prevRefAddress = this.getReferenceAddress(prevTxInfo);
-        return this.isImitatorAddress(refAddress, prevRefAddress);
+        return this.isSpoofedEvent(txInfo, prevTxInfo);
       });
 
       txInfo.transferInfo.imitation = isImitation;
@@ -144,15 +127,58 @@ export class TransferImitationMapper {
   }
 
   /**
-   * Returns a string value of the value multiplied by the given decimals
-   * @param value - value to format
-   * @param decimals - decimals to multiply value by
-   * @returns - formatted value
+   * Returns whether {@link txInfo} is fake event imitating {@link prevTxInfo}
+   *
+   * A tolerant value transfer to a similar vanity address is deemed an imitation.
+   *
+   * @param {Erc20TransferTransactionInfo} txInfo - transaction info to compare
+   * @param {Erc20TransferTransactionInfo} prevTxInfo - previous transaction info
+   * @returns {boolean} - whether the transaction is an imitation
    */
-  private formatValue(value: string, decimals: number | null): string {
-    // Default to "standard" Ethereum decimals
-    const _decimals = decimals ?? TransferImitationMapper.ETH_DECIMALS;
-    return formatUnits(BigInt(value), _decimals);
+  isSpoofedEvent(
+    txInfo: Erc20TransferTransactionInfo,
+    prevTxInfo: Erc20TransferTransactionInfo,
+  ): boolean {
+    const value = this.formatValue(txInfo.transferInfo);
+    const prevValue = this.formatValue(prevTxInfo.transferInfo);
+
+    // Value can differ by +/- tolerance
+    const isTolerant =
+      value <= prevValue + this.valueTolerance &&
+      value >= prevValue - this.valueTolerance;
+    if (!isTolerant) {
+      return false;
+    }
+
+    const refAddress = this.getReferenceAddress(txInfo);
+    const prevRefAddress = this.getReferenceAddress(prevTxInfo);
+    return this.isImitatorAddress(refAddress, prevRefAddress);
+  }
+
+  /**
+   * Returns whether the transaction info is an ERC-20 transfer
+   * @param {Erc20TransferTransactionInfo} txInfo - transaction info
+   * @returns {boolean} - whether an ERC-20 transfer
+   */
+  private isErc20TransferTransactionInfo(
+    txInfo: TransactionInfo,
+  ): txInfo is Erc20TransferTransactionInfo {
+    return (
+      (isTransferTransactionInfo(txInfo) ||
+        isSwapTransferTransactionInfo(txInfo)) &&
+      isErc20Transfer(txInfo.transferInfo)
+    );
+  }
+
+  /**
+   * Divides the given value by 10 to the power of the decimals
+   * @param {string} args.value - value to format
+   * @param {number|null} args.decimals - decimals to divide by
+   * @returns {bigint} - formatted value
+   */
+  private formatValue(args: Pick<Erc20Transfer, 'value' | 'decimals'>): bigint {
+    const decimals = args.decimals ?? TransferImitationMapper.ETH_DECIMALS;
+    return BigInt(args.value) / BigInt(10 ** decimals);
   }
 
   /**
