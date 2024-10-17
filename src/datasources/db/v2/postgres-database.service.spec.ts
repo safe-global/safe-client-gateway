@@ -7,7 +7,7 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { DataSource, type ObjectLiteral, type Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { DatabaseShutdownHook } from '@/datasources/db/v2/database-shutdown.hook';
 import { DatabaseInitializeHook } from '@/datasources/db/v2/database-initialize.hook';
@@ -136,19 +136,6 @@ describe('PostgresDatabaseService', () => {
 
   describe('getRepository()', () => {
     class MockEntity {}
-
-    it('Should return a repository for the given entity', async () => {
-      const mockRepository = {} as Promise<Repository<ObjectLiteral>>;
-      jest
-        .spyOn(postgresqlService, 'getRepository')
-        .mockReturnValue(mockRepository);
-
-      const result =
-        await postgresqlService.getRepository<MockEntity>(MockEntity);
-
-      expect(postgresqlService.getRepository).toHaveBeenCalledWith(MockEntity);
-      expect(result).toBe(mockRepository);
-    });
 
     it('Should fetch the database connection before returning the repository', async () => {
       const fetchConnectionSpy = jest.spyOn(
