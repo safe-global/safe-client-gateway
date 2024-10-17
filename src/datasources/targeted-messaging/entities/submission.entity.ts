@@ -2,17 +2,17 @@ export class Submission {
   id: number;
   targeted_safe_id: number;
   signer_address: `0x${string}`;
-  completion_date: string;
-  created_at: string;
-  updated_at: string;
+  completion_date: Date;
+  created_at: Date;
+  updated_at: Date;
 
   constructor(
     id: number,
     targeted_safe_id: number,
     signer_address: `0x${string}`,
-    completion_date: string,
-    created_at: string,
-    updated_at: string,
+    completion_date: Date,
+    created_at: Date,
+    updated_at: Date,
   ) {
     this.id = id;
     this.targeted_safe_id = targeted_safe_id;

@@ -2,15 +2,15 @@ export class TargetedSafe {
   id: number;
   address: `0x${string}`;
   outreach_id: number;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 
   constructor(
     id: number,
     address: `0x${string}`,
     outreach_id: number,
-    created_at: string,
-    updated_at: string,
+    created_at: Date,
+    updated_at: Date,
   ) {
     this.id = id;
     this.address = address;
