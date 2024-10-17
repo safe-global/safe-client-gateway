@@ -134,15 +134,22 @@ export default () => ({
   },
   db: {
     migrator: {
+      // Determines if database migrations should be executed. By default, it will execute
       executeMigrations:
         process.env.DB_MIGRATIONS_EXECUTE?.toLowerCase() !== 'false',
+      // The number of times to retry running migrations in case of failure. Defaults to 5 retries.
       numberOfRetries: process.env.DB_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
+      // The time interval (in milliseconds) to wait before retrying a failed migration. Defaults to 1000ms (1 second).
       retryAfter: process.env.DB_MIGRATIONS_RETRY_AFTER ?? 1000, // Milliseconds
     },
     orm: {
+      // Indicates if migrations should be automatically run when the ORM initializes. Set to false to control this behavior manually.
       migrationsRun: false,
+      // Enables the automatic loading of entities into the ORM.
       autoLoadEntities: true,
+      // Requires manual initialization of the database connection. Useful for controlling startup behavior.
       manualInitialization: true,
+      // The name of the table where migrations are stored. Uses the environment variable value or defaults to '_migrations'.
       migrationsTableName:
         process.env.ORM_MIGRATION_TABLE_NAME || '_migrations',
     },
