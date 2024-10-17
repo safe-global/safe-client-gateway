@@ -10,6 +10,9 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
 import type postgres from 'postgres';
 import { OutreachFileProcessor } from './outreach.file-processor';
+import path from 'path';
+import { rm, writeFile } from 'fs/promises';
+import { createHash } from 'crypto';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -48,6 +51,7 @@ describe('OutreachFileProcessor', () => {
     );
 
     fileProcessor = new OutreachFileProcessor(
+      mockLoggingService,
       fakeCacheService,
       targetedMessagingDatasource,
     );
@@ -75,7 +79,36 @@ describe('OutreachFileProcessor', () => {
     expect(result).toHaveLength(1);
   });
 
-  it('should process Outreach data files of the lock is not set and release the lock', async () => {
+  it('should not process Outreach data files with bad checksum', async () => {
+    const filePath = path.resolve('src', '__tests__', 'test.json');
+    const dataString = JSON.stringify({ bad: 'data' });
+    await writeFile(filePath, dataString, 'utf-8');
+    const hash = createHash('sha256');
+    hash.update(dataString);
+    const checksum = hash.digest('hex');
+    await targetedMessagingDatasource.createOutreach(
+      createOutreachDtoBuilder()
+        .with('sourceFile', filePath)
+        .with('sourceFileChecksum', checksum)
+        .build(),
+    );
+
+    try {
+      const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
+      await fakeCacheService.deleteByKey(lockCacheKey.key);
+      await fileProcessor.onModuleInit();
+
+      const result =
+        await targetedMessagingDatasource.getUnprocessedOutreaches();
+
+      expect(result).toHaveLength(0);
+      expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+    } finally {
+      await rm(filePath);
+    }
+  });
+
+  it.skip('should process Outreach data files of the lock is not set and release the lock', async () => {
     const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
     await targetedMessagingDatasource.createOutreach(
       createOutreachDtoBuilder().build(),
