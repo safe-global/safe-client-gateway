@@ -32,6 +32,8 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
 import { getAddress } from 'viem';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
 describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -53,6 +55,8 @@ describe('Collectibles Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

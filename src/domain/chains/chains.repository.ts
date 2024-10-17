@@ -16,15 +16,29 @@ import {
 } from '@/domain/indexing/entities/indexing-status.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { differenceBy } from 'lodash';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
+  // According to the limits of the Config Service
+  // @see https://github.com/safe-global/safe-config-service/blob/main/src/chains/views.py#L14-L16
+  static readonly MAX_LIMIT = 40;
+
+  private readonly maxSequentialPages: number;
+
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxSequentialPages = this.configurationService.getOrThrow<number>(
+      'safeConfig.chains.maxSequentialPages',
+    );
+  }
 
   async getChain(chainId: string): Promise<Chain> {
     const chain = await this.configApi.getChain(chainId);
@@ -45,6 +59,36 @@ export class ChainsRepository implements IChainsRepository {
       });
     }
     return valid;
+  }
+
+  async getAllChains(): Promise<Array<Chain>> {
+    const chains: Array<Chain> = [];
+
+    let offset = 0;
+    let next = null;
+
+    for (let i = 0; i < this.maxSequentialPages; i++) {
+      const result = await this.getChains(ChainsRepository.MAX_LIMIT, offset);
+
+      next = result.next;
+      chains.push(...result.results);
+
+      if (!next) {
+        break;
+      }
+
+      const url = new URL(next);
+      const paginationData = PaginationData.fromLimitAndOffset(url);
+      offset = paginationData.offset;
+    }
+
+    if (next) {
+      this.loggingService.error(
+        'More chains available despite request limit reached',
+      );
+    }
+
+    return chains;
   }
 
   async getSingletons(chainId: string): Promise<Singleton[]> {

@@ -12,7 +12,6 @@ import {
   cursorUrlFromLimitAndOffset,
 } from '@/routes/common/pagination/pagination.data';
 import { IndexingStatus } from '@/routes/chains/entities/indexing-status.entity';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 
 @Injectable()
 export class ChainsService {
@@ -23,8 +22,6 @@ export class ChainsService {
     private readonly chainsRepository: IChainsRepository,
     @Inject(IBackboneRepository)
     private readonly backboneRepository: IBackboneRepository,
-    @Inject(IBlockchainApiManager)
-    private readonly blockchainApiManager: IBlockchainApiManager,
   ) {}
 
   async getChains(
@@ -125,21 +122,16 @@ export class ChainsService {
   }
 
   async getIndexingStatus(chainId: string): Promise<IndexingStatus> {
-    const [indexingStatus, blockchainApi] = await Promise.all([
-      this.chainsRepository.getIndexingStatus(chainId),
-      this.blockchainApiManager.getApi(chainId),
-    ]);
+    const indexingStatus =
+      await this.chainsRepository.getIndexingStatus(chainId);
 
-    const lastSyncedBlock = Math.min(
-      indexingStatus.erc20BlockNumber,
-      indexingStatus.masterCopiesBlockNumber,
+    const lastSync = Math.min(
+      indexingStatus.erc20BlockTimestamp.getTime(),
+      indexingStatus.masterCopiesBlockTimestamp.getTime(),
     );
-    const block = await blockchainApi.getBlock({
-      blockNumber: BigInt(lastSyncedBlock),
-    });
 
     return new IndexingStatus({
-      lastSync: Number(block.timestamp),
+      lastSync,
       synced: indexingStatus.synced,
     });
   }

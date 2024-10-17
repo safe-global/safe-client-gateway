@@ -44,6 +44,8 @@ import request from 'supertest';
 import { getAddress } from 'viem';
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
 describe('Notifications Controller V2 (Unit)', () => {
   let app: INestApplication<Server>;
@@ -69,6 +71,8 @@ describe('Notifications Controller V2 (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(JWT_CONFIGURATION_MODULE)
       .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountsDatasourceModule)

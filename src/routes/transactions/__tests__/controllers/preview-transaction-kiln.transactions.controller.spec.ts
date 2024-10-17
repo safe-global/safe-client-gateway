@@ -44,6 +44,8 @@ import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
 describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -66,6 +68,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

@@ -1,11 +1,11 @@
+import '@/__tests__/matchers/to-be-string-or-null';
+import { AppModule } from '@/app.module';
+import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { expect } from '@jest/globals';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import request from 'supertest';
-import { AppModule } from '@/app.module';
-import { expect } from '@jest/globals';
-import '@/__tests__/matchers/to-be-string-or-null';
-import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import type { Server } from 'net';
+import request from 'supertest';
 
 describe('Get about e2e test', () => {
   let app: INestApplication<Server>;

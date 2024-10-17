@@ -44,6 +44,8 @@ import type { Server } from 'net';
 import { RecoveryController } from '@/routes/recovery/recovery.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
 describe('Recovery (Unit)', () => {
   let app: INestApplication<Server>;
@@ -70,6 +72,8 @@ describe('Recovery (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(JWT_CONFIGURATION_MODULE)
       .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(ALERTS_CONFIGURATION_MODULE)

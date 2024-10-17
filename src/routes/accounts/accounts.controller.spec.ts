@@ -8,6 +8,8 @@ import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 import {
   JWT_CONFIGURATION_MODULE,
@@ -62,6 +64,8 @@ describe('AccountsController', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(JWT_CONFIGURATION_MODULE)
       .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountsDatasourceModule)

@@ -14,6 +14,7 @@ export const CreateOutreachDtoSchema = z.object({
   teamName: z.string(),
   sourceFile: z.string().nullish().default(null),
   sourceFileProcessedDate: z.coerce.date().nullish().default(null),
+  sourceFileChecksum: z.string().nullish().default(null),
 });
 
 export class CreateOutreachDto
@@ -27,6 +28,7 @@ export class CreateOutreachDto
   teamName: string;
   sourceFile: string | null;
   sourceFileProcessedDate: Date | null;
+  sourceFileChecksum: string | null;
 
   constructor(props: CreateOutreachDto) {
     this.name = props.name;
@@ -37,5 +39,6 @@ export class CreateOutreachDto
     this.teamName = props.teamName;
     this.sourceFile = props.sourceFile;
     this.sourceFileProcessedDate = props.sourceFileProcessedDate;
+    this.sourceFileChecksum = props.sourceFileChecksum;
   }
 }

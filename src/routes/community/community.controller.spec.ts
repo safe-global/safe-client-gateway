@@ -41,6 +41,8 @@ import {
   campaignActivityBuilder,
   toJson as campaignActivityToJson,
 } from '@/domain/community/entities/__tests__/campaign-activity.builder';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
 describe('Community (Unit)', () => {
   let app: INestApplication<Server>;
@@ -53,6 +55,8 @@ describe('Community (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

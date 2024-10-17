@@ -17,6 +17,8 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
 import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
 import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication<Server>;
@@ -27,6 +29,8 @@ describe('Post Hook Events (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(config)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

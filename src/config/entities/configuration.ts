@@ -298,6 +298,11 @@ export default () => ({
   safeConfig: {
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
+    chains: {
+      maxSequentialPages: parseInt(
+        process.env.SAFE_CONFIG_CHAINS_MAX_SEQUENTIAL_PAGES ?? `${3}`,
+      ),
+    },
   },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
