@@ -23,14 +23,9 @@ export const BlockExplorerUriTemplateSchema = z.object({
   api: z.string(),
 });
 
-export const BeaconChainExplorerUriTemplateSchema = z
-  .object({
-    publicKey: z.string().nullish().default(null),
-  })
-  // TODO: Remove after `beaconChainExplorerUriTemplate` field is deployed on Config Service
-  .catch({
-    publicKey: null,
-  });
+export const BeaconChainExplorerUriTemplateSchema = z.object({
+  publicKey: z.string().nullish().default(null),
+});
 
 export const ThemeSchema = z.object({
   textColor: z.string(),
@@ -73,30 +68,17 @@ export const BalancesProviderSchema = z.object({
   enabled: z.boolean(),
 });
 
-export const ContractAddressesSchema = z
-  .object({
-    safeSingletonAddress: AddressSchema.nullish().default(null),
-    safeProxyFactoryAddress: AddressSchema.nullish().default(null),
-    multiSendAddress: AddressSchema.nullish().default(null),
-    multiSendCallOnlyAddress: AddressSchema.nullish().default(null),
-    fallbackHandlerAddress: AddressSchema.nullish().default(null),
-    signMessageLibAddress: AddressSchema.nullish().default(null),
-    createCallAddress: AddressSchema.nullish().default(null),
-    simulateTxAccessorAddress: AddressSchema.nullish().default(null),
-    safeWebAuthnSignerFactoryAddress: AddressSchema.nullish().default(null),
-  })
-  // TODO: Remove catch after deployed and all chain caches include the `contractAddresses` field
-  .catch({
-    safeSingletonAddress: null,
-    safeProxyFactoryAddress: null,
-    multiSendAddress: null,
-    multiSendCallOnlyAddress: null,
-    fallbackHandlerAddress: null,
-    signMessageLibAddress: null,
-    createCallAddress: null,
-    simulateTxAccessorAddress: null,
-    safeWebAuthnSignerFactoryAddress: null,
-  });
+export const ContractAddressesSchema = z.object({
+  safeSingletonAddress: AddressSchema.nullish().default(null),
+  safeProxyFactoryAddress: AddressSchema.nullish().default(null),
+  multiSendAddress: AddressSchema.nullish().default(null),
+  multiSendCallOnlyAddress: AddressSchema.nullish().default(null),
+  fallbackHandlerAddress: AddressSchema.nullish().default(null),
+  signMessageLibAddress: AddressSchema.nullish().default(null),
+  createCallAddress: AddressSchema.nullish().default(null),
+  simulateTxAccessorAddress: AddressSchema.nullish().default(null),
+  safeWebAuthnSignerFactoryAddress: AddressSchema.nullish().default(null),
+});
 
 function removeTrailingSlash(url: string): string {
   return url.replace(/\/$/, '');
