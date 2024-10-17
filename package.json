@@ -106,8 +106,7 @@
       "index.ts",
       ".+\\/__tests__\\/.+\\.builder.(t|j)s",
       ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      ".e2e-spec.ts",
-      "dist"
+      ".e2e-spec.ts"
     ],
     "testEnvironment": "node",
     "moduleNameMapper": {
