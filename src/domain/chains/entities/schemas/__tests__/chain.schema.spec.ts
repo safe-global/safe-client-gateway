@@ -619,8 +619,8 @@ describe('Chain schemas', () => {
       ['safeAppsRpcUri' as const],
       ['publicRpcUri' as const],
       ['blockExplorerUriTemplate' as const],
-      // TODO: Include after `beaconChainExplorerUriTemplate` field is deployed on Config Service
-      // ['beaconChainExplorerUriTemplate' as const],
+      ['beaconChainExplorerUriTemplate' as const],
+      ['contractAddresses' as const],
       ['nativeCurrency' as const],
       ['pricesProvider' as const],
       ['balancesProvider' as const],
