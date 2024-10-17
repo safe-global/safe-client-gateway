@@ -25,22 +25,12 @@ import type { Page } from '@/domain/entities/page.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import type { GetBlockReturnType } from 'viem';
-import { getAddress, HttpRequestError } from 'viem';
+import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
 import { indexingStatusBuilder } from '@/domain/chains/entities/__tests__/indexing-status.builder';
-import {
-  BlockchainApiManagerModule,
-  IBlockchainApiManager,
-} from '@/domain/interfaces/blockchain-api.manager.interface';
-import { TestBlockchainApiManagerModule } from '@/datasources/blockchain/__tests__/test.blockchain-api.manager';
-import type { FakeBlockchainApiManager } from '@/datasources/blockchain/__tests__/fake.blockchain-api.manager';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
 
-const mockGetBlock = jest.fn();
 describe('Chains Controller (Unit)', () => {
   let app: INestApplication<Server>;
 
@@ -49,7 +39,6 @@ describe('Chains Controller (Unit)', () => {
   let version: string;
   let buildNumber: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
-  let blockchainApiManager: FakeBlockchainApiManager;
 
   const chainsResponse: Page<Chain> = {
     count: 2,
@@ -67,8 +56,6 @@ describe('Chains Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -77,8 +64,6 @@ describe('Chains Controller (Unit)', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
-      .overrideModule(BlockchainApiManagerModule)
-      .useModule(TestBlockchainApiManagerModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -89,10 +74,6 @@ describe('Chains Controller (Unit)', () => {
     version = configurationService.getOrThrow('about.version');
     buildNumber = configurationService.getOrThrow('about.buildNumber');
     networkService = moduleFixture.get(NetworkService);
-    blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
-    blockchainApiManager.getApi.mockImplementation(() => ({
-      getBlock: mockGetBlock,
-    }));
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -645,31 +626,40 @@ describe('Chains Controller (Unit)', () => {
 
   describe('GET /:chainId/about/indexing', () => {
     it('Success', async () => {
-      networkService.get.mockResolvedValueOnce({
-        data: chainResponse,
-        status: 200,
-      });
       const indexingStatus = indexingStatusBuilder().build();
-      networkService.get.mockResolvedValueOnce({
-        data: indexingStatus,
-        status: 200,
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`) {
+          return Promise.resolve({
+            data: chainResponse,
+            status: 200,
+          });
+        }
+        if (
+          url === `${chainResponse.transactionService}/api/v1/about/indexing/`
+        ) {
+          return Promise.resolve({
+            data: indexingStatus,
+            status: 200,
+          });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
       });
-      const block: Partial<GetBlockReturnType> = {
-        timestamp: faker.number.bigInt(),
-      };
-      mockGetBlock.mockResolvedValue(block);
 
       await request(app.getHttpServer())
-        .get('/v1/chains/1/about/indexing')
+        .get(`/v1/chains/${chainResponse.chainId}/about/indexing`)
         .expect(200)
         .expect({
-          lastSync: Number(block.timestamp),
+          lastSync:
+            indexingStatus.erc20BlockTimestamp >
+            indexingStatus.masterCopiesBlockTimestamp
+              ? indexingStatus.masterCopiesBlockTimestamp.getTime()
+              : indexingStatus.erc20BlockTimestamp.getTime(),
           synced: indexingStatus.synced,
         });
 
       expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0].url).toBe(
-        `${safeConfigUrl}/api/v1/chains/1`,
+        `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chainResponse.transactionService}/api/v1/about/indexing/`,
@@ -677,16 +667,6 @@ describe('Chains Controller (Unit)', () => {
       expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
         undefined,
       );
-      expect(mockGetBlock).toHaveBeenCalledTimes(1);
-      expect(mockGetBlock).toHaveBeenCalledWith({
-        blockNumber: BigInt(
-          // The oldest block number synced
-          Math.min(
-            indexingStatus.erc20BlockNumber,
-            indexingStatus.masterCopiesBlockNumber,
-          ),
-        ),
-      });
     });
 
     it('Failure getting the chain', async () => {
@@ -699,7 +679,7 @@ describe('Chains Controller (Unit)', () => {
       networkService.get.mockRejectedValueOnce(error);
 
       await request(app.getHttpServer())
-        .get('/v1/chains/1/about/indexing')
+        .get(`/v1/chains/${chainResponse.chainId}/about/indexing`)
         .expect(400)
         .expect({
           message: 'An error occurred',
@@ -708,7 +688,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
-        url: `${safeConfigUrl}/api/v1/chains/1`,
+        url: `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`,
       });
     });
 
@@ -719,18 +699,23 @@ describe('Chains Controller (Unit)', () => {
           status: 502,
         } as Response,
       );
-      networkService.get.mockResolvedValueOnce({
-        data: chainResponse,
-        status: 200,
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`) {
+          return Promise.resolve({
+            data: chainResponse,
+            status: 200,
+          });
+        }
+        if (
+          url === `${chainResponse.transactionService}/api/v1/about/indexing/`
+        ) {
+          return Promise.reject(error);
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
       });
-      networkService.get.mockRejectedValueOnce(error);
-      const block: Partial<GetBlockReturnType> = {
-        timestamp: faker.number.bigInt(),
-      };
-      mockGetBlock.mockResolvedValue(block);
 
       await request(app.getHttpServer())
-        .get('/v1/chains/1/about/indexing')
+        .get(`/v1/chains/${chainResponse.chainId}/about/indexing`)
         .expect(502)
         .expect({
           message: 'An error occurred',
@@ -739,7 +724,7 @@ describe('Chains Controller (Unit)', () => {
 
       expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0].url).toBe(
-        `${safeConfigUrl}/api/v1/chains/1`,
+        `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
         `${chainResponse.transactionService}/api/v1/about/indexing/`,
@@ -747,52 +732,6 @@ describe('Chains Controller (Unit)', () => {
       expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
         undefined,
       );
-    });
-
-    it('Should fail getting the block', async () => {
-      networkService.get.mockResolvedValueOnce({
-        data: chainResponse,
-        status: 200,
-      });
-      const indexingStatus = indexingStatusBuilder().build();
-      networkService.get.mockResolvedValueOnce({
-        data: indexingStatus,
-        status: 200,
-      });
-      mockGetBlock.mockRejectedValue(
-        new HttpRequestError({
-          url: faker.internet.url(),
-        }),
-      );
-
-      await request(app.getHttpServer())
-        .get('/v1/chains/1/about/indexing')
-        .expect(500)
-        .expect({
-          message: 'Internal server error',
-          code: 500,
-        });
-
-      expect(networkService.get).toHaveBeenCalledTimes(2);
-      expect(networkService.get.mock.calls[0][0].url).toBe(
-        `${safeConfigUrl}/api/v1/chains/1`,
-      );
-      expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chainResponse.transactionService}/api/v1/about/indexing/`,
-      );
-      expect(networkService.get.mock.calls[1][0].networkRequest).toBe(
-        undefined,
-      );
-      expect(mockGetBlock).toHaveBeenCalledTimes(1);
-      expect(mockGetBlock).toHaveBeenCalledWith({
-        blockNumber: BigInt(
-          // The oldest block number synced
-          Math.min(
-            indexingStatus.erc20BlockNumber,
-            indexingStatus.masterCopiesBlockNumber,
-          ),
-        ),
-      });
     });
 
     it('Should return validation error', async () => {
@@ -809,7 +748,7 @@ describe('Chains Controller (Unit)', () => {
       });
 
       await request(app.getHttpServer())
-        .get('/v1/chains/1/about/indexing')
+        .get(`/v1/chains/${chainResponse.chainId}/about/indexing`)
         .expect(500)
         .expect({
           statusCode: 500,
