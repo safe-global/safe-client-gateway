@@ -135,13 +135,13 @@ export class AppModule implements NestModule {
         }),
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
-          useFactory: async (
+          useFactory: (
             configService: ConfigService,
             loggingService: ILoggingService,
           ) => {
             const typeormConfig = configService.getOrThrow('db.orm');
             const postgresConfigObject = postgresConfig(
-              await configService.getOrThrow('db.connection.postgres'),
+              configService.getOrThrow('db.connection.postgres'),
               loggingService,
             );
 

@@ -110,6 +110,7 @@ describe('PostgresDatabaseService', () => {
 
       expect(connection.runMigrations).toHaveBeenCalled();
       expect(connection.query).toHaveBeenCalledWith(insertLockQuery, [1]);
+      expect(connection.runMigrations).toHaveBeenCalled();
 
       expect(connection.query).toHaveBeenCalledWith(truncateLockQuery);
     });
