@@ -1,4 +1,5 @@
 // Custom configuration for the application
+
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default () => ({
   about: {
@@ -131,26 +132,47 @@ export default () => ({
       apiKey: process.env.INFURA_API_KEY,
     },
   },
-  typeorm: { autoLoadEntities: true, manualInitialization: true },
   db: {
-    postgres: {
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: process.env.POSTGRES_PORT || '5432',
-      database: process.env.POSTGRES_DB || 'safe-client-gateway',
-      schema: process.env.POSTGRES_SCHEMA || 'main', //@TODO: use this schema
-      username: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
-      ssl: {
-        enabled: process.env.POSTGRES_SSL_ENABLED?.toLowerCase() === 'true',
-        requestCert:
-          process.env.POSTGRES_SSL_REQUEST_CERT?.toLowerCase() !== 'false',
-        // If the value is not explicitly set to false, default should be true
-        // If not false the server will reject any connection which is not authorized with the list of supplied CAs
-        // https://nodejs.org/docs/latest-v20.x/api/tls.html#tlscreateserveroptions-secureconnectionlistener
-        rejectUnauthorized:
-          process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
-          'false',
-        caPath: process.env.POSTGRES_SSL_CA_PATH,
+    migrator: {
+      // Determines if database migrations should be executed. By default, it will execute
+      executeMigrations:
+        process.env.DB_MIGRATIONS_EXECUTE?.toLowerCase() !== 'false',
+      // The number of times to retry running migrations in case of failure. Defaults to 5 retries.
+      numberOfRetries: process.env.DB_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
+      // The time interval (in milliseconds) to wait before retrying a failed migration. Defaults to 1000ms (1 second).
+      retryAfterMs: process.env.DB_MIGRATIONS_RETRY_AFTER_MS ?? 1000, // Milliseconds
+    },
+    orm: {
+      // Indicates if migrations should be automatically run when the ORM initializes. Set to false to control this behavior manually.
+      migrationsRun: false,
+      // Enables the automatic loading of entities into the ORM.
+      autoLoadEntities: true,
+      // Requires manual initialization of the database connection. Useful for controlling startup behavior.
+      manualInitialization: true,
+      // The name of the table where migrations are stored. Uses the environment variable value or defaults to '_migrations'.
+      migrationsTableName:
+        process.env.ORM_MIGRATION_TABLE_NAME || '_migrations',
+    },
+    connection: {
+      postgres: {
+        host: process.env.POSTGRES_HOST || 'localhost',
+        port: process.env.POSTGRES_PORT || '5432',
+        database: process.env.POSTGRES_DB || 'safe-client-gateway',
+        schema: process.env.POSTGRES_SCHEMA || 'main', //@TODO: use this schema
+        username: process.env.POSTGRES_USER || 'postgres',
+        password: process.env.POSTGRES_PASSWORD || 'postgres',
+        ssl: {
+          enabled: process.env.POSTGRES_SSL_ENABLED?.toLowerCase() === 'true',
+          requestCert:
+            process.env.POSTGRES_SSL_REQUEST_CERT?.toLowerCase() !== 'false',
+          // If the value is not explicitly set to false, default should be true
+          // If not false the server will reject any connection which is not authorized with the list of supplied CAs
+          // https://nodejs.org/docs/latest-v20.x/api/tls.html#tlscreateserveroptions-secureconnectionlistener
+          rejectUnauthorized:
+            process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
+            'false',
+          caPath: process.env.POSTGRES_SSL_CA_PATH,
+        },
       },
     },
   },

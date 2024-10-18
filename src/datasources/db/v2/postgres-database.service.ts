@@ -4,24 +4,64 @@ import {
 } from '@/logging/logging.interface';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource, type ObjectLiteral, type Repository } from 'typeorm';
+import {
+  DataSource,
+  type EntityManager,
+  type ObjectLiteral,
+  type Repository,
+} from 'typeorm';
 
 @Injectable()
 export class PostgresDatabaseService {
+  private transactionManager?: EntityManager = undefined;
+
   public constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @InjectDataSource() private readonly dataSource: DataSource,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
-   * Fetches the database connection. If the connection is not initialized, it initializes the connection.
+   * Returns the datasource object
+   *
+   * @returns {DataSource} Datasource object
+   */
+  public getDataSource(): DataSource {
+    return this.dataSource;
+  }
+
+  /**
+   * Checks whether the datasource has been initialized or not
+   *
+   * @returns {boolean} True if the datasource has already been initialized
+   */
+  public isInitialized(): boolean {
+    return this.dataSource.isInitialized;
+  }
+
+  /**
+   * Initializes the database connection. If the connection is not initialized, it initializes the connection.
    *
    * @returns {Promise<DataSource>} The database connection.
    */
-  public async fetchDatabaseConnection(): Promise<DataSource> {
-    if (!this.dataSource.isInitialized) {
+  public async initializeDatabaseConnection(): Promise<DataSource> {
+    if (!this.isInitialized()) {
       this.loggingService.info('PostgresDatabaseService initialized...');
       await this.dataSource.initialize();
+    }
+
+    return this.dataSource;
+  }
+
+  /**
+   * Destroys the database connection.
+   *
+   * @returns {Promise<DataSource>} The database connection.
+   */
+  public async destroyDatabaseConnection(): Promise<DataSource> {
+    if (this.isInitialized()) {
+      this.loggingService.info('PostgresDatabaseService destroyed...');
+      await this.dataSource.destroy();
     }
 
     return this.dataSource;
@@ -37,8 +77,29 @@ export class PostgresDatabaseService {
   public async getRepository<T extends ObjectLiteral>(entity: {
     new (): T;
   }): Promise<Repository<T>> {
-    const connection = await this.fetchDatabaseConnection();
+    if (!this.isInitialized()) {
+      await this.initializeDatabaseConnection();
+    }
 
-    return connection.getRepository<T>(entity);
+    return this.dataSource.getRepository<T>(entity);
+  }
+
+  public async transaction(
+    callback: (transactionManager: EntityManager) => Promise<void>,
+  ): Promise<void> {
+    return this.dataSource.transaction(
+      async (transactionalEntityManager): Promise<void> => {
+        this.transactionManager = transactionalEntityManager;
+        await callback(this.transactionManager);
+      },
+    );
+  }
+
+  public getTransactionRunner(): EntityManager {
+    if (!this.transactionManager) {
+      throw new Error('Query runner is not initialized...');
+    }
+
+    return this.transactionManager;
   }
 }
