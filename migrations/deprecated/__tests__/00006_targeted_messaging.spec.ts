@@ -1,10 +1,11 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
-import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
-import { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
-import { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import type { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
+import type { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
+import type { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import { faker } from '@faker-js/faker';
-import postgres, { Sql } from 'postgres';
+import type { Sql } from 'postgres';
+import type postgres from 'postgres';
 
 describe('Migration 00006_targeted_messaging', () => {
   let sql: postgres.Sql;

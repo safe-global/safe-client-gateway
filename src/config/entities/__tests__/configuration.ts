@@ -85,17 +85,31 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   db: {
-    postgres: {
-      host: process.env.POSTGRES_TEST_HOST || 'localhost',
-      port: process.env.POSTGRES_TEST_PORT || '5433',
-      database: process.env.POSTGRES_TEST_DB || 'test-db',
-      username: process.env.POSTGRES_TEST_USER || 'postgres',
-      password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
-      ssl: {
-        enabled: true,
-        requestCert: true,
-        rejectUnauthorized: true,
-        caPath: process.env.POSTGRES_SSL_CA_PATH,
+    migrator: {
+      executeMigrations: true,
+      numberOfRetries: process.env.DB_TEST_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
+      retryAfterMs: process.env.DB_TEST_MIGRATIONS_RETRY_AFTER_MS ?? 1000, // Milliseconds
+    },
+    orm: {
+      autoLoadEntities: true,
+      manualInitialization: true,
+      migrationsRun: false,
+      migrationsTableName: '_migrations',
+    },
+    connection: {
+      postgres: {
+        schema: process.env.POSTGRES_SCHEMA || 'main',
+        host: process.env.POSTGRES_TEST_HOST || 'localhost',
+        port: process.env.POSTGRES_TEST_PORT || '5433',
+        database: process.env.POSTGRES_TEST_DB || 'test-db',
+        username: process.env.POSTGRES_TEST_USER || 'postgres',
+        password: process.env.POSTGRES_TEST_PASSWORD || 'postgres',
+        ssl: {
+          enabled: true,
+          requestCert: true,
+          rejectUnauthorized: true,
+          caPath: process.env.POSTGRES_SSL_CA_PATH,
+        },
       },
     },
   },
