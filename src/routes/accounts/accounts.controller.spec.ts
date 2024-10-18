@@ -9,7 +9,9 @@ import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/coun
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 import {
   JWT_CONFIGURATION_MODULE,
@@ -80,6 +82,8 @@ describe('AccountsController', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     accountDataSource = moduleFixture.get(IAccountsDatasource);

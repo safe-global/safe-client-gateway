@@ -55,6 +55,10 @@ import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.mo
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { postgresConfig } from '@/config/entities/postgres.config';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -133,10 +137,14 @@ export class AppModule implements NestModule {
         }),
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
-          useFactory: async (configService: ConfigService) => {
-            const typeormConfig = await configService.getOrThrow('typeorm');
+          useFactory: (
+            configService: ConfigService,
+            loggingService: ILoggingService,
+          ) => {
+            const typeormConfig = configService.getOrThrow('db.orm');
             const postgresConfigObject = postgresConfig(
-              await configService.getOrThrow('db.postgres'),
+              configService.getOrThrow('db.connection.postgres'),
+              loggingService,
             );
 
             return {
@@ -144,7 +152,7 @@ export class AppModule implements NestModule {
               ...postgresConfigObject,
             };
           },
-          inject: [ConfigService],
+          inject: [ConfigService, LoggingService],
         }),
       ],
       providers: [

@@ -1,3 +1,5 @@
+import { PostgresqlLogger } from '@/datasources/db/v2/postgresql-logger.service';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { readFileSync } from 'fs';
 import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
@@ -18,6 +20,7 @@ interface IPostgresEnvConfig {
 
 export const postgresConfig = (
   postgresEnvConfig: IPostgresEnvConfig,
+  logger?: ILoggingService,
 ): PostgresConnectionOptions => {
   const isCIContext = process.env.CI?.toLowerCase() === 'true';
   const isSslEnabled = !isCIContext && postgresEnvConfig.ssl.enabled;
@@ -37,7 +40,7 @@ export const postgresConfig = (
     password: postgresEnvConfig.password,
     database: postgresEnvConfig.database,
     migrations: ['dist/migrations/*.js'],
-    // logging: !isCIContext,
+    logger: logger ? new PostgresqlLogger(logger) : undefined,
     ssl: isSslEnabled
       ? {
           ca: postgresCa,
