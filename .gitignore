@@ -51,3 +51,6 @@ data
 
 # ABIs
 /abis/*
+
+# Targeted Messaging data files
+/assets/targeted-messaging/*
