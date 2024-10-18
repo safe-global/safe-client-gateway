@@ -59,6 +59,39 @@ describe('TargetedMessagingDataSource tests', () => {
     await testDbFactory.destroyTestDatabase(sql);
   });
 
+  describe('getUnprocessedOutreaches', () => {
+    it('gets unprocessed outreaches successfully', async () => {
+      const outreaches = [
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', null)
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', null)
+          .build(),
+      ];
+      for (const outreach of outreaches) {
+        await target.createOutreach(outreach);
+      }
+
+      const result = await target.getUnprocessedOutreaches();
+
+      // Only the outreaches with sourceFileProcessedDate as null are returned
+      expect(result).toStrictEqual([
+        expect.objectContaining(outreaches[2]),
+        expect.objectContaining(outreaches[4]),
+      ]);
+    });
+  });
+
   describe('createOutreach', () => {
     it('creates an outreach successfully', async () => {
       const dto = createOutreachDtoBuilder().build();
@@ -90,6 +123,38 @@ describe('TargetedMessagingDataSource tests', () => {
       await expect(target.createOutreach(dto)).rejects.toThrow(
         'Error creating outreach',
       );
+    });
+  });
+
+  describe('updateOutreach', () => {
+    it('should update an outreach successfully', async () => {
+      const dto = createOutreachDtoBuilder().build();
+      await target.createOutreach(dto);
+      const updateOutreachDto = {
+        sourceId: dto.sourceId,
+        name: faker.string.alphanumeric(),
+        startDate: faker.date.recent(),
+        endDate: faker.date.recent(),
+        teamName: faker.string.alphanumeric(),
+        type: faker.string.alphanumeric(),
+      };
+
+      const result = await target.updateOutreach(updateOutreachDto);
+
+      expect(result).toStrictEqual({
+        id: expect.any(Number),
+        name: updateOutreachDto.name,
+        startDate: updateOutreachDto.startDate,
+        endDate: updateOutreachDto.endDate,
+        sourceId: updateOutreachDto.sourceId,
+        type: updateOutreachDto.type,
+        teamName: updateOutreachDto.teamName,
+        sourceFile: dto.sourceFile,
+        sourceFileProcessedDate: dto.sourceFileProcessedDate,
+        sourceFileChecksum: dto.sourceFileChecksum,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      });
     });
   });
 
