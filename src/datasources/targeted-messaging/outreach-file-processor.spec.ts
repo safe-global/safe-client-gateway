@@ -4,15 +4,16 @@ import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.servi
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import { TargetedMessagingDatasource } from '@/datasources/targeted-messaging/targeted-messaging.datasource';
 import { createOutreachDtoBuilder } from '@/domain/targeted-messaging/entities/tests/create-outreach.dto.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
+import { createHash } from 'crypto';
+import { rm, writeFile } from 'fs/promises';
 import path from 'path';
 import type postgres from 'postgres';
 import { OutreachFileProcessor } from './outreach-file-processor';
-import { rm, writeFile } from 'fs/promises';
-import { createHash } from 'crypto';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -24,6 +25,10 @@ const mockLoggingService = {
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
+
+const mockCloudStorageApiService = jest.mocked({
+  getFileContent: jest.fn(),
+} as jest.MockedObjectDeep<ICloudStorageApiService>);
 
 describe('OutreachFileProcessor', () => {
   let fakeCacheService: FakeCacheService;
@@ -61,6 +66,7 @@ describe('OutreachFileProcessor', () => {
       fakeCacheService,
       targetedMessagingDatasource,
       mockConfigurationService,
+      mockCloudStorageApiService,
     );
   });
 

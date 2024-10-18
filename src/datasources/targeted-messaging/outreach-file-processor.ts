@@ -5,6 +5,7 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
+import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import { OutreachFileSchema } from '@/datasources/targeted-messaging/entities/schemas/outreach-file.schema';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
@@ -29,6 +30,8 @@ export class OutreachFileProcessor implements OnModuleInit {
     private readonly datasource: ITargetedMessagingDatasource,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(ICloudStorageApiService)
+    private readonly cloudStorageApiService: ICloudStorageApiService,
   ) {
     this.storageType = this.configurationService.getOrThrow<FileStorageType>(
       'targetedMessaging.fileStorage.type',
@@ -90,7 +93,7 @@ export class OutreachFileProcessor implements OnModuleInit {
 
     const data =
       this.storageType === 'aws'
-        ? await this.getAwsFileData()
+        ? await this.cloudStorageApiService.getFileContent(outreach.sourceFile)
         : await this.getLocalFileData(outreach.sourceFile);
 
     const checksum = this.checksumData(data);
@@ -103,18 +106,17 @@ export class OutreachFileProcessor implements OnModuleInit {
     return data;
   }
 
-  private async getLocalFileData(filePath: string): Promise<string> {
+  private async getLocalFileData(sourceFile: string): Promise<string> {
     try {
-      return await readFile(path.resolve(this.localBaseDir, filePath), 'utf-8');
+      return await readFile(
+        path.resolve(this.localBaseDir, sourceFile),
+        'utf-8',
+      );
     } catch (err) {
       throw new Error(
-        `Error reading file ${filePath}: ${asError(err).message}`,
+        `Error reading file ${sourceFile}: ${asError(err).message}`,
       );
     }
-  }
-
-  private getAwsFileData(): Promise<string> {
-    throw new Error('Not implemented');
   }
 
   private checksumData(dataString: string): string {

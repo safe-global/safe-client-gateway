@@ -231,10 +231,7 @@ export default (): ReturnType<typeof configuration> => ({
     fileStorage: {
       type: 'local',
       aws: {
-        accessKey: faker.string.alphanumeric(),
-        accessKeyId: faker.string.alphanumeric(),
         bucketName: faker.string.alphanumeric(),
-        s3CustomDomain: faker.internet.url({ appendSlash: false }),
         basePath: faker.system.directoryPath(),
       },
       local: {
