@@ -70,7 +70,7 @@ describe('OutreachFileProcessor', () => {
     );
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
     await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
     jest.clearAllMocks();
   });
