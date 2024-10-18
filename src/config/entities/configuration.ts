@@ -346,4 +346,25 @@ export default () => ({
       process.env.SWAPS_MAX_NUMBER_OF_PARTS ?? `${11}`,
     ),
   },
+  targetedMessaging: {
+    fileStorage: {
+      // The type of file storage to use. Defaults to 'local'.
+      // Supported values: 'aws', 'local'
+      type: process.env.TARGETED_MESSAGING_FILE_STORAGE_TYPE || 'local',
+      aws: {
+        // This will be ignored if the TARGETED_MESSAGING_FILE_STORAGE_TYPE is set to 'local'.
+        accessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        bucketName: process.env.AWS_STORAGE_BUCKET_NAME,
+        s3CustomDomain: process.env.AWS_S3_CUSTOM_DOMAIN,
+        basePath: process.env.AWS_S3_BASE_PATH || 'assets/targeted-messaging',
+      },
+      local: {
+        // This will be ignored if the TARGETED_MESSAGING_FILE_STORAGE_TYPE is set to 'aws'.
+        baseDir:
+          process.env.TARGETED_MESSAGING_LOCAL_BASE_DIR ||
+          'assets/targeted-messaging',
+      },
+    },
+  },
 });

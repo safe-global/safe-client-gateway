@@ -3,6 +3,7 @@ import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messa
 import { Module } from '@nestjs/common';
 
 const targetedMessagingDatasource = {
+  getUnprocessedOutreaches: jest.fn(),
   createOutreach: jest.fn(),
   createTargetedSafes: jest.fn(),
   getTargetedSafe: jest.fn(),
