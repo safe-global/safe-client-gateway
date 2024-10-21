@@ -13,7 +13,7 @@ import { createOutreachDtoBuilder } from '@/domain/targeted-messaging/entities/t
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
 import { createHash } from 'crypto';
-import { rm, writeFile } from 'fs/promises';
+import { mkdir, rm, writeFile } from 'fs/promises';
 import path from 'path';
 import type postgres from 'postgres';
 import { getAddress } from 'viem';
@@ -58,6 +58,7 @@ describe('OutreachFileProcessor', () => {
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
+    await mkdir(baseDir, { recursive: true });
     await writeFile(path.resolve(baseDir, fileName), contentString);
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') return faker.number.int();
