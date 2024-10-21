@@ -1,4 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -20,8 +21,6 @@ import {
 import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';
 import path from 'path';
-
-type FileStorageType = 'aws' | 'local';
 
 @Injectable()
 export class OutreachFileProcessor implements OnModuleInit, OnModuleDestroy {

@@ -1,8 +1,8 @@
-import { faker } from '@faker-js/faker';
 import { fakeJson } from '@/__tests__/faker';
-import { omit } from 'lodash';
 import configurationValidator from '@/config/configuration.validator';
-import { RootConfigurationSchema } from '@/config/configuration.module';
+import { RootConfigurationSchema } from '@/config/entities/schemas/configuration.schema';
+import { faker } from '@faker-js/faker';
+import { omit } from 'lodash';
 
 describe('Configuration validator', () => {
   const validConfiguration: Record<string, unknown> = {
@@ -181,7 +181,7 @@ describe('Configuration validator', () => {
     expect(() =>
       configurationValidator(invalidConfiguration, RootConfigurationSchema),
     ).toThrow(
-      /TARGETED_MESSAGING_FILE_STORAGE_TYPE Invalid enum value. Expected 'local' | 'cloud', received/,
+      /TARGETED_MESSAGING_FILE_STORAGE_TYPE Invalid enum value. Expected 'local' | 'aws', received/,
     );
   });
 
