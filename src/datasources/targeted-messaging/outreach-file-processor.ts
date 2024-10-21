@@ -7,7 +7,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
-import { OutreachFileSchema } from '@/datasources/targeted-messaging/entities/schemas/outreach-file.schema';
+import { OutreachFileSchema } from '@/datasources/targeted-messaging/entities/outreach-file.entity';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';

@@ -1,6 +1,8 @@
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 
+export type OutreachFile = z.infer<typeof OutreachFileSchema>;
+
 export const OutreachFileSchema = z.object({
   campaign_id: z.number().int().min(1),
   campaign_name: z.string(),
