@@ -4,6 +4,7 @@ import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.servi
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
 import { TargetedMessagingDatasource } from '@/datasources/targeted-messaging/targeted-messaging.datasource';
 import { createOutreachDtoBuilder } from '@/domain/targeted-messaging/entities/tests/create-outreach.dto.builder';
 import { createTargetedSafesDtoBuilder } from '@/domain/targeted-messaging/entities/tests/create-target-safes.dto.builder';
@@ -47,6 +48,7 @@ describe('TargetedMessagingDataSource tests', () => {
       mockLoggingService,
       new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockConfigurationService,
+      new OutreachDbMapper(),
     );
   });
 

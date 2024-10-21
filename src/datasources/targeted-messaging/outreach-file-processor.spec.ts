@@ -14,6 +14,7 @@ import { rm, writeFile } from 'fs/promises';
 import path from 'path';
 import type postgres from 'postgres';
 import { OutreachFileProcessor } from './outreach-file-processor';
+import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -59,6 +60,7 @@ describe('OutreachFileProcessor', () => {
       mockLoggingService,
       new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockConfigurationService,
+      new OutreachDbMapper(),
     );
 
     fileProcessor = new OutreachFileProcessor(

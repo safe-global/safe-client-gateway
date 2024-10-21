@@ -4,7 +4,7 @@ import { asError } from '@/logging/utils';
 import { S3 } from '@aws-sdk/client-s3';
 import { Inject, Injectable } from '@nestjs/common';
 import path from 'path';
-import type { Readable } from 'stream';
+import { Readable } from 'stream';
 
 @Injectable()
 export class AwsCloudStorageApiService implements ICloudStorageApiService {
@@ -31,7 +31,11 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
         Bucket: this.bucket,
         Key: path.posix.join(this.basePath, sourceFile),
       });
-      return await this.streamToString(response.Body as Readable);
+      if (response.Body instanceof Readable) {
+        return await this.streamToString(response.Body);
+      } else {
+        throw new Error('Unexpected response body type');
+      }
     } catch (err) {
       throw new Error(
         `Error getting file content from S3: ${asError(err).message}`,

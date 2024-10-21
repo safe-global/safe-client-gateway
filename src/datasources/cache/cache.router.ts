@@ -688,10 +688,11 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.TARGETED_MESSAGING_OUTREACHES, '');
   }
 
+  static getOutreachFileProcessorCacheKey(): string {
+    return CacheRouter.TARGETED_MESSAGING_OUTREACH_FILE_PROCESSOR_LOCK;
+  }
+
   static getOutreachFileProcessorCacheDir(): CacheDir {
-    return new CacheDir(
-      CacheRouter.TARGETED_MESSAGING_OUTREACH_FILE_PROCESSOR_LOCK,
-      '',
-    );
+    return new CacheDir(CacheRouter.getOutreachFileProcessorCacheKey(), '');
   }
 }
