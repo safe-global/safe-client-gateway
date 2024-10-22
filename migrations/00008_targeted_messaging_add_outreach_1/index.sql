@@ -15,5 +15,5 @@ INSERT INTO outreaches (
     '',
     '',
     'cluster_5_campaign.json',
-    '443bf977e13c19788cd8e677e7efa73e2820d8c2bb68377a6ae1644e69486115'
+    'ba79d7b59fc99d2c967a5bef772333bdfac8c146de02f10bbd20eb1735353a2b'
 );
