@@ -58,8 +58,7 @@ describe('OutreachFileProcessor', () => {
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
-    await mkdir(baseDir, { recursive: true });
-    await writeFile(path.resolve(baseDir, fileName), contentString);
+    await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') return faker.number.int();
       if (key === 'targetedMessaging.fileStorage.type') return 'local';
@@ -85,13 +84,18 @@ describe('OutreachFileProcessor', () => {
   });
 
   beforeEach(async () => {
+    await mkdir(baseDir, { recursive: true });
+    await writeFile(path.resolve(baseDir, fileName), contentString);
+  });
+
+  afterEach(async () => {
     await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
+    await rm(path.resolve(baseDir, fileName));
     jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
-    await rm(path.resolve(baseDir, fileName));
   });
 
   it('should not process Outreach data files of the lock is set', async () => {
@@ -266,7 +270,19 @@ describe('OutreachFileProcessor', () => {
   });
 
   it('should checksum the Targeted Safes addresses in the data file', async () => {
+    const outreachFile = outreachFileBuilder()
+      .with(
+        'safe_addresses',
+        Array.from(
+          { length: faker.number.int({ min: 10, max: 50 }) },
+          () => faker.finance.ethereumAddress().toLowerCase() as `0x${string}`, // not checksummed
+        ),
+      )
+      .build();
+    const contentString = JSON.stringify(outreachFile);
+    const fileChecksum = getChecksum(contentString);
     const sourceFile = path.resolve(baseDir, fileName);
+    await writeFile(path.resolve(baseDir, fileName), contentString);
     const created = await targetedMessagingDatasource.createOutreach(
       createOutreachDtoBuilder()
         .with('sourceId', outreachFile.campaign_id)
