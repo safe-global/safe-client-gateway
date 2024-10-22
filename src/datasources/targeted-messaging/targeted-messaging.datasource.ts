@@ -22,6 +22,7 @@ import { asError } from '@/logging/utils';
 import { Inject, UnprocessableEntityException } from '@nestjs/common';
 import postgres from 'postgres';
 import { UpdateOutreachDto } from '@/domain/targeted-messaging/entities/update-outreach.dto.entity';
+import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
 
 export class TargetedMessagingDatasource
   implements ITargetedMessagingDatasource
@@ -36,6 +37,7 @@ export class TargetedMessagingDatasource
     private readonly cachedQueryResolver: CachedQueryResolver,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly outreachDbMapper: OutreachDbMapper,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -66,22 +68,7 @@ export class TargetedMessagingDatasource
       throw new UnprocessableEntityException('Error creating outreach');
     });
 
-    return {
-      id: outreach.id,
-      name: outreach.name,
-      startDate: this.parseDate(outreach.start_date),
-      endDate: this.parseDate(outreach.end_date),
-      sourceId: outreach.source_id,
-      type: outreach.type,
-      teamName: outreach.team_name,
-      sourceFile: outreach.source_file,
-      sourceFileProcessedDate: outreach.source_file_processed_date
-        ? this.parseDate(outreach.source_file_processed_date)
-        : null,
-      sourceFileChecksum: outreach.source_file_checksum,
-      created_at: this.parseDate(outreach.created_at),
-      updated_at: this.parseDate(outreach.updated_at),
-    };
+    return this.outreachDbMapper.map(outreach);
   }
 
   async updateOutreach(
@@ -102,22 +89,7 @@ export class TargetedMessagingDatasource
       throw new UnprocessableEntityException('Error updating outreach');
     });
 
-    return {
-      id: outreach.id,
-      name: outreach.name,
-      startDate: this.parseDate(outreach.start_date),
-      endDate: this.parseDate(outreach.end_date),
-      sourceId: outreach.source_id,
-      type: outreach.type,
-      teamName: outreach.team_name,
-      sourceFile: outreach.source_file,
-      sourceFileProcessedDate: outreach.source_file_processed_date
-        ? this.parseDate(outreach.source_file_processed_date)
-        : null,
-      sourceFileChecksum: outreach.source_file_checksum,
-      created_at: this.parseDate(outreach.created_at),
-      updated_at: this.parseDate(outreach.updated_at),
-    };
+    return this.outreachDbMapper.map(outreach);
   }
 
   async getUnprocessedOutreaches(): Promise<Outreach[]> {
@@ -157,22 +129,7 @@ export class TargetedMessagingDatasource
       );
     });
 
-    return {
-      id: updatedOutreach.id,
-      name: updatedOutreach.name,
-      startDate: this.parseDate(updatedOutreach.start_date),
-      endDate: this.parseDate(updatedOutreach.end_date),
-      sourceId: updatedOutreach.source_id,
-      type: updatedOutreach.type,
-      teamName: updatedOutreach.team_name,
-      sourceFile: updatedOutreach.source_file,
-      sourceFileProcessedDate: updatedOutreach.source_file_processed_date
-        ? this.parseDate(updatedOutreach.source_file_processed_date)
-        : null,
-      sourceFileChecksum: updatedOutreach.source_file_checksum,
-      created_at: this.parseDate(updatedOutreach.created_at),
-      updated_at: this.parseDate(updatedOutreach.updated_at),
-    };
+    return this.outreachDbMapper.map(updatedOutreach);
   }
 
   async createTargetedSafes(

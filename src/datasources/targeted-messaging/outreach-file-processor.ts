@@ -1,4 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -6,20 +7,23 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
-import { OutreachFileSchema } from '@/datasources/targeted-messaging/entities/schemas/outreach-file.schema';
+import { OutreachFileSchema } from '@/datasources/targeted-messaging/entities/outreach-file.entity';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
-import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';
 import path from 'path';
 
-type FileStorageType = 'aws' | 'local';
-
 @Injectable()
-export class OutreachFileProcessor implements OnModuleInit {
+export class OutreachFileProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly storageType: FileStorageType;
   private readonly localBaseDir: string;
 
@@ -42,16 +46,24 @@ export class OutreachFileProcessor implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
-    const lockCacheDir = CacheRouter.getOutreachFileProcessorCacheDir();
     try {
+      const lockCacheDir = CacheRouter.getOutreachFileProcessorCacheDir();
       const lock = await this.cacheService.hGet(lockCacheDir);
       if (!lock) {
         await this.cacheService.hSet(lockCacheDir, 'true', MAX_TTL);
         await this.processOutreachFiles();
       }
     } finally {
-      await this.cacheService.deleteByKey(lockCacheDir.key);
+      await this.cacheService.deleteByKey(
+        CacheRouter.getOutreachFileProcessorCacheKey(),
+      );
     }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    await this.cacheService.deleteByKey(
+      CacheRouter.getOutreachFileProcessorCacheKey(),
+    );
   }
 
   private async processOutreachFiles(): Promise<void> {

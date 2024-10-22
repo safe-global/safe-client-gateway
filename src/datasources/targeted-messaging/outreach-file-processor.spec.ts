@@ -5,14 +5,18 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
+import { outreachFileBuilder } from '@/datasources/targeted-messaging/entities/__tests__/outreach-file.builder';
+import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
+import type { TargetedSafe as DbTargetedSafe } from '@/datasources/targeted-messaging/entities/targeted-safe.entity';
 import { TargetedMessagingDatasource } from '@/datasources/targeted-messaging/targeted-messaging.datasource';
 import { createOutreachDtoBuilder } from '@/domain/targeted-messaging/entities/tests/create-outreach.dto.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
 import { createHash } from 'crypto';
-import { rm, writeFile } from 'fs/promises';
+import { mkdir, rm, writeFile } from 'fs/promises';
 import path from 'path';
 import type postgres from 'postgres';
+import { getAddress } from 'viem';
 import { OutreachFileProcessor } from './outreach-file-processor';
 
 const mockLoggingService = {
@@ -30,23 +34,32 @@ const mockCloudStorageApiService = jest.mocked({
   getFileContent: jest.fn(),
 } as jest.MockedObjectDeep<ICloudStorageApiService>);
 
+function getChecksum(content: string): string {
+  const hash = createHash('sha256');
+  hash.update(content);
+  return hash.digest('hex');
+}
+
 describe('OutreachFileProcessor', () => {
   let fakeCacheService: FakeCacheService;
   let sql: postgres.Sql;
   let migrator: PostgresDatabaseMigrator;
   let fileProcessor: OutreachFileProcessor;
   let targetedMessagingDatasource: TargetedMessagingDatasource;
-  const baseDir = 'assets/targeted-messaging';
-  const fileName = 'sample.json';
-  const fileChecksum =
-    'f1cd6d9c293d46143c944aa11fa0383aae90307ff770a6a9cde510ff6326de01';
   const testDbFactory = new TestDbFactory();
+  const baseDir = 'assets/targeted-messaging';
+  const fileName = faker.system.commonFileName();
+  const outreachFile = outreachFileBuilder().build();
+  const contentString = JSON.stringify(outreachFile);
+  const fileChecksum = getChecksum(contentString);
 
   beforeAll(async () => {
     fakeCacheService = new FakeCacheService();
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
+    await mkdir(baseDir, { recursive: true });
+    await writeFile(path.resolve(baseDir, fileName), contentString);
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') return faker.number.int();
       if (key === 'targetedMessaging.fileStorage.type') return 'local';
@@ -59,6 +72,7 @@ describe('OutreachFileProcessor', () => {
       mockLoggingService,
       new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockConfigurationService,
+      new OutreachDbMapper(),
     );
 
     fileProcessor = new OutreachFileProcessor(
@@ -77,6 +91,7 @@ describe('OutreachFileProcessor', () => {
 
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
+    await rm(path.resolve(baseDir, fileName));
   });
 
   it('should not process Outreach data files of the lock is set', async () => {
@@ -206,7 +221,7 @@ describe('OutreachFileProcessor', () => {
     const sourceFile = path.resolve(baseDir, fileName);
     const created = await targetedMessagingDatasource.createOutreach(
       createOutreachDtoBuilder()
-        .with('sourceId', 1)
+        .with('sourceId', outreachFile.campaign_id)
         .with('sourceFile', sourceFile)
         .with('sourceFileChecksum', fileChecksum)
         .build(),
@@ -219,17 +234,17 @@ describe('OutreachFileProcessor', () => {
     // assert the Outreach was updated with the contents of the data file
     const [updated] =
       await sql`SELECT * FROM outreaches WHERE id = ${created.id}`;
-    expect(updated.name).toBe('test_wallet_campaign');
-    expect(updated.team_name).toBe('test_team_name');
-    expect(updated.start_date).toStrictEqual(new Date('2024-10-21'));
-    expect(updated.end_date).toStrictEqual(new Date('2024-10-28'));
+    expect(updated.name).toBe(outreachFile.campaign_name);
+    expect(updated.team_name).toBe(outreachFile.team_name);
+    expect(updated.start_date).toStrictEqual(outreachFile.start_date);
+    expect(updated.end_date).toStrictEqual(outreachFile.end_date);
   });
 
   it('should add the Targeted Safes present in the data file', async () => {
     const sourceFile = path.resolve(baseDir, fileName);
     const created = await targetedMessagingDatasource.createOutreach(
       createOutreachDtoBuilder()
-        .with('sourceId', 1)
+        .with('sourceId', outreachFile.campaign_id)
         .with('sourceFile', sourceFile)
         .with('sourceFileChecksum', fileChecksum)
         .build(),
@@ -242,10 +257,37 @@ describe('OutreachFileProcessor', () => {
     // assert the Targeted Safes were created
     const targetedSafes =
       await sql`SELECT * FROM targeted_safes WHERE outreach_id = ${created.id}`;
-    expect(targetedSafes).toHaveLength(10);
+    expect(targetedSafes).toHaveLength(outreachFile.safe_addresses.length);
     expect(
       targetedSafes.every(
         (targetedSafe) => targetedSafe.outreach_id === created.id,
+      ),
+    ).toBeTruthy();
+  });
+
+  it('should checksum the Targeted Safes addresses in the data file', async () => {
+    const sourceFile = path.resolve(baseDir, fileName);
+    const created = await targetedMessagingDatasource.createOutreach(
+      createOutreachDtoBuilder()
+        .with('sourceId', outreachFile.campaign_id)
+        .with('sourceFile', sourceFile)
+        .with('sourceFileChecksum', fileChecksum)
+        .build(),
+    );
+    const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
+    await fakeCacheService.deleteByKey(lockCacheKey.key);
+
+    await fileProcessor.onModuleInit();
+
+    // assert the Targeted Safes were created
+    const targetedSafes: DbTargetedSafe[] =
+      await sql`SELECT * FROM targeted_safes WHERE outreach_id = ${created.id}`;
+    expect(targetedSafes).toHaveLength(outreachFile.safe_addresses.length);
+    // assert the Targeted Safes addresses were checksummed
+    expect(
+      targetedSafes.every(
+        (targetedSafe) =>
+          getAddress(targetedSafe.address) === targetedSafe.address,
       ),
     ).toBeTruthy();
   });
@@ -254,7 +296,7 @@ describe('OutreachFileProcessor', () => {
     const sourceFile = path.resolve(baseDir, fileName);
     const created = await targetedMessagingDatasource.createOutreach(
       createOutreachDtoBuilder()
-        .with('sourceId', 1)
+        .with('sourceId', outreachFile.campaign_id)
         .with('sourceFile', sourceFile)
         .with('sourceFileChecksum', fileChecksum)
         .build(),
