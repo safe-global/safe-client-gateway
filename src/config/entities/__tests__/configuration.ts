@@ -241,4 +241,16 @@ export default (): ReturnType<typeof configuration> => ({
     allowedApps: [],
     maxNumberOfParts: faker.number.int(),
   },
+  targetedMessaging: {
+    fileStorage: {
+      type: 'local',
+      aws: {
+        bucketName: faker.string.alphanumeric(),
+        basePath: faker.system.directoryPath(),
+      },
+      local: {
+        baseDir: 'assets/targeted-messaging',
+      },
+    },
+  },
 });

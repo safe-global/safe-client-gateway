@@ -21,6 +21,8 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { Inject, UnprocessableEntityException } from '@nestjs/common';
 import postgres from 'postgres';
+import { UpdateOutreachDto } from '@/domain/targeted-messaging/entities/update-outreach.dto.entity';
+import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
 
 export class TargetedMessagingDatasource
   implements ITargetedMessagingDatasource
@@ -35,6 +37,7 @@ export class TargetedMessagingDatasource
     private readonly cachedQueryResolver: CachedQueryResolver,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly outreachDbMapper: OutreachDbMapper,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -65,11 +68,40 @@ export class TargetedMessagingDatasource
       throw new UnprocessableEntityException('Error creating outreach');
     });
 
-    return {
+    return this.outreachDbMapper.map(outreach);
+  }
+
+  async updateOutreach(
+    updateOutreachDto: UpdateOutreachDto,
+  ): Promise<Outreach> {
+    const [outreach] = await this.sql<DbOutreach[]>`
+    UPDATE outreaches SET
+      name = ${updateOutreachDto.name},
+      start_date = ${updateOutreachDto.startDate},
+      end_date = ${updateOutreachDto.endDate},
+      type = ${updateOutreachDto.type},
+      team_name = ${updateOutreachDto.teamName}
+    WHERE source_id = ${updateOutreachDto.sourceId}
+    RETURNING *`.catch((err) => {
+      this.loggingService.warn(
+        `Error creating outreach: ${asError(err).message}`,
+      );
+      throw new UnprocessableEntityException('Error updating outreach');
+    });
+
+    return this.outreachDbMapper.map(outreach);
+  }
+
+  async getUnprocessedOutreaches(): Promise<Outreach[]> {
+    const outreaches = await this.sql<
+      DbOutreach[]
+    >`SELECT * FROM outreaches WHERE source_file_processed_date IS NULL`;
+
+    return outreaches.map((outreach) => ({
       id: outreach.id,
       name: outreach.name,
-      startDate: outreach.start_date,
-      endDate: outreach.end_date,
+      startDate: this.parseDate(outreach.start_date),
+      endDate: this.parseDate(outreach.end_date),
       sourceId: outreach.source_id,
       type: outreach.type,
       teamName: outreach.team_name,
@@ -80,7 +112,24 @@ export class TargetedMessagingDatasource
       sourceFileChecksum: outreach.source_file_checksum,
       created_at: this.parseDate(outreach.created_at),
       updated_at: this.parseDate(outreach.updated_at),
-    };
+    }));
+  }
+
+  async markOutreachAsProcessed(outreach: Outreach): Promise<Outreach> {
+    const [updatedOutreach] = await this.sql<DbOutreach[]>`
+      UPDATE outreaches
+      SET source_file_processed_date = ${new Date()}
+      WHERE id = ${outreach.id}
+      RETURNING *`.catch((err) => {
+      this.loggingService.warn(
+        `Error marking outreach as processed: ${asError(err).message}`,
+      );
+      throw new UnprocessableEntityException(
+        'Error marking outreach as processed',
+      );
+    });
+
+    return this.outreachDbMapper.map(updatedOutreach);
   }
 
   async createTargetedSafes(

@@ -47,6 +47,10 @@ export class CacheRouter {
   private static readonly STAKING_STAKES_KEY = 'staking_stakes';
   private static readonly STAKING_TRANSACTION_STATUS_KEY =
     'staking_transaction_status';
+  private static readonly TARGETED_MESSAGING_OUTREACHES =
+    'targeted_messaging_outreaches';
+  private static readonly TARGETED_MESSAGING_OUTREACH_FILE_PROCESSOR_LOCK =
+    'targeted_messaging_outreach_file_processor_lock';
   private static readonly TARGETED_MESSAGING_SUBMISSION_KEY =
     'targeted_messaging_submission';
   private static readonly TARGETED_MESSAGING_TARGETED_SAFE_KEY =
@@ -678,5 +682,17 @@ export class CacheRouter {
       CacheRouter.getSubmissionCacheKey(args.outreachId),
       `${args.safeAddress}_${args.signerAddress}`,
     );
+  }
+
+  static getOutreachesCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.TARGETED_MESSAGING_OUTREACHES, '');
+  }
+
+  static getOutreachFileProcessorCacheKey(): string {
+    return CacheRouter.TARGETED_MESSAGING_OUTREACH_FILE_PROCESSOR_LOCK;
+  }
+
+  static getOutreachFileProcessorCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.getOutreachFileProcessorCacheKey(), '');
   }
 }
