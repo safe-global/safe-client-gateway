@@ -23,6 +23,8 @@ import { Inject, UnprocessableEntityException } from '@nestjs/common';
 import postgres from 'postgres';
 import { UpdateOutreachDto } from '@/domain/targeted-messaging/entities/update-outreach.dto.entity';
 import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
+import { SubmissionDbMapper } from '@/datasources/targeted-messaging/entities/submission.db.mapper';
+import { TargetedSafeDbMapper } from '@/datasources/targeted-messaging/entities/targeted-safe.db.mapper';
 
 export class TargetedMessagingDatasource
   implements ITargetedMessagingDatasource
@@ -38,6 +40,8 @@ export class TargetedMessagingDatasource
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly outreachDbMapper: OutreachDbMapper,
+    private readonly submissionDbMapper: SubmissionDbMapper,
+    private readonly targetedSafeDbMapper: TargetedSafeDbMapper,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -155,13 +159,9 @@ export class TargetedMessagingDatasource
         DbTargetedSafe[]
       >`SELECT * FROM targeted_safes WHERE id = ANY(${inserted.map((i) => i.id)})`;
 
-      return targetedSafes.map((targetedSafe) => ({
-        id: targetedSafe.id,
-        outreachId: targetedSafe.outreach_id,
-        address: targetedSafe.address,
-        created_at: this.parseDate(targetedSafe.created_at),
-        updated_at: this.parseDate(targetedSafe.updated_at),
-      }));
+      return targetedSafes.map((targetedSafe) =>
+        this.targetedSafeDbMapper.map(targetedSafe),
+      );
     });
 
     await this.cacheService.deleteByKey(
@@ -189,13 +189,7 @@ export class TargetedMessagingDatasource
       throw new TargetedSafeNotFoundError();
     }
 
-    return {
-      id: targetedSafe.id,
-      address: targetedSafe.address,
-      outreachId: targetedSafe.outreach_id,
-      created_at: this.parseDate(targetedSafe.created_at),
-      updated_at: this.parseDate(targetedSafe.updated_at),
-    };
+    return this.targetedSafeDbMapper.map(targetedSafe);
   }
 
   async createSubmission(args: {
@@ -215,15 +209,7 @@ export class TargetedMessagingDatasource
       CacheRouter.getSubmissionCacheKey(args.targetedSafe.outreachId),
     );
 
-    return {
-      id: submission.id,
-      outreachId: args.targetedSafe.outreachId,
-      targetedSafeId: submission.targeted_safe_id,
-      signerAddress: submission.signer_address,
-      completionDate: this.parseDate(submission.completion_date),
-      created_at: this.parseDate(submission.created_at),
-      updated_at: this.parseDate(submission.updated_at),
-    };
+    return this.submissionDbMapper.map(submission, args.targetedSafe);
   }
 
   async getSubmission(args: {
@@ -246,15 +232,7 @@ export class TargetedMessagingDatasource
       throw new SubmissionNotFoundError();
     }
 
-    return {
-      id: submission.id,
-      outreachId: args.targetedSafe.outreachId,
-      targetedSafeId: args.targetedSafe.id,
-      signerAddress: args.signerAddress,
-      completionDate: this.parseDate(submission.completion_date),
-      created_at: this.parseDate(submission.created_at),
-      updated_at: this.parseDate(submission.updated_at),
-    };
+    return this.submissionDbMapper.map(submission, args.targetedSafe);
   }
 
   private parseDate(date: Date | string): Date {
