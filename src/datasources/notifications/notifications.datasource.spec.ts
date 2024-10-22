@@ -2,7 +2,7 @@ import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/upsert-subscriptions.dto.entity.builder';
 import { NotificationsDatasource } from '@/datasources/notifications/notifications.datasource';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import type { UUID } from 'crypto';
 import type { ILoggingService } from '@/logging/logging.interface';

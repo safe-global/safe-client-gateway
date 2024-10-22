@@ -1,5 +1,5 @@
-import { RowSchema } from '@/datasources/db/entities/row.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { z } from 'zod';
 
 export type Outreach = z.infer<typeof OutreachSchema>;
