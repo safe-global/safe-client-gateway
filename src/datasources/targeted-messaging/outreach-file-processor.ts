@@ -69,6 +69,9 @@ export class OutreachFileProcessor implements OnModuleInit, OnModuleDestroy {
   private async processOutreachFiles(): Promise<void> {
     const outreaches = await this.datasource.getUnprocessedOutreaches();
     for (const outreach of outreaches) {
+      this.loggingService.info(
+        `[Outreach ${outreach.id}] Processing outreach ${outreach.sourceId}`,
+      );
       await this.processOutreach(outreach);
     }
   }
@@ -86,14 +89,20 @@ export class OutreachFileProcessor implements OnModuleInit, OnModuleDestroy {
         type: 'new_outreach',
         teamName: outreachData.team_name,
       });
-      await this.datasource.createTargetedSafes({
+      const createdTargetedSafes = await this.datasource.createTargetedSafes({
         outreachId: outreach.id,
         addresses: outreachData.safe_addresses,
       });
+      this.loggingService.info(
+        `[Outreach ${outreach.id}] ${createdTargetedSafes.length} targeted safes created`,
+      );
       await this.datasource.markOutreachAsProcessed(outreach);
+      this.loggingService.info(
+        `[Outreach ${outreach.id}] Outreach ${outreach.sourceId} was processed`,
+      );
     } catch (err) {
       this.loggingService.error(
-        `Error parsing Outreach ${outreach.id} data file: ${asError(err).message}`,
+        `[Outreach ${outreach.id}] Error parsing data file: ${asError(err).message}`,
       );
     }
   }
@@ -114,6 +123,10 @@ export class OutreachFileProcessor implements OnModuleInit, OnModuleDestroy {
         `Checksum expected ${outreach.sourceFileChecksum}, but found ${checksum}`,
       );
     }
+
+    this.loggingService.info(
+      `[Outreach ${outreach.id}] Data file ${outreach.sourceFile} read from ${this.storageType}`,
+    );
 
     return data;
   }
