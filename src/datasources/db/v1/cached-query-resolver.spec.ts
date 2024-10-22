@@ -1,6 +1,6 @@
 import { fakeJson } from '@/__tests__/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
+import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { InternalServerErrorException } from '@nestjs/common';

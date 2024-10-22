@@ -18,7 +18,9 @@ import type { Server } from 'net';
 import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
 import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Post Hook Events (Unit)', () => {
   let app: INestApplication<Server>;
@@ -41,6 +43,8 @@ describe('Post Hook Events (Unit)', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(NotificationsDatasourceModule)
       .useModule(TestNotificationsDatasourceModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
     app = moduleFixture.createNestApplication();
 
