@@ -8,6 +8,8 @@ import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import type { SafeApp } from '@/routes/safe-apps/entities/safe-app.entity';
 import type { Server } from 'net';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Get Safe Apps e2e test', () => {
   let app: INestApplication<Server>;
@@ -21,6 +23,8 @@ describe('Get Safe Apps e2e test', () => {
     })
       .overrideProvider(CacheKeyPrefix)
       .useValue(cacheKeyPrefix)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     app = await new TestAppProvider().provide(moduleRef);
