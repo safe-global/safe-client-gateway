@@ -8,7 +8,7 @@ import { Readable } from 'stream';
 
 @Injectable()
 export class AwsCloudStorageApiService implements ICloudStorageApiService {
-  private s3Client: S3;
+  private readonly s3Client: S3;
   private readonly bucket: string;
   private readonly basePath: string;
 
