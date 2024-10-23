@@ -18,6 +18,8 @@ import path from 'path';
 import type postgres from 'postgres';
 import { getAddress } from 'viem';
 import { OutreachFileProcessor } from './outreach-file-processor';
+import { SubmissionDbMapper } from '@/datasources/targeted-messaging/entities/submission.db.mapper';
+import { TargetedSafeDbMapper } from '@/datasources/targeted-messaging/entities/targeted-safe.db.mapper';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -72,6 +74,8 @@ describe('OutreachFileProcessor', () => {
       new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockConfigurationService,
       new OutreachDbMapper(),
+      new SubmissionDbMapper(),
+      new TargetedSafeDbMapper(),
     );
 
     fileProcessor = new OutreachFileProcessor(
