@@ -134,7 +134,7 @@ describe('OutreachFileProcessor', () => {
     ).toHaveLength(1);
     expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
     expect(mockLoggingService.error).toHaveBeenCalledWith(
-      `Error parsing Outreach ${created.id} data file: No source file`,
+      `[Outreach ${created.id}] Error parsing data file: No source file`,
     );
   });
 
@@ -157,7 +157,7 @@ describe('OutreachFileProcessor', () => {
     ).toHaveLength(1);
     expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
     expect(mockLoggingService.error).toHaveBeenCalledWith(
-      `Error parsing Outreach ${created.id} data file: Checksum expected ${expectedChecksum}, but found ${fileChecksum}`,
+      `[Outreach ${created.id}] Error parsing data file: Checksum expected ${expectedChecksum}, but found ${fileChecksum}`,
     );
   });
 
@@ -217,7 +217,7 @@ describe('OutreachFileProcessor', () => {
       expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.stringContaining(
-          `Error parsing Outreach ${created.id} data file`,
+          `[Outreach ${created.id}] Error parsing data file`,
         ),
       );
     } finally {
