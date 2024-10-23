@@ -164,6 +164,7 @@ export default (): ReturnType<typeof configuration> => ({
   mappings: {
     imitation: {
       lookupDistance: faker.number.int(),
+      valueTolerance: faker.number.bigInt(),
       prefixLength: faker.number.int(),
       suffixLength: faker.number.int(),
     },
