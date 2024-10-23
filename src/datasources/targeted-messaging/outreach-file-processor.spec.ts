@@ -58,6 +58,7 @@ describe('OutreachFileProcessor', () => {
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
+    await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') return faker.number.int();
       if (key === 'targetedMessaging.fileStorage.type') return 'local';
