@@ -1,35 +1,41 @@
 import postgres from 'postgres';
 import { Module } from '@nestjs/common';
-import { PostgresDatabaseShutdownHook } from '@/datasources/db/postgres-database.shutdown.hook';
+import { PostgresDatabaseShutdownHook } from '@/datasources/db/v1/postgres-database.shutdown.hook';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseMigrationHook } from '@/datasources/db/postgres-database.migration.hook';
+import { PostgresDatabaseMigrationHook } from '@/datasources/db/v1/postgres-database.migration.hook';
 import fs from 'fs';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
-import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
-import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
+import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
 
 function dbFactory(configurationService: IConfigurationService): postgres.Sql {
-  const caPath = configurationService.get<string>('db.postgres.ssl.caPath');
+  const caPath = configurationService.get<string>(
+    'db.connection.postgres.ssl.caPath',
+  );
   const ca: string | undefined =
     caPath && caPath.length > 0 ? fs.readFileSync(caPath, 'utf8') : undefined;
 
-  const sslConfig = configurationService.getOrThrow('db.postgres.ssl.enabled')
+  const sslConfig = configurationService.getOrThrow(
+    'db.connection.postgres.ssl.enabled',
+  )
     ? {
         requestCert: configurationService.getOrThrow(
-          'db.postgres.ssl.requestCert',
+          'db.connection.postgres.ssl.requestCert',
         ),
         rejectUnauthorized: configurationService.getOrThrow(
-          'db.postgres.ssl.rejectUnauthorized',
+          'db.connection.postgres.ssl.rejectUnauthorized',
         ),
         ca,
       }
     : false;
   return postgres({
-    host: configurationService.getOrThrow('db.postgres.host'),
-    port: configurationService.getOrThrow('db.postgres.port'),
-    db: configurationService.getOrThrow('db.postgres.database'),
-    user: configurationService.getOrThrow('db.postgres.username'),
-    password: configurationService.getOrThrow('db.postgres.password'),
+    host: configurationService.getOrThrow('db.connection.postgres.host'),
+    port: configurationService.getOrThrow('db.connection.postgres.port'),
+    db: configurationService.getOrThrow('db.connection.postgres.database'),
+    user: configurationService.getOrThrow('db.connection.postgres.username'),
+    password: configurationService.getOrThrow(
+      'db.connection.postgres.password',
+    ),
     ssl: sslConfig,
   });
 }

@@ -6,6 +6,8 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { Server } from 'net';
 import request from 'supertest';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Get about e2e test', () => {
   let app: INestApplication<Server>;
@@ -17,6 +19,8 @@ describe('Get about e2e test', () => {
     })
       .overrideProvider(CacheKeyPrefix)
       .useValue(cacheKeyPrefix)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     app = moduleRef.createNestApplication();

@@ -1,4 +1,4 @@
-import { RowSchema } from '@/datasources/db/entities/row.entity';
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { AccountSchema } from '@/domain/accounts/entities/account.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';

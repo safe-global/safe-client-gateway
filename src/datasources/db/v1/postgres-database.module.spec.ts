@@ -1,7 +1,7 @@
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { Test } from '@nestjs/testing';
 import { join } from 'path';
@@ -19,12 +19,14 @@ describe('PostgresDatabaseModule tests', () => {
       ...baseConfiguration,
       db: {
         ...baseConfiguration.db,
-        postgres: {
-          ...baseConfiguration.db.postgres,
-          ssl: {
-            ...baseConfiguration.db.postgres.ssl,
-            enabled: !isCIContext,
-            caPath: join(__dirname, '../../../db_config/test/server.crt'),
+        connection: {
+          postgres: {
+            ...baseConfiguration.db.connection.postgres,
+            ssl: {
+              ...baseConfiguration.db.connection.postgres.ssl,
+              enabled: !isCIContext,
+              caPath: join(__dirname, '../../../../db_config/test/server.crt'),
+            },
           },
         },
       },

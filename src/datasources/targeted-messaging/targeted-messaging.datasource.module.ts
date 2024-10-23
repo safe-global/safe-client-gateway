@@ -1,4 +1,4 @@
-import { PostgresDatabaseModule } from '@/datasources/db/postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { CloudStorageModule } from '@/datasources/storage/cloud-storage.module';
 import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
 import { SubmissionDbMapper } from '@/datasources/targeted-messaging/entities/submission.db.mapper';
