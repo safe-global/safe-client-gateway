@@ -15,6 +15,8 @@ import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { TEST_SAFE } from '@/routes/common/__tests__/constants';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;
@@ -43,6 +45,8 @@ describe('Events queue processing e2e tests', () => {
     })
       .overrideProvider(CacheKeyPrefix)
       .useValue(cacheKeyPrefix)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     app = await new TestAppProvider().provide(moduleRef);

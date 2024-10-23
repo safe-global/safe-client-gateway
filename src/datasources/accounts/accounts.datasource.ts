@@ -5,8 +5,8 @@ import {
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
-import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
-import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
+import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
+import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
 import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
 import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
 import { Account } from '@/domain/accounts/entities/account.entity';

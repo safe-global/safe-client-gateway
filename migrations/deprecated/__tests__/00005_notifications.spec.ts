@@ -1,5 +1,5 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
 import { UUID } from 'crypto';
 import { faker } from '@faker-js/faker';

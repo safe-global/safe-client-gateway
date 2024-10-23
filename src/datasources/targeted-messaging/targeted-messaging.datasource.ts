@@ -4,8 +4,8 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
-import { ICachedQueryResolver } from '@/datasources/db/cached-query-resolver.interface';
+import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
+import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
 import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
 import { Outreach as DbOutreach } from '@/datasources/targeted-messaging/entities/outreach.entity';
 import { SubmissionDbMapper } from '@/datasources/targeted-messaging/entities/submission.db.mapper';
