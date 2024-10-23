@@ -60,6 +60,8 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
   const suffixLength = 4;
   const valueTolerance = BigInt(1);
   const echoLimit = BigInt(10);
+  const chain = chainBuilder().build();
+  const safe = safeBuilder().build();
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -110,9 +112,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
   afterAll(async () => {
     await app.close();
   });
-
-  const chain = chainBuilder().build();
-  const safe = safeBuilder().build();
 
   describe('Event spoofing', () => {
     function parseUnits(value: bigint, decimals: number): bigint {
