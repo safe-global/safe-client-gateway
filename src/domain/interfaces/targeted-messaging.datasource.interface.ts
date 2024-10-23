@@ -3,6 +3,7 @@ import type { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entitie
 import type { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import type { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
 import type { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
+import type { UpdateOutreachDto } from '@/domain/targeted-messaging/entities/update-outreach.dto.entity';
 
 export const ITargetedMessagingDatasource = Symbol(
   'ITargetedMessagingDatasource',
@@ -10,6 +11,12 @@ export const ITargetedMessagingDatasource = Symbol(
 
 export interface ITargetedMessagingDatasource {
   createOutreach(createOutreachDto: CreateOutreachDto): Promise<Outreach>;
+
+  updateOutreach(updateOutreachDto: UpdateOutreachDto): Promise<Outreach>;
+
+  getUnprocessedOutreaches(): Promise<Outreach[]>;
+
+  markOutreachAsProcessed(outreach: Outreach): Promise<Outreach>;
 
   createTargetedSafes(
     createTargetedSafesDto: CreateTargetedSafesDto,

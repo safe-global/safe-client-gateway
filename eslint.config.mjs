@@ -31,6 +31,7 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-floating-promises': 'warn',
+      'no-nested-ternary': 'error',
       'no-restricted-imports': [
         'error',
         {

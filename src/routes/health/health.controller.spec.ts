@@ -18,6 +18,10 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import type { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 import type { Server } from 'net';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Health Controller tests', () => {
   let app: INestApplication<Server>;
@@ -30,6 +34,8 @@ describe('Health Controller tests', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -38,6 +44,8 @@ describe('Health Controller tests', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);

@@ -27,7 +27,7 @@ export class TransferImitationMapper {
   private readonly prefixLength: number;
   private readonly suffixLength: number;
   private readonly valueTolerance: bigint;
-  private readonly echoLimit = BigInt(10);
+  private readonly echoLimit: bigint;
 
   constructor(
     @Inject(IConfigurationService)

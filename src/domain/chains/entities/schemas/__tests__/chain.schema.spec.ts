@@ -168,21 +168,6 @@ describe('Chain schemas', () => {
 
       expect(result.success && result.data.publicKey).toBe(null);
     });
-
-    // TODO: Remove after `beaconChainExplorerUriTemplate` field is deployed on Config Service
-    it('should default beaconChainExplorerUriTemplate to have null publicKey', () => {
-      const chain = chainBuilder().build();
-      // @ts-expect-error - inferred types don't allow optional fields
-      delete chain.beaconChainExplorerUriTemplate;
-
-      const result = ChainSchema.safeParse(chain);
-
-      expect(
-        result.success && result.data.beaconChainExplorerUriTemplate,
-      ).toStrictEqual({
-        publicKey: null,
-      });
-    });
   });
 
   describe('ThemeSchema', () => {
@@ -555,47 +540,6 @@ describe('Chain schemas', () => {
         expect(result.success && result.data[field]).toBe(null);
       });
     });
-
-    // TODO: Remove after deployed and all chain caches include the `contractAddresses` field
-    describe('should default all contract addresses to null if the chain cache does not contain contractAddresses', () => {
-      it('on a ContractAddresses level', () => {
-        const contractAddresses = undefined;
-
-        const result = ContractAddressesSchema.safeParse(contractAddresses);
-
-        expect(result.success && result.data).toStrictEqual({
-          safeSingletonAddress: null,
-          safeProxyFactoryAddress: null,
-          multiSendAddress: null,
-          multiSendCallOnlyAddress: null,
-          fallbackHandlerAddress: null,
-          signMessageLibAddress: null,
-          createCallAddress: null,
-          simulateTxAccessorAddress: null,
-          safeWebAuthnSignerFactoryAddress: null,
-        });
-      });
-
-      it('on a Chain level', () => {
-        const chain = chainBuilder().build();
-        // @ts-expect-error - pre-inclusion of `contractAddresses` field
-        delete chain.contractAddresses;
-
-        const result = ChainSchema.safeParse(chain);
-
-        expect(result.success && result.data.contractAddresses).toStrictEqual({
-          safeSingletonAddress: null,
-          safeProxyFactoryAddress: null,
-          multiSendAddress: null,
-          multiSendCallOnlyAddress: null,
-          fallbackHandlerAddress: null,
-          signMessageLibAddress: null,
-          createCallAddress: null,
-          simulateTxAccessorAddress: null,
-          safeWebAuthnSignerFactoryAddress: null,
-        });
-      });
-    });
   });
 
   describe('ChainSchema', () => {
@@ -675,8 +619,8 @@ describe('Chain schemas', () => {
       ['safeAppsRpcUri' as const],
       ['publicRpcUri' as const],
       ['blockExplorerUriTemplate' as const],
-      // TODO: Include after `beaconChainExplorerUriTemplate` field is deployed on Config Service
-      // ['beaconChainExplorerUriTemplate' as const],
+      ['beaconChainExplorerUriTemplate' as const],
+      ['contractAddresses' as const],
       ['nativeCurrency' as const],
       ['pricesProvider' as const],
       ['balancesProvider' as const],

@@ -57,6 +57,10 @@ import {
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -102,6 +106,8 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
+        .overrideModule(PostgresDatabaseModule)
+        .useModule(TestPostgresDatabaseModule)
         .overrideModule(JWT_CONFIGURATION_MODULE)
         .useModule(JwtConfigurationModule.register(jwtConfiguration))
         .overrideModule(ALERTS_CONFIGURATION_MODULE)
@@ -120,6 +126,8 @@ describe('Alerts (Unit)', () => {
         .useModule(TestEmailApiModule)
         .overrideModule(QueuesApiModule)
         .useModule(TestQueuesApiModule)
+        .overrideModule(PostgresDatabaseModuleV2)
+        .useModule(TestPostgresDatabaseModuleV2)
         .compile();
 
       configurationService = moduleFixture.get(IConfigurationService);
@@ -902,6 +910,8 @@ describe('Alerts (Unit)', () => {
           .useModule(TestNetworkModule)
           .overrideModule(QueuesApiModule)
           .useModule(TestQueuesApiModule)
+          .overrideModule(PostgresDatabaseModuleV2)
+          .useModule(TestPostgresDatabaseModuleV2)
           .compile();
 
         app = moduleFixture.createNestApplication();

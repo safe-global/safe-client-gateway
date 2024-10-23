@@ -48,6 +48,8 @@ import { erc20TransferEncoder } from '@/domain/relay/contracts/__tests__/encoder
 import type { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Server } from 'net';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
   let app: INestApplication<Server>;
@@ -91,6 +93,8 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -3797,7 +3801,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           notImitatedMultisigTransaction,
           multisigTransaction,
         ];
-
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
             return Promise.resolve({ data: chain, status: 200 });

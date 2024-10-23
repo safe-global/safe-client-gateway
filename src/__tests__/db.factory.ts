@@ -13,7 +13,9 @@ export class TestDbFactory {
   private readonly mainConnection: postgres.Sql;
 
   constructor() {
-    this.mainConnection = this.connect(this.config.db.postgres.database);
+    this.mainConnection = this.connect(
+      this.config.db.connection.postgres.database,
+    );
   }
 
   async createTestDatabase(dbName: string): Promise<postgres.Sql> {
@@ -38,7 +40,8 @@ export class TestDbFactory {
    * @returns {@link postgres.Sql} pointing to the database
    */
   private connect(dbName: string): postgres.Sql {
-    const { host, port, username, password, ssl } = this.config.db.postgres;
+    const { host, port, username, password, ssl } =
+      this.config.db.connection.postgres;
     const sslEnabled = !this.isCIContext && ssl.enabled;
     return postgres({
       host,

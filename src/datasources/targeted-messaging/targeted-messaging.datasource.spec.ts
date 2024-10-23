@@ -2,8 +2,11 @@ import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { CachedQueryResolver } from '@/datasources/db/cached-query-resolver';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
+import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import { OutreachDbMapper } from '@/datasources/targeted-messaging/entities/outreach.db.mapper';
+import { SubmissionDbMapper } from '@/datasources/targeted-messaging/entities/submission.db.mapper';
+import { TargetedSafeDbMapper } from '@/datasources/targeted-messaging/entities/targeted-safe.db.mapper';
 import { TargetedMessagingDatasource } from '@/datasources/targeted-messaging/targeted-messaging.datasource';
 import { createOutreachDtoBuilder } from '@/domain/targeted-messaging/entities/tests/create-outreach.dto.builder';
 import { createTargetedSafesDtoBuilder } from '@/domain/targeted-messaging/entities/tests/create-target-safes.dto.builder';
@@ -47,16 +50,52 @@ describe('TargetedMessagingDataSource tests', () => {
       mockLoggingService,
       new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockConfigurationService,
+      new OutreachDbMapper(),
+      new SubmissionDbMapper(),
+      new TargetedSafeDbMapper(),
     );
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
     await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
     jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
+  });
+
+  describe('getUnprocessedOutreaches', () => {
+    it('gets unprocessed outreaches successfully', async () => {
+      const outreaches = [
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', null)
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', faker.date.recent())
+          .build(),
+        createOutreachDtoBuilder()
+          .with('sourceFileProcessedDate', null)
+          .build(),
+      ];
+      for (const outreach of outreaches) {
+        await target.createOutreach(outreach);
+      }
+
+      const result = await target.getUnprocessedOutreaches();
+
+      // Only the outreaches with sourceFileProcessedDate as null are returned
+      expect(result).toStrictEqual([
+        expect.objectContaining(outreaches[2]),
+        expect.objectContaining(outreaches[4]),
+      ]);
+    });
   });
 
   describe('createOutreach', () => {
@@ -70,6 +109,12 @@ describe('TargetedMessagingDataSource tests', () => {
         name: dto.name,
         startDate: dto.startDate,
         endDate: dto.endDate,
+        sourceId: dto.sourceId,
+        type: dto.type,
+        teamName: dto.teamName,
+        sourceFile: dto.sourceFile,
+        sourceFileProcessedDate: null,
+        sourceFileChecksum: null,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
@@ -84,6 +129,38 @@ describe('TargetedMessagingDataSource tests', () => {
       await expect(target.createOutreach(dto)).rejects.toThrow(
         'Error creating outreach',
       );
+    });
+  });
+
+  describe('updateOutreach', () => {
+    it('should update an outreach successfully', async () => {
+      const dto = createOutreachDtoBuilder().build();
+      await target.createOutreach(dto);
+      const updateOutreachDto = {
+        sourceId: dto.sourceId,
+        name: faker.string.alphanumeric(),
+        startDate: faker.date.recent(),
+        endDate: faker.date.recent(),
+        teamName: faker.string.alphanumeric(),
+        type: faker.string.alphanumeric(),
+      };
+
+      const result = await target.updateOutreach(updateOutreachDto);
+
+      expect(result).toStrictEqual({
+        id: expect.any(Number),
+        name: updateOutreachDto.name,
+        startDate: updateOutreachDto.startDate,
+        endDate: updateOutreachDto.endDate,
+        sourceId: updateOutreachDto.sourceId,
+        type: updateOutreachDto.type,
+        teamName: updateOutreachDto.teamName,
+        sourceFile: dto.sourceFile,
+        sourceFileProcessedDate: dto.sourceFileProcessedDate,
+        sourceFileChecksum: dto.sourceFileChecksum,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      });
     });
   });
 
