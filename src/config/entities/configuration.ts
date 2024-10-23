@@ -259,11 +259,12 @@ export default () => ({
   mappings: {
     imitation: {
       lookupDistance: parseInt(process.env.IMITATION_LOOKUP_DISTANCE ?? `${3}`),
+      prefixLength: parseInt(process.env.IMITATION_PREFIX_LENGTH ?? `${3}`),
+      suffixLength: parseInt(process.env.IMITATION_SUFFIX_LENGTH ?? `${4}`),
       // Note: due to high value formatted token values, we use bigint
       // This means the value tolerance can only be an integer
       valueTolerance: BigInt(process.env.IMITATION_VALUE_TOLERANCE ?? 1),
-      prefixLength: parseInt(process.env.IMITATION_PREFIX_LENGTH ?? `${3}`),
-      suffixLength: parseInt(process.env.IMITATION_SUFFIX_LENGTH ?? `${4}`),
+      echoLimit: BigInt(process.env.IMITATION_ECHO_LIMIT ?? `${10}`),
     },
     history: {
       maxNestedTransfers: parseInt(
