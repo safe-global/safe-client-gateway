@@ -53,6 +53,10 @@ export class OutreachFileProcessor implements OnModuleInit, OnModuleDestroy {
         await this.cacheService.hSet(lockCacheDir, 'true', MAX_TTL);
         await this.processOutreachFiles();
       }
+    } catch (err) {
+      this.loggingService.error(
+        `Error processing outreach files: ${asError(err).message}`,
+      );
     } finally {
       await this.cacheService.deleteByKey(
         CacheRouter.getOutreachFileProcessorCacheKey(),
