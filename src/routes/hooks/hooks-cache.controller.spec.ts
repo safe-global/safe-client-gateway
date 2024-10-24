@@ -154,6 +154,11 @@ describe('Post Hook Events for Cache (Unit)', () => {
       type: 'CHAIN_UPDATE',
     },
     {
+      type: 'REORG_DETECTED',
+      chainId: faker.string.numeric(),
+      blockNumber: faker.number.int(),
+    },
+    {
       type: 'SAFE_APPS_UPDATE',
     },
     {
@@ -224,12 +229,13 @@ describe('Post Hook Events for Cache (Unit)', () => {
           'OUTGOING_ETHER',
           'OUTGOING_TOKEN',
           'PENDING_MULTISIG_TRANSACTION',
+          'REORG_DETECTED',
           'SAFE_APPS_UPDATE',
           'SAFE_CREATED',
         ],
         path: ['type'],
         message:
-          "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'SAFE_APPS_UPDATE' | 'SAFE_CREATED'",
+          "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'REORG_DETECTED' | 'SAFE_APPS_UPDATE' | 'SAFE_CREATED'",
       });
   });
 
