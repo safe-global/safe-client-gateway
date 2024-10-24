@@ -60,7 +60,6 @@ describe('TransactionsViewController tests', () => {
       ...baseConfig,
       features: {
         ...baseConfig.features,
-        confirmationView: true,
         nativeStaking: true,
       },
       swaps: {
