@@ -88,6 +88,7 @@ export class EventCacheHelper {
       this.onTransactionEventMessageCreated.bind(this),
     [TransactionEventType.MESSAGE_CONFIRMATION]:
       this.onTransactionEventMessageConfirmation.bind(this),
+    [TransactionEventType.REORG_DETECTED]: () => [],
     [TransactionEventType.SAFE_CREATED]:
       this.onTransactionEventSafeCreated.bind(this),
     [ConfigEventType.CHAIN_UPDATE]: this.onConfigEventChainUpdate.bind(this),
@@ -127,6 +128,7 @@ export class EventCacheHelper {
       case ConfigEventType.SAFE_APPS_UPDATE:
         this._logEvent(event);
         break;
+      case TransactionEventType.REORG_DETECTED:
       case TransactionEventType.SAFE_CREATED:
         break;
     }

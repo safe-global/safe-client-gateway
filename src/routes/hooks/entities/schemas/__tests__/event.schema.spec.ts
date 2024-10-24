@@ -10,6 +10,7 @@ import { newMessageConfirmationEventBuilder } from '@/routes/hooks/entities/__te
 import { outgoingEtherEventBuilder } from '@/routes/hooks/entities/__tests__/outgoing-ether.builder';
 import { outgoingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/outgoing-token.builder';
 import { pendingTransactionEventBuilder } from '@/routes/hooks/entities/__tests__/pending-transaction.builder';
+import { reorgDetectedEventBuilder } from '@/routes/hooks/entities/__tests__/reorg-detected.builder';
 import { safeAppsEventBuilder } from '@/routes/hooks/entities/__tests__/safe-apps-update.builder';
 import { EventSchema } from '@/routes/hooks/entities/schemas/event.schema';
 import { ZodError } from 'zod';
@@ -28,6 +29,7 @@ describe('EventSchema', () => {
     outgoingEtherEventBuilder,
     outgoingTokenEventBuilder,
     pendingTransactionEventBuilder,
+    reorgDetectedEventBuilder,
     safeAppsEventBuilder,
   ].forEach((builder) => {
     const event = builder().build();
@@ -63,12 +65,13 @@ describe('EventSchema', () => {
             'OUTGOING_ETHER',
             'OUTGOING_TOKEN',
             'PENDING_MULTISIG_TRANSACTION',
+            'REORG_DETECTED',
             'SAFE_APPS_UPDATE',
             'SAFE_CREATED',
           ],
           path: ['type'],
           message:
-            "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'SAFE_APPS_UPDATE' | 'SAFE_CREATED'",
+            "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'REORG_DETECTED' | 'SAFE_APPS_UPDATE' | 'SAFE_CREATED'",
         },
       ]),
     );

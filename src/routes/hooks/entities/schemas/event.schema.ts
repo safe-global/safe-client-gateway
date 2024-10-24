@@ -11,6 +11,7 @@ import { NewMessageConfirmationEventSchema } from '@/routes/hooks/entities/schem
 import { OutgoingEtherEventSchema } from '@/routes/hooks/entities/schemas/outgoing-ether.schema';
 import { OutgoingTokenEventSchema } from '@/routes/hooks/entities/schemas/outgoing-token.schema';
 import { PendingTransactionEventSchema } from '@/routes/hooks/entities/schemas/pending-transaction.schema';
+import { ReorgDetectedEventSchema } from '@/routes/hooks/entities/schemas/reorg-detected.schema';
 import { SafeAppsUpdateEventSchema } from '@/routes/hooks/entities/schemas/safe-apps-update.schema';
 import { SafeCreatedEventSchema } from '@/routes/hooks/entities/schemas/safe-created.schema';
 
@@ -27,6 +28,7 @@ export const EventSchema = z.discriminatedUnion('type', [
   OutgoingEtherEventSchema,
   OutgoingTokenEventSchema,
   PendingTransactionEventSchema,
+  ReorgDetectedEventSchema,
   SafeAppsUpdateEventSchema,
   SafeCreatedEventSchema,
 ]);
