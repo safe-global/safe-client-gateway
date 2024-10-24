@@ -161,7 +161,7 @@ export class TransferImitationMapper {
       ? // Value can differ by +/- tolerance
         value <= prevValue + this.valueTolerance &&
         value >= prevValue - this.valueTolerance
-      : // Value must differ
+      : // Value must be equal
         value === prevValue;
     if (!isSpoofedValue) {
       return false;
