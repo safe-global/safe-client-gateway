@@ -152,6 +152,7 @@ export default (): ReturnType<typeof configuration> => ({
     nativeStaking: false,
     nativeStakingDecoding: false,
     targetedMessaging: false,
+    improvedAddressPoisoning: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {

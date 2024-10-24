@@ -235,6 +235,8 @@ export default () => ({
       process.env.FF_NATIVE_STAKING_DECODING?.toLowerCase() === 'true',
     targetedMessaging:
       process.env.FF_TARGETED_MESSAGING?.toLowerCase() === 'true',
+    improvedAddressPoisoning:
+      process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
