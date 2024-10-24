@@ -10,6 +10,6 @@ export const CreationTransactionSchema = z.object({
   factoryAddress: AddressSchema,
   masterCopy: AddressSchema.nullish().default(null),
   setupData: HexSchema.nullish().default(null),
-  saltNonce: z.string(),
+  saltNonce: z.string().nullish().default(null),
   dataDecoded: DataDecodedSchema.nullish().default(null),
 });
