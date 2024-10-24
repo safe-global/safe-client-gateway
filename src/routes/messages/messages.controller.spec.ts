@@ -134,6 +134,7 @@ describe('Messages controller', () => {
             signature: confirmation.signature,
           })),
           preparedSignature: message.preparedSignature,
+          origin: message.origin,
         });
     });
 
@@ -201,6 +202,7 @@ describe('Messages controller', () => {
             signature: confirmation.signature,
           })),
           preparedSignature: message.preparedSignature,
+          origin: message.origin,
         });
     });
 
@@ -265,6 +267,7 @@ describe('Messages controller', () => {
             signature: confirmation.signature,
           })),
           preparedSignature: null,
+          origin: message.origin,
         });
     });
 
@@ -332,6 +335,7 @@ describe('Messages controller', () => {
             signature: confirmation.signature,
           })),
           preparedSignature: null,
+          origin: message.origin,
         });
     });
 
@@ -396,6 +400,7 @@ describe('Messages controller', () => {
             signature: confirmation.signature,
           })),
           preparedSignature: null,
+          origin: message.origin,
         });
     });
 
@@ -458,6 +463,7 @@ describe('Messages controller', () => {
             signature: confirmation.signature,
           })),
           preparedSignature: null,
+          origin: message.origin,
         });
     });
   });
@@ -570,6 +576,7 @@ describe('Messages controller', () => {
                     signature: confirmation.signature,
                   })),
                   preparedSignature: null,
+                  origin: message.origin,
                 },
               ])
               .build(),

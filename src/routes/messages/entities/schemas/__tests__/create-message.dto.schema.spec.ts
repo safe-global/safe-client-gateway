@@ -169,4 +169,28 @@ describe('CreateMessageDtoSchema', () => {
       );
     });
   });
+
+  describe('origin', () => {
+    it('should validate without origin, defaulting to null', () => {
+      const createMessageDto = createMessageDtoBuilder().build();
+      // @ts-expect-error - inferred type doesn't allow optional properties
+      delete createMessageDto.origin;
+
+      const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+      expect(result.success && result.data.origin).toBe(null);
+    });
+
+    it('should validate a stringified origin', () => {
+      const createMessageDto = createMessageDtoBuilder()
+        .with('origin', JSON.stringify({ example: faker.internet.url() }))
+        .build();
+
+      const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+      expect(result.success && result.data.origin).toBe(
+        createMessageDto.origin,
+      );
+    });
+  });
 });
