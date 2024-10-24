@@ -37,8 +37,6 @@ export class MultisigTransactionInfoMapper {
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
   private readonly isRichFragmentsEnabled: boolean;
-  private readonly isSwapsDecodingEnabled: boolean;
-  private readonly isTwapsDecodingEnabled: boolean;
   private readonly isNativeStakingDecodingEnabled: boolean;
 
   private readonly ERC20_TRANSFER_METHODS = [
@@ -75,12 +73,6 @@ export class MultisigTransactionInfoMapper {
     this.isRichFragmentsEnabled = this.configurationService.getOrThrow(
       'features.richFragments',
     );
-    this.isSwapsDecodingEnabled = this.configurationService.getOrThrow(
-      'features.swapsDecoding',
-    );
-    this.isTwapsDecodingEnabled = this.configurationService.getOrThrow(
-      'features.twapsDecoding',
-    );
     this.isNativeStakingDecodingEnabled = this.configurationService.getOrThrow(
       'features.nativeStakingDecoding',
     );
@@ -113,19 +105,17 @@ export class MultisigTransactionInfoMapper {
       ? richDecodedInfo
       : undefined;
 
-    if (this.isSwapsDecodingEnabled) {
-      const swapOrder: SwapOrderTransactionInfo | null =
-        await this.mapSwapOrder(chainId, transaction);
-      // If the transaction is a swap order, we return it immediately
-      if (swapOrder) return swapOrder;
-    }
+    const swapOrder: SwapOrderTransactionInfo | null = await this.mapSwapOrder(
+      chainId,
+      transaction,
+    );
+    // If the transaction is a swap order, we return it immediately
+    if (swapOrder) return swapOrder;
 
-    if (this.isTwapsDecodingEnabled) {
-      // If the transaction is a TWAP order, we return it immediately
-      const twapOrder = await this.mapTwapOrder(chainId, transaction);
-      if (twapOrder) {
-        return twapOrder;
-      }
+    // If the transaction is a TWAP order, we return it immediately
+    const twapOrder = await this.mapTwapOrder(chainId, transaction);
+    if (twapOrder) {
+      return twapOrder;
     }
 
     if (this.isNativeStakingDecodingEnabled) {

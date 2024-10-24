@@ -52,11 +52,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
     const baseConfig = configuration();
     const testConfiguration: typeof configuration = () => ({
       ...baseConfig,
-      features: {
-        ...baseConfig.features,
-        swapsDecoding: true,
-        twapsDecoding: true,
-      },
       swaps: {
         ...baseConfig.swaps,
         restrictApps: true,

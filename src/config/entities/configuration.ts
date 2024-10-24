@@ -213,16 +213,12 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesChainIds:
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
-    swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
-    twapsDecoding: process.env.FF_TWAPS_DECODING?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     imitationMapping:
       process.env.FF_IMITATION_MAPPING?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
-    confirmationView:
-      process.env.FF_CONFIRMATION_VIEW?.toLowerCase() === 'true',
     eventsQueue: process.env.FF_EVENTS_QUEUE?.toLowerCase() === 'true',
     delegatesV2: process.env.FF_DELEGATES_V2?.toLowerCase() === 'true',
     counterfactualBalances:
