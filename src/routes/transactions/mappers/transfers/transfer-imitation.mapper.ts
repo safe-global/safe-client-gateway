@@ -23,6 +23,7 @@ type Erc20TransferTransactionInfo = Omit<
 export class TransferImitationMapper {
   private static ETH_DECIMALS = 18;
 
+  private readonly isImproved: boolean;
   private readonly lookupDistance: number;
   private readonly prefixLength: number;
   private readonly suffixLength: number;
@@ -33,6 +34,9 @@ export class TransferImitationMapper {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
+    this.isImproved = configurationService.getOrThrow(
+      'features.improvedAddressPoisoning',
+    );
     this.lookupDistance = configurationService.getOrThrow(
       'mappings.imitation.lookupDistance',
     );
@@ -117,6 +121,10 @@ export class TransferImitationMapper {
           return false;
         }
 
+        if (!this.isImproved) {
+          return this.isSpoofedEvent(txInfo, prevTxInfo);
+        }
+
         return (
           this.isSpoofedEvent(txInfo, prevTxInfo) ||
           this.isEchoImitation(txInfo, prevTxInfo)
@@ -149,11 +157,13 @@ export class TransferImitationMapper {
     const value = this.formatValue(txInfo.transferInfo);
     const prevValue = this.formatValue(prevTxInfo.transferInfo);
 
-    // Value can differ by +/- tolerance
-    const isTolerant =
-      value <= prevValue + this.valueTolerance &&
-      value >= prevValue - this.valueTolerance;
-    if (!isTolerant) {
+    const isSpoofedValue = this.isImproved
+      ? // Value can differ by +/- tolerance
+        value <= prevValue + this.valueTolerance &&
+        value >= prevValue - this.valueTolerance
+      : // Value must differ
+        value === prevValue;
+    if (!isSpoofedValue) {
       return false;
     }
 
