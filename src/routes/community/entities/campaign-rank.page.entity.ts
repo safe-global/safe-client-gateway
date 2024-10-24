@@ -3,6 +3,6 @@ import { CampaignRank } from '@/routes/community/entities/campaign-rank.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CampaignRankPage extends Page<CampaignRank> {
-  @ApiProperty({ type: CampaignRank })
+  @ApiProperty({ type: CampaignRank, isArray: true })
   results!: Array<CampaignRank>;
 }
