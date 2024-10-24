@@ -99,7 +99,16 @@ export class TargetedMessagingDatasource
   async getUnprocessedOutreaches(): Promise<Outreach[]> {
     const dbOutreaches = await this.sql<
       DbOutreach[]
-    >`SELECT * FROM outreaches WHERE source_file_processed_date IS NULL`;
+    >`SELECT * FROM outreaches WHERE source_file_processed_date IS NULL`.catch(
+      (err) => {
+        this.loggingService.warn(
+          `Error getting unprocessed outreaches: ${asError(err).message}`,
+        );
+        throw new UnprocessableEntityException(
+          'Error getting unprocessed outreaches',
+        );
+      },
+    );
 
     return dbOutreaches.map((dbOutreach) =>
       this.outreachDbMapper.map(dbOutreach),
