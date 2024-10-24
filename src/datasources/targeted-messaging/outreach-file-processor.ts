@@ -12,18 +12,13 @@ import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messa
 import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
-import {
-  Inject,
-  Injectable,
-  OnModuleDestroy,
-  type OnModuleInit,
-} from '@nestjs/common';
+import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';
 import path from 'path';
 
 @Injectable()
-export class OutreachFileProcessor implements OnModuleInit, OnModuleDestroy {
+export class OutreachFileProcessor implements OnModuleInit {
   private readonly storageType: FileStorageType;
   private readonly localBaseDir: string;
 
@@ -62,12 +57,6 @@ export class OutreachFileProcessor implements OnModuleInit, OnModuleDestroy {
         CacheRouter.getOutreachFileProcessorCacheKey(),
       );
     }
-  }
-
-  async onModuleDestroy(): Promise<void> {
-    await this.cacheService.deleteByKey(
-      CacheRouter.getOutreachFileProcessorCacheKey(),
-    );
   }
 
   private async processOutreachFiles(): Promise<void> {
