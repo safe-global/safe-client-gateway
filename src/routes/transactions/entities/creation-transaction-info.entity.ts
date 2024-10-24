@@ -14,15 +14,15 @@ export class CreationTransactionInfo extends TransactionInfo {
   implementation: AddressInfo | null;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   factory: AddressInfo | null;
-  @ApiProperty()
-  saltNonce: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  saltNonce: string | null;
 
   constructor(
     creator: AddressInfo,
     transactionHash: string,
     implementation: AddressInfo | null,
     factory: AddressInfo | null,
-    saltNonce: string,
+    saltNonce: string | null,
   ) {
     super(TransactionInfoType.Creation, null, null);
     this.creator = creator;
