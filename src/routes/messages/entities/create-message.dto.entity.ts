@@ -7,8 +7,10 @@ export class CreateMessageDto
 {
   @ApiProperty()
   message!: string | Record<string, unknown>;
-  @ApiPropertyOptional({ type: Number, nullable: true })
+  @ApiPropertyOptional({ type: Number, nullable: true, deprecated: true })
   safeAppId!: number | null;
   @ApiProperty()
   signature!: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  origin!: string | null;
 }

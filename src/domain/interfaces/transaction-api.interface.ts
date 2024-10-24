@@ -226,6 +226,7 @@ export interface ITransactionApi {
     message: unknown;
     safeAppId: number | null;
     signature: string;
+    origin: string | null;
   }): Promise<Message>;
 
   postMessageSignature(args: {

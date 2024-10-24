@@ -26,6 +26,7 @@ import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
 import { getAddress } from 'viem';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { indexingStatusBuilder } from '@/domain/chains/entities/__tests__/indexing-status.builder';
+import { fakeJson } from '@/__tests__/faker';
 
 const dataSource = {
   get: jest.fn(),
@@ -3491,6 +3492,7 @@ describe('TransactionApi', () => {
       const message = faker.word.words();
       const safeAppId = faker.number.int();
       const signature = faker.string.hexadecimal();
+      const origin = fakeJson();
       const postMessageUrl = `${baseUrl}/api/v1/safes/${safeAddress}/messages/`;
       networkService.post.mockResolvedValueOnce({
         status: 200,
@@ -3502,6 +3504,7 @@ describe('TransactionApi', () => {
         message,
         safeAppId,
         signature,
+        origin,
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
@@ -3511,6 +3514,7 @@ describe('TransactionApi', () => {
           message,
           safeAppId,
           signature,
+          origin,
         },
       });
     });
@@ -3524,6 +3528,7 @@ describe('TransactionApi', () => {
       const message = faker.word.words();
       const safeAppId = faker.number.int();
       const signature = faker.string.hexadecimal();
+      const origin = fakeJson();
       const postMessageUrl = `${baseUrl}/api/v1/safes/${safeAddress}/messages/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
@@ -3545,6 +3550,7 @@ describe('TransactionApi', () => {
           message,
           safeAppId,
           signature,
+          origin,
         }),
       ).rejects.toThrow(expected);
 
@@ -3555,6 +3561,7 @@ describe('TransactionApi', () => {
           message,
           safeAppId,
           signature,
+          origin,
         },
       });
     });

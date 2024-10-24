@@ -41,6 +41,7 @@ export class MessageMapper {
           message.proposedBy,
           message.confirmations,
           message.preparedSignature,
+          message.origin,
         );
       }),
     );
@@ -85,6 +86,7 @@ export class MessageMapper {
       proposedBy,
       confirmations,
       preparedSignature,
+      message.origin,
     );
   }
 
