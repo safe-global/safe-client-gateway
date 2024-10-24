@@ -24,14 +24,12 @@ import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transa
 import type { SafeList } from '@/domain/safe/entities/safe-list.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 import type { Transaction } from '@/domain/safe/entities/transaction.entity';
-import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
 import type { Transfer } from '@/domain/safe/entities/transfer.entity';
 import type { Token } from '@/domain/tokens/entities/token.entity';
 import type { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import type { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { get } from 'lodash';
-import { getAddress } from 'viem';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
@@ -667,43 +665,28 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/multisig-transactions/`;
-      return await this.dataSource
-        .get<Page<MultisigTransaction>>({
-          cacheDir,
-          url,
-          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-          networkRequest: {
-            params: {
-              safe: args.safeAddress,
-              ordering: args.ordering,
-              executed: args.executed,
-              trusted: args.trusted,
-              execution_date__gte: args.executionDateGte,
-              execution_date__lte: args.executionDateLte,
-              to: args.to,
-              value: args.value,
-              nonce: args.nonce,
-              nonce__gte: args.nonceGte,
-              limit: args.limit,
-              offset: args.offset,
-            },
+      return await this.dataSource.get<Page<MultisigTransaction>>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            safe: args.safeAddress,
+            ordering: args.ordering,
+            executed: args.executed,
+            trusted: args.trusted,
+            execution_date__gte: args.executionDateGte,
+            execution_date__lte: args.executionDateLte,
+            to: args.to,
+            value: args.value,
+            nonce: args.nonce,
+            nonce__gte: args.nonceGte,
+            limit: args.limit,
+            offset: args.offset,
           },
-          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        })
-        .then(async (data): Promise<Page<MultisigTransaction>> => {
-          const results = await Promise.all(
-            data.results.map(async (tx) => {
-              return tx.confirmationsRequired !== null
-                ? tx
-                : await this._setConfirmationsRequired(tx);
-            }),
-          );
-
-          return {
-            ...data,
-            results,
-          };
-        });
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
@@ -726,49 +709,15 @@ export class TransactionApi implements ITransactionApi {
         safeTransactionHash,
       });
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
-      return await this.dataSource
-        .get<MultisigTransaction>({
-          cacheDir,
-          url,
-          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        })
-        .then(async (tx) =>
-          tx.confirmationsRequired !== null
-            ? tx
-            : await this._setConfirmationsRequired(tx),
-        );
+      return await this.dataSource.get<MultisigTransaction>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
-  }
-
-  /**
-   * The Transaction Service sometimes returns null for confirmationsRequired
-   * TODO: Remove this method once the Transaction Service is fixed
-   * @see https://github.com/safe-global/safe-transaction-service/issues/2170
-   * @param transaction - {@link MultisigTransaction} maybe missing confirmationsRequired
-   * @returns - {@link MultisigTransaction} with confirmationsRequired set
-   */
-  private async _setConfirmationsRequired(
-    transaction: MultisigTransaction & {
-      confirmationsRequired:
-        | MultisigTransaction['confirmationsRequired']
-        | null;
-    },
-  ): Promise<MultisigTransaction> {
-    if (transaction.confirmationsRequired !== null) {
-      return transaction;
-    }
-
-    transaction.confirmationsRequired =
-      transaction.isExecuted && transaction.confirmations !== null
-        ? transaction.confirmations.length
-        : await this.getSafe(getAddress(transaction.safe)).then((safe) => {
-            return safe.threshold;
-          });
-
-    return transaction;
   }
 
   async deleteTransaction(args: {
@@ -832,40 +781,22 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/all-transactions/`;
-      return await this.dataSource
-        .get<Page<Transaction>>({
-          cacheDir,
-          url,
-          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-          networkRequest: {
-            params: {
-              safe: args.safeAddress,
-              ordering: args.ordering,
-              executed: args.executed,
-              queued: args.queued,
-              limit: args.limit,
-              offset: args.offset,
-            },
+      return await this.dataSource.get<Page<Transaction>>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            safe: args.safeAddress,
+            ordering: args.ordering,
+            executed: args.executed,
+            queued: args.queued,
+            limit: args.limit,
+            offset: args.offset,
           },
-          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        })
-        .then(async (data): Promise<Page<Transaction>> => {
-          const results = await Promise.all(
-            data.results.map(async (tx) => {
-              if (!isMultisigTransaction(tx)) {
-                return tx;
-              }
-              return tx.confirmationsRequired !== null
-                ? tx
-                : await this._setConfirmationsRequired(tx);
-            }),
-          );
-
-          return {
-            ...data,
-            results,
-          };
-        });
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
