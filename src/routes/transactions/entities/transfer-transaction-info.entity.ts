@@ -29,7 +29,7 @@ export class TransferTransactionInfo extends TransactionInfo {
     direction: TransferDirection,
     transferInfo: Transfer,
     humanDescription: string | null,
-    richDecodedInfo: RichDecodedInfo | null | undefined,
+    richDecodedInfo: RichDecodedInfo | null,
   ) {
     super(TransactionInfoType.Transfer, humanDescription, richDecodedInfo);
     this.sender = sender;

@@ -28,7 +28,7 @@ export class CustomTransactionInfo extends TransactionInfo {
     actionCount: number | null,
     isCancellation: boolean,
     humanDescription: string | null,
-    richDecodedInfo: RichDecodedInfo | null | undefined,
+    richDecodedInfo: RichDecodedInfo | null,
   ) {
     super(TransactionInfoType.Custom, humanDescription, richDecodedInfo);
     this.to = to;

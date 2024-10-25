@@ -120,7 +120,7 @@ export class SwapTransferTransactionInfo
     direction: TransferDirection;
     transferInfo: Transfer;
     humanDescription: string | null;
-    richDecodedInfo: RichDecodedInfo | null | undefined;
+    richDecodedInfo: RichDecodedInfo | null;
     // SwapOrderTransactionInfo properties
     uid: string;
     orderStatus: OrderStatus;

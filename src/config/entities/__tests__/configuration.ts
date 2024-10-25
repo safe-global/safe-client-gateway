@@ -134,7 +134,6 @@ export default (): ReturnType<typeof configuration> => ({
   },
   express: { jsonLimit: '1mb' },
   features: {
-    richFragments: true,
     email: false,
     zerionBalancesChainIds: ['137'],
     debugLogs: false,
