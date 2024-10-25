@@ -131,6 +131,7 @@ export class MessagesService {
       safeAddress: args.safeAddress,
       message: args.createMessageDto.message,
       safeAppId: args.createMessageDto.safeAppId,
+      origin: args.createMessageDto.origin,
       signature: args.createMessageDto.signature,
     });
   }

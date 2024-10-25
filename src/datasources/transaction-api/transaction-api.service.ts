@@ -1028,6 +1028,7 @@ export class TransactionApi implements ITransactionApi {
     message: unknown;
     safeAppId: number | null;
     signature: string;
+    origin: string | null;
   }): Promise<Message> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
@@ -1037,6 +1038,7 @@ export class TransactionApi implements ITransactionApi {
           message: args.message,
           safeAppId: args.safeAppId,
           signature: args.signature,
+          origin: args.origin,
         },
       });
       return data;

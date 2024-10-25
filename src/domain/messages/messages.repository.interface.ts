@@ -25,6 +25,7 @@ export interface IMessagesRepository {
     message: unknown;
     safeAppId: number;
     signature: string;
+    origin: string | null;
   }): Promise<unknown>;
 
   updateMessageSignature(args: {
