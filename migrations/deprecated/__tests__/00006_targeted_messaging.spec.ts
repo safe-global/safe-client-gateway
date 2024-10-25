@@ -1,4 +1,5 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
+import { waitMilliseconds } from '@/__tests__/util/retry';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import type { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import type { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
@@ -104,6 +105,8 @@ describe('Migration 00006_targeted_messaging', () => {
       const updatedAt = new Date(result.after[0].updated_at);
       expect(createdAt).toStrictEqual(updatedAt);
 
+      // wait for 1 millisecond to ensure that the updated_at timestamp is different
+      await waitMilliseconds(1);
       // only updated_at should be updated after the row is updated
       await sql`UPDATE outreaches set name = ${faker.string.alphanumeric()} WHERE id = 1;`;
       const afterUpdate = await sql<Outreach[]>`SELECT * FROM outreaches`;
@@ -111,7 +114,7 @@ describe('Migration 00006_targeted_messaging', () => {
       const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
 
       expect(createdAtAfterUpdate).toStrictEqual(createdAt);
-      expect(updatedAtAfterUpdate.getTime()).toBeGreaterThanOrEqual(
+      expect(updatedAtAfterUpdate.getTime()).toBeGreaterThan(
         createdAt.getTime(),
       );
     });
@@ -166,6 +169,8 @@ describe('Migration 00006_targeted_messaging', () => {
       const updatedAt = new Date(result.after[0].updated_at);
       expect(createdAt).toStrictEqual(updatedAt);
 
+      // wait for 1 millisecond to ensure that the updated_at timestamp is different
+      await waitMilliseconds(1);
       // only updated_at should be updated after the row is updated
       await sql`UPDATE targeted_safes set address = ${faker.finance.ethereumAddress()} WHERE id = 1;`;
       const afterUpdate = await sql<
@@ -175,7 +180,7 @@ describe('Migration 00006_targeted_messaging', () => {
       const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
 
       expect(createdAtAfterUpdate).toStrictEqual(createdAt);
-      expect(updatedAtAfterUpdate.getTime()).toBeGreaterThanOrEqual(
+      expect(updatedAtAfterUpdate.getTime()).toBeGreaterThan(
         createdAt.getTime(),
       );
     });
@@ -240,6 +245,8 @@ describe('Migration 00006_targeted_messaging', () => {
       const updatedAt = new Date(result.after[0].updated_at);
       expect(createdAt).toStrictEqual(updatedAt);
 
+      // wait for 1 millisecond to ensure that the updated_at timestamp is different
+      await waitMilliseconds(1);
       // only updated_at should be updated after the row is updated
       await sql`UPDATE submissions set completion_date = ${new Date()} WHERE id = 1;`;
       const afterUpdate = await sql<Submission[]>`SELECT * FROM submissions`;
@@ -247,7 +254,7 @@ describe('Migration 00006_targeted_messaging', () => {
       const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
 
       expect(createdAtAfterUpdate).toStrictEqual(createdAt);
-      expect(updatedAtAfterUpdate.getTime()).toBeGreaterThanOrEqual(
+      expect(updatedAtAfterUpdate.getTime()).toBeGreaterThan(
         createdAt.getTime(),
       );
     });
