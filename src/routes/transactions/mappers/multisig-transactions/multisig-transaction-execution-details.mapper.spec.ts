@@ -14,6 +14,7 @@ import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigConfirmationDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
+import { getAddress } from 'viem';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -84,7 +85,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasTokenInfo,
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
-        proposedByDelegate: new AddressInfo(transaction.proposedByDelegate!),
+        proposedByDelegate: null,
       }),
     );
   });
@@ -149,7 +150,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasTokenInfo: null,
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
-        proposedByDelegate: new AddressInfo(transaction.proposedByDelegate!),
+        proposedByDelegate: null,
       }),
     );
   });
@@ -216,7 +217,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasTokenInfo: null,
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
-        proposedByDelegate: new AddressInfo(transaction.proposedByDelegate!),
+        proposedByDelegate: null,
       }),
     );
   });
@@ -250,12 +251,14 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     );
   });
 
-  it('should return a MultisigExecutionDetails object with no proposedByDelegate if not present', async () => {
+  it('should return a MultisigExecutionDetails object proposedByDelegate if not present', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
+    const delegate = getAddress(faker.finance.ethereumAddress());
     const transaction = multisigTransactionBuilder()
       .with('safe', safe.address)
-      .with('proposedByDelegate', null)
+      .with('proposer', delegate)
+      .with('proposedByDelegate', delegate)
       .build();
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
@@ -274,7 +277,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     expect(actual).toEqual(
       expect.objectContaining({
         type: 'MULTISIG',
-        proposedByDelegate: null,
+        proposedByDelegate: new AddressInfo(delegate),
       }),
     );
   });
