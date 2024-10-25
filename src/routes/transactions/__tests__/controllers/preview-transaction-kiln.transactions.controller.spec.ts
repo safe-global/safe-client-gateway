@@ -191,7 +191,6 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             txInfo: {
               type: 'NativeStakingDeposit',
               humanDescription: null,
-              richDecodedInfo: null,
               status: 'NOT_STAKED',
               estimatedEntryTime:
                 networkStats.estimated_entry_time_seconds * 1_000,
@@ -348,7 +347,6 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             txInfo: {
               type: 'NativeStakingDeposit',
               humanDescription: null,
-              richDecodedInfo: null,
               status: 'NOT_STAKED',
               estimatedEntryTime:
                 networkStats.estimated_entry_time_seconds * 1_000,
@@ -960,7 +958,6 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             txInfo: {
               type: 'NativeStakingValidatorsExit',
               humanDescription: null,
-              richDecodedInfo: null,
               status: 'ACTIVE',
               estimatedExitTime:
                 networkStats.estimated_exit_time_seconds * 1_000,
@@ -1112,7 +1109,6 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             txInfo: {
               type: 'NativeStakingValidatorsExit',
               humanDescription: null,
-              richDecodedInfo: null,
               status: 'ACTIVE',
               estimatedExitTime:
                 networkStats.estimated_exit_time_seconds * 1_000,
@@ -1712,7 +1708,6 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             txInfo: {
               type: 'NativeStakingWithdraw',
               humanDescription: null,
-              richDecodedInfo: null,
               value: (
                 +stakes[0].net_claimable_consensus_rewards! +
                 +stakes[1].net_claimable_consensus_rewards!
@@ -1863,7 +1858,6 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             txInfo: {
               type: 'NativeStakingWithdraw',
               humanDescription: null,
-              richDecodedInfo: null,
               value: (
                 +stakes[0].net_claimable_consensus_rewards! +
                 +stakes[1].net_claimable_consensus_rewards!

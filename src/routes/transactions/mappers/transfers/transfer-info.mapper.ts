@@ -64,7 +64,6 @@ export class TransferInfoMapper {
       direction,
       transferInfo,
       null,
-      null,
     );
   }
 

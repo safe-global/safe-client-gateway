@@ -158,7 +158,6 @@ describe('TwapOrderMapper', () => {
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '500000000000000000',
       receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-      richDecodedInfo: null,
       sellAmount: '1000000000000000000',
       sellToken: {
         address: sellToken.address,
@@ -341,7 +340,6 @@ describe('TwapOrderMapper', () => {
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '213586875483862141750',
       receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-      richDecodedInfo: null,
       sellAmount: '427173750967724283500',
       sellToken: {
         address: sellToken.address,
@@ -486,7 +484,6 @@ describe('TwapOrderMapper', () => {
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '213586875483862141750',
       receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-      richDecodedInfo: null,
       sellAmount: '427173750967724283500',
       sellToken: {
         address: sellToken.address,
@@ -886,7 +883,6 @@ describe('TwapOrderMapper', () => {
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '500000000000000000',
       receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-      richDecodedInfo: null,
       sellAmount: '1000000000000000000',
       sellToken: {
         address: sellToken.address,

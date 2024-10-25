@@ -15,6 +15,7 @@ import { MAX_UINT256 } from '@/routes/transactions/constants';
 import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
 import { HumanDescriptionMapper } from '@/routes/transactions/mappers/common/human-description.mapper';
 import type { SafeAppInfoMapper } from '@/routes/transactions/mappers/common/safe-app-info.mapper';
+import { truncateAddress } from '@/domain/common/utils/utils';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),
@@ -79,7 +80,7 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return null if there is no data', async () => {
     const transaction = multisigTransactionBuilder().with('data', null).build();
 
-    const humanDescription = await mapper.mapRichDecodedInfo(
+    const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
     );
@@ -94,7 +95,7 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', data as `0x${string}`)
       .build();
 
-    const humanDescription = await mapper.mapRichDecodedInfo(
+    const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
     );
@@ -105,24 +106,14 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return a human-readable description for erc20 transfers', async () => {
     tokenRepository.getToken.mockImplementation(() => Promise.resolve(token));
 
-    const humanDescription = await mapper.mapRichDecodedInfo(
+    const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
     );
 
-    const expectedResult = [
-      { type: 'text', value: 'Send' },
-      {
-        type: 'tokenValue',
-        value: formatUnits(mockAmount, token.decimals!),
-        symbol: token.symbol,
-        logoUri: token.logoUri,
-      },
-      { type: 'text', value: 'to' },
-      { type: 'address', value: mockAddress },
-    ];
-
-    expect(humanDescription).toEqual({ fragments: expectedResult });
+    expect(humanDescription).toEqual(
+      `Send ${formatUnits(mockAmount, token.decimals!)} ${token.symbol} to ${truncateAddress(mockAddress)}`,
+    );
   });
 
   it('should return null for corrupt data', async () => {
@@ -134,7 +125,7 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', corruptedData as `0x${string}`)
       .build();
 
-    const humanDescription = await mapper.mapRichDecodedInfo(
+    const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
     );
@@ -147,24 +138,14 @@ describe('Human descriptions mapper (Unit)', () => {
       return Promise.reject();
     });
 
-    const humanDescription = await mapper.mapRichDecodedInfo(
+    const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
     );
 
-    const expectedResult = [
-      { type: 'text', value: 'Send' },
-      {
-        type: 'tokenValue',
-        value: mockAmount.toString(),
-        symbol: null,
-        logoUri: null,
-      },
-      { type: 'text', value: 'to' },
-      { type: 'address', value: mockAddress },
-    ];
-
-    expect(humanDescription).toEqual({ fragments: expectedResult });
+    expect(humanDescription).toEqual(
+      `Send ${mockAmount} to ${truncateAddress(mockAddress)}`,
+    );
   });
 
   it('should return a description for unlimited token approvals', async () => {
@@ -182,22 +163,12 @@ describe('Human descriptions mapper (Unit)', () => {
       .with('data', mockApprovalData)
       .build();
 
-    const humanDescription = await mapper.mapRichDecodedInfo(
+    const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
     );
 
-    const expectedResult = [
-      { type: 'text', value: 'Approve' },
-      {
-        type: 'tokenValue',
-        value: 'unlimited',
-        symbol: token.symbol,
-        logoUri: token.logoUri,
-      },
-    ];
-
-    expect(humanDescription).toEqual({ fragments: expectedResult });
+    expect(humanDescription).toEqual(`Approve unlimited ${token.symbol}`);
   });
 
   it('should append the safe app name to the description if it exists', async () => {
@@ -212,24 +183,13 @@ describe('Human descriptions mapper (Unit)', () => {
       Promise.resolve(mockSafeAppInfo),
     );
 
-    const humanDescription = await mapper.mapRichDecodedInfo(
+    const humanDescription = await mapper.mapHumanDescription(
       transaction,
       chainId,
     );
 
-    const expectedResult = [
-      { type: 'text', value: 'Send' },
-      {
-        type: 'tokenValue',
-        value: formatUnits(mockAmount, token.decimals!),
-        symbol: token.symbol,
-        logoUri: token.logoUri,
-      },
-      { type: 'text', value: 'to' },
-      { type: 'address', value: mockAddress },
-      { type: 'text', value: `via ${mockSafeAppName}` },
-    ];
-
-    expect(humanDescription).toEqual({ fragments: expectedResult });
+    expect(humanDescription).toEqual(
+      `Send ${formatUnits(mockAmount, token.decimals!)} ${token.symbol} to ${truncateAddress(mockAddress)} via ${mockSafeAppName}`,
+    );
   });
 });

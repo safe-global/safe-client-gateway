@@ -40,7 +40,7 @@ export class NativeStakingValidatorsExitTransactionInfo extends TransactionInfo 
     tokenInfo: TokenInfo;
     validators: Array<`0x${string}`>;
   }) {
-    super(TransactionInfoType.NativeStakingValidatorsExit, null, null);
+    super(TransactionInfoType.NativeStakingValidatorsExit, null);
     this.status = args.status;
     this.estimatedExitTime = args.estimatedExitTime;
     this.estimatedWithdrawalTime = args.estimatedWithdrawalTime;

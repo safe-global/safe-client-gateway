@@ -385,7 +385,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -431,7 +430,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -471,7 +469,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: imitationAddress,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -518,7 +515,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -563,7 +559,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -661,7 +656,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -702,7 +696,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: imitationAddress,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -749,7 +742,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -795,7 +787,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -840,7 +831,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -943,7 +933,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -989,7 +978,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1034,7 +1022,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1132,7 +1119,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1173,7 +1159,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: imitationAddress,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1220,7 +1205,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1266,7 +1250,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1311,7 +1294,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1435,7 +1417,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1485,7 +1466,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1527,7 +1507,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: imitationAddress,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1578,7 +1557,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1623,7 +1601,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1720,7 +1697,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1767,7 +1743,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: imitationAddress,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1818,7 +1793,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1864,7 +1838,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -1909,7 +1882,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2006,7 +1978,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2056,7 +2027,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2098,7 +2068,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: imitationAddress,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2149,7 +2118,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2194,7 +2162,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2291,7 +2258,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2338,7 +2304,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: imitationAddress,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2389,7 +2354,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2435,7 +2399,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2480,7 +2443,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2619,7 +2581,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                     name: null,
                     value: safe.address,
                   },
-                  richDecodedInfo: null,
                   sender: {
                     logoUri: null,
                     name: null,
@@ -2666,7 +2627,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                     name: null,
                     value: multisigTransfer.to,
                   },
-                  richDecodedInfo: null,
                   sender: {
                     logoUri: null,
                     name: null,
@@ -2908,7 +2868,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -2954,7 +2913,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3046,7 +3004,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3093,7 +3050,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3139,7 +3095,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3185,7 +3140,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3230,7 +3184,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3314,7 +3267,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3406,7 +3358,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3453,7 +3404,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3499,7 +3449,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3545,7 +3494,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3590,7 +3538,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3710,7 +3657,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3756,7 +3702,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3856,7 +3801,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: safe.address,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3903,7 +3847,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3949,7 +3892,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -3995,7 +3937,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: notImitatedMultisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,
@@ -4040,7 +3981,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                       name: null,
                       value: multisigTransfer.to,
                     },
-                    richDecodedInfo: null,
                     sender: {
                       logoUri: null,
                       name: null,

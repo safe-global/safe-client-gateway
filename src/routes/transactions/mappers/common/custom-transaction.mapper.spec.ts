@@ -7,7 +7,6 @@ import {
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { buildHumanDescription } from '@/routes/transactions/entities/__tests__/human-description.builder';
 import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
 import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
 import { getAddress } from 'viem';
@@ -38,7 +37,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize,
       chainId,
       null,
-      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -67,7 +65,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize,
       chainId,
       null,
-      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -95,7 +92,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       transaction,
       dataSize,
       chainId,
-      null,
       null,
     );
 
@@ -140,7 +136,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize,
       chainId,
       null,
-      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -179,7 +174,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       dataSize,
       chainId,
       null,
-      null,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -200,16 +194,12 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const chainId = faker.string.numeric();
     const transaction = multisigTransactionBuilder().build();
     const humanDescription = 'Send 10 ETH to vitalik.eth';
-    const richDecodedInfo = {
-      fragments: buildHumanDescription(),
-    };
 
     const customTransaction = await mapper.mapCustomTransaction(
       transaction,
       dataSize,
       chainId,
       humanDescription,
-      richDecodedInfo,
     );
 
     expect(customTransaction).toBeInstanceOf(CustomTransactionInfo);
@@ -217,9 +207,6 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
       expect.objectContaining({
         humanDescription,
       }),
-    );
-    expect(customTransaction).toEqual(
-      expect.objectContaining({ richDecodedInfo }),
     );
   });
 });

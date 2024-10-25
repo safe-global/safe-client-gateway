@@ -164,7 +164,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
           txInfo: {
             type: 'SwapOrder',
             humanDescription: null,
-            richDecodedInfo: null,
             uid: order.uid,
             status: order.status,
             kind: order.kind,
@@ -300,7 +299,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
           txInfo: {
             type: 'SwapOrder',
             humanDescription: null,
-            richDecodedInfo: null,
             uid: order.uid,
             status: order.status,
             kind: order.kind,
@@ -780,7 +778,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
           txInfo: {
             type: 'TwapOrder',
             humanDescription: null,
-            richDecodedInfo: null,
             status: 'presignaturePending',
             kind: 'sell',
             class: 'limit',
@@ -917,7 +914,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
           txInfo: {
             type: 'TwapOrder',
             humanDescription: null,
-            richDecodedInfo: null,
             status: 'presignaturePending',
             kind: 'sell',
             class: 'limit',
