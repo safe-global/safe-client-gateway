@@ -167,7 +167,7 @@ export class TransferImitationMapper {
       return false;
     }
 
-    return this.isImitationRecipient(txInfo, prevTxInfo);
+    return this.isImitationAddress(txInfo, prevTxInfo);
   }
 
   /**
@@ -201,7 +201,7 @@ export class TransferImitationMapper {
       return false;
     }
 
-    return this.isImitationRecipient(txInfo, prevTxInfo);
+    return this.isImitationAddress(txInfo, prevTxInfo);
   }
 
   /**
@@ -247,7 +247,7 @@ export class TransferImitationMapper {
    * @param {Erc20TransferTransactionInfo} prevTxInfo - previous transaction from which info
    * @returns {boolean} - whether the transaction is an imitation
    */
-  private isImitationRecipient(
+  private isImitationAddress(
     txInfo: Erc20TransferTransactionInfo,
     prevTxInfo: Erc20TransferTransactionInfo,
   ): boolean {
