@@ -63,18 +63,7 @@ describe('Post Hook Events (Unit)', () => {
     await app.close();
   });
 
-  it('should return 410 if the eventsQueue FF is active and the hook is not CHAIN_UPDATE or SAFE_APPS_UPDATE', async () => {
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        eventsQueue: true,
-      },
-    });
-
-    await initApp(testConfiguration);
-
+  it('should return 410 if the hook is not CHAIN_UPDATE or SAFE_APPS_UPDATE', async () => {
     const payload = {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),

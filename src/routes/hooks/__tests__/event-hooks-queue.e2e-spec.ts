@@ -34,10 +34,6 @@ describe('Events queue processing e2e tests', () => {
         ...defaultConfiguration.amqp,
         queue,
       },
-      features: {
-        ...defaultConfiguration.features,
-        eventsQueue: true,
-      },
     });
 
     const moduleRef = await Test.createTestingModule({

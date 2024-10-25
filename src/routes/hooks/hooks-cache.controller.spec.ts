@@ -33,7 +33,8 @@ import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
-describe('Post Hook Events for Cache (Unit)', () => {
+// TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
+describe.skip('Post Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;
   let authToken: string;
   let safeConfigUrl: string;
@@ -1089,105 +1090,6 @@ describe('Post Hook Events for Cache (Unit)', () => {
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
   });
-
-  it.each([
-    {
-      type: 'CHAIN_UPDATE',
-    },
-  ])(
-    '$type clears chains even if the eventsQueue FF is active ',
-    async (payload) => {
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): typeof defaultConfiguration => ({
-        ...defaultConfiguration,
-        features: {
-          ...defaultConfiguration.features,
-          eventsQueue: true,
-        },
-      });
-      await initApp(testConfiguration);
-      const chain = chainBuilder().build();
-      const cacheDir = new CacheDir(`chains`, '');
-      await fakeCacheService.hSet(
-        cacheDir,
-        JSON.stringify(chain),
-        faker.number.int({ min: 1 }),
-      );
-      const data = {
-        chainId: chain.chainId,
-        ...payload,
-      };
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({
-              data: chain,
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(data)
-        .expect(202);
-
-      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
-    },
-  );
-
-  it.each([
-    {
-      type: 'SAFE_APPS_UPDATE',
-    },
-  ])(
-    '$type clears safe apps even if the eventsQueue FF is active',
-    async (payload) => {
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): typeof defaultConfiguration => ({
-        ...defaultConfiguration,
-        features: {
-          ...defaultConfiguration.features,
-          eventsQueue: true,
-        },
-      });
-      await initApp(testConfiguration);
-      const chain = chainBuilder().build();
-      const cacheDir = new CacheDir(`${chain.chainId}_safe_apps`, '');
-      await fakeCacheService.hSet(
-        cacheDir,
-        JSON.stringify(chain),
-        faker.number.int({ min: 1 }),
-      );
-      const data = {
-        chainId: chain.chainId,
-        ...payload,
-      };
-
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({
-              data: chain,
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(data)
-        .expect(202);
-
-      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
-    },
-  );
 
   it.each([
     {

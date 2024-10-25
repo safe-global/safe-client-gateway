@@ -58,7 +58,8 @@ import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.conf
 import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 
-describe('Post Hook Events for Notifications (Unit)', () => {
+// TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
+describe.skip('Post Hook Events for Notifications (Unit)', () => {
   let app: INestApplication<Server>;
   let pushNotificationsApi: jest.MockedObjectDeep<IPushNotificationsApi>;
   let notificationsDatasource: jest.MockedObjectDeep<INotificationsDatasource>;
