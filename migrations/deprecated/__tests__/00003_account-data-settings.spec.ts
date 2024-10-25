@@ -1,7 +1,8 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
+import { waitMilliseconds } from '@/__tests__/util/retry';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import { faker } from '@faker-js/faker';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 import { getAddress } from 'viem';
 
 interface AccountRow {
@@ -107,6 +108,8 @@ describe('Migration 00003_account-data-settings', () => {
     expect(createdAt).toBeInstanceOf(Date);
     expect(createdAt).toStrictEqual(updatedAt);
 
+    // wait for 1 millisecond to ensure that the updated_at timestamp is different
+    await waitMilliseconds(1);
     // only updated_at should be updated after the row is updated
     const afterUpdate = await sql<
       AccountDataTypeRow[]
