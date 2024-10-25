@@ -141,7 +141,6 @@ export default (): ReturnType<typeof configuration> => ({
     configHooksDebugLogs: false,
     imitationMapping: false,
     auth: false,
-    eventsQueue: false,
     delegatesV2: false,
     counterfactualBalances: false,
     accounts: false,
