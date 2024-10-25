@@ -13,6 +13,7 @@ import { getAddress } from 'viem';
 const HASH_LENGTH = 10;
 
 export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
+  const delegate = getAddress(faker.finance.ethereumAddress());
   return new Builder<MultisigTransaction>()
     .with('baseGas', faker.number.int())
     .with('blockNumber', faker.number.int())
@@ -43,7 +44,8 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
         appendSlash: false,
       })}", "name": "${faker.word.words()}"}`,
     )
-    .with('proposer', getAddress(faker.finance.ethereumAddress()))
+    .with('proposer', delegate)
+    .with('proposedByDelegate', delegate)
     .with('refundReceiver', getAddress(faker.finance.ethereumAddress()))
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('safeTxGas', faker.number.int())

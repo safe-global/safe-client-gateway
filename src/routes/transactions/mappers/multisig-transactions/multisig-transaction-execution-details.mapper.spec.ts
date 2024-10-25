@@ -84,6 +84,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasTokenInfo,
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
+        proposedByDelegate: new AddressInfo(transaction.proposedByDelegate!),
       }),
     );
   });
