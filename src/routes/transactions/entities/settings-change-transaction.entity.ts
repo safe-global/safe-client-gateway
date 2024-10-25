@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
-import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
 import { SettingsChange } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 import {
   TransactionInfo,
@@ -17,13 +16,8 @@ export class SettingsChangeTransaction extends TransactionInfo {
     dataDecoded: DataDecoded,
     settingsInfo: SettingsChange | null,
     humanDescription: string | null,
-    richDecodedInfo: RichDecodedInfo | null | undefined,
   ) {
-    super(
-      TransactionInfoType.SettingsChange,
-      humanDescription,
-      richDecodedInfo,
-    );
+    super(TransactionInfoType.SettingsChange, humanDescription);
     this.dataDecoded = dataDecoded;
     this.settingsInfo = settingsInfo;
   }

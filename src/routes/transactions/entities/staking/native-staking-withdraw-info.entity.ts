@@ -23,7 +23,7 @@ export class NativeStakingWithdrawTransactionInfo extends TransactionInfo {
     tokenInfo: TokenInfo;
     validators: Array<`0x${string}`>;
   }) {
-    super(TransactionInfoType.NativeStakingWithdraw, null, null);
+    super(TransactionInfoType.NativeStakingWithdraw, null);
     this.value = args.value;
     this.tokenInfo = args.tokenInfo;
     this.validators = args.validators;

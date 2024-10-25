@@ -90,7 +90,7 @@ export class SwapTransferInfoMapper {
       direction: args.direction,
       transferInfo: args.transferInfo,
       humanDescription: null,
-      richDecodedInfo: null,
+
       // SwapOrderTransactionInfo
       uid: order.uid,
       orderStatus: order.status,

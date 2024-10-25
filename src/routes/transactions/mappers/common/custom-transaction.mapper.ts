@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { isMultisigTransaction } from '@/domain/safe/entities/transaction.entity';
-import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import {
@@ -21,7 +20,6 @@ export class CustomTransactionMapper {
     dataSize: number,
     chainId: string,
     humanDescription: string | null,
-    richDecodedInfo: RichDecodedInfo | null | undefined,
   ): Promise<CustomTransactionInfo> {
     const toAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -37,7 +35,6 @@ export class CustomTransactionMapper {
       this.getActionCount(transaction),
       this.isCancellation(transaction, dataSize),
       humanDescription,
-      richDecodedInfo,
     );
   }
 

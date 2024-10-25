@@ -86,7 +86,7 @@ export class NativeStakingDepositTransactionInfo
     tokenInfo: TokenInfo;
     validators: Array<`0x${string}`> | null;
   }) {
-    super(TransactionInfoType.NativeStakingDeposit, null, null);
+    super(TransactionInfoType.NativeStakingDeposit, null);
     this.status = args.status;
     this.estimatedEntryTime = args.estimatedEntryTime;
     this.estimatedExitTime = args.estimatedExitTime;

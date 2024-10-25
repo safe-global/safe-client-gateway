@@ -195,7 +195,7 @@ export class TwapOrderTransactionInfo
     durationOfPart: DurationOfPart;
     startTime: StartTime;
   }) {
-    super(TransactionInfoType.SwapOrder, null, null);
+    super(TransactionInfoType.SwapOrder, null);
     this.status = args.status;
     this.kind = args.kind;
     this.class = args.class;

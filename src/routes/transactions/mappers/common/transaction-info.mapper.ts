@@ -36,7 +36,6 @@ export class MultisigTransactionInfoMapper {
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
-  private readonly isRichFragmentsEnabled: boolean;
   private readonly isNativeStakingDecodingEnabled: boolean;
 
   private readonly ERC20_TRANSFER_METHODS = [
@@ -70,9 +69,6 @@ export class MultisigTransactionInfoMapper {
     private readonly nativeStakingMapper: NativeStakingMapper,
     private readonly kilnDecoder: KilnDecoder,
   ) {
-    this.isRichFragmentsEnabled = this.configurationService.getOrThrow(
-      'features.richFragments',
-    );
     this.isNativeStakingDecodingEnabled = this.configurationService.getOrThrow(
       'features.nativeStakingDecoding',
     );
@@ -90,20 +86,11 @@ export class MultisigTransactionInfoMapper {
     const dataSize =
       dataByteLength >= 2 ? Math.floor((dataByteLength - 2) / 2) : 0;
 
-    const richDecodedInfo =
-      await this.humanDescriptionMapper.mapRichDecodedInfo(
+    const humanDescription =
+      await this.humanDescriptionMapper.mapHumanDescription(
         transaction,
         chainId,
       );
-
-    const humanDescription =
-      this.humanDescriptionMapper.mapHumanDescription(richDecodedInfo);
-
-    // If the rich fragment feature is disabled, we set it as undefined.
-    // Undefined properties are not rendered on the response
-    const richDecodedInfoApiProperty = this.isRichFragmentsEnabled
-      ? richDecodedInfo
-      : undefined;
 
     const swapOrder: SwapOrderTransactionInfo | null = await this.mapSwapOrder(
       chainId,
@@ -151,7 +138,6 @@ export class MultisigTransactionInfoMapper {
         dataSize,
         chainId,
         humanDescription,
-        richDecodedInfoApiProperty,
       );
     }
 
@@ -160,7 +146,6 @@ export class MultisigTransactionInfoMapper {
         chainId,
         transaction,
         humanDescription,
-        richDecodedInfoApiProperty,
       );
     }
 
@@ -191,7 +176,6 @@ export class MultisigTransactionInfoMapper {
         new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
         settingsInfo,
         humanDescription,
-        richDecodedInfoApiProperty,
       );
     }
 
@@ -207,7 +191,6 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
-            richDecodedInfoApiProperty,
           );
         case TokenType.Erc721:
           return this.erc721TransferMapper.mapErc721Transfer(
@@ -215,7 +198,6 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
-            richDecodedInfoApiProperty,
           );
       }
     }
@@ -225,7 +207,6 @@ export class MultisigTransactionInfoMapper {
       dataSize,
       chainId,
       humanDescription,
-      richDecodedInfoApiProperty,
     );
   }
 

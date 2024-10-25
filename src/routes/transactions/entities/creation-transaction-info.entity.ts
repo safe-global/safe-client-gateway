@@ -24,7 +24,7 @@ export class CreationTransactionInfo extends TransactionInfo {
     factory: AddressInfo | null,
     saltNonce: string | null,
   ) {
-    super(TransactionInfoType.Creation, null, null);
+    super(TransactionInfoType.Creation, null);
     this.creator = creator;
     this.transactionHash = transactionHash;
     this.implementation = implementation;
