@@ -14,6 +14,7 @@ import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigConfirmationDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
+import { getAddress } from 'viem';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -84,6 +85,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasTokenInfo,
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
+        proposedByDelegate: null,
       }),
     );
   });
@@ -148,6 +150,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasTokenInfo: null,
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
+        proposedByDelegate: null,
       }),
     );
   });
@@ -214,6 +217,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasTokenInfo: null,
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
+        proposedByDelegate: null,
       }),
     );
   });
@@ -243,6 +247,37 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       expect.objectContaining({
         type: 'MULTISIG',
         proposer: null,
+      }),
+    );
+  });
+
+  it('should return a MultisigExecutionDetails object proposedByDelegate if not present', async () => {
+    const chainId = faker.string.numeric();
+    const safe = safeBuilder().build();
+    const delegate = getAddress(faker.finance.ethereumAddress());
+    const transaction = multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('proposer', delegate)
+      .with('proposedByDelegate', delegate)
+      .build();
+    const addressInfo = addressInfoBuilder().build();
+    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+    safeRepository.getMultisigTransactions.mockResolvedValue(
+      pageBuilder<MultisigTransaction>().with('results', []).build(),
+    );
+    const gasTokenInfo = tokenBuilder().build();
+    tokenRepository.getToken.mockResolvedValue(gasTokenInfo);
+
+    const actual = await mapper.mapMultisigExecutionDetails(
+      chainId,
+      transaction,
+      safe,
+    );
+
+    expect(actual).toEqual(
+      expect.objectContaining({
+        type: 'MULTISIG',
+        proposedByDelegate: new AddressInfo(delegate),
       }),
     );
   });

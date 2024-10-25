@@ -43,6 +43,9 @@ export class MultisigTransactionExecutionDetailsMapper {
     const proposer = transaction.proposer
       ? new AddressInfo(transaction.proposer)
       : null;
+    const proposedByDelegate = transaction.proposedByDelegate
+      ? new AddressInfo(transaction.proposedByDelegate)
+      : null;
 
     const [gasTokenInfo, executor, refundReceiver, rejectors] =
       await Promise.all([
@@ -79,6 +82,7 @@ export class MultisigTransactionExecutionDetailsMapper {
       gasTokenInfo,
       transaction.trusted,
       proposer,
+      proposedByDelegate,
     );
   }
 

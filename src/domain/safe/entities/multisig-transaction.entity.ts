@@ -11,7 +11,7 @@ export type Confirmation = z.infer<typeof ConfirmationSchema>;
 
 export type MultisigTransaction = z.infer<typeof MultisigTransactionSchema>;
 
-const ConfirmationSchema = z.object({
+export const ConfirmationSchema = z.object({
   owner: AddressSchema,
   submissionDate: z.coerce.date(),
   transactionHash: HexSchema.nullish().default(null),
@@ -31,6 +31,7 @@ export const MultisigTransactionSchema = z.object({
   baseGas: z.number().nullish().default(null),
   gasPrice: NumericStringSchema.nullish().default(null),
   proposer: AddressSchema.nullish().default(null),
+  proposedByDelegate: AddressSchema.nullish().default(null),
   refundReceiver: AddressSchema.nullish().default(null),
   nonce: z.number(),
   executionDate: z.coerce.date().nullish().default(null),
