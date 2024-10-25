@@ -171,6 +171,6 @@ export class SwapTransferTransactionInfo
 
 export function isSwapTransferTransactionInfo(
   txInfo: TransactionInfo,
-): txInfo is TransferTransactionInfo {
+): txInfo is SwapTransferTransactionInfo {
   return txInfo.type === TransactionInfoType.SwapTransfer;
 }

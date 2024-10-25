@@ -70,7 +70,6 @@ export class AppModule implements NestModule {
       auth: isAuthFeatureEnabled,
       accounts: isAccountsFeatureEnabled,
       email: isEmailFeatureEnabled,
-      confirmationView: isConfirmationViewEnabled,
       delegatesV2: isDelegatesV2Enabled,
       pushNotifications: isPushNotificationsEnabled,
       targetedMessaging: isTargetedMessagingFeatureEnabled,
@@ -111,9 +110,7 @@ export class AppModule implements NestModule {
         SafesModule,
         ...(isTargetedMessagingFeatureEnabled ? [TargetedMessagingModule] : []),
         TransactionsModule,
-        ...(isConfirmationViewEnabled
-          ? [TransactionsViewControllerModule]
-          : []),
+        TransactionsViewControllerModule,
         // common
         CacheModule,
         // Module for storing and reading from the async local storage
