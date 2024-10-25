@@ -152,7 +152,9 @@ export class EventCacheHelper {
    * Logs the number of unsupported chain events for each chain and clears the store.
    * This function is public just for testing purposes.
    */
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_MINUTE, {
+    disabled: process.env.NODE_ENV === 'test',
+  })
   public async logUnsupportedEvents(): Promise<void> {
     await Promise.all(
       this.unsupportedChains.map(async (chainId) => {
