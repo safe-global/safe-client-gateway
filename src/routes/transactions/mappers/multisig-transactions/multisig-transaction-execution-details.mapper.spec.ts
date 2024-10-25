@@ -249,6 +249,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       }),
     );
   });
+
   it('should return a MultisigExecutionDetails object with no proposedByDelegate if not present', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
