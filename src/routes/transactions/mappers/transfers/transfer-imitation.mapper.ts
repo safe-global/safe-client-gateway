@@ -167,9 +167,7 @@ export class TransferImitationMapper {
       return false;
     }
 
-    const refAddress = this.getReferenceAddress(txInfo);
-    const prevRefAddress = this.getReferenceAddress(prevTxInfo);
-    return this.isImitatorAddress(refAddress, prevRefAddress);
+    return this.isImitationAddress(txInfo, prevTxInfo);
   }
 
   /**
@@ -188,7 +186,7 @@ export class TransferImitationMapper {
   ): boolean {
     // Incoming transfer imitations must be of the same token
     const isSameToken =
-      txInfo.transferInfo.tokenAddress === txInfo.transferInfo.tokenAddress;
+      txInfo.transferInfo.tokenAddress === prevTxInfo.transferInfo.tokenAddress;
     const isIncoming = txInfo.direction === TransferDirection.Incoming;
     const isPrevOutgoing = prevTxInfo.direction === TransferDirection.Outgoing;
     if (!isSameToken || !isIncoming || !isPrevOutgoing) {
@@ -198,10 +196,12 @@ export class TransferImitationMapper {
     // Is imitation if value is lower than the specified threshold
     const value = this.formatValue(txInfo.transferInfo);
     const prevValue = this.formatValue(prevTxInfo.transferInfo);
-    return (
-      // Imitations generally follow high transfer values
-      prevValue >= this.echoLimit && value <= this.echoLimit
-    );
+    const isEchoValue = prevValue >= this.echoLimit && value <= this.echoLimit;
+    if (!isEchoValue) {
+      return false;
+    }
+
+    return this.isImitationAddress(txInfo, prevTxInfo);
   }
 
   /**
@@ -242,25 +242,30 @@ export class TransferImitationMapper {
   }
 
   /**
-   * Returns whether the two addresses match in vanity
-   * @param address1 - address to compare against
-   * @param address2  - second address to compare
-   * @returns - whether the two addresses are imitators
+   * Returns whether the reference addresses of transactions match in vanity
+   * @param {Erc20TransferTransactionInfo} txInfo - transaction info from which to compare
+   * @param {Erc20TransferTransactionInfo} prevTxInfo - previous transaction from which info
+   * @returns {boolean} - whether the transaction is an imitation
    */
-  private isImitatorAddress(address1: string, address2: string): boolean {
-    const a1 = address1.toLowerCase();
-    const a2 = address2.toLowerCase();
+  private isImitationAddress(
+    txInfo: Erc20TransferTransactionInfo,
+    prevTxInfo: Erc20TransferTransactionInfo,
+  ): boolean {
+    const refAddress = this.getReferenceAddress(txInfo).toLowerCase();
+    const prevRefAddress = this.getReferenceAddress(prevTxInfo).toLowerCase();
 
     // Same address is not an imitation
-    if (a1 === a2) {
+    if (refAddress === prevRefAddress) {
       return false;
     }
 
     const isSamePrefix =
       // Ignore `0x` prefix
-      a1.slice(2, 2 + this.prefixLength) === a2.slice(2, 2 + this.prefixLength);
+      refAddress.slice(2, 2 + this.prefixLength) ===
+      prevRefAddress.slice(2, 2 + this.prefixLength);
     const isSameSuffix =
-      a1.slice(-this.suffixLength) === a2.slice(-this.suffixLength);
+      refAddress.slice(-this.suffixLength) ===
+      prevRefAddress.slice(-this.suffixLength);
     return isSamePrefix && isSameSuffix;
   }
 }

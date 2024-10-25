@@ -114,17 +114,17 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     await app.close();
   });
 
+  function getImitationAddress(address: `0x${string}`): `0x${string}` {
+    // + 2 is to account for the '0x' prefix
+    const prefix = address.slice(0, prefixLength + 2);
+    const suffix = address.slice(-suffixLength);
+    const imitator = `${prefix}${faker.finance.ethereumAddress().slice(prefixLength + 2, -suffixLength)}${suffix}`;
+    return getAddress(imitator);
+  }
+
   describe('Event spoofing', () => {
     function parseUnits(value: bigint, decimals: number): bigint {
       return value * BigInt(10 ** decimals);
-    }
-
-    function getImitationAddress(address: `0x${string}`): `0x${string}` {
-      // + 2 is to account for the '0x' prefix
-      const prefix = address.slice(0, prefixLength + 2);
-      const suffix = address.slice(-suffixLength);
-      const imitator = `${prefix}${faker.finance.ethereumAddress().slice(prefixLength + 2, -suffixLength)}${suffix}`;
-      return getAddress(imitator);
     }
 
     const multisigExecutionDate = new Date('2024-03-20T09:41:25Z');
@@ -2820,6 +2820,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       // TODO: Update type to include transfers
       transfers: [erc20TransferToJson(notImitatedMultisigTransfer) as Transfer],
     } as MultisigTransaction;
+    const imitationAddress = getImitationAddress(multisigTransfer.to);
 
     const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -2831,6 +2832,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       const imitationIncomingTransfer = {
         ...erc20TransferBuilder()
           .with('to', safe.address)
+          .with('from', imitationAddress)
           .with('tokenAddress', multisigToken.address)
           .with(
             'value',
@@ -2857,7 +2859,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           .build(),
       ) as EthereumTransaction;
 
-      it('should flag imitation incoming transfers with a below-limit value within the lookup distance', async () => {
+      it('should flag imitation incoming transfers of vanity with a below-limit value within the lookup distance', async () => {
         const results = [imitationIncomingTransaction, multisigTransaction];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -2982,7 +2984,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           });
       });
 
-      it('should not flag imitation incoming transfers with a below-limit value outside the lookup distance', async () => {
+      it('should not flag imitation incoming transfers of vanity with a below-limit value outside the lookup distance', async () => {
         const results = [
           imitationIncomingTransaction,
           notImitatedMultisigTransaction,
@@ -3258,7 +3260,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           });
       });
 
-      it('should filter out imitation incoming transfers with a below-limit value within the lookup distance', async () => {
+      it('should filter out imitation incoming transfers of vanity with a below-limit value within the lookup distance', async () => {
         const results = [imitationIncomingTransaction, multisigTransaction];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -3342,7 +3344,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           });
       });
 
-      it('should not filter out imitation incoming transfers with a below-limit value outside the lookup distance', async () => {
+      it('should not filter out imitation incoming transfers of vanity with a below-limit value outside the lookup distance', async () => {
         const results = [
           imitationIncomingTransaction,
           notImitatedMultisigTransaction,
@@ -3624,6 +3626,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       const aboveLimitIncomingTransfer = {
         ...erc20TransferBuilder()
           .with('to', safe.address)
+          .with('from', imitationAddress)
           .with('tokenAddress', multisigToken.address)
           .with(
             'value',
@@ -3652,11 +3655,11 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
       it.each([
         [
-          'should not flag imitation incoming transfers with an above-limit value within the lookup distance',
+          'should not flag imitation incoming transfers of vanity with an above-limit value within the lookup distance',
           true,
         ],
         [
-          'should not filter out imitation incoming transfers with an above-limit value within the lookup distance',
+          'should not filter out imitation incoming of vanity transfers with an above-limit value within the lookup distance',
           false,
         ],
       ])(`%s`, async (_, filter) => {
@@ -3786,11 +3789,11 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
       it.each([
         [
-          'should not flag imitation incoming transfers with an above-limit value outside the lookup distance',
+          'should not flag imitation incoming transfers of vanity with an above-limit value outside the lookup distance',
           true,
         ],
         [
-          'should not filter out imitation incoming transfers with an above-limit value outside the lookup distance',
+          'should not filter out imitation incoming of vanity transfers with an above-limit value outside the lookup distance',
           false,
         ],
       ])(`%s`, async (_, filter) => {
