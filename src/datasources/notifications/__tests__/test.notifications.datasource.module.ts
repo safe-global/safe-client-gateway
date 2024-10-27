@@ -1,6 +1,9 @@
 import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { Module } from '@nestjs/common';
 
+/**
+ * @deprecated
+ */
 const accountsDatasource: INotificationsDatasource = {
   deleteDevice: jest.fn(),
   deleteSubscription: jest.fn(),
@@ -8,6 +11,10 @@ const accountsDatasource: INotificationsDatasource = {
   getSubscribersBySafe: jest.fn(),
   upsertSubscriptions: jest.fn(),
 };
+
+/**
+ * @deprecated
+ */
 
 @Module({
   providers: [

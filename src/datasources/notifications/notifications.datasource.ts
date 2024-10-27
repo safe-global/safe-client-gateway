@@ -12,6 +12,9 @@ import {
 import postgres from 'postgres';
 import { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
 
+/**
+ * @deprecated
+ */
 @Injectable()
 export class NotificationsDatasource implements INotificationsDatasource {
   constructor(
