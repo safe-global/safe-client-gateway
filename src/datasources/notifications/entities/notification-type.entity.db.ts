@@ -36,7 +36,8 @@ export class NotificationType
 
   @OneToMany(
     () => NotificationSubscriptionNotificationType,
-    (notificationType) => notificationType.id,
+    (notificationSubscriptionType) =>
+      notificationSubscriptionType.notification_type,
     { onDelete: 'CASCADE' },
   )
   notification_subscription_notification_type!: NotificationSubscriptionNotificationType[];

@@ -1,7 +1,7 @@
 import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
 import {
+  NotificationSubscriptionNotificationType,
   NotificationSubscriptionNotificationTypeSchema,
-  type NotificationSubscriptionNotificationType,
 } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity.db';
 import {
   Column,
@@ -94,8 +94,9 @@ export class NotificationSubscription
   updated_at!: Date;
 
   @OneToMany(
-    () => NotificationSubscription,
-    (notificationSubscription) => notificationSubscription.id,
+    () => NotificationSubscriptionNotificationType,
+    (notificationSubscriptionNotificationType) =>
+      notificationSubscriptionNotificationType.id,
   )
   notification_subscription_notification_type!: NotificationSubscriptionNotificationType[];
 }

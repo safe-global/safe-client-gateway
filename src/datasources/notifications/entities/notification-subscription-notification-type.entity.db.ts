@@ -31,7 +31,14 @@ export class NotificationSubscriptionNotificationType
   })
   notification_subscription!: NotificationSubscription;
 
-  @ManyToOne(() => NotificationType, (type) => type.id, { onDelete: 'CASCADE' })
+  @ManyToOne(
+    () => NotificationType,
+    (notificationType) =>
+      notificationType.notification_subscription_notification_type,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   @JoinColumn({ name: 'notification_type_id' })
   notification_type!: NotificationType;
 }

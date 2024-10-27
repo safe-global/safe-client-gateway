@@ -301,6 +301,9 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       where: {
         notification_subscription_notification_type: {
           notification_subscription: {
+            push_notification_device: {
+              device_uuid: args.deviceUuid,
+            },
             chain_id: args.chainId,
             safe_address: args.safeAddress,
             signer_address: args.authPayload.signer_address,
