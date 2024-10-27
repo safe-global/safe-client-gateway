@@ -31,11 +31,19 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
+import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
+import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
+import { TestNotificationsModuleV2 } from '@/routes/notifications/v2/test.notifications.module';
+import type { UUID } from 'crypto';
+import { createV2RegisterDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/create-registration-v2.dto.builder';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let notificationServiceV2: jest.MockedObjectDeep<NotificationsServiceV2>;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -57,11 +65,16 @@ describe('Notifications Controller (Unit)', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
+      .overrideModule(NotificationsRepositoryV2Module)
+      .useModule(TestNotificationsRepositoryV2Module)
+      .overrideModule(NotificationsModuleV2)
+      .useModule(TestNotificationsModuleV2)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
+    notificationServiceV2 = moduleFixture.get(NotificationsServiceV2);
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
@@ -69,27 +82,46 @@ describe('Notifications Controller (Unit)', () => {
     await app.init();
   });
 
-  const buildInputDto = (): RegisterDeviceDto =>
-    registerDeviceDtoBuilder()
-      .with(
-        'safeRegistrations',
-        faker.helpers.multiple(
-          (_, i) => {
-            return safeRegistrationBuilder()
-              .with('chainId', i.toString())
-              .build();
-          },
-          { count: 4 },
-        ),
-      )
+  const buildInputDto = async (): Promise<RegisterDeviceDto> => {
+    const uuid = faker.string.uuid() as UUID;
+    const cloudMessagingToken = faker.string.uuid() as UUID;
+    const timestamp = faker.date.recent().getTime();
+
+    const safeRegistrations = await Promise.all(
+      faker.helpers.multiple(
+        async (_, i) => {
+          const safeRegistration = await safeRegistrationBuilder({
+            signaturePrefix: 'gnosis-safe',
+            uuid,
+            cloudMessagingToken,
+            timestamp,
+          });
+          return safeRegistration.with('chainId', i.toString()).build();
+        },
+        { count: 4 },
+      ),
+    );
+
+    return (
+      await registerDeviceDtoBuilder({
+        uuid,
+        cloudMessagingToken,
+        timestamp,
+      })
+    )
+      .with('safeRegistrations', safeRegistrations)
       .build();
+  };
 
   const rejectForUrl = (url: string): Promise<never> =>
     Promise.reject(`No matching rule for url: ${url}`);
 
   describe('POST /register/notifications', () => {
     it('Success', async () => {
-      const registerDeviceDto = buildInputDto();
+      const registerDeviceDto = await buildInputDto();
+      const upsertSubscriptionsV2Dto =
+        await createV2RegisterDtoBuilder(registerDeviceDto);
+
       networkService.get.mockImplementation(({ url }) =>
         url.includes(`${safeConfigUrl}/api/v1/chains/`)
           ? Promise.resolve({
@@ -109,10 +141,31 @@ describe('Notifications Controller (Unit)', () => {
         .send(registerDeviceDto)
         .expect(200)
         .expect({});
+
+      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
+      // We call V2 as many times as we have a registration with at least one safe
+      const safedRegistrationsWithSafe =
+        registerDeviceDto.safeRegistrations.filter(
+          (safeRegistration) => safeRegistration.safes.length > 0,
+        );
+
+      expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
+        safedRegistrationsWithSafe.length,
+      );
+
+      for (const [
+        index,
+        upsertSubscriptionsV2,
+      ] of upsertSubscriptionsV2Dto.entries()) {
+        const nthCall = index + 1; // Convert zero-based index to a one-based call number
+        expect(
+          notificationServiceV2.upsertSubscriptions,
+        ).toHaveBeenNthCalledWith(nthCall, upsertSubscriptionsV2);
+      }
     });
 
     it('Client errors returned from provider', async () => {
-      const registerDeviceDto = buildInputDto();
+      const registerDeviceDto = await buildInputDto();
       networkService.get.mockImplementation(({ url }) => {
         return url.includes(`${safeConfigUrl}/api/v1/chains/`)
           ? Promise.resolve({
@@ -150,10 +203,12 @@ describe('Notifications Controller (Unit)', () => {
             error: 'Bad Request',
           }),
         );
+
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
     });
 
     it('Server errors returned from provider', async () => {
-      const registerDeviceDto = buildInputDto();
+      const registerDeviceDto = await buildInputDto();
       networkService.get.mockImplementation(({ url }) =>
         url.includes(`${safeConfigUrl}/api/v1/chains/`)
           ? Promise.resolve({
@@ -189,10 +244,12 @@ describe('Notifications Controller (Unit)', () => {
           message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistrations[0].chainId}`,
           error: 'Internal Server Error',
         });
+
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
     });
 
     it('Both client and server errors returned from provider', async () => {
-      const registerDeviceDto = buildInputDto();
+      const registerDeviceDto = await buildInputDto();
       networkService.get.mockImplementation(({ url }) => {
         return url.includes(`${safeConfigUrl}/api/v1/chains/`)
           ? Promise.resolve({
@@ -243,10 +300,12 @@ describe('Notifications Controller (Unit)', () => {
           ]}`,
           error: 'Internal Server Error',
         });
+
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
     });
 
     it('No status code errors returned from provider', async () => {
-      const registerDeviceDto = buildInputDto();
+      const registerDeviceDto = await buildInputDto();
       networkService.get.mockImplementation(({ url }) =>
         url.includes(`${safeConfigUrl}/api/v1/chains/`)
           ? Promise.resolve({
@@ -280,6 +339,8 @@ describe('Notifications Controller (Unit)', () => {
           message: `Push notification registration failed for chain IDs: ${registerDeviceDto.safeRegistrations[1].chainId}`,
           error: 'Internal Server Error',
         });
+
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
     });
   });
 
@@ -307,6 +368,9 @@ describe('Notifications Controller (Unit)', () => {
       expect(networkService.delete).toHaveBeenCalledWith({
         url: expectedProviderURL,
       });
+
+      expect(notificationServiceV2.deleteDevice).toHaveBeenCalledTimes(1);
+      expect(notificationServiceV2.deleteDevice).toHaveBeenCalledWith(uuid);
     });
 
     it('Failure: Config API fails', async () => {
@@ -322,6 +386,8 @@ describe('Notifications Controller (Unit)', () => {
         .delete(`/v1/chains/${chainId}/notifications/devices/${uuid}`)
         .expect(503);
       expect(networkService.delete).toHaveBeenCalledTimes(0);
+
+      expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
     });
 
     it('Failure: Transaction API fails', async () => {
@@ -343,6 +409,8 @@ describe('Notifications Controller (Unit)', () => {
         .delete(`/v1/chains/${chain.chainId}/notifications/devices/${uuid}`)
         .expect(503);
       expect(networkService.delete).toHaveBeenCalledTimes(1);
+
+      expect(notificationServiceV2.deleteDevice).not.toHaveBeenCalled();
     });
   });
 
@@ -374,6 +442,13 @@ describe('Notifications Controller (Unit)', () => {
       expect(networkService.delete).toHaveBeenCalledWith({
         url: expectedProviderURL,
       });
+
+      expect(notificationServiceV2.deleteSubscription).toHaveBeenCalledTimes(1);
+      expect(notificationServiceV2.deleteSubscription).toHaveBeenCalledWith({
+        deviceUuid: uuid,
+        chainId: chain.chainId,
+        safeAddress: getAddress(safeAddress),
+      });
     });
 
     it('Failure: Config API fails', async () => {
@@ -392,6 +467,8 @@ describe('Notifications Controller (Unit)', () => {
         )
         .expect(503);
       expect(networkService.delete).toHaveBeenCalledTimes(0);
+
+      expect(notificationServiceV2.deleteSubscription).not.toHaveBeenCalled();
     });
 
     it('Failure: Transaction API fails', async () => {
@@ -416,6 +493,8 @@ describe('Notifications Controller (Unit)', () => {
         )
         .expect(503);
       expect(networkService.delete).toHaveBeenCalledTimes(1);
+
+      expect(notificationServiceV2.deleteSubscription).not.toHaveBeenCalled();
     });
   });
 });
