@@ -31,3 +31,7 @@ process.env.AMQP_QUEUE = 'test-queue';
 process.env.AMQP_PREFETCH = '100';
 
 process.env.OWNERS_TTL_SECONDS = '0';
+
+// For E2E tests, JWT dummy values
+process.env.JWT_ISSUER = 'fase-issuer';
+process.env.JWT_SECRET = 'fake-secret';
