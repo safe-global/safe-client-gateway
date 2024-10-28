@@ -1,5 +1,6 @@
 import type { Page } from '@/domain/entities/page.entity';
 import type { Campaign } from '@/domain/community/entities/campaign.entity';
+import type { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
 import type { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import type { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import type { LockingRank } from '@/domain/community/entities/locking-rank.entity';
@@ -19,7 +20,7 @@ export interface ILockingApi {
     holder?: `0x${string}`;
     limit?: number;
     offset?: number;
-  }): Promise<number>;
+  }): Promise<CampaignActivity>;
 
   getLockingRank(safeAddress: `0x${string}`): Promise<LockingRank>;
 

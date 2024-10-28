@@ -7,6 +7,7 @@ import {
 import { Page } from '@/domain/entities/page.entity';
 import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
 import { Campaign } from '@/domain/community/entities/campaign.entity';
+import { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
 import { CampaignRank } from '@/domain/community/entities/campaign-rank.entity';
 import { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import { LockingRank } from '@/domain/community/entities/locking-rank.entity';
@@ -62,10 +63,10 @@ export class LockingApi implements ILockingApi {
     holder?: `0x${string}`;
     limit?: number;
     offset?: number;
-  }): Promise<number> {
+  }): Promise<CampaignActivity> {
     try {
       const url = `${this.baseUri}/api/v1/campaigns/${args.resourceId}/activities`;
-      const { data } = await this.networkService.get<number>({
+      const { data } = await this.networkService.get<CampaignActivity>({
         url,
         networkRequest: {
           params: {
