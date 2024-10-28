@@ -35,3 +35,11 @@ process.env.OWNERS_TTL_SECONDS = '0';
 // For E2E tests, JWT dummy values
 process.env.JWT_ISSUER = 'fase-issuer';
 process.env.JWT_SECRET = 'fake-secret';
+
+// For E2E tests, Push notification dummy values
+process.env.PUSH_NOTIFICATIONS_API_BASE_URI = 'http://www.fake.com';
+process.env.PUSH_NOTIFICATIONS_API_PROJECT = 'fake-project';
+process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL =
+  'email@fake-email.com';
+process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY =
+  'fake-private-key';
