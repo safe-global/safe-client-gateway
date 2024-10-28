@@ -902,6 +902,8 @@ describe('Alerts (Unit)', () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
           imports: [AppModule.register(testConfiguration)],
         })
+          .overrideModule(PostgresDatabaseModule)
+          .useModule(TestPostgresDatabaseModule)
           .overrideModule(CacheModule)
           .useModule(TestCacheModule)
           .overrideModule(RequestScopedLoggingModule)
