@@ -12,11 +12,6 @@ import { Controller, Get, INestApplication, UseGuards } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 import { Server } from 'net';
 
 @Controller()
@@ -53,8 +48,6 @@ describe('AuthGuard', () => {
       ],
       controllers: [TestController],
     })
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .compile();

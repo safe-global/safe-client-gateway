@@ -21,11 +21,6 @@ import { CacheService } from '@/datasources/cache/cache.service.interface';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
@@ -55,8 +50,6 @@ describe('AuthController', () => {
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(BlockchainApiManagerModule)
       .useModule(TestBlockchainApiManagerModule)
       .overrideModule(CacheModule)

@@ -22,6 +22,8 @@ describe('Configuration validator', () => {
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
     INFURA_API_KEY: faker.string.uuid(),
+    JWT_ISSUER: faker.string.uuid(),
+    JWT_SECRET: faker.string.uuid(),
     PUSH_NOTIFICATIONS_API_PROJECT: faker.word.noun(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: faker.internet.email(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY:
@@ -66,6 +68,8 @@ describe('Configuration validator', () => {
     { key: 'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_VERIFICATION_CODE' },
     { key: 'INFURA_API_KEY' },
+    { key: 'JWT_ISSUER' },
+    { key: 'JWT_SECRET' },
     { key: 'PUSH_NOTIFICATIONS_API_PROJECT' },
     { key: 'PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL' },
     { key: 'PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY' },
@@ -112,6 +116,8 @@ describe('Configuration validator', () => {
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
       EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
       INFURA_API_KEY: faker.string.uuid(),
+      JWT_ISSUER: faker.string.uuid(),
+      JWT_SECRET: faker.string.uuid(),
       PUSH_NOTIFICATIONS_API_PROJECT: faker.word.noun(),
       PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL:
         faker.internet.email(),
@@ -158,6 +164,8 @@ describe('Configuration validator', () => {
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
       EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
       INFURA_API_KEY: faker.string.uuid(),
+      JWT_ISSUER: faker.string.uuid(),
+      JWT_SECRET: faker.string.uuid(),
       PUSH_NOTIFICATIONS_API_PROJECT: faker.word.noun(),
       PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL:
         faker.internet.email(),

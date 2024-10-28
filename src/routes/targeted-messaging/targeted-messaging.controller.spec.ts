@@ -8,11 +8,6 @@ import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.post
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
-import jwtConfiguration from '@/datasources/jwt/configuration/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -60,8 +55,6 @@ describe('TargetedMessagingController', () => {
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
       .overrideModule(RequestScopedLoggingModule)
