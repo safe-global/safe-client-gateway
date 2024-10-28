@@ -239,6 +239,10 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
   },
+  jwt: {
+    issuer: process.env.JWT_ISSUER,
+    secret: process.env.JWT_SECRET,
+  },
   locking: {
     baseUri:
       process.env.LOCKING_PROVIDER_API_BASE_URI ||
@@ -393,9 +397,5 @@ export default () => ({
           'assets/targeted-messaging',
       },
     },
-  },
-  jwt: {
-    issuer: process.env.JWT_ISSUER,
-    secret: process.env.JWT_SECRET,
   },
 });

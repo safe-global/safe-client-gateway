@@ -22,6 +22,8 @@ describe('Configuration validator', () => {
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
     INFURA_API_KEY: faker.string.uuid(),
+    JWT_ISSUER: faker.string.uuid(),
+    JWT_SECRET: faker.string.uuid(),
     PUSH_NOTIFICATIONS_API_PROJECT: faker.word.noun(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: faker.internet.email(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY:
@@ -39,8 +41,6 @@ describe('Configuration validator', () => {
     RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
     STAKING_API_KEY: faker.string.uuid(),
     STAKING_TESTNET_API_KEY: faker.string.uuid(),
-    JWT_ISSUER: faker.string.uuid(),
-    JWT_SECRET: faker.string.uuid(),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -68,6 +68,8 @@ describe('Configuration validator', () => {
     { key: 'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_VERIFICATION_CODE' },
     { key: 'INFURA_API_KEY' },
+    { key: 'JWT_ISSUER' },
+    { key: 'JWT_SECRET' },
     { key: 'PUSH_NOTIFICATIONS_API_PROJECT' },
     { key: 'PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL' },
     { key: 'PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY' },
@@ -84,8 +86,6 @@ describe('Configuration validator', () => {
     { key: 'RELAY_PROVIDER_API_KEY_SEPOLIA' },
     { key: 'STAKING_API_KEY' },
     { key: 'STAKING_TESTNET_API_KEY' },
-    { key: 'JWT_ISSUER' },
-    { key: 'JWT_SECRET' },
   ])(
     'should detect that $key is missing in the configuration in production environment',
     ({ key }) => {
@@ -116,6 +116,8 @@ describe('Configuration validator', () => {
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
       EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
       INFURA_API_KEY: faker.string.uuid(),
+      JWT_ISSUER: faker.string.uuid(),
+      JWT_SECRET: faker.string.uuid(),
       PUSH_NOTIFICATIONS_API_PROJECT: faker.word.noun(),
       PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL:
         faker.internet.email(),
@@ -134,8 +136,6 @@ describe('Configuration validator', () => {
       RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
       STAKING_API_KEY: faker.string.uuid(),
       STAKING_TESTNET_API_KEY: faker.string.uuid(),
-      JWT_ISSUER: faker.string.uuid(),
-      JWT_SECRET: faker.string.uuid(),
     };
     expect(() =>
       configurationValidator(invalidConfiguration, RootConfigurationSchema),
@@ -164,6 +164,8 @@ describe('Configuration validator', () => {
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
       EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
       INFURA_API_KEY: faker.string.uuid(),
+      JWT_ISSUER: faker.string.uuid(),
+      JWT_SECRET: faker.string.uuid(),
       PUSH_NOTIFICATIONS_API_PROJECT: faker.word.noun(),
       PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL:
         faker.internet.email(),
@@ -182,8 +184,6 @@ describe('Configuration validator', () => {
       RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
       STAKING_API_KEY: faker.string.uuid(),
       STAKING_TESTNET_API_KEY: faker.string.uuid(),
-      JWT_ISSUER: faker.string.uuid(),
-      JWT_SECRET: faker.string.uuid(),
       TARGETED_MESSAGING_FILE_STORAGE_TYPE: faker.lorem.words(),
     };
     expect(() =>

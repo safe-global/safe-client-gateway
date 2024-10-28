@@ -18,6 +18,8 @@ export const RootConfigurationSchema = z
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: z.string(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: z.string(),
     INFURA_API_KEY: z.string(),
+    JWT_ISSUER: z.string(),
+    JWT_SECRET: z.string(),
     PUSH_NOTIFICATIONS_API_PROJECT: z.string(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: z.string().email(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY: z.string(),
@@ -35,8 +37,6 @@ export const RootConfigurationSchema = z
     STAKING_API_KEY: z.string(),
     STAKING_TESTNET_API_KEY: z.string(),
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
-    JWT_ISSUER: z.string(),
-    JWT_SECRET: z.string(),
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* fields in production and staging environments

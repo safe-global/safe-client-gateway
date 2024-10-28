@@ -61,7 +61,6 @@ function jwtClientFactory() {
 export type JwtClient = ReturnType<typeof jwtClientFactory>;
 
 @Module({
-  imports: [],
   providers: [
     {
       provide: 'JwtClient',

@@ -153,6 +153,10 @@ export default (): ReturnType<typeof configuration> => ({
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
+  jwt: {
+    issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',
+    secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
+  },
   log: {
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
@@ -250,9 +254,5 @@ export default (): ReturnType<typeof configuration> => ({
         baseDir: 'assets/targeted-messaging',
       },
     },
-  },
-  jwt: {
-    issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',
-    secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
   },
 });
