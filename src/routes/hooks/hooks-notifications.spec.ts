@@ -50,11 +50,6 @@ import { messageCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/me
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 import type { UUID } from 'crypto';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
 import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
@@ -87,8 +82,6 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

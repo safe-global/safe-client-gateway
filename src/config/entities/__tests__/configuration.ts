@@ -251,4 +251,8 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  jwt: {
+    issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',
+    secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
+  },
 });

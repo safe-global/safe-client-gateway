@@ -35,6 +35,8 @@ export const RootConfigurationSchema = z
     STAKING_API_KEY: z.string(),
     STAKING_TESTNET_API_KEY: z.string(),
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
+    JWT_ISSUER: z.string(),
+    JWT_SECRET: z.string(),
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* fields in production and staging environments

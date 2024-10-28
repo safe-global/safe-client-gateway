@@ -5,6 +5,9 @@ import { ConfigModule } from '@nestjs/config';
 import { NestConfigurationService } from '@/config/nest.configuration.service';
 import jwtConfiguration from '@/datasources/jwt/configuration/jwt.configuration';
 
+/**
+ * @deprecated
+ */
 @Module({})
 export class JwtConfigurationModule {
   static register(configFactory: ConfigFactory): DynamicModule {
@@ -19,5 +22,8 @@ export class JwtConfigurationModule {
   }
 }
 
+/**
+ * @deprecated
+ */
 export const JWT_CONFIGURATION_MODULE =
   JwtConfigurationModule.register(jwtConfiguration);

@@ -49,11 +49,6 @@ import {
   ALERTS_CONFIGURATION_MODULE,
 } from '@/routes/alerts/configuration/alerts.configuration.module';
 import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
@@ -108,8 +103,6 @@ describe('Alerts (Unit)', () => {
       })
         .overrideModule(PostgresDatabaseModule)
         .useModule(TestPostgresDatabaseModule)
-        .overrideModule(JWT_CONFIGURATION_MODULE)
-        .useModule(JwtConfigurationModule.register(jwtConfiguration))
         .overrideModule(ALERTS_CONFIGURATION_MODULE)
         .useModule(AlertsConfigurationModule.register(alertsConfiguration))
         .overrideModule(ALERTS_API_CONFIGURATION_MODULE)

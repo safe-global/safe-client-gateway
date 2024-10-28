@@ -1,5 +1,8 @@
 import { registerAs } from '@nestjs/config';
 
+/**
+ * @deprecated
+ */
 export interface JwtConfiguration {
   issuer?: string;
   secret?: string;

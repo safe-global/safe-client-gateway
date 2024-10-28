@@ -4,7 +4,6 @@ import { JwtService } from '@/datasources/jwt/jwt.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
 import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
-import { JWT_CONFIGURATION_MODULE } from '@/datasources/jwt/configuration/jwt.configuration.module';
 
 // Use inferred type
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -62,7 +61,7 @@ function jwtClientFactory() {
 export type JwtClient = ReturnType<typeof jwtClientFactory>;
 
 @Module({
-  imports: [JWT_CONFIGURATION_MODULE],
+  imports: [],
   providers: [
     {
       provide: 'JwtClient',

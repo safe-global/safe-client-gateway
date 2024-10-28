@@ -39,6 +39,8 @@ describe('Configuration validator', () => {
     RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
     STAKING_API_KEY: faker.string.uuid(),
     STAKING_TESTNET_API_KEY: faker.string.uuid(),
+    JWT_ISSUER: faker.string.uuid(),
+    JWT_SECRET: faker.string.uuid(),
   };
 
   it('should bypass this validation on test environment', () => {
@@ -82,6 +84,8 @@ describe('Configuration validator', () => {
     { key: 'RELAY_PROVIDER_API_KEY_SEPOLIA' },
     { key: 'STAKING_API_KEY' },
     { key: 'STAKING_TESTNET_API_KEY' },
+    { key: 'JWT_ISSUER' },
+    { key: 'JWT_SECRET' },
   ])(
     'should detect that $key is missing in the configuration in production environment',
     ({ key }) => {
@@ -130,6 +134,8 @@ describe('Configuration validator', () => {
       RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
       STAKING_API_KEY: faker.string.uuid(),
       STAKING_TESTNET_API_KEY: faker.string.uuid(),
+      JWT_ISSUER: faker.string.uuid(),
+      JWT_SECRET: faker.string.uuid(),
     };
     expect(() =>
       configurationValidator(invalidConfiguration, RootConfigurationSchema),
@@ -176,6 +182,8 @@ describe('Configuration validator', () => {
       RELAY_PROVIDER_API_KEY_SEPOLIA: faker.string.uuid(),
       STAKING_API_KEY: faker.string.uuid(),
       STAKING_TESTNET_API_KEY: faker.string.uuid(),
+      JWT_ISSUER: faker.string.uuid(),
+      JWT_SECRET: faker.string.uuid(),
       TARGETED_MESSAGING_FILE_STORAGE_TYPE: faker.lorem.words(),
     };
     expect(() =>
