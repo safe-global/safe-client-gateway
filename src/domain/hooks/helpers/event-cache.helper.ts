@@ -513,10 +513,10 @@ export class EventCacheHelper {
   ): void {
     this.loggingService.info({
       type: EventCacheHelper.HOOK_TYPE,
-      eventType: event.type,
+      event_type: event.type,
       address: event.address,
-      chainId: event.chainId,
-      safeTxHash: event.safeTxHash,
+      chain_id: event.chainId,
+      safe_tx_hash: event.safeTxHash,
     });
   }
 
@@ -525,10 +525,10 @@ export class EventCacheHelper {
   ): void {
     this.loggingService.info({
       type: EventCacheHelper.HOOK_TYPE,
-      eventType: event.type,
+      event_type: event.type,
       address: event.address,
-      chainId: event.chainId,
-      txHash: event.txHash,
+      chain_id: event.chainId,
+      tx_hash: event.txHash,
     });
   }
 
@@ -537,18 +537,18 @@ export class EventCacheHelper {
   ): void {
     this.loggingService.info({
       type: EventCacheHelper.HOOK_TYPE,
-      eventType: event.type,
+      event_type: event.type,
       address: event.address,
-      chainId: event.chainId,
-      messageHash: event.messageHash,
+      chain_id: event.chainId,
+      message_hash: event.messageHash,
     });
   }
 
   private _logEvent(event: Event): void {
     this.loggingService.info({
       type: EventCacheHelper.HOOK_TYPE,
-      eventType: event.type,
-      chainId: event.chainId,
+      event_type: event.type,
+      chain_id: event.chainId,
     });
   }
 }
