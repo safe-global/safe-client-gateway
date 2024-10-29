@@ -86,7 +86,10 @@ export class FetchNetworkService implements INetworkService {
     }
   }
 
-  private buildUrl(baseUrl: string, params = {}): string {
+  private buildUrl(
+    baseUrl: string,
+    params: Record<string, NonNullable<NetworkRequest['params']>[string]> = {},
+  ): string {
     const urlObject = new URL(baseUrl);
 
     for (const [key, value] of Object.entries(params)) {
