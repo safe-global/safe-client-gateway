@@ -16,4 +16,4 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type Raw<_> = { readonly _: unique symbol };
+export type Raw<_> = symbol;
