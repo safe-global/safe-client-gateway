@@ -75,6 +75,7 @@ export class AlertsRepository implements IAlertsRepository {
     }
   }
 
+  // TODO: Refactor to use getSafeBeingRecovered from relay address limiter
   private _decodeTransactionAdded(
     data: Hex,
   ): Array<ReturnType<typeof this._decodeRecoveryTransaction>> {
