@@ -58,7 +58,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
 
-  async enqueueNotification(args: {
+  public async enqueueNotification(args: {
     token: string;
     deviceUuid: UUID;
     notification: FirebaseNotification;
@@ -281,7 +281,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     );
   }
 
-  async getSafeSubscription(args: {
+  public async getSafeSubscription(args: {
     authPayload: AuthPayload;
     deviceUuid: UUID;
     chainId: string;
@@ -323,12 +323,12 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       cloudMessagingToken: string;
     }>
   > {
-    const notificationSubscriptionDatasource =
+    const notificationSubscriptionRepository =
       await this.postgresDatabaseService.getRepository<NotificationSubscription>(
         NotificationSubscription,
       );
 
-    const subscriptions = await notificationSubscriptionDatasource.find({
+    const subscriptions = await notificationSubscriptionRepository.find({
       where: {
         chain_id: args.chainId,
         safe_address: args.safeAddress,
@@ -363,7 +363,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       await this.postgresDatabaseService.getRepository<NotificationSubscription>(
         NotificationSubscription,
       );
-    const subscription = await notificationsSubscriptionsRepository.find({
+    const subscription = await notificationsSubscriptionsRepository.findOne({
       where: {
         chain_id: args.chainId,
         safe_address: args.safeAddress,
@@ -373,7 +373,9 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       },
     });
 
-    await notificationsSubscriptionsRepository.remove(subscription);
+    if (subscription) {
+      await notificationsSubscriptionsRepository.remove(subscription);
+    }
   }
 
   public async deleteDevice(deviceUuid: UUID): Promise<void> {
