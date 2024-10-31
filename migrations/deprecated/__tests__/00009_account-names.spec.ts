@@ -13,6 +13,10 @@ describe('Migration 00006_accounts-names', () => {
     migrator = new PostgresDatabaseMigrator(sql);
   });
 
+  beforeEach(async () => {
+    await sql`DROP TABLE IF EXISTS groups, accounts, outreaches, targeted_safes, submissions CASCADE;`;
+  });
+
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
   });
@@ -25,6 +29,8 @@ describe('Migration 00006_accounts-names', () => {
           accounts: {
             columns:
               await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts'`,
+            nonNullColumns:
+              await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'accounts' AND IS_NULLABLE = 'NO';`,
             rows: await sql`SELECT * FROM accounts`,
             uniqueConstraints: await sql`
                 SELECT CONSTRAINT_NAME
@@ -46,10 +52,52 @@ describe('Migration 00006_accounts-names', () => {
           { column_name: 'created_at' },
           { column_name: 'updated_at' },
         ]),
+        nonNullColumns: expect.arrayContaining([
+          { column_name: 'id' },
+          { column_name: 'address' },
+          { column_name: 'name' },
+          { column_name: 'name_hash' },
+        ]),
         rows: [],
         uniqueConstraints: expect.arrayContaining([
           { constraint_name: 'accounts_address_key' },
           { constraint_name: 'name_hash_unique' },
+        ]),
+      },
+    });
+  });
+
+  it('sets a random name/name_hash for existing accounts', async () => {
+    const result = await migrator.test({
+      migration: '00009_account-names',
+      before: async (sql: postgres.Sql) => {
+        await sql`INSERT INTO groups (id) VALUES (1);`;
+        await sql`
+          INSERT INTO accounts (group_id, address)
+          VALUES (1, '0x001'), (1, '0x002')`;
+      },
+      after: async (sql: postgres.Sql) => {
+        return {
+          accounts: {
+            rows: await sql`SELECT * FROM accounts`,
+          },
+        };
+      },
+    });
+
+    expect(result.after).toMatchObject({
+      accounts: {
+        rows: expect.arrayContaining([
+          expect.objectContaining({
+            address: '0x001',
+            name: expect.any(Object),
+            name_hash: expect.any(String),
+          }),
+          expect.objectContaining({
+            address: '0x002',
+            name: expect.any(Object),
+            name_hash: expect.any(String),
+          }),
         ]),
       },
     });

@@ -69,7 +69,15 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     );
   }
 
-  // TODO: document this function explaining why the name is hashed (unique constraint)
+  /**
+   * Account names need to be unique across the system, but they are encrypted, so
+   * the same string could generate different encrypted values depending on the
+   * encryption key used.
+   *
+   * This function hashes the name to ensure uniqueness. By hashing the name, we can
+   * enforce a unique constraint on the hashed value, ensuring that no two names
+   * will result in the same hash.
+   */
   async createAccount(args: {
     createAccountDto: CreateAccountDto;
     clientIp: string;
