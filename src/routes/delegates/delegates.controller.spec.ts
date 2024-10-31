@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { omit } from 'lodash';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -12,10 +13,8 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -27,7 +26,11 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Delegates controller', () => {
   let app: INestApplication<Server>;
@@ -40,6 +43,8 @@ describe('Delegates controller', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -48,6 +53,8 @@ describe('Delegates controller', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

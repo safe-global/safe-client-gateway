@@ -1,5 +1,6 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import crypto from 'crypto';
@@ -17,7 +18,8 @@ import {
   alertTransactionBuilder,
 } from '@/routes/alerts/entities/__tests__/alerts.builder';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Alert, EventType } from '@/routes/alerts/entities/alert.dto.entity';
+import type { Alert } from '@/routes/alerts/entities/alert.dto.entity';
+import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
 import { TestEmailApiModule } from '@/datasources/email-api/__tests__/test.email-api.module';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
@@ -32,7 +34,7 @@ import { transactionAddedEventBuilder } from '@/domain/alerts/contracts/__tests_
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { getAddress } from 'viem';
-import { getMultiSendCallOnlyDeployment } from '@safe-global/safe-deployments';
+import { getMultiSendCallOnlyDeployments } from '@/domain/common/utils/deployments';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -47,14 +49,13 @@ import {
   ALERTS_CONFIGURATION_MODULE,
 } from '@/routes/alerts/configuration/alerts.configuration.module';
 import alertsConfiguration from '@/routes/alerts/configuration/__tests__/alerts.configuration';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -100,8 +101,8 @@ describe('Alerts (Unit)', () => {
       const moduleFixture: TestingModule = await Test.createTestingModule({
         imports: [AppModule.register(testConfiguration)],
       })
-        .overrideModule(JWT_CONFIGURATION_MODULE)
-        .useModule(JwtConfigurationModule.register(jwtConfiguration))
+        .overrideModule(PostgresDatabaseModule)
+        .useModule(TestPostgresDatabaseModule)
         .overrideModule(ALERTS_CONFIGURATION_MODULE)
         .useModule(AlertsConfigurationModule.register(alertsConfiguration))
         .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
@@ -118,6 +119,8 @@ describe('Alerts (Unit)', () => {
         .useModule(TestEmailApiModule)
         .overrideModule(QueuesApiModule)
         .useModule(TestQueuesApiModule)
+        .overrideModule(PostgresDatabaseModuleV2)
+        .useModule(TestPostgresDatabaseModuleV2)
         .compile();
 
       configurationService = moduleFixture.get(IConfigurationService);
@@ -396,7 +399,12 @@ describe('Alerts (Unit)', () => {
             .with('data', multiSend.encode())
             .with(
               'to',
-              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
+              faker.helpers.arrayElement(
+                getMultiSendCallOnlyDeployments({
+                  chainId: chain.chainId,
+                  version: '1.3.0',
+                }),
+              ),
             )
             .encode();
 
@@ -634,7 +642,12 @@ describe('Alerts (Unit)', () => {
             .with('data', multiSend.encode())
             .with(
               'to',
-              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
+              faker.helpers.arrayElement(
+                getMultiSendCallOnlyDeployments({
+                  chainId: chain.chainId,
+                  version: '1.3.0',
+                }),
+              ),
             )
             .encode();
 
@@ -704,7 +717,12 @@ describe('Alerts (Unit)', () => {
             .with('data', multiSend.encode())
             .with(
               'to',
-              getAddress(getMultiSendCallOnlyDeployment()!.defaultAddress),
+              faker.helpers.arrayElement(
+                getMultiSendCallOnlyDeployments({
+                  chainId: chain.chainId,
+                  version: '1.3.0',
+                }),
+              ),
             )
             .encode();
 
@@ -877,6 +895,8 @@ describe('Alerts (Unit)', () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
           imports: [AppModule.register(testConfiguration)],
         })
+          .overrideModule(PostgresDatabaseModule)
+          .useModule(TestPostgresDatabaseModule)
           .overrideModule(CacheModule)
           .useModule(TestCacheModule)
           .overrideModule(RequestScopedLoggingModule)
@@ -885,6 +905,8 @@ describe('Alerts (Unit)', () => {
           .useModule(TestNetworkModule)
           .overrideModule(QueuesApiModule)
           .useModule(TestQueuesApiModule)
+          .overrideModule(PostgresDatabaseModuleV2)
+          .useModule(TestPostgresDatabaseModuleV2)
           .compile();
 
         app = moduleFixture.createNestApplication();

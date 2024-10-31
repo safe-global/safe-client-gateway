@@ -1,4 +1,3 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
@@ -10,11 +9,11 @@ import {
 } from '@/domain/swaps/entities/order.entity';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenType } from '@/domain/tokens/entities/token.entity';
-import { TokenRepository } from '@/domain/tokens/token.repository';
-import { ILoggingService } from '@/logging/logging.interface';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { TokenRepository } from '@/domain/tokens/token.repository';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+import type { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { TransactionInfoType } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
@@ -22,16 +21,12 @@ import {
   TransferDirection,
   TransferTransactionInfo,
 } from '@/routes/transactions/entities/transfer-transaction-info.entity';
-import { TransferType } from '@/routes/transactions/entities/transfers/transfer.entity';
-import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
+import { Erc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
+import type { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
 import { TransferInfoMapper } from '@/routes/transactions/mappers/transfers/transfer-info.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-
-const configurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -56,7 +51,6 @@ describe('Transfer mapper (Unit)', () => {
     jest.resetAllMocks();
 
     const transferInfoMapper = new TransferInfoMapper(
-      configurationService,
       tokenRepository,
       swapTransferInfoMapper,
       addressInfoHelper,
@@ -331,10 +325,18 @@ describe('Transfer mapper (Unit)', () => {
             from: safe.address,
           } as const;
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
+          const transferInfo = new Erc20Transfer(
+            transfer.tokenInfo.address,
+            transfer.value,
+            transfer.tokenInfo.name,
+            transfer.tokenInfo.symbol,
+            transfer.tokenInfo.logoUri,
+            transfer.tokenInfo.decimals,
+            transfer.tokenInfo.trusted,
+          );
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
             type: TransactionInfoType.SwapTransfer,
             humanDescription: null,
-            richDecodedInfo: null,
             sender: {
               value: '0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
               name: 'GPv2Settlement',
@@ -347,7 +349,7 @@ describe('Transfer mapper (Unit)', () => {
               logoUri: null,
             },
             direction: TransferDirection.Incoming,
-            transferInfo: { ...transfer.tokenInfo, type: TransferType.Erc20 },
+            transferInfo,
             uid: '0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             status: OrderStatus.Fulfilled,
             kind: OrderKind.Sell,
@@ -401,7 +403,9 @@ describe('Transfer mapper (Unit)', () => {
               id: `transfer_${safe.address}_${transfer.transferId}`,
               timestamp: transfer.executionDate.getTime(),
               txStatus: TransactionStatus.Success,
-              txInfo: expect.any(TransferTransactionInfo),
+              txInfo: expect.objectContaining({
+                type: TransactionInfoType.SwapTransfer,
+              }),
               executionInfo: null,
               safeAppInfo: null,
               txHash: transfer.transactionHash,
@@ -443,10 +447,18 @@ describe('Transfer mapper (Unit)', () => {
             from: safe.address,
           } as const;
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
+          const transferInfo = new Erc20Transfer(
+            transfer.tokenInfo.address,
+            transfer.value,
+            transfer.tokenInfo.name,
+            transfer.tokenInfo.symbol,
+            transfer.tokenInfo.logoUri,
+            transfer.tokenInfo.decimals,
+            transfer.tokenInfo.trusted,
+          );
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
             type: TransactionInfoType.SwapTransfer,
             humanDescription: null,
-            richDecodedInfo: null,
             sender: {
               value: '0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
               name: 'GPv2Settlement',
@@ -459,7 +471,7 @@ describe('Transfer mapper (Unit)', () => {
               logoUri: null,
             },
             direction: TransferDirection.Incoming,
-            transferInfo: { ...transfer.tokenInfo, type: TransferType.Erc20 },
+            transferInfo,
             uid: '0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             status: OrderStatus.Fulfilled,
             kind: OrderKind.Sell,
@@ -513,7 +525,9 @@ describe('Transfer mapper (Unit)', () => {
               id: `transfer_${safe.address}_${transfer.transferId}`,
               timestamp: transfer.executionDate.getTime(),
               txStatus: TransactionStatus.Success,
-              txInfo: expect.any(TransferTransactionInfo),
+              txInfo: expect.objectContaining({
+                type: TransactionInfoType.SwapTransfer,
+              }),
               executionInfo: null,
               safeAppInfo: null,
               txHash: transfer.transactionHash,
@@ -553,10 +567,18 @@ describe('Transfer mapper (Unit)', () => {
             from: safe.address,
           } as const;
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
+          const transferInfo = new Erc20Transfer(
+            transfer.tokenInfo.address,
+            transfer.value,
+            transfer.tokenInfo.name,
+            transfer.tokenInfo.symbol,
+            transfer.tokenInfo.logoUri,
+            transfer.tokenInfo.decimals,
+            transfer.tokenInfo.trusted,
+          );
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
             type: TransactionInfoType.SwapTransfer,
             humanDescription: null,
-            richDecodedInfo: null,
             sender: {
               value: '0x9008D19f58AAbD9eD0D60971565AA8510560ab41',
               name: 'GPv2Settlement',
@@ -569,7 +591,7 @@ describe('Transfer mapper (Unit)', () => {
               logoUri: null,
             },
             direction: TransferDirection.Incoming,
-            transferInfo: { ...transfer.tokenInfo, type: TransferType.Erc20 },
+            transferInfo,
             uid: '0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             status: OrderStatus.Fulfilled,
             kind: OrderKind.Sell,

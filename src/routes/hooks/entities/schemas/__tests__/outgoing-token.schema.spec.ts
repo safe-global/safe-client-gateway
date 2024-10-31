@@ -1,5 +1,5 @@
 import { outgoingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/outgoing-token.builder';
-import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { OutgoingTokenEventSchema } from '@/routes/hooks/entities/schemas/outgoing-token.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

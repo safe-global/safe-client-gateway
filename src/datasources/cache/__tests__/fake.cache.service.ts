@@ -1,6 +1,6 @@
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
+import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 
 export class FakeCacheService implements ICacheService, ICacheReadiness {
   private cache: Record<string, Record<string, string> | number> = {};
@@ -24,7 +24,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
 
   async deleteByKey(key: string): Promise<number> {
     delete this.cache[key];
-    await this.set(
+    await this.hSet(
       new CacheDir(`invalidationTimeMs:${key}`, ''),
       Date.now().toString(),
       1, // non-falsy expireTimeSeconds, otherwise it wouldn't be written
@@ -32,7 +32,14 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     return Promise.resolve(1);
   }
 
-  get(cacheDir: CacheDir): Promise<string | undefined> {
+  getCounter(key: string): Promise<number | null> {
+    const value = this.cache[key];
+    return Number.isInteger(value) && typeof value === 'number'
+      ? Promise.resolve(value)
+      : Promise.resolve(null);
+  }
+
+  hGet(cacheDir: CacheDir): Promise<string | undefined> {
     const fields = this.cache[cacheDir.key];
     if (fields === undefined) return Promise.resolve(undefined);
     return Promise.resolve(
@@ -40,7 +47,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     );
   }
 
-  set(
+  hSet(
     cacheDir: CacheDir,
     value: string | number,
     expireTimeSeconds: number | undefined,
@@ -70,5 +77,15 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     currentValue = currentValue ? currentValue + 1 : 1;
     this.cache[cacheKey] = currentValue;
     return Promise.resolve(currentValue);
+  }
+
+  setCounter(
+    key: string,
+    value: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    expireTimeSeconds: number | undefined,
+  ): Promise<void> {
+    this.cache[key] = value;
+    return Promise.resolve();
   }
 }

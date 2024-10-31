@@ -15,7 +15,11 @@ export class NativeStakingWithdrawConfirmationView implements Baseline {
   @ApiProperty()
   method: string;
 
-  @ApiPropertyOptional({ type: [DataDecodedParameter], nullable: true })
+  @ApiPropertyOptional({
+    type: DataDecodedParameter,
+    isArray: true,
+    nullable: true,
+  })
   parameters: DataDecodedParameter[] | null;
 
   @ApiProperty()
@@ -24,15 +28,20 @@ export class NativeStakingWithdrawConfirmationView implements Baseline {
   @ApiProperty()
   tokenInfo: TokenInfo;
 
+  @ApiProperty()
+  validators: Array<`0x${string}`>;
+
   constructor(args: {
     method: string;
     parameters: DataDecodedParameter[] | null;
     value: string;
     tokenInfo: TokenInfo;
+    validators: Array<`0x${string}`>;
   }) {
     this.method = args.method;
     this.parameters = args.parameters;
     this.value = args.value;
     this.tokenInfo = args.tokenInfo;
+    this.validators = args.validators;
   }
 }

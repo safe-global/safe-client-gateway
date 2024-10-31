@@ -1,13 +1,13 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ConfigApi } from '@/datasources/config-api/config-api.service';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 
 const dataSource = {
@@ -17,7 +17,7 @@ const mockDataSource = jest.mocked(dataSource);
 
 const cacheService = {
   deleteByKey: jest.fn(),
-  set: jest.fn(),
+  hSet: jest.fn(),
 } as jest.MockedObjectDeep<ICacheService>;
 const mockCacheService = jest.mocked(cacheService);
 

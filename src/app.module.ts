@@ -6,6 +6,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { join } from 'path';
 import { ChainsModule } from '@/routes/chains/chains.module';
@@ -28,7 +29,7 @@ import { OwnersModule } from '@/routes/owners/owners.module';
 import { AboutModule } from '@/routes/about/about.module';
 import { TransactionsModule } from '@/routes/transactions/transactions.module';
 import { SafesModule } from '@/routes/safes/safes.module';
-import { NotificationsModule } from '@/routes/notifications/notifications.module';
+import { NotificationsModule } from '@/routes/notifications/v1/notifications.module';
 import { EstimationsModule } from '@/routes/estimations/estimations.module';
 import { MessagesModule } from '@/routes/messages/messages.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -48,7 +49,16 @@ import { AuthModule } from '@/routes/auth/auth.module';
 import { TransactionsViewControllerModule } from '@/routes/transactions/transactions-view.controller';
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
-import { NotificationsModuleV2 } from '@/routes/notifications/notifications.module.v2';
+import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
+import { TargetedMessagingModule } from '@/routes/targeted-messaging/targeted-messaging.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { postgresConfig } from '@/config/entities/postgres.config';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -60,14 +70,15 @@ export class AppModule implements NestModule {
       auth: isAuthFeatureEnabled,
       accounts: isAccountsFeatureEnabled,
       email: isEmailFeatureEnabled,
-      confirmationView: isConfirmationViewEnabled,
       delegatesV2: isDelegatesV2Enabled,
       pushNotifications: isPushNotificationsEnabled,
+      targetedMessaging: isTargetedMessagingFeatureEnabled,
     } = configFactory()['features'];
 
     return {
       module: AppModule,
       imports: [
+        PostgresDatabaseModule,
         // features
         AboutModule,
         ...(isAccountsFeatureEnabled ? [AccountsModule] : []),
@@ -97,10 +108,9 @@ export class AppModule implements NestModule {
         RootModule,
         SafeAppsModule,
         SafesModule,
+        ...(isTargetedMessagingFeatureEnabled ? [TargetedMessagingModule] : []),
         TransactionsModule,
-        ...(isConfirmationViewEnabled
-          ? [TransactionsViewControllerModule]
-          : []),
+        TransactionsViewControllerModule,
         // common
         CacheModule,
         // Module for storing and reading from the async local storage
@@ -114,12 +124,32 @@ export class AppModule implements NestModule {
         ConfigurationModule.register(configFactory),
         NetworkModule,
         RequestScopedLoggingModule,
+        ScheduleModule.forRoot(),
         ServeStaticModule.forRoot({
           rootPath: join(__dirname, '..', 'assets'),
           // Excludes the paths under '/' (base url) from being served as static content
           // If we do not exclude these paths, the service will try to find the file and
           // return 500 for files that do not exist instead of a 404
           exclude: ['/(.*)'],
+        }),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          useFactory: (
+            configService: ConfigService,
+            loggingService: ILoggingService,
+          ) => {
+            const typeormConfig = configService.getOrThrow('db.orm');
+            const postgresConfigObject = postgresConfig(
+              configService.getOrThrow('db.connection.postgres'),
+              loggingService,
+            );
+
+            return {
+              ...typeormConfig,
+              ...postgresConfigObject,
+            };
+          },
+          inject: [ConfigService, LoggingService],
         }),
       ],
       providers: [

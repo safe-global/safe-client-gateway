@@ -4,13 +4,15 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -21,9 +23,10 @@ import {
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Server } from 'net';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import type { Server } from 'net';
 import request from 'supertest';
 
 describe('Get creation transaction', () => {
@@ -35,6 +38,8 @@ describe('Get creation transaction', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -43,6 +48,8 @@ describe('Get creation transaction', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -94,8 +101,7 @@ describe('Get creation transaction', () => {
       });
   });
 
-  // TODO: Review why the response status code is 503 instead of 404
-  it.skip('should forward Transaction Service errors', async () => {
+  it('should forward Transaction Service errors', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;

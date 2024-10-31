@@ -16,6 +16,7 @@ export const MessageSchema = z.object({
   safeAppId: z.number().nullish().default(null),
   confirmations: z.array(MessageConfirmationSchema),
   preparedSignature: HexSchema.nullish().default(null),
+  origin: z.string().nullish().default(null),
 });
 
 export const MessagePageSchema = buildPageSchema(MessageSchema);

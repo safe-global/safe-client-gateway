@@ -1,11 +1,12 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import {
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type {
   AlertLog,
   AlertTransaction,
   Alert,
-  EventType,
 } from '@/routes/alerts/entities/alert.dto.entity';
+import { EventType } from '@/routes/alerts/entities/alert.dto.entity';
 import { getAddress } from 'viem';
 
 export function alertLogBuilder(): IBuilder<AlertLog> {
@@ -15,9 +16,9 @@ export function alertLogBuilder(): IBuilder<AlertLog> {
       'topics',
       Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () =>
         faker.string.hexadecimal(),
-      ),
+      ) as [`0x${string}`, ...Array<`0x${string}`>],
     )
-    .with('data', faker.string.hexadecimal());
+    .with('data', faker.string.hexadecimal() as `0x${string}`);
 }
 
 export function alertTransactionBuilder(): IBuilder<AlertTransaction> {

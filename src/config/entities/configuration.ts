@@ -1,4 +1,5 @@
 // Custom configuration for the application
+
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export default () => ({
   about: {
@@ -132,23 +133,46 @@ export default () => ({
     },
   },
   db: {
-    postgres: {
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: process.env.POSTGRES_PORT || '5432',
-      database: process.env.POSTGRES_DB || 'safe-client-gateway',
-      username: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
-      ssl: {
-        enabled: process.env.POSTGRES_SSL_ENABLED?.toLowerCase() === 'true',
-        requestCert:
-          process.env.POSTGRES_SSL_REQUEST_CERT?.toLowerCase() !== 'false',
-        // If the value is not explicitly set to false, default should be true
-        // If not false the server will reject any connection which is not authorized with the list of supplied CAs
-        // https://nodejs.org/docs/latest-v20.x/api/tls.html#tlscreateserveroptions-secureconnectionlistener
-        rejectUnauthorized:
-          process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
-          'false',
-        caPath: process.env.POSTGRES_SSL_CA_PATH,
+    migrator: {
+      // Determines if database migrations should be executed. By default, it will execute
+      executeMigrations:
+        process.env.DB_MIGRATIONS_EXECUTE?.toLowerCase() !== 'false',
+      // The number of times to retry running migrations in case of failure. Defaults to 5 retries.
+      numberOfRetries: process.env.DB_MIGRATIONS_NUMBER_OF_RETRIES ?? 5,
+      // The time interval (in milliseconds) to wait before retrying a failed migration. Defaults to 1000ms (1 second).
+      retryAfterMs: process.env.DB_MIGRATIONS_RETRY_AFTER_MS ?? 1000, // Milliseconds
+    },
+    orm: {
+      // Indicates if migrations should be automatically run when the ORM initializes. Set to false to control this behavior manually.
+      migrationsRun: false,
+      // Enables the automatic loading of entities into the ORM.
+      autoLoadEntities: true,
+      // Requires manual initialization of the database connection. Useful for controlling startup behavior.
+      manualInitialization: true,
+      // The name of the table where migrations are stored. Uses the environment variable value or defaults to '_migrations'.
+      migrationsTableName:
+        process.env.ORM_MIGRATION_TABLE_NAME || '_migrations',
+    },
+    connection: {
+      postgres: {
+        host: process.env.POSTGRES_HOST || 'localhost',
+        port: process.env.POSTGRES_PORT || '5432',
+        database: process.env.POSTGRES_DB || 'safe-client-gateway',
+        schema: process.env.POSTGRES_SCHEMA || 'main', //@TODO: use this schema
+        username: process.env.POSTGRES_USER || 'postgres',
+        password: process.env.POSTGRES_PASSWORD || 'postgres',
+        ssl: {
+          enabled: process.env.POSTGRES_SSL_ENABLED?.toLowerCase() === 'true',
+          requestCert:
+            process.env.POSTGRES_SSL_REQUEST_CERT?.toLowerCase() !== 'false',
+          // If the value is not explicitly set to false, default should be true
+          // If not false the server will reject any connection which is not authorized with the list of supplied CAs
+          // https://nodejs.org/docs/latest-v20.x/api/tls.html#tlscreateserveroptions-secureconnectionlistener
+          rejectUnauthorized:
+            process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
+            'false',
+          caPath: process.env.POSTGRES_SSL_CA_PATH,
+        },
       },
     },
   },
@@ -164,6 +188,7 @@ export default () => ({
     rpc: parseInt(process.env.EXPIRATION_TIME_RPC_SECONDS ?? `${15}`),
     holesky: parseInt(process.env.HOLESKY_EXPIRATION_TIME_SECONDS ?? `${60}`),
     indexing: parseInt(process.env.EXPIRATION_TIME_INDEXING_SECONDS ?? `${5}`),
+    staking: parseInt(process.env.EXPIRATION_TIME_STAKING_SECONDS ?? `${60}`),
     notFound: {
       default: parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -184,21 +209,15 @@ export default () => ({
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
   },
   features: {
-    richFragments: process.env.FF_RICH_FRAGMENTS?.toLowerCase() === 'true',
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     zerionBalancesChainIds:
       process.env.FF_ZERION_BALANCES_CHAIN_IDS?.split(',') ?? [],
-    swapsDecoding: process.env.FF_SWAPS_DECODING?.toLowerCase() === 'true',
-    twapsDecoding: process.env.FF_TWAPS_DECODING?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     imitationMapping:
       process.env.FF_IMITATION_MAPPING?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
-    confirmationView:
-      process.env.FF_CONFIRMATION_VIEW?.toLowerCase() === 'true',
-    eventsQueue: process.env.FF_EVENTS_QUEUE?.toLowerCase() === 'true',
     delegatesV2: process.env.FF_DELEGATES_V2?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
@@ -208,6 +227,10 @@ export default () => ({
     nativeStaking: process.env.FF_NATIVE_STAKING?.toLowerCase() === 'true',
     nativeStakingDecoding:
       process.env.FF_NATIVE_STAKING_DECODING?.toLowerCase() === 'true',
+    targetedMessaging:
+      process.env.FF_TARGETED_MESSAGING?.toLowerCase() === 'true',
+    improvedAddressPoisoning:
+      process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -215,6 +238,10 @@ export default () => ({
     requestTimeout: parseInt(
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS ?? `${5_000}`,
     ),
+  },
+  jwt: {
+    issuer: process.env.JWT_ISSUER,
+    secret: process.env.JWT_SECRET,
   },
   locking: {
     baseUri:
@@ -234,6 +261,10 @@ export default () => ({
       lookupDistance: parseInt(process.env.IMITATION_LOOKUP_DISTANCE ?? `${3}`),
       prefixLength: parseInt(process.env.IMITATION_PREFIX_LENGTH ?? `${3}`),
       suffixLength: parseInt(process.env.IMITATION_SUFFIX_LENGTH ?? `${4}`),
+      // Note: due to high value formatted token values, we use bigint
+      // This means the value tolerance can only be an integer
+      valueTolerance: BigInt(process.env.IMITATION_VALUE_TOLERANCE ?? 1),
+      echoLimit: BigInt(process.env.IMITATION_ECHO_LIMIT ?? `${10}`),
     },
     history: {
       maxNestedTransfers: parseInt(
@@ -265,17 +296,41 @@ export default () => ({
       process.env.RELAY_PROVIDER_API_BASE_URI || 'https://api.gelato.digital',
     limit: parseInt(process.env.RELAY_THROTTLE_LIMIT ?? `${5}`),
     ttlSeconds: parseInt(
-      process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60}`,
+      process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
     ),
     apiKey: {
+      // Optimism
+      10: process.env.RELAY_PROVIDER_API_KEY_OPTIMISM,
+      // BNB
+      56: process.env.RELAY_PROVIDER_API_KEY_BSC,
+      // Gnosis
       100: process.env.RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN,
+      // Polygon
+      137: process.env.RELAY_PROVIDER_API_KEY_POLYGON,
+      // Polygon zkEVM
+      1101: process.env.RELAY_PROVIDER_API_KEY_POLYGON_ZKEVM,
+      // Base
+      8453: process.env.RELAY_PROVIDER_API_KEY_BASE,
+      // Arbitrum
       42161: process.env.RELAY_PROVIDER_API_KEY_ARBITRUM_ONE,
+      // Avalanche
+      43114: process.env.RELAY_PROVIDER_API_KEY_AVALANCHE,
+      // Linea
+      59144: process.env.RELAY_PROVIDER_API_KEY_LINEA,
+      // Blast
+      81457: process.env.RELAY_PROVIDER_API_KEY_BLAST,
+      // Sepolia
       11155111: process.env.RELAY_PROVIDER_API_KEY_SEPOLIA,
     },
   },
   safeConfig: {
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
+    chains: {
+      maxSequentialPages: parseInt(
+        process.env.SAFE_CONFIG_CHAINS_MAX_SEQUENTIAL_PAGES ?? `${3}`,
+      ),
+    },
   },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
@@ -291,8 +346,7 @@ export default () => ({
       apiKey: process.env.STAKING_TESTNET_API_KEY,
     },
     mainnet: {
-      baseUri:
-        process.env.STAKING_API_BASE_URI || 'https://api.testnet.kiln.fi',
+      baseUri: process.env.STAKING_API_BASE_URI || 'https://api.kiln.fi',
       apiKey: process.env.STAKING_API_KEY,
     },
   },
@@ -319,5 +373,29 @@ export default () => ({
     maxNumberOfParts: parseInt(
       process.env.SWAPS_MAX_NUMBER_OF_PARTS ?? `${11}`,
     ),
+  },
+  targetedMessaging: {
+    fileStorage: {
+      // The type of file storage to use. Defaults to 'local'.
+      // Supported values: 'aws', 'local'
+      type: process.env.TARGETED_MESSAGING_FILE_STORAGE_TYPE || 'local',
+      aws: {
+        // This will be ignored if the TARGETED_MESSAGING_FILE_STORAGE_TYPE is set to 'local'.
+        // For reference, these environment variables should be present in the environment,
+        // but they are not transferred to the memory/configuration file:
+        // AWS_ACCESS_KEY_ID
+        // AWS_SECRET_ACCESS_KEY
+        // AWS_REGION
+        bucketName:
+          process.env.AWS_STORAGE_BUCKET_NAME || 'safe-client-gateway',
+        basePath: process.env.AWS_S3_BASE_PATH || 'assets/targeted-messaging',
+      },
+      local: {
+        // This will be ignored if the TARGETED_MESSAGING_FILE_STORAGE_TYPE is set to 'aws'.
+        baseDir:
+          process.env.TARGETED_MESSAGING_LOCAL_BASE_DIR ||
+          'assets/targeted-messaging',
+      },
+    },
   },
 });

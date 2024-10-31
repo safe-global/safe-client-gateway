@@ -1,39 +1,35 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { INetworkService } from '@/datasources/network/network.service.interface';
-import { Backbone } from '@/domain/backbone/entities/backbone.entity';
-import { Singleton } from '@/domain/chains/entities/singleton.entity';
-import { Contract } from '@/domain/contracts/entities/contract.entity';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { Delegate } from '@/domain/delegate/entities/delegate.entity';
-import { Page } from '@/domain/entities/page.entity';
-import { Estimation } from '@/domain/estimations/entities/estimation.entity';
-import { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
-import { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
-import { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import { Message } from '@/domain/messages/entities/message.entity';
-import { Device } from '@/domain/notifications/entities/device.entity';
-import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { SafeList } from '@/domain/safe/entities/safe-list.entity';
-import { Safe } from '@/domain/safe/entities/safe.entity';
-import {
-  isMultisigTransaction,
-  Transaction,
-} from '@/domain/safe/entities/transaction.entity';
-import { Transfer } from '@/domain/safe/entities/transfer.entity';
-import { Token } from '@/domain/tokens/entities/token.entity';
-import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
-import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
+import type { Singleton } from '@/domain/chains/entities/singleton.entity';
+import type { Contract } from '@/domain/contracts/entities/contract.entity';
+import type { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import type { Page } from '@/domain/entities/page.entity';
+import type { Estimation } from '@/domain/estimations/entities/estimation.entity';
+import type { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
+import type { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { Message } from '@/domain/messages/entities/message.entity';
+import type { Device } from '@/domain/notifications/v1/entities/device.entity';
+import type { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import type { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import type { SafeList } from '@/domain/safe/entities/safe-list.entity';
+import type { Safe } from '@/domain/safe/entities/safe.entity';
+import type { Transaction } from '@/domain/safe/entities/transaction.entity';
+import type { Transfer } from '@/domain/safe/entities/transfer.entity';
+import type { Token } from '@/domain/tokens/entities/token.entity';
+import type { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
+import type { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { get } from 'lodash';
-import { getAddress } from 'viem';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
@@ -198,7 +194,7 @@ export class TransactionApi implements ITransactionApi {
       safeAddress,
     });
 
-    const cached = await this.cacheService.get(cacheDir).catch(() => null);
+    const cached = await this.cacheService.hGet(cacheDir).catch(() => null);
 
     if (cached != null) {
       this.loggingService.debug({
@@ -234,7 +230,7 @@ export class TransactionApi implements ITransactionApi {
       }
     })();
 
-    await this.cacheService.set(
+    await this.cacheService.hSet(
       cacheDir,
       JSON.stringify(isSafe),
       // We can indefinitely cache this as an address cannot "un-Safe" itself
@@ -669,43 +665,28 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/multisig-transactions/`;
-      return await this.dataSource
-        .get<Page<MultisigTransaction>>({
-          cacheDir,
-          url,
-          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-          networkRequest: {
-            params: {
-              safe: args.safeAddress,
-              ordering: args.ordering,
-              executed: args.executed,
-              trusted: args.trusted,
-              execution_date__gte: args.executionDateGte,
-              execution_date__lte: args.executionDateLte,
-              to: args.to,
-              value: args.value,
-              nonce: args.nonce,
-              nonce__gte: args.nonceGte,
-              limit: args.limit,
-              offset: args.offset,
-            },
+      return await this.dataSource.get<Page<MultisigTransaction>>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            safe: args.safeAddress,
+            ordering: args.ordering,
+            executed: args.executed,
+            trusted: args.trusted,
+            execution_date__gte: args.executionDateGte,
+            execution_date__lte: args.executionDateLte,
+            to: args.to,
+            value: args.value,
+            nonce: args.nonce,
+            nonce__gte: args.nonceGte,
+            limit: args.limit,
+            offset: args.offset,
           },
-          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        })
-        .then(async (data): Promise<Page<MultisigTransaction>> => {
-          const results = await Promise.all(
-            data.results.map(async (tx) => {
-              return tx.confirmationsRequired !== null
-                ? tx
-                : await this._setConfirmationsRequired(tx);
-            }),
-          );
-
-          return {
-            ...data,
-            results,
-          };
-        });
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
@@ -728,49 +709,15 @@ export class TransactionApi implements ITransactionApi {
         safeTransactionHash,
       });
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
-      return await this.dataSource
-        .get<MultisigTransaction>({
-          cacheDir,
-          url,
-          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        })
-        .then(async (tx) =>
-          tx.confirmationsRequired !== null
-            ? tx
-            : await this._setConfirmationsRequired(tx),
-        );
+      return await this.dataSource.get<MultisigTransaction>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
-  }
-
-  /**
-   * The Transaction Service sometimes returns null for confirmationsRequired
-   * TODO: Remove this method once the Transaction Service is fixed
-   * @see https://github.com/safe-global/safe-transaction-service/issues/2170
-   * @param transaction - {@link MultisigTransaction} maybe missing confirmationsRequired
-   * @returns - {@link MultisigTransaction} with confirmationsRequired set
-   */
-  private async _setConfirmationsRequired(
-    transaction: MultisigTransaction & {
-      confirmationsRequired:
-        | MultisigTransaction['confirmationsRequired']
-        | null;
-    },
-  ): Promise<MultisigTransaction> {
-    if (transaction.confirmationsRequired !== null) {
-      return transaction;
-    }
-
-    transaction.confirmationsRequired =
-      transaction.isExecuted && transaction.confirmations !== null
-        ? transaction.confirmations.length
-        : await this.getSafe(getAddress(transaction.safe)).then((safe) => {
-            return safe.threshold;
-          });
-
-    return transaction;
   }
 
   async deleteTransaction(args: {
@@ -834,40 +781,22 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/all-transactions/`;
-      return await this.dataSource
-        .get<Page<Transaction>>({
-          cacheDir,
-          url,
-          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-          networkRequest: {
-            params: {
-              safe: args.safeAddress,
-              ordering: args.ordering,
-              executed: args.executed,
-              queued: args.queued,
-              limit: args.limit,
-              offset: args.offset,
-            },
+      return await this.dataSource.get<Page<Transaction>>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            safe: args.safeAddress,
+            ordering: args.ordering,
+            executed: args.executed,
+            queued: args.queued,
+            limit: args.limit,
+            offset: args.offset,
           },
-          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-        })
-        .then(async (data): Promise<Page<Transaction>> => {
-          const results = await Promise.all(
-            data.results.map(async (tx) => {
-              if (!isMultisigTransaction(tx)) {
-                return tx;
-              }
-              return tx.confirmationsRequired !== null
-                ? tx
-                : await this._setConfirmationsRequired(tx);
-            }),
-          );
-
-          return {
-            ...data,
-            results,
-          };
-        });
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
@@ -1099,6 +1028,7 @@ export class TransactionApi implements ITransactionApi {
     message: unknown;
     safeAppId: number | null;
     signature: string;
+    origin: string | null;
   }): Promise<Message> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
@@ -1108,6 +1038,7 @@ export class TransactionApi implements ITransactionApi {
           message: args.message,
           safeAppId: args.safeAppId,
           signature: args.signature,
+          origin: args.origin,
         },
       });
       return data;

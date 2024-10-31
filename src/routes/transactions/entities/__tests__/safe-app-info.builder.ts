@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
 
 export function safeAppInfoBuilder(): IBuilder<SafeAppInfo> {
   return new Builder<SafeAppInfo>()

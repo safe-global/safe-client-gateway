@@ -1,13 +1,13 @@
 import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-transfer.builder';
 import { orderBuilder } from '@/domain/swaps/entities/__tests__/order.builder';
 import { OrdersSchema } from '@/domain/swaps/entities/order.entity';
-import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
+import type { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 import { TransferDirection } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/routes/transactions/entities/transfers/erc20-transfer.entity';
-import { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
-import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
+import type { SwapAppsHelper } from '@/routes/transactions/helpers/swap-apps.helper';
+import type { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { getTransferDirection } from '@/routes/transactions/mappers/common/transfer-direction.helper';
 import { SwapTransferInfoMapper } from '@/routes/transactions/mappers/transfers/swap-transfer-info.mapper';
 import { faker } from '@faker-js/faker';
@@ -151,7 +151,6 @@ describe('SwapTransferInfoMapper', () => {
       owner: safeAddress,
       receiver: order.receiver,
       recipient,
-      richDecodedInfo: null,
       sellAmount: order.sellAmount.toString(),
       sellToken: token,
       sender,
@@ -233,7 +232,6 @@ describe('SwapTransferInfoMapper', () => {
       owner: safeAddress,
       receiver: order.receiver,
       recipient,
-      richDecodedInfo: null,
       sellAmount: order.sellAmount.toString(),
       sellToken: token,
       sender,
@@ -394,7 +392,6 @@ describe('SwapTransferInfoMapper', () => {
       owner: orders[0].owner,
       receiver: orders[0].receiver,
       recipient,
-      richDecodedInfo: null,
       sellAmount: orders[0].sellAmount.toString(),
       sellToken: token,
       sender,

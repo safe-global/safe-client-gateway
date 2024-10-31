@@ -1,5 +1,5 @@
 import { DataDecodedParameter as DomainDataDecodedParameter } from '@/domain/data-decoder/entities/data-decoded.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class DataDecodedParameter implements DomainDataDecodedParameter {
   @ApiProperty()
@@ -8,7 +8,10 @@ export class DataDecodedParameter implements DomainDataDecodedParameter {
   type: string;
   @ApiProperty()
   value: Required<unknown>;
-  @ApiProperty()
+  @ApiPropertyOptional({
+    oneOf: [{ type: 'object' }, { type: 'array', items: { type: 'object' } }],
+    nullable: true,
+  })
   valueDecoded: Record<string, unknown> | Record<string, unknown>[] | null;
 
   constructor(

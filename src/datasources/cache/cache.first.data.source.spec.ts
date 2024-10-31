@@ -2,11 +2,11 @@ import { faker } from '@faker-js/faker';
 import { fakeJson } from '@/__tests__/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { INetworkService } from '@/datasources/network/network.service.interface';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
@@ -70,7 +70,7 @@ describe('CacheFirstDataSource', () => {
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     expect(fakeCacheService.keyCount()).toBe(1); // only data is cached (as no invalidation happened yet at this point in time)
-    await expect(fakeCacheService.get(cacheDir)).resolves.toEqual(
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(
       JSON.stringify(data),
     );
   });
@@ -81,7 +81,7 @@ describe('CacheFirstDataSource', () => {
     const notFoundExpireTimeSeconds = faker.number.int();
     const data = JSON.parse(fakeJson());
     const invalidationTimeMs = jest.now(); // invalidation happens at this point in time
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
       invalidationTimeMs.toString(),
       faker.number.int({ min: 1 }),
@@ -106,7 +106,7 @@ describe('CacheFirstDataSource', () => {
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     expect(fakeCacheService.keyCount()).toBe(2); // both data and invalidation timestamp are cached
-    expect(await fakeCacheService.get(cacheDir)).toEqual(JSON.stringify(data)); // item is cached
+    expect(await fakeCacheService.hGet(cacheDir)).toEqual(JSON.stringify(data)); // item is cached
   });
 
   it('should return the network data but it should not cache it if the last invalidation happened after the request was initiated', async () => {
@@ -115,7 +115,7 @@ describe('CacheFirstDataSource', () => {
     const notFoundExpireTimeSeconds = faker.number.int();
     const data = JSON.parse(fakeJson());
     const invalidationTimeMs = jest.now() + 1; // invalidation happens 1 ms after this point in time
-    await fakeCacheService.set(
+    await fakeCacheService.hSet(
       new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
       invalidationTimeMs.toString(),
       faker.number.int({ min: 1 }),
@@ -140,14 +140,18 @@ describe('CacheFirstDataSource', () => {
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     expect(fakeCacheService.keyCount()).toBe(1); // only invalidation timestamp is cached
-    await expect(fakeCacheService.get(cacheDir)).resolves.toEqual(undefined); // item is not cached
+    await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(undefined); // item is not cached
   });
 
   it('should return the cached data without calling the underlying network interface', async () => {
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
     const rawJson = fakeJson();
-    await fakeCacheService.set(cacheDir, rawJson, faker.number.int({ min: 1 }));
+    await fakeCacheService.hSet(
+      cacheDir,
+      rawJson,
+      faker.number.int({ min: 1 }),
+    );
     mockNetworkService.get.mockImplementation(({ url }) =>
       Promise.reject(`Unexpected request to ${url}`),
     );
@@ -229,8 +233,8 @@ describe('CacheFirstDataSource', () => {
 
   it('should cache not found errors with the default TTL', async () => {
     const mockCache = jest.mocked({
-      get: jest.fn(),
-      set: jest.fn(),
+      hGet: jest.fn(),
+      hSet: jest.fn(),
     } as jest.MockedObjectDeep<ICacheService>);
 
     cacheFirstDataSource = new CacheFirstDataSource(
@@ -246,7 +250,7 @@ describe('CacheFirstDataSource', () => {
     const expectedError = new NetworkResponseError(new URL(targetUrl), {
       status: 404,
     } as Response);
-    mockCache.get.mockResolvedValue(undefined);
+    mockCache.hGet.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case targetUrl:
@@ -264,7 +268,7 @@ describe('CacheFirstDataSource', () => {
       }),
     ).rejects.toThrow(expectedError);
 
-    expect(mockCache.set).toHaveBeenCalledWith(
+    expect(mockCache.hSet).toHaveBeenCalledWith(
       cacheDir,
       expect.anything(),
       notFoundExpireTimeSeconds,
@@ -273,8 +277,8 @@ describe('CacheFirstDataSource', () => {
 
   it('should cache not found errors with a specific TTL', async () => {
     const mockCache = jest.mocked({
-      get: jest.fn(),
-      set: jest.fn(),
+      hGet: jest.fn(),
+      hSet: jest.fn(),
     } as jest.MockedObjectDeep<ICacheService>);
 
     cacheFirstDataSource = new CacheFirstDataSource(
@@ -290,7 +294,7 @@ describe('CacheFirstDataSource', () => {
       status: 404,
     } as Response);
     const notFoundExpireTimeSeconds = faker.number.int();
-    mockCache.get.mockResolvedValue(undefined);
+    mockCache.hGet.mockResolvedValue(undefined);
     mockNetworkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case targetUrl:
@@ -309,7 +313,7 @@ describe('CacheFirstDataSource', () => {
       }),
     ).rejects.toThrow(expectedError);
 
-    expect(mockCache.set).toHaveBeenCalledWith(
+    expect(mockCache.hSet).toHaveBeenCalledWith(
       cacheDir,
       expect.anything(),
       notFoundExpireTimeSeconds,

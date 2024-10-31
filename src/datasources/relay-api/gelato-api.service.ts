@@ -77,7 +77,7 @@ export class GelatoApi implements IRelayApi {
     address: `0x${string}`;
   }): Promise<number> {
     const cacheDir = CacheRouter.getRelayCacheDir(args);
-    const count = await this.cacheService.get(cacheDir);
+    const count = await this.cacheService.hGet(cacheDir);
     return count ? parseInt(count) : 0;
   }
 
@@ -87,7 +87,7 @@ export class GelatoApi implements IRelayApi {
     count: number;
   }): Promise<void> {
     const cacheDir = CacheRouter.getRelayCacheDir(args);
-    await this.cacheService.set(
+    await this.cacheService.hSet(
       cacheDir,
       args.count.toString(),
       this.ttlSeconds,

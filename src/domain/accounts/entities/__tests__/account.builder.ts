@@ -1,5 +1,6 @@
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Account } from '@/domain/accounts/entities/account.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Account } from '@/domain/accounts/entities/account.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

@@ -1,8 +1,8 @@
-import { ContractsRepository } from '@/domain/contracts/contracts.repository';
+import type { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { TokenRepository } from '@/domain/tokens/token.repository';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { TokenRepository } from '@/domain/tokens/token.repository';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

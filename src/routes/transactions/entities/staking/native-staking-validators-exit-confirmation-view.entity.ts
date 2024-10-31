@@ -3,30 +3,29 @@ import {
   Baseline,
   DecodedType,
 } from '@/routes/transactions/entities/confirmation-view/confirmation-view.entity';
-import {
-  StakingValidatorsExitInfo,
-  StakingValidatorsExitStatus,
-} from '@/routes/transactions/entities/staking/staking.entity';
+import { StakingStatus } from '@/routes/transactions/entities/staking/staking.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class NativeStakingValidatorsExitConfirmationView
-  implements Baseline, StakingValidatorsExitInfo
-{
+export class NativeStakingValidatorsExitConfirmationView implements Baseline {
   @ApiProperty({
     enum: [DecodedType.KilnNativeStakingValidatorsExit],
   })
   type = DecodedType.KilnNativeStakingValidatorsExit;
 
   @ApiProperty({
-    enum: StakingValidatorsExitStatus,
+    enum: StakingStatus,
   })
-  status: StakingValidatorsExitStatus;
+  status: StakingStatus;
 
   @ApiProperty()
   method: string;
 
-  @ApiPropertyOptional({ type: [DataDecodedParameter], nullable: true })
+  @ApiPropertyOptional({
+    type: DataDecodedParameter,
+    isArray: true,
+    nullable: true,
+  })
   parameters: DataDecodedParameter[] | null;
 
   @ApiProperty()
@@ -44,15 +43,19 @@ export class NativeStakingValidatorsExitConfirmationView
   @ApiProperty()
   tokenInfo: TokenInfo;
 
+  @ApiProperty()
+  validators: Array<`0x${string}`>;
+
   constructor(args: {
     method: string;
     parameters: DataDecodedParameter[] | null;
-    status: StakingValidatorsExitStatus;
+    status: StakingStatus;
     estimatedExitTime: number;
     estimatedWithdrawalTime: number;
     value: string;
     numValidators: number;
     tokenInfo: TokenInfo;
+    validators: Array<`0x${string}`>;
   }) {
     this.method = args.method;
     this.parameters = args.parameters;
@@ -62,5 +65,6 @@ export class NativeStakingValidatorsExitConfirmationView
     this.value = args.value;
     this.numValidators = args.numValidators;
     this.tokenInfo = args.tokenInfo;
+    this.validators = args.validators;
   }
 }

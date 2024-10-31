@@ -16,6 +16,8 @@ process.env.POSTGRES_PORT = '5433';
 process.env.POSTGRES_DB = 'test-db';
 process.env.POSTGRES_USER = 'postgres';
 process.env.POSTGRES_PASSWORD = 'postgres';
+process.env.POSTGRES_SSL_ENABLED = 'true';
+process.env.POSTGRES_SSL_CA_PATH = 'db_config/test/server.crt';
 
 // For E2E tests, connect to the test cache
 process.env.REDIS_HOST = '127.0.0.1';
@@ -29,3 +31,15 @@ process.env.AMQP_QUEUE = 'test-queue';
 process.env.AMQP_PREFETCH = '100';
 
 process.env.OWNERS_TTL_SECONDS = '0';
+
+// For E2E tests, JWT dummy values
+process.env.JWT_ISSUER = 'fase-issuer';
+process.env.JWT_SECRET = 'fake-secret';
+
+// For E2E tests, Push notification dummy values
+process.env.PUSH_NOTIFICATIONS_API_BASE_URI = 'http://www.fake.com';
+process.env.PUSH_NOTIFICATIONS_API_PROJECT = 'fake-project';
+process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL =
+  'email@fake-email.com';
+process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY =
+  'fake-private-key';

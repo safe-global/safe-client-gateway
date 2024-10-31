@@ -1,13 +1,13 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/entities/__tests__/upsert-subscriptions.dto.entity.builder';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/upsert-subscriptions.dto.entity.builder';
 import { NotificationsDatasource } from '@/datasources/notifications/notifications.datasource';
-import { PostgresDatabaseMigrator } from '@/datasources/db/postgres-database.migrator';
-import { NotificationType } from '@/domain/notifications/entities-v2/notification-type.entity';
-import { UUID } from 'crypto';
-import { ILoggingService } from '@/logging/logging.interface';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
+import type { UUID } from 'crypto';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 import { getAddress } from 'viem';
 
 const mockLoggingService = {

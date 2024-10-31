@@ -50,6 +50,7 @@ export class MessagesRepository implements IMessagesRepository {
     message: unknown;
     safeAppId: number | null;
     signature: string;
+    origin: string | null;
   }): Promise<unknown> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -60,6 +61,7 @@ export class MessagesRepository implements IMessagesRepository {
       message: args.message,
       safeAppId: args.safeAppId,
       signature: args.signature,
+      origin: args.origin,
     });
   }
 

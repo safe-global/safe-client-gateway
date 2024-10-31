@@ -1,10 +1,10 @@
 import { faker } from '@faker-js/faker';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
-import { RedisClientType } from 'redis';
+import type { RedisClientType } from 'redis';
 import { fakeJson } from '@/__tests__/faker';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import clearAllMocks = jest.clearAllMocks;
 
 const redisClientType = {
@@ -61,7 +61,7 @@ describe('RedisCacheService with a Key Prefix', () => {
     const value = fakeJson();
     const expireTime = faker.number.int();
 
-    await redisCacheService.set(cacheDir, value, expireTime);
+    await redisCacheService.hSet(cacheDir, value, expireTime);
 
     expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,
@@ -80,7 +80,7 @@ describe('RedisCacheService with a Key Prefix', () => {
       faker.string.alphanumeric(),
       faker.string.sample(),
     );
-    await redisCacheService.get(cacheDir);
+    await redisCacheService.hGet(cacheDir);
 
     expect(redisClientTypeMock.hGet).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,

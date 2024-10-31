@@ -25,7 +25,7 @@ describe('SiweApiService', () => {
       await service.storeNonce(nonce);
 
       await expect(
-        fakeCacheService.get(new CacheDir(`auth_nonce_${nonce}`, '')),
+        fakeCacheService.hGet(new CacheDir(`auth_nonce_${nonce}`, '')),
       ).resolves.toBe(nonce);
     });
   });
@@ -49,7 +49,7 @@ describe('SiweApiService', () => {
       await service.clearNonce(nonce);
 
       await expect(
-        fakeCacheService.get(new CacheDir(`auth_nonce_${nonce}`, '')),
+        fakeCacheService.hGet(new CacheDir(`auth_nonce_${nonce}`, '')),
       ).resolves.toBe(undefined);
     });
   });

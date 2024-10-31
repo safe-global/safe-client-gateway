@@ -42,7 +42,11 @@ export class SafesController {
     return this.service.getNonces({ chainId, safeAddress });
   }
 
-  @ApiQuery({ name: 'wallet_address', required: false })
+  @ApiQuery({ name: 'wallet_address', required: false, type: String })
+  @ApiQuery({ name: 'currency', required: true, type: String })
+  @ApiQuery({ name: 'safes', required: true, type: String })
+  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
+  @ApiQuery({ name: 'exclude_spam', required: false, type: Boolean })
   @Get('safes')
   async getSafeOverview(
     @Query('currency') currency: string,

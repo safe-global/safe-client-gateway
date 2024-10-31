@@ -1,5 +1,5 @@
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SafeOverview {
   @ApiProperty()
@@ -14,7 +14,7 @@ export class SafeOverview {
   readonly fiatTotal: string;
   @ApiProperty()
   readonly queued: number;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: Number, nullable: true })
   readonly awaitingConfirmation: number | null;
 
   constructor(

@@ -7,13 +7,16 @@ import configuration from '@/config/entities/configuration';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { ChannelWrapper } from 'amqp-connection-manager';
-import { RedisClientType } from 'redis';
+import type { ChannelWrapper } from 'amqp-connection-manager';
+import type { RedisClientType } from 'redis';
 import { getAddress } from 'viem';
-import { Server } from 'net';
+import type { Server } from 'net';
 import { TEST_SAFE } from '@/routes/common/__tests__/constants';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;
@@ -31,10 +34,6 @@ describe('Events queue processing e2e tests', () => {
         ...defaultConfiguration.amqp,
         queue,
       },
-      features: {
-        ...defaultConfiguration.features,
-        eventsQueue: true,
-      },
     });
 
     const moduleRef = await Test.createTestingModule({
@@ -42,6 +41,8 @@ describe('Events queue processing e2e tests', () => {
     })
       .overrideProvider(CacheKeyPrefix)
       .useValue(cacheKeyPrefix)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     app = await new TestAppProvider().provide(moduleRef);
@@ -492,14 +493,14 @@ describe('Events queue processing e2e tests', () => {
       type: 'CHAIN_UPDATE',
     },
   ])('$type clears chain', async (payload) => {
-    const chainId = faker.string.numeric();
-    const cacheDir = new CacheDir(`${chainId}_chain`, '');
+    const chain = chainBuilder().build();
+    const cacheDir = new CacheDir(`${chain.chainId}_chain`, '');
     await redisClient.hSet(
       `${cacheKeyPrefix}-${cacheDir.key}`,
       cacheDir.field,
-      faker.string.alpha(),
+      JSON.stringify(chain),
     );
-    const data = { chainId, ...payload };
+    const data = { chainId: chain.chainId, ...payload };
 
     await channel.sendToQueue(queueName, data);
 

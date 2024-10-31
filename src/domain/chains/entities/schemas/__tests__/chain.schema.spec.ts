@@ -1,4 +1,5 @@
 import { balancesProviderBuilder } from '@/domain/chains/entities/__tests__/balances-provider.builder';
+import { beaconChainExplorerUriTemplateBuilder } from '@/domain/chains/entities/__tests__/beacon-chain-explorer-uri-template.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractAddressesBuilder } from '@/domain/chains/entities/__tests__/contract-addresses.builder';
 import { gasPriceFixedEIP1559Builder } from '@/domain/chains/entities/__tests__/gas-price-fixed-eip-1559.builder';
@@ -8,7 +9,7 @@ import { nativeCurrencyBuilder } from '@/domain/chains/entities/__tests__/native
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
 import { themeBuilder } from '@/domain/chains/entities/__tests__/theme.builder';
-import { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Chain } from '@/domain/chains/entities/chain.entity';
 import {
   ChainSchema,
   BalancesProviderSchema,
@@ -22,6 +23,7 @@ import {
   ThemeSchema,
   ContractAddressesSchema,
   ChainLenientPageSchema,
+  BeaconChainExplorerUriTemplateSchema,
 } from '@/domain/chains/entities/schemas/chain.schema';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { faker } from '@faker-js/faker';
@@ -113,6 +115,58 @@ describe('Chain schemas', () => {
           },
         ]),
       );
+    });
+  });
+
+  describe('BeaconChainExplorerUriTemplate', () => {
+    it('should validate a BeaconChainExplorerUriTemplate', () => {
+      const beaconChainExplorerUriTemplate =
+        beaconChainExplorerUriTemplateBuilder().build();
+
+      const result = BeaconChainExplorerUriTemplateSchema.safeParse(
+        beaconChainExplorerUriTemplate,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should allow a string publicKey', () => {
+      const beaconChainExplorerUriTemplate =
+        beaconChainExplorerUriTemplateBuilder()
+          .with(
+            'publicKey',
+            `${faker.internet.url({ appendSlash: false })}/{{publicKey}}`,
+          )
+          .build();
+
+      const result = BeaconChainExplorerUriTemplateSchema.safeParse(
+        beaconChainExplorerUriTemplate,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should allow a null publicKey', () => {
+      const beaconChainExplorerUriTemplate =
+        beaconChainExplorerUriTemplateBuilder().with('publicKey', null).build();
+
+      const result = BeaconChainExplorerUriTemplateSchema.safeParse(
+        beaconChainExplorerUriTemplate,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should default publicKey to null', () => {
+      const beaconChainExplorerUriTemplate = {
+        publicKey: null,
+      };
+
+      const result = BeaconChainExplorerUriTemplateSchema.safeParse(
+        beaconChainExplorerUriTemplate,
+      );
+
+      expect(result.success && result.data.publicKey).toBe(null);
     });
   });
 
@@ -486,47 +540,6 @@ describe('Chain schemas', () => {
         expect(result.success && result.data[field]).toBe(null);
       });
     });
-
-    // TODO: Remove after deployed and all chain caches include the `contractAddresses` field
-    describe('should default all contract addresses to null if the chain cache does not contain contractAddresses', () => {
-      it('on a ContractAddresses level', () => {
-        const contractAddresses = undefined;
-
-        const result = ContractAddressesSchema.safeParse(contractAddresses);
-
-        expect(result.success && result.data).toStrictEqual({
-          safeSingletonAddress: null,
-          safeProxyFactoryAddress: null,
-          multiSendAddress: null,
-          multiSendCallOnlyAddress: null,
-          fallbackHandlerAddress: null,
-          signMessageLibAddress: null,
-          createCallAddress: null,
-          simulateTxAccessorAddress: null,
-          safeWebAuthnSignerFactoryAddress: null,
-        });
-      });
-
-      it('on a Chain level', () => {
-        const chain = chainBuilder().build();
-        // @ts-expect-error - pre-inclusion of `contractAddresses` field
-        delete chain.contractAddresses;
-
-        const result = ChainSchema.safeParse(chain);
-
-        expect(result.success && result.data.contractAddresses).toStrictEqual({
-          safeSingletonAddress: null,
-          safeProxyFactoryAddress: null,
-          multiSendAddress: null,
-          multiSendCallOnlyAddress: null,
-          fallbackHandlerAddress: null,
-          signMessageLibAddress: null,
-          createCallAddress: null,
-          simulateTxAccessorAddress: null,
-          safeWebAuthnSignerFactoryAddress: null,
-        });
-      });
-    });
   });
 
   describe('ChainSchema', () => {
@@ -547,6 +560,30 @@ describe('Chain schemas', () => {
         const result = ChainSchema.safeParse(chain);
 
         expect(result.success && result.data[field]).toBe(null);
+      },
+    );
+
+    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
+      'accept non-trailing slash %s as is',
+      (field) => {
+        const url = faker.internet.url({ appendSlash: false });
+        const chain = chainBuilder().with(field, url).build();
+
+        const result = ChainSchema.safeParse(chain);
+
+        expect(result.success && result.data[field]).toBe(url);
+      },
+    );
+
+    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
+      'should remove trailing slashes from %s',
+      (field) => {
+        const url = faker.internet.url({ appendSlash: false });
+        const chain = chainBuilder().with(field, `${url}/`).build();
+
+        const result = ChainSchema.safeParse(chain);
+
+        expect(result.success && result.data[field]).toBe(url);
       },
     );
 
@@ -582,6 +619,8 @@ describe('Chain schemas', () => {
       ['safeAppsRpcUri' as const],
       ['publicRpcUri' as const],
       ['blockExplorerUriTemplate' as const],
+      ['beaconChainExplorerUriTemplate' as const],
+      ['contractAddresses' as const],
       ['nativeCurrency' as const],
       ['pricesProvider' as const],
       ['balancesProvider' as const],

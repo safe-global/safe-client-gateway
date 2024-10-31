@@ -1,19 +1,19 @@
 import { fakeJson } from '@/__tests__/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { ComposableCowDecoder } from '@/domain/swaps/contracts/decoders/composable-cow-decoder.helper';
 import { GPv2Decoder } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
-import { Order } from '@/domain/swaps/entities/order.entity';
-import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
+import type { Order } from '@/domain/swaps/entities/order.entity';
+import type { ISwapsRepository } from '@/domain/swaps/swaps.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import type { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { GPv2OrderHelper } from '@/routes/transactions/helpers/gp-v2-order.helper';
 import { SwapOrderHelper } from '@/routes/transactions/helpers/swap-order.helper';
 import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper';
 import { TwapOrderMapper } from '@/routes/transactions/mappers/common/twap-order.mapper';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { getAddress } from 'viem';
 import { fullAppDataBuilder } from '@/domain/swaps/entities/__tests__/full-app-data.builder';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
@@ -45,7 +45,7 @@ const mockChainsRepository = {
 
 describe('TwapOrderMapper', () => {
   const configurationService = new FakeConfigurationService();
-  const multiSendDecoder = new MultiSendDecoder();
+  const multiSendDecoder = new MultiSendDecoder(loggingService);
   const transactionFinder = new TransactionFinder(multiSendDecoder);
   const gpv2Decoder = new GPv2Decoder(mockLoggingService);
   const allowedApps = new Set<string>();
@@ -158,7 +158,6 @@ describe('TwapOrderMapper', () => {
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '500000000000000000',
       receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-      richDecodedInfo: null,
       sellAmount: '1000000000000000000',
       sellToken: {
         address: sellToken.address,
@@ -341,7 +340,6 @@ describe('TwapOrderMapper', () => {
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '213586875483862141750',
       receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-      richDecodedInfo: null,
       sellAmount: '427173750967724283500',
       sellToken: {
         address: sellToken.address,
@@ -486,7 +484,6 @@ describe('TwapOrderMapper', () => {
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '213586875483862141750',
       receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-      richDecodedInfo: null,
       sellAmount: '427173750967724283500',
       sellToken: {
         address: sellToken.address,
@@ -886,7 +883,6 @@ describe('TwapOrderMapper', () => {
       owner: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
       partSellAmount: '500000000000000000',
       receiver: '0x31eaC7F0141837B266De30f4dc9aF15629Bd5381',
-      richDecodedInfo: null,
       sellAmount: '1000000000000000000',
       sellToken: {
         address: sellToken.address,
@@ -1478,7 +1474,6 @@ describe('TwapOrderMapper', () => {
           if (order) {
             return Promise.resolve(order);
           }
-          console.log('Order not found', orderUid);
           return Promise.reject(new NotFoundException());
         },
       );

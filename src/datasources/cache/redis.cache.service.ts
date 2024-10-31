@@ -31,7 +31,13 @@ export class RedisCacheService
     return this.client.ping();
   }
 
-  async set(
+  async getCounter(key: string): Promise<number | null> {
+    const value = await this.client.get(this._prefixKey(key));
+    const numericValue = Number(value);
+    return Number.isInteger(numericValue) ? numericValue : null;
+  }
+
+  async hSet(
     cacheDir: CacheDir,
     value: string,
     expireTimeSeconds: number | undefined,
@@ -53,7 +59,7 @@ export class RedisCacheService
     }
   }
 
-  async get(cacheDir: CacheDir): Promise<string | undefined> {
+  async hGet(cacheDir: CacheDir): Promise<string | undefined> {
     const key = this._prefixKey(cacheDir.key);
     return await this.client.hGet(key, cacheDir.field);
   }
@@ -62,7 +68,7 @@ export class RedisCacheService
     const keyWithPrefix = this._prefixKey(key);
     // see https://redis.io/commands/unlink/
     const result = await this.client.unlink(keyWithPrefix);
-    await this.set(
+    await this.hSet(
       new CacheDir(`invalidationTimeMs:${key}`, ''),
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
@@ -80,6 +86,14 @@ export class RedisCacheService
     }
     const [incrRes] = await transaction.get(cacheKey).exec();
     return Number(incrRes);
+  }
+
+  async setCounter(
+    key: string,
+    value: number,
+    expireTimeSeconds: number,
+  ): Promise<void> {
+    await this.client.set(key, value, { EX: expireTimeSeconds, NX: true });
   }
 
   /**

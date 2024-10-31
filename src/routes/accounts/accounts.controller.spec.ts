@@ -8,11 +8,10 @@ import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -29,17 +28,18 @@ import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.int
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { AccountsController } from '@/routes/accounts/accounts.controller';
-import { Account } from '@/routes/accounts/entities/account.entity';
+import type { Account } from '@/routes/accounts/entities/account.entity';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
 import {
   ConflictException,
-  INestApplication,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Server } from 'net';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
 
@@ -62,8 +62,8 @@ describe('AccountsController', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(AccountsDatasourceModule)
       .useModule(TestAccountsDataSourceModule)
       .overrideModule(CounterfactualSafesDatasourceModule)
@@ -76,6 +76,8 @@ describe('AccountsController', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     accountDataSource = moduleFixture.get(IAccountsDatasource);

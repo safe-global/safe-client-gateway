@@ -1,8 +1,9 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { GelatoApi } from '@/datasources/relay-api/gelato-api.service';
 import { faker } from '@faker-js/faker';
-import { INetworkService } from '@/datasources/network/network.service.interface';
-import { Hex, getAddress } from 'viem';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { Hex } from 'viem';
+import { getAddress } from 'viem';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -172,7 +173,7 @@ describe('GelatoApi', () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
       const count = faker.number.int({ min: 1 });
-      await fakeCacheService.set(
+      await fakeCacheService.hSet(
         new CacheDir(`${chainId}_relay_${address}`, ''),
         count.toString(),
         ttlSeconds,
@@ -211,7 +212,7 @@ describe('GelatoApi', () => {
         count,
       });
 
-      const result = await fakeCacheService.get(
+      const result = await fakeCacheService.hGet(
         new CacheDir(`${chainId}_relay_${address}`, ''),
       );
       expect(result).toBe(count.toString());

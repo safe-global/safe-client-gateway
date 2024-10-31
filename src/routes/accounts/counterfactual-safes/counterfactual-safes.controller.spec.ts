@@ -8,17 +8,16 @@ import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
-import jwtConfiguration from '@/datasources/jwt/configuration/__tests__/jwt.configuration';
-import {
-  JWT_CONFIGURATION_MODULE,
-  JwtConfigurationModule,
-} from '@/datasources/jwt/configuration/jwt.configuration.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
+import type { IAccountsRepository } from '@/domain/accounts/accounts.repository.interface';
 import { counterfactualSafeBuilder } from '@/domain/accounts/counterfactual-safes/entities/__tests__/counterfactual-safe.builder';
 import { createCounterfactualSafeDtoBuilder } from '@/domain/accounts/counterfactual-safes/entities/__tests__/create-counterfactual-safe.dto.entity.builder';
 import { accountDataSettingBuilder } from '@/domain/accounts/entities/__tests__/account-data-setting.builder';
@@ -34,9 +33,11 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { CounterfactualSafesController } from '@/routes/accounts/counterfactual-safes/counterfactual-safes.controller';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { faker } from '@faker-js/faker';
-import { INestApplication, NotFoundException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Server } from 'http';
+import type { INestApplication } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import type { Server } from 'http';
 import request from 'supertest';
 import { getAddress } from 'viem';
 
@@ -60,8 +61,6 @@ describe('CounterfactualSafesController', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
-      .overrideModule(JWT_CONFIGURATION_MODULE)
-      .useModule(JwtConfigurationModule.register(jwtConfiguration))
       .overrideModule(AccountsDatasourceModule)
       .useModule(TestAccountsDataSourceModule)
       .overrideModule(CounterfactualSafesDatasourceModule)
@@ -74,6 +73,10 @@ describe('CounterfactualSafesController', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .compile();
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     accountsRepository = moduleFixture.get(IAccountsDatasource);

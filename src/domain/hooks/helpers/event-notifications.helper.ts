@@ -16,7 +16,7 @@ import { Event } from '@/routes/hooks/entities/event.entity';
 import {
   INotificationsRepositoryV2,
   NotificationsRepositoryV2Module,
-} from '@/domain/notifications/notifications.repository.v2.interface';
+} from '@/domain/notifications/v2/notifications.repository.interface';
 import { DeletedMultisigTransactionEvent } from '@/routes/hooks/entities/schemas/deleted-multisig-transaction.schema';
 import { ExecutedTransactionEvent } from '@/routes/hooks/entities/schemas/executed-transaction.schema';
 import { IncomingEtherEvent } from '@/routes/hooks/entities/schemas/incoming-ether.schema';
@@ -31,7 +31,7 @@ import {
   MessageConfirmationNotification,
   Notification,
   NotificationType,
-} from '@/domain/notifications/entities-v2/notification.entity';
+} from '@/domain/notifications/v2/entities/notification.entity';
 import {
   DelegatesV2RepositoryModule,
   IDelegatesV2Repository,

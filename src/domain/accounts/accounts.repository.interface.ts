@@ -7,6 +7,7 @@ import { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.
 import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Module } from '@nestjs/common';
+import { Request } from 'express';
 
 export const IAccountsRepository = Symbol('IAccountsRepository');
 
@@ -14,7 +15,7 @@ export interface IAccountsRepository {
   createAccount(args: {
     authPayload: AuthPayload;
     createAccountDto: CreateAccountDto;
-    clientIp: string;
+    clientIp: Request['ip'];
   }): Promise<Account>;
 
   getAccount(args: {

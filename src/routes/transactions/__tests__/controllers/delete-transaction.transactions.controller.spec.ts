@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
@@ -9,11 +10,9 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { DeleteTransactionDto } from '@/routes/transactions/entities/delete-transaction.dto.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import type { DeleteTransactionDto } from '@/routes/transactions/entities/delete-transaction.dto.entity';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -25,10 +24,14 @@ import {
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 
 describe('Delete Transaction - Transactions Controller (Unit', () => {
   let app: INestApplication<Server>;
@@ -42,6 +45,8 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -50,6 +55,8 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -158,7 +165,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       .expect(200);
 
     await expect(
-      fakeCacheService.get(
+      fakeCacheService.hGet(
         new CacheDir(
           `${chain.chainId}_multisig_transaction_${tx.safeTxHash}`,
           '',
@@ -166,7 +173,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       ),
     ).resolves.toBeUndefined();
     await expect(
-      fakeCacheService.get(
+      fakeCacheService.hGet(
         new CacheDir(`${chain.chainId}_multisig_transactions_${tx.safe}`, ''),
       ),
     ).resolves.toBeUndefined();

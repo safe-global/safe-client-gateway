@@ -1,5 +1,8 @@
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
-import { StakeSchema } from '@/datasources/staking-api/entities/stake.entity';
+import {
+  StakeSchema,
+  StakeState,
+} from '@/datasources/staking-api/entities/stake.entity';
 import { faker } from '@faker-js/faker';
 
 describe('StakeSchema', () => {
@@ -11,26 +14,33 @@ describe('StakeSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it.each(['validator_address' as const, 'state' as const])(
-    'should not validate non-string %s values',
-    (key) => {
-      const stake = stakeBuilder().build();
+  it('should fallback to unknown for an invalid state', () => {
+    const stake = stakeBuilder()
+      .with('state', 'invalid_state' as unknown as StakeState)
+      .build();
 
-      // @ts-expect-error - $key is expected to be a string
-      stake[key] = faker.number.int();
+    const result = StakeSchema.safeParse(stake);
 
-      const result = StakeSchema.safeParse(stake);
+    expect(result.success && result.data.state).toBe(StakeState.Unknown);
+  });
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'invalid_type',
-        expected: 'string',
-        received: 'number',
-        message: 'Expected string, received number',
-        path: [key],
-      });
-    },
-  );
+  it('should not validate non-string validator_address values', () => {
+    const stake = stakeBuilder().build();
+
+    // @ts-expect-error - validator_address is expected to be a string
+    stake.validator_address = faker.number.int();
+
+    const result = StakeSchema.safeParse(stake);
+
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'number',
+      message: 'Expected string, received number',
+      path: ['validator_address'],
+    });
+  });
 
   it('should not validate a `validator_address` with an invalid length', () => {
     const stake = stakeBuilder().with('validator_address', '0x00').build();
@@ -45,7 +55,7 @@ describe('StakeSchema', () => {
     });
   });
 
-  it.each(['effective_balance' as const, 'rewards' as const])(
+  it.each(['rewards' as const, 'net_claimable_consensus_rewards' as const])(
     'should not validate non-numeric string %s values',
     (key) => {
       const stake = stakeBuilder().with(key, faker.lorem.word()).build();
@@ -72,20 +82,6 @@ describe('StakeSchema', () => {
         expected: 'string',
         message: 'Required',
         path: ['validator_address'],
-        received: 'undefined',
-      },
-      {
-        code: 'invalid_type',
-        expected: 'string',
-        message: 'Required',
-        path: ['state'],
-        received: 'undefined',
-      },
-      {
-        code: 'invalid_type',
-        expected: 'string',
-        message: 'Required',
-        path: ['effective_balance'],
         received: 'undefined',
       },
       {

@@ -1,11 +1,13 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Message } from '@/domain/messages/entities/message.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Message } from '@/domain/messages/entities/message.entity';
 import {
   messageConfirmationBuilder,
   toJson as messageConfirmationToJson,
 } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 import { getAddress } from 'viem';
+import { fakeJson } from '@/__tests__/faker';
 
 export function messageBuilder(): IBuilder<Message> {
   return new Builder<Message>()
@@ -28,7 +30,8 @@ export function messageBuilder(): IBuilder<Message> {
     .with(
       'preparedSignature',
       faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
-    );
+    )
+    .with('origin', fakeJson());
 }
 
 export function toJson(message: Message): unknown {

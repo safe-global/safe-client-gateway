@@ -1,8 +1,8 @@
-import { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
-import { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
-import { Account } from '@/domain/accounts/entities/account.entity';
-import { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.entity';
-import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
+import type { AccountDataSetting } from '@/domain/accounts/entities/account-data-setting.entity';
+import type { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
+import type { Account } from '@/domain/accounts/entities/account.entity';
+import type { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.entity';
+import type { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 
 export const IAccountsDatasource = Symbol('IAccountsDatasource');
 

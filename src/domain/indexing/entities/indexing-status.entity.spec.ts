@@ -13,8 +13,11 @@ describe('IndexingStatusSchema', () => {
 
   it.each([
     'currentBlockNumber' as const,
+    'currentBlockTimestamp' as const,
     'erc20BlockNumber' as const,
+    'erc20BlockTimestamp' as const,
     'masterCopiesBlockNumber' as const,
+    'masterCopiesBlockTimestamp' as const,
     'erc20Synced' as const,
     'masterCopiesSynced' as const,
     'synced' as const,
@@ -49,6 +52,23 @@ describe('IndexingStatusSchema', () => {
     ]);
   });
 
+  it.each([
+    'currentBlockTimestamp' as const,
+    'erc20BlockTimestamp' as const,
+    'masterCopiesBlockTimestamp' as const,
+  ])('should coerce %s to a date', (key) => {
+    const date = faker.date.recent();
+    const indexingStatus = indexingStatusBuilder()
+      .with(key, date.toString() as unknown as Date)
+      .build();
+
+    const result = IndexingStatusSchema.safeParse(indexingStatus);
+
+    // zod does not coerce milliseconds
+    date.setMilliseconds(0);
+    expect(result.success && result.data[key]).toStrictEqual(date);
+  });
+
   it('should not allow an invalid IndexingStatus', () => {
     const indexingStatus = {
       invalid: 'indexingStatus',
@@ -65,11 +85,21 @@ describe('IndexingStatusSchema', () => {
         received: 'undefined',
       },
       {
+        code: 'invalid_date',
+        message: 'Invalid date',
+        path: ['currentBlockTimestamp'],
+      },
+      {
         code: 'invalid_type',
         expected: 'number',
         message: 'Required',
         path: ['erc20BlockNumber'],
         received: 'undefined',
+      },
+      {
+        code: 'invalid_date',
+        message: 'Invalid date',
+        path: ['erc20BlockTimestamp'],
       },
       {
         code: 'invalid_type',
@@ -84,6 +114,11 @@ describe('IndexingStatusSchema', () => {
         message: 'Required',
         path: ['masterCopiesBlockNumber'],
         received: 'undefined',
+      },
+      {
+        code: 'invalid_date',
+        message: 'Invalid date',
+        path: ['masterCopiesBlockTimestamp'],
       },
       {
         code: 'invalid_type',

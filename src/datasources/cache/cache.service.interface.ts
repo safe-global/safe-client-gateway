@@ -1,15 +1,17 @@
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export const CacheService = Symbol('ICacheService');
 
 export interface ICacheService {
-  set(
+  getCounter(key: string): Promise<number | null>;
+
+  hSet(
     cacheDir: CacheDir,
     value: string,
     expireTimeSeconds: number | undefined,
   ): Promise<void>;
 
-  get(cacheDir: CacheDir): Promise<string | undefined>;
+  hGet(cacheDir: CacheDir): Promise<string | undefined>;
 
   deleteByKey(key: string): Promise<number>;
 
@@ -17,4 +19,10 @@ export interface ICacheService {
     cacheKey: string,
     expireTimeSeconds: number | undefined,
   ): Promise<number>;
+
+  setCounter(
+    key: string,
+    value: number,
+    expireTimeSeconds: number | undefined,
+  ): Promise<void>;
 }

@@ -1,5 +1,5 @@
 import { safeCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/safe-created.build';
-import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
+import type { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { SafeCreatedEventSchema } from '@/routes/hooks/entities/schemas/safe-created.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';

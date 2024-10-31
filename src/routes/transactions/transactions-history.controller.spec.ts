@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -38,11 +39,9 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TokenType } from '@/domain/tokens/entities/token.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { Transfer } from '@/domain/safe/entities/transfer.entity';
-import {
-  INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { Transfer } from '@/domain/safe/entities/transfer.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -55,12 +54,16 @@ import {
   erc721TransferBuilder,
   toJson as erc721TransferToJson,
 } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
-import { TransactionItem } from '@/routes/transactions/entities/transaction-item.entity';
+import type { TransactionItem } from '@/routes/transactions/entities/transaction-item.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { getAddress } from 'viem';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { Server } from 'net';
+import type { Server } from 'net';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -84,6 +87,8 @@ describe('Transactions History Controller (Unit)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
@@ -92,6 +97,8 @@ describe('Transactions History Controller (Unit)', () => {
       .useModule(TestNetworkModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
       .compile();
 
     configurationService = moduleFixture.get(IConfigurationService);
@@ -430,6 +437,62 @@ describe('Transactions History Controller (Unit)', () => {
         expect(body.results[3].transaction.timestamp).toEqual(
           moduleTransaction1.executionDate.getTime(),
         );
+      });
+  });
+
+  it('Should group transactions according to timezone', async () => {
+    const safeAddress = faker.finance.ethereumAddress();
+    const timezone = 'Europe/Berlin';
+    const chainResponse = chainBuilder().build();
+    const chainId = chainResponse.chainId;
+    const moduleTransaction1 = moduleTransactionBuilder()
+      .with('dataDecoded', null)
+      .with('executionDate', new Date('2022-12-31T21:09:36Z'))
+      .build();
+    const moduleTransaction2 = moduleTransactionBuilder()
+      .with('dataDecoded', null)
+      .with('executionDate', new Date('2022-12-31T23:09:36Z'))
+      .build();
+    const safe = safeBuilder().build();
+    const transactionHistoryBuilder = {
+      count: 40,
+      next: `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
+      previous: null,
+      results: [
+        moduleTransactionToJson(moduleTransaction2),
+        moduleTransactionToJson(moduleTransaction1),
+      ],
+    };
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      // Param ValidationPipe checksums address
+      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/all-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: chainResponse, status: 200 });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({
+          data: transactionHistoryBuilder,
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: safe, status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/history/?timezone=${timezone}`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.results).toHaveLength(4);
+
+        // The first and second transactions should be assigned to different groups, and for that reason, the element at index 2 of the array should be a DATE_LABEL.
+        expect(body.results[2].type).toBe('DATE_LABEL');
       });
   });
 

@@ -1,5 +1,5 @@
 import { creationTransactionBuilder } from '@/domain/safe/entities/__tests__/creation-transaction.builder';
-import { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
+import type { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
@@ -48,6 +48,7 @@ describe('CreationTransactionSchema', () => {
     'masterCopy' as const,
     'setupData' as const,
     'dataDecoded' as const,
+    'saltNonce' as const,
   ])('should allow an optional %s', (field) => {
     const creationTransaction = creationTransactionBuilder().build();
     delete creationTransaction[field];

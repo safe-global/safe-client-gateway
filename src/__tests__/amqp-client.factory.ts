@@ -1,5 +1,6 @@
-import amqp, { ChannelWrapper } from 'amqp-connection-manager';
-import { Channel } from 'amqplib';
+import type { ChannelWrapper } from 'amqp-connection-manager';
+import amqp from 'amqp-connection-manager';
+import type { Channel } from 'amqplib';
 
 export function amqpClientFactory(queue?: string): {
   channel: ChannelWrapper;

@@ -1,146 +1,102 @@
-import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
-import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
+import {
+  KilnAbi,
+  KilnDecoder,
+} from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import {
   TransactionFinder,
   TransactionFinderModule,
 } from '@/routes/transactions/helpers/transaction-finder.helper';
-import { Inject, Injectable, Module } from '@nestjs/common';
-import { toFunctionSelector } from 'viem';
+import { Injectable, Module } from '@nestjs/common';
+import { getAbiItem, toFunctionSelector } from 'viem';
 
 @Injectable()
 export class KilnNativeStakingHelper {
-  constructor(
-    private readonly transactionFinder: TransactionFinder,
-    @Inject(IStakingRepository)
-    private readonly stakingRepository: IStakingRepository,
-  ) {}
+  private static readonly DEPOSIT_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'deposit',
+  });
+  private static readonly VALIDATORS_EXIT_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'requestValidatorsExit',
+  });
+  private static readonly WITHDRAW_SIGNATURE = getAbiItem({
+    abi: KilnAbi,
+    name: 'batchWithdrawCLFee',
+  });
 
-  public async findDeposit(args: {
-    chainId: string;
+  constructor(private readonly transactionFinder: TransactionFinder) {}
+
+  public findDepositTransaction(args: {
     to?: `0x${string}`;
     data: `0x${string}`;
-  }): Promise<{
-    to: `0x${string}`;
-    data: `0x${string}`;
-  } | null> {
-    const selector = toFunctionSelector('function deposit() external payable');
-    const transaction = this.transactionFinder.findTransaction(
+    value: string;
+  }): { to?: `0x${string}`; data: `0x${string}`; value: string } | null {
+    const selector = toFunctionSelector(
+      KilnNativeStakingHelper.DEPOSIT_SIGNATURE,
+    );
+    return this.transactionFinder.findTransaction(
       (transaction) => transaction.data.startsWith(selector),
       args,
     );
-
-    if (!transaction?.to) {
-      return null;
-    }
-
-    // We need to check against the deployment as `deposit` is a common function name
-    const deployment = await this.stakingRepository
-      .getDeployment({
-        chainId: args.chainId,
-        address: transaction.to,
-      })
-      .catch(() => null);
-
-    if (
-      deployment?.product_type !== 'dedicated' &&
-      deployment?.chain !== 'unknown'
-    ) {
-      return null;
-    }
-
-    return {
-      to: transaction.to,
-      data: transaction.data,
-    };
   }
 
-  // TODO: refactor this and the above function to a single function
-  public async findValidatorsExit(args: {
-    chainId: string;
+  public findValidatorsExitTransaction(args: {
     to?: `0x${string}`;
     data: `0x${string}`;
-  }): Promise<{
-    to: `0x${string}`;
-    data: `0x${string}`;
-  } | null> {
+    value: string;
+  }): { to?: `0x${string}`; data: `0x${string}`; value: string } | null {
     const selector = toFunctionSelector(
-      'function requestValidatorsExit(bytes) external',
+      KilnNativeStakingHelper.VALIDATORS_EXIT_SIGNATURE,
     );
-    const transaction = this.transactionFinder.findTransaction(
+    return this.transactionFinder.findTransaction(
       (transaction) => transaction.data.startsWith(selector),
       args,
     );
-
-    if (!transaction?.to) {
-      return null;
-    }
-
-    // We need to check against the deployment as `deposit` is a common function name
-    const deployment = await this.stakingRepository
-      .getDeployment({
-        chainId: args.chainId,
-        address: transaction.to,
-      })
-      .catch(() => null);
-
-    if (
-      deployment?.product_type !== 'dedicated' &&
-      deployment?.chain !== 'unknown'
-    ) {
-      return null;
-    }
-
-    return {
-      to: transaction.to,
-      data: transaction.data,
-    };
   }
 
-  public async findWithdraw(args: {
-    chainId: string;
+  public findWithdrawTransaction(args: {
     to?: `0x${string}`;
     data: `0x${string}`;
-  }): Promise<{
-    to: `0x${string}`;
-    data: `0x${string}`;
-  } | null> {
+    value: string;
+  }): { to?: `0x${string}`; data: `0x${string}`; value: string } | null {
     const selector = toFunctionSelector(
-      'function batchWithdrawCLFee(bytes) external',
+      KilnNativeStakingHelper.WITHDRAW_SIGNATURE,
     );
-    const transaction = this.transactionFinder.findTransaction(
+    return this.transactionFinder.findTransaction(
       (transaction) => transaction.data.startsWith(selector),
       args,
     );
+  }
 
-    if (!transaction?.to) {
-      return null;
-    }
-
-    // We need to check against the deployment as `deposit` is a common function name
-    const deployment = await this.stakingRepository
-      .getDeployment({
-        chainId: args.chainId,
-        address: transaction.to,
-      })
-      .catch(() => null);
-
-    if (
-      deployment?.product_type !== 'dedicated' &&
-      deployment?.chain !== 'unknown'
+  /**
+   * Splits the public keys into an array of public keys.
+   *
+   * Each {@link KilnDecoder.KilnPublicKeyLength} characters represent a validator to withdraw, so the public keys
+   * are split into an array of strings of length {@link KilnDecoder.KilnPublicKeyLength}.
+   *
+   * @param publicKeys - the public keys to split
+   * @returns
+   */
+  public splitPublicKeys(publicKeys: `0x${string}`): `0x${string}`[] {
+    // Remove initial `0x` of decoded `_publicKeys`
+    const publicKeysString = publicKeys.slice(2);
+    const publicKeysArray: `0x${string}`[] = [];
+    for (
+      let i = 0;
+      i < publicKeysString.length;
+      i += KilnDecoder.KilnPublicKeyLength
     ) {
-      return null;
+      publicKeysArray.push(
+        `0x${publicKeysString.slice(i, i + KilnDecoder.KilnPublicKeyLength)}`,
+      );
     }
-
-    return {
-      to: transaction.to,
-      data: transaction.data,
-    };
+    return publicKeysArray;
   }
 }
 
 @Module({
-  imports: [TransactionFinderModule, StakingRepositoryModule],
-  providers: [KilnNativeStakingHelper],
-  exports: [KilnNativeStakingHelper],
+  imports: [TransactionFinderModule],
+  providers: [KilnNativeStakingHelper, KilnDecoder],
+  exports: [KilnNativeStakingHelper, KilnDecoder],
 })
 export class KilnNativeStakingHelperModule {}

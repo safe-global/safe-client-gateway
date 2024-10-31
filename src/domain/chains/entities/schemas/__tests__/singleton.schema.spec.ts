@@ -1,6 +1,6 @@
 import { singletonBuilder } from '@/domain/chains/entities/__tests__/singleton.builder';
 import { SingletonSchema } from '@/domain/chains/entities/schemas/singleton.schema';
-import { Singleton } from '@/domain/chains/entities/singleton.entity';
+import type { Singleton } from '@/domain/chains/entities/singleton.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 

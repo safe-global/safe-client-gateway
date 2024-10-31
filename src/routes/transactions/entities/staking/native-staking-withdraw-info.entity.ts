@@ -15,9 +15,17 @@ export class NativeStakingWithdrawTransactionInfo extends TransactionInfo {
   @ApiProperty()
   tokenInfo: TokenInfo;
 
-  constructor(args: { value: string; tokenInfo: TokenInfo }) {
-    super(TransactionInfoType.NativeStakingWithdraw, null, null);
+  @ApiProperty()
+  validators: Array<`0x${string}`>;
+
+  constructor(args: {
+    value: string;
+    tokenInfo: TokenInfo;
+    validators: Array<`0x${string}`>;
+  }) {
+    super(TransactionInfoType.NativeStakingWithdraw, null);
     this.value = args.value;
     this.tokenInfo = args.tokenInfo;
+    this.validators = args.validators;
   }
 }

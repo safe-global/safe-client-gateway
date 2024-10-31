@@ -37,12 +37,26 @@ describe('Alerts schemas', () => {
       );
     });
 
-    it('should allow empty alert log topics', () => {
-      const alertLog = alertLogBuilder().with('topics', []).build();
+    it('should not allow empty alert log event signature', () => {
+      const alertLog = alertLogBuilder()
+        .with(
+          'topics',
+          [] as unknown as [`0x${string}`, ...Array<`0x${string}`>],
+        )
+        .build();
 
       const result = AlertLogSchema.safeParse(alertLog);
 
-      expect(result.success && result.data.topics).toStrictEqual([]);
+      expect(!result.success && result.error.issues.length).toBe(1);
+      expect(!result.success && result.error.issues[0]).toStrictEqual({
+        code: 'too_small',
+        exact: false,
+        inclusive: true,
+        message: 'No event signature found',
+        minimum: 1,
+        path: ['topics'],
+        type: 'array',
+      });
     });
 
     it('should not allow invalid alert logs', () => {

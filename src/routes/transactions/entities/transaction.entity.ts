@@ -16,6 +16,9 @@ import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer
 import { SwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/swap-order-info.entity';
 import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
 import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
+import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
+import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
+import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 
 @ApiExtraModels(
   CreationTransactionInfo,
@@ -27,13 +30,16 @@ import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/t
   SwapOrderTransactionInfo,
   SwapTransferTransactionInfo,
   TwapOrderTransactionInfo,
+  NativeStakingDepositTransactionInfo,
+  NativeStakingValidatorsExitTransactionInfo,
+  NativeStakingWithdrawTransactionInfo,
 )
 export class Transaction {
   @ApiProperty()
   id: string;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   txHash: `0x${string}` | null;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: Number, nullable: true })
   timestamp: number | null;
   @ApiProperty()
   txStatus: string;
@@ -46,6 +52,9 @@ export class Transaction {
       { $ref: getSchemaPath(SwapTransferTransactionInfo) },
       { $ref: getSchemaPath(TwapOrderTransactionInfo) },
       { $ref: getSchemaPath(TransferTransactionInfo) },
+      { $ref: getSchemaPath(NativeStakingDepositTransactionInfo) },
+      { $ref: getSchemaPath(NativeStakingValidatorsExitTransactionInfo) },
+      { $ref: getSchemaPath(NativeStakingWithdrawTransactionInfo) },
     ],
   })
   txInfo: TransactionInfo;

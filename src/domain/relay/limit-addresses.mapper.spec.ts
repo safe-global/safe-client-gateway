@@ -26,18 +26,19 @@ import { Erc20Decoder } from '@/domain/relay/contracts/decoders/erc-20-decoder.h
 import { ProxyFactoryDecoder } from '@/domain/relay/contracts/decoders/proxy-factory-decoder.helper';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import type { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 import { faker } from '@faker-js/faker';
 import {
-  getMultiSendCallOnlyDeployment,
-  getMultiSendDeployment,
-  getProxyFactoryDeployment,
-  getSafeL2SingletonDeployment,
-  getSafeSingletonDeployment,
-} from '@safe-global/safe-deployments';
+  getMultiSendCallOnlyDeployments,
+  getMultiSendDeployments,
+  getProxyFactoryDeployments,
+  getSafeL2SingletonDeployments,
+  getSafeSingletonDeployments,
+} from '@/domain/common/utils/deployments';
 import { getAddress } from 'viem';
 import configuration from '@/config/entities/configuration';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -62,6 +63,10 @@ const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
   supportedChainIds,
 );
 
+const mockLoggingService = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+
 const mockSafeRepository = jest.mocked({
   getSafe: jest.fn(),
 } as jest.MockedObjectDeep<ISafeRepository>);
@@ -74,7 +79,7 @@ describe('LimitAddressesMapper', () => {
 
     const erc20Decoder = new Erc20Decoder();
     const safeDecoder = new SafeDecoder();
-    const multiSendDecoder = new MultiSendDecoder();
+    const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
     const proxyFactoryDecoder = new ProxyFactoryDecoder();
 
     target = new LimitAddressesMapper(
@@ -562,10 +567,12 @@ describe('LimitAddressesMapper', () => {
             const data = multiSendEncoder()
               .with('transactions', multiSendTransactionsEncoder(transactions))
               .encode();
-            const to = getMultiSendCallOnlyDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
+            const to = faker.helpers.arrayElement(
+              getMultiSendCallOnlyDeployments({
+                version,
+                chainId,
+              }),
+            );
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -573,7 +580,7 @@ describe('LimitAddressesMapper', () => {
               version,
               chainId,
               data,
-              to: getAddress(to),
+              to,
             });
             expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
           });
@@ -593,10 +600,12 @@ describe('LimitAddressesMapper', () => {
             const data = multiSendEncoder()
               .with('transactions', multiSendTransactionsEncoder(transactions))
               .encode();
-            const to = getMultiSendCallOnlyDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
+            const to = faker.helpers.arrayElement(
+              getMultiSendCallOnlyDeployments({
+                version,
+                chainId,
+              }),
+            );
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -605,7 +614,7 @@ describe('LimitAddressesMapper', () => {
                 version,
                 chainId,
                 data,
-                to: getAddress(to),
+                to,
               }),
             ).rejects.toThrow(
               'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
@@ -626,10 +635,12 @@ describe('LimitAddressesMapper', () => {
             const data = multiSendEncoder()
               .with('transactions', multiSendTransactionsEncoder(transactions))
               .encode();
-            const to = getMultiSendCallOnlyDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
+            const to = faker.helpers.arrayElement(
+              getMultiSendCallOnlyDeployments({
+                version,
+                chainId,
+              }),
+            );
             // Unofficial mastercopy
             mockSafeRepository.getSafe.mockRejectedValue(
               new Error('Not official mastercopy'),
@@ -640,7 +651,7 @@ describe('LimitAddressesMapper', () => {
                 version,
                 chainId,
                 data,
-                to: getAddress(to),
+                to,
               }),
             ).rejects.toThrow(
               'Safe attempting to relay is not official. Only official Safe singletons are supported.',
@@ -664,10 +675,12 @@ describe('LimitAddressesMapper', () => {
             const data = multiSendEncoder()
               .with('transactions', multiSendTransactionsEncoder(transactions))
               .encode();
-            const to = getMultiSendCallOnlyDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
+            const to = faker.helpers.arrayElement(
+              getMultiSendCallOnlyDeployments({
+                version,
+                chainId,
+              }),
+            );
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -676,7 +689,7 @@ describe('LimitAddressesMapper', () => {
                 version,
                 chainId,
                 data,
-                to: getAddress(to),
+                to,
               }),
             ).rejects.toThrow(
               'Invalid multiSend call. The batch is not all execTransaction calls to same address.',
@@ -784,10 +797,12 @@ describe('LimitAddressesMapper', () => {
             const data = multiSendEncoder()
               .with('transactions', multiSendTransactionsEncoder(transactions))
               .encode();
-            const to = getMultiSendDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
+            const to = faker.helpers.arrayElement(
+              getMultiSendDeployments({
+                version,
+                chainId,
+              }),
+            );
             // Official mastercopy
             mockSafeRepository.getSafe.mockResolvedValue(safe);
 
@@ -795,7 +810,7 @@ describe('LimitAddressesMapper', () => {
               version,
               chainId,
               data,
-              to: getAddress(to),
+              to,
             });
             expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
           });
@@ -852,28 +867,31 @@ describe('LimitAddressesMapper', () => {
                 getAddress(faker.finance.ethereumAddress()),
                 getAddress(faker.finance.ethereumAddress()),
               ];
-              const singleton = getSafeSingletonDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
+              const singleton = faker.helpers.arrayElement(
+                getSafeSingletonDeployments({
+                  version,
+                  chainId,
+                }),
+              );
               const data = createProxyWithNonceEncoder()
-                .with('singleton', getAddress(singleton))
+                .with('singleton', singleton)
                 .with(
                   'initializer',
                   setupEncoder().with('owners', owners).encode(),
                 )
                 .encode();
-              const proxyFactory = getProxyFactoryDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
-              const to = getAddress(proxyFactory);
+              const proxyFactory = faker.helpers.arrayElement(
+                getProxyFactoryDeployments({
+                  version,
+                  chainId,
+                }),
+              );
 
               const expectedLimitAddresses = await target.getLimitAddresses({
                 version,
                 chainId,
                 data,
-                to,
+                to: proxyFactory,
               });
               expect(expectedLimitAddresses).toStrictEqual(owners);
             });
@@ -883,12 +901,14 @@ describe('LimitAddressesMapper', () => {
                 getAddress(faker.finance.ethereumAddress()),
                 getAddress(faker.finance.ethereumAddress()),
               ];
-              const singleton = getSafeSingletonDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
+              const singleton = faker.helpers.arrayElement(
+                getSafeSingletonDeployments({
+                  version,
+                  chainId,
+                }),
+              );
               const data = createProxyWithNonceEncoder()
-                .with('singleton', getAddress(singleton))
+                .with('singleton', singleton)
                 .with(
                   'initializer',
                   setupEncoder().with('owners', owners).encode(),
@@ -916,28 +936,31 @@ describe('LimitAddressesMapper', () => {
                 getAddress(faker.finance.ethereumAddress()),
                 getAddress(faker.finance.ethereumAddress()),
               ];
-              const singleton = getSafeL2SingletonDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
+              const singleton = faker.helpers.arrayElement(
+                getSafeL2SingletonDeployments({
+                  version,
+                  chainId,
+                }),
+              );
               const data = createProxyWithNonceEncoder()
-                .with('singleton', getAddress(singleton))
+                .with('singleton', singleton)
                 .with(
                   'initializer',
                   setupEncoder().with('owners', owners).encode(),
                 )
                 .encode();
-              const proxyFactory = getProxyFactoryDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
-              const to = getAddress(proxyFactory);
+              const proxyFactory = faker.helpers.arrayElement(
+                getProxyFactoryDeployments({
+                  version,
+                  chainId,
+                }),
+              );
 
               const expectedLimitAddresses = await target.getLimitAddresses({
                 version,
                 chainId,
                 data,
-                to,
+                to: proxyFactory,
               });
               expect(expectedLimitAddresses).toStrictEqual(owners);
             });
@@ -947,12 +970,14 @@ describe('LimitAddressesMapper', () => {
                 getAddress(faker.finance.ethereumAddress()),
                 getAddress(faker.finance.ethereumAddress()),
               ];
-              const singleton = getSafeL2SingletonDeployment({
-                version,
-                network: chainId,
-              })!.networkAddresses[chainId];
+              const singleton = faker.helpers.arrayElement(
+                getSafeL2SingletonDeployments({
+                  version,
+                  chainId,
+                }),
+              );
               const data = createProxyWithNonceEncoder()
-                .with('singleton', getAddress(singleton))
+                .with('singleton', singleton)
                 .with(
                   'initializer',
                   setupEncoder().with('owners', owners).encode(),
@@ -982,24 +1007,25 @@ describe('LimitAddressesMapper', () => {
             // Unofficial singleton
             const singleton = getAddress(faker.finance.ethereumAddress());
             const data = createProxyWithNonceEncoder()
-              .with('singleton', getAddress(singleton))
+              .with('singleton', singleton)
               .with(
                 'initializer',
                 setupEncoder().with('owners', owners).encode(),
               )
               .encode();
-            const proxyFactory = getProxyFactoryDeployment({
-              version,
-              network: chainId,
-            })!.networkAddresses[chainId];
-            const to = getAddress(proxyFactory);
+            const proxyFactory = faker.helpers.arrayElement(
+              getProxyFactoryDeployments({
+                version,
+                chainId,
+              }),
+            );
 
             await expect(
               target.getLimitAddresses({
                 version,
                 chainId,
                 data,
-                to,
+                to: proxyFactory,
               }),
             ).rejects.toThrow(
               'Invalid transfer. The proposed transfer is not an execTransaction/multiSend to another party or createProxyWithNonce call.',
@@ -1016,7 +1042,7 @@ describe('LimitAddressesMapper', () => {
             // Unofficial singleton
             const singleton = getAddress(faker.finance.ethereumAddress());
             const data = createProxyWithNonceEncoder()
-              .with('singleton', getAddress(singleton))
+              .with('singleton', singleton)
               .with(
                 'initializer',
                 setupEncoder().with('owners', owners).encode(),

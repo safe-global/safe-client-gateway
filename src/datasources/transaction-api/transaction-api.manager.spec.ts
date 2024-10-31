@@ -1,12 +1,12 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { INetworkService } from '@/datasources/network/network.service.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { TransactionApiManager } from '@/datasources/transaction-api/transaction-api.manager';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 
 const configurationService = {

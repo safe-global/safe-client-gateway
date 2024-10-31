@@ -46,6 +46,8 @@ export class CommunityController {
   }
 
   @Get('/campaigns/:resourceId/activities')
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'holder', required: false, type: String })
   async getCampaignActivities(
     @Param('resourceId') resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,

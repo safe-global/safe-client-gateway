@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { Builder, IBuilder } from '@/__tests__/builder';
-import { Confirmation } from '@/domain/safe/entities/multisig-transaction.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { Confirmation } from '@/domain/safe/entities/multisig-transaction.entity';
 import { getAddress } from 'viem';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 

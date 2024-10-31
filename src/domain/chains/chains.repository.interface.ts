@@ -19,6 +19,11 @@ export interface IChainsRepository {
   getChains(limit?: number, offset?: number): Promise<Page<Chain>>;
 
   /**
+   * Gets all the {@link Chain} available across pages
+   */
+  getAllChains(): Promise<Array<Chain>>;
+
+  /**
    * Gets the {@link Chain} associated with {@link chainId}
    *
    * @param chainId
@@ -43,6 +48,13 @@ export interface IChainsRepository {
    * @param chainId
    */
   getIndexingStatus(chainId: string): Promise<IndexingStatus>;
+
+  /**
+   * Checks if the {@link Chain} associated with {@link chainId} is supported.
+   *
+   * @param chainId
+   */
+  isSupportedChain(chainId: string): Promise<boolean>;
 }
 
 @Module({

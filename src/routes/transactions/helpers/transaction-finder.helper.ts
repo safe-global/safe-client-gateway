@@ -17,8 +17,8 @@ export class TransactionFinder {
       to?: `0x${string}`;
       data: `0x${string}`;
     }) => boolean,
-    transaction: { to?: `0x${string}`; data: `0x${string}` },
-  ): { to?: `0x${string}`; data: `0x${string}` } | null {
+    transaction: { to?: `0x${string}`; data: `0x${string}`; value: string },
+  ): { to?: `0x${string}`; data: `0x${string}`; value: string } | null {
     if (isTransactionData(transaction)) {
       return transaction;
     }
@@ -32,6 +32,7 @@ export class TransactionFinder {
         return {
           to: batchedTransaction.to,
           data: batchedTransaction.data,
+          value: batchedTransaction.value.toString(),
         };
       }
     }

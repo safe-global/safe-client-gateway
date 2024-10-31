@@ -91,14 +91,20 @@ export class TwapOrderMapper {
     // to avoid requesting too many orders
     const hasAbundantParts = twapParts.length > this.maxNumberOfParts;
 
-    // Fetch all order parts if the transaction has been executed, otherwise none
-    const partsToFetch = transaction.executionDate
-      ? hasAbundantParts
-        ? // We use the last part (and only one) to get the amounts/fees of the entire
-          // order and we only need one to get the token info
-          twapParts.slice(-1)
-        : twapParts
-      : [];
+    let partsToFetch: Array<GPv2OrderParameters>;
+
+    // If the transaction is not executed, there are no parts to fetch
+    if (!transaction.executionDate) {
+      partsToFetch = [];
+    } else {
+      // Otherwise, fetch parts to get amounts/fees of order/token info
+      if (!hasAbundantParts) {
+        partsToFetch = twapParts;
+      } else {
+        // Can use the last part to get the amounts/fees for entire order
+        partsToFetch = twapParts.slice(-1);
+      }
+    }
 
     const activePart = this.getActivePart({
       twapParts,

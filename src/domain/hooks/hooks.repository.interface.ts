@@ -1,18 +1,10 @@
-import { BalancesRepositoryModule } from '@/domain/balances/balances.repository.interface';
-import { BlockchainRepositoryModule } from '@/domain/blockchain/blockchain.repository.interface';
-import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
-import { CollectiblesRepositoryModule } from '@/domain/collectibles/collectibles.repository.interface';
+import { EventCacheHelperModule } from '@/domain/hooks/helpers/event-cache.helper.module';
 import { EventNotificationsHelperModule } from '@/domain/hooks/helpers/event-notifications.helper';
 import {
   HooksRepository,
   HooksRepositoryWithNotifications,
 } from '@/domain/hooks/hooks.repository';
-import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.interface';
 import { QueuesRepositoryModule } from '@/domain/queues/queues-repository.interface';
-import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
-import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
-import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
-import { TransactionsRepositoryModule } from '@/domain/transactions/transactions.repository.interface';
 import { Event } from '@/routes/hooks/entities/event.entity';
 import { Module } from '@nestjs/common';
 
@@ -24,16 +16,8 @@ export interface IHooksRepository {
 
 @Module({
   imports: [
-    BalancesRepositoryModule,
-    BlockchainRepositoryModule,
-    ChainsRepositoryModule,
-    CollectiblesRepositoryModule,
-    MessagesRepositoryModule,
+    EventCacheHelperModule,
     EventNotificationsHelperModule,
-    SafeAppsRepositoryModule,
-    SafeRepositoryModule,
-    StakingRepositoryModule,
-    TransactionsRepositoryModule,
     QueuesRepositoryModule,
   ],
   providers: [
@@ -48,18 +32,7 @@ export class HooksRepositoryWithNotificationsModule {}
 // due to config injection issues from the ConfigurationService so this is a
 // temporary solution
 @Module({
-  imports: [
-    BalancesRepositoryModule,
-    BlockchainRepositoryModule,
-    ChainsRepositoryModule,
-    CollectiblesRepositoryModule,
-    MessagesRepositoryModule,
-    SafeAppsRepositoryModule,
-    SafeRepositoryModule,
-    StakingRepositoryModule,
-    TransactionsRepositoryModule,
-    QueuesRepositoryModule,
-  ],
+  imports: [EventCacheHelperModule, QueuesRepositoryModule],
   providers: [{ provide: IHooksRepository, useClass: HooksRepository }],
   exports: [IHooksRepository],
 })

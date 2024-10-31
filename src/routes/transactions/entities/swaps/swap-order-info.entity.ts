@@ -134,7 +134,7 @@ export class SwapOrderTransactionInfo
     owner: `0x${string}`;
     fullAppData: Record<string, unknown> | null;
   }) {
-    super(TransactionInfoType.SwapOrder, null, null);
+    super(TransactionInfoType.SwapOrder, null);
     this.uid = args.uid;
     this.status = args.orderStatus;
     this.kind = args.kind;

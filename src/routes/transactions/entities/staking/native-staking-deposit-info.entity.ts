@@ -1,6 +1,5 @@
 import {
   StakingStatus,
-  StakingStatusInfo,
   StakingTimeInfo,
   StakingFinancialInfo,
 } from '@/routes/transactions/entities/staking/staking.entity';
@@ -9,11 +8,9 @@ import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export type NativeStakingDepositInfo = StakingStatusInfo &
-  StakingTimeInfo &
-  StakingFinancialInfo;
+export type NativeStakingDepositInfo = StakingTimeInfo & StakingFinancialInfo;
 
 export class NativeStakingDepositTransactionInfo
   extends TransactionInfo
@@ -64,6 +61,14 @@ export class NativeStakingDepositTransactionInfo
   @ApiProperty()
   tokenInfo: TokenInfo;
 
+  @ApiPropertyOptional({
+    type: String,
+    isArray: true,
+    nullable: true,
+    description: 'Populated after transaction has been executed',
+  })
+  validators: Array<`0x${string}`> | null;
+
   constructor(args: {
     status: StakingStatus;
     estimatedEntryTime: number;
@@ -79,8 +84,9 @@ export class NativeStakingDepositTransactionInfo
     expectedFiatAnnualReward: number;
     expectedFiatMonthlyReward: number;
     tokenInfo: TokenInfo;
+    validators: Array<`0x${string}`> | null;
   }) {
-    super(TransactionInfoType.NativeStakingDeposit, null, null);
+    super(TransactionInfoType.NativeStakingDeposit, null);
     this.status = args.status;
     this.estimatedEntryTime = args.estimatedEntryTime;
     this.estimatedExitTime = args.estimatedExitTime;
@@ -95,5 +101,6 @@ export class NativeStakingDepositTransactionInfo
     this.expectedFiatAnnualReward = args.expectedFiatAnnualReward;
     this.expectedFiatMonthlyReward = args.expectedFiatMonthlyReward;
     this.tokenInfo = args.tokenInfo;
+    this.validators = args.validators;
   }
 }

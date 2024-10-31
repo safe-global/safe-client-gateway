@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
@@ -29,9 +28,8 @@ export class TransferTransactionInfo extends TransactionInfo {
     direction: TransferDirection,
     transferInfo: Transfer,
     humanDescription: string | null,
-    richDecodedInfo: RichDecodedInfo | null | undefined,
   ) {
-    super(TransactionInfoType.Transfer, humanDescription, richDecodedInfo);
+    super(TransactionInfoType.Transfer, humanDescription);
     this.sender = sender;
     this.recipient = recipient;
     this.direction = direction;

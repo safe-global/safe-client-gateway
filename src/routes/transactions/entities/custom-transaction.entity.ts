@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { RichDecodedInfo } from '@/routes/transactions/entities/human-description.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
@@ -11,7 +10,7 @@ export class CustomTransactionInfo extends TransactionInfo {
   to: AddressInfo;
   @ApiProperty()
   dataSize: string;
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   value: string | null;
   @ApiProperty()
   isCancellation: boolean;
@@ -28,9 +27,8 @@ export class CustomTransactionInfo extends TransactionInfo {
     actionCount: number | null,
     isCancellation: boolean,
     humanDescription: string | null,
-    richDecodedInfo: RichDecodedInfo | null | undefined,
   ) {
-    super(TransactionInfoType.Custom, humanDescription, richDecodedInfo);
+    super(TransactionInfoType.Custom, humanDescription);
     this.to = to;
     this.dataSize = dataSize;
     this.value = value;
