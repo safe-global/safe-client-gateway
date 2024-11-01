@@ -7,7 +7,7 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
 export const ITokenRepository = Symbol('ITokenRepository');
 
 export interface ITokenRepository {
-  getToken(args: { chainId: string; address: string }): Promise<Token>;
+  getToken(args: { chainId: string; address: `0x${string}` }): Promise<Token>;
 
   getTokens(args: {
     chainId: string;

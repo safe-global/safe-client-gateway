@@ -142,7 +142,7 @@ export class TransactionsService {
     safeAddress: `0x${string}`;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: string;
+    to?: `0x${string}`;
     value?: string;
     nonce?: string;
     executed?: boolean;
@@ -266,9 +266,9 @@ export class TransactionsService {
     safeAddress: `0x${string}`;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: string;
+    to?: `0x${string}`;
     value?: string;
-    tokenAddress?: string;
+    tokenAddress?: `0x${string}`;
     paginationData?: PaginationData;
     onlyTrusted: boolean;
   }): Promise<Partial<Page<IncomingTransfer>>> {
