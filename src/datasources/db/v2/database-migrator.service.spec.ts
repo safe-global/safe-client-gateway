@@ -9,10 +9,8 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { type ILoggingService } from '@/logging/logging.interface';
 import type { DataSource } from 'typeorm';
-import {
-  postgresDataSourceMock,
-  TestPostgresDatabaseModuleV2,
-} from '@/datasources/db/v2/test.postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
+import { mockPostgresDataSource } from '@/datasources/db/v2/__tests__/postgresql-datasource.mock';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -68,7 +66,7 @@ describe('PostgresDatabaseService', () => {
       providers: [DatabaseMigrator],
     }).compile();
 
-    connection = postgresDataSourceMock;
+    connection = mockPostgresDataSource;
     const configService = moduleRef.get<ConfigService>(ConfigService);
     postgresDatabaseService = new PostgresDatabaseService(
       mockLoggingService,
