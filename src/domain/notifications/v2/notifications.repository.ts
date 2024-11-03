@@ -180,7 +180,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     deviceId: number;
   }): Promise<Array<NotificationSubscription>> {
     const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
-    const notificationTypes = [];
     for (const safe of args.upsertSubscriptionsDto.safes) {
       const device = new NotificationDevice();
       device.id = args.deviceId;
@@ -190,8 +189,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
         signer_address: args.authPayload.signer_address ?? null,
         push_notification_device: device,
       });
-
-      notificationTypes.push(safe.notificationTypes);
     }
 
     const databaseTransaction =

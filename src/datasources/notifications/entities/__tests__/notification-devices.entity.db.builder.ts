@@ -10,6 +10,10 @@ export function notificationDeviceBuilder(): IBuilder<NotificationDevice> {
     .with('id', faker.number.int())
     .with('device_uuid', faker.string.uuid() as UUID)
     .with('device_type', faker.helpers.enumValue(DeviceType))
+    .with(
+      'cloud_messaging_token',
+      faker.string.alphanumeric({ length: { min: 10, max: 255 } }),
+    )
     .with('created_at', new Date())
     .with('updated_at', new Date());
 }

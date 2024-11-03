@@ -1,22 +1,28 @@
 import type { UUID } from 'crypto';
-import type { DataSource } from 'typeorm';
 import { faker } from '@faker-js/faker/.';
-import type { Repository } from 'typeorm';
 import { UnauthorizedException } from '@nestjs/common';
 import { type ILoggingService } from '@/logging/logging.interface';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { NotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository';
 import type { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import type { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
 import type { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
 import { notificationTypeBuilder } from '@/datasources/notifications/entities/__tests__/notification-type.entity.db.builder';
 import { notificationSubscriptionBuilder } from '@/datasources/notifications/entities/__tests__/notification-subscription.entity.db.builder';
-import type { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
+import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
+import { upsertSubscriptionsDtoBuilder } from '@/datasources/notifications/__tests__/upsert-subscriptions.dto.entity.builder';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
+import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
+import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
+import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
+import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
 
 describe('NotificationsRepositoryV2', () => {
   let notificationsRepository: INotificationsRepositoryV2;
-  let postgresDatabaseService: PostgresDatabaseService;
+  const notificationTypeRepository = { ...mockRepository };
+  const notificationDeviceRepository = { ...mockRepository };
+  const notificationSubscriptionRepository = { ...mockRepository };
+  const notificationSubscriptionsRepository = { ...mockRepository };
   const mockLoggingService = {
     debug: jest.fn(),
     error: jest.fn(),
@@ -26,22 +32,166 @@ describe('NotificationsRepositoryV2', () => {
   const mockPushNotificationsApi: IPushNotificationsApi = {
     enqueueNotification: jest.fn(),
   };
-  const mockDataSource = {
-    getRepository: jest.fn(),
-    isInitialized: false,
-    initialize: jest.fn(),
-  } as jest.MockedObjectDeep<DataSource>;
 
   beforeEach(() => {
-    postgresDatabaseService = new PostgresDatabaseService(
-      mockLoggingService,
-      mockDataSource,
-    );
+    jest.clearAllMocks();
     notificationsRepository = new NotificationsRepositoryV2(
       mockPushNotificationsApi,
       mockLoggingService,
-      postgresDatabaseService,
+      mockPostgresDatabaseService,
     );
+  });
+
+  describe('upsertSubscription()', () => {
+    const deviceId = 1;
+    beforeEach(() => {
+      mockEntityManager.upsert.mockResolvedValue({
+        identifiers: [
+          {
+            id: deviceId,
+          },
+        ],
+        generatedMaps: [
+          {
+            id: 1,
+          },
+        ],
+        raw: jest.fn(),
+      });
+    });
+
+    it('Should insert a new device when upserting a subscription', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      const mockNotificationTypes = Array.from({ length: 4 }, () =>
+        notificationTypeBuilder().build(),
+      );
+      mockEntityManager.find.mockResolvedValue(mockNotificationTypes);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationTypeRepository,
+      );
+
+      await notificationsRepository.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto: upsertSubscriptionsDto,
+      });
+
+      expect(mockPostgresDatabaseService.transaction).toHaveBeenCalledTimes(1);
+      expect(mockEntityManager.upsert).toHaveBeenNthCalledWith(
+        1,
+        NotificationDevice,
+        {
+          device_uuid: upsertSubscriptionsDto.deviceUuid,
+          device_type: upsertSubscriptionsDto.deviceType,
+          cloud_messaging_token: upsertSubscriptionsDto.cloudMessagingToken,
+        },
+        ['device_uuid'],
+      );
+    });
+
+    it('Should delete previous subscriptions when upserting a new one', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepository.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto: upsertSubscriptionsDto,
+      });
+
+      expect(mockPostgresDatabaseService.transaction).toHaveBeenCalledTimes(1);
+      expect(
+        mockEntityManager.createQueryBuilder().delete().from,
+      ).toHaveBeenNthCalledWith(1, NotificationSubscription);
+      for (const [index, safe] of upsertSubscriptionsDto.safes.entries()) {
+        const nthTime = index + 1; // Index is zero based for that reason we need to add 1 to it
+        expect(
+          mockEntityManager
+            .createQueryBuilder()
+            .delete()
+            .from(NotificationSubscription).where,
+        ).toHaveBeenNthCalledWith(
+          nthTime,
+          `chain_id = :chainId
+          AND safe_address = :safeAddress
+          AND push_notification_device.id = :deviceId
+          AND (
+            signer_address = :signerAddress OR signer_address IS NULL
+          )`,
+          {
+            chainId: safe.chainId,
+            safeAddress: safe.address,
+            deviceId: deviceId,
+            signerAddress: authPayload.signer_address ?? null,
+          },
+        );
+      }
+    });
+
+    it('Should insert the subscription object when upserting a new subscription', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepository.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto: upsertSubscriptionsDto,
+      });
+
+      const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
+      for (const safe of upsertSubscriptionsDto.safes) {
+        const device = new NotificationDevice();
+        device.id = deviceId;
+        subscriptionsToInsert.push({
+          chain_id: safe.chainId,
+          safe_address: safe.address,
+          signer_address: authPayload.signer_address ?? null,
+          push_notification_device: device,
+        });
+      }
+
+      expect(mockPostgresDatabaseService.transaction).toHaveBeenCalledTimes(1);
+      expect(mockEntityManager.upsert).toHaveBeenNthCalledWith(
+        2,
+        NotificationSubscription,
+        subscriptionsToInsert,
+        [
+          'chain_id',
+          'safe_address',
+          'signer_address',
+          'push_notification_device',
+        ],
+      );
+    });
+
+    it('Should insert the notification subscription type object when upserting a new subscription', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepository.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto: upsertSubscriptionsDto,
+      });
+
+      const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
+      for (const safe of upsertSubscriptionsDto.safes) {
+        const device = new NotificationDevice();
+        device.id = deviceId;
+        subscriptionsToInsert.push({
+          chain_id: safe.chainId,
+          safe_address: safe.address,
+          signer_address: authPayload.signer_address ?? null,
+          push_notification_device: device,
+        });
+      }
+
+      expect(mockPostgresDatabaseService.transaction).toHaveBeenCalledTimes(1);
+      expect(mockEntityManager.upsert).toHaveBeenCalledTimes(3);
+      // @TODO expect(mockEntityManager.upsert).toHaveBeenCalledWith();
+    });
   });
 
   describe('getSafeSubscription()', () => {
@@ -49,23 +199,18 @@ describe('NotificationsRepositoryV2', () => {
       const mockNotificationTypes = Array.from({ length: 4 }, () =>
         notificationTypeBuilder().build(),
       );
-      const notificationTypeRepository = {
-        find: jest.fn().mockResolvedValue(mockNotificationTypes),
-      } as jest.MockedObjectDeep<Repository<NotificationType>>;
-      postgresDatabaseService.getRepository = jest
-        .fn()
-        .mockResolvedValue(notificationTypeRepository);
+      notificationTypeRepository.find.mockResolvedValue(mockNotificationTypes);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationTypeRepository,
+      );
 
-      const authPayload = new AuthPayload();
-      authPayload.chain_id = faker.number.int({ min: 1, max: 100 }).toString();
-      authPayload.signer_address = faker.string.hexadecimal({
-        length: 32,
-      }) as `0x${string}`;
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
 
       const args = {
         authPayload: authPayload,
         deviceUuid: faker.string.uuid() as UUID,
-        chainId: authPayload.chain_id,
+        chainId: authPayload.chain_id as string,
         safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
       };
 
@@ -88,14 +233,15 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should throw UnauthorizedException if signer_address is not passed', async () => {
-      const authPayload = new AuthPayload();
-      authPayload.chain_id = faker.number.int({ min: 1, max: 100 }).toString();
-      authPayload.signer_address = '' as `0x${string}`;
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', '' as `0x${string}`)
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
 
       const args = {
-        authPayload: authPayload,
+        authPayload,
         deviceUuid: faker.string.uuid() as UUID,
-        chainId: authPayload.chain_id,
+        chainId: authPayload.chain_id as string,
         safeAddress: faker.string.hexadecimal({
           length: 32,
         }) as `0x${string}`,
@@ -107,23 +253,18 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should return an empty array if there is no notification type for safe', async () => {
       const mockNotificationTypes: Array<NotificationType> = [];
-      const notificationTypeRepository = {
-        find: jest.fn().mockResolvedValue(mockNotificationTypes),
-      } as jest.MockedObjectDeep<Repository<NotificationType>>;
-      postgresDatabaseService.getRepository = jest
-        .fn()
-        .mockResolvedValue(notificationTypeRepository);
+      notificationTypeRepository.find.mockResolvedValue(mockNotificationTypes);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationTypeRepository,
+      );
 
-      const authPayload = new AuthPayload();
-      authPayload.chain_id = faker.number.int({ min: 1, max: 100 }).toString();
-      authPayload.signer_address = faker.string.hexadecimal({
-        length: 32,
-      }) as `0x${string}`;
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
 
       const args = {
         authPayload: authPayload,
         deviceUuid: faker.string.uuid() as UUID,
-        chainId: authPayload.chain_id,
+        chainId: authPayload.chain_id as string,
         safeAddress: faker.string.hexadecimal({
           length: 32,
         }) as `0x${string}`,
@@ -154,12 +295,12 @@ describe('NotificationsRepositoryV2', () => {
         (): NotificationSubscription =>
           notificationSubscriptionBuilder().build(),
       );
-      const notificationSubscriptionsRepository = {
-        find: jest.fn().mockResolvedValue(mockSbuscribers),
-      } as jest.MockedObjectDeep<Repository<NotificationSubscription>>;
-      postgresDatabaseService.getRepository = jest
-        .fn()
-        .mockResolvedValue(notificationSubscriptionsRepository);
+      notificationSubscriptionsRepository.find.mockResolvedValue(
+        mockSbuscribers,
+      );
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
 
       const result = await notificationsRepository.getSubscribersBySafe({
         chainId: faker.number.int({ min: 1, max: 100 }).toString(),
@@ -181,13 +322,10 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should return empty when there is no subscribers for safe', async () => {
-      const mockSbuscribers: Array<NotificationSubscription> = [];
-      const notificationSubscriptionsRepository = {
-        find: jest.fn().mockResolvedValue(mockSbuscribers),
-      } as jest.MockedObjectDeep<Repository<NotificationSubscription>>;
-      postgresDatabaseService.getRepository = jest
-        .fn()
-        .mockResolvedValue(notificationSubscriptionsRepository);
+      notificationSubscriptionsRepository.find.mockResolvedValue([]);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
 
       const result = await notificationsRepository.getSubscribersBySafe({
         chainId: faker.number.int({ min: 1, max: 100 }).toString(),
@@ -203,13 +341,13 @@ describe('NotificationsRepositoryV2', () => {
       const mockNotificationSubscription =
         notificationSubscriptionBuilder().build();
 
-      const notificationSubscriptionRepository = {
-        findOne: jest.fn().mockResolvedValue(mockNotificationSubscription),
-        remove: jest.fn(),
-      } as jest.MockedObjectDeep<Repository<NotificationSubscription>>;
-      postgresDatabaseService.getRepository = jest
-        .fn()
-        .mockResolvedValue(notificationSubscriptionRepository);
+      notificationSubscriptionRepository.findOne.mockResolvedValue(
+        mockNotificationSubscription,
+      );
+
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionRepository,
+      );
 
       const args = {
         deviceUuid: faker.string.uuid() as UUID,
@@ -240,13 +378,10 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should not call remove if no subscription is found', async () => {
-      const notificationSubscriptionRepository = {
-        findOne: jest.fn().mockResolvedValue(null),
-        remove: jest.fn(),
-      } as jest.MockedObjectDeep<Repository<NotificationSubscription>>;
-      postgresDatabaseService.getRepository = jest
-        .fn()
-        .mockResolvedValue(notificationSubscriptionRepository);
+      notificationSubscriptionRepository.findOne.mockResolvedValue(null);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionRepository,
+      );
 
       const args = {
         deviceUuid: faker.string.uuid() as UUID,
@@ -274,12 +409,9 @@ describe('NotificationsRepositoryV2', () => {
 
   describe('deleteDevice()', () => {
     it('Should delete a device successfully', async () => {
-      const notificationDeviceRepository = {
-        delete: jest.fn(),
-      } as jest.MockedObjectDeep<Repository<NotificationSubscription>>;
-      postgresDatabaseService.getRepository = jest
-        .fn()
-        .mockResolvedValue(notificationDeviceRepository);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationDeviceRepository,
+      );
 
       const deviceUuid = faker.string.uuid() as UUID;
 
