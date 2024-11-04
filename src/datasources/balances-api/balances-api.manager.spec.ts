@@ -62,9 +62,9 @@ const coingeckoApi = {
 } as IPricesApi;
 
 const coingeckoApiMock = jest.mocked(coingeckoApi);
-const ZERION_BALANCES_CHAIN_IDS: string[] = Array.from(
-  { length: faker.number.int({ min: 1, max: 10 }) },
+const ZERION_BALANCES_CHAIN_IDS: string[] = faker.helpers.multiple(
   () => faker.string.numeric(),
+  { count: { min: 1, max: 10 } },
 );
 
 beforeEach(() => {

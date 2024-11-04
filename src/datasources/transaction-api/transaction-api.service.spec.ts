@@ -2137,7 +2137,7 @@ describe('TransactionApi', () => {
         uuid: faker.string.uuid(),
         cloudMessagingToken: faker.string.uuid(),
         buildNumber: faker.system.semver(),
-        deviceType: faker.helpers.arrayElement(Object.values(DeviceType)),
+        deviceType: faker.helpers.enumValue(DeviceType),
         version: faker.system.semver(),
         timestamp: faker.date.recent().toISOString(),
         bundle: faker.word.noun(),

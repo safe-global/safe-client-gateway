@@ -81,7 +81,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     const swapApiConfig =
       configurationService.getOrThrow<Record<string, string>>('swaps.api');
-    swapsChainId = faker.helpers.arrayElement(Object.keys(swapApiConfig));
+    swapsChainId = faker.helpers.objectKey(swapApiConfig);
     swapsApiUrl = swapApiConfig[swapsChainId];
     swapsExplorerUrl = configurationService.getOrThrow(`swaps.explorerBaseUri`);
     networkService = moduleFixture.get(NetworkService);

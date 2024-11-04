@@ -446,9 +446,9 @@ describe('AccountsDatasource tests', () => {
         address,
         clientIp: faker.internet.ipv4(),
       });
-      const accountDataTypes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const accountDataTypes = faker.helpers.multiple(
         () => accountDataTypeBuilder().with('is_active', true).build(),
+        { count: { min: 1, max: 4 } },
       );
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
@@ -480,9 +480,9 @@ describe('AccountsDatasource tests', () => {
         address,
         clientIp: faker.internet.ipv4(),
       });
-      const accountDataTypes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const accountDataTypes = faker.helpers.multiple(
         () => accountDataTypeBuilder().with('is_active', true).build(),
+        { count: { min: 1, max: 4 } },
       );
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
@@ -543,9 +543,9 @@ describe('AccountsDatasource tests', () => {
         address,
         clientIp: faker.internet.ipv4(),
       });
-      const accountDataTypes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const accountDataTypes = faker.helpers.multiple(
         () => accountDataTypeBuilder().with('is_active', true).build(),
+        { count: { min: 1, max: 4 } },
       );
       accountDataTypes.push(
         accountDataTypeBuilder().with('is_active', false).build(),
@@ -587,9 +587,9 @@ describe('AccountsDatasource tests', () => {
         address,
         clientIp: faker.internet.ipv4(),
       });
-      const accountDataTypes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const accountDataTypes = faker.helpers.multiple(
         () => accountDataTypeBuilder().with('is_active', true).build(),
+        { count: { min: 1, max: 4 } },
       );
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
@@ -623,9 +623,9 @@ describe('AccountsDatasource tests', () => {
         address,
         clientIp: faker.internet.ipv4(),
       });
-      const accountDataTypes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const accountDataTypes = faker.helpers.multiple(
         () => accountDataTypeBuilder().with('is_active', true).build(),
+        { count: { min: 1, max: 4 } },
       );
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
@@ -664,9 +664,9 @@ describe('AccountsDatasource tests', () => {
         address,
         clientIp: faker.internet.ipv4(),
       });
-      const accountDataTypes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const accountDataTypes = faker.helpers.multiple(
         () => accountDataTypeBuilder().with('is_active', true).build(),
+        { count: { min: 1, max: 4 } },
       );
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
@@ -724,9 +724,9 @@ describe('AccountsDatasource tests', () => {
 
     it('throws an error if the account does not exist', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const accountDataTypes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const accountDataTypes = faker.helpers.multiple(
         () => accountDataTypeBuilder().with('is_active', true).build(),
+        { count: { min: 1, max: 4 } },
       );
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;
@@ -749,9 +749,9 @@ describe('AccountsDatasource tests', () => {
     it('throws an error if a non-existent data type is provided', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       await target.createAccount({ address, clientIp: faker.internet.ipv4() });
-      const accountDataTypes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const accountDataTypes = faker.helpers.multiple(
         () => accountDataTypeBuilder().with('is_active', true).build(),
+        { count: { min: 1, max: 4 } },
       );
       const insertedDataTypes =
         await sql`INSERT INTO account_data_types ${sql(accountDataTypes, 'name', 'is_active')} returning *`;

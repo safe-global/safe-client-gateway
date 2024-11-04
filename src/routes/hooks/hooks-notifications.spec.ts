@@ -145,15 +145,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       moduleTransactionEventBuilder().build(),
     ].map((event) => [event.type, event]),
   )('should enqueue %s event notifications as is', async (_, event) => {
-    const subscribers = Array.from(
-      {
-        length: faker.number.int({ min: 1, max: 5 }),
-      },
+    const subscribers = faker.helpers.multiple(
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
+      {
+        count: { min: 1, max: 5 },
+      },
     );
     const chain = chainBuilder().build();
     notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
@@ -194,10 +194,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     'should enqueue %s event notifications when receiving assets from other parties',
     async (_, event) => {
       const chain = chainBuilder().with('chainId', event.chainId).build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: faker.helpers.arrayElement([
             getAddress(faker.finance.ethereumAddress()),
@@ -206,6 +203,9 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -274,10 +274,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     'should not enqueue %s event notifications when receiving assets from the Safe itself',
     async (_, event) => {
       const chain = chainBuilder().with('chainId', event.chainId).build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: faker.helpers.arrayElement([
             getAddress(faker.finance.ethereumAddress()),
@@ -286,6 +283,9 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -346,15 +346,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       const multisigTransaction = multisigTransactionBuilder()
         .with('safe', event.address)
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const safe = safeBuilder()
         .with('address', event.address)
@@ -418,15 +418,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     it('should not enqueue PENDING_MULTISIG_TRANSACTION event notifications if the Safe has a threshold of 1', async () => {
       const event = pendingTransactionEventBuilder().build();
       const chain = chainBuilder().with('chainId', event.chainId).build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const safe = safeBuilder()
         .with('address', event.address)
@@ -470,15 +470,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     it('should not enqueue PENDING_MULTISIG_TRANSACTION event notifications if the Safe has a threshold > 1 but the owner has signed', async () => {
       const event = pendingTransactionEventBuilder().build();
       const chain = chainBuilder().with('chainId', event.chainId).build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const safe = safeBuilder()
         .with('address', event.address)
@@ -632,15 +632,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       const message = messageBuilder()
         .with('messageHash', event.messageHash as `0x${string}`)
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const safe = safeBuilder()
         .with('address', event.address)
@@ -704,15 +704,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     it('should not enqueue MESSAGE_CONFIRMATION_REQUEST event notifications if the Safe has a threshold of 1', async () => {
       const event = messageCreatedEventBuilder().build();
       const chain = chainBuilder().with('chainId', event.chainId).build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const safe = safeBuilder()
         .with('address', event.address)
@@ -756,15 +756,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     it('should not enqueue MESSAGE_CONFIRMATION_REQUEST event notifications if the Safe has a threshold > 1 but the owner has signed', async () => {
       const event = messageCreatedEventBuilder().build();
       const chain = chainBuilder().with('chainId', event.chainId).build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const safe = safeBuilder()
         .with('address', event.address)
@@ -927,15 +927,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       const multisigTransaction = multisigTransactionBuilder()
         .with('safe', event.address)
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const delegates = subscribers.map((subscriber) => {
         return delegateBuilder()
@@ -1006,15 +1006,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         .with('address', event.address)
         .with('threshold', 1)
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const delegates = subscribers.map((subscriber) => {
         return delegateBuilder()
@@ -1065,15 +1065,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         .with('address', event.address)
         .with('threshold', faker.number.int({ min: 2 }))
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -1245,15 +1245,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       const message = messageBuilder()
         .with('messageHash', event.messageHash as `0x${string}`)
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const delegates = subscribers.map((subscriber) => {
         return delegateBuilder()
@@ -1324,15 +1324,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         .with('address', event.address)
         .with('threshold', 1)
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -1383,15 +1383,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         .with('address', event.address)
         .with('threshold', faker.number.int({ min: 2 }))
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -1566,10 +1566,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       const multisigTransaction = multisigTransactionBuilder()
         .with('safe', event.address)
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: faker.helpers.arrayElement([
             getAddress(faker.finance.ethereumAddress()),
@@ -1578,6 +1575,9 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -1633,10 +1633,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       const message = messageBuilder()
         .with('messageHash', event.messageHash as `0x${string}`)
         .build();
-      const subscribers = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const subscribers = faker.helpers.multiple(
         () => ({
           subscriber: faker.helpers.arrayElement([
             getAddress(faker.finance.ethereumAddress()),
@@ -1645,6 +1642,9 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           deviceUuid: faker.string.uuid() as UUID,
           cloudMessagingToken: faker.string.alphanumeric(),
         }),
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -1980,15 +1980,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       executedTransactionEventBuilder().build(),
       moduleTransactionEventBuilder().build(),
     ]);
-    const subscribers = Array.from(
-      {
-        length: faker.number.int({ min: 2, max: 5 }),
-      },
+    const subscribers = faker.helpers.multiple(
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
+      {
+        count: { min: 2, max: 5 },
+      },
     );
     const chain = chainBuilder().build();
     notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
@@ -2073,15 +2073,15 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       messageCreatedEvent,
       pendingTransactionEvent,
     ];
-    const subscribers = Array.from(
-      {
-        length: safe.owners.length,
-      },
+    const subscribers = faker.helpers.multiple(
       (_, i) => ({
         subscriber: safe.owners[i],
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }),
+      {
+        count: safe.owners.length,
+      },
     );
     notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
     networkService.get.mockImplementation(({ url }) => {
