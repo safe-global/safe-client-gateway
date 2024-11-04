@@ -4,13 +4,14 @@ import type { Hex } from 'viem';
 import {
   encodeAbiParameters,
   encodeEventTopics,
+  encodeFunctionData,
   getAbiItem,
   getAddress,
   keccak256,
   toBytes,
 } from 'viem';
 import { Builder } from '@/__tests__/builder';
-import { TRANSACTION_ADDED_ABI } from '@/domain/alerts/contracts/decoders/delay-modifier-decoder.helper';
+import { DelayModifierAbi } from '@/domain/alerts/contracts/decoders/delay-modifier-decoder.helper';
 
 // TransactionAdded
 
@@ -33,7 +34,7 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
   implements IEncoder<TransactionAddedEvent>
 {
   private readonly item = getAbiItem({
-    abi: TRANSACTION_ADDED_ABI,
+    abi: DelayModifierAbi,
     name: 'TransactionAdded',
   });
 
@@ -49,7 +50,7 @@ class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>
     );
 
     const topics = encodeEventTopics({
-      abi: TRANSACTION_ADDED_ABI,
+      abi: DelayModifierAbi,
       eventName: 'TransactionAdded',
       args: {
         // Only indexed params
@@ -76,4 +77,68 @@ export function transactionAddedEventBuilder(): TransactionAddedEventBuilder<Tra
     .with('value', BigInt(0))
     .with('data', '0x')
     .with('operation', 0);
+}
+
+// execTransactionFromModule
+
+type ExecTransactionFromModuleArgs = {
+  to: `0x${string}`;
+  value: bigint;
+  data: `0x${string}`;
+  operation: 0 | 1;
+};
+
+class ExecTransactionFromModuleEncoder<T extends ExecTransactionFromModuleArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): `0x${string}` {
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi: DelayModifierAbi,
+      functionName: 'execTransactionFromModule',
+      args: [args.to, args.value, args.data, args.operation],
+    });
+  }
+}
+
+export function execTransactionFromModuleEncoder(): ExecTransactionFromModuleEncoder<ExecTransactionFromModuleArgs> {
+  return new ExecTransactionFromModuleEncoder()
+    .with('to', getAddress(faker.finance.ethereumAddress()))
+    .with('value', faker.number.bigInt())
+    .with('data', faker.string.hexadecimal() as `0x${string}`)
+    .with('operation', faker.helpers.arrayElement([0, 1]));
+}
+
+// executeNextTx
+
+type ExecNextTxArgs = {
+  to: `0x${string}`;
+  value: bigint;
+  data: `0x${string}`;
+  operation: 0 | 1;
+};
+
+class ExecNextTxEncoder<T extends ExecNextTxArgs>
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): `0x${string}` {
+    const args = this.build();
+
+    return encodeFunctionData({
+      abi: DelayModifierAbi,
+      functionName: 'executeNextTx',
+      args: [args.to, args.value, args.data, args.operation],
+    });
+  }
+}
+
+export function executeNextTxEncoder(): ExecNextTxEncoder<ExecNextTxArgs> {
+  return new ExecNextTxEncoder()
+    .with('to', getAddress(faker.finance.ethereumAddress()))
+    .with('value', faker.number.bigInt())
+    .with('data', faker.string.hexadecimal() as `0x${string}`)
+    .with('operation', faker.helpers.arrayElement([0, 1]));
 }
