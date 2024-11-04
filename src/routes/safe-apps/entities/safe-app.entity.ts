@@ -22,11 +22,11 @@ export class SafeApp {
   accessControl: SafeAppAccessControl;
   @ApiProperty()
   tags: string[];
-  @ApiProperty()
+  @ApiProperty({ type: String, isArray: true })
   features: string[];
   @ApiPropertyOptional({ type: String, nullable: true })
   developerWebsite: string | null;
-  @ApiProperty({ type: SafeAppSocialProfile })
+  @ApiProperty({ type: SafeAppSocialProfile, isArray: true })
   socialProfiles: SafeAppSocialProfile[];
 
   constructor(
