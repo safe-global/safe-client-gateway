@@ -138,7 +138,7 @@ export class TransferInfoMapper {
 
   private getToken(
     chainId: string,
-    tokenAddress: string | null,
+    tokenAddress: `0x${string}` | null,
   ): Promise<Token> {
     if (!tokenAddress) {
       throw Error('Invalid token address for transfer');

@@ -9,10 +9,8 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { type ILoggingService } from '@/logging/logging.interface';
 import type { DataSource } from 'typeorm';
-import {
-  postgresDataSourceMock,
-  TestPostgresDatabaseModuleV2,
-} from '@/datasources/db/v2/test.postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
+import { mockPostgresDataSource } from '@/datasources/db/v2/__tests__/postgresql-datasource.mock';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -24,11 +22,11 @@ const mockLoggingService = {
 describe('PostgresDatabaseService', () => {
   let moduleRef: TestingModule;
   let databaseMigratorService: DatabaseMigrator;
-  let connection: jest.MockedObjectDeep<DataSource>;
   let postgresDatabaseService: PostgresDatabaseService;
   const NUMBER_OF_RETRIES = 2;
   const LOCK_TABLE_NAME = '_lock';
   const truncateLockQuery = `TRUNCATE TABLE "${LOCK_TABLE_NAME}";`;
+  const connection: jest.MockedObjectDeep<DataSource> = mockPostgresDataSource;
   const insertLockQuery = `INSERT INTO "${LOCK_TABLE_NAME}" (status) VALUES ($1);`;
 
   beforeAll(async () => {
@@ -68,7 +66,6 @@ describe('PostgresDatabaseService', () => {
       providers: [DatabaseMigrator],
     }).compile();
 
-    connection = postgresDataSourceMock;
     const configService = moduleRef.get<ConfigService>(ConfigService);
     postgresDatabaseService = new PostgresDatabaseService(
       mockLoggingService,

@@ -39,6 +39,11 @@ import { getAddress } from 'viem';
 import configuration from '@/config/entities/configuration';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { DelayModifierDecoder } from '@/domain/alerts/contracts/decoders/delay-modifier-decoder.helper';
+import {
+  execTransactionFromModuleEncoder,
+  executeNextTxEncoder,
+} from '@/domain/alerts/contracts/__tests__/encoders/delay-modifier-encoder.builder';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 
@@ -69,6 +74,7 @@ const mockLoggingService = {
 
 const mockSafeRepository = jest.mocked({
   getSafe: jest.fn(),
+  getSafesByModule: jest.fn(),
 } as jest.MockedObjectDeep<ISafeRepository>);
 
 describe('LimitAddressesMapper', () => {
@@ -81,6 +87,7 @@ describe('LimitAddressesMapper', () => {
     const safeDecoder = new SafeDecoder();
     const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
     const proxyFactoryDecoder = new ProxyFactoryDecoder();
+    const delayModifierDecoder = new DelayModifierDecoder();
 
     target = new LimitAddressesMapper(
       mockSafeRepository,
@@ -88,7 +95,339 @@ describe('LimitAddressesMapper', () => {
       safeDecoder,
       multiSendDecoder,
       proxyFactoryDecoder,
+      delayModifierDecoder,
     );
+  });
+
+  describe('Recovery', () => {
+    describe.each([
+      [
+        'execTransactionFromModule (Proposals)',
+        execTransactionFromModuleEncoder,
+      ],
+      ['executeNextTx (Execution)', executeNextTxEncoder],
+    ])('%s', (_, encoder) => {
+      describe('Singular', () => {
+        it('should limit Safe being recovered if one owner management transaction', async () => {
+          const version = faker.system.semver();
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const data = encoder()
+            .with('to', safeAddress)
+            .with(
+              'data',
+              execTransactionEncoder()
+                .with('data', addOwnerWithThresholdEncoder().encode())
+                .encode(),
+            )
+            .encode();
+          const to = getAddress(faker.finance.ethereumAddress()); // DelayModifier
+
+          mockSafeRepository.getSafesByModule.mockResolvedValue({
+            safes: [safeAddress],
+          });
+
+          const expectedLimitAddresses = await target.getLimitAddresses({
+            version,
+            chainId,
+            data,
+            to,
+          });
+          expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
+        });
+
+        it('should throw if it is a non-owner management transaction', async () => {
+          const version = faker.system.semver();
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const data = encoder()
+            .with('to', safeAddress)
+            .with('data', execTransactionEncoder().encode())
+            .encode();
+          const to = getAddress(faker.finance.ethereumAddress()); // DelayModifier
+
+          mockSafeRepository.getSafesByModule.mockResolvedValue({
+            safes: [safeAddress],
+          });
+
+          await expect(
+            target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to,
+            }),
+          ).rejects.toThrow();
+        });
+
+        it('should throw if not for the Safe', async () => {
+          const version = faker.system.semver();
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const data = encoder()
+            // to is not safeAddress
+            .with(
+              'data',
+              execTransactionEncoder()
+                .with('data', addOwnerWithThresholdEncoder().encode())
+                .encode(),
+            )
+            .encode();
+          const to = getAddress(faker.finance.ethereumAddress()); // DelayModifier
+
+          mockSafeRepository.getSafesByModule.mockResolvedValue({
+            safes: [safeAddress],
+          });
+
+          await expect(
+            target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to,
+            }),
+          ).rejects.toThrow();
+        });
+      });
+
+      describe('Batch', () => {
+        // We don't need to test all possible combinations as we only use the address
+        // to check the officiality of the MultiSend. The rest is universal for all.
+        const chainId = faker.helpers.arrayElement(supportedChainIds);
+        const version = faker.helpers.arrayElement(
+          MULTI_SEND_VERSIONS[chainId],
+        );
+        const [address] = getMultiSendDeployments({
+          chainId,
+          version,
+        });
+        it('should limit Safe being recovered if an owner management batch', async () => {
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const data = encoder()
+            .with('to', address) // MultiSend
+            .with(
+              'data',
+              multiSendEncoder()
+                .with(
+                  'transactions',
+                  multiSendTransactionsEncoder(
+                    [
+                      execTransactionEncoder()
+                        .with('data', addOwnerWithThresholdEncoder().encode())
+                        .encode(),
+                      execTransactionEncoder()
+                        .with('data', changeThresholdEncoder().encode())
+                        .encode(),
+                    ].map((data) => ({
+                      operation: faker.number.int({ min: 0, max: 1 }),
+                      data,
+                      to: safeAddress,
+                      value: faker.number.bigInt(),
+                    })),
+                  ),
+                )
+                .encode(),
+            )
+            .encode();
+          const to = getAddress(faker.finance.ethereumAddress()); // DelayModifier
+
+          mockSafeRepository.getSafesByModule.mockResolvedValue({
+            safes: [safeAddress],
+          });
+
+          const expectedLimitAddresses = await target.getLimitAddresses({
+            version,
+            chainId,
+            data,
+            to,
+          });
+          expect(expectedLimitAddresses).toStrictEqual([safeAddress]);
+        });
+
+        it('should throw if batches with non-official MultiSend', async () => {
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const data = encoder()
+            // to is not official MultiSend
+            .with(
+              'data',
+              multiSendEncoder()
+                .with(
+                  'transactions',
+                  multiSendTransactionsEncoder(
+                    [
+                      execTransactionEncoder()
+                        .with('data', addOwnerWithThresholdEncoder().encode())
+                        .encode(),
+                      execTransactionEncoder()
+                        .with('data', changeThresholdEncoder().encode())
+                        .encode(),
+                    ].map((data) => ({
+                      operation: faker.number.int({ min: 0, max: 1 }),
+                      data,
+                      to: safeAddress,
+                      value: faker.number.bigInt(),
+                    })),
+                  ),
+                )
+                .encode(),
+            )
+            .encode();
+          const to = getAddress(faker.finance.ethereumAddress()); // DelayModifier
+
+          mockSafeRepository.getSafesByModule.mockResolvedValue({
+            safes: [safeAddress],
+          });
+
+          await expect(
+            target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to,
+            }),
+          ).rejects.toThrow();
+        });
+
+        it('should throw if there are non-owner management transactions in batch', async () => {
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const data = encoder()
+            .with('to', address) // MultiSend
+            .with(
+              'data',
+              multiSendEncoder()
+                .with(
+                  'transactions',
+                  multiSendTransactionsEncoder(
+                    ['0x' as const, '0x' as const].map((data) => ({
+                      operation: faker.number.int({ min: 0, max: 1 }),
+                      data,
+                      to: safeAddress,
+                      value: faker.number.bigInt(),
+                    })),
+                  ),
+                )
+                .encode(),
+            )
+            .encode();
+          const to = getAddress(faker.finance.ethereumAddress()); // DelayModifier
+
+          mockSafeRepository.getSafesByModule.mockResolvedValue({
+            safes: [safeAddress],
+          });
+
+          await expect(
+            target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to,
+            }),
+          ).rejects.toThrow();
+        });
+
+        it('should throw if there are transactions in batch not for the Safe', async () => {
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const data = encoder()
+            .with('to', address) // MultiSend
+            .with(
+              'data',
+              multiSendEncoder()
+                .with(
+                  'transactions',
+                  multiSendTransactionsEncoder(
+                    [
+                      execTransactionEncoder()
+                        .with('data', addOwnerWithThresholdEncoder().encode())
+                        .encode(),
+                      execTransactionEncoder()
+                        .with('data', changeThresholdEncoder().encode())
+                        .encode(),
+                    ].map((data, i) => ({
+                      operation: faker.number.int({ min: 0, max: 1 }),
+                      data,
+                      to:
+                        i === 0
+                          ? // to is not safeAddress
+                            getAddress(faker.finance.ethereumAddress())
+                          : safeAddress,
+                      value: faker.number.bigInt(),
+                    })),
+                  ),
+                )
+                .encode(),
+            )
+            .encode();
+          const to = getAddress(faker.finance.ethereumAddress()); // DelayModifier
+
+          mockSafeRepository.getSafesByModule.mockResolvedValue({
+            safes: [safeAddress],
+          });
+
+          await expect(
+            target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to,
+            }),
+          ).rejects.toThrow();
+        });
+
+        it('should throw if there are transactions in batch to more than one Safe', async () => {
+          const chainId = faker.helpers.arrayElement(supportedChainIds);
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const safeAddress2 = getAddress(faker.finance.ethereumAddress());
+          const data = encoder()
+            .with('to', address) // MultiSend
+            .with(
+              'data',
+              multiSendEncoder()
+                .with(
+                  'transactions',
+                  multiSendTransactionsEncoder(
+                    [
+                      execTransactionEncoder()
+                        .with('data', addOwnerWithThresholdEncoder().encode())
+                        .encode(),
+                      execTransactionEncoder()
+                        .with('data', changeThresholdEncoder().encode())
+                        .encode(),
+                    ].map((data, i) => ({
+                      operation: faker.number.int({ min: 0, max: 1 }),
+                      data,
+                      to:
+                        i === 0
+                          ? safeAddress
+                          : // different Safe
+                            safeAddress2,
+                      value: faker.number.bigInt(),
+                    })),
+                  ),
+                )
+                .encode(),
+            )
+            .encode();
+          const to = getAddress(faker.finance.ethereumAddress()); // DelayModifier
+
+          mockSafeRepository.getSafesByModule.mockResolvedValue({
+            safes: [safeAddress, safeAddress2],
+          });
+
+          await expect(
+            target.getLimitAddresses({
+              version,
+              chainId,
+              data,
+              to,
+            }),
+          ).rejects.toThrow();
+        });
+      });
+    });
   });
 
   describe.each(supportedChainIds)('Chain %s', (chainId) => {

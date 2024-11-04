@@ -37,4 +37,5 @@ export const SafeAppSchema = z.object({
   iconUrl: z.string().url().nullish().default(null),
   provider: SafeAppProviderSchema.nullish().default(null),
   developerWebsite: z.string().url().nullish().default(null),
+  featured: z.boolean(),
 });

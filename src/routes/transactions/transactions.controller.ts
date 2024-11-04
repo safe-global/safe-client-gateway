@@ -79,7 +79,8 @@ export class TransactionsController {
     safeAddress: `0x${string}`,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
-    @Query('to') to?: string,
+    @Query('to', new ValidationPipe(AddressSchema.optional()))
+    to?: `0x${string}`,
     @Query('value') value?: string,
     @Query('nonce') nonce?: string,
     @Query('executed', new ParseBoolPipe({ optional: true }))
@@ -175,9 +176,11 @@ export class TransactionsController {
     trusted: boolean,
     @Query('execution_date__gte') executionDateGte?: string,
     @Query('execution_date__lte') executionDateLte?: string,
-    @Query('to') to?: string,
+    @Query('to', new ValidationPipe(AddressSchema.optional()))
+    to?: `0x${string}`,
     @Query('value') value?: string,
-    @Query('token_address') tokenAddress?: string,
+    @Query('token_address', new ValidationPipe(AddressSchema.optional()))
+    tokenAddress?: `0x${string}`,
   ): Promise<Partial<Page<IncomingTransfer>>> {
     return this.transactionsService.getIncomingTransfers({
       chainId,

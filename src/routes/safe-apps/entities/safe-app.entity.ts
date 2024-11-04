@@ -22,12 +22,14 @@ export class SafeApp {
   accessControl: SafeAppAccessControl;
   @ApiProperty()
   tags: string[];
-  @ApiProperty()
+  @ApiProperty({ type: String, isArray: true })
   features: string[];
   @ApiPropertyOptional({ type: String, nullable: true })
   developerWebsite: string | null;
-  @ApiProperty({ type: SafeAppSocialProfile })
+  @ApiProperty({ type: SafeAppSocialProfile, isArray: true })
   socialProfiles: SafeAppSocialProfile[];
+  @ApiProperty()
+  featured: boolean;
 
   constructor(
     id: number,
@@ -42,6 +44,7 @@ export class SafeApp {
     features: string[],
     developerWebsite: string | null,
     socialProfiles: SafeAppSocialProfile[],
+    featured: boolean,
   ) {
     this.id = id;
     this.url = url;
@@ -55,5 +58,6 @@ export class SafeApp {
     this.features = features;
     this.developerWebsite = developerWebsite;
     this.socialProfiles = socialProfiles;
+    this.featured = featured;
   }
 }

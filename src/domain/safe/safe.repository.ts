@@ -98,7 +98,7 @@ export class SafeRepository implements ISafeRepository {
 
   async getCollectibleTransfers(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
   }): Promise<Page<Transfer>> {
@@ -115,7 +115,7 @@ export class SafeRepository implements ISafeRepository {
 
   async clearTransfers(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -126,12 +126,12 @@ export class SafeRepository implements ISafeRepository {
 
   async getIncomingTransfers(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: string;
+    to?: `0x${string}`;
     value?: string;
-    tokenAddress?: string;
+    tokenAddress?: `0x${string}`;
     txHash?: string;
     limit?: number;
     offset?: number;
@@ -145,7 +145,7 @@ export class SafeRepository implements ISafeRepository {
 
   async clearIncomingTransfers(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -356,7 +356,7 @@ export class SafeRepository implements ISafeRepository {
 
   async clearMultisigTransactions(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
   }): Promise<void> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -370,7 +370,7 @@ export class SafeRepository implements ISafeRepository {
     executed?: boolean;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: string;
+    to?: `0x${string}`;
     value?: string;
     nonce?: string;
     nonceGte?: number;
@@ -401,7 +401,7 @@ export class SafeRepository implements ISafeRepository {
 
   async getTransfers(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     limit?: number | undefined;
   }): Promise<Page<Transfer>> {
     const transactionService = await this.transactionApiManager.getApi(
@@ -473,7 +473,7 @@ export class SafeRepository implements ISafeRepository {
 
   async proposeTransaction(args: {
     chainId: string;
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown> {
     const transactionService = await this.transactionApiManager.getApi(
@@ -512,7 +512,7 @@ export class SafeRepository implements ISafeRepository {
 
   async getSafesByModule(args: {
     chainId: string;
-    moduleAddress: string;
+    moduleAddress: `0x${string}`;
   }): Promise<SafeList> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
