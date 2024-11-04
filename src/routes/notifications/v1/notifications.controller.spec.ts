@@ -144,13 +144,13 @@ describe('Notifications Controller (Unit)', () => {
 
       // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
       // We call V2 as many times as we have a registration with at least one safe
-      const safedRegistrationsWithSafe =
+      const safeRegistrationsWithSafe =
         registerDeviceDto.safeRegistrations.filter(
           (safeRegistration) => safeRegistration.safes.length > 0,
         );
 
       expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
-        safedRegistrationsWithSafe.length,
+        safeRegistrationsWithSafe.length,
       );
 
       for (const [

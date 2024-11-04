@@ -96,14 +96,16 @@ describe('NotificationsRepositoryV2', () => {
    *
    * @async
    * @function createDatabaseConnection
-   * @returns {Promise<void>} Resolves when migrations are complete.
+   * @returns {Promise<PostgresDatabaseService>} Returns an instance of PostgresDatabaseService
    */
-  async function createDatabaseConnection(): Promise<void> {
-    postgresDatabaseService = new PostgresDatabaseService(
+  async function createDatabaseConnection(): Promise<PostgresDatabaseService> {
+    const databaseService = new PostgresDatabaseService(
       mockLoggingService,
       dataSource,
     );
-    await postgresDatabaseService.initializeDatabaseConnection();
+    await databaseService.initializeDatabaseConnection();
+
+    return databaseService;
   }
 
   /**
@@ -113,11 +115,15 @@ describe('NotificationsRepositoryV2', () => {
    * services (logging, database, and configuration) and executes the migration
    * process.
    *
+   * @param {postgresDatabaseService} postgresDatabaseService The postgres database service instance
+   *
    * @async
    * @function migrateDatabase
    * @returns {Promise<void>} Resolves when migrations are complete.
    */
-  async function migrateDatabase(): Promise<void> {
+  async function migrateDatabase(
+    postgresDatabaseService: PostgresDatabaseService,
+  ): Promise<void> {
     const migrator = new DatabaseMigrator(
       mockLoggingService,
       postgresDatabaseService,
@@ -168,8 +174,8 @@ describe('NotificationsRepositoryV2', () => {
 
   beforeAll(async () => {
     await createTestDatabase();
-    await createDatabaseConnection();
-    await migrateDatabase();
+    postgresDatabaseService = await createDatabaseConnection();
+    await migrateDatabase(postgresDatabaseService);
 
     notificationsRepositoryService = new NotificationsRepositoryV2(
       mockPushNotificationsApi,
