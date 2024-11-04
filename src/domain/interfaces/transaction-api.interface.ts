@@ -98,35 +98,35 @@ export interface ITransactionApi {
   getTransfer(transferId: string): Promise<Transfer>;
 
   getTransfers(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     onlyErc20?: boolean;
     onlyErc721?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<Page<Transfer>>;
 
-  clearTransfers(safeAddress: string): Promise<void>;
+  clearTransfers(safeAddress: `0x${string}`): Promise<void>;
 
   getIncomingTransfers(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: string;
+    to?: `0x${string}`;
     value?: string;
-    tokenAddress?: string;
+    tokenAddress?: `0x${string}`;
     txHash?: string;
     limit?: number;
     offset?: number;
   }): Promise<Page<Transfer>>;
 
-  clearIncomingTransfers(safeAddress: string): Promise<void>;
+  clearIncomingTransfers(safeAddress: `0x${string}`): Promise<void>;
 
   postConfirmation(args: {
     safeTxHash: string;
     addConfirmationDto: AddConfirmationDto;
   }): Promise<unknown>;
 
-  getSafesByModule(moduleAddress: string): Promise<SafeList>;
+  getSafesByModule(moduleAddress: `0x${string}`): Promise<SafeList>;
 
   getModuleTransaction(moduleTransactionId: string): Promise<ModuleTransaction>;
 
@@ -159,7 +159,7 @@ export interface ITransactionApi {
     trusted?: boolean;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: string;
+    to?: `0x${string}`;
     value?: string;
     nonce?: string;
     nonceGte?: number;
@@ -167,7 +167,7 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Page<MultisigTransaction>>;
 
-  clearMultisigTransactions(safeAddress: string): Promise<void>;
+  clearMultisigTransactions(safeAddress: `0x${string}`): Promise<void>;
 
   getCreationTransaction(
     safeAddress: `0x${string}`,
@@ -184,7 +184,7 @@ export interface ITransactionApi {
 
   clearAllTransactions(safeAddress: `0x${string}`): Promise<void>;
 
-  getToken(address: string): Promise<Token>;
+  getToken(address: `0x${string}`): Promise<Token>;
 
   getTokens(args: { limit?: number; offset?: number }): Promise<Page<Token>>;
 
@@ -217,7 +217,7 @@ export interface ITransactionApi {
   }): Promise<Page<Message>>;
 
   postMultisigTransaction(args: {
-    address: string;
+    address: `0x${string}`;
     data: ProposeTransactionDto;
   }): Promise<unknown>;
 

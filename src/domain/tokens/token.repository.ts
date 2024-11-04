@@ -15,7 +15,10 @@ export class TokenRepository implements ITokenRepository {
     private readonly transactionApiManager: ITransactionApiManager,
   ) {}
 
-  async getToken(args: { chainId: string; address: string }): Promise<Token> {
+  async getToken(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<Token> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );

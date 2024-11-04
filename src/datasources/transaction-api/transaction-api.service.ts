@@ -466,7 +466,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getTransfers(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     onlyErc20: boolean;
     onlyErc721: boolean;
     limit?: number;
@@ -497,7 +497,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async clearTransfers(safeAddress: string): Promise<void> {
+  async clearTransfers(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getTransfersCacheKey({
       chainId: this.chainId,
       safeAddress,
@@ -506,12 +506,12 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getIncomingTransfers(args: {
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: string;
+    to?: `0x${string}`;
     value?: string;
-    tokenAddress?: string;
+    tokenAddress?: `0x${string}`;
     txHash?: string;
     limit?: number;
     offset?: number;
@@ -545,7 +545,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async clearIncomingTransfers(safeAddress: string): Promise<void> {
+  async clearIncomingTransfers(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getIncomingTransfersCacheKey({
       chainId: this.chainId,
       safeAddress,
@@ -570,7 +570,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async getSafesByModule(moduleAddress: string): Promise<SafeList> {
+  async getSafesByModule(moduleAddress: `0x${string}`): Promise<SafeList> {
     try {
       const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
       const { data } = await this.networkService.get<SafeList>({ url });
@@ -645,14 +645,13 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async getMultisigTransactions(args: {
-    // TODO: safeAddress and to should be `0x${string}`
-    safeAddress: string;
+    safeAddress: `0x${string}`;
     ordering?: string;
     executed?: boolean;
     trusted?: boolean;
     executionDateGte?: string;
     executionDateLte?: string;
-    to?: string;
+    to?: `0x${string}`;
     value?: string;
     nonce?: string;
     nonceGte?: number;
@@ -692,7 +691,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async clearMultisigTransactions(safeAddress: string): Promise<void> {
+  async clearMultisigTransactions(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getMultisigTransactionsCacheKey({
       chainId: this.chainId,
       safeAddress,
@@ -812,7 +811,7 @@ export class TransactionApi implements ITransactionApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
-  async getToken(address: string): Promise<Token> {
+  async getToken(address: `0x${string}`): Promise<Token> {
     try {
       const cacheDir = CacheRouter.getTokenCacheDir({
         chainId: this.chainId,
@@ -994,7 +993,7 @@ export class TransactionApi implements ITransactionApi {
   }
 
   async postMultisigTransaction(args: {
-    address: string;
+    address: `0x${string}`;
     data: ProposeTransactionDto;
   }): Promise<unknown> {
     try {
