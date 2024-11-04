@@ -243,6 +243,13 @@ describe('SafeAppSchema', () => {
           path: ['socialProfiles'],
           message: 'Required',
         },
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          received: 'undefined',
+          path: ['featured'],
+          message: 'Required',
+        },
       ]),
     );
   });
