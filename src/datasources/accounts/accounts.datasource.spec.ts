@@ -126,7 +126,23 @@ describe('AccountsDatasource tests', () => {
       );
     });
 
-    it.todo('should fail if the name already exists');
+    it('should fail if the name already exists', async () => {
+      const createAccountDto = createAccountDtoBuilder().build();
+      await target.createAccount({
+        createAccountDto,
+        clientIp: faker.internet.ipv4(),
+      });
+
+      await expect(
+        target.createAccount({
+          createAccountDto: createAccountDtoBuilder()
+            .with('address', getAddress(faker.finance.ethereumAddress()))
+            .with('name', createAccountDto.name)
+            .build(),
+          clientIp: faker.internet.ipv4(),
+        }),
+      ).rejects.toThrow('Error creating account.');
+    });
 
     it('should fail if the IP hits the rate limit', async () => {
       const clientIp = faker.internet.ipv4();

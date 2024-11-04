@@ -5,16 +5,16 @@ import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
+// Note: regular expression is simplified because faker has limited support for regex.
+// https://fakerjs.dev/api/helpers#fromregexp
+export const accountNameSimpleRegex = /[a-zA-Z0-9]{12,20}/i;
+
 export function accountBuilder(): IBuilder<Account> {
-  return (
-    new Builder<Account>()
-      .with('id', faker.number.int({ max: DB_MAX_SAFE_INTEGER }))
-      .with('group_id', faker.number.int({ max: DB_MAX_SAFE_INTEGER }))
-      .with('address', getAddress(faker.finance.ethereumAddress()))
-      // Note: regular expression is simplified because faker has limited support for regex.
-      // https://fakerjs.dev/api/helpers#fromregexp
-      .with('name', faker.helpers.fromRegExp(/[a-zA-Z0-9]{12,20}/i))
-      .with('created_at', faker.date.recent())
-      .with('updated_at', faker.date.recent())
-  );
+  return new Builder<Account>()
+    .with('id', faker.number.int({ max: DB_MAX_SAFE_INTEGER }))
+    .with('group_id', faker.number.int({ max: DB_MAX_SAFE_INTEGER }))
+    .with('address', getAddress(faker.finance.ethereumAddress()))
+    .with('name', faker.helpers.fromRegExp(accountNameSimpleRegex))
+    .with('created_at', faker.date.recent())
+    .with('updated_at', faker.date.recent());
 }

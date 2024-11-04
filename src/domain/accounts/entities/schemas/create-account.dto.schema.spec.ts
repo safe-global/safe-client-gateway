@@ -75,8 +75,4 @@ describe('CreateAccountDtoSchema', () => {
       );
     });
   });
-
-  describe('name', () => {
-    // TODO: Add tests for name validation
-  });
 });
