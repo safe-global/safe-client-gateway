@@ -22,11 +22,11 @@ const mockLoggingService = {
 describe('PostgresDatabaseService', () => {
   let moduleRef: TestingModule;
   let databaseMigratorService: DatabaseMigrator;
-  let connection: jest.MockedObjectDeep<DataSource>;
   let postgresDatabaseService: PostgresDatabaseService;
   const NUMBER_OF_RETRIES = 2;
   const LOCK_TABLE_NAME = '_lock';
   const truncateLockQuery = `TRUNCATE TABLE "${LOCK_TABLE_NAME}";`;
+  const connection: jest.MockedObjectDeep<DataSource> = mockPostgresDataSource;
   const insertLockQuery = `INSERT INTO "${LOCK_TABLE_NAME}" (status) VALUES ($1);`;
 
   beforeAll(async () => {
@@ -66,7 +66,6 @@ describe('PostgresDatabaseService', () => {
       providers: [DatabaseMigrator],
     }).compile();
 
-    connection = mockPostgresDataSource;
     const configService = moduleRef.get<ConfigService>(ConfigService);
     postgresDatabaseService = new PostgresDatabaseService(
       mockLoggingService,
