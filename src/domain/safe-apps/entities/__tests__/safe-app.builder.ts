@@ -24,5 +24,6 @@ export function safeAppBuilder(): IBuilder<SafeApp> {
       faker.helpers.multiple(() => safeAppSocialProfileBuilder().build(), {
         count: { min: 0, max: 5 },
       }),
-    );
+    )
+    .with('featured', faker.datatype.boolean());
 }

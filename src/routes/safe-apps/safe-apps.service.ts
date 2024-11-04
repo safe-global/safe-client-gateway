@@ -38,6 +38,7 @@ export class SafeAppsService {
           safeApp.features,
           safeApp.developerWebsite,
           safeApp.socialProfiles,
+          safeApp.featured,
         ),
     );
   }

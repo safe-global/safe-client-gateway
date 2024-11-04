@@ -120,6 +120,7 @@ describe('Safe Apps Controller (Unit)', () => {
             features: safeAppsResponse[0].features,
             developerWebsite: safeAppsResponse[0].developerWebsite,
             socialProfiles: safeAppsResponse[0].socialProfiles,
+            featured: safeAppsResponse[0].featured,
           },
           {
             id: safeAppsResponse[1].id,
@@ -137,6 +138,7 @@ describe('Safe Apps Controller (Unit)', () => {
             features: safeAppsResponse[1].features,
             developerWebsite: safeAppsResponse[1].developerWebsite,
             socialProfiles: safeAppsResponse[1].socialProfiles,
+            featured: safeAppsResponse[1].featured,
           },
         ]);
     });
@@ -183,6 +185,7 @@ describe('Safe Apps Controller (Unit)', () => {
             features: safeAppsResponse[0].features,
             developerWebsite: safeAppsResponse[0].developerWebsite,
             socialProfiles: safeAppsResponse[0].socialProfiles,
+            featured: safeAppsResponse[0].featured,
           },
         ]);
     });
