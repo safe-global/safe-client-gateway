@@ -66,6 +66,8 @@ export class NotificationsController {
 
       await Promise.all(v2Requests);
     }
+
+    await Promise.all(v2Requests);
   }
 
   private async createV2RegisterDto(
