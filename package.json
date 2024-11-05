@@ -30,7 +30,7 @@
     "migration:revert": "yarn typeorm migration:revert"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.674.0",
+    "@aws-sdk/client-s3": "^3.685.0",
     "@nestjs/cli": "^10.4.7",
     "@nestjs/common": "^10.4.6",
     "@nestjs/config": "^3.2.3",
