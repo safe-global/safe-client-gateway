@@ -228,7 +228,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     upsertSubscriptionsDto: UpsertSubscriptionsDto;
     subscriptions: Array<NotificationSubscription>;
   }): Promise<void> {
-    const notificationTypesMap = new Map<string, NotificationType>();
+    const notificationTypesMap = new Map<string, NotificationType>(); // A map of all the notification types in request along with their database entity
     const notificationTypes = arg.upsertSubscriptionsDto.safes.flatMap(
       (safe) => safe.notificationTypes,
     );
