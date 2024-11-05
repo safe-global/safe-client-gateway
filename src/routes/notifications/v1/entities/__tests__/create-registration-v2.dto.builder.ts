@@ -2,9 +2,8 @@ import type { UpsertSubscriptionsDto } from '@/datasources/notifications/entitie
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 import type { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
-import type { UpsertSubscriptionsSafesDto } from '@/routes/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import type { UUID } from 'crypto';
-import { recoverMessageAddress } from 'viem';
+import { getAddress, recoverMessageAddress } from 'viem';
 
 export const createV2RegisterDtoBuilder = async (
   args: RegisterDeviceDto,
@@ -25,17 +24,11 @@ export const createV2RegisterDtoBuilder = async (
 
   for (const safeV1Registration of safesV1Registrations) {
     if (safeV1Registration.safes.length) {
-      const safeV2: {
-        authPayload: AuthPayload;
-        upsertSubscriptionsDto: UpsertSubscriptionsDto & {
-          safes: Array<UpsertSubscriptionsSafesDto>;
-          signature: `0x${string}`;
-        };
-      } = {
+      const safeV2: (typeof safeV2Array)[number] = {
         upsertSubscriptionsDto: {
           cloudMessagingToken: args.cloudMessagingToken,
           deviceType: args.deviceType,
-          deviceUuid: (args.uuid as UUID) || undefined,
+          deviceUuid: (args.uuid as UUID | undefined) || undefined,
           safes: [],
           signature: safeV1Registration.signatures[0] as `0x${string}`,
         },
@@ -43,7 +36,7 @@ export const createV2RegisterDtoBuilder = async (
       };
       for (const safeAddresses of safeV1Registration.safes) {
         safeV2.upsertSubscriptionsDto.safes.push({
-          address: safeAddresses as `0x${string}`,
+          address: getAddress(safeAddresses),
           chainId: safeV1Registration.chainId,
           notificationTypes: Object.values(NotificationType),
         });

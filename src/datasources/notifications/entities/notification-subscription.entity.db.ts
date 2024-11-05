@@ -3,6 +3,8 @@ import {
   NotificationSubscriptionNotificationType,
   NotificationSubscriptionNotificationTypeSchema,
 } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity.db';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import {
   Column,
   Entity,
@@ -17,9 +19,9 @@ import { z } from 'zod';
 
 export const NotificationSubscriptionSchema = z.object({
   id: z.number(),
-  chain_id: z.string(),
-  safe_address: z.string(),
-  signer_address: z.string().nullable(),
+  chain_id: NumericStringSchema,
+  safe_address: AddressSchema,
+  signer_address: AddressSchema.nullable(),
   updated_at: z.date(),
   notification_subscription_notification_type: z.array(
     NotificationSubscriptionNotificationTypeSchema,

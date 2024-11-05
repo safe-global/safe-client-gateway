@@ -1,13 +1,14 @@
 import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { UUID } from 'crypto';
 import { z } from 'zod';
 
 export const UpsertSubscriptionsDtoSafeSchema = z.object({
-  chainId: z.string(),
+  chainId: NumericStringSchema,
   address: AddressSchema,
   notificationTypes: z.array(z.nativeEnum(NotificationType)),
 });
