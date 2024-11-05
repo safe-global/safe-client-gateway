@@ -1,6 +1,6 @@
 import type { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
 import type { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
-import type { Uuid } from '@/domain/notifications/v2/entities/uuid.entity';
+import type { UUID } from 'crypto';
 
 export type UpsertSubscriptionsDto = {
   cloudMessagingToken: string;
@@ -10,5 +10,5 @@ export type UpsertSubscriptionsDto = {
     notificationTypes: Array<NotificationType>;
   }>;
   deviceType: DeviceType;
-  deviceUuid?: Uuid;
+  deviceUuid?: UUID;
 };
