@@ -21,6 +21,7 @@ import { NotificationType } from '@/domain/notifications/v2/entities/notificatio
 import type { UUID } from 'crypto';
 import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
 import { recoverMessageAddress } from 'viem';
+import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
@@ -91,7 +92,8 @@ export class NotificationsController {
           },
           authPayload: new AuthPayload(),
         };
-        for (const safeAddresses of safeV1Registration.safes) {
+        const uniqueSafeAddresses = new Set(safeV1Registration.safes);
+        for (const safeAddresses of uniqueSafeAddresses) {
           safeV2.upsertSubscriptionsDto.safes.push({
             address: safeAddresses as `0x${string}`,
             chainId: safeV1Registration.chainId,
@@ -125,19 +127,19 @@ export class NotificationsController {
   @Delete('chains/:chainId/notifications/devices/:uuid')
   async unregisterDevice(
     @Param('chainId') chainId: string,
-    @Param('uuid') uuid: string,
+    @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
   ): Promise<void> {
     await this.notificationsService.unregisterDevice({ chainId, uuid });
 
     // Compatibility with V2
     // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
-    await this.notificationServiceV2.deleteDevice(uuid as UUID);
+    await this.notificationServiceV2.deleteDevice(uuid);
   }
 
   @Delete('chains/:chainId/notifications/devices/:uuid/safes/:safeAddress')
   async unregisterSafe(
     @Param('chainId') chainId: string,
-    @Param('uuid') uuid: string,
+    @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
   ): Promise<void> {
@@ -150,7 +152,7 @@ export class NotificationsController {
     // Compatibility with V2
     // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
     await this.notificationServiceV2.deleteSubscription({
-      deviceUuid: uuid as UUID,
+      deviceUuid: uuid,
       chainId: chainId,
       safeAddress: safeAddress,
     });

@@ -55,6 +55,8 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
+import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
+import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
 
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
 describe.skip('Post Hook Events for Notifications (Unit)', () => {
@@ -97,6 +99,8 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       .useModule(TestPostgresDatabaseModuleV2)
       .overrideModule(PushNotificationsApiModule)
       .useModule(TestPushNotificationsApiModule)
+      .overrideModule(NotificationsRepositoryV2Module)
+      .useModule(TestNotificationsRepositoryV2Module)
       .compile();
     app = moduleFixture.createNestApplication();
 
@@ -107,7 +111,6 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
 
     notificationsRepository = moduleFixture.get(INotificationsRepositoryV2);
-    notificationsRepository.getSubscribersBySafe = jest.fn();
 
     await app.init();
   }
@@ -1985,7 +1988,6 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
   });
 
   it('should cleanup unregistered tokens', async () => {
-    notificationsRepository.deleteDevice = jest.fn();
     // Events that are notified "as is" for simplicity
     const event = faker.helpers.arrayElement([
       deletedMultisigTransactionEventBuilder().build(),

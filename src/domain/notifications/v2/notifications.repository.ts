@@ -228,23 +228,18 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     upsertSubscriptionsDto: UpsertSubscriptionsDto;
     subscriptions: Array<NotificationSubscription>;
   }): Promise<void> {
-    const notificationTypesMap: Map<string, NotificationType> = new Map();
+    const notificationTypesMap = new Map<string, NotificationType>();
     const notificationTypes = arg.upsertSubscriptionsDto.safes.flatMap(
       (safe) => safe.notificationTypes,
     );
-    const notificationTypesKeys: Map<string, undefined> = new Map();
-    notificationTypes.forEach((notificationType) => {
-      notificationTypesKeys.set(notificationType, undefined);
-    });
-    const notificationTypesKeysArray = [...notificationTypesKeys.keys()];
-
+    const uniqueNotificationTypes = new Set(notificationTypes);
     const databaseTransaction =
       this.postgresDatabaseService.getTransactionRunner();
 
     const notificationTypeObjects = await databaseTransaction.find(
       NotificationType,
       {
-        where: { name: In(notificationTypesKeysArray) },
+        where: { name: In([...uniqueNotificationTypes]) },
       },
     );
 
