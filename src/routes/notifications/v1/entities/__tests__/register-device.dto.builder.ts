@@ -14,13 +14,15 @@ export async function registerDeviceDtoBuilder(args?: {
   const uuid = args?.uuid ?? (faker.string.uuid() as UUID);
   const cloudMessagingToken =
     args?.cloudMessagingToken ?? (faker.string.uuid() as UUID);
-  const timestamp = args?.timestamp ?? faker.date.recent().getTime();
+  const timestamp = new Date(args?.timestamp ?? faker.date.recent());
+  timestamp.setMilliseconds(0);
+  const timestampWithoutMilliseconds = timestamp.getTime();
   const signaturePrefix = 'gnosis-safe';
   const safeRegistrations = await safeRegistrationBuilder({
     signaturePrefix,
     uuid,
     cloudMessagingToken,
-    timestamp,
+    timestamp: timestampWithoutMilliseconds,
   });
 
   return new Builder<RegisterDeviceDto>()

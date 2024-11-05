@@ -82,23 +82,29 @@ describe('Notifications Controller (Unit)', () => {
     await app.init();
   });
 
-  const buildInputDto = async (): Promise<RegisterDeviceDto> => {
+  const buildInputDto = async (
+    safeRegistrationsLength: number = 4,
+  ): Promise<RegisterDeviceDto> => {
     const uuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.uuid() as UUID;
-    const timestamp = faker.date.recent().getTime();
+    const timestamp = faker.date.recent();
+    timestamp.setMilliseconds(0);
+    const timestampWithoutMilliseconds = timestamp.getTime();
 
     const safeRegistrations = await Promise.all(
       faker.helpers.multiple(
-        async (_, i) => {
+        async () => {
           const safeRegistration = await safeRegistrationBuilder({
             signaturePrefix: 'gnosis-safe',
             uuid,
             cloudMessagingToken,
-            timestamp,
+            timestamp: timestampWithoutMilliseconds,
           });
-          return safeRegistration.with('chainId', i.toString()).build();
+          return safeRegistration
+            .with('chainId', faker.number.int({ min: 1, max: 100 }).toString())
+            .build();
         },
-        { count: 4 },
+        { count: safeRegistrationsLength },
       ),
     );
 
@@ -106,7 +112,7 @@ describe('Notifications Controller (Unit)', () => {
       await registerDeviceDtoBuilder({
         uuid,
         cloudMessagingToken,
-        timestamp,
+        timestamp: timestampWithoutMilliseconds,
       })
     )
       .with('safeRegistrations', safeRegistrations)
@@ -117,52 +123,61 @@ describe('Notifications Controller (Unit)', () => {
     Promise.reject(`No matching rule for url: ${url}`);
 
   describe('POST /register/notifications', () => {
-    it('Success', async () => {
-      const registerDeviceDto = await buildInputDto();
-      const upsertSubscriptionsV2Dto =
-        await createV2RegisterDtoBuilder(registerDeviceDto);
+    it.each([5, 20, 100])(
+      'Success for a subscription with %i safe registrations',
+      async (safeRegistrationLength: number) => {
+        const registerDeviceDto = await buildInputDto(safeRegistrationLength);
+        const upsertSubscriptionsV2Dto =
+          await createV2RegisterDtoBuilder(registerDeviceDto);
 
-      networkService.get.mockImplementation(({ url }) =>
-        url.includes(`${safeConfigUrl}/api/v1/chains/`)
-          ? Promise.resolve({
-              data: rawify(chainBuilder().build()),
-              status: 200,
-            })
-          : rejectForUrl(url),
-      );
-      networkService.post.mockImplementation(({ url }) =>
-        url.includes('/api/v1/notifications/devices/')
-          ? Promise.resolve({ data: rawify({}), status: 200 })
-          : rejectForUrl(url),
-      );
-
-      await request(app.getHttpServer())
-        .post('/v1/register/notifications')
-        .send(registerDeviceDto)
-        .expect(200)
-        .expect({});
-
-      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
-      // We call V2 as many times as we have a registration with at least one safe
-      const safeRegistrationsWithSafe =
-        registerDeviceDto.safeRegistrations.filter(
-          (safeRegistration) => safeRegistration.safes.length > 0,
+        networkService.get.mockImplementation(({ url }) =>
+          url.includes(`${safeConfigUrl}/api/v1/chains/`)
+            ? Promise.resolve({
+                data: rawify(chainBuilder().build()),
+                status: 200,
+              })
+            : rejectForUrl(url),
+        );
+        networkService.post.mockImplementation(({ url }) =>
+          url.includes('/api/v1/notifications/devices/')
+            ? Promise.resolve({ data: rawify({}), status: 200 })
+            : rejectForUrl(url),
         );
 
-      expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
-        safeRegistrationsWithSafe.length,
-      );
+        await request(app.getHttpServer())
+          .post('/v1/register/notifications')
+          .send(registerDeviceDto)
+          .expect(200)
+          .expect({});
 
-      for (const [
-        index,
-        upsertSubscriptionsV2,
-      ] of upsertSubscriptionsV2Dto.entries()) {
-        const nthCall = index + 1; // Convert zero-based index to a one-based call number
-        expect(
-          notificationServiceV2.upsertSubscriptions,
-        ).toHaveBeenNthCalledWith(nthCall, upsertSubscriptionsV2);
-      }
-    });
+        await request(app.getHttpServer())
+          .post('/v1/register/notifications')
+          .send(registerDeviceDto)
+          .expect(200)
+          .expect({});
+
+        // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
+        // We call V2 as many times as we have a registration with at least one safe
+        const safeRegistrationsWithSafe =
+          registerDeviceDto.safeRegistrations.filter(
+            (safeRegistration) => safeRegistration.safes.length > 0,
+          );
+
+        expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
+          safeRegistrationsWithSafe.length,
+        );
+
+        for (const [
+          index,
+          upsertSubscriptionsV2,
+        ] of upsertSubscriptionsV2Dto.entries()) {
+          const nthCall = index + 1; // Convert zero-based index to a one-based call number
+          expect(
+            notificationServiceV2.upsertSubscriptions,
+          ).toHaveBeenNthCalledWith(nthCall, upsertSubscriptionsV2);
+        }
+      },
+    );
 
     it('Client errors returned from provider', async () => {
       const registerDeviceDto = await buildInputDto();
