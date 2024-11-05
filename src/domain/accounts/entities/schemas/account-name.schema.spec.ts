@@ -97,7 +97,7 @@ describe('AccountNameSchema', () => {
           validation: 'regex',
           code: 'invalid_string',
           message:
-            'Account names must start with a letter or number and can contain alphanumeric characters, periods, underscores, and hyphens',
+            'Account names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
           path: [],
         },
       ]),
