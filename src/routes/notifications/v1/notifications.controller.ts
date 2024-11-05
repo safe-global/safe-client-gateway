@@ -46,9 +46,16 @@ export class NotificationsController {
     const compatibleV2Requests =
       await this.createV2RegisterDto(registerDeviceDto);
 
+    const v2Requests = [];
     for (const compatibleV2Request of compatibleV2Requests) {
-      await this.notificationServiceV2.upsertSubscriptions(compatibleV2Request);
+      v2Requests.push(
+        await this.notificationServiceV2.upsertSubscriptions(
+          compatibleV2Request,
+        ),
+      );
     }
+
+    await Promise.all(v2Requests);
   }
 
   private async createV2RegisterDto(args: RegisterDeviceDto): Promise<
