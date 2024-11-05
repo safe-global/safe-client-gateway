@@ -1988,7 +1988,6 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
   });
 
   it('should cleanup unregistered tokens', async () => {
-    notificationsRepository.deleteDevice = jest.fn();
     // Events that are notified "as is" for simplicity
     const event = faker.helpers.arrayElement([
       deletedMultisigTransactionEventBuilder().build(),
