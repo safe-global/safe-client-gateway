@@ -1219,7 +1219,7 @@ describe('Relay controller', () => {
                   )
                   .build();
                 const safes = Array.from(
-                  { length: faker.number.int({ min: 1, max: 4 }) },
+                  { length: faker.number.int({ min: 2, max: 4 }) },
                   () => getAddress(faker.finance.ethereumAddress()),
                 );
                 // We don't need to test all possible combinations as we only use the address
