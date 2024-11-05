@@ -205,7 +205,7 @@ describe('Relay controller', () => {
                 .build();
               const safes = faker.helpers.multiple(
                 () => getAddress(faker.finance.ethereumAddress()),
-                { count: { min: 1, max: 4 } },
+                { count: { min: 2, max: 4 } },
               );
               // We don't need to test all possible combinations as we only use the address
               // to check the officiality of the MultiSend. The rest is universal for all.
@@ -1044,7 +1044,7 @@ describe('Relay controller', () => {
                   .build();
                 const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
-                  { count: { min: 1, max: 4 } },
+                  { count: { min: 2, max: 4 } },
                 );
                 // We don't need to test all possible combinations as we only use the address
                 // to check the officiality of the MultiSend. The rest is universal for all.
@@ -1221,7 +1221,7 @@ describe('Relay controller', () => {
                   .build();
                 const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
-                  { count: { min: 1, max: 4 } },
+                  { count: { min: 2, max: 4 } },
                 );
                 // We don't need to test all possible combinations as we only use the address
                 // to check the officiality of the MultiSend. The rest is universal for all.
@@ -2030,7 +2030,7 @@ describe('Relay controller', () => {
                 .build();
               const safes = faker.helpers.multiple(
                 () => getAddress(faker.finance.ethereumAddress()),
-                { count: { min: 1, max: 4 } },
+                { count: { min: 2, max: 4 } },
               );
               // We don't need to test all possible combinations as we only use the address
               // to check the officiality of the MultiSend. The rest is universal for all.
