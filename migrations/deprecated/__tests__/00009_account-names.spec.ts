@@ -102,4 +102,24 @@ describe('Migration 00006_accounts-names', () => {
       },
     });
   });
+
+  it('should fail if name_hash is not unique', async () => {
+    await migrator.test({
+      migration: '00009_account-names',
+      before: async (sql: postgres.Sql) => {
+        await sql`INSERT INTO groups (id) VALUES (1);`;
+      },
+      after: async (sql: postgres.Sql) => {
+        await sql`
+          INSERT INTO accounts (group_id, address, name, name_hash)
+          VALUES
+            (1, '0x001', 'name', 'hash'),
+            (1, '0x002', 'name', 'hash')`.catch((error) => {
+          expect(error.message).toEqual(
+            expect.stringContaining('name_hash_unique'),
+          );
+        });
+      },
+    });
+  });
 });
