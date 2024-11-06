@@ -345,8 +345,14 @@ describe('NotificationsRepositoryV2', () => {
           const databaseTransaction = entityManager;
 
           jest
-            .spyOn(postgresDatabaseService, 'getTransactionRunner')
-            .mockReturnValue(databaseTransaction);
+            .spyOn(postgresDatabaseService, 'transaction')
+            .mockImplementation(
+              <T>(
+                runInTransaction: (entityManager: EntityManager) => Promise<T>,
+              ): Promise<T> => {
+                return runInTransaction(databaseTransaction);
+              },
+            );
 
           jest
             .spyOn(databaseTransaction, 'upsert')

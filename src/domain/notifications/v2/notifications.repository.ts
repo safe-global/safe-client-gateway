@@ -15,7 +15,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
 import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
-import { In } from 'typeorm';
+import { In, type EntityManager } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { NotificationSubscriptionNotificationType } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity.db';
 
@@ -99,20 +99,20 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     deviceUuid: UUID;
   }> {
     const deviceUuid = await this.postgresDatabaseService.transaction(
-      async (): Promise<UUID> => {
-        const device = await this.upsertDevice(args);
-        await this.deletePreviousSubscriptions({
+      async (entityManager: EntityManager): Promise<UUID> => {
+        const device = await this.upsertDevice(entityManager, args);
+        await this.deletePreviousSubscriptions(entityManager, {
           deviceId: device.id,
           signerAddress: args.authPayload.signer_address,
           upsertSubscriptionsDto: args.upsertSubscriptionsDto,
         });
 
-        const subscriptions = await this.upsertSubscription({
+        const subscriptions = await this.upsertSubscription(entityManager, {
           ...args,
           deviceId: device.id,
         });
 
-        await this.insertSubscriptionNotificationTypes({
+        await this.insertSubscriptionNotificationTypes(entityManager, {
           subscriptions,
           upsertSubscriptionsDto: args.upsertSubscriptionsDto,
         });
@@ -124,17 +124,17 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     return { deviceUuid };
   }
 
-  private async upsertDevice(args: {
-    authPayload: AuthPayload;
-    upsertSubscriptionsDto: UpsertSubscriptionsDto;
-  }): Promise<Pick<NotificationDevice, 'id' | 'device_uuid'>> {
+  private async upsertDevice(
+    entityManager: EntityManager,
+    args: {
+      authPayload: AuthPayload;
+      upsertSubscriptionsDto: UpsertSubscriptionsDto;
+    },
+  ): Promise<Pick<NotificationDevice, 'id' | 'device_uuid'>> {
     const deviceUuid =
       args.upsertSubscriptionsDto.deviceUuid ?? crypto.randomUUID();
 
-    const databaseTransaction =
-      this.postgresDatabaseService.getTransactionRunner();
-
-    const queryResult = await databaseTransaction.upsert(
+    const queryResult = await entityManager.upsert(
       NotificationDevice,
       {
         device_uuid: deviceUuid,
@@ -147,15 +147,16 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     return { id: queryResult.identifiers[0].id, device_uuid: deviceUuid };
   }
 
-  private async deletePreviousSubscriptions(args: {
-    deviceId: number;
-    signerAddress?: `0x${string}`;
-    upsertSubscriptionsDto: UpsertSubscriptionsDto;
-  }): Promise<void> {
-    const databaseTransaction =
-      this.postgresDatabaseService.getTransactionRunner();
+  private async deletePreviousSubscriptions(
+    entityManager: EntityManager,
+    args: {
+      deviceId: number;
+      signerAddress?: `0x${string}`;
+      upsertSubscriptionsDto: UpsertSubscriptionsDto;
+    },
+  ): Promise<void> {
     for (const safe of args.upsertSubscriptionsDto.safes) {
-      await databaseTransaction
+      await entityManager
         .createQueryBuilder()
         .delete()
         .from(NotificationSubscription)
@@ -177,11 +178,14 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     }
   }
 
-  private async upsertSubscription(args: {
-    authPayload: AuthPayload;
-    upsertSubscriptionsDto: UpsertSubscriptionsDto;
-    deviceId: number;
-  }): Promise<Array<NotificationSubscription>> {
+  private async upsertSubscription(
+    entityManager: EntityManager,
+    args: {
+      authPayload: AuthPayload;
+      upsertSubscriptionsDto: UpsertSubscriptionsDto;
+      deviceId: number;
+    },
+  ): Promise<Array<NotificationSubscription>> {
     const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
     for (const safe of args.upsertSubscriptionsDto.safes) {
       const device = new NotificationDevice();
@@ -194,10 +198,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       });
     }
 
-    const databaseTransaction =
-      this.postgresDatabaseService.getTransactionRunner();
-
-    const insertResult = await databaseTransaction.upsert(
+    const insertResult = await entityManager.upsert(
       NotificationSubscription,
       subscriptionsToInsert,
       [
@@ -219,32 +220,32 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   public async getSubscriptionsById(
     subscriptionIds: Array<number>,
   ): Promise<Array<NotificationSubscription>> {
-    const databaseTransaction =
-      this.postgresDatabaseService.getTransactionRunner();
+    const notificationSubscriptionRepository =
+      await this.postgresDatabaseService.getRepository(
+        NotificationSubscription,
+      );
 
-    return await databaseTransaction.find(NotificationSubscription, {
+    return await notificationSubscriptionRepository.find({
       where: { id: In(subscriptionIds) },
     });
   }
 
-  private async insertSubscriptionNotificationTypes(arg: {
-    upsertSubscriptionsDto: UpsertSubscriptionsDto;
-    subscriptions: Array<NotificationSubscription>;
-  }): Promise<void> {
+  private async insertSubscriptionNotificationTypes(
+    entityManager: EntityManager,
+    arg: {
+      upsertSubscriptionsDto: UpsertSubscriptionsDto;
+      subscriptions: Array<NotificationSubscription>;
+    },
+  ): Promise<void> {
     const notificationTypesMap = new Map<string, NotificationType>(); // A map of all the notification types in request along with their database entity
     const notificationTypes = arg.upsertSubscriptionsDto.safes.flatMap(
       (safe) => safe.notificationTypes,
     );
     const uniqueNotificationTypes = new Set(notificationTypes);
-    const databaseTransaction =
-      this.postgresDatabaseService.getTransactionRunner();
 
-    const notificationTypeObjects = await databaseTransaction.find(
-      NotificationType,
-      {
-        where: { name: In([...uniqueNotificationTypes]) },
-      },
-    );
+    const notificationTypeObjects = await entityManager.find(NotificationType, {
+      where: { name: In([...uniqueNotificationTypes]) },
+    });
 
     for (const notificationTypeObject of notificationTypeObjects) {
       notificationTypesMap.set(
@@ -269,7 +270,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       }
     }
 
-    await databaseTransaction.upsert(
+    await entityManager.upsert(
       NotificationSubscriptionNotificationType,
       subscriptionNotificationTypes,
       ['notification_subscription', 'notification_type'],
