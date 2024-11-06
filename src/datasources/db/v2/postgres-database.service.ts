@@ -13,8 +13,6 @@ import {
 
 @Injectable()
 export class PostgresDatabaseService {
-  private transactionManager?: EntityManager = undefined;
-
   public constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @InjectDataSource()
@@ -88,18 +86,9 @@ export class PostgresDatabaseService {
     callback: (transactionManager: EntityManager) => Promise<T>,
   ): Promise<T> {
     return this.dataSource.transaction(
-      async (transactionalEntityManager): Promise<T> => {
-        this.transactionManager = transactionalEntityManager;
-        return await callback(this.transactionManager);
+      async (transactionalEntityManager: EntityManager): Promise<T> => {
+        return await callback(transactionalEntityManager);
       },
     );
-  }
-
-  public getTransactionRunner(): EntityManager {
-    if (!this.transactionManager) {
-      throw new Error('Query runner is not initialized...');
-    }
-
-    return this.transactionManager;
   }
 }
