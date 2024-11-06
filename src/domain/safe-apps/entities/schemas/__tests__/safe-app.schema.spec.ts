@@ -4,10 +4,7 @@ import { safeAppSocialProfileBuilder } from '@/domain/safe-apps/entities/__tests
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import { SafeAppAccessControlPolicies } from '@/domain/safe-apps/entities/safe-app-access-control.entity';
 import type { SafeAppSocialProfile } from '@/domain/safe-apps/entities/safe-app-social-profile.entity';
-import {
-  SafeAppSchema,
-  SafeAppSocialProfilePlatforms,
-} from '@/domain/safe-apps/entities/schemas/safe-app.schema';
+import { SafeAppSchema } from '@/domain/safe-apps/entities/schemas/safe-app.schema';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 
@@ -68,45 +65,52 @@ describe('SafeAppSchema', () => {
     );
   });
 
-  it.each(Object.values(SafeAppSocialProfilePlatforms))(
-    'should validate %s nested socialProfile and provider urls',
-    (platform) => {
-      const safeApp = safeAppBuilder()
-        .with('socialProfiles', [
-          safeAppSocialProfileBuilder().with('platform', platform).build(),
-          safeAppSocialProfileBuilder()
-            .with('platform', platform)
-            .with('url', faker.string.alphanumeric())
-            .build(),
-        ])
-        .with(
-          'provider',
-          safeAppProviderBuilder()
-            .with('url', faker.string.alphanumeric())
-            .build(),
-        )
-        .build();
+  it('should throw if a socialProfile has an invalid url', () => {
+    const safeApp = safeAppBuilder()
+      .with('socialProfiles', [
+        safeAppSocialProfileBuilder()
+          .with('url', faker.string.alphanumeric())
+          .build(),
+      ])
+      .build();
 
-      const result = SafeAppSchema.safeParse(safeApp);
+    const result = SafeAppSchema.safeParse(safeApp);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            validation: 'url',
-            code: 'invalid_string',
-            message: 'Invalid url',
-            path: ['socialProfiles', 1, 'url'],
-          },
-          {
-            validation: 'url',
-            code: 'invalid_string',
-            message: 'Invalid url',
-            path: ['provider', 'url'],
-          },
-        ]),
-      );
-    },
-  );
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          validation: 'url',
+          code: 'invalid_string',
+          message: 'Invalid url',
+          path: ['socialProfiles', 0, 'url'],
+        },
+      ]),
+    );
+  });
+
+  it('should throw if a profile has an invalid url', () => {
+    const safeApp = safeAppBuilder()
+      .with(
+        'provider',
+        safeAppProviderBuilder()
+          .with('url', faker.string.alphanumeric())
+          .build(),
+      )
+      .build();
+
+    const result = SafeAppSchema.safeParse(safeApp);
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          validation: 'url',
+          code: 'invalid_string',
+          message: 'Invalid url',
+          path: ['provider', 'url'],
+        },
+      ]),
+    );
+  });
 
   it('should fallback to UNKNOWN nested socialProfile', () => {
     const safeApp = safeAppBuilder()
