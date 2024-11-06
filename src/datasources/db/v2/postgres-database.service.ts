@@ -84,13 +84,13 @@ export class PostgresDatabaseService {
     return this.dataSource.getRepository<T>(entity);
   }
 
-  public async transaction(
-    callback: (transactionManager: EntityManager) => Promise<void>,
-  ): Promise<void> {
+  public async transaction<T>(
+    callback: (transactionManager: EntityManager) => Promise<T>,
+  ): Promise<T> {
     return this.dataSource.transaction(
-      async (transactionalEntityManager): Promise<void> => {
+      async (transactionalEntityManager): Promise<T> => {
         this.transactionManager = transactionalEntityManager;
-        await callback(this.transactionManager);
+        return await callback(this.transactionManager);
       },
     );
   }
