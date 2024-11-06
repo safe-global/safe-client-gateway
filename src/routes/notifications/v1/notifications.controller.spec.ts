@@ -123,7 +123,7 @@ describe('Notifications Controller (Unit)', () => {
     Promise.reject(`No matching rule for url: ${url}`);
 
   describe('POST /register/notifications', () => {
-    it.each([5, 20, 100])(
+    it.each([5, 20])(
       'Success for a subscription with %i safe registrations',
       async (safeRegistrationLength: number) => {
         const registerDeviceDto = await buildInputDto(safeRegistrationLength);

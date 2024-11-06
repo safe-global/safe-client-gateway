@@ -1,4 +1,5 @@
 import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import type { UUID } from 'crypto';
@@ -11,13 +12,10 @@ import {
 } from 'typeorm';
 import { z } from 'zod';
 
-export const NotificationDeviceSchema = z.object({
-  id: z.number(),
+export const NotificationDeviceSchema = RowSchema.extend({
   device_type: z.nativeEnum(DeviceType),
   device_uuid: UuidSchema,
   cloud_messaging_token: z.string(),
-  created_at: z.date(),
-  updated_at: z.date(),
 });
 
 @Entity('push_notification_devices')
