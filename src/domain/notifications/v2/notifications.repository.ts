@@ -98,27 +98,30 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   }): Promise<{
     deviceUuid: UUID;
   }> {
-    let device;
-    await this.postgresDatabaseService.transaction(async () => {
-      device = await this.upsertDevice(args);
-      await this.deletePreviousSubscriptions({
-        deviceId: device.id,
-        signerAddress: args.authPayload.signer_address,
-        upsertSubscriptionsDto: args.upsertSubscriptionsDto,
-      });
+    const deviceUuid = await this.postgresDatabaseService.transaction(
+      async (): Promise<UUID> => {
+        const device = await this.upsertDevice(args);
+        await this.deletePreviousSubscriptions({
+          deviceId: device.id,
+          signerAddress: args.authPayload.signer_address,
+          upsertSubscriptionsDto: args.upsertSubscriptionsDto,
+        });
 
-      const subscriptions = await this.upsertSubscription({
-        ...args,
-        deviceId: device.id,
-      });
+        const subscriptions = await this.upsertSubscription({
+          ...args,
+          deviceId: device.id,
+        });
 
-      await this.insertSubscriptionNotificationTypes({
-        subscriptions,
-        upsertSubscriptionsDto: args.upsertSubscriptionsDto,
-      });
-    });
+        await this.insertSubscriptionNotificationTypes({
+          subscriptions,
+          upsertSubscriptionsDto: args.upsertSubscriptionsDto,
+        });
 
-    return { deviceUuid: device!.device_uuid };
+        return device.device_uuid;
+      },
+    );
+
+    return { deviceUuid };
   }
 
   private async upsertDevice(args: {
