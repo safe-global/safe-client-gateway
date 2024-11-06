@@ -647,10 +647,9 @@ describe('Chain schemas', () => {
 
   describe('ChainLenientPageSchema', () => {
     it('should validate a valid Chain page', () => {
-      const chains = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
-        () => chainBuilder().build(),
-      );
+      const chains = faker.helpers.multiple(() => chainBuilder().build(), {
+        count: { min: 1, max: 5 },
+      });
       const chainPage = pageBuilder()
         .with('results', chains)
         .with('count', chains.length)
@@ -662,10 +661,9 @@ describe('Chain schemas', () => {
     });
 
     it('should exclude invalid Chain items, adjusting the count accordingly', () => {
-      const chains = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
-        () => chainBuilder().build(),
-      );
+      const chains = faker.helpers.multiple(() => chainBuilder().build(), {
+        count: { min: 1, max: 5 },
+      });
       const chainPage = pageBuilder<Chain>()
         .with('results', chains)
         .with('count', chains.length)

@@ -58,11 +58,11 @@ describe('ChainsRepository', () => {
 
   it('should return all chains across pages below request limit', async () => {
     const url = faker.internet.url({ appendSlash: true });
-    const chains = Array.from(
-      {
-        length: ChainsRepository.MAX_LIMIT * (maxSequentialPages - 1), // One page less than request limit
-      },
+    const chains = faker.helpers.multiple(
       (_, i) => chainBuilder().with('chainId', i.toString()).build(),
+      {
+        count: ChainsRepository.MAX_LIMIT * (maxSequentialPages - 1), // One page less than request limit
+      },
     );
     const pages = chunk(chains, ChainsRepository.MAX_LIMIT).map(
       (results, i, arr) => {
@@ -135,11 +135,11 @@ describe('ChainsRepository', () => {
 
   it('should return all chains across pages up request limit', async () => {
     const url = faker.internet.url({ appendSlash: true });
-    const chains = Array.from(
-      {
-        length: ChainsRepository.MAX_LIMIT * maxSequentialPages, // Exactly request limit
-      },
+    const chains = faker.helpers.multiple(
       (_, i) => chainBuilder().with('chainId', i.toString()).build(),
+      {
+        count: ChainsRepository.MAX_LIMIT * maxSequentialPages, // Exactly request limit
+      },
     );
     const pages = chunk(chains, ChainsRepository.MAX_LIMIT).map(
       (results, i, arr) => {
@@ -216,11 +216,11 @@ describe('ChainsRepository', () => {
 
   it('should return all chains across pages up to request limit and notify if there are more', async () => {
     const url = faker.internet.url({ appendSlash: true });
-    const chains = Array.from(
-      {
-        length: ChainsRepository.MAX_LIMIT * (maxSequentialPages + 1), // One page more than request limit
-      },
+    const chains = faker.helpers.multiple(
       (_, i) => chainBuilder().with('chainId', i.toString()).build(),
+      {
+        count: ChainsRepository.MAX_LIMIT * (maxSequentialPages + 1), // One page more than request limit
+      },
     );
     const pages = chunk(chains, ChainsRepository.MAX_LIMIT).map(
       (results, i, arr) => {

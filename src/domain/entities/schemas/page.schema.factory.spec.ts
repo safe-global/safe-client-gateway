@@ -9,10 +9,9 @@ import { z } from 'zod';
 describe('Page schema factory', () => {
   describe('buildPageSchema', () => {
     it('should build a page schema', () => {
-      const results = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
-        () => faker.lorem.word(),
-      );
+      const results = faker.helpers.multiple(() => faker.lorem.word(), {
+        count: { min: 1, max: 5 },
+      });
       const page = pageBuilder()
         .with('results', results)
         .with('count', results.length)
@@ -25,10 +24,9 @@ describe('Page schema factory', () => {
     });
 
     it('should expect a numerical count', () => {
-      const results = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
-        () => faker.lorem.word(),
-      );
+      const results = faker.helpers.multiple(() => faker.lorem.word(), {
+        count: { min: 1, max: 5 },
+      });
       const page = pageBuilder()
         .with('results', results)
         .with('count', results.length.toString() as unknown as number)
@@ -50,10 +48,9 @@ describe('Page schema factory', () => {
     it.each(['next' as const, 'previous' as const])(
       'should expect a string %s',
       (key) => {
-        const results = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => faker.lorem.word(),
-        );
+        const results = faker.helpers.multiple(() => faker.lorem.word(), {
+          count: { min: 1, max: 5 },
+        });
         const page = pageBuilder()
           .with('results', results)
           .with('count', results.length)
@@ -77,10 +74,9 @@ describe('Page schema factory', () => {
     it.each(['count' as const, 'next' as const, 'previous' as const])(
       'should allow a nullable %s',
       (key) => {
-        const results = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => faker.lorem.word(),
-        );
+        const results = faker.helpers.multiple(() => faker.lorem.word(), {
+          count: { min: 1, max: 5 },
+        });
         const page = pageBuilder()
           .with('results', results)
           .with('count', results.length)
@@ -97,10 +93,9 @@ describe('Page schema factory', () => {
 
   describe('buildLenientPageSchema', () => {
     it('should build a lenient page schema', () => {
-      const results = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
-        () => faker.lorem.word(),
-      );
+      const results = faker.helpers.multiple(() => faker.lorem.word(), {
+        count: { min: 1, max: 5 },
+      });
       const page = pageBuilder()
         .with('results', results)
         .with('count', results.length)
@@ -113,10 +108,9 @@ describe('Page schema factory', () => {
     });
 
     it('should expect a numerical count', () => {
-      const results = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
-        () => faker.lorem.word(),
-      );
+      const results = faker.helpers.multiple(() => faker.lorem.word(), {
+        count: { min: 1, max: 5 },
+      });
       const page = pageBuilder()
         .with('results', results)
         .with('count', results.length.toString() as unknown as number)
@@ -138,10 +132,9 @@ describe('Page schema factory', () => {
     it.each(['next' as const, 'previous' as const])(
       'should expect a string %s',
       (key) => {
-        const results = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => faker.lorem.word(),
-        );
+        const results = faker.helpers.multiple(() => faker.lorem.word(), {
+          count: { min: 1, max: 5 },
+        });
         const page = pageBuilder()
           .with('results', results)
           .with('count', results.length)
@@ -165,10 +158,9 @@ describe('Page schema factory', () => {
     it.each(['count' as const, 'next' as const, 'previous' as const])(
       'should allow a nullable %s',
       (key) => {
-        const results = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => faker.lorem.word(),
-        );
+        const results = faker.helpers.multiple(() => faker.lorem.word(), {
+          count: { min: 1, max: 5 },
+        });
         const page = pageBuilder()
           .with('results', results)
           .with('count', results.length)
@@ -183,9 +175,9 @@ describe('Page schema factory', () => {
     );
 
     it('should remove invalid items from results, reducing count accordingly', () => {
-      const results = Array.from(
-        { length: faker.number.int({ min: 2, max: 5 }) },
+      const results = faker.helpers.multiple(
         () => ({ test: faker.lorem.word() }),
+        { count: { min: 2, max: 5 } },
       );
       const page = pageBuilder<{ test: string }>()
         .with('results', structuredClone(results))

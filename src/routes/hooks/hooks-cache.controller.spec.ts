@@ -491,9 +491,9 @@ describe.skip('Post Hook Events for Cache (Unit)', () => {
     const validatorsPublicKeys = faker.string.hexadecimal({
       length: KilnDecoder.KilnPublicKeyLength,
     });
-    const stakes = Array.from({ length: validatorsPublicKeys.length }, () =>
-      stakeBuilder().build(),
-    );
+    const stakes = faker.helpers.multiple(() => stakeBuilder().build(), {
+      count: validatorsPublicKeys.length,
+    });
     const cacheDir = new CacheDir(
       `${chainId}_staking_stakes_${getAddress(safeAddress)}`,
       validatorsPublicKeys,

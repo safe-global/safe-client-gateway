@@ -468,10 +468,7 @@ describe('Notifications Controller V2 (Unit)', () => {
         const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
           .with(
             'safes',
-            Array.from(
-              {
-                length: faker.number.int({ min: 1, max: 5 }),
-              },
+            faker.helpers.multiple(
               () => ({
                 chainId,
                 address: getAddress(faker.finance.ethereumAddress()),
@@ -479,6 +476,9 @@ describe('Notifications Controller V2 (Unit)', () => {
                   Object.values(NotificationType),
                 ),
               }),
+              {
+                count: { min: 1, max: 5 },
+              },
             ),
           )
           .build();
@@ -506,10 +506,7 @@ describe('Notifications Controller V2 (Unit)', () => {
         const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
           .with(
             'safes',
-            Array.from(
-              {
-                length: faker.number.int({ min: 1, max: 5 }),
-              },
+            faker.helpers.multiple(
               () => ({
                 chainId,
                 address: getAddress(faker.finance.ethereumAddress()),
@@ -517,6 +514,9 @@ describe('Notifications Controller V2 (Unit)', () => {
                   Object.values(NotificationType),
                 ),
               }),
+              {
+                count: { min: 1, max: 5 },
+              },
             ),
           )
           .build();
@@ -540,10 +540,7 @@ describe('Notifications Controller V2 (Unit)', () => {
         const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder()
           .with(
             'safes',
-            Array.from(
-              {
-                length: faker.number.int({ min: 1, max: 5 }),
-              },
+            faker.helpers.multiple(
               () => ({
                 chainId,
                 address: getAddress(faker.finance.ethereumAddress()),
@@ -551,6 +548,9 @@ describe('Notifications Controller V2 (Unit)', () => {
                   Object.values(NotificationType),
                 ),
               }),
+              {
+                count: { min: 1, max: 5 },
+              },
             ),
           )
           .build();
