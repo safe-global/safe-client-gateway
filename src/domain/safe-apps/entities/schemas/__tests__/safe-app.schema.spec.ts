@@ -3,6 +3,7 @@ import { safeAppProviderBuilder } from '@/domain/safe-apps/entities/__tests__/sa
 import { safeAppSocialProfileBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app-social-profile.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import { SafeAppAccessControlPolicies } from '@/domain/safe-apps/entities/safe-app-access-control.entity';
+import type { SafeAppSocialProfile } from '@/domain/safe-apps/entities/safe-app-social-profile.entity';
 import { SafeAppSchema } from '@/domain/safe-apps/entities/schemas/safe-app.schema';
 import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
@@ -64,14 +65,31 @@ describe('SafeAppSchema', () => {
     );
   });
 
-  it('should validate nested socialProfile and provider urls', () => {
+  it('should throw if a socialProfile has an invalid url', () => {
     const safeApp = safeAppBuilder()
       .with('socialProfiles', [
-        safeAppSocialProfileBuilder().build(),
         safeAppSocialProfileBuilder()
           .with('url', faker.string.alphanumeric())
           .build(),
       ])
+      .build();
+
+    const result = SafeAppSchema.safeParse(safeApp);
+
+    expect(!result.success && result.error).toStrictEqual(
+      new ZodError([
+        {
+          validation: 'url',
+          code: 'invalid_string',
+          message: 'Invalid url',
+          path: ['socialProfiles', 0, 'url'],
+        },
+      ]),
+    );
+  });
+
+  it('should throw if a profile has an invalid url', () => {
+    const safeApp = safeAppBuilder()
       .with(
         'provider',
         safeAppProviderBuilder()
@@ -88,15 +106,25 @@ describe('SafeAppSchema', () => {
           validation: 'url',
           code: 'invalid_string',
           message: 'Invalid url',
-          path: ['socialProfiles', 1, 'url'],
-        },
-        {
-          validation: 'url',
-          code: 'invalid_string',
-          message: 'Invalid url',
           path: ['provider', 'url'],
         },
       ]),
+    );
+  });
+
+  it('should fallback to UNKNOWN nested socialProfile', () => {
+    const safeApp = safeAppBuilder()
+      .with('socialProfiles', [
+        safeAppSocialProfileBuilder()
+          .with('platform', 'invalid' as SafeAppSocialProfile['platform'])
+          .build(),
+      ])
+      .build();
+
+    const result = SafeAppSchema.safeParse(safeApp);
+
+    expect(result.success && result.data.socialProfiles[0].platform).toBe(
+      'UNKNOWN',
     );
   });
 
