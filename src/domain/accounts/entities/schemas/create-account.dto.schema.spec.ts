@@ -1,5 +1,5 @@
 import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/create-account.dto.builder';
-import { CreateAccountDtoSchema } from '@/domain/accounts/entities/schemas/create-account.dto.schema';
+import { CreateAccountDtoSchema } from '@/domain/accounts/entities/create-account.dto.entity';
 import { ZodError } from 'zod';
 
 describe('CreateAccountDtoSchema', () => {
@@ -23,6 +23,13 @@ describe('CreateAccountDtoSchema', () => {
           expected: 'string',
           received: 'undefined',
           path: ['address'],
+          message: 'Required',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['name'],
           message: 'Required',
         },
       ]),

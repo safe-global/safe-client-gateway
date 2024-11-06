@@ -4,4 +4,6 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateAccountDto implements DomainCreateAccountDto {
   @ApiProperty()
   address!: `0x${string}`;
+  @ApiProperty()
+  name!: string;
 }
