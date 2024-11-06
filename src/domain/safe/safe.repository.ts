@@ -241,13 +241,12 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page: Page<MultisigTransaction> =
-      await transactionService.getMultisigTransactions({
-        ...args,
-        safeAddress: args.safe.address,
-        executed: false,
-        nonceGte: args.safe.nonce,
-      });
+    const page = await transactionService.getMultisigTransactions({
+      ...args,
+      safeAddress: args.safe.address,
+      executed: false,
+      nonceGte: args.safe.nonce,
+    });
     return MultisigTransactionPageSchema.parse(page);
   }
 
@@ -283,13 +282,11 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page: Page<Transaction> = await transactionService.getAllTransactions(
-      {
-        ...args,
-        executed: true,
-        queued: false,
-      },
-    );
+    const page = await transactionService.getAllTransactions({
+      ...args,
+      executed: true,
+      queued: false,
+    });
     return TransactionTypePageSchema.parse(page);
   }
 
@@ -338,9 +335,10 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const { safe } = await transactionService.getMultisigTransaction(
+    const transaction = await transactionService.getMultisigTransaction(
       args.safeTxHash,
     );
+    const { safe } = MultisigTransactionSchema.parse(transaction);
     await transactionService.deleteTransaction(args);
 
     // Ensure transaction is removed from cache in case event is not received
@@ -458,17 +456,17 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page: Page<Transaction> =
-      await transactionService.getMultisigTransactions({
-        ...args,
-        ordering: '-nonce',
-        trusted: true,
-        limit: 1,
-      });
+    const page = await transactionService.getMultisigTransactions({
+      ...args,
+      ordering: '-nonce',
+      trusted: true,
+      limit: 1,
+    });
+    const { results } = MultisigTransactionPageSchema.parse(page);
 
-    return isEmpty(page.results)
+    return isEmpty(results)
       ? null
-      : MultisigTransactionSchema.parse(page.results[0]);
+      : MultisigTransactionSchema.parse(results[0]);
   }
 
   async proposeTransaction(args: {

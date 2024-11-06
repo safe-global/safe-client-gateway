@@ -6,7 +6,7 @@ import {
 } from '@/domain/chains/entities/schemas/chain.schema';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Singleton } from '@/domain/chains/entities/singleton.entity';
-import { SingletonSchema } from '@/domain/chains/entities/schemas/singleton.schema';
+import { SingletonsSchema } from '@/domain/chains/entities/schemas/singleton.schema';
 import { Page } from '@/domain/entities/page.entity';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -94,7 +94,7 @@ export class ChainsRepository implements IChainsRepository {
   async getSingletons(chainId: string): Promise<Singleton[]> {
     const transactionApi = await this.transactionApiManager.getApi(chainId);
     const singletons = await transactionApi.getSingletons();
-    return singletons.map((singleton) => SingletonSchema.parse(singleton));
+    return SingletonsSchema.parse(singletons);
   }
 
   async getIndexingStatus(chainId: string): Promise<IndexingStatus> {
