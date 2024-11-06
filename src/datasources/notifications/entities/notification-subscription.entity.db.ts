@@ -22,6 +22,7 @@ export const NotificationSubscriptionSchema = z.object({
   chain_id: NumericStringSchema,
   safe_address: AddressSchema,
   signer_address: AddressSchema.nullable(),
+  created_at: z.date(),
   updated_at: z.date(),
   notification_subscription_notification_type: z.array(
     NotificationSubscriptionNotificationTypeSchema,
