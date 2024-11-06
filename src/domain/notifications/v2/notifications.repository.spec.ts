@@ -295,14 +295,14 @@ describe('NotificationsRepositoryV2', () => {
   });
 
   describe('getSubscribersBySafe()', () => {
-    it('Should succesfully return subscribers by safe', async () => {
-      const mockSbuscribers = Array.from(
+    it('Should successfully return subscribers by safe', async () => {
+      const mockSubscribers = Array.from(
         { length: 5 },
         (): NotificationSubscription =>
           notificationSubscriptionBuilder().build(),
       );
       notificationSubscriptionsRepository.find.mockResolvedValue(
-        mockSbuscribers,
+        mockSubscribers,
       );
       mockPostgresDatabaseService.getRepository.mockResolvedValue(
         notificationSubscriptionsRepository,
@@ -313,7 +313,7 @@ describe('NotificationsRepositoryV2', () => {
         safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
       });
 
-      const output = mockSbuscribers.map(
+      const output = mockSubscribers.map(
         (subscription: NotificationSubscription) => {
           return {
             subscriber: subscription.signer_address,

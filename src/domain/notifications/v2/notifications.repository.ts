@@ -53,7 +53,6 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     private readonly pushNotificationsApi: IPushNotificationsApi,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
