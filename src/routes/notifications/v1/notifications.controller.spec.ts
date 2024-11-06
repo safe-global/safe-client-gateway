@@ -68,11 +68,14 @@ describe('Notifications Controller (Unit)', () => {
     registerDeviceDtoBuilder()
       .with(
         'safeRegistrations',
-        Array.from({ length: 4 }).map((_, i) => {
-          return safeRegistrationBuilder()
-            .with('chainId', i.toString())
-            .build();
-        }),
+        faker.helpers.multiple(
+          (_, i) => {
+            return safeRegistrationBuilder()
+              .with('chainId', i.toString())
+              .build();
+          },
+          { count: 4 },
+        ),
       )
       .build();
 

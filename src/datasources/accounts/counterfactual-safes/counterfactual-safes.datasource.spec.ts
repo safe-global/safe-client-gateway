@@ -94,12 +94,12 @@ describe('CounterfactualSafesDatasource tests', () => {
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
       const creationRateLimitCalls = faker.number.int({ min: 5, max: 10 });
-      const createCounterfactualSafes = Array.from(
-        { length: creationRateLimitCalls },
+      const createCounterfactualSafes = faker.helpers.multiple(
         (_, i) =>
           createCounterfactualSafeDtoBuilder()
             .with('chainId', i.toString())
             .build(),
+        { count: creationRateLimitCalls },
       );
 
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
@@ -156,12 +156,12 @@ describe('CounterfactualSafesDatasource tests', () => {
         Account[]
       >`INSERT INTO accounts (address) VALUES (${address}) RETURNING *`;
       const creationRateLimitCalls = faker.number.int({ min: 5, max: 10 });
-      const createCounterfactualSafes = Array.from(
-        { length: creationRateLimitCalls },
+      const createCounterfactualSafes = faker.helpers.multiple(
         (_, i) =>
           createCounterfactualSafeDtoBuilder()
             .with('chainId', i.toString())
             .build(),
+        { count: creationRateLimitCalls },
       );
 
       mockConfigurationService.getOrThrow.mockImplementation((key) => {

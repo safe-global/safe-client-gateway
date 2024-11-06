@@ -81,9 +81,9 @@ describe('KilnApi', () => {
 
   describe('getDeployments', () => {
     it('should return deployments', async () => {
-      const deployments = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
+      const deployments = faker.helpers.multiple(
         () => deploymentBuilder().build(),
+        { count: { min: 1, max: 5 } },
       );
       dataSource.get.mockResolvedValue({
         status: 200,
@@ -463,17 +463,17 @@ describe('KilnApi', () => {
   describe('getStakes', () => {
     it('should return stakes', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const validatorsPublicKeys = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
+      const validatorsPublicKeys = faker.helpers.multiple(
         () =>
           faker.string.hexadecimal({
             length: KilnDecoder.KilnPublicKeyLength,
           }) as `0x${string}`,
+        { count: { min: 1, max: 5 } },
       );
       const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
-      const stakes = Array.from({ length: validatorsPublicKeys.length }, () =>
-        stakeBuilder().build(),
-      );
+      const stakes = faker.helpers.multiple(() => stakeBuilder().build(), {
+        count: validatorsPublicKeys.length,
+      });
       const getStakesUrl = `${baseUrl}/v1/eth/stakes`;
       dataSource.get.mockResolvedValue({
         status: 200,
@@ -512,12 +512,12 @@ describe('KilnApi', () => {
 
     it('should forward errors', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const validatorsPublicKeys = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
+      const validatorsPublicKeys = faker.helpers.multiple(
         () =>
           faker.string.hexadecimal({
             length: KilnDecoder.KilnPublicKeyLength,
           }) as `0x${string}`,
+        { count: { min: 1, max: 5 } },
       );
       const concatenatedValidatorsPublicKeys = validatorsPublicKeys.join(',');
       const getStakesUrl = `${baseUrl}/v1/eth/stakes`;

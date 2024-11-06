@@ -150,9 +150,9 @@ describe('Relay controller', () => {
               const chain = chainBuilder()
                 .with('chainId', faker.helpers.arrayElement(supportedChainIds))
                 .build();
-              const safes = Array.from(
-                { length: faker.number.int({ min: 1, max: 4 }) },
+              const safes = faker.helpers.multiple(
                 () => getAddress(faker.finance.ethereumAddress()),
+                { count: { min: 1, max: 4 } },
               );
               const version = faker.system.semver();
               const safeAddress = faker.helpers.arrayElement(safes);
@@ -203,9 +203,9 @@ describe('Relay controller', () => {
               const chain = chainBuilder()
                 .with('chainId', faker.helpers.arrayElement(supportedChainIds))
                 .build();
-              const safes = Array.from(
-                { length: faker.number.int({ min: 2, max: 4 }) },
+              const safes = faker.helpers.multiple(
                 () => getAddress(faker.finance.ethereumAddress()),
+                { count: { min: 2, max: 4 } },
               );
               // We don't need to test all possible combinations as we only use the address
               // to check the officiality of the MultiSend. The rest is universal for all.
@@ -920,9 +920,9 @@ describe('Relay controller', () => {
                     faker.helpers.arrayElement(supportedChainIds),
                   )
                   .build();
-                const safes = Array.from(
-                  { length: faker.number.int({ min: 1, max: 4 }) },
+                const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
+                  { count: { min: 1, max: 4 } },
                 );
                 const version = faker.system.semver();
                 const safeAddress = faker.helpers.arrayElement(safes);
@@ -980,9 +980,9 @@ describe('Relay controller', () => {
                     faker.helpers.arrayElement(supportedChainIds),
                   )
                   .build();
-                const safes = Array.from(
-                  { length: faker.number.int({ min: 1, max: 4 }) },
+                const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
+                  { count: { min: 1, max: 4 } },
                 );
                 const version = faker.system.semver();
                 const safeAddress = getAddress(faker.finance.ethereumAddress()); // Not in safes
@@ -1042,9 +1042,9 @@ describe('Relay controller', () => {
                     faker.helpers.arrayElement(supportedChainIds),
                   )
                   .build();
-                const safes = Array.from(
-                  { length: faker.number.int({ min: 2, max: 4 }) },
+                const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
+                  { count: { min: 2, max: 4 } },
                 );
                 // We don't need to test all possible combinations as we only use the address
                 // to check the officiality of the MultiSend. The rest is universal for all.
@@ -1131,8 +1131,9 @@ describe('Relay controller', () => {
                     faker.helpers.arrayElement(supportedChainIds),
                   )
                   .build();
-                const safes = Array.from({ length: 2 }, () =>
-                  getAddress(faker.finance.ethereumAddress()),
+                const safes = faker.helpers.multiple(
+                  () => getAddress(faker.finance.ethereumAddress()),
+                  { count: 2 },
                 );
                 // We don't need to test all possible combinations as we only use the address
                 // to check the officiality of the MultiSend. The rest is universal for all.
@@ -1218,9 +1219,9 @@ describe('Relay controller', () => {
                     faker.helpers.arrayElement(supportedChainIds),
                   )
                   .build();
-                const safes = Array.from(
-                  { length: faker.number.int({ min: 2, max: 4 }) },
+                const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
+                  { count: { min: 2, max: 4 } },
                 );
                 // We don't need to test all possible combinations as we only use the address
                 // to check the officiality of the MultiSend. The rest is universal for all.
@@ -1307,9 +1308,9 @@ describe('Relay controller', () => {
                   )
                   .build();
                 const version = faker.system.semver();
-                const safes = Array.from(
-                  { length: faker.number.int({ min: 1, max: 4 }) },
+                const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
+                  { count: { min: 1, max: 4 } },
                 );
                 const safeAddress = faker.helpers.arrayElement(safes);
                 const data = encoder()
@@ -1966,9 +1967,9 @@ describe('Relay controller', () => {
               const chain = chainBuilder()
                 .with('chainId', faker.helpers.arrayElement(supportedChainIds))
                 .build();
-              const safes = Array.from(
-                { length: faker.number.int({ min: 1, max: 4 }) },
+              const safes = faker.helpers.multiple(
                 () => getAddress(faker.finance.ethereumAddress()),
+                { count: { min: 1, max: 4 } },
               );
               const version = faker.system.semver();
               const safeAddress = faker.helpers.arrayElement(safes);
@@ -2027,9 +2028,9 @@ describe('Relay controller', () => {
               const chain = chainBuilder()
                 .with('chainId', faker.helpers.arrayElement(supportedChainIds))
                 .build();
-              const safes = Array.from(
-                { length: faker.number.int({ min: 2, max: 4 }) },
+              const safes = faker.helpers.multiple(
                 () => getAddress(faker.finance.ethereumAddress()),
+                { count: { min: 2, max: 4 } },
               );
               // We don't need to test all possible combinations as we only use the address
               // to check the officiality of the MultiSend. The rest is universal for all.

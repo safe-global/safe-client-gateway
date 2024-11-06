@@ -277,9 +277,9 @@ describe('OutreachFileProcessor', () => {
     const outreachFile = outreachFileBuilder()
       .with(
         'safe_addresses',
-        Array.from(
-          { length: faker.number.int({ min: 10, max: 50 }) },
+        faker.helpers.multiple(
           () => faker.finance.ethereumAddress().toLowerCase() as `0x${string}`, // not checksummed
+          { count: { min: 10, max: 50 } },
         ),
       )
       .build();

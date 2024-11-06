@@ -3,9 +3,9 @@ import { faker } from '@faker-js/faker/.';
 
 describe('EventTopicsSchema', () => {
   it('validate an EventTopicsSchema', () => {
-    const eventTopics = Array.from(
-      { length: faker.number.int({ min: 1, max: 5 }) },
+    const eventTopics = faker.helpers.multiple(
       () => faker.string.hexadecimal() as `0x${string}`,
+      { count: { min: 1, max: 5 } },
     );
 
     const result = EventTopicsSchema.safeParse(eventTopics);
@@ -29,22 +29,25 @@ describe('EventTopicsSchema', () => {
   });
 
   it('should not allow non-hex topics', () => {
-    const topics = Array.from(
-      { length: faker.number.int({ min: 1, max: 5 }) },
+    const topics = faker.helpers.multiple(
       () => faker.string.alpha() as `0x${string}`,
+      { count: { min: 1, max: 5 } },
     );
 
     const result = EventTopicsSchema.safeParse(topics);
 
     expect(!result.success && result.error.issues.length).toBe(topics.length);
     expect(!result.success && result.error.issues).toStrictEqual(
-      Array.from({ length: topics.length }, (_, i) => {
-        return {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: [i],
-        };
-      }),
+      faker.helpers.multiple(
+        (_, i) => {
+          return {
+            code: 'custom',
+            message: 'Invalid "0x" notated hex string',
+            path: [i],
+          };
+        },
+        { count: topics.length },
+      ),
     );
   });
 

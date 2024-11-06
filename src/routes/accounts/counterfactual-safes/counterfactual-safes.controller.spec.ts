@@ -171,9 +171,9 @@ describe('CounterfactualSafesController', () => {
   describe('Get Counterfactual Safes', () => {
     it('should return all the Counterfactual Safes associated with the account address', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const counterfactualSafes = Array.from(
-        { length: faker.number.int({ min: 1, max: 4 }) },
+      const counterfactualSafes = faker.helpers.multiple(
         () => counterfactualSafeBuilder().build(),
+        { count: { min: 1, max: 4 } },
       );
       counterfactualSafesDataSource.getCounterfactualSafesForAddress.mockResolvedValue(
         counterfactualSafes,

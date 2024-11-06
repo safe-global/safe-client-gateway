@@ -68,11 +68,11 @@ describe('SafeSchema', () => {
   it.each(['owners' as const, 'modules' as const])(
     'should checksum the array of %s',
     (field) => {
-      const nonChecksummedAddresses = Array.from(
-        {
-          length: faker.number.int({ min: 1, max: 5 }),
-        },
+      const nonChecksummedAddresses = faker.helpers.multiple(
         () => faker.finance.ethereumAddress().toLowerCase() as `0x${string}`,
+        {
+          count: { min: 1, max: 5 },
+        },
       );
       const safe = safeBuilder().with(field, nonChecksummedAddresses).build();
 
