@@ -14,8 +14,17 @@ export const SafeAppAccessControlSchema = z.discriminatedUnion('type', [
   }),
 ]);
 
+export enum SafeAppSocialProfilePlatforms {
+  Discord = 'DISCORD',
+  GitHub = 'GITHUB',
+  Twitter = 'TWITTER',
+  Unknown = 'UNKNOWN',
+}
+
 export const SafeAppSocialProfileSchema = z.object({
-  platform: z.string(),
+  platform: z
+    .nativeEnum(SafeAppSocialProfilePlatforms)
+    .catch(SafeAppSocialProfilePlatforms.Unknown),
   url: z.string().url(),
 });
 
