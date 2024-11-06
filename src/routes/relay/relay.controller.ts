@@ -11,6 +11,8 @@ import { UnofficialMultiSendExceptionFilter } from '@/domain/relay/exception-fil
 import { UnofficialProxyFactoryExceptionFilter } from '@/domain/relay/exception-filters/unofficial-proxy-factory.exception-filter';
 import { RelayDtoSchema } from '@/routes/relay/entities/schemas/relay.dto.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { Relay } from '@/routes/relay/entities/relay.entity';
+import type { RelaysRemaining } from '@/routes/relay/entities/relays-remaining.entity';
 
 @ApiTags('relay')
 @Controller({
@@ -33,7 +35,7 @@ export class RelayController {
     @Param('chainId') chainId: string,
     @Body(new ValidationPipe(RelayDtoSchema))
     relayDto: RelayDto,
-  ): Promise<{ taskId: string }> {
+  ): Promise<Relay> {
     return this.relayService.relay({ chainId, relayDto });
   }
 
@@ -42,10 +44,7 @@ export class RelayController {
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
-  ): Promise<{
-    remaining: number;
-    limit: number;
-  }> {
+  ): Promise<RelaysRemaining> {
     return this.relayService.getRelaysRemaining({ chainId, safeAddress });
   }
 }

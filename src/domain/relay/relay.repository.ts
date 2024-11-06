@@ -4,6 +4,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { LimitAddressesMapper } from '@/domain/relay/limit-addresses.mapper';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { Relay, RelaySchema } from '@/domain/relay/entities/relay.entity';
 
 @Injectable()
 export class RelayRepository {
@@ -26,7 +27,7 @@ export class RelayRepository {
     to: `0x${string}`;
     data: `0x${string}`;
     gasLimit: bigint | null;
-  }): Promise<{ taskId: string }> {
+  }): Promise<Relay> {
     const relayAddresses =
       await this.limitAddressesMapper.getLimitAddresses(args);
 
@@ -46,7 +47,9 @@ export class RelayRepository {
       }
     }
 
-    const relayResponse = await this.relayApi.relay(args);
+    const relayResponse = await this.relayApi
+      .relay(args)
+      .then(RelaySchema.parse);
 
     // If we fail to increment count, we should not fail the relay
     for (const address of relayAddresses) {
