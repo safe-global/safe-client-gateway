@@ -68,7 +68,13 @@ describe('NotificationsRepositoryV2', () => {
       const mockNotificationTypes = Array.from({ length: 4 }, () =>
         notificationTypeBuilder().build(),
       );
+      const mockSubscriptions = Array.from({ length: 4 }, () =>
+        notificationSubscriptionBuilder().build(),
+      );
       mockEntityManager.find.mockResolvedValue(mockNotificationTypes);
+      notificationSubscriptionRepository.find.mockResolvedValue(
+        mockSubscriptions,
+      );
       mockPostgresDatabaseService.getRepository.mockResolvedValue(
         notificationTypeRepository,
       );
