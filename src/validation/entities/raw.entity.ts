@@ -17,3 +17,7 @@
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type Raw<_> = symbol;
+
+export function rawify<T>(value: T): Raw<T> {
+  return value as Raw<T>;
+}

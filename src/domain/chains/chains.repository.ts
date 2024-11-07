@@ -18,6 +18,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { differenceBy } from 'lodash';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {
@@ -50,7 +51,9 @@ export class ChainsRepository implements IChainsRepository {
   }
 
   async getChains(limit?: number, offset?: number): Promise<Page<Chain>> {
-    const page = await this.configApi.getChains({ limit, offset });
+    const page = await this.configApi
+      .getChains({ limit, offset })
+      .then(LenientBasePageSchema.parse);
     const valid = ChainLenientPageSchema.parse(page);
     if (valid.results.length < page.results.length) {
       this.loggingService.error({

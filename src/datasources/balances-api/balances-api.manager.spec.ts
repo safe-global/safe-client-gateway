@@ -12,6 +12,7 @@ import { getAddress } from 'viem';
 import { sample } from 'lodash';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const configurationService = {
   getOrThrow: jest.fn(),
@@ -155,7 +156,7 @@ describe('Balances API Manager Tests', () => {
         else if (key === 'features.counterfactualBalances') return true;
         throw new Error(`Unexpected key: ${key}`);
       });
-      configApiMock.getChain.mockResolvedValue(chain);
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
       dataSourceMock.get.mockResolvedValue([]);
       const balancesApiManager = new BalancesApiManager(
         configurationService,

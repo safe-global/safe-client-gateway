@@ -11,7 +11,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { TransactionApi } from '@/datasources/transaction-api/transaction-api.service';
-import { Chain } from '@/domain/chains/entities/chain.entity';
+import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -41,7 +41,9 @@ export class TransactionApiManager implements ITransactionApiManager {
     const transactionApi = this.transactionApiMap[chainId];
     if (transactionApi !== undefined) return transactionApi;
 
-    const chain: Chain = await this.configApi.getChain(chainId);
+    const chain = await this.configApi
+      .getChain(chainId)
+      .then(ChainSchema.parse);
     this.transactionApiMap[chainId] = new TransactionApi(
       chainId,
       this.useVpcUrl ? chain.vpcTransactionService : chain.transactionService,

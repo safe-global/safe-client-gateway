@@ -14,6 +14,7 @@ import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { intersection } from 'lodash';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
@@ -83,7 +84,9 @@ export class BalancesApiManager implements IBalancesApiManager {
     const safeBalancesApi = this.safeBalancesApiMap[chainId];
     if (safeBalancesApi !== undefined) return safeBalancesApi;
 
-    const chain = await this.configApi.getChain(chainId);
+    const chain = await this.configApi
+      .getChain(chainId)
+      .then(ChainSchema.parse);
     this.safeBalancesApiMap[chainId] = new SafeBalancesApi(
       chainId,
       this.useVpcUrl ? chain.vpcTransactionService : chain.transactionService,

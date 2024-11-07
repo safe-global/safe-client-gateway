@@ -6,6 +6,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
 import { RpcUriAuthentication } from '@/domain/chains/entities/rpc-uri-authentication.entity';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { hexToNumber, toHex } from 'viem';
 
@@ -39,7 +40,7 @@ describe('BlockchainApiManager', () => {
   describe('getApi', () => {
     it('caches the API', async () => {
       const chain = chainBuilder().build();
-      configApiMock.getChain.mockResolvedValue(chain);
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
 
       const api = await target.getApi(chain.chainId);
       const cachedApi = await target.getApi(chain.chainId);
@@ -58,7 +59,7 @@ describe('BlockchainApiManager', () => {
             .build(),
         )
         .build();
-      configApiMock.getChain.mockResolvedValue(chain);
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
 
       const api = await target.getApi(chain.chainId);
 
@@ -70,7 +71,7 @@ describe('BlockchainApiManager', () => {
       const chain = chainBuilder()
         .with('rpcUri', rpcUriBuilder().with('value', rpcUriValue).build())
         .build();
-      configApiMock.getChain.mockResolvedValue(chain);
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
 
       const api = await target.getApi(chain.chainId);
 
@@ -79,7 +80,7 @@ describe('BlockchainApiManager', () => {
 
     it('should not include the INFURA_API_KEY in the RPC URI for a RPC provider different from Infura', async () => {
       const chain = chainBuilder().build();
-      configApiMock.getChain.mockResolvedValue(chain);
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
 
       const api = await target.getApi(chain.chainId);
 
@@ -90,7 +91,7 @@ describe('BlockchainApiManager', () => {
   describe('destroyApi', () => {
     it('clears the API', async () => {
       const chain = chainBuilder().build();
-      configApiMock.getChain.mockResolvedValue(chain);
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
 
       const api = await target.getApi(chain.chainId);
       target.destroyApi(chain.chainId);
