@@ -1,4 +1,4 @@
-import jwt, { type Algorithm } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { Module } from '@nestjs/common';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
@@ -38,7 +38,7 @@ function jwtClientFactory() {
       options: {
         issuer: string;
         secretOrPrivateKey: string;
-        algorithms?: Array<Algorithm>;
+        algorithms?: Array<jwt.Algorithm>;
       },
     ): T => {
       return jwt.verify(token, options.secretOrPrivateKey, {
@@ -53,7 +53,7 @@ function jwtClientFactory() {
       options: {
         issuer: string;
         secretOrPrivateKey: string;
-        algorithms?: Array<Algorithm>;
+        algorithms?: Array<jwt.Algorithm>;
       },
     ): JwtPayloadWithClaims<T> => {
       // Client has `decode` method but we also want to verify the signature
