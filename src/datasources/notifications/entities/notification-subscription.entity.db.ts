@@ -1,3 +1,4 @@
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
 import {
   NotificationSubscriptionNotificationType,
@@ -17,13 +18,10 @@ import {
 import { getAddress } from 'viem';
 import { z } from 'zod';
 
-export const NotificationSubscriptionSchema = z.object({
-  id: z.number(),
+export const NotificationSubscriptionSchema = RowSchema.extend({
   chain_id: NumericStringSchema,
   safe_address: AddressSchema,
   signer_address: AddressSchema.nullable(),
-  created_at: z.date(),
-  updated_at: z.date(),
   notification_subscription_notification_type: z.array(
     NotificationSubscriptionNotificationTypeSchema,
   ),
