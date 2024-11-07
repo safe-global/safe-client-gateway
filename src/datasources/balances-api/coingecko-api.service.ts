@@ -21,7 +21,13 @@ import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { asError } from '@/logging/utils';
 import { Chain } from '@/domain/chains/entities/chain.entity';
+import { z } from 'zod';
+import type { Raw } from '@/validation/entities/raw.entity';
 
+/**
+ * TODO: Move all usage of Raw to NetworkService/CacheFirstDataSource after fully migrated
+ * to "Raw" type implementation.
+ */
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
   /**
@@ -126,23 +132,26 @@ export class CoingeckoApi implements IPricesApi {
         fiatCode: lowerCaseFiatCode,
       });
       const url = `${this.baseUrl}/simple/price`;
-      const result = await this.dataSource.get<AssetPrice>({
-        cacheDir,
-        url,
-        networkRequest: {
-          params: {
-            vs_currencies: lowerCaseFiatCode,
-            ids: nativeCoinId,
-          },
-          ...(this.apiKey && {
-            headers: {
-              [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+      const result = await this.dataSource
+        .get<Raw<AssetPrice>>({
+          cacheDir,
+          url,
+          networkRequest: {
+            params: {
+              vs_currencies: lowerCaseFiatCode,
+              ids: nativeCoinId,
             },
-          }),
-        },
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
-      });
+            ...(this.apiKey && {
+              headers: {
+                [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+              },
+            }),
+          },
+          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+          expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
+        })
+        .then(AssetPriceSchema.parse);
+      // TODO: Change to Raw when cache service is migrated
       return result?.[nativeCoinId]?.[lowerCaseFiatCode];
     } catch (error) {
       // Error at this level are logged out, but not thrown to the upper layers.
@@ -150,6 +159,7 @@ export class CoingeckoApi implements IPricesApi {
       this.loggingService.error(
         `Error getting native coin price: ${asError(error)} `,
       );
+      // TODO: Change to Raw when cache service is migrated
       return null;
     }
   }
@@ -209,19 +219,21 @@ export class CoingeckoApi implements IPricesApi {
     try {
       const cacheDir = CacheRouter.getPriceFiatCodesCacheDir();
       const url = `${this.baseUrl}/simple/supported_vs_currencies`;
-      const result = await this.dataSource.get<string[]>({
-        cacheDir,
-        url,
-        networkRequest: {
-          ...(this.apiKey && {
-            headers: {
-              [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
-            },
-          }),
-        },
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
+      const result = await this.dataSource
+        .get<Raw<string[]>>({
+          cacheDir,
+          url,
+          networkRequest: {
+            ...(this.apiKey && {
+              headers: {
+                [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+              },
+            }),
+          },
+          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        })
+        .then(z.array(z.string()).parse);
       return result.map((item) => item.toUpperCase());
     } catch (error) {
       this.loggingService.error(
@@ -276,7 +288,7 @@ export class CoingeckoApi implements IPricesApi {
     const prices = await this._requestPricesFromNetwork({
       ...args,
       tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
-    });
+    }).then(AssetPriceSchema.parse);
 
     return Promise.all(
       args.tokenAddresses.map(async (tokenAddress) => {
@@ -321,10 +333,10 @@ export class CoingeckoApi implements IPricesApi {
     chainName: string;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<AssetPrice> {
+  }): Promise<Raw<AssetPrice>> {
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const { data } = await this.networkService.get<AssetPrice>({
+      const { data } = await this.networkService.get<Raw<AssetPrice>>({
         url,
         networkRequest: {
           params: {
