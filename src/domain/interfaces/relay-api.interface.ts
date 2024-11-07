@@ -1,3 +1,6 @@
+import type { Relay } from '@/domain/relay/entities/relay.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
+
 export const IRelayApi = Symbol('IRelayApi');
 
 export interface IRelayApi {
@@ -6,7 +9,7 @@ export interface IRelayApi {
     to: `0x${string}`;
     data: string;
     gasLimit: bigint | null;
-  }): Promise<{ taskId: string }>;
+  }): Promise<Raw<Relay>>;
 
   getRelayCount(args: {
     chainId: string;

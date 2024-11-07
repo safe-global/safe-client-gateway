@@ -11,7 +11,13 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import type { Relay } from '@/domain/relay/entities/relay.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
+/**
+ * TODO: Move all usage of Raw to NetworkService after fully migrated
+ * to "Raw" type implementation.
+ */
 @Injectable()
 export class GelatoApi implements IRelayApi {
   /**
@@ -43,14 +49,14 @@ export class GelatoApi implements IRelayApi {
     to: `0x${string}`;
     data: string;
     gasLimit: bigint | null;
-  }): Promise<{ taskId: string }> {
+  }): Promise<Raw<Relay>> {
     const sponsorApiKey = this.configurationService.getOrThrow<string>(
       `relay.apiKey.${args.chainId}`,
     );
 
     try {
       const url = `${this.baseUri}/relays/v2/sponsored-call`;
-      const { data } = await this.networkService.post<{ taskId: string }>({
+      const { data } = await this.networkService.post<Raw<Relay>>({
         url,
         data: {
           sponsorApiKey,
@@ -75,6 +81,7 @@ export class GelatoApi implements IRelayApi {
   async getRelayCount(args: {
     chainId: string;
     address: `0x${string}`;
+    // TODO: Change to Raw when cache service is migrated
   }): Promise<number> {
     const cacheDir = CacheRouter.getRelayCacheDir(args);
     const count = await this.cacheService.hGet(cacheDir);

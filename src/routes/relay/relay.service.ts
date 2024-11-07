@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { RelayRepository } from '@/domain/relay/relay.repository';
 import { RelayDto } from '@/routes/relay/entities/relay.dto.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { Relay } from '@/routes/relay/entities/relay.entity';
+import { RelaysRemaining } from '@/routes/relay/entities/relays-remaining.entity';
 
 @Injectable()
 export class RelayService {
@@ -15,17 +17,16 @@ export class RelayService {
     this.limit = configurationService.getOrThrow('relay.limit');
   }
 
-  async relay(args: {
-    chainId: string;
-    relayDto: RelayDto;
-  }): Promise<{ taskId: string }> {
-    return this.relayRepository.relay({
+  async relay(args: { chainId: string; relayDto: RelayDto }): Promise<Relay> {
+    const relay = await this.relayRepository.relay({
       version: args.relayDto.version,
       chainId: args.chainId,
       to: args.relayDto.to,
       data: args.relayDto.data,
       gasLimit: args.relayDto.gasLimit,
     });
+
+    return new Relay(relay);
   }
 
   async getRelaysRemaining(args: {
@@ -37,9 +38,9 @@ export class RelayService {
       address: args.safeAddress,
     });
 
-    return {
+    return new RelaysRemaining({
       remaining: Math.max(this.limit - currentCount, 0),
       limit: this.limit,
-    };
+    });
   }
 }
