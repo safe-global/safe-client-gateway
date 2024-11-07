@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { type Algorithm } from 'jsonwebtoken';
 import { Module } from '@nestjs/common';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
@@ -17,7 +17,7 @@ function jwtClientFactory() {
       },
     >(
       payload: T,
-      options: { secretOrPrivateKey: string },
+      options: { secretOrPrivateKey: string; algorithm?: jwt.Algorithm },
     ): string => {
       // All date-based claims should be second-based NumericDates
       const { exp, iat, nbf, ...rest } = payload;
@@ -30,13 +30,19 @@ function jwtClientFactory() {
           ...rest,
         },
         options.secretOrPrivateKey,
+        { algorithm: options.algorithm ?? 'HS256' },
       );
     },
     verify: <T extends object>(
       token: string,
-      options: { issuer: string; secretOrPrivateKey: string },
+      options: {
+        issuer: string;
+        secretOrPrivateKey: string;
+        algorithms?: Array<Algorithm>;
+      },
     ): T => {
       return jwt.verify(token, options.secretOrPrivateKey, {
+        algorithms: options.algorithms,
         issuer: options.issuer,
         // Return only payload without claims, e.g. no exp, nbf, etc.
         complete: false,
@@ -44,10 +50,15 @@ function jwtClientFactory() {
     },
     decode: <T extends object>(
       token: string,
-      options: { issuer: string; secretOrPrivateKey: string },
+      options: {
+        issuer: string;
+        secretOrPrivateKey: string;
+        algorithms?: Array<Algorithm>;
+      },
     ): JwtPayloadWithClaims<T> => {
       // Client has `decode` method but we also want to verify the signature
       const { payload } = jwt.verify(token, options.secretOrPrivateKey, {
+        algorithms: options.algorithms,
         issuer: options.issuer,
         // Return headers, payload (with claims) and signature
         complete: true,
