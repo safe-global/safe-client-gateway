@@ -36,6 +36,7 @@ import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.mo
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
+// Add *_DELEGATE event tests here if we unskip this
 describe.skip('Post Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;
   let authToken: string;

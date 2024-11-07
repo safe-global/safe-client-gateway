@@ -5,6 +5,7 @@ import type { BlockchainRepository } from '@/domain/blockchain/blockchain.reposi
 import type { ChainsRepository } from '@/domain/chains/chains.repository';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import type { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
+import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { EventCacheHelper } from '@/domain/hooks/helpers/event-cache.helper';
 import type { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
@@ -41,6 +42,10 @@ const mockChainsRepository = jest.mocked({
 const mockCollectiblesRepository = jest.mocked({
   clearCollectibles: jest.fn(),
 } as jest.MockedObjectDeep<CollectiblesRepository>);
+
+const mockDelegatesRepository = jest.mocked({
+  clearDelegates: jest.fn(),
+} as jest.MockedObjectDeep<DelegatesV2Repository>);
 
 const mockMessagesRepository = jest.mocked({
   clearMessages: jest.fn(),
@@ -100,6 +105,7 @@ describe('HooksRepository (Unit)', () => {
       mockBlockchainRepository,
       mockChainsRepository,
       mockCollectiblesRepository,
+      mockDelegatesRepository,
       mockMessagesRepository,
       mockSafeAppsRepository,
       mockSafeRepository,
@@ -278,6 +284,7 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
       mockBlockchainRepository,
       mockChainsRepository,
       mockCollectiblesRepository,
+      mockDelegatesRepository,
       mockMessagesRepository,
       mockSafeAppsRepository,
       mockSafeRepository,

@@ -342,6 +342,14 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async clearDelegates(safeAddress: `0x${string}`): Promise<void> {
+    const cacheKey = CacheRouter.getDelegatesCacheKey({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    await this.cacheService.deleteByKey(cacheKey);
+  }
+
   async postDelegate(args: {
     safeAddress: `0x${string}` | null;
     delegate: `0x${string}`;
