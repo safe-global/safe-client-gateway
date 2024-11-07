@@ -1322,6 +1322,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fingerprintjs/fingerprintjs-pro-server-api@npm:^5.2.0":
+  version: 5.2.0
+  resolution: "@fingerprintjs/fingerprintjs-pro-server-api@npm:5.2.0"
+  checksum: 10/8829dabd91199efd800cea206a90c0c7946df622d4cd114c778fbb82c85520cf073ec64dbacf4aec3058db463b8df3150f6b6c66a34f3cd85d50163368ef92aa
+  languageName: node
+  linkType: hard
+
 "@humanfs/core@npm:^0.19.0":
   version: 0.19.0
   resolution: "@humanfs/core@npm:0.19.0"
@@ -8326,6 +8333,7 @@ __metadata:
   dependencies:
     "@aws-sdk/client-s3": "npm:^3.685.0"
     "@faker-js/faker": "npm:^9.1.0"
+    "@fingerprintjs/fingerprintjs-pro-server-api": "npm:^5.2.0"
     "@nestjs/cli": "npm:^10.4.7"
     "@nestjs/common": "npm:^10.4.6"
     "@nestjs/config": "npm:^3.2.3"

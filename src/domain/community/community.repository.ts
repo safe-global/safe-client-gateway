@@ -23,12 +23,20 @@ import {
   CampaignActivity,
   CampaignActivityPageSchema,
 } from '@/domain/community/entities/campaign-activity.entity';
+import { EligibilityRequest } from '@/domain/community/entities/eligibility-request.entity';
+import { Eligibility } from '@/domain/community/entities/eligibility.entity';
+import { asError } from '@/logging/utils';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
 
 @Injectable()
 export class CommunityRepository implements ICommunityRepository {
   constructor(
     @Inject(ILockingApi)
     private readonly lockingApi: ILockingApi,
+    @Inject(IIdentityApi)
+    private readonly identityApi: IIdentityApi,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   async getCampaignById(resourceId: string): Promise<Campaign> {
@@ -91,5 +99,20 @@ export class CommunityRepository implements ICommunityRepository {
   }): Promise<Page<LockingEvent>> {
     const page = await this.lockingApi.getLockingHistory(args);
     return LockingEventPageSchema.parse(page);
+  }
+
+  async checkEligibility(
+    eligibilityRequest: EligibilityRequest,
+  ): Promise<Eligibility> {
+    try {
+      return await this.identityApi.checkEligibility(eligibilityRequest);
+    } catch (err) {
+      this.loggingService.error(`Error checking eligibility: ${asError(err)}`);
+      return {
+        requestId: eligibilityRequest.requestId,
+        isAllowed: false,
+        isVpn: false,
+      };
+    }
   }
 }

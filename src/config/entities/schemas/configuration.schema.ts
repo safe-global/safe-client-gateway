@@ -17,6 +17,7 @@ export const RootConfigurationSchema = z
     EMAIL_TEMPLATE_RECOVERY_TX: z.string(),
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: z.string(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: z.string(),
+    FINGERPRINT_ENCRYPTION_KEY: z.string(),
     INFURA_API_KEY: z.string(),
     JWT_ISSUER: z.string(),
     JWT_SECRET: z.string(),
