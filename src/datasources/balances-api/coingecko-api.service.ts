@@ -22,7 +22,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { asError } from '@/logging/utils';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { z } from 'zod';
-import type { Raw } from '@/validation/entities/raw.entity';
+import { rawify, type Raw } from '@/validation/entities/raw.entity';
 
 /**
  * TODO: Move all usage of Raw to NetworkService/CacheFirstDataSource after fully migrated
@@ -120,6 +120,7 @@ export class CoingeckoApi implements IPricesApi {
   async getNativeCoinPrice(args: {
     chain: Chain;
     fiatCode: string;
+    // TODO: Change to Raw when cache service is migrated
   }): Promise<number | null> {
     try {
       const nativeCoinId = args.chain.pricesProvider.nativeCoin;
@@ -177,7 +178,7 @@ export class CoingeckoApi implements IPricesApi {
     chain: Chain;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<AssetPrice[]> {
+  }): Promise<Raw<AssetPrice[]>> {
     try {
       const chainName = args.chain.pricesProvider.chainName;
       if (chainName == null) {
@@ -204,18 +205,18 @@ export class CoingeckoApi implements IPricesApi {
           })
         : [];
 
-      return [pricesFromCache, pricesFromNetwork].flat();
+      return rawify([pricesFromCache, pricesFromNetwork].flat());
     } catch (error) {
       // Error at this level are logged out, but not thrown to the upper layers.
       // The service won't throw an error if a single token price retrieval fails.
       this.loggingService.error(
         `Error getting token prices: ${asError(error)} `,
       );
-      return [];
+      return rawify([]);
     }
   }
 
-  async getFiatCodes(): Promise<string[]> {
+  async getFiatCodes(): Promise<Raw<string[]>> {
     try {
       const cacheDir = CacheRouter.getPriceFiatCodesCacheDir();
       const url = `${this.baseUrl}/simple/supported_vs_currencies`;
@@ -234,12 +235,12 @@ export class CoingeckoApi implements IPricesApi {
           expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         })
         .then(z.array(z.string()).parse);
-      return result.map((item) => item.toUpperCase());
+      return rawify(result.map((item) => item.toUpperCase()));
     } catch (error) {
       this.loggingService.error(
         `CoinGecko error getting fiat codes: ${asError(error)} `,
       );
-      return [];
+      return rawify([]);
     }
   }
 

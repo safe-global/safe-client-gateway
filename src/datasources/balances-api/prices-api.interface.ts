@@ -1,5 +1,6 @@
 import type { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
 import type { Chain } from '@/domain/chains/entities/chain.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 export const IPricesApi = Symbol('IPricesApi');
 
@@ -13,7 +14,7 @@ export interface IPricesApi {
     chain: Chain;
     tokenAddresses: string[];
     fiatCode: string;
-  }): Promise<AssetPrice[]>;
+  }): Promise<Raw<AssetPrice[]>>;
 
-  getFiatCodes(): Promise<string[]>;
+  getFiatCodes(): Promise<Raw<string[]>>;
 }

@@ -3,7 +3,10 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CoingeckoApi } from '@/datasources/balances-api/coingecko-api.service';
 import { faker } from '@faker-js/faker';
 import type { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import type { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
+import {
+  AssetPricesSchema,
+  type AssetPrice,
+} from '@/datasources/balances-api/entities/asset-price.entity';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { sortBy } from 'lodash';
@@ -504,15 +507,17 @@ describe('CoingeckoAPI', () => {
       status: 200,
     });
 
-    const assetPrices = await service.getTokenPrices({
-      chain,
-      tokenAddresses: [
-        firstTokenAddress,
-        secondTokenAddress,
-        thirdTokenAddress,
-      ],
-      fiatCode,
-    });
+    const assetPrices = await service
+      .getTokenPrices({
+        chain,
+        tokenAddresses: [
+          firstTokenAddress,
+          secondTokenAddress,
+          thirdTokenAddress,
+        ],
+        fiatCode,
+      })
+      .then(AssetPricesSchema.parse);
 
     expect(sortBy(assetPrices, (i) => Object.keys(i)[0])).toEqual(
       sortBy(
@@ -606,15 +611,17 @@ describe('CoingeckoAPI', () => {
       status: 200,
     });
 
-    const assetPrices = await service.getTokenPrices({
-      chain,
-      tokenAddresses: [
-        firstTokenAddress,
-        secondTokenAddress,
-        thirdTokenAddress,
-      ],
-      fiatCode,
-    });
+    const assetPrices = await service
+      .getTokenPrices({
+        chain,
+        tokenAddresses: [
+          firstTokenAddress,
+          secondTokenAddress,
+          thirdTokenAddress,
+        ],
+        fiatCode,
+      })
+      .then(AssetPricesSchema.parse);
 
     expect(sortBy(assetPrices, (i) => Object.keys(i)[0])).toEqual(
       sortBy(
