@@ -18,5 +18,4 @@ export const mockPostgresDatabaseService = {
         return callback(mockEntityManager);
       },
     ),
-  getTransactionRunner: jest.fn().mockReturnValue(mockEntityManager),
 } as jest.MockedObjectDeep<PostgresDatabaseService>;
