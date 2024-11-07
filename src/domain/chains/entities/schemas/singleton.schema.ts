@@ -9,3 +9,5 @@ export const SingletonSchema = z.object({
   lastIndexedBlockNumber: z.number(),
   l2: z.boolean(),
 });
+
+export const SingletonsSchema = z.array(SingletonSchema);
