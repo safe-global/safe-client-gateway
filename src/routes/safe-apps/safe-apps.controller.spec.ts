@@ -218,11 +218,8 @@ describe('Safe Apps Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/safe-apps`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
   });
 });

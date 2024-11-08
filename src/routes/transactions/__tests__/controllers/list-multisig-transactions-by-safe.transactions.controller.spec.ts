@@ -162,8 +162,8 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
-      .expect(500)
-      .expect({ statusCode: 500, message: 'Internal server error' });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('Failure: data page validation fails', async () => {
@@ -182,8 +182,8 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
-      .expect(500)
-      .expect({ statusCode: 500, message: 'Internal server error' });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('Should get a ERC20 transfer mapped to the expected format', async () => {
