@@ -86,8 +86,8 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safe.address}/transactions/queued`)
-      .expect(500)
-      .expect({ statusCode: 500, message: 'Internal server error' });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('should get a transactions queue with labels and conflict headers', async () => {
