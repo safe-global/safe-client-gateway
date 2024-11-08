@@ -71,7 +71,7 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
         data: {
           message: {
             token: fcmToken,
-            notification,
+            ...notification,
           },
         },
         networkRequest: {
@@ -138,7 +138,6 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
     const now = new Date();
 
     const payload = {
-      alg: 'RS256',
       iss: this.clientEmail,
       scope: FirebaseCloudMessagingApiService.Scope,
       aud: FirebaseCloudMessagingApiService.OAuth2TokenUrl,
@@ -149,6 +148,7 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
 
     return this.jwtService.sign(payload, {
       secretOrPrivateKey: this.privateKey,
+      algorithm: 'RS256',
     });
   }
 }

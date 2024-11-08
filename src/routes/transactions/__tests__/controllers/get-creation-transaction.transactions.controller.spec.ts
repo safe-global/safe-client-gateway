@@ -34,7 +34,8 @@ describe('Get creation transaction', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    jest.resetAllMocks();
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(configuration)],
     })
@@ -61,8 +62,6 @@ describe('Get creation transaction', () => {
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
-
-  beforeEach(() => jest.resetAllMocks());
 
   afterAll(async () => {
     await app.close();

@@ -48,3 +48,5 @@ export const SafeAppSchema = z.object({
   developerWebsite: z.string().url().nullish().default(null),
   featured: z.boolean(),
 });
+
+export const SafeAppsSchema = z.array(SafeAppSchema);

@@ -1,4 +1,5 @@
 import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import type { Algorithm } from 'jsonwebtoken';
 
 export const IJwtService = Symbol('IJwtService');
 
@@ -13,6 +14,7 @@ export interface IJwtService {
     payload: T,
     options?: {
       secretOrPrivateKey: string;
+      algorithm?: Algorithm;
     },
   ): string;
 

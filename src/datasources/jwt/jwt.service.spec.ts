@@ -44,6 +44,7 @@ describe('JwtService', () => {
         { iss: configIssuer, ...payload },
         {
           secretOrPrivateKey: configSecret,
+          algorithm: 'HS256',
         },
       );
     });
@@ -63,7 +64,26 @@ describe('JwtService', () => {
       expect(jwtClientMock.sign).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.sign).toHaveBeenCalledWith(payload, {
         secretOrPrivateKey: customSecret,
+        algorithm: 'HS256',
       });
+    });
+
+    it('should sign a payload with RS256 algorithm', () => {
+      const payload = JSON.parse(fakeJson()) as object;
+
+      service.sign(payload, {
+        secretOrPrivateKey: configSecret,
+        algorithm: 'RS256',
+      });
+
+      expect(jwtClientMock.sign).toHaveBeenCalledTimes(1);
+      expect(jwtClientMock.sign).toHaveBeenCalledWith(
+        { iss: configIssuer, ...payload },
+        {
+          secretOrPrivateKey: configSecret,
+          algorithm: 'RS256',
+        },
+      );
     });
   });
 
@@ -96,6 +116,25 @@ describe('JwtService', () => {
         secretOrPrivateKey: customSecret,
       });
     });
+
+    it('should verify a token with RS256 algorithm', () => {
+      const token = faker.string.alphanumeric();
+      const customIssuer = faker.word.noun();
+      const customSecret = faker.string.alphanumeric();
+
+      service.verify(token, {
+        issuer: customIssuer,
+        secretOrPrivateKey: customSecret,
+        algorithms: ['RS256'],
+      });
+
+      expect(jwtClientMock.verify).toHaveBeenCalledTimes(1);
+      expect(jwtClientMock.verify).toHaveBeenCalledWith(token, {
+        issuer: customIssuer,
+        secretOrPrivateKey: customSecret,
+        algorithms: ['RS256'],
+      });
+    });
   });
 
   describe('decode', () => {
@@ -125,6 +164,25 @@ describe('JwtService', () => {
       expect(jwtClientMock.decode).toHaveBeenCalledWith(token, {
         issuer: customIssuer,
         secretOrPrivateKey: customSecret,
+      });
+    });
+
+    it('should decode a token with RS256 Algorithm', () => {
+      const token = faker.string.alphanumeric();
+      const customIssuer = faker.word.noun();
+      const customSecret = faker.string.alphanumeric();
+
+      service.decode(token, {
+        issuer: customIssuer,
+        secretOrPrivateKey: customSecret,
+        algorithms: ['RS256'],
+      });
+
+      expect(jwtClientMock.decode).toHaveBeenCalledTimes(1);
+      expect(jwtClientMock.decode).toHaveBeenCalledWith(token, {
+        issuer: customIssuer,
+        secretOrPrivateKey: customSecret,
+        algorithms: ['RS256'],
       });
     });
   });

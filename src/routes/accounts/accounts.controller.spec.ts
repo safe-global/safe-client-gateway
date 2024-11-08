@@ -48,7 +48,9 @@ describe('AccountsController', () => {
   let jwtService: IJwtService;
   let accountDataSource: jest.MockedObjectDeep<IAccountsDatasource>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    jest.resetAllMocks();
+    jest.useFakeTimers();
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -84,11 +86,6 @@ describe('AccountsController', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
-  });
-
-  beforeEach(() => {
-    jest.resetAllMocks();
-    jest.useFakeTimers();
   });
 
   afterEach(() => {

@@ -14,7 +14,12 @@ import type { PooledStakingStats } from '@/datasources/staking-api/entities/pool
 import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
 import type { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
 import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
+import type { Raw } from '@/validation/entities/raw.entity';
 
+/**
+ * TODO: Move all usage of Raw to NetworkService after fully migrated
+ * to "Raw" type implementation.
+ */
 export class KilnApi implements IStakingApi {
   public static DefiVaultStatsChains: {
     [key in (typeof DefiVaultStatsChains)[number]]: string;
@@ -50,13 +55,13 @@ export class KilnApi implements IStakingApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
-  async getDeployments(): Promise<Array<Deployment>> {
+  async getDeployments(): Promise<Raw<Array<Deployment>>> {
     try {
       const url = `${this.baseUrl}/v1/deployments`;
       const cacheDir = CacheRouter.getStakingDeploymentsCacheDir();
       // Note: Kiln always return { data: T }
       const { data } = await this.dataSource.get<{
-        data: Array<Deployment>;
+        data: Raw<Array<Deployment>>;
       }>({
         cacheDir,
         url,
@@ -76,12 +81,12 @@ export class KilnApi implements IStakingApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
-  async getNetworkStats(): Promise<NetworkStats> {
+  async getNetworkStats(): Promise<Raw<NetworkStats>> {
     try {
       const url = `${this.baseUrl}/v1/eth/network-stats`;
       const cacheDir = CacheRouter.getStakingNetworkStatsCacheDir();
       // Note: Kiln always return { data: T }
-      const { data } = await this.dataSource.get<{ data: NetworkStats }>({
+      const { data } = await this.dataSource.get<{ data: Raw<NetworkStats> }>({
         cacheDir,
         url,
         networkRequest: {
@@ -100,13 +105,13 @@ export class KilnApi implements IStakingApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
-  async getDedicatedStakingStats(): Promise<DedicatedStakingStats> {
+  async getDedicatedStakingStats(): Promise<Raw<DedicatedStakingStats>> {
     try {
       const url = `${this.baseUrl}/v1/eth/kiln-stats`;
       const cacheDir = CacheRouter.getStakingDedicatedStakingStatsCacheDir();
       // Note: Kiln always return { data: T }
       const { data } = await this.dataSource.get<{
-        data: DedicatedStakingStats;
+        data: Raw<DedicatedStakingStats>;
       }>({
         cacheDir,
         url,
@@ -128,13 +133,13 @@ export class KilnApi implements IStakingApi {
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getPooledStakingStats(
     pool: `0x${string}`,
-  ): Promise<PooledStakingStats> {
+  ): Promise<Raw<PooledStakingStats>> {
     try {
       const url = `${this.baseUrl}/v1/eth/onchain/v2/network-stats`;
       const cacheDir = CacheRouter.getStakingPooledStakingStatsCacheDir(pool);
       // Note: Kiln always return { data: T }
       const { data } = await this.dataSource.get<{
-        data: PooledStakingStats;
+        data: Raw<PooledStakingStats>;
       }>({
         cacheDir,
         url,
@@ -159,7 +164,7 @@ export class KilnApi implements IStakingApi {
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getDefiVaultStats(
     vault: `0x${string}`,
-  ): Promise<Array<DefiVaultStats>> {
+  ): Promise<Raw<Array<DefiVaultStats>>> {
     try {
       const url = `${this.baseUrl}/v1/defi/network-stats`;
       const cacheDir = CacheRouter.getStakingDefiVaultStatsCacheDir({
@@ -168,7 +173,7 @@ export class KilnApi implements IStakingApi {
       });
       // Note: Kiln always return { data: T }
       const { data } = await this.dataSource.get<{
-        data: Array<DefiVaultStats>;
+        data: Raw<Array<DefiVaultStats>>;
       }>({
         cacheDir,
         url,
@@ -203,7 +208,7 @@ export class KilnApi implements IStakingApi {
   async getStakes(args: {
     safeAddress: `0x${string}`;
     validatorsPublicKeys: Array<`0x${string}`>;
-  }): Promise<Stake[]> {
+  }): Promise<Raw<Stake[]>> {
     try {
       const url = `${this.baseUrl}/v1/eth/stakes`;
       const cacheDir = CacheRouter.getStakingStakesCacheDir({
@@ -213,7 +218,7 @@ export class KilnApi implements IStakingApi {
       });
       // Note: Kiln always return { data: T }
       const { data } = await this.dataSource.get<{
-        data: Array<Stake>;
+        data: Raw<Array<Stake>>;
       }>({
         cacheDir,
         url,
@@ -251,7 +256,7 @@ export class KilnApi implements IStakingApi {
 
   async getTransactionStatus(
     txHash: `0x${string}`,
-  ): Promise<TransactionStatus> {
+  ): Promise<Raw<TransactionStatus>> {
     try {
       const url = `${this.baseUrl}/v1/eth/transaction/status`;
       const cacheDir = CacheRouter.getStakingTransactionStatusCacheDir({
@@ -260,7 +265,7 @@ export class KilnApi implements IStakingApi {
       });
       // Note: Kiln always return { data: T }
       const { data } = await this.dataSource.get<{
-        data: TransactionStatus;
+        data: Raw<TransactionStatus>;
       }>({
         cacheDir,
         url,

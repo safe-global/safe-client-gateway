@@ -35,4 +35,6 @@ export const DefiVaultStatsSchema = z.object({
   updated_at_block: z.number(),
 });
 
+export const DefiVaultsStateSchema = z.array(DefiVaultStatsSchema);
+
 export type DefiVaultStats = z.infer<typeof DefiVaultStatsSchema>;
