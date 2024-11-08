@@ -249,8 +249,10 @@ export default () => ({
       'https://safe-locking.safe.global',
     eligibility: {
       fingerprintEncryptionKey: process.env.FINGERPRINT_ENCRYPTION_KEY,
-      nonEligibleCountries:
-        process.env.FINGERPRINT_NON_ELIGIBLE_COUNTRIES?.split(',') ?? ['US'],
+      nonEligibleCountryCodes:
+        process.env.FINGERPRINT_NON_ELIGIBLE_COUNTRY_CODES?.split(',') ?? [
+          'US',
+        ],
     },
   },
   log: {

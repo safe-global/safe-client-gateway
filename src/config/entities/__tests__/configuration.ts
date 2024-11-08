@@ -154,7 +154,7 @@ export default (): ReturnType<typeof configuration> => ({
     baseUri: faker.internet.url({ appendSlash: false }),
     eligibility: {
       fingerprintEncryptionKey: faker.string.uuid(),
-      nonEligibleCountries: faker.helpers.multiple(
+      nonEligibleCountryCodes: faker.helpers.multiple(
         () => faker.location.countryCode(),
         { count: { min: 1, max: 5 } },
       ),

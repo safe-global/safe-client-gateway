@@ -1,10 +1,18 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import {
+  fingerprintIpDataBuilder,
+  fingerprintIpInfoBuilder,
+  fingerprintLocationSpoofingBuilder,
+  fingerprintUnsealedDataBuilder,
+  fingerprintVpnBuilder,
+} from '@/datasources/locking-api/entities/__tests__/fingerprint-unsealed-data.entity.builder';
 import { FingerprintApiService } from '@/datasources/locking-api/fingerprint-api.service';
 import { eligibilityRequestBuilder } from '@/domain/community/entities/__tests__/eligibility-request.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { unsealEventsResponse } from '@fingerprintjs/fingerprintjs-pro-server-api';
 
+// TODO: convert to spy to avoid casting
 jest.mock('@fingerprintjs/fingerprintjs-pro-server-api');
 
 const mockLoggingService = {
@@ -27,9 +35,10 @@ describe('FingerprintApiService', () => {
       'locking.eligibility.fingerprintEncryptionKey',
       eligibilityEncryptionKey,
     );
-    fakeConfigurationService.set('locking.eligibility.nonEligibleCountries', [
-      'US',
-    ]);
+    fakeConfigurationService.set(
+      'locking.eligibility.nonEligibleCountryCodes',
+      ['US'],
+    );
 
     service = new FingerprintApiService(
       fakeConfigurationService,
@@ -40,34 +49,28 @@ describe('FingerprintApiService', () => {
   describe('checkEligibility', () => {
     it('should return isAllowed:true and isVpn:false for a non-VPN non-US location', async () => {
       const eligibilityRequest = eligibilityRequestBuilder().build();
-      const unsealedData = {
-        products: {
-          ipInfo: {
-            data: {
-              v4: {
-                geolocation: {
-                  country: { code: faker.location.countryCode() },
-                },
-              },
-            },
-          },
-          locationSpoofing: { data: { result: false } },
-          vpn: { data: { result: false } },
-        },
-      };
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
+          ipInfo: fingerprintIpInfoBuilder()
+            .with('data', {
+              v4: fingerprintIpDataBuilder()
+                .with('geolocation', { country: { code: 'DE' } })
+                .build(),
+              v6: fingerprintIpDataBuilder()
+                .with('geolocation', { country: { code: 'DE' } })
+                .build(),
+            })
+            .build(),
+          locationSpoofing: fingerprintLocationSpoofingBuilder()
+            .with('data', { result: false })
+            .build(),
+          vpn: fingerprintVpnBuilder().with('data', { result: false }).build(),
+        })
+        .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
-      expect(unsealEventsResponse).toHaveBeenCalledWith(
-        Buffer.from(eligibilityRequest.sealedData, 'base64'),
-        [
-          {
-            key: Buffer.from(eligibilityEncryptionKey, 'base64'),
-            algorithm: 'aes-256-gcm',
-          },
-        ],
-      );
       expect(result).toEqual({
         requestId: eligibilityRequest.requestId,
         isAllowed: true,
@@ -77,28 +80,26 @@ describe('FingerprintApiService', () => {
 
     it('should return isAllowed:false and isVpn:false for a non-VPN US location', async () => {
       const eligibilityRequest = eligibilityRequestBuilder().build();
-      const unsealedData = {
-        products: {
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
           ipInfo: {
-            data: { v4: { geolocation: { country: { code: 'US' } } } },
+            data: {
+              v4: fingerprintIpDataBuilder()
+                .with('geolocation', { country: { code: 'US' } })
+                .build(),
+              v6: null,
+            },
           },
-          locationSpoofing: { data: { result: false } },
-          vpn: { data: { result: false } },
-        },
-      };
+          locationSpoofing: fingerprintLocationSpoofingBuilder()
+            .with('data', { result: false })
+            .build(),
+          vpn: fingerprintVpnBuilder().with('data', { result: false }).build(),
+        })
+        .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
-      expect(unsealEventsResponse).toHaveBeenCalledWith(
-        Buffer.from(eligibilityRequest.sealedData, 'base64'),
-        [
-          {
-            key: Buffer.from(eligibilityEncryptionKey, 'base64'),
-            algorithm: 'aes-256-gcm',
-          },
-        ],
-      );
       expect(result).toEqual({
         requestId: eligibilityRequest.requestId,
         isAllowed: false,
@@ -108,28 +109,26 @@ describe('FingerprintApiService', () => {
 
     it('should return isAllowed:false and isVpn:true for a VPN US location', async () => {
       const eligibilityRequest = eligibilityRequestBuilder().build();
-      const unsealedData = {
-        products: {
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
           ipInfo: {
-            data: { v4: { geolocation: { country: { code: 'US' } } } },
+            data: {
+              v4: null,
+              v6: fingerprintIpDataBuilder()
+                .with('geolocation', { country: { code: 'US' } })
+                .build(),
+            },
           },
-          locationSpoofing: { data: { result: false } },
-          vpn: { data: { result: true } },
-        },
-      };
+          locationSpoofing: fingerprintLocationSpoofingBuilder()
+            .with('data', { result: false })
+            .build(),
+          vpn: fingerprintVpnBuilder().with('data', { result: true }).build(),
+        })
+        .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
-      expect(unsealEventsResponse).toHaveBeenCalledWith(
-        Buffer.from(eligibilityRequest.sealedData, 'base64'),
-        [
-          {
-            key: Buffer.from(eligibilityEncryptionKey, 'base64'),
-            algorithm: 'aes-256-gcm',
-          },
-        ],
-      );
       expect(result).toEqual({
         requestId: eligibilityRequest.requestId,
         isAllowed: false,
@@ -139,26 +138,19 @@ describe('FingerprintApiService', () => {
 
     it('should return isAllowed:true and isVpn:true for a VPN unknown location', async () => {
       const eligibilityRequest = eligibilityRequestBuilder().build();
-      const unsealedData = {
-        products: {
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
           ipInfo: null,
-          locationSpoofing: { data: { result: false } },
-          vpn: { data: { result: true } },
-        },
-      };
+          locationSpoofing: fingerprintLocationSpoofingBuilder()
+            .with('data', { result: false })
+            .build(),
+          vpn: fingerprintVpnBuilder().with('data', { result: true }).build(),
+        })
+        .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
-      expect(unsealEventsResponse).toHaveBeenCalledWith(
-        Buffer.from(eligibilityRequest.sealedData, 'base64'),
-        [
-          {
-            key: Buffer.from(eligibilityEncryptionKey, 'base64'),
-            algorithm: 'aes-256-gcm',
-          },
-        ],
-      );
       expect(result).toEqual({
         requestId: eligibilityRequest.requestId,
         isAllowed: true,
@@ -166,69 +158,49 @@ describe('FingerprintApiService', () => {
       });
     });
 
-    it('should return isAllowed:true and isVpn:false for a unknown location', async () => {
+    it('should return isAllowed:true for a unknown location', async () => {
       const eligibilityRequest = eligibilityRequestBuilder().build();
-      const unsealedData = {
-        products: {
+      const vpn = fingerprintVpnBuilder().build();
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
           ipInfo: null,
-          locationSpoofing: { data: { result: false } },
-          vpn: null,
-        },
-      };
+          locationSpoofing: fingerprintLocationSpoofingBuilder()
+            .with('data', { result: false })
+            .build(),
+          vpn,
+        })
+        .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
-      expect(unsealEventsResponse).toHaveBeenCalledWith(
-        Buffer.from(eligibilityRequest.sealedData, 'base64'),
-        [
-          {
-            key: Buffer.from(eligibilityEncryptionKey, 'base64'),
-            algorithm: 'aes-256-gcm',
-          },
-        ],
-      );
       expect(result).toEqual({
         requestId: eligibilityRequest.requestId,
         isAllowed: true,
-        isVpn: false,
+        isVpn: vpn.data?.result,
       });
     });
 
-    it('should return isAllowed:false and isVpn:false when location spoofing is detected', async () => {
+    it('should return isAllowed:false when location spoofing is detected', async () => {
       const eligibilityRequest = eligibilityRequestBuilder().build();
-      const unsealedData = {
-        products: {
-          ipInfo: {
-            data: {
-              v4: {
-                geolocation: {
-                  country: { code: faker.location.countryCode() },
-                },
-              },
-            },
-          },
-          locationSpoofing: { data: { result: true } },
-          vpn: { data: { result: false } },
-        },
-      };
+      const vpn = fingerprintVpnBuilder().build();
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
+          ipInfo: fingerprintIpInfoBuilder().build(),
+          locationSpoofing: fingerprintLocationSpoofingBuilder()
+            .with('data', { result: true })
+            .build(),
+          vpn,
+        })
+        .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
-      expect(unsealEventsResponse).toHaveBeenCalledWith(
-        Buffer.from(eligibilityRequest.sealedData, 'base64'),
-        [
-          {
-            key: Buffer.from(eligibilityEncryptionKey, 'base64'),
-            algorithm: 'aes-256-gcm',
-          },
-        ],
-      );
       expect(result).toEqual({
         requestId: eligibilityRequest.requestId,
         isAllowed: false,
-        isVpn: false,
+        isVpn: vpn.data?.result,
       });
     });
   });

@@ -1,4 +1,8 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  FingerprintUnsealedData,
+  FingerprintUnsealedDataSchema,
+} from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
 import type { EligibilityRequest } from '@/domain/community/entities/eligibility-request.entity';
 import type { Eligibility } from '@/domain/community/entities/eligibility.entity';
 import type { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
@@ -11,7 +15,7 @@ import { Inject } from '@nestjs/common';
 
 export class FingerprintApiService implements IIdentityApi {
   private readonly eligibilityEncryptionKey: string;
-  private readonly nonEligibleCountries: Array<string>;
+  private readonly nonEligibleCountryCodes: Array<string>;
 
   constructor(
     @Inject(IConfigurationService)
@@ -22,9 +26,9 @@ export class FingerprintApiService implements IIdentityApi {
       this.configurationService.getOrThrow<string>(
         'locking.eligibility.fingerprintEncryptionKey',
       );
-    this.nonEligibleCountries = this.configurationService.getOrThrow<string[]>(
-      'locking.eligibility.nonEligibleCountries',
-    );
+    this.nonEligibleCountryCodes = this.configurationService.getOrThrow<
+      string[]
+    >('locking.eligibility.nonEligibleCountryCodes');
   }
 
   async checkEligibility(
@@ -41,12 +45,13 @@ export class FingerprintApiService implements IIdentityApi {
 
   private async getUnsealedData(
     sealedData: string,
-  ): Promise<ReturnType<typeof unsealEventsResponse>> {
+  ): Promise<FingerprintUnsealedData> {
     const key = Buffer.from(this.eligibilityEncryptionKey, 'base64');
     const sealedDataBuffer = Buffer.from(sealedData, 'base64');
-    return unsealEventsResponse(sealedDataBuffer, [
+    const res = await unsealEventsResponse(sealedDataBuffer, [
       { key, algorithm: DecryptionAlgorithm.Aes256Gcm },
     ]);
+    return FingerprintUnsealedDataSchema.parse(res);
   }
 
   /**
@@ -55,9 +60,7 @@ export class FingerprintApiService implements IIdentityApi {
    * @param unsealedData - The unsealed data for the eligibility check.
    * @returns true if the location is not spoofed and the country is eligible, false otherwise.
    */
-  private isAllowed(
-    unsealedData: Awaited<ReturnType<typeof unsealEventsResponse>>,
-  ): boolean {
+  private isAllowed(unsealedData: FingerprintUnsealedData): boolean {
     const isSpoofedLocation =
       unsealedData.products.locationSpoofing?.data?.result === true;
     if (isSpoofedLocation) return false; // Early return if the location is spoofed.
@@ -67,7 +70,7 @@ export class FingerprintApiService implements IIdentityApi {
     ];
     // Both IP geolocation results must be either null or not in the non-eligible countries list.
     return ipCountryCodes.every(
-      (code) => code === null || !this.nonEligibleCountries.includes(code),
+      (code) => code === null || !this.nonEligibleCountryCodes.includes(code),
     );
   }
 }
