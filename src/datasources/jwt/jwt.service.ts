@@ -7,6 +7,8 @@ import type { Algorithm } from 'jsonwebtoken';
 
 @Injectable()
 export class JwtService implements IJwtService {
+  private static readonly ALGORITHM: Algorithm = 'HS256';
+
   issuer: string;
   secret: string;
 
@@ -37,7 +39,7 @@ export class JwtService implements IJwtService {
         iss: 'iss' in payload ? payload.iss : this.issuer,
         ...payload,
       },
-      options,
+      { ...options, algorithm: options.algorithm ?? JwtService.ALGORITHM },
     );
   }
 

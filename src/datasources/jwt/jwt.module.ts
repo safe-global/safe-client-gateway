@@ -30,7 +30,7 @@ function jwtClientFactory() {
           ...rest,
         },
         options.secretOrPrivateKey,
-        { algorithm: options.algorithm ?? 'HS256' },
+        { algorithm: options.algorithm },
       );
     },
     verify: <T extends object>(

@@ -44,6 +44,7 @@ describe('JwtService', () => {
         { iss: configIssuer, ...payload },
         {
           secretOrPrivateKey: configSecret,
+          algorithm: 'HS256',
         },
       );
     });
@@ -63,6 +64,7 @@ describe('JwtService', () => {
       expect(jwtClientMock.sign).toHaveBeenCalledTimes(1);
       expect(jwtClientMock.sign).toHaveBeenCalledWith(payload, {
         secretOrPrivateKey: customSecret,
+        algorithm: 'HS256',
       });
     });
 
