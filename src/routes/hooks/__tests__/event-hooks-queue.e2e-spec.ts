@@ -554,9 +554,12 @@ describe('Events queue processing e2e tests', () => {
         faker.string.alpha(),
       );
       const data = {
+        type,
         chainId: TEST_SAFE.chainId,
         address: TEST_SAFE.address,
-        type,
+        delegate: faker.finance.ethereumAddress(),
+        delegator: faker.finance.ethereumAddress(),
+        label: faker.lorem.word(),
       };
 
       await channel.sendToQueue(queueName, data);
