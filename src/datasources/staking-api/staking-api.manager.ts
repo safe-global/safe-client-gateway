@@ -6,6 +6,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
+import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
@@ -30,7 +31,9 @@ export class StakingApiManager implements IStakingApiManager {
       return Promise.resolve(this.apis[chainId]);
     }
 
-    const chain = await this.configApi.getChain(chainId);
+    const chain = await this.configApi
+      .getChain(chainId)
+      .then(ChainSchema.parse);
 
     const baseUrl = this.configurationService.getOrThrow<string>(
       chain.isTestnet ? 'staking.testnet.baseUri' : 'staking.mainnet.baseUri',

@@ -13,6 +13,7 @@ import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { Page } from '@/domain/entities/page.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 const mockLoggingService = {
   error: jest.fn(),
@@ -89,16 +90,18 @@ describe('ChainsRepository', () => {
           );
         })();
 
-        return pageBuilder<Chain>()
-          .with('results', results)
-          .with('count', chains.length)
-          .with('previous', previous)
-          .with('next', next)
-          .build();
+        return rawify(
+          pageBuilder<Chain>()
+            .with('results', results)
+            .with('count', chains.length)
+            .with('previous', previous)
+            .with('next', next)
+            .build(),
+        );
       },
     );
     mockConfigApi.getChains.mockImplementation(
-      ({ offset }): Promise<Page<Chain>> => {
+      ({ offset }): Promise<Raw<Page<Chain>>> => {
         if (offset === 0) {
           return Promise.resolve(pages[0]);
         }
@@ -166,16 +169,18 @@ describe('ChainsRepository', () => {
           );
         })();
 
-        return pageBuilder<Chain>()
-          .with('results', results)
-          .with('count', chains.length)
-          .with('previous', previous)
-          .with('next', next)
-          .build();
+        return rawify(
+          pageBuilder<Chain>()
+            .with('results', results)
+            .with('count', chains.length)
+            .with('previous', previous)
+            .with('next', next)
+            .build(),
+        );
       },
     );
     mockConfigApi.getChains.mockImplementation(
-      ({ offset }): Promise<Page<Chain>> => {
+      ({ offset }): Promise<Raw<Page<Chain>>> => {
         if (offset === 0) {
           return Promise.resolve(pages[0]);
         }
@@ -247,16 +252,18 @@ describe('ChainsRepository', () => {
           );
         })();
 
-        return pageBuilder<Chain>()
-          .with('results', results)
-          .with('count', chains.length)
-          .with('previous', previous)
-          .with('next', next)
-          .build();
+        return rawify(
+          pageBuilder<Chain>()
+            .with('results', results)
+            .with('count', chains.length)
+            .with('previous', previous)
+            .with('next', next)
+            .build(),
+        );
       },
     );
     mockConfigApi.getChains.mockImplementation(
-      ({ offset }): Promise<Page<Chain>> => {
+      ({ offset }): Promise<Raw<Page<Chain>>> => {
         if (offset === 0) {
           return Promise.resolve(pages[0]);
         }
