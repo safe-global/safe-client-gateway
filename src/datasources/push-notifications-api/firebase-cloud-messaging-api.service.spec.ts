@@ -100,7 +100,7 @@ describe('FirebaseCloudMessagingApiService', () => {
       data: {
         message: {
           token: fcmToken,
-          notification,
+          ...notification,
         },
       },
       networkRequest: {
@@ -138,7 +138,7 @@ describe('FirebaseCloudMessagingApiService', () => {
       data: {
         message: {
           token: fcmToken,
-          notification,
+          ...notification,
         },
       },
       networkRequest: {
