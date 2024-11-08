@@ -18,7 +18,7 @@ export function moduleTransactionBuilder(): IBuilder<ModuleTransaction> {
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('transactionHash', faker.string.hexadecimal() as `0x${string}`)
-    .with('value', faker.string.hexadecimal())
+    .with('value', faker.string.numeric())
     .with('moduleTransactionId', faker.string.sample());
 }
 
