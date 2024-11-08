@@ -47,7 +47,8 @@ describe('CounterfactualSafesController', () => {
   let accountsRepository: jest.MockedObjectDeep<IAccountsRepository>;
   let counterfactualSafesDataSource: jest.MockedObjectDeep<ICounterfactualSafesDatasource>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    jest.resetAllMocks();
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -86,10 +87,6 @@ describe('CounterfactualSafesController', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
-  });
-
-  beforeEach(() => {
-    jest.resetAllMocks();
   });
 
   afterAll(async () => {
