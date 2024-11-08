@@ -11,7 +11,10 @@ import { SafeState } from '@/routes/safes/entities/safe-info.entity';
 import { SafesService } from '@/routes/safes/safes.service';
 import { SafeNonces } from '@/routes/safes/entities/nonces.entity';
 import { SafeOverview } from '@/routes/safes/entities/safe-overview.entity';
-import { Caip10AddressesPipe } from '@/routes/safes/pipes/caip-10-addresses.pipe';
+import {
+  Caip10AddressesSchema,
+  type Caip10Addresses,
+} from '@/routes/safes/entities/caip-10-addresses.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
@@ -50,8 +53,8 @@ export class SafesController {
   @Get('safes')
   async getSafeOverview(
     @Query('currency') currency: string,
-    @Query('safes', new Caip10AddressesPipe())
-    addresses: Array<{ chainId: string; address: `0x${string}` }>,
+    @Query('safes', new ValidationPipe(Caip10AddressesSchema))
+    addresses: Caip10Addresses,
     @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)
     trusted: boolean,
     @Query('exclude_spam', new DefaultValuePipe(true), ParseBoolPipe)
