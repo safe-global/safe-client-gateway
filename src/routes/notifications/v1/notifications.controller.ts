@@ -22,17 +22,27 @@ import type { UUID } from 'crypto';
 import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
 import { recoverMessageAddress } from 'viem';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
 export class NotificationsController {
+  private isPushNotificationV2Enabled = false;
   constructor(
     // Adding NotificationServiceV2 to ensure compatibility with V1.
     // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
     @Inject(NotificationsServiceV2)
     private readonly notificationServiceV2: NotificationsServiceV2,
     private readonly notificationsService: NotificationsService,
-  ) {}
+
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isPushNotificationV2Enabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.pushNotifications',
+      );
+  }
 
   @ApiOkResponse()
   @Post('register/notifications')
@@ -42,21 +52,23 @@ export class NotificationsController {
   ): Promise<void> {
     await this.notificationsService.registerDevice(registerDeviceDto);
 
-    // Compatibility with V2
-    // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
-    const compatibleV2Requests =
-      await this.createV2RegisterDto(registerDeviceDto);
+    if (this.isPushNotificationV2Enabled) {
+      // Compatibility with V2
+      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
+      const compatibleV2Requests =
+        await this.createV2RegisterDto(registerDeviceDto);
 
-    const v2Requests = [];
-    for (const compatibleV2Request of compatibleV2Requests) {
-      v2Requests.push(
-        await this.notificationServiceV2.upsertSubscriptions(
-          compatibleV2Request,
-        ),
-      );
+      const v2Requests = [];
+      for (const compatibleV2Request of compatibleV2Requests) {
+        v2Requests.push(
+          await this.notificationServiceV2.upsertSubscriptions(
+            compatibleV2Request,
+          ),
+        );
+      }
+
+      await Promise.all(v2Requests);
     }
-
-    await Promise.all(v2Requests);
   }
 
   private async createV2RegisterDto(args: RegisterDeviceDto): Promise<
@@ -131,9 +143,11 @@ export class NotificationsController {
   ): Promise<void> {
     await this.notificationsService.unregisterDevice({ chainId, uuid });
 
-    // Compatibility with V2
-    // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
-    await this.notificationServiceV2.deleteDevice(uuid);
+    if (this.isPushNotificationV2Enabled) {
+      // Compatibility with V2
+      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
+      await this.notificationServiceV2.deleteDevice(uuid);
+    }
   }
 
   @Delete('chains/:chainId/notifications/devices/:uuid/safes/:safeAddress')
@@ -149,12 +163,14 @@ export class NotificationsController {
       safeAddress,
     });
 
-    // Compatibility with V2
-    // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
-    await this.notificationServiceV2.deleteSubscription({
-      deviceUuid: uuid,
-      chainId: chainId,
-      safeAddress: safeAddress,
-    });
+    if (this.isPushNotificationV2Enabled) {
+      // Compatibility with V2
+      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
+      await this.notificationServiceV2.deleteSubscription({
+        deviceUuid: uuid,
+        chainId: chainId,
+        safeAddress: safeAddress,
+      });
+    }
   }
 }
