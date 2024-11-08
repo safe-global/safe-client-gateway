@@ -15,7 +15,6 @@ import { get } from 'lodash';
 @Injectable()
 export class HttpErrorFactory {
   from(source: unknown): DataSourceError {
-    // TODO: Handle instances of ZodError, returning issue from it
     if (source instanceof NetworkResponseError) {
       const errorMessage = get(source, 'data.message', 'An error occurred');
       return new DataSourceError(errorMessage, source.response.status);

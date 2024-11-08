@@ -17,6 +17,7 @@ import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.mana
 import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { z } from 'zod';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
+import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
