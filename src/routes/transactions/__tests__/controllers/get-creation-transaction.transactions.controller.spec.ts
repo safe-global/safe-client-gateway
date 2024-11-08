@@ -116,9 +116,6 @@ describe('Get creation transaction', () => {
             } as Response),
           );
         default:
-          console.log('************');
-          console.log(url, getChainUrl, chain, getCreationTransactionUrl);
-          console.log('************');
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
