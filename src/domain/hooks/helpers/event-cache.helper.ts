@@ -531,15 +531,12 @@ export class EventCacheHelper {
       }
     >,
   ): Array<Promise<void>> {
-    if (!event.address) {
-      return [];
-    }
     // A delegate change affects:
     // - the delegates associated to the Safe
     return [
       this.delegatesRepository.clearDelegates({
         chainId: event.chainId,
-        safeAddress: event.address,
+        safeAddress: event.address ?? undefined,
       }),
     ];
   }

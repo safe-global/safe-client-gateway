@@ -342,7 +342,7 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
-  async clearDelegates(safeAddress: `0x${string}`): Promise<void> {
+  async clearDelegates(safeAddress?: `0x${string}`): Promise<void> {
     const cacheKey = CacheRouter.getDelegatesCacheKey({
       chainId: this.chainId,
       safeAddress,

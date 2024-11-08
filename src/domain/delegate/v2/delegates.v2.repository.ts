@@ -38,7 +38,7 @@ export class DelegatesV2Repository implements IDelegatesV2Repository {
 
   async clearDelegates(args: {
     chainId: string;
-    safeAddress: `0x${string}`;
+    safeAddress?: `0x${string}`;
   }): Promise<void> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,

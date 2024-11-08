@@ -61,7 +61,7 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<Delegate>>>;
 
-  clearDelegates(safeAddress: `0x${string}`): Promise<void>;
+  clearDelegates(safeAddress?: `0x${string}`): Promise<void>;
 
   postDelegate(args: {
     safeAddress: `0x${string}` | null;

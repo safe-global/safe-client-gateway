@@ -17,7 +17,10 @@ export interface IDelegatesV2Repository {
     offset?: number;
   }): Promise<Page<Delegate>>;
 
-  clearDelegates(args: { chainId: string; safeAddress: string }): Promise<void>;
+  clearDelegates(args: {
+    chainId: string;
+    safeAddress?: string;
+  }): Promise<void>;
 
   postDelegate(args: {
     chainId: string;
