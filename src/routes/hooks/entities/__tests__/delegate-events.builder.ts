@@ -16,7 +16,7 @@ type DelegateEventPayload = z.infer<typeof DelegateEventPayloadSchema>;
 function delegateEventBuilder(): IBuilder<DelegateEventPayload> {
   return new Builder<DelegateEventPayload>()
     .with('chainId', faker.string.numeric())
-    .with('safeAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('delegate', getAddress(faker.finance.ethereumAddress()))
     .with('delegator', getAddress(faker.finance.ethereumAddress()))
     .with('label', faker.lorem.word())

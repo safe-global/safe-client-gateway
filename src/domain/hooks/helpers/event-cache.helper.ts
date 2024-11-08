@@ -531,7 +531,7 @@ export class EventCacheHelper {
       }
     >,
   ): Array<Promise<void>> {
-    if (!event.safeAddress) {
+    if (!event.address) {
       return [];
     }
     // A delegate change affects:
@@ -539,7 +539,7 @@ export class EventCacheHelper {
     return [
       this.delegatesRepository.clearDelegates({
         chainId: event.chainId,
-        safeAddress: event.safeAddress,
+        safeAddress: event.address,
       }),
     ];
   }
