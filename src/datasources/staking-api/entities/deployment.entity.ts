@@ -22,4 +22,6 @@ export const DeploymentSchema = z.object({
   product_fee: NumericStringSchema.nullish().default(null),
 });
 
+export const DeploymentsSchema = z.array(DeploymentSchema);
+
 export type Deployment = z.infer<typeof DeploymentSchema>;

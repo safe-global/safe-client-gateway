@@ -26,4 +26,6 @@ export const StakeSchema = z.object({
   net_claimable_consensus_rewards: NumericStringSchema.nullish().default(null),
 });
 
+export const StakesSchema = z.array(StakeSchema);
+
 export type Stake = z.infer<typeof StakeSchema>;
