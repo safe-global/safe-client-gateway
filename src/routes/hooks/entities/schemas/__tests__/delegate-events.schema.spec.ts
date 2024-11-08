@@ -47,7 +47,7 @@ describe.each([
     ]);
   });
 
-  it.each(['safeAddress' as const, 'delegate' as const, 'delegator' as const])(
+  it.each(['address' as const, 'delegate' as const, 'delegator' as const])(
     'should checksum %s',
     (field) => {
       const nonChecksummedAddress = faker.finance.ethereumAddress();
@@ -63,7 +63,7 @@ describe.each([
     },
   );
 
-  it.each(['safeAddress' as const, 'expiryDateSeconds' as const])(
+  it.each(['address' as const, 'expiryDateSeconds' as const])(
     'should allow nullish %s, defaulting to null',
     (field) => {
       const event = builder().build();

@@ -555,7 +555,7 @@ describe('Events queue processing e2e tests', () => {
       );
       const data = {
         chainId: TEST_SAFE.chainId,
-        safeAddress: TEST_SAFE.address,
+        address: TEST_SAFE.address,
         type,
       };
 

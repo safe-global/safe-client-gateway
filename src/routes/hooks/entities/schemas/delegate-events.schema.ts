@@ -5,7 +5,7 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 
 export const DelegateEventPayloadSchema = z.object({
   chainId: NumericStringSchema,
-  safeAddress: AddressSchema.nullish().default(null),
+  address: AddressSchema.nullish().default(null),
   delegate: AddressSchema,
   delegator: AddressSchema,
   label: z.string(),
