@@ -247,6 +247,13 @@ export default () => ({
     baseUri:
       process.env.LOCKING_PROVIDER_API_BASE_URI ||
       'https://safe-locking.safe.global',
+    eligibility: {
+      fingerprintEncryptionKey: process.env.FINGERPRINT_ENCRYPTION_KEY,
+      nonEligibleCountryCodes:
+        process.env.FINGERPRINT_NON_ELIGIBLE_COUNTRY_CODES?.split(',') ?? [
+          'US',
+        ],
+    },
   },
   log: {
     level: process.env.LOG_LEVEL || 'debug',

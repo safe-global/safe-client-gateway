@@ -4,6 +4,8 @@ import type { CampaignRank } from '@/domain/community/entities/campaign-rank.ent
 import type { LockingEvent } from '@/domain/community/entities/locking-event.entity';
 import type { LockingRank } from '@/domain/community/entities/locking-rank.entity';
 import type { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
+import type { EligibilityRequest } from '@/domain/community/entities/eligibility-request.entity';
+import type { Eligibility } from '@/domain/community/entities/eligibility.entity';
 
 export const ICommunityRepository = Symbol('ICommunityRepository');
 
@@ -45,4 +47,8 @@ export interface ICommunityRepository {
     offset?: number;
     limit?: number;
   }): Promise<Page<LockingEvent>>;
+
+  checkEligibility(
+    eligibilityRequest: EligibilityRequest,
+  ): Promise<Eligibility>;
 }

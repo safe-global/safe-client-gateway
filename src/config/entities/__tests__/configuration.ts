@@ -152,6 +152,13 @@ export default (): ReturnType<typeof configuration> => ({
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
+    eligibility: {
+      fingerprintEncryptionKey: faker.string.uuid(),
+      nonEligibleCountryCodes: faker.helpers.multiple(
+        () => faker.location.countryCode(),
+        { count: { min: 1, max: 5 } },
+      ),
+    },
   },
   jwt: {
     issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',
