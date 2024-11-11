@@ -24,6 +24,12 @@ export default () => ({
           `${25}`,
       ),
     },
+    encryption: {
+      // The encryption type to use. Defaults to 'local'.
+      // Supported values: 'aws', 'local'
+      type: process.env.ACCOUNTS_ENCRYPTION_TYPE || 'local',
+      awsKmsKeyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+    },
   },
   amqp: {
     url: process.env.AMQP_URL || 'amqp://localhost:5672',

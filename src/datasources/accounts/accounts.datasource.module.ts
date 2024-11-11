@@ -1,16 +1,16 @@
-import { Module } from '@nestjs/common';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
+import { EncryptionApiManager } from '@/datasources/accounts/encryption/encryption-api.manager';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
-import { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
-import { AwsEncryptionApiService } from '@/datasources/accounts/encryption/aws-encryption-api.service';
+import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
+import { Module } from '@nestjs/common';
 
 @Module({
   imports: [PostgresDatabaseModule],
   providers: [
     { provide: IAccountsDatasource, useClass: AccountsDatasource },
-    { provide: IEncryptionApi, useClass: AwsEncryptionApiService },
+    { provide: IEncryptionApiManager, useClass: EncryptionApiManager },
   ],
-  exports: [IAccountsDatasource, IEncryptionApi],
+  exports: [IAccountsDatasource, IEncryptionApiManager],
 })
 export class AccountsDatasourceModule {}

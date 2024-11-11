@@ -14,6 +14,7 @@ import { CreateAccountDto } from '@/domain/accounts/entities/create-account.dto.
 import { UpsertAccountDataSettingsDto } from '@/domain/accounts/entities/upsert-account-data-settings.dto.entity';
 import { AccountsCreationRateLimitError } from '@/domain/accounts/errors/accounts-creation-rate-limit.error';
 import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.interface';
+import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { IpSchema } from '@/validation/entities/schemas/ip.schema';
@@ -45,6 +46,8 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IEncryptionApiManager)
+    private readonly encryptionApiManager: IEncryptionApiManager,
   ) {
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -87,18 +90,19 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     const hash = crypto.createHash('sha256');
     hash.update(name);
     const nameHash = hash.digest('hex');
-    // TODO: encrypt the name
+    const encryptedName = await this.getEncryptedName(name);
     const [account] = await this.sql<[Account]>`
       INSERT INTO accounts (address, name, name_hash)
-        VALUES (${address}, ${name}, ${nameHash})
+        VALUES (${address}, ${encryptedName}, ${nameHash})
       RETURNING *
       `.catch((e) => {
       this.loggingService.warn(`Error creating account: ${asError(e).message}`);
       throw new UnprocessableEntityException('Error creating account.');
     });
     const cacheDir = CacheRouter.getAccountCacheDir(address);
-    // TODO: decrypt the name
-    const result = omit({ ...account, name }, 'name_hash');
+    const decryptedName = await this.decryptName(name);
+    const result = omit({ ...account, name: decryptedName }, 'name_hash');
+    // TODO: store the encrypted name in the cache
     await this.cacheService.hSet(
       cacheDir,
       JSON.stringify([result]),
@@ -108,6 +112,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   }
 
   async getAccount(address: `0x${string}`): Promise<Account> {
+    // TODO: the name should be encrypted in the cache
     const cacheDir = CacheRouter.getAccountCacheDir(address);
     const [account] = await this.cachedQueryResolver.get<Account[]>({
       cacheDir,
@@ -261,5 +266,15 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         throw new AccountsCreationRateLimitError();
       }
     }
+  }
+
+  async getEncryptedName(name: string): Promise<string> {
+    const api = await this.encryptionApiManager.getApi();
+    return api.encrypt(name);
+  }
+
+  async decryptName(encryptedName: string): Promise<string> {
+    const api = await this.encryptionApiManager.getApi();
+    return api.decrypt(encryptedName);
   }
 }
