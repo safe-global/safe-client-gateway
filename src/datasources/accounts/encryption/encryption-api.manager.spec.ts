@@ -2,16 +2,11 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { AwsEncryptionApiService } from '@/datasources/accounts/encryption/aws-encryption-api.service';
 import { EncryptionApiManager } from '@/datasources/accounts/encryption/encryption-api.manager';
 import { LocalEncryptionApiService } from '@/datasources/accounts/encryption/local-encryption-api.service';
-import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockConfigurationService = {
   get: jest.fn(),
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
-
-const mockLoggingService = {
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('EncryptionApiManager', () => {
   let target: EncryptionApiManager;
@@ -29,10 +24,7 @@ describe('EncryptionApiManager', () => {
       if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
       throw new Error(`Unexpected key: ${key}`);
     });
-    target = new EncryptionApiManager(
-      mockConfigurationService,
-      mockLoggingService,
-    );
+    target = new EncryptionApiManager(mockConfigurationService);
 
     const api = await target.getApi();
 
@@ -48,10 +40,7 @@ describe('EncryptionApiManager', () => {
       if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
       throw new Error(`Unexpected key: ${key}`);
     });
-    target = new EncryptionApiManager(
-      mockConfigurationService,
-      mockLoggingService,
-    );
+    target = new EncryptionApiManager(mockConfigurationService);
 
     const api = await target.getApi();
     const cachedApi = await target.getApi();
@@ -65,10 +54,7 @@ describe('EncryptionApiManager', () => {
       if (key === 'accounts.encryption.type') return 'aws';
       throw new Error(`Unexpected key: ${key}`);
     });
-    target = new EncryptionApiManager(
-      mockConfigurationService,
-      mockLoggingService,
-    );
+    target = new EncryptionApiManager(mockConfigurationService);
 
     const api = await target.getApi();
 
@@ -80,10 +66,7 @@ describe('EncryptionApiManager', () => {
       if (key === 'accounts.encryption.type') return 'aws';
       throw new Error(`Unexpected key: ${key}`);
     });
-    target = new EncryptionApiManager(
-      mockConfigurationService,
-      mockLoggingService,
-    );
+    target = new EncryptionApiManager(mockConfigurationService);
 
     const api = await target.getApi();
     const cachedApi = await target.getApi();

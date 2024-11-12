@@ -4,7 +4,6 @@ import { AwsEncryptionApiService } from '@/datasources/accounts/encryption/aws-e
 import { LocalEncryptionApiService } from '@/datasources/accounts/encryption/local-encryption-api.service';
 import { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
 import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -23,7 +22,6 @@ export class EncryptionApiManager implements IEncryptionApiManager {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.accountsEncryptionType =
       this.configurationService.getOrThrow<AccountsEncryptionType>(
@@ -33,27 +31,26 @@ export class EncryptionApiManager implements IEncryptionApiManager {
 
   getApi(): Promise<IEncryptionApi> {
     if (this.encryptionApi) return Promise.resolve(this.encryptionApi);
-    return this.accountsEncryptionType === 'aws'
-      ? this._setAwsEncryptionApi()
-      : this._setLocalEncryptionApi();
+    switch (this.accountsEncryptionType) {
+      case 'aws':
+        this.encryptionApi = new AwsEncryptionApiService(
+          this.configurationService,
+        );
+        break;
+      case 'local':
+        this.encryptionApi = new LocalEncryptionApiService(
+          this.configurationService,
+        );
+        break;
+      default:
+        throw new Error(
+          `Unsupported encryption type: ${this.accountsEncryptionType}`,
+        );
+    }
+    return Promise.resolve(this.encryptionApi);
   }
 
   destroyApi(): void {
     this.encryptionApi = undefined;
-  }
-
-  private _setAwsEncryptionApi(): Promise<IEncryptionApi> {
-    this.encryptionApi = new AwsEncryptionApiService(
-      this.configurationService,
-      this.loggingService,
-    );
-    return Promise.resolve(this.encryptionApi);
-  }
-
-  private _setLocalEncryptionApi(): Promise<IEncryptionApi> {
-    this.encryptionApi = new LocalEncryptionApiService(
-      this.configurationService,
-    );
-    return Promise.resolve(this.encryptionApi);
   }
 }
