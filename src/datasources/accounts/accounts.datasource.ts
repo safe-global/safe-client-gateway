@@ -100,19 +100,16 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       throw new UnprocessableEntityException('Error creating account.');
     });
     const cacheDir = CacheRouter.getAccountCacheDir(address);
-    const decryptedName = await this.decryptName(name);
-    const result = omit({ ...account, name: decryptedName }, 'name_hash');
-    // TODO: store the encrypted name in the cache
     await this.cacheService.hSet(
       cacheDir,
-      JSON.stringify([result]),
+      JSON.stringify([account]),
       this.defaultExpirationTimeInSeconds,
     );
-    return result;
+    const decryptedName = await this.decryptName(name);
+    return omit({ ...account, name: decryptedName }, 'name_hash');
   }
 
   async getAccount(address: `0x${string}`): Promise<Account> {
-    // TODO: the name should be encrypted in the cache
     const cacheDir = CacheRouter.getAccountCacheDir(address);
     const [account] = await this.cachedQueryResolver.get<Account[]>({
       cacheDir,
@@ -124,7 +121,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       throw new NotFoundException('Error getting account.');
     }
 
-    return account;
+    return { ...account, name: await this.decryptName(account.name) };
   }
 
   async deleteAccount(address: `0x${string}`): Promise<void> {

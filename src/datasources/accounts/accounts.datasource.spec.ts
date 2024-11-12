@@ -62,7 +62,6 @@ describe('AccountsDatasource tests', () => {
       encryptionApiManagerMock,
     );
     encryptionApiManagerMock.getApi.mockResolvedValue(encryptionApiMock);
-    // TODO: implement mock de/encryption if possible.
     encryptionApiMock.encrypt.mockResolvedValue('encrypted');
     encryptionApiMock.decrypt.mockResolvedValue('decrypted');
   });
@@ -104,7 +103,10 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: 'decrypted', // TODO: cache should contain the encrypted name
+            name: expect.objectContaining({
+              data: expect.any(Array),
+              type: 'Buffer',
+            }),
           }),
         ]),
       );
@@ -136,7 +138,10 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: 'decrypted', // TODO: cache should contain the encrypted name
+            name: expect.objectContaining({
+              data: expect.any(Array),
+              type: 'Buffer',
+            }),
           }),
         ]),
       );
@@ -299,7 +304,10 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: 'decrypted', // TODO: cache should contain the encrypted name
+            name: expect.objectContaining({
+              data: expect.any(Array),
+              type: 'Buffer',
+            }),
           }),
         ]),
       );
