@@ -86,20 +86,20 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     clientIp: string;
   }): Promise<Account> {
     await this.checkCreationRateLimit(args.clientIp);
-    const { address, name } = args.createAccountDto;
-    const hash = crypto.createHash('sha256');
-    hash.update(name);
-    const nameHash = hash.digest('hex');
-    const encryptedName = await this.getEncryptedName(name);
+    const encryptedAccountData = await this.encryptAccountData(
+      args.createAccountDto,
+    );
     const [dbAccount] = await this.sql<[Account]>`
       INSERT INTO accounts (address, name, name_hash)
-        VALUES (${address}, ${encryptedName}, ${nameHash})
+        VALUES (${encryptedAccountData.address}, ${encryptedAccountData.name}, ${encryptedAccountData.nameHash})
       RETURNING *
       `.catch((e) => {
       this.loggingService.warn(`Error creating account: ${asError(e).message}`);
       throw new UnprocessableEntityException('Error creating account.');
     });
-    const cacheDir = CacheRouter.getAccountCacheDir(address);
+    const cacheDir = CacheRouter.getAccountCacheDir(
+      args.createAccountDto.address,
+    );
     const account = {
       ...dbAccount,
       name: Buffer.from(dbAccount.name).toString('utf8'),
@@ -109,8 +109,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       JSON.stringify([account]),
       this.defaultExpirationTimeInSeconds,
     );
-    const decryptedName = await this.decryptName(account.name);
-    return omit({ ...account, name: decryptedName }, 'name_hash');
+    return omit(await this.decryptAccountData(account), 'name_hash');
   }
 
   async getAccount(address: `0x${string}`): Promise<Account> {
@@ -125,7 +124,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       throw new NotFoundException('Error getting account.');
     }
 
-    return { ...account, name: await this.decryptName(account.name) };
+    return this.decryptAccountData(account);
   }
 
   async deleteAccount(address: `0x${string}`): Promise<void> {
@@ -269,13 +268,19 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     }
   }
 
-  async getEncryptedName(name: string): Promise<string> {
+  async encryptAccountData(
+    createAccountDto: CreateAccountDto,
+  ): Promise<{ address: `0x${string}`; name: string; nameHash: string }> {
+    const hash = crypto.createHash('sha256');
+    hash.update(createAccountDto.name);
+    const nameHash = hash.digest('hex');
     const api = await this.encryptionApiManager.getApi();
-    return api.encrypt(name);
+    const encryptedName = await api.encrypt(createAccountDto.name);
+    return { address: createAccountDto.address, name: encryptedName, nameHash };
   }
 
-  async decryptName(encryptedName: string): Promise<string> {
+  async decryptAccountData(account: Account): Promise<Account> {
     const api = await this.encryptionApiManager.getApi();
-    return api.decrypt(encryptedName);
+    return { ...account, name: await api.decrypt(account.name) };
   }
 }

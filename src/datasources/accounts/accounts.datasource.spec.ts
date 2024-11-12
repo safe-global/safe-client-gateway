@@ -103,10 +103,7 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: expect.objectContaining({
-              data: expect.any(Array),
-              type: 'Buffer',
-            }),
+            name: 'encrypted',
           }),
         ]),
       );
@@ -138,10 +135,7 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: expect.objectContaining({
-              data: expect.any(Array),
-              type: 'Buffer',
-            }),
+            name: 'encrypted',
           }),
         ]),
       );
@@ -304,10 +298,7 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: expect.objectContaining({
-              data: expect.any(Array),
-              type: 'Buffer',
-            }),
+            name: 'encrypted',
           }),
         ]),
       );
