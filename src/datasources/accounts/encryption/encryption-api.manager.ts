@@ -7,8 +7,6 @@ import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manage
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
-// TODO: add tests
-
 @Injectable()
 export class EncryptionApiManager implements IEncryptionApiManager {
   /**
@@ -34,32 +32,28 @@ export class EncryptionApiManager implements IEncryptionApiManager {
   }
 
   getApi(): Promise<IEncryptionApi> {
-    if (!this.encryptionApi) {
-      this.encryptionApi =
-        this.accountsEncryptionType === 'aws'
-          ? this._setAwsEncryptionApi()
-          : this._setLocalEncryptionApi();
-    }
-    return Promise.resolve(this.encryptionApi);
+    if (this.encryptionApi) return Promise.resolve(this.encryptionApi);
+    return this.accountsEncryptionType === 'aws'
+      ? this._setAwsEncryptionApi()
+      : this._setLocalEncryptionApi();
   }
 
   destroyApi(): void {
     this.encryptionApi = undefined;
   }
 
-  private _setAwsEncryptionApi(): IEncryptionApi {
+  private _setAwsEncryptionApi(): Promise<IEncryptionApi> {
     this.encryptionApi = new AwsEncryptionApiService(
       this.configurationService,
       this.loggingService,
     );
-    return this.encryptionApi;
+    return Promise.resolve(this.encryptionApi);
   }
 
-  private _setLocalEncryptionApi(): IEncryptionApi {
+  private _setLocalEncryptionApi(): Promise<IEncryptionApi> {
     this.encryptionApi = new LocalEncryptionApiService(
       this.configurationService,
-      this.loggingService,
     );
-    return this.encryptionApi;
+    return Promise.resolve(this.encryptionApi);
   }
 }

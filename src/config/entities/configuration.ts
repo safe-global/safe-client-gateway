@@ -28,7 +28,14 @@ export default () => ({
       // The encryption type to use. Defaults to 'local'.
       // Supported values: 'aws', 'local'
       type: process.env.ACCOUNTS_ENCRYPTION_TYPE || 'local',
-      awsKmsKeyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+      awsKms: {
+        keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+      },
+      local: {
+        algorithm: process.env.LOCAL_ENCRYPTION_ALGORITHM || 'aes-256-cbc',
+        key: process.env.LOCAL_ENCRYPTION_KEY || 'a'.repeat(64),
+        iv: process.env.LOCAL_ENCRYPTION_IV || 'b'.repeat(32),
+      },
     },
   },
   amqp: {

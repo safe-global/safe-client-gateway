@@ -26,7 +26,7 @@ export class AwsEncryptionApiService implements IEncryptionApi, OnModuleInit {
         'accounts.encryption.type',
       );
     this.awsKmsKeyId = this.configurationService.get<string>(
-      'accounts.encryption.awsKmsKeyId',
+      'accounts.encryption.awsKms.keyId',
     );
     this.kmsClient = new KMSClient({
       // TODO: localstack
