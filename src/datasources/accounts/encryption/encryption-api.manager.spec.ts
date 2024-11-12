@@ -24,9 +24,9 @@ describe('EncryptionApiManager', () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'accounts.encryption.type') return 'local';
       if (key === 'application.isProduction') return false;
-      if (key === 'encryption.local.algorithm') return 'aes-256-cbc';
-      if (key === 'encryption.local.key') return 'a'.repeat(64);
-      if (key === 'encryption.local.iv') return 'b'.repeat(32);
+      if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
+      if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
+      if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new EncryptionApiManager(
@@ -43,9 +43,9 @@ describe('EncryptionApiManager', () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'accounts.encryption.type') return 'local';
       if (key === 'application.isProduction') return false;
-      if (key === 'encryption.local.algorithm') return 'aes-256-cbc';
-      if (key === 'encryption.local.key') return 'a'.repeat(64);
-      if (key === 'encryption.local.iv') return 'b'.repeat(32);
+      if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
+      if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
+      if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new EncryptionApiManager(

@@ -91,7 +91,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     hash.update(name);
     const nameHash = hash.digest('hex');
     const encryptedName = await this.getEncryptedName(name);
-    const [account] = await this.sql<[Account]>`
+    const [dbAccount] = await this.sql<[Account]>`
       INSERT INTO accounts (address, name, name_hash)
         VALUES (${address}, ${encryptedName}, ${nameHash})
       RETURNING *
@@ -100,12 +100,16 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
       throw new UnprocessableEntityException('Error creating account.');
     });
     const cacheDir = CacheRouter.getAccountCacheDir(address);
+    const account = {
+      ...dbAccount,
+      name: Buffer.from(dbAccount.name).toString('utf8'),
+    };
     await this.cacheService.hSet(
       cacheDir,
       JSON.stringify([account]),
       this.defaultExpirationTimeInSeconds,
     );
-    const decryptedName = await this.decryptName(name);
+    const decryptedName = await this.decryptName(account.name);
     return omit({ ...account, name: decryptedName }, 'name_hash');
   }
 

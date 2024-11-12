@@ -15,14 +15,18 @@ export class LocalEncryptionApiService implements IEncryptionApi {
       'application.isProduction',
     );
     this.algorithm = this.configurationService.getOrThrow<string>(
-      'encryption.local.algorithm',
+      'accounts.encryption.local.algorithm',
     );
     this.key = Buffer.from(
-      this.configurationService.getOrThrow<string>('encryption.local.key'),
+      this.configurationService.getOrThrow<string>(
+        'accounts.encryption.local.key',
+      ),
       'hex',
     );
     this.iv = Buffer.from(
-      this.configurationService.getOrThrow<string>('encryption.local.iv'),
+      this.configurationService.getOrThrow<string>(
+        'accounts.encryption.local.iv',
+      ),
       'hex',
     );
   }
