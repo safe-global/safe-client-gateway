@@ -4,16 +4,17 @@ import type { IEncryptionApi } from '@/domain/interfaces/encryption-api.interfac
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   CreateKeyCommand,
+  DecryptCommand,
   EncryptCommand,
   KMSClient,
   ListKeysCommand,
 } from '@aws-sdk/client-kms';
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
-export class AwsEncryptionApiService implements IEncryptionApi, OnModuleInit {
+export class AwsEncryptionApiService implements IEncryptionApi {
   private readonly kmsClient: KMSClient;
-  private awsKmsKeyId: string | undefined; // TODO: readonly after local encryption implementation
+  private awsKmsKeyId: string | undefined; // TODO: remove this when not using LocalStack
   private readonly accountsEncryptionType: AccountsEncryptionType;
 
   constructor(
@@ -38,47 +39,42 @@ export class AwsEncryptionApiService implements IEncryptionApi, OnModuleInit {
       },
     });
   }
-
-  async onModuleInit(): Promise<void> {
-    if (this.accountsEncryptionType === 'local') {
-      // TODO: move to a separate IEncryptionApi implementation and refactor to use local encryption
-      // instead of AWS KMS LocalStack implementation.
-      const keyId = await this.createKey();
-      await this.listKeys();
-      this.awsKmsKeyId = keyId;
+  async initKey(): Promise<void> {
+    // TODO: remove this when not using LocalStack
+    if (this.awsKmsKeyId) {
+      return;
     }
-    const encryptedData = await this.encrypt('testData');
-    this.loggingService.info(`Encrypted Data: ${encryptedData}`);
-
-    // const decryptedData = await this.kmsClient.send(
-    //   new DecryptCommand({ CiphertextBlob: encryptedData }),
-    // );
-    // const decryptedString = decryptedData.Plaintext
-    //   ? Buffer.from(decryptedData.Plaintext).toString('utf-8')
-    //   : '';
-    // this.loggingService.info(`Decrypted Data: ${decryptedString}`);
+    const keyId = await this.createKey();
+    await this.listKeys();
+    this.awsKmsKeyId = keyId;
   }
 
   async encrypt(data: string): Promise<string> {
+    await this.initKey();
     const encryptedData = await this.kmsClient.send(
       new EncryptCommand({
         KeyId: this.awsKmsKeyId,
         Plaintext: Buffer.from(data),
       }),
     );
-    this.loggingService.info(`Encrypted Data: ${encryptedData.CiphertextBlob}`);
-
-    return encryptedData.CiphertextBlob
-      ? Buffer.from(encryptedData.CiphertextBlob).toString('base64')
-      : '';
+    if (!encryptedData.CiphertextBlob) {
+      throw new Error('Failed to encrypt data');
+    }
+    return Buffer.from(encryptedData.CiphertextBlob).toString('base64');
   }
 
-  decrypt(data: string): Promise<string> {
-    this.loggingService.info(`Encrypting data: ${data}`);
-    throw new Error('Method not implemented.');
+  async decrypt(data: string): Promise<string> {
+    await this.initKey();
+    const decryptedData = await this.kmsClient.send(
+      new DecryptCommand({ CiphertextBlob: Buffer.from(data, 'base64') }),
+    );
+    if (!decryptedData.Plaintext) {
+      throw new Error('Failed to decrypt data');
+    }
+    return Buffer.from(decryptedData.Plaintext).toString('utf-8');
   }
 
-  // TODO: remove this function after the key is created
+  // TODO: remove this when not using LocalStack
   async createKey(): Promise<string> {
     const command = new CreateKeyCommand({
       Description: 'Test key for LocalStack',
@@ -90,7 +86,7 @@ export class AwsEncryptionApiService implements IEncryptionApi, OnModuleInit {
     return response.KeyMetadata?.KeyId || '';
   }
 
-  // TODO: remove this function after the key is created
+  // TODO: remove this when not using LocalStack
   async listKeys(): Promise<void> {
     const command = new ListKeysCommand({});
     const response = await this.kmsClient.send(command);
