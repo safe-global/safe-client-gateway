@@ -184,6 +184,7 @@ describe('AccountsController', () => {
         id: account.id.toString(),
         groupId: null,
         address: account.address,
+        name: account.name,
       };
 
       await request(app.getHttpServer())
@@ -212,6 +213,7 @@ describe('AccountsController', () => {
         id: account.id.toString(),
         groupId: groupId.toString(),
         address: account.address,
+        name: account.name,
       };
 
       await request(app.getHttpServer())
