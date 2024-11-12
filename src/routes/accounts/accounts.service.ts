@@ -103,6 +103,7 @@ export class AccountsService {
       domainAccount.id.toString(),
       domainAccount.group_id?.toString() ?? null,
       domainAccount.address,
+      domainAccount.name,
     );
   }
 
