@@ -200,7 +200,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const moduleTransaction = moduleTransactionBuilder()
       .with('safe', getAddress(safe.address))
       .with('data', null)
-      .with('value', '0xf')
+      .with('value', '15')
       .with('operation', Operation.CALL)
       .with('isSuccessful', true)
       .build();
@@ -420,7 +420,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const contract = contractBuilder().build();
     const executionDate = faker.date.recent();
     const safeTxGas = faker.number.int();
-    const gasPrice = faker.string.hexadecimal();
+    const gasPrice = faker.string.numeric();
     const baseGas = faker.number.int();
     const confirmations = [
       confirmationBuilder().build(),
@@ -585,7 +585,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const contract = contractBuilder().build();
     const executionDate = faker.date.recent();
     const safeTxGas = faker.number.int();
-    const gasPrice = faker.string.hexadecimal();
+    const gasPrice = faker.string.numeric();
     const baseGas = faker.number.int();
     const confirmations = [
       confirmationBuilder().build(),
@@ -753,7 +753,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const contract = contractBuilder().build();
     const executionDate = faker.date.recent();
     const safeTxGas = faker.number.int();
-    const gasPrice = faker.string.hexadecimal();
+    const gasPrice = faker.string.numeric();
     const baseGas = faker.number.int();
     const confirmations = [
       confirmationBuilder().build(),
