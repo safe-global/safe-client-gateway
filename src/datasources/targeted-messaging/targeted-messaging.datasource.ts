@@ -23,9 +23,14 @@ import { SubmissionNotFoundError } from '@/domain/targeted-messaging/errors/subm
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
-import { Inject, UnprocessableEntityException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import postgres from 'postgres';
 
+@Injectable()
 export class TargetedMessagingDatasource
   implements ITargetedMessagingDatasource
 {

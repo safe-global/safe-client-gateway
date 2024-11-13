@@ -50,6 +50,8 @@ import { IdentityApiModule } from '@/datasources/locking-api/identity-api.module
 import { TestIdentityApiModule } from '@/datasources/locking-api/__tests__/test.identity-api.module';
 import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
 import { eligibilityBuilder } from '@/domain/community/entities/__tests__/eligibility.builder';
+import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
+import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 
 describe('Community (Unit)', () => {
   let app: INestApplication<Server>;
@@ -65,6 +67,8 @@ describe('Community (Unit)', () => {
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
+      .overrideModule(TargetedMessagingDatasourceModule)
+      .useModule(TestTargetedMessagingDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

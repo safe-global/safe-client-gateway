@@ -72,7 +72,6 @@ export class AppModule implements NestModule {
       email: isEmailFeatureEnabled,
       delegatesV2: isDelegatesV2Enabled,
       pushNotifications: isPushNotificationsEnabled,
-      targetedMessaging: isTargetedMessagingFeatureEnabled,
     } = configFactory()['features'];
 
     return {
@@ -108,7 +107,7 @@ export class AppModule implements NestModule {
         RootModule,
         SafeAppsModule,
         SafesModule,
-        ...(isTargetedMessagingFeatureEnabled ? [TargetedMessagingModule] : []),
+        TargetedMessagingModule,
         TransactionsModule,
         TransactionsViewControllerModule,
         // common
