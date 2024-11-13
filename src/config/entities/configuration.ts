@@ -215,8 +215,6 @@ export default () => ({
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
-    imitationMapping:
-      process.env.FF_IMITATION_MAPPING?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     delegatesV2: process.env.FF_DELEGATES_V2?.toLowerCase() === 'true',
     counterfactualBalances:

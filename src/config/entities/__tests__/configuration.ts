@@ -138,7 +138,6 @@ export default (): ReturnType<typeof configuration> => ({
     zerionBalancesChainIds: ['137'],
     debugLogs: false,
     configHooksDebugLogs: false,
-    imitationMapping: false,
     auth: false,
     delegatesV2: false,
     counterfactualBalances: false,

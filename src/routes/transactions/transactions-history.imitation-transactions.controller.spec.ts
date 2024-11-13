@@ -84,7 +84,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       },
       features: {
         ...configuration().features,
-        imitationMapping: true,
         improvedAddressPoisoning: true,
       },
     });
