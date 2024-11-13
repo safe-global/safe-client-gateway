@@ -24,7 +24,6 @@ import {
 
 @Injectable()
 export class TransactionsHistoryMapper {
-  private readonly isImitationMappingEnabled: boolean;
   private readonly maxNestedTransfers: number;
 
   constructor(
@@ -36,9 +35,6 @@ export class TransactionsHistoryMapper {
     private readonly transferImitationMapper: TransferImitationMapper,
     private readonly creationTransactionMapper: CreationTransactionMapper,
   ) {
-    this.isImitationMappingEnabled = this.configurationService.getOrThrow(
-      'features.imitationMapping',
-    );
     this.maxNestedTransfers = this.configurationService.getOrThrow(
       'mappings.history.maxNestedTransfers',
     );
@@ -149,10 +145,6 @@ export class TransactionsHistoryMapper {
     const transactionItems = mappedTransactions
       .filter(<T>(x: T): x is NonNullable<T> => x != null)
       .flat();
-
-    if (!this.isImitationMappingEnabled) {
-      return transactionItems;
-    }
 
     return this.transferImitationMapper.mapImitations({
       transactions: transactionItems,
