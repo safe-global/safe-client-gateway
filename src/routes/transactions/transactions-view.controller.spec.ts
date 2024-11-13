@@ -62,10 +62,6 @@ describe('TransactionsViewController tests', () => {
     const baseConfig = configuration();
     const testConfiguration: typeof configuration = () => ({
       ...baseConfig,
-      features: {
-        ...baseConfig.features,
-        nativeStaking: true,
-      },
       swaps: {
         ...baseConfig.swaps,
         restrictApps: true,

@@ -224,9 +224,6 @@ export default () => ({
     accounts: process.env.FF_ACCOUNTS?.toLowerCase() === 'true',
     pushNotifications:
       process.env.FF_PUSH_NOTIFICATIONS?.toLowerCase() === 'true',
-    nativeStaking: process.env.FF_NATIVE_STAKING?.toLowerCase() === 'true',
-    nativeStakingDecoding:
-      process.env.FF_NATIVE_STAKING_DECODING?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
   },
