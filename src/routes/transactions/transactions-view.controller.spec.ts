@@ -20,6 +20,8 @@ import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests_
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
 import { StakeState } from '@/datasources/staking-api/entities/stake.entity';
+import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
+import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { getNumberString } from '@/domain/common/utils/utils';
 import {
@@ -76,6 +78,8 @@ describe('TransactionsViewController tests', () => {
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
+      .overrideModule(TargetedMessagingDatasourceModule)
+      .useModule(TestTargetedMessagingDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)

@@ -227,8 +227,6 @@ export default () => ({
     nativeStaking: process.env.FF_NATIVE_STAKING?.toLowerCase() === 'true',
     nativeStakingDecoding:
       process.env.FF_NATIVE_STAKING_DECODING?.toLowerCase() === 'true',
-    targetedMessaging:
-      process.env.FF_TARGETED_MESSAGING?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
   },
