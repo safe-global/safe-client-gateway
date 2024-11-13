@@ -1,4 +1,3 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
@@ -25,10 +24,8 @@ import { TwapOrderHelper } from '@/routes/transactions/helpers/twap-order.helper
 import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native-staking.mapper';
 import { Inject, Injectable } from '@nestjs/common';
 
-@Injectable({})
+@Injectable()
 export class TransactionsViewService {
-  private readonly isNativeStakingEnabled: boolean;
-
   constructor(
     @Inject(IDataDecodedRepository)
     private readonly dataDecodedRepository: IDataDecodedRepository,
@@ -40,16 +37,10 @@ export class TransactionsViewService {
     private readonly swapsRepository: ISwapsRepository,
     private readonly composableCowDecoder: ComposableCowDecoder,
     private readonly swapAppsHelper: SwapAppsHelper,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
     private readonly kilnDecoder: KilnDecoder,
-  ) {
-    this.isNativeStakingEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.nativeStaking',
-    );
-  }
+  ) {}
 
   async getTransactionConfirmationView(args: {
     chainId: string;
@@ -83,7 +74,6 @@ export class TransactionsViewService {
       : null;
 
     const nativeStakingDepositTransaction =
-      this.isNativeStakingEnabled &&
       this.kilnNativeStakingHelper.findDepositTransaction({
         to: args.transactionDataDto.to,
         data: args.transactionDataDto.data,
@@ -92,7 +82,6 @@ export class TransactionsViewService {
       });
 
     const nativeStakingValidatorsExitTransaction =
-      this.isNativeStakingEnabled &&
       this.kilnNativeStakingHelper.findValidatorsExitTransaction({
         to: args.transactionDataDto.to,
         data: args.transactionDataDto.data,
@@ -101,7 +90,6 @@ export class TransactionsViewService {
       });
 
     const nativeStakingWithdrawTransaction =
-      this.isNativeStakingEnabled &&
       this.kilnNativeStakingHelper.findWithdrawTransaction({
         to: args.transactionDataDto.to,
         data: args.transactionDataDto.data,

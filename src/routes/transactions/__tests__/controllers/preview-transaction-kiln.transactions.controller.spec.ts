@@ -60,17 +60,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    const baseConfig = configuration();
-    const testConfiguration: typeof configuration = () => ({
-      ...baseConfig,
-      features: {
-        ...baseConfig.features,
-        nativeStaking: true,
-        nativeStakingDecoding: true,
-      },
-    });
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
+      imports: [AppModule.register(configuration)],
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
