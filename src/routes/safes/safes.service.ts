@@ -25,6 +25,7 @@ import { SafeOverview } from '@/routes/safes/entities/safe-overview.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import { Caip10Addresses } from '@/routes/safes/entities/caip-10-addresses.entity';
 
 @Injectable()
 export class SafesService {
@@ -129,7 +130,7 @@ export class SafesService {
 
   async getSafeOverview(args: {
     currency: string;
-    addresses: Array<{ chainId: string; address: `0x${string}` }>;
+    addresses: Caip10Addresses;
     trusted: boolean;
     excludeSpam: boolean;
     walletAddress?: `0x${string}`;
