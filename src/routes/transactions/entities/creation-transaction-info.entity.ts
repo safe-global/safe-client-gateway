@@ -6,6 +6,8 @@ import {
 } from '@/routes/transactions/entities/transaction-info.entity';
 
 export class CreationTransactionInfo extends TransactionInfo {
+  @ApiProperty({ enum: [TransactionInfoType.Creation] })
+  override type = TransactionInfoType.Creation;
   @ApiProperty()
   creator: AddressInfo;
   @ApiProperty()
