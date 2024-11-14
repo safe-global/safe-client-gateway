@@ -1,30 +1,42 @@
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { AppModule } from '@/app.module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
+import { TestIdentityApiModule } from '@/datasources/locking-api/__tests__/test.identity-api.module';
+import { IdentityApiModule } from '@/datasources/locking-api/identity-api.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
+import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
+import {
+  toJson as multisigToJson,
+  multisigTransactionBuilder,
+} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import request from 'supertest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
-import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import {
-  multisigTransactionBuilder,
-  toJson as multisigToJson,
-} from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { TransactionsModule } from '@/routes/transactions/transactions.module';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { getAddress } from 'viem';
 import type { Server } from 'net';
+import request from 'supertest';
+import { getAddress } from 'viem';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -35,16 +47,25 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        // feature
-        TransactionsModule,
-        // common
-        TestCacheModule,
-        ConfigurationModule.register(configuration),
-        TestLoggingModule,
-        TestNetworkModule,
-      ],
-    }).compile();
+      imports: [AppModule.register(configuration)],
+    })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
+      .overrideModule(TargetedMessagingDatasourceModule)
+      .useModule(TestTargetedMessagingDatasourceModule)
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
+      .overrideModule(IdentityApiModule)
+      .useModule(TestIdentityApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
+      .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
