@@ -1,4 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { EncryptedBlob } from '@/datasources/accounts/encryption/entities/encrypted-blob.entity';
 import type { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
@@ -49,5 +50,48 @@ export class LocalEncryptionApiService implements IEncryptionApi {
     let decrypted = decipher.update(data, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return Promise.resolve(decrypted);
+  }
+
+  async encryptBlob(data: unknown): Promise<EncryptedBlob> {
+    if (this.isProduction) {
+      throw new Error('Local encryption is not suitable for production usage');
+    }
+    if ((typeof data !== 'object' && !Array.isArray(data)) || data === null) {
+      throw new Error('Data must be an object or array');
+    }
+    const encryptedData = Buffer.from(
+      await this.encrypt(JSON.stringify(data)),
+      'hex',
+    );
+    const encryptedDataKey = Buffer.from(
+      await this.encrypt(this.key.toString('hex')),
+      'hex',
+    );
+    return {
+      encryptedData,
+      encryptedDataKey,
+      iv: this.iv,
+    };
+  }
+
+  async decryptBlob(encryptedBlob: EncryptedBlob): Promise<unknown> {
+    if (this.isProduction) {
+      throw new Error('Local encryption is not suitable for production usage');
+    }
+    const decryptedKey = await this.decrypt(
+      encryptedBlob.encryptedDataKey.toString('hex'),
+    );
+    const decipher = crypto.createDecipheriv(
+      this.algorithm,
+      Buffer.from(decryptedKey, 'hex'),
+      encryptedBlob.iv,
+    );
+    let decrypted = decipher.update(
+      encryptedBlob.encryptedData.toString('hex'),
+      'hex',
+      'utf8',
+    );
+    decrypted += decipher.final('utf8');
+    return Promise.resolve(JSON.parse(decrypted));
   }
 }
