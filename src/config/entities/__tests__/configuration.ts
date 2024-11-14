@@ -14,6 +14,17 @@ export default (): ReturnType<typeof configuration> => ({
       creationRateLimitPeriodSeconds: faker.number.int(),
       creationRateLimitCalls: faker.number.int(),
     },
+    encryption: {
+      type: faker.string.sample(),
+      awsKms: {
+        keyId: faker.string.uuid(),
+      },
+      local: {
+        algorithm: faker.string.alphanumeric(),
+        key: faker.string.alphanumeric(),
+        iv: faker.string.alphanumeric(),
+      },
+    },
   },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),

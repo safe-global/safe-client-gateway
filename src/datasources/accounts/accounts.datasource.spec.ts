@@ -10,6 +10,8 @@ import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/acc
 import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/create-account.dto.builder';
 import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
 import type { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
+import type { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
+import type { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
@@ -25,6 +27,15 @@ const mockLoggingService = {
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
+
+const encryptionApiManagerMock = {
+  getApi: jest.fn(),
+} as jest.MockedObjectDeep<IEncryptionApiManager>;
+
+const encryptionApiMock = {
+  encrypt: jest.fn(),
+  decrypt: jest.fn(),
+} as jest.MockedObjectDeep<IEncryptionApi>;
 
 describe('AccountsDatasource tests', () => {
   let fakeCacheService: FakeCacheService;
@@ -48,7 +59,11 @@ describe('AccountsDatasource tests', () => {
       new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockLoggingService,
       mockConfigurationService,
+      encryptionApiManagerMock,
     );
+    encryptionApiManagerMock.getApi.mockResolvedValue(encryptionApiMock);
+    encryptionApiMock.encrypt.mockResolvedValue('encrypted');
+    encryptionApiMock.decrypt.mockResolvedValue('decrypted');
   });
 
   afterEach(async () => {
@@ -74,7 +89,7 @@ describe('AccountsDatasource tests', () => {
         id: expect.any(Number),
         group_id: null,
         address: createAccountDto.address,
-        name: createAccountDto.name,
+        name: 'decrypted',
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
@@ -88,7 +103,7 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: createAccountDto.name,
+            name: 'encrypted',
           }),
         ]),
       );
@@ -106,7 +121,7 @@ describe('AccountsDatasource tests', () => {
         id: expect.any(Number),
         group_id: null,
         address: createAccountDto.address,
-        name: createAccountDto.name,
+        name: 'decrypted',
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
@@ -120,7 +135,7 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: createAccountDto.name,
+            name: 'encrypted',
           }),
         ]),
       );
@@ -164,6 +179,7 @@ describe('AccountsDatasource tests', () => {
         new CachedQueryResolver(mockLoggingService, fakeCacheService),
         mockLoggingService,
         mockConfigurationService,
+        encryptionApiManagerMock,
       );
 
       for (let i = 0; i < accountCreationRateLimitCalls; i++) {
@@ -205,6 +221,7 @@ describe('AccountsDatasource tests', () => {
         new CachedQueryResolver(mockLoggingService, fakeCacheService),
         mockLoggingService,
         mockConfigurationService,
+        encryptionApiManagerMock,
       );
 
       for (let i = 0; i < accountsToCreate; i++) {
@@ -251,7 +268,7 @@ describe('AccountsDatasource tests', () => {
           id: expect.any(Number),
           group_id: null,
           address: createAccountDto.address,
-          name: createAccountDto.name,
+          name: 'decrypted',
         }),
       );
     });
@@ -270,7 +287,7 @@ describe('AccountsDatasource tests', () => {
           id: expect.any(Number),
           group_id: null,
           address: createAccountDto.address,
-          name: createAccountDto.name,
+          name: 'decrypted',
         }),
       );
       const cacheDir = new CacheDir(`account_${createAccountDto.address}`, '');
@@ -281,7 +298,7 @@ describe('AccountsDatasource tests', () => {
             id: expect.any(Number),
             group_id: null,
             address: createAccountDto.address,
-            name: createAccountDto.name,
+            name: 'encrypted',
           }),
         ]),
       );
@@ -355,7 +372,7 @@ describe('AccountsDatasource tests', () => {
           id: expect.any(Number),
           group_id: null,
           address: createAccountDto.address,
-          name: createAccountDto.name,
+          name: 'decrypted',
         }),
       );
 

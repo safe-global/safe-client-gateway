@@ -2,8 +2,10 @@ import { z } from 'zod';
 
 export const RootConfigurationSchema = z
   .object({
+    ACCOUNTS_ENCRYPTION_TYPE: z.enum(['local', 'aws']).optional(),
     AUTH_TOKEN: z.string(),
     AWS_ACCESS_KEY_ID: z.string().optional(),
+    AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().optional(),
     CGW_ENV: z.string().optional(),
@@ -41,24 +43,31 @@ export const RootConfigurationSchema = z
   })
   .superRefine((config, ctx) =>
     // Check for AWS_* fields in production and staging environments
-    ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION'].forEach(
-      (field) => {
-        if (
-          config.CGW_ENV &&
-          config instanceof Object &&
-          ['production', 'staging'].includes(config.CGW_ENV) &&
-          !(config as Record<string, unknown>)[field]
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `is required in production and staging environments`,
-            path: [field],
-          });
-        }
-      },
-    ),
+    [
+      'AWS_ACCESS_KEY_ID',
+      'AWS_KMS_ENCRYPTION_KEY_ID',
+      'AWS_SECRET_ACCESS_KEY',
+      'AWS_REGION',
+    ].forEach((field) => {
+      if (
+        config.CGW_ENV &&
+        config instanceof Object &&
+        ['production', 'staging'].includes(config.CGW_ENV) &&
+        !(config as Record<string, unknown>)[field]
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `is required in production and staging environments`,
+          path: [field],
+        });
+      }
+    }),
   );
 
 export type FileStorageType = z.infer<
   typeof RootConfigurationSchema
 >['TARGETED_MESSAGING_FILE_STORAGE_TYPE'];
+
+export type AccountsEncryptionType = z.infer<
+  typeof RootConfigurationSchema
+>['ACCOUNTS_ENCRYPTION_TYPE'];
