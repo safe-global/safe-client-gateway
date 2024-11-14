@@ -24,6 +24,19 @@ export default () => ({
           `${25}`,
       ),
     },
+    encryption: {
+      // The encryption type to use. Defaults to 'local'.
+      // Supported values: 'aws', 'local'
+      type: process.env.ACCOUNTS_ENCRYPTION_TYPE || 'local',
+      awsKms: {
+        keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+      },
+      local: {
+        algorithm: process.env.LOCAL_ENCRYPTION_ALGORITHM || 'aes-256-cbc',
+        key: process.env.LOCAL_ENCRYPTION_KEY || 'a'.repeat(64),
+        iv: process.env.LOCAL_ENCRYPTION_IV || 'b'.repeat(32),
+      },
+    },
   },
   amqp: {
     url: process.env.AMQP_URL || 'amqp://localhost:5672',
@@ -215,8 +228,6 @@ export default () => ({
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
-    imitationMapping:
-      process.env.FF_IMITATION_MAPPING?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     delegatesV2: process.env.FF_DELEGATES_V2?.toLowerCase() === 'true',
     counterfactualBalances:
@@ -224,11 +235,6 @@ export default () => ({
     accounts: process.env.FF_ACCOUNTS?.toLowerCase() === 'true',
     pushNotifications:
       process.env.FF_PUSH_NOTIFICATIONS?.toLowerCase() === 'true',
-    nativeStaking: process.env.FF_NATIVE_STAKING?.toLowerCase() === 'true',
-    nativeStakingDecoding:
-      process.env.FF_NATIVE_STAKING_DECODING?.toLowerCase() === 'true',
-    targetedMessaging:
-      process.env.FF_TARGETED_MESSAGING?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
   },
@@ -247,6 +253,13 @@ export default () => ({
     baseUri:
       process.env.LOCKING_PROVIDER_API_BASE_URI ||
       'https://safe-locking.safe.global',
+    eligibility: {
+      fingerprintEncryptionKey: process.env.FINGERPRINT_ENCRYPTION_KEY,
+      nonEligibleCountryCodes:
+        process.env.FINGERPRINT_NON_ELIGIBLE_COUNTRY_CODES?.split(',') ?? [
+          'US',
+        ],
+    },
   },
   log: {
     level: process.env.LOG_LEVEL || 'debug',

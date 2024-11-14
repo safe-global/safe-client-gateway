@@ -11,5 +11,3 @@ export const OutreachFileSchema = z.object({
   end_date: z.coerce.date(),
   safe_addresses: z.array(AddressSchema),
 });
-
-// TODO: Add tests for this schema.

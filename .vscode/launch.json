@@ -12,7 +12,13 @@
       "program": "${workspaceFolder}/src/main.ts",
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "console": "integratedTerminal",
-      "outputCapture": "std"
+      "outputCapture": "std",
+      "env": {
+        "FF_AUTH": "true",
+        "FF_EMAIL": "true",
+        "FF_ACCOUNTS": "true",
+        "FF_DELEGATES_V2": "true"
+      }
     },
     {
       "type": "node",

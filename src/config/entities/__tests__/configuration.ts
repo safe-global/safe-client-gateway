@@ -14,6 +14,17 @@ export default (): ReturnType<typeof configuration> => ({
       creationRateLimitPeriodSeconds: faker.number.int(),
       creationRateLimitCalls: faker.number.int(),
     },
+    encryption: {
+      type: faker.string.sample(),
+      awsKms: {
+        keyId: faker.string.uuid(),
+      },
+      local: {
+        algorithm: faker.string.alphanumeric(),
+        key: faker.string.alphanumeric(),
+        iv: faker.string.alphanumeric(),
+      },
+    },
   },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),
@@ -138,20 +149,23 @@ export default (): ReturnType<typeof configuration> => ({
     zerionBalancesChainIds: ['137'],
     debugLogs: false,
     configHooksDebugLogs: false,
-    imitationMapping: false,
     auth: false,
     delegatesV2: false,
     counterfactualBalances: false,
     accounts: false,
     pushNotifications: false,
-    nativeStaking: false,
-    nativeStakingDecoding: false,
-    targetedMessaging: false,
     improvedAddressPoisoning: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),
+    eligibility: {
+      fingerprintEncryptionKey: faker.string.uuid(),
+      nonEligibleCountryCodes: faker.helpers.multiple(
+        () => faker.location.countryCode(),
+        { count: { min: 1, max: 5 } },
+      ),
+    },
   },
   jwt: {
     issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',

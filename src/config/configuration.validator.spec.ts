@@ -9,6 +9,7 @@ describe('Configuration validator', () => {
     ...JSON.parse(fakeJson()),
     AUTH_TOKEN: faker.string.uuid(),
     AWS_ACCESS_KEY_ID: faker.string.uuid(),
+    AWS_KMS_ENCRYPTION_KEY_ID: faker.string.uuid(),
     AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
     AWS_REGION: faker.string.alphanumeric(),
     ALERTS_PROVIDER_SIGNING_KEY: faker.string.uuid(),
@@ -21,6 +22,7 @@ describe('Configuration validator', () => {
     EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
+    FINGERPRINT_ENCRYPTION_KEY: faker.string.uuid(),
     INFURA_API_KEY: faker.string.uuid(),
     JWT_ISSUER: faker.string.uuid(),
     JWT_SECRET: faker.string.uuid(),
@@ -67,6 +69,7 @@ describe('Configuration validator', () => {
     { key: 'EMAIL_TEMPLATE_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX' },
     { key: 'EMAIL_TEMPLATE_VERIFICATION_CODE' },
+    { key: 'FINGERPRINT_ENCRYPTION_KEY' },
     { key: 'INFURA_API_KEY' },
     { key: 'JWT_ISSUER' },
     { key: 'JWT_SECRET' },
@@ -115,6 +118,7 @@ describe('Configuration validator', () => {
       EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
       EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
+      FINGERPRINT_ENCRYPTION_KEY: faker.string.uuid(),
       INFURA_API_KEY: faker.string.uuid(),
       JWT_ISSUER: faker.string.uuid(),
       JWT_SECRET: faker.string.uuid(),
@@ -150,6 +154,7 @@ describe('Configuration validator', () => {
       ...JSON.parse(fakeJson()),
       AUTH_TOKEN: faker.string.uuid(),
       AWS_ACCESS_KEY_ID: faker.string.uuid(),
+      AWS_KMS_ENCRYPTION_KEY_ID: faker.string.uuid(),
       AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
       AWS_REGION: faker.lorem.word(),
       LOG_LEVEL: faker.helpers.arrayElement(['error', 'warn', 'info']),
@@ -163,6 +168,7 @@ describe('Configuration validator', () => {
       EMAIL_TEMPLATE_RECOVERY_TX: faker.string.alphanumeric(),
       EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: faker.string.alphanumeric(),
       EMAIL_TEMPLATE_VERIFICATION_CODE: faker.string.alphanumeric(),
+      FINGERPRINT_ENCRYPTION_KEY: faker.string.uuid(),
       INFURA_API_KEY: faker.string.uuid(),
       JWT_ISSUER: faker.string.uuid(),
       JWT_SECRET: faker.string.uuid(),
@@ -193,22 +199,20 @@ describe('Configuration validator', () => {
     );
   });
 
-  describe.each(['staging', 'production'])('environment', (env) => {
+  describe.each(['staging', 'production'])('%s environment', (env) => {
     it.each([
       { key: 'AWS_ACCESS_KEY_ID' },
+      { key: 'AWS_KMS_ENCRYPTION_KEY_ID' },
       { key: 'AWS_SECRET_ACCESS_KEY' },
       { key: 'AWS_REGION' },
-    ])(
-      `should require AWS_* configuration in ${env} environment`,
-      ({ key }) => {
-        process.env.NODE_ENV = 'production';
-        const config = { ...omit(validConfiguration, key), CGW_ENV: env };
-        expect(() =>
-          configurationValidator(config, RootConfigurationSchema),
-        ).toThrow(
-          `Configuration is invalid: ${key} is required in production and staging environments`,
-        );
-      },
-    );
+    ])(`should require $key configuration in ${env} environment`, ({ key }) => {
+      process.env.NODE_ENV = 'production';
+      const config = { ...omit(validConfiguration, key), CGW_ENV: env };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        `Configuration is invalid: ${key} is required in production and staging environments`,
+      );
+    });
   });
 });

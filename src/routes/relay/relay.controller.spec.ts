@@ -59,6 +59,8 @@ import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
 } from '@/domain/alerts/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
+import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 
 const supportedChainIds = faker.helpers.arrayElements(
   Object.keys(configuration().relay.apiKey),
@@ -110,6 +112,8 @@ describe('Relay controller', () => {
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
+      .overrideModule(TargetedMessagingDatasourceModule)
+      .useModule(TestTargetedMessagingDatasourceModule)
       .overrideModule(CacheModule)
       .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
