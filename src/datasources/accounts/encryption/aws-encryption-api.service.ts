@@ -41,6 +41,16 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     return Buffer.from(encryptedData.CiphertextBlob).toString('base64');
   }
 
+  async decrypt(data: string): Promise<string> {
+    const decryptedData = await this.kmsClient.send(
+      new DecryptCommand({ CiphertextBlob: Buffer.from(data, 'base64') }),
+    );
+    if (!decryptedData.Plaintext) {
+      throw new Error('Failed to decrypt data');
+    }
+    return Buffer.from(decryptedData.Plaintext).toString('utf-8');
+  }
+
   async encryptBlob(data: unknown): Promise<{
     encryptedData: Buffer;
     encryptedDataKey: Buffer;
@@ -55,31 +65,19 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     if (!dataKeyResponse.Plaintext || !dataKeyResponse.CiphertextBlob) {
       throw new Error('Failed to generate data key');
     }
-    const iv = crypto.randomBytes(16); // Generate a new IV for each encryption
+    const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(
       this.algorithm,
       dataKeyResponse.Plaintext,
       iv,
     );
-    const encryptedData = Buffer.concat([
-      cipher.update(JSON.stringify(data), 'utf8'),
-      cipher.final(),
-    ]);
+    let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'base64');
+    encrypted += cipher.final('base64');
     return {
-      encryptedData: Buffer.from(encryptedData),
+      encryptedData: Buffer.from(encrypted),
       encryptedDataKey: Buffer.from(dataKeyResponse.CiphertextBlob),
       iv,
     };
-  }
-
-  async decrypt(data: string): Promise<string> {
-    const decryptedData = await this.kmsClient.send(
-      new DecryptCommand({ CiphertextBlob: Buffer.from(data, 'base64') }),
-    );
-    if (!decryptedData.Plaintext) {
-      throw new Error('Failed to decrypt data');
-    }
-    return Buffer.from(decryptedData.Plaintext).toString('utf-8');
   }
 
   async decryptBlob(data: {
@@ -98,7 +96,11 @@ export class AwsEncryptionApiService implements IEncryptionApi {
       decryptedDataKey.Plaintext,
       data.iv,
     );
-    let decrypted = decipher.update(data.encryptedData, 'base64', 'utf8');
+    let decrypted = decipher.update(
+      data.encryptedData.toString('base64'),
+      'base64',
+      'utf8',
+    );
     decrypted += decipher.final('utf8');
     return JSON.parse(decrypted);
   }

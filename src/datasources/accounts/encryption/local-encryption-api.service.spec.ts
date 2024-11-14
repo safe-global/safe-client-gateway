@@ -3,7 +3,6 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { encryptedBlobBuilder } from '@/datasources/accounts/encryption/entities/__tests__/encrypted-blob.builder';
 import { LocalEncryptionApiService } from '@/datasources/accounts/encryption/local-encryption-api.service';
 import { faker } from '@faker-js/faker/.';
-import * as crypto from 'crypto';
 
 const mockConfigurationService = {
   get: jest.fn(),
@@ -77,9 +76,9 @@ describe('LocalEncryptionApiService', () => {
     it('should fail to encryptBlob in production', async () => {
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
         if (key === 'application.isProduction') return true;
-        if (key === 'accounts.encryption.local.algorithm') return 'aes-256-gcm';
-        if (key === 'accounts.encryption.local.key')
-          return crypto.randomBytes(32);
+        if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
+        if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
+        if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
         throw new Error(`Unexpected key: ${key}`);
       });
       target = new LocalEncryptionApiService(mockConfigurationService);
@@ -94,9 +93,9 @@ describe('LocalEncryptionApiService', () => {
     it('should fail to decryptBlob in production', async () => {
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
         if (key === 'application.isProduction') return true;
-        if (key === 'accounts.encryption.local.algorithm') return 'aes-256-gcm';
-        if (key === 'accounts.encryption.local.key')
-          return crypto.randomBytes(32);
+        if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
+        if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
+        if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
         throw new Error(`Unexpected key: ${key}`);
       });
       target = new LocalEncryptionApiService(mockConfigurationService);
@@ -124,7 +123,7 @@ describe('LocalEncryptionApiService', () => {
       ).rejects.toThrow('Data must be an object or array');
     });
 
-    it('should fail to encrypt null or undefined data', async () => {
+    it('should fail to encrypt null data', async () => {
       await expect(target.encryptBlob(null)).rejects.toThrow(
         'Data must be an object or array',
       );

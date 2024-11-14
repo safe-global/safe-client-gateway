@@ -17,9 +17,8 @@ describe('AwsEncryptionApiService', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     mockConfigurationService.get.mockImplementation((key) => {
-      if (key === 'accounts.encryption.awsKms.keyId') {
-        return awsKmsKeyId;
-      }
+      if (key === 'accounts.encryption.awsKms.keyId') return awsKmsKeyId;
+      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-gcm';
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new AwsEncryptionApiService(mockConfigurationService);
@@ -49,4 +48,17 @@ describe('AwsEncryptionApiService', () => {
       }),
     ).toHaveLength(1);
   });
+
+  it.todo('should fail to encrypt when the KMS client fails');
+  it.todo('should fail to decrypt when the KMS client fails');
+  it.todo(
+    'should fail to encrypt when the KMS client does not return a CiphertextBlob',
+  );
+  it.todo(
+    'should fail to decrypt when the KMS client does not return a Plaintext',
+  );
+  it.todo('should encrypt and decrypt arrays of objects correctly');
+  it.todo('should fail to encrypt non-object data');
+  it.todo('should fail to encrypt null data');
+  it.todo('should fail to encrypt undefined data');
 });

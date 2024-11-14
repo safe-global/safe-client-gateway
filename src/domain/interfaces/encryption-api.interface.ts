@@ -5,9 +5,9 @@ export const IEncryptionApi = Symbol('IEncryptionApi');
 export interface IEncryptionApi {
   encrypt(data: string): Promise<string>;
 
-  encryptBlob(data: unknown): Promise<EncryptedBlob>;
-
   decrypt(data: string): Promise<string>;
+
+  encryptBlob(data: unknown): Promise<EncryptedBlob>;
 
   decryptBlob(data: EncryptedBlob): Promise<unknown>;
 }
