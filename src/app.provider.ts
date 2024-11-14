@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { VersioningType } from '@nestjs/common';
+import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -26,7 +27,28 @@ function configureSwagger(app: INestApplication): void {
     .setVersion(configurationService.get('about.version') ?? '')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const options: SwaggerDocumentOptions = {
+    operationIdFactory: (
+      controllerKey: string,
+      methodKey: string,
+      version: string | undefined,
+    ) => {
+      const capitalize = (str: string): string =>
+        str ? str[0].toUpperCase() + str.slice(1) : '';
+      const decapitalize = (str: string): string =>
+        str ? str[0].toLowerCase() + str.slice(1) : '';
+      const versionPart = version ? capitalize(version) : '';
+      const controllerPart = decapitalize(
+        controllerKey
+          .replace('Controller', '')
+          .replace(new RegExp(versionPart, 'i'), ''),
+      );
+      const methodPart = capitalize(methodKey);
+      return `${controllerPart}${methodPart}${versionPart}`;
+    },
+  };
+
+  const document = SwaggerModule.createDocument(app, config, options);
   SwaggerModule.setup('api', app, document, {
     customfavIcon: '/favicon.png',
     customSiteTitle: 'Safe Client Gateway',
