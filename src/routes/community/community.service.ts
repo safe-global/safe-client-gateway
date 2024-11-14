@@ -10,6 +10,8 @@ import {
 } from '@/routes/common/pagination/pagination.data';
 import { Inject, Injectable } from '@nestjs/common';
 import { CampaignActivity } from '@/domain/community/entities/campaign-activity.entity';
+import { Eligibility } from '@/routes/community/entities/eligibility.entity';
+import { EligibilityRequest } from '@/routes/community/entities/eligibility-request.entity';
 
 @Injectable()
 export class CommunityService {
@@ -152,5 +154,11 @@ export class CommunityService {
       previous: previousUrl?.toString() ?? null,
       results: result.results,
     };
+  }
+
+  async checkEligibility(
+    eligibilityRequest: EligibilityRequest,
+  ): Promise<Eligibility> {
+    return this.communityRepository.checkEligibility(eligibilityRequest);
   }
 }

@@ -1,3 +1,4 @@
+import { EligibilityRequestSchema } from '@/domain/community/entities/eligibility-request.entity';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
@@ -7,12 +8,22 @@ import { CampaignRank } from '@/routes/community/entities/campaign-rank.entity';
 import { CampaignRankPage } from '@/routes/community/entities/campaign-rank.page.entity';
 import { Campaign } from '@/routes/community/entities/campaign.entity';
 import { CampaignPage } from '@/routes/community/entities/campaign.page.entity';
+import { EligibilityRequest } from '@/routes/community/entities/eligibility-request.entity';
+import { Eligibility } from '@/routes/community/entities/eligibility.entity';
 import { LockingEventPage } from '@/routes/community/entities/locking-event.page.entity';
 import { LockingRank } from '@/routes/community/entities/locking-rank.entity';
 import { LockingRankPage } from '@/routes/community/entities/locking-rank.page.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiTags, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('community')
@@ -90,6 +101,16 @@ export class CommunityController {
     safeAddress: `0x${string}`,
   ): Promise<CampaignRank> {
     return this.communityService.getCampaignRank({ resourceId, safeAddress });
+  }
+
+  @ApiOkResponse({ type: Eligibility })
+  @HttpCode(200)
+  @Post('/eligibility')
+  async checkEligibility(
+    @Body(new ValidationPipe(EligibilityRequestSchema))
+    eligibilityRequest: EligibilityRequest,
+  ): Promise<Eligibility> {
+    return this.communityService.checkEligibility(eligibilityRequest);
   }
 
   @ApiOkResponse({ type: LockingRankPage })

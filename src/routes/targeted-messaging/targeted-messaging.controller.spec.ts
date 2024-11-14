@@ -41,17 +41,8 @@ describe('TargetedMessagingController', () => {
   let targetedMessagingDatasource: jest.MockedObjectDeep<ITargetedMessagingDatasource>;
 
   beforeEach(async () => {
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        targetedMessaging: true,
-      },
-    });
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
+      imports: [AppModule.register(configuration)],
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)

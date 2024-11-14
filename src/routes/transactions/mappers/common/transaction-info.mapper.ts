@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
@@ -36,7 +35,6 @@ export class MultisigTransactionInfoMapper {
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
-  private readonly isNativeStakingDecodingEnabled: boolean;
 
   private readonly ERC20_TRANSFER_METHODS = [
     this.TRANSFER_METHOD,
@@ -51,8 +49,6 @@ export class MultisigTransactionInfoMapper {
 
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
     private readonly customTransactionMapper: CustomTransactionMapper,
@@ -68,11 +64,7 @@ export class MultisigTransactionInfoMapper {
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
     private readonly kilnDecoder: KilnDecoder,
-  ) {
-    this.isNativeStakingDecodingEnabled = this.configurationService.getOrThrow(
-      'features.nativeStakingDecoding',
-    );
-  }
+  ) {}
 
   async mapTransactionInfo(
     chainId: string,
@@ -105,31 +97,29 @@ export class MultisigTransactionInfoMapper {
       return twapOrder;
     }
 
-    if (this.isNativeStakingDecodingEnabled) {
-      const nativeStakingDeposit = await this.mapNativeStakingDeposit(
-        chainId,
-        transaction,
-      );
-      // If the transaction is a native staking deposit, we return it immediately
-      if (nativeStakingDeposit) {
-        return nativeStakingDeposit;
-      }
+    const nativeStakingDeposit = await this.mapNativeStakingDeposit(
+      chainId,
+      transaction,
+    );
+    // If the transaction is a native staking deposit, we return it immediately
+    if (nativeStakingDeposit) {
+      return nativeStakingDeposit;
+    }
 
-      const nativeStakingValidatorsExit =
-        await this.mapNativeStakingValidatorsExit(chainId, transaction);
-      // If the transaction is a native staking validators exit, we return it immediately
-      if (nativeStakingValidatorsExit) {
-        return nativeStakingValidatorsExit;
-      }
+    const nativeStakingValidatorsExit =
+      await this.mapNativeStakingValidatorsExit(chainId, transaction);
+    // If the transaction is a native staking validators exit, we return it immediately
+    if (nativeStakingValidatorsExit) {
+      return nativeStakingValidatorsExit;
+    }
 
-      const nativeStakingWithdraw = await this.mapNativeStakingWithdraw(
-        chainId,
-        transaction,
-      );
-      // If the transaction is a native staking withdraw, we return it immediately
-      if (nativeStakingWithdraw) {
-        return nativeStakingWithdraw;
-      }
+    const nativeStakingWithdraw = await this.mapNativeStakingWithdraw(
+      chainId,
+      transaction,
+    );
+    // If the transaction is a native staking withdraw, we return it immediately
+    if (nativeStakingWithdraw) {
+      return nativeStakingWithdraw;
     }
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
