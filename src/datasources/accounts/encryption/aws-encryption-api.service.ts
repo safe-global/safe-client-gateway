@@ -81,6 +81,9 @@ export class AwsEncryptionApiService implements IEncryptionApi, OnModuleInit {
   }
 
   async encryptBlob(data: unknown): Promise<EncryptedBlob> {
+    if ((typeof data !== 'object' && !Array.isArray(data)) || data === null) {
+      throw new Error('Data must be an object or array');
+    }
     const { Plaintext, CiphertextBlob } = await this.kmsClient.send(
       new GenerateDataKeyCommand({
         KeyId: this.awsKmsKeyId,
