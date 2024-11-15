@@ -3,7 +3,7 @@ import { ConflictType } from '@/routes/transactions/entities/conflict-type.entit
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 export class TransactionItem {
-  @ApiProperty()
+  @ApiProperty({ enum: ['TRANSACTION'] })
   type: string;
   @ApiProperty()
   transaction: Transaction;
