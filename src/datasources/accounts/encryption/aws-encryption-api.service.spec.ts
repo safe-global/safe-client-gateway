@@ -18,7 +18,7 @@ describe('AwsEncryptionApiService', () => {
     jest.resetAllMocks();
     mockConfigurationService.get.mockImplementation((key) => {
       if (key === 'accounts.encryption.awsKms.keyId') return awsKmsKeyId;
-      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-gcm';
+      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-cbc';
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new AwsEncryptionApiService(mockConfigurationService);

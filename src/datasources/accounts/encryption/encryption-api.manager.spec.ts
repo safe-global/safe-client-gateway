@@ -53,7 +53,7 @@ describe('EncryptionApiManager', () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'accounts.encryption.type') return 'aws';
       if (key === 'accounts.encryption.awsKms.keyId') return 'a'.repeat(64);
-      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-gcm';
+      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-cbc';
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new EncryptionApiManager(mockConfigurationService);
@@ -67,7 +67,7 @@ describe('EncryptionApiManager', () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'accounts.encryption.type') return 'aws';
       if (key === 'accounts.encryption.awsKms.keyId') return 'a'.repeat(64);
-      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-gcm';
+      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-cbc';
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new EncryptionApiManager(mockConfigurationService);

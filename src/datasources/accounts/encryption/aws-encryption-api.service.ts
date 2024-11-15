@@ -1,18 +1,21 @@
+import { fakeJson } from '@/__tests__/faker';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { EncryptedBlob } from '@/datasources/accounts/encryption/entities/encrypted-blob.entity';
 import type { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
 import {
+  CreateKeyCommand,
   DecryptCommand,
   EncryptCommand,
   GenerateDataKeyCommand,
   KMSClient,
 } from '@aws-sdk/client-kms';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import * as crypto from 'crypto';
 
 @Injectable()
-export class AwsEncryptionApiService implements IEncryptionApi {
+export class AwsEncryptionApiService implements IEncryptionApi, OnModuleInit {
   private readonly kmsClient: KMSClient;
-  private readonly awsKmsKeyId: string | undefined;
+  private awsKmsKeyId: string | undefined; // TODO: make readonly
   private readonly algorithm: string;
 
   constructor(
@@ -25,7 +28,33 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     this.algorithm = this.configurationService.getOrThrow<string>(
       'accounts.encryption.awsKms.algorithm',
     );
-    this.kmsClient = new KMSClient({});
+    // TODO: LocalStack testing
+    this.kmsClient = new KMSClient({
+      region: 'us-east-1',
+      endpoint: 'http://localhost:4566', // LocalStack
+      credentials: {
+        accessKeyId: 'test', // Dummy credentials for LocalStack
+        secretAccessKey: 'test',
+      },
+    });
+  }
+
+  // TODO: LocalStack testing
+  async onModuleInit(): Promise<void> {
+    const data = JSON.parse(fakeJson());
+    console.log('Data:', data);
+    const key = await this.kmsClient.send(
+      new CreateKeyCommand({
+        Description: 'Test KMS Key for LocalStack',
+        KeyUsage: 'ENCRYPT_DECRYPT', // Key can encrypt and decrypt
+        CustomerMasterKeySpec: 'SYMMETRIC_DEFAULT', // Default symmetric key
+      }),
+    );
+    this.awsKmsKeyId = key.KeyMetadata?.KeyId;
+    const encrypted = await this.encryptBlob(data);
+    console.log('Encrypted Data:', encrypted);
+    const decrypted = await this.decryptBlob(encrypted);
+    console.log('Decrypted Data:', decrypted);
   }
 
   async encrypt(data: string): Promise<string> {
@@ -48,60 +77,44 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     if (!decryptedData.Plaintext) {
       throw new Error('Failed to decrypt data');
     }
-    return Buffer.from(decryptedData.Plaintext).toString('utf-8');
+    return Buffer.from(decryptedData.Plaintext).toString('utf8');
   }
 
-  async encryptBlob(data: unknown): Promise<{
-    encryptedData: Buffer;
-    encryptedDataKey: Buffer;
-    iv: Buffer;
-  }> {
-    const dataKeyResponse = await this.kmsClient.send(
+  async encryptBlob(data: unknown): Promise<EncryptedBlob> {
+    const { Plaintext, CiphertextBlob } = await this.kmsClient.send(
       new GenerateDataKeyCommand({
         KeyId: this.awsKmsKeyId,
         KeySpec: 'AES_256',
       }),
     );
-    if (!dataKeyResponse.Plaintext || !dataKeyResponse.CiphertextBlob) {
+    if (!Plaintext || !CiphertextBlob) {
       throw new Error('Failed to generate data key');
     }
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(
-      this.algorithm,
-      dataKeyResponse.Plaintext,
-      iv,
-    );
-    let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'base64');
-    encrypted += cipher.final('base64');
+    const cipher = crypto.createCipheriv(this.algorithm, Plaintext, iv);
     return {
-      encryptedData: Buffer.from(encrypted),
-      encryptedDataKey: Buffer.from(dataKeyResponse.CiphertextBlob),
+      encryptedData: Buffer.concat([
+        cipher.update(JSON.stringify(data), 'utf8'),
+        cipher.final(),
+      ]),
+      encryptedDataKey: Buffer.from(CiphertextBlob),
       iv,
     };
   }
 
-  async decryptBlob(data: {
-    encryptedData: Buffer;
-    encryptedDataKey: Buffer;
-    iv: Buffer;
-  }): Promise<unknown> {
-    const decryptedDataKey = await this.kmsClient.send(
-      new DecryptCommand({ CiphertextBlob: data.encryptedDataKey }),
+  async decryptBlob(encryptedBlob: EncryptedBlob): Promise<unknown> {
+    const { encryptedData, encryptedDataKey, iv } = encryptedBlob;
+    const { Plaintext } = await this.kmsClient.send(
+      new DecryptCommand({ CiphertextBlob: encryptedDataKey }),
     );
-    if (!decryptedDataKey.Plaintext) {
+    if (!Plaintext) {
       throw new Error('Failed to decrypt data key');
     }
-    const decipher = crypto.createDecipheriv(
-      this.algorithm,
-      decryptedDataKey.Plaintext,
-      data.iv,
-    );
-    let decrypted = decipher.update(
-      data.encryptedData.toString('base64'),
-      'base64',
-      'utf8',
-    );
-    decrypted += decipher.final('utf8');
-    return JSON.parse(decrypted);
+    const decipher = crypto.createDecipheriv(this.algorithm, Plaintext, iv);
+    const decryptedData = Buffer.concat([
+      decipher.update(encryptedData),
+      decipher.final(),
+    ]);
+    return JSON.parse(decryptedData.toString('utf8'));
   }
 }

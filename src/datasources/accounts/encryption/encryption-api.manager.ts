@@ -4,10 +4,12 @@ import { AwsEncryptionApiService } from '@/datasources/accounts/encryption/aws-e
 import { LocalEncryptionApiService } from '@/datasources/accounts/encryption/local-encryption-api.service';
 import { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
 import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
-export class EncryptionApiManager implements IEncryptionApiManager {
+export class EncryptionApiManager
+  implements IEncryptionApiManager, OnModuleInit
+{
   /**
    * This is linked to the Accounts feature. It is used to determine which encryption provider to use.
    * If the encryption is needed for a different feature, this should be renamed/moved to a generic configuration.
@@ -27,6 +29,11 @@ export class EncryptionApiManager implements IEncryptionApiManager {
       this.configurationService.getOrThrow<AccountsEncryptionType>(
         'accounts.encryption.type',
       );
+  }
+
+  // TODO: LocalStack testing
+  async onModuleInit(): Promise<void> {
+    await new AwsEncryptionApiService(this.configurationService).onModuleInit();
   }
 
   getApi(): Promise<IEncryptionApi> {
