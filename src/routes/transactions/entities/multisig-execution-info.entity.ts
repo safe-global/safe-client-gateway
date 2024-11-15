@@ -6,6 +6,8 @@ import {
 } from '@/routes/transactions/entities/execution-info.entity';
 
 export class MultisigExecutionInfo extends ExecutionInfo {
+  @ApiProperty({ enum: [ExecutionInfoType.Multisig] })
+  override type = ExecutionInfoType.Multisig;
   @ApiProperty()
   nonce: number;
   @ApiProperty()

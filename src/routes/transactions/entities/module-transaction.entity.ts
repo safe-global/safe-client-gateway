@@ -7,7 +7,7 @@ export class ModuleTransaction {
   type: string;
   @ApiProperty()
   transaction: Transaction;
-  @ApiProperty()
+  @ApiProperty({ enum: [ConflictType.None] })
   conflictType: string;
 
   constructor(transaction: Transaction) {
