@@ -17,6 +17,7 @@ export default (): ReturnType<typeof configuration> => ({
     encryption: {
       type: faker.string.sample(),
       awsKms: {
+        algorithm: faker.string.alphanumeric(),
         keyId: faker.string.uuid(),
       },
       local: {
