@@ -1,21 +1,19 @@
-import { fakeJson } from '@/__tests__/faker';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { EncryptedBlob } from '@/datasources/accounts/encryption/entities/encrypted-blob.entity';
 import type { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
 import {
-  CreateKeyCommand,
   DecryptCommand,
   EncryptCommand,
   GenerateDataKeyCommand,
   KMSClient,
 } from '@aws-sdk/client-kms';
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 
 @Injectable()
-export class AwsEncryptionApiService implements IEncryptionApi, OnModuleInit {
+export class AwsEncryptionApiService implements IEncryptionApi {
   private readonly kmsClient: KMSClient;
-  private awsKmsKeyId: string | undefined; // TODO: make readonly
+  private readonly awsKmsKeyId: string | undefined;
   private readonly algorithm: string;
 
   constructor(
@@ -28,33 +26,7 @@ export class AwsEncryptionApiService implements IEncryptionApi, OnModuleInit {
     this.algorithm = this.configurationService.getOrThrow<string>(
       'accounts.encryption.awsKms.algorithm',
     );
-    // TODO: LocalStack testing
-    this.kmsClient = new KMSClient({
-      region: 'us-east-1',
-      endpoint: 'http://localhost:4566', // LocalStack
-      credentials: {
-        accessKeyId: 'test', // Dummy credentials for LocalStack
-        secretAccessKey: 'test',
-      },
-    });
-  }
-
-  // TODO: LocalStack testing
-  async onModuleInit(): Promise<void> {
-    const data = JSON.parse(fakeJson());
-    console.log('Data:', data);
-    const key = await this.kmsClient.send(
-      new CreateKeyCommand({
-        Description: 'Test KMS Key for LocalStack',
-        KeyUsage: 'ENCRYPT_DECRYPT', // Key can encrypt and decrypt
-        CustomerMasterKeySpec: 'SYMMETRIC_DEFAULT', // Default symmetric key
-      }),
-    );
-    this.awsKmsKeyId = key.KeyMetadata?.KeyId;
-    const encrypted = await this.encryptBlob(data);
-    console.log('Encrypted Data:', encrypted);
-    const decrypted = await this.decryptBlob(encrypted);
-    console.log('Decrypted Data:', decrypted);
+    this.kmsClient = new KMSClient({});
   }
 
   async encrypt(data: string): Promise<string> {
