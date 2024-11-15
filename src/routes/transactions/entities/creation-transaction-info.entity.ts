@@ -12,8 +12,8 @@ export class CreationTransactionInfo extends TransactionInfo {
   transactionHash: string;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   implementation: AddressInfo | null;
-  @ApiPropertyOptional({ type: AddressInfo, nullable: true })
-  factory: AddressInfo | null;
+  @ApiPropertyOptional({ type: AddressInfo })
+  factory: AddressInfo;
   @ApiPropertyOptional({ type: String, nullable: true })
   saltNonce: string | null;
 
@@ -21,7 +21,7 @@ export class CreationTransactionInfo extends TransactionInfo {
     creator: AddressInfo,
     transactionHash: string,
     implementation: AddressInfo | null,
-    factory: AddressInfo | null,
+    factory: AddressInfo,
     saltNonce: string | null,
   ) {
     super(TransactionInfoType.Creation, null);
