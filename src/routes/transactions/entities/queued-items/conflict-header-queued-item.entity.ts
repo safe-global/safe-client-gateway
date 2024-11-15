@@ -5,6 +5,8 @@ import {
 } from '@/routes/transactions/entities/queued-item.entity';
 
 export class ConflictHeaderQueuedItem extends QueuedItem {
+  @ApiProperty({ enum: [QueuedItemType.ConflictHeader] })
+  override type = QueuedItemType.ConflictHeader;
   @ApiProperty()
   nonce: number;
 

@@ -7,6 +7,8 @@ import {
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 
 export class TransactionQueuedItem extends QueuedItem {
+  @ApiProperty({ enum: [QueuedItemType.Transaction]})
+  override type = QueuedItemType.Transaction;
   @ApiProperty()
   transaction: Transaction;
   @ApiProperty()
