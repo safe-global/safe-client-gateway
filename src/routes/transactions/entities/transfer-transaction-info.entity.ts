@@ -15,11 +15,7 @@ export enum TransferDirection {
   Unknown = 'UNKNOWN',
 }
 
-@ApiExtraModels(
-  Erc20Transfer,
-  Erc721Transfer,
-  NativeCoinTransfer,
-)
+@ApiExtraModels(Erc20Transfer, Erc721Transfer, NativeCoinTransfer)
 export class TransferTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.Transfer] })
   override type = TransactionInfoType.Transfer;
@@ -27,7 +23,7 @@ export class TransferTransactionInfo extends TransactionInfo {
   sender: AddressInfo;
   @ApiProperty()
   recipient: AddressInfo;
-  @ApiProperty()
+  @ApiProperty({ enum: TransferDirection })
   direction: TransferDirection;
   @ApiProperty({
     oneOf: [
