@@ -25,7 +25,7 @@ export class TransactionDetails {
   txId!: string;
   @ApiPropertyOptional({ type: Number, nullable: true })
   executedAt!: number | null;
-  @ApiProperty()
+  @ApiProperty({ enum: TransactionStatus })
   txStatus!: TransactionStatus;
   @ApiProperty({ type: TransactionInfo, nullable: true })
   txInfo!: TransactionInfo;
