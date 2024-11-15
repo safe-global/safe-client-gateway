@@ -7,7 +7,7 @@ export class MultisigTransaction {
   type: string;
   @ApiProperty()
   transaction: Transaction;
-  @ApiProperty()
+  @ApiProperty({ enum: ConflictType })
   conflictType: string;
 
   constructor(transaction: Transaction, conflictType: ConflictType) {
