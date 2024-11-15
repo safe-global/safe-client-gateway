@@ -27,7 +27,7 @@ export class TransactionDetails {
   executedAt!: number | null;
   @ApiProperty()
   txStatus!: TransactionStatus;
-  @ApiProperty()
+  @ApiProperty({ type: TransactionInfo, nullable: true })
   txInfo!: TransactionInfo;
   @ApiPropertyOptional({ type: TransactionData, nullable: true })
   txData!: TransactionData | null;
