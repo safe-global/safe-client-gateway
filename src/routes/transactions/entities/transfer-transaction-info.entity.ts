@@ -13,6 +13,8 @@ export enum TransferDirection {
 }
 
 export class TransferTransactionInfo extends TransactionInfo {
+  @ApiProperty({ enum: [TransactionInfoType.Transfer] })
+  override type = TransactionInfoType.Transfer;
   @ApiProperty()
   sender: AddressInfo;
   @ApiProperty()

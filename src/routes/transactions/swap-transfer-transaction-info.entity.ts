@@ -21,6 +21,9 @@ export class SwapTransferTransactionInfo
   extends TransactionInfo
   implements TransferTransactionInfo, SwapOrderTransactionInfo
 {
+  @ApiProperty({ enum: [TransactionInfoType.SwapTransfer] })
+  override type = TransactionInfoType.SwapTransfer;
+
   // TransferTransactionInfo properties
   @ApiProperty()
   sender: AddressInfo;
