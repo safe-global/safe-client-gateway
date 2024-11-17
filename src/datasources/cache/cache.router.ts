@@ -5,6 +5,7 @@ export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
   private static readonly ACCOUNT_DATA_TYPES_KEY = 'account_data_types';
   private static readonly ACCOUNT_KEY = 'account';
+  private static readonly ADDRESS_BOOK_KEY = 'address_book';
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
   private static readonly AUTH_NONCE_KEY = 'auth_nonce';
   private static readonly BACKBONE_KEY = 'backbone';
@@ -542,6 +543,10 @@ export class CacheRouter {
       `${CacheRouter.ACCOUNT_DATA_SETTINGS_KEY}_${address}`,
       '',
     );
+  }
+
+  static getAddressBookCacheDir(accountId: number): CacheDir {
+    return new CacheDir(`${CacheRouter.ADDRESS_BOOK_KEY}_${accountId}`, '');
   }
 
   static getCounterfactualSafeCacheDir(
