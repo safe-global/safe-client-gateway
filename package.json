@@ -57,7 +57,7 @@
     "semver": "^7.6.3",
     "typeorm": "^0.3.20",
     "viem": "^2.21.47",
-    "winston": "^3.15.0",
+    "winston": "^3.17.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
