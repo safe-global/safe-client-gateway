@@ -74,7 +74,7 @@ export class LocalEncryptionApiService implements IEncryptionApi {
     };
   }
 
-  async decryptBlob(encryptedBlob: EncryptedBlob): Promise<unknown> {
+  async decryptBlob<T>(encryptedBlob: EncryptedBlob): Promise<T> {
     if (this.isProduction) {
       throw new Error('Local encryption is not suitable for production usage');
     }

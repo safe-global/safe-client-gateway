@@ -1,17 +1,17 @@
 export class AddressBook {
   id: number;
-  data: object;
-  key: string;
-  iv: string;
+  data: Buffer;
+  key: Buffer;
+  iv: Buffer;
   account_id: number;
   created_at: Date;
   updated_at: Date;
 
   constructor(
     id: number,
-    data: object,
-    key: string,
-    iv: string,
+    data: Buffer,
+    key: Buffer,
+    iv: Buffer,
     account_id: number,
     created_at: Date,
     updated_at: Date,

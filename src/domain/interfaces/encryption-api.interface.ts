@@ -9,5 +9,5 @@ export interface IEncryptionApi {
 
   encryptBlob(data: unknown): Promise<EncryptedBlob>;
 
-  decryptBlob(data: EncryptedBlob): Promise<unknown>;
+  decryptBlob<T>(data: EncryptedBlob): Promise<T>;
 }

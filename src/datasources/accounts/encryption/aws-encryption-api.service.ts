@@ -77,7 +77,7 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     };
   }
 
-  async decryptBlob(encryptedBlob: EncryptedBlob): Promise<unknown> {
+  async decryptBlob<T>(encryptedBlob: EncryptedBlob): Promise<T> {
     const { encryptedData, encryptedDataKey, iv } = encryptedBlob;
     const { Plaintext } = await this.kmsClient.send(
       new DecryptCommand({ CiphertextBlob: encryptedDataKey }),

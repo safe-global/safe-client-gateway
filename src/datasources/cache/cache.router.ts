@@ -545,8 +545,12 @@ export class CacheRouter {
     );
   }
 
+  static getAddressBookCacheKey(accountId: number): string {
+    return `${CacheRouter.ADDRESS_BOOK_KEY}_${accountId}`;
+  }
+
   static getAddressBookCacheDir(accountId: number): CacheDir {
-    return new CacheDir(`${CacheRouter.ADDRESS_BOOK_KEY}_${accountId}`, '');
+    return new CacheDir(CacheRouter.getAddressBookCacheKey(accountId), '');
   }
 
   static getCounterfactualSafeCacheDir(
