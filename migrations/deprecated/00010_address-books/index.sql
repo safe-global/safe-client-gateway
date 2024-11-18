@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS address_books CASCADE;
+
 CREATE TABLE address_books (
     id SERIAL PRIMARY KEY,
     data BYTEA NOT NULL,
@@ -16,3 +18,5 @@ CREATE OR REPLACE TRIGGER update_address_books_updated_at
 BEFORE UPDATE ON address_books
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+UPDATE account_data_types SET is_active = true WHERE name = 'AddressBook';
