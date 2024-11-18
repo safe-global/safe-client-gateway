@@ -5,9 +5,13 @@ import {
   AddressBookItem,
 } from '@/domain/accounts/address-books/entities/address-book.entity';
 import { CreateAddressBookItemDto } from '@/domain/accounts/address-books/entities/create-address-book-item.dto.entity';
+import { UpdateAddressBookItemDto } from '@/domain/accounts/address-books/entities/update-address-book.item.dto.entity';
+import { AddressBookItemNotFoundError } from '@/domain/accounts/address-books/errors/address-book-item-not-found.error';
+import { AddressBookNotFoundError } from '@/domain/accounts/address-books/errors/address-book-not-found.error';
 import { Account } from '@/domain/accounts/entities/account.entity';
 import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import { max } from 'lodash';
 import postgres from 'postgres';
 
 @Injectable()
@@ -24,23 +28,65 @@ export class AddressBooksDatasource {
     createAddressBookItemDto: CreateAddressBookItemDto;
   }): Promise<AddressBookItem> {
     const addressBook = await this.getOrCreateAddressBook(args.account);
-    const newItem = {
-      id: addressBook.data.length + 1,
+    const addressBookItem = {
+      id: (max(addressBook.data.map((i) => i.id)) ?? 0) + 1,
       address: args.createAddressBookItemDto.address,
       name: args.createAddressBookItemDto.name,
     };
-    addressBook.data.push(newItem);
+    addressBook.data.push(addressBookItem);
     await this.updateAddressBook(addressBook);
-    return newItem;
+    return addressBookItem;
   }
 
-  async getOrCreateAddressBook(account: Account): Promise<AddressBook> {
+  async getAddressBook(account: Account): Promise<AddressBook> {
     const [dbAddressBook] = await this.sql<
       DbAddressBook[]
     >`SELECT * FROM address_books WHERE account_id = ${account.id}`;
-    return dbAddressBook
-      ? this.addressBookMapper.map(dbAddressBook)
-      : this.addressBookMapper.map(await this.createAddressBook({ account }));
+    if (!dbAddressBook) throw new AddressBookNotFoundError();
+    return this.addressBookMapper.map(dbAddressBook);
+  }
+
+  async updateAddressBookItem(args: {
+    addressBook: AddressBook;
+    updateAddressBookItem: UpdateAddressBookItemDto;
+  }): Promise<AddressBookItem> {
+    const { addressBook, updateAddressBookItem } = args;
+    const addressBookItem = addressBook.data.find(
+      (i) => i.id === updateAddressBookItem.id,
+    );
+    if (!addressBookItem) throw new AddressBookItemNotFoundError();
+    addressBookItem.address = updateAddressBookItem.address;
+    addressBookItem.name = updateAddressBookItem.name;
+    await this.updateAddressBook(addressBook);
+    return addressBookItem;
+  }
+
+  async deleteAddressBook(addressBook: AddressBook): Promise<void> {
+    await this.sql`DELETE FROM address_books WHERE id = ${addressBook.id}`;
+  }
+
+  async deleteAddressBookItem(args: {
+    addressBook: AddressBook;
+    id: number;
+  }): Promise<void> {
+    const { addressBook, id } = args;
+    const index = addressBook.data.findIndex((i) => i.id === id);
+    if (index === -1) throw new AddressBookItemNotFoundError();
+    addressBook.data.splice(index, 1);
+    await this.updateAddressBook(addressBook);
+  }
+
+  private async getOrCreateAddressBook(account: Account): Promise<AddressBook> {
+    try {
+      return await this.getAddressBook(account);
+    } catch (err) {
+      if (err instanceof AddressBookNotFoundError) {
+        return this.addressBookMapper.map(
+          await this.createAddressBook({ account }),
+        );
+      }
+      throw err;
+    }
   }
 
   private async createAddressBook(args: {

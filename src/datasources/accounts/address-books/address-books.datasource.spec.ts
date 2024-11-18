@@ -5,7 +5,8 @@ import { AddressBookDbMapper } from '@/datasources/accounts/address-books/entiti
 import type { EncryptionApiManager } from '@/datasources/accounts/encryption/encryption-api.manager';
 import { LocalEncryptionApiService } from '@/datasources/accounts/encryption/local-encryption-api.service';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import { createAddressBookItemDtoBuilder } from '@/domain/accounts/address-books/entities/__tests__/create-address-book.builder';
+import { createAddressBookItemDtoBuilder } from '@/domain/accounts/address-books/entities/__tests__/create-address-book-item.dto.builder';
+import { updateAddressBookItemDtoBuilder } from '@/domain/accounts/address-books/entities/__tests__/update-address-book-item.dto.builder';
 import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/create-account.dto.builder';
 import type { Account } from '@/domain/accounts/entities/account.entity';
 import { faker } from '@faker-js/faker/.';
@@ -58,16 +59,21 @@ describe('AddressBooksDataSource', () => {
     await testDbFactory.destroyTestDatabase(sql);
   });
 
-  describe('createAddressBookItem', () => {
-    it('should create an address book if it does not exist when adding a new item', async () => {
-      const createAccountDto = createAccountDtoBuilder().build();
-      const [account] = await sql<Account[]>`
+  const createTestAccount = async (): Promise<Account> => {
+    const createAccountDto = createAccountDtoBuilder().build();
+    const [account] = await sql<Account[]>`
         INSERT INTO accounts (address, name, name_hash)
         VALUES (
           ${createAccountDto.address},
           ${createAccountDto.name},
           ${faker.string.alphanumeric(32)}
         ) RETURNING *`;
+    return account;
+  };
+
+  describe('createAddressBookItem', () => {
+    it('should create an address book if it does not exist when adding a new item', async () => {
+      const account = await createTestAccount();
       const createAddressBookItemDto =
         createAddressBookItemDtoBuilder().build();
 
@@ -81,50 +87,321 @@ describe('AddressBooksDataSource', () => {
         address: createAddressBookItemDto.address,
         name: createAddressBookItemDto.name,
       });
-      expect(await target.getOrCreateAddressBook(account)).toMatchObject({
+      expect(await target.getAddressBook(account)).toMatchObject({
         data: [createAddressBookItemDto],
         accountId: account.id,
       });
     });
 
     it('should create a several address book items', async () => {
-      const createAccountDto = createAccountDtoBuilder().build();
-      const [account] = await sql<Account[]>`
-        INSERT INTO accounts (address, name, name_hash)
-        VALUES (
-          ${createAccountDto.address},
-          ${createAccountDto.name},
-          ${faker.string.alphanumeric(32)}
-        ) RETURNING *`;
-      const createAddressBookItemDtos = [
+      const account = await createTestAccount();
+      const createAddressBookItemDtoArray = [
         createAddressBookItemDtoBuilder().build(),
         createAddressBookItemDtoBuilder().build(),
         createAddressBookItemDtoBuilder().build(),
       ];
       await target.createAddressBookItem({
         account,
-        createAddressBookItemDto: createAddressBookItemDtos[0],
+        createAddressBookItemDto: createAddressBookItemDtoArray[0],
       });
-      expect(await target.getOrCreateAddressBook(account)).toMatchObject({
-        data: [createAddressBookItemDtos[0]],
+      expect(await target.getAddressBook(account)).toMatchObject({
+        data: [createAddressBookItemDtoArray[0]],
         accountId: account.id,
       });
       await target.createAddressBookItem({
         account,
-        createAddressBookItemDto: createAddressBookItemDtos[1],
+        createAddressBookItemDto: createAddressBookItemDtoArray[1],
       });
-      expect(await target.getOrCreateAddressBook(account)).toMatchObject({
-        data: [createAddressBookItemDtos[0], createAddressBookItemDtos[1]],
+      expect(await target.getAddressBook(account)).toMatchObject({
+        data: [
+          createAddressBookItemDtoArray[0],
+          createAddressBookItemDtoArray[1],
+        ],
         accountId: account.id,
       });
       await target.createAddressBookItem({
         account,
-        createAddressBookItemDto: createAddressBookItemDtos[2],
+        createAddressBookItemDto: createAddressBookItemDtoArray[2],
       });
-      expect(await target.getOrCreateAddressBook(account)).toMatchObject({
-        data: createAddressBookItemDtos,
+      expect(await target.getAddressBook(account)).toMatchObject({
+        data: createAddressBookItemDtoArray,
         accountId: account.id,
       });
+    });
+  });
+
+  describe('getAddressBook', () => {
+    it('should throw an error if the address book does not exist', async () => {
+      const account = await createTestAccount();
+
+      await expect(target.getAddressBook(account)).rejects.toThrow(
+        'Address Book not found',
+      );
+    });
+
+    it('should return the address book if it exists', async () => {
+      const account = await createTestAccount();
+      const createAddressBookItemDto =
+        createAddressBookItemDtoBuilder().build();
+      await target.createAddressBookItem({
+        account,
+        createAddressBookItemDto,
+      });
+
+      const addressBook = await target.getAddressBook(account);
+
+      expect(addressBook).toMatchObject({
+        data: [createAddressBookItemDto],
+        accountId: account.id,
+      });
+    });
+  });
+
+  describe('updateAddressBookItem', () => {
+    it('should update an address book item', async () => {
+      const account = await createTestAccount();
+      const createAddressBookItemDto =
+        createAddressBookItemDtoBuilder().build();
+      const createdAddressBookItem = await target.createAddressBookItem({
+        account,
+        createAddressBookItemDto,
+      });
+      const updatedAddressBookItem = updateAddressBookItemDtoBuilder()
+        .with('id', createdAddressBookItem.id)
+        .build();
+
+      const addressBook = await target.getAddressBook(account);
+      const updatedItem = await target.updateAddressBookItem({
+        addressBook,
+        updateAddressBookItem: updatedAddressBookItem,
+      });
+
+      expect(updatedItem).toMatchObject(updatedAddressBookItem);
+      expect(await target.getAddressBook(account)).toMatchObject({
+        data: [updatedAddressBookItem],
+        accountId: account.id,
+      });
+    });
+
+    it('should update one address book item', async () => {
+      const account = await createTestAccount();
+      const firstCreatedItem = await target.createAddressBookItem({
+        account,
+        createAddressBookItemDto: createAddressBookItemDtoBuilder().build(),
+      });
+      const secondCreatedItem = await target.createAddressBookItem({
+        account,
+        createAddressBookItemDto: createAddressBookItemDtoBuilder().build(),
+      });
+      const updatedAddressBookItem = updateAddressBookItemDtoBuilder()
+        .with('id', secondCreatedItem.id)
+        .build();
+
+      const addressBook = await target.getAddressBook(account);
+      const updatedItem = await target.updateAddressBookItem({
+        addressBook,
+        updateAddressBookItem: updatedAddressBookItem,
+      });
+
+      expect(updatedItem).toMatchObject(updatedAddressBookItem);
+      expect(await target.getAddressBook(account)).toMatchObject({
+        data: [firstCreatedItem, updatedAddressBookItem],
+        accountId: account.id,
+      });
+    });
+
+    it('should throw an error if the address book item does not exist', async () => {
+      const account = await createTestAccount();
+      const createAddressBookItemDtoArray = [
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+      ];
+      for (const createAddressBookItemDto of createAddressBookItemDtoArray) {
+        await target.createAddressBookItem({
+          account,
+          createAddressBookItemDto,
+        });
+      }
+      const addressBook = await target.getAddressBook(account);
+      const nonExistentId = addressBook.data.reduce((sum, i) => sum + i.id, 1);
+
+      await expect(
+        target.updateAddressBookItem({
+          addressBook,
+          updateAddressBookItem: updateAddressBookItemDtoBuilder()
+            .with('id', nonExistentId)
+            .build(),
+        }),
+      ).rejects.toThrow('Address Book Item not found');
+    });
+  });
+
+  describe('deleteAddressBook', () => {
+    it('should delete an address book', async () => {
+      const account = await createTestAccount();
+      await target.createAddressBookItem({
+        account,
+        createAddressBookItemDto: createAddressBookItemDtoBuilder().build(),
+      });
+      const addressBook = await target.getAddressBook(account);
+
+      await target.deleteAddressBook(addressBook);
+
+      await expect(target.getAddressBook(account)).rejects.toThrow(
+        'Address Book not found',
+      );
+    });
+  });
+
+  describe('deleteAddressBookItem', () => {
+    it('should delete the first address book item', async () => {
+      const account = await createTestAccount();
+      const createAddressBookItemDtoArray = [
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+      ];
+      for (const createAddressBookItemDto of createAddressBookItemDtoArray) {
+        await target.createAddressBookItem({
+          account,
+          createAddressBookItemDto,
+        });
+      }
+      const addressBook = await target.getAddressBook(account);
+      const items = Object.values(addressBook.data);
+
+      await target.deleteAddressBookItem({
+        addressBook,
+        id: addressBook.data[0].id,
+      });
+
+      const afterDeletion = await target.getAddressBook(account);
+      expect(afterDeletion).toMatchObject({
+        data: [items[1], items[2]],
+        accountId: account.id,
+      });
+    });
+
+    it('should delete an address book item', async () => {
+      const account = await createTestAccount();
+      const createAddressBookItemDtoArray = [
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+      ];
+      for (const createAddressBookItemDto of createAddressBookItemDtoArray) {
+        await target.createAddressBookItem({
+          account,
+          createAddressBookItemDto,
+        });
+      }
+      const addressBook = await target.getAddressBook(account);
+      const items = Object.values(addressBook.data);
+
+      await target.deleteAddressBookItem({
+        addressBook,
+        id: addressBook.data[1].id,
+      });
+
+      const afterDeletion = await target.getAddressBook(account);
+      expect(afterDeletion).toMatchObject({
+        data: [items[0], items[2]],
+        accountId: account.id,
+      });
+    });
+
+    it('should delete the last address book item', async () => {
+      const account = await createTestAccount();
+      const createAddressBookItemDtoArray = [
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+      ];
+      for (const createAddressBookItemDto of createAddressBookItemDtoArray) {
+        await target.createAddressBookItem({
+          account,
+          createAddressBookItemDto,
+        });
+      }
+      const addressBook = await target.getAddressBook(account);
+      const items = Object.values(addressBook.data);
+
+      await target.deleteAddressBookItem({
+        addressBook,
+        id: addressBook.data[createAddressBookItemDtoArray.length - 1].id,
+      });
+
+      const afterDeletion = await target.getAddressBook(account);
+      expect(afterDeletion).toMatchObject({
+        data: [items[0], items[1]],
+        accountId: account.id,
+      });
+    });
+
+    it('should create an address book with the proper id item after deletion', async () => {
+      const account = await createTestAccount();
+      const createAddressBookItemDtoArray = [
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+      ];
+      for (const createAddressBookItemDto of createAddressBookItemDtoArray) {
+        await target.createAddressBookItem({
+          account,
+          createAddressBookItemDto,
+        });
+      }
+      const addressBook = await target.getAddressBook(account);
+      const items = Object.values(addressBook.data);
+
+      await target.deleteAddressBookItem({
+        addressBook,
+        id: addressBook.data[1].id,
+      });
+
+      const afterDeletion = await target.getAddressBook(account);
+      expect(afterDeletion).toMatchObject({
+        data: [items[0], items[2]],
+        accountId: account.id,
+      });
+
+      const createAddressBookItemDto =
+        createAddressBookItemDtoBuilder().build();
+      const newItem = await target.createAddressBookItem({
+        account,
+        createAddressBookItemDto,
+      });
+
+      expect(newItem).toMatchObject({
+        id: 4,
+        address: createAddressBookItemDto.address,
+        name: createAddressBookItemDto.name,
+      });
+    });
+
+    it('should throw an error if the address book item does not exist', async () => {
+      const account = await createTestAccount();
+      const createAddressBookItemDtoArray = [
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+        createAddressBookItemDtoBuilder().build(),
+      ];
+      for (const createAddressBookItemDto of createAddressBookItemDtoArray) {
+        await target.createAddressBookItem({
+          account,
+          createAddressBookItemDto,
+        });
+      }
+      const addressBook = await target.getAddressBook(account);
+      const nonExistentId = addressBook.data.reduce((sum, i) => sum + i.id, 1);
+
+      await expect(
+        target.deleteAddressBookItem({
+          addressBook,
+          id: nonExistentId,
+        }),
+      ).rejects.toThrow('Address Book Item not found');
     });
   });
 });
