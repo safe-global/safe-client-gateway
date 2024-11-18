@@ -4,23 +4,13 @@ import { AddressBooksDatasource } from '@/datasources/accounts/address-books/add
 import { AddressBookDbMapper } from '@/datasources/accounts/address-books/entities/address-book.db.mapper';
 import type { EncryptionApiManager } from '@/datasources/accounts/encryption/encryption-api.manager';
 import { LocalEncryptionApiService } from '@/datasources/accounts/encryption/local-encryption-api.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
 import { createAddressBookItemDtoBuilder } from '@/domain/accounts/address-books/entities/__tests__/create-address-book.builder';
 import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/create-account.dto.builder';
 import type { Account } from '@/domain/accounts/entities/account.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
 import { randomBytes } from 'crypto';
 import type postgres from 'postgres';
-
-const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -31,19 +21,16 @@ const mockEncryptionApiManager = jest.mocked({
 } as jest.MockedObjectDeep<EncryptionApiManager>);
 
 describe('AddressBooksDataSource', () => {
-  let fakeCacheService: FakeCacheService;
   let sql: postgres.Sql;
   let migrator: PostgresDatabaseMigrator;
   let target: AddressBooksDatasource;
   const testDbFactory = new TestDbFactory();
 
   beforeAll(async () => {
-    fakeCacheService = new FakeCacheService();
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'expirationTimeInSeconds.default') return faker.number.int();
       if (key === 'application.isProduction') return false;
       if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
       if (key === 'accounts.encryption.local.key')
@@ -56,18 +43,14 @@ describe('AddressBooksDataSource', () => {
     );
 
     target = new AddressBooksDatasource(
-      fakeCacheService,
       sql,
-      new CachedQueryResolver(mockLoggingService, fakeCacheService),
       mockEncryptionApiManager,
-      mockConfigurationService,
       new AddressBookDbMapper(mockEncryptionApiManager),
     );
   });
 
   beforeEach(async () => {
     await sql`TRUNCATE TABLE accounts, account_data_settings, address_books CASCADE`;
-    fakeCacheService.clear();
     jest.clearAllMocks();
   });
 
@@ -78,10 +61,43 @@ describe('AddressBooksDataSource', () => {
   describe('createAddressBookItem', () => {
     it('should create an address book if it does not exist when adding a new item', async () => {
       const createAccountDto = createAccountDtoBuilder().build();
-      const [account] = await sql<
-        Account[]
-      >`INSERT INTO accounts (address, name, name_hash) VALUES (${createAccountDto.address}, ${createAccountDto.name}, ${faker.string.alphanumeric(32)}) RETURNING *`;
+      const [account] = await sql<Account[]>`
+        INSERT INTO accounts (address, name, name_hash)
+        VALUES (
+          ${createAccountDto.address},
+          ${createAccountDto.name},
+          ${faker.string.alphanumeric(32)}
+        ) RETURNING *`;
+      const createAddressBookItemDto =
+        createAddressBookItemDtoBuilder().build();
+
+      const addressBookItem = await target.createAddressBookItem({
+        account,
+        createAddressBookItemDto,
+      });
+
+      expect(addressBookItem).toMatchObject({
+        id: expect.any(Number),
+        address: createAddressBookItemDto.address,
+        name: createAddressBookItemDto.name,
+      });
+      expect(await target.getOrCreateAddressBook(account)).toMatchObject({
+        data: [createAddressBookItemDto],
+        accountId: account.id,
+      });
+    });
+
+    it('should create a several address book items', async () => {
+      const createAccountDto = createAccountDtoBuilder().build();
+      const [account] = await sql<Account[]>`
+        INSERT INTO accounts (address, name, name_hash)
+        VALUES (
+          ${createAccountDto.address},
+          ${createAccountDto.name},
+          ${faker.string.alphanumeric(32)}
+        ) RETURNING *`;
       const createAddressBookItemDtos = [
+        createAddressBookItemDtoBuilder().build(),
         createAddressBookItemDtoBuilder().build(),
         createAddressBookItemDtoBuilder().build(),
       ];
@@ -93,23 +109,21 @@ describe('AddressBooksDataSource', () => {
         data: [createAddressBookItemDtos[0]],
         accountId: account.id,
       });
-    });
-
-    it('should create a new address book item', async () => {
-      const createAccountDto = createAccountDtoBuilder().build();
-      const [account] = await sql<
-        Account[]
-      >`INSERT INTO accounts (address, name, name_hash) VALUES (${createAccountDto.address}, ${createAccountDto.name}, ${faker.string.alphanumeric(32)}) RETURNING *`;
-      const createAddressBookItemDto =
-        createAddressBookItemDtoBuilder().build();
-      const addressBookItem = await target.createAddressBookItem({
+      await target.createAddressBookItem({
         account,
-        createAddressBookItemDto,
+        createAddressBookItemDto: createAddressBookItemDtos[1],
       });
-      expect(addressBookItem).toMatchObject({
-        id: expect.any(Number),
-        address: createAddressBookItemDto.address,
-        name: createAddressBookItemDto.name,
+      expect(await target.getOrCreateAddressBook(account)).toMatchObject({
+        data: [createAddressBookItemDtos[0], createAddressBookItemDtos[1]],
+        accountId: account.id,
+      });
+      await target.createAddressBookItem({
+        account,
+        createAddressBookItemDto: createAddressBookItemDtos[2],
+      });
+      expect(await target.getOrCreateAddressBook(account)).toMatchObject({
+        data: createAddressBookItemDtos,
+        accountId: account.id,
       });
     });
   });

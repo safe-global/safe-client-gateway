@@ -1,13 +1,5 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AddressBookDbMapper } from '@/datasources/accounts/address-books/entities/address-book.db.mapper';
 import { AddressBook as DbAddressBook } from '@/datasources/accounts/address-books/entities/address-book.entity';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
-import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
 import {
   AddressBook,
   AddressBookItem,
@@ -20,25 +12,12 @@ import postgres from 'postgres';
 
 @Injectable()
 export class AddressBooksDatasource {
-  private readonly defaultExpirationTimeInSeconds: number;
-
   constructor(
-    @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
-    @Inject(ICachedQueryResolver)
-    private readonly cachedQueryResolver: CachedQueryResolver,
     @Inject(IEncryptionApiManager)
     private readonly encryptionApiManager: IEncryptionApiManager,
-    // @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     private readonly addressBookMapper: AddressBookDbMapper,
-  ) {
-    this.defaultExpirationTimeInSeconds =
-      this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.default',
-      );
-  }
+  ) {}
 
   async createAddressBookItem(args: {
     account: Account;
@@ -47,7 +26,8 @@ export class AddressBooksDatasource {
     const addressBook = await this.getOrCreateAddressBook(args.account);
     const newItem = {
       id: addressBook.data.length + 1,
-      ...args.createAddressBookItemDto,
+      address: args.createAddressBookItemDto.address,
+      name: args.createAddressBookItemDto.name,
     };
     addressBook.data.push(newItem);
     await this.updateAddressBook(addressBook);
@@ -55,16 +35,9 @@ export class AddressBooksDatasource {
   }
 
   async getOrCreateAddressBook(account: Account): Promise<AddressBook> {
-    const cacheDir = CacheRouter.getAddressBookCacheDir(account.id);
-    const [dbAddressBook] = await this.cachedQueryResolver.get<DbAddressBook[]>(
-      {
-        cacheDir,
-        query: this.sql<
-          DbAddressBook[]
-        >`SELECT * FROM address_books WHERE account_id = ${account.id}`,
-        ttl: this.defaultExpirationTimeInSeconds,
-      },
-    );
+    const [dbAddressBook] = await this.sql<
+      DbAddressBook[]
+    >`SELECT * FROM address_books WHERE account_id = ${account.id}`;
     return dbAddressBook
       ? this.addressBookMapper.map(dbAddressBook)
       : this.addressBookMapper.map(await this.createAddressBook({ account }));
@@ -87,18 +60,19 @@ export class AddressBooksDatasource {
     return dbAddressBook;
   }
 
-  private async updateAddressBook(addressBook: AddressBook): Promise<void> {
+  private async updateAddressBook(
+    addressBook: AddressBook,
+  ): Promise<DbAddressBook> {
     const encryptionApi = await this.encryptionApiManager.getApi();
     const encryptedBlob = await encryptionApi.encryptBlob(addressBook.data);
-    await this.sql`
+    const [dbAddressBook] = await this.sql<DbAddressBook[]>`
       UPDATE address_books
       SET data = ${encryptedBlob.encryptedData},
           key = ${encryptedBlob.encryptedDataKey},
           iv = ${encryptedBlob.iv}
       WHERE id = ${addressBook.id}
+     RETURNING *;
     `;
-    await this.cacheService.deleteByKey(
-      CacheRouter.getAddressBookCacheKey(addressBook.accountId),
-    );
+    return dbAddressBook;
   }
 }
