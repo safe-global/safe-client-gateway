@@ -12,6 +12,7 @@ import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/cr
 import type { Account } from '@/domain/accounts/entities/account.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
+import { randomBytes } from 'crypto';
 import type postgres from 'postgres';
 
 const mockLoggingService = {
@@ -45,8 +46,10 @@ describe('AddressBooksDataSource', () => {
       if (key === 'expirationTimeInSeconds.default') return faker.number.int();
       if (key === 'application.isProduction') return false;
       if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
-      if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
-      if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
+      if (key === 'accounts.encryption.local.key')
+        return randomBytes(32).toString('hex');
+      if (key === 'accounts.encryption.local.iv')
+        return randomBytes(16).toString('hex');
     });
     mockEncryptionApiManager.getApi.mockResolvedValue(
       new LocalEncryptionApiService(mockConfigurationService),
