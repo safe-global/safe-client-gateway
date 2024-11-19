@@ -77,6 +77,8 @@ describe('Migration 00001_accounts', () => {
       after: async (sql: Sql): Promise<AccountRow[]> => {
         await sql`INSERT INTO groups (id) VALUES (1);`;
         await sql`INSERT INTO accounts (id, group_id, address) VALUES (1, 1, '0x0000');`;
+        // wait for 1 millisecond to ensure that the updated_at timestamp is different
+        await waitMilliseconds(1);
         await sql`UPDATE accounts set address = '0x0001' WHERE id = 1;`;
         return await sql<AccountRow[]>`SELECT * FROM accounts`;
       },
