@@ -26,6 +26,8 @@ export class MultisigConfirmationDetails {
 }
 
 export class MultisigExecutionDetails extends ExecutionDetails {
+  @ApiProperty({ enum: [ExecutionDetailsType.Multisig] })
+  override type = ExecutionDetailsType.Multisig;
   @ApiProperty()
   submittedAt: number;
   @ApiProperty()

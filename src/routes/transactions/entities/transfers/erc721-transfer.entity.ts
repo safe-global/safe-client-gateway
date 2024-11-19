@@ -5,6 +5,8 @@ import {
 } from '@/routes/transactions/entities/transfers/transfer.entity';
 
 export class Erc721Transfer extends Transfer {
+  @ApiProperty({ enum: [TransferType.Erc721] })
+  override type = TransferType.Erc721;
   @ApiProperty()
   tokenAddress: `0x${string}`;
   @ApiProperty()
