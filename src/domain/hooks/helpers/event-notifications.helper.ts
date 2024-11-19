@@ -112,6 +112,7 @@ export class EventNotificationsHelper {
    * @param event - {@link Event} to check
    */
   private isEventToNotify(event: Event): event is EventToNotify {
+    // TODO: Simplify this by inverting the logic and/or refactor mapEventNotification to explicitly handle types
     return (
       // Don't notify about Config events
       event.type !== ConfigEventType.CHAIN_UPDATE &&
@@ -124,7 +125,13 @@ export class EventNotificationsHelper {
       // We only notify required confirmations on required - see MESSAGE_CREATED
       event.type !== TransactionEventType.MESSAGE_CONFIRMATION &&
       // You cannot subscribe to Safes-to-be-created
-      event.type !== TransactionEventType.SAFE_CREATED
+      event.type !== TransactionEventType.SAFE_CREATED &&
+      // We don't notify about reorgs
+      event.type !== TransactionEventType.REORG_DETECTED &&
+      // We don't notify about delegate events
+      event.type !== TransactionEventType.NEW_DELEGATE &&
+      event.type !== TransactionEventType.UPDATED_DELEGATE &&
+      event.type !== TransactionEventType.DELETED_DELEGATE
     );
   }
 

@@ -14,15 +14,22 @@ import { PendingTransactionEventSchema } from '@/routes/hooks/entities/schemas/p
 import { ReorgDetectedEventSchema } from '@/routes/hooks/entities/schemas/reorg-detected.schema';
 import { SafeAppsUpdateEventSchema } from '@/routes/hooks/entities/schemas/safe-apps-update.schema';
 import { SafeCreatedEventSchema } from '@/routes/hooks/entities/schemas/safe-created.schema';
+import {
+  DeletedDelegateEventSchema,
+  NewDelegateEventSchema,
+  UpdatedDelegateEventSchema,
+} from '@/routes/hooks/entities/schemas/delegate-events.schema';
 
 export const EventSchema = z.discriminatedUnion('type', [
   ChainUpdateEventSchema,
   DeletedMultisigTransactionEventSchema,
   ExecutedTransactionEventSchema,
+  DeletedDelegateEventSchema,
   IncomingEtherEventSchema,
   IncomingTokenEventSchema,
   MessageCreatedEventSchema,
   ModuleTransactionEventSchema,
+  NewDelegateEventSchema,
   NewConfirmationEventSchema,
   NewMessageConfirmationEventSchema,
   OutgoingEtherEventSchema,
@@ -31,4 +38,5 @@ export const EventSchema = z.discriminatedUnion('type', [
   ReorgDetectedEventSchema,
   SafeAppsUpdateEventSchema,
   SafeCreatedEventSchema,
+  UpdatedDelegateEventSchema,
 ]);

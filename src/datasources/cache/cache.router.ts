@@ -199,6 +199,13 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.SAFE_COLLECTIBLES_KEY}_${args.safeAddress}`;
   }
 
+  static getDelegatesCacheKey(args: {
+    chainId: string;
+    safeAddress?: `0x${string}`;
+  }): string {
+    return `${args.chainId}_${CacheRouter.DELEGATES_KEY}_${args.safeAddress}`;
+  }
+
   static getDelegatesCacheDir(args: {
     chainId: string;
     safeAddress?: `0x${string}`;
@@ -209,7 +216,7 @@ export class CacheRouter {
     offset?: number;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${CacheRouter.DELEGATES_KEY}_${args.safeAddress}`,
+      CacheRouter.getDelegatesCacheKey(args),
       `${args.delegate}_${args.delegator}_${args.label}_${args.limit}_${args.offset}`,
     );
   }
