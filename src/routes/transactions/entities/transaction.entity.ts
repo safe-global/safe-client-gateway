@@ -19,6 +19,7 @@ import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/t
 import { NativeStakingDepositTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-deposit-info.entity';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
+import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
 
 @ApiExtraModels(
   CreationTransactionInfo,
@@ -39,9 +40,9 @@ export class Transaction {
   id: string;
   @ApiPropertyOptional({ type: String, nullable: true })
   txHash: `0x${string}` | null;
-  @ApiPropertyOptional({ type: Number, nullable: true })
-  timestamp: number | null;
   @ApiProperty()
+  timestamp: number;
+  @ApiProperty({ enum: TransactionStatus })
   txStatus: string;
   @ApiProperty({
     oneOf: [
@@ -71,7 +72,7 @@ export class Transaction {
 
   constructor(
     id: string,
-    timestamp: number | null,
+    timestamp: number,
     txStatus: string,
     txInfo: TransactionInfo,
     executionInfo: ExecutionInfo | null = null,

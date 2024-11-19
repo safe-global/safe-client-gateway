@@ -29,8 +29,6 @@ describe('Migration 00002_account-data-types', () => {
   });
 
   it('runs successfully', async () => {
-    await sql`DROP TABLE IF EXISTS account_data_types CASCADE;`;
-
     const result = await migrator.test({
       migration: '00002_account-data-types',
       after: async (sql: Sql) => {
@@ -85,8 +83,6 @@ describe('Migration 00002_account-data-types', () => {
   });
 
   it('should add and update row timestamps', async () => {
-    await sql`DROP TABLE IF EXISTS account_data_types CASCADE;`;
-
     const result: { before: unknown; after: AccountDataTypeRow[] } =
       await migrator.test({
         migration: '00002_account-data-types',

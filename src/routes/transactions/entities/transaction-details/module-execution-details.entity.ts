@@ -6,6 +6,8 @@ import {
 } from '@/routes/transactions/entities/transaction-details/execution-details.entity';
 
 export class ModuleExecutionDetails extends ExecutionDetails {
+  @ApiProperty({ enum: [ExecutionDetailsType.Module] })
+  override type = ExecutionDetailsType.Module;
   @ApiProperty()
   address: AddressInfo;
 

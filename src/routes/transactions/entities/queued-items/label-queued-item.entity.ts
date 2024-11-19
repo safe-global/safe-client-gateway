@@ -10,6 +10,8 @@ export enum LabelItem {
 }
 
 export class LabelQueuedItem extends QueuedItem {
+  @ApiProperty({ enum: [QueuedItemType.Label] })
+  override type = QueuedItemType.Label;
   @ApiProperty()
   label: string;
 

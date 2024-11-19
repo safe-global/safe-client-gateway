@@ -7,7 +7,7 @@ export enum QueuedItemType {
 }
 
 export class QueuedItem {
-  @ApiProperty()
+  @ApiProperty({ enum: QueuedItemType })
   type: QueuedItemType;
 
   constructor(type: QueuedItemType) {
