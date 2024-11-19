@@ -32,7 +32,7 @@ interface AddressBooksRow {
   updated_at: Date;
 }
 
-describe('Migration 00010_address-books', () => {
+describe('Migration 00011_address-books', () => {
   let sql: postgres.Sql;
   let migrator: PostgresDatabaseMigrator;
   const testDbFactory = new TestDbFactory();
@@ -48,7 +48,7 @@ describe('Migration 00010_address-books', () => {
 
   it('runs successfully', async () => {
     const result = await migrator.test({
-      migration: '00010_address-books',
+      migration: '00011_address-books',
       after: async (sql: postgres.Sql) => {
         return {
           account_data_types: {
@@ -83,7 +83,7 @@ describe('Migration 00010_address-books', () => {
 
     const { after: addressBookRows }: { after: AddressBooksRow[] } =
       await migrator.test({
-        migration: '00010_address-books',
+        migration: '00011_address-books',
         after: async (sql: postgres.Sql): Promise<AddressBooksRow[]> => {
           accountRows = await sql<
             AccountRow[]
@@ -133,7 +133,7 @@ describe('Migration 00010_address-books', () => {
 
     const { after: addressBooksRows }: { after: AddressBooksRow[] } =
       await migrator.test({
-        migration: '00010_address-books',
+        migration: '00011_address-books',
         after: async (sql: postgres.Sql): Promise<AddressBooksRow[]> => {
           accountRows = await sql<
             AccountRow[]
@@ -161,7 +161,7 @@ describe('Migration 00010_address-books', () => {
     let accountRows: AccountRow[] = [];
 
     await migrator.test({
-      migration: '00010_address-books',
+      migration: '00011_address-books',
       after: async (sql: postgres.Sql) => {
         accountRows = await sql<
           AccountRow[]
@@ -193,7 +193,7 @@ describe('Migration 00010_address-books', () => {
 
   it('should set the AddressBook DataType as active ', async () => {
     await migrator.test({
-      migration: '00010_address-books',
+      migration: '00011_address-books',
       before: async (sql: postgres.Sql) => {
         const dataTypes = await sql<
           AccountDataTypeRow[]
