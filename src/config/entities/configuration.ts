@@ -30,6 +30,7 @@ export default () => ({
       type: process.env.ACCOUNTS_ENCRYPTION_TYPE || 'local',
       awsKms: {
         keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+        algorithm: process.env.AWS_KMS_ENCRYPTION_ALGORITHM || 'aes-256-cbc',
       },
       local: {
         algorithm: process.env.LOCAL_ENCRYPTION_ALGORITHM || 'aes-256-cbc',
