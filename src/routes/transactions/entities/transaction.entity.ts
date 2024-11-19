@@ -73,7 +73,7 @@ export class Transaction {
   constructor(
     id: string,
     timestamp: number,
-    txStatus: string,
+    txStatus: TransactionStatus,
     txInfo: TransactionInfo,
     executionInfo: ExecutionInfo | null = null,
     safeAppInfo: SafeAppInfo | null = null,
