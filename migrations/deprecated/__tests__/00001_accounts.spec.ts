@@ -28,8 +28,6 @@ describe('Migration 00001_accounts', () => {
   });
 
   it('runs successfully', async () => {
-    await sql`DROP TABLE IF EXISTS groups, accounts CASCADE;`;
-
     const result = await migrator.test({
       migration: '00001_accounts',
       after: async (sql: Sql) => {
@@ -71,8 +69,6 @@ describe('Migration 00001_accounts', () => {
   });
 
   it('should add and update row timestamps', async () => {
-    await sql`DROP TABLE IF EXISTS groups, accounts CASCADE;`;
-
     const result: {
       before: unknown;
       after: AccountRow[];
@@ -102,8 +98,6 @@ describe('Migration 00001_accounts', () => {
   });
 
   it('only updated_at should be updated on row changes', async () => {
-    await sql`DROP TABLE IF EXISTS groups, accounts CASCADE;`;
-
     const result: {
       before: unknown;
       after: AccountRow[];

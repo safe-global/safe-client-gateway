@@ -13,10 +13,6 @@ describe('Migration 00006_accounts-names', () => {
     migrator = new PostgresDatabaseMigrator(sql);
   });
 
-  beforeEach(async () => {
-    await sql`DROP TABLE IF EXISTS groups, accounts, outreaches, targeted_safes, submissions CASCADE;`;
-  });
-
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
   });
