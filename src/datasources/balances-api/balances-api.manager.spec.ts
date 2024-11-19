@@ -158,6 +158,7 @@ describe('Balances API Manager Tests', () => {
       });
       configApiMock.getChain.mockResolvedValue(rawify(chain));
       dataSourceMock.get.mockResolvedValue([]);
+      coingeckoApiMock.getTokenPrices.mockResolvedValue(rawify([]));
       const balancesApiManager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -204,12 +205,10 @@ describe('Balances API Manager Tests', () => {
 
   describe('getFiatCodes checks', () => {
     it('should return the intersection of all providers supported currencies', async () => {
-      zerionBalancesApiMock.getFiatCodes.mockResolvedValue([
-        'EUR',
-        'GBP',
-        'ETH',
-      ]);
-      coingeckoApiMock.getFiatCodes.mockResolvedValue(['GBP']);
+      zerionBalancesApiMock.getFiatCodes.mockResolvedValue(
+        rawify(['EUR', 'GBP', 'ETH']),
+      );
+      coingeckoApiMock.getFiatCodes.mockResolvedValue(rawify(['GBP']));
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,

@@ -30,3 +30,5 @@ export const BalanceSchema = z.union([
   NativeBalanceSchema.merge(FiatSchema),
   Erc20BalanceSchema.merge(FiatSchema),
 ]);
+
+export const BalancesSchema = z.array(BalanceSchema);
