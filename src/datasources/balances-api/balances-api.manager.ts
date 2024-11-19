@@ -15,6 +15,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { intersection } from 'lodash';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
+import { z } from 'zod';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
@@ -72,12 +74,12 @@ export class BalancesApiManager implements IBalancesApiManager {
     }
   }
 
-  async getFiatCodes(): Promise<string[]> {
+  async getFiatCodes(): Promise<Raw<string[]>> {
     const [zerionFiatCodes, safeFiatCodes] = await Promise.all([
       this.zerionBalancesApi.getFiatCodes(),
       this.coingeckoApi.getFiatCodes(),
-    ]);
-    return intersection(zerionFiatCodes, safeFiatCodes).sort();
+    ]).then(z.array(z.array(z.string())).parse);
+    return rawify(intersection(zerionFiatCodes, safeFiatCodes).sort());
   }
 
   private async _getSafeBalancesApi(chainId: string): Promise<SafeBalancesApi> {

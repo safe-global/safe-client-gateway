@@ -38,6 +38,7 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
+// Add *_DELEGATE event tests here if we unskip this
 describe.skip('Post Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;
   let authToken: string;

@@ -1,4 +1,9 @@
 import { chainUpdateEventBuilder } from '@/routes/hooks/entities/__tests__/chain-update.builder';
+import {
+  deletedDelegateEventBuilder,
+  newDelegateEventBuilder,
+  updatedDelegateEventBuilder,
+} from '@/routes/hooks/entities/__tests__/delegate-events.builder';
 import { deletedMultisigTransactionEventBuilder } from '@/routes/hooks/entities/__tests__/deleted-multisig-transaction.builder';
 import { executedTransactionEventBuilder } from '@/routes/hooks/entities/__tests__/executed-transaction.builder';
 import { incomingEtherEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-ether.builder';
@@ -18,6 +23,7 @@ import { ZodError } from 'zod';
 describe('EventSchema', () => {
   [
     chainUpdateEventBuilder,
+    deletedDelegateEventBuilder,
     deletedMultisigTransactionEventBuilder,
     executedTransactionEventBuilder,
     incomingEtherEventBuilder,
@@ -25,12 +31,14 @@ describe('EventSchema', () => {
     messageCreatedEventBuilder,
     moduleTransactionEventBuilder,
     newConfirmationEventBuilder,
+    newDelegateEventBuilder,
     newMessageConfirmationEventBuilder,
     outgoingEtherEventBuilder,
     outgoingTokenEventBuilder,
     pendingTransactionEventBuilder,
     reorgDetectedEventBuilder,
     safeAppsEventBuilder,
+    updatedDelegateEventBuilder,
   ].forEach((builder) => {
     const event = builder().build();
 
@@ -56,10 +64,12 @@ describe('EventSchema', () => {
             'CHAIN_UPDATE',
             'DELETED_MULTISIG_TRANSACTION',
             'EXECUTED_MULTISIG_TRANSACTION',
+            'DELETED_DELEGATE',
             'INCOMING_ETHER',
             'INCOMING_TOKEN',
             'MESSAGE_CREATED',
             'MODULE_TRANSACTION',
+            'NEW_DELEGATE',
             'NEW_CONFIRMATION',
             'MESSAGE_CONFIRMATION',
             'OUTGOING_ETHER',
@@ -68,10 +78,11 @@ describe('EventSchema', () => {
             'REORG_DETECTED',
             'SAFE_APPS_UPDATE',
             'SAFE_CREATED',
+            'UPDATED_DELEGATE',
           ],
           path: ['type'],
           message:
-            "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'REORG_DETECTED' | 'SAFE_APPS_UPDATE' | 'SAFE_CREATED'",
+            "Invalid discriminator value. Expected 'CHAIN_UPDATE' | 'DELETED_MULTISIG_TRANSACTION' | 'EXECUTED_MULTISIG_TRANSACTION' | 'DELETED_DELEGATE' | 'INCOMING_ETHER' | 'INCOMING_TOKEN' | 'MESSAGE_CREATED' | 'MODULE_TRANSACTION' | 'NEW_DELEGATE' | 'NEW_CONFIRMATION' | 'MESSAGE_CONFIRMATION' | 'OUTGOING_ETHER' | 'OUTGOING_TOKEN' | 'PENDING_MULTISIG_TRANSACTION' | 'REORG_DETECTED' | 'SAFE_APPS_UPDATE' | 'SAFE_CREATED' | 'UPDATED_DELEGATE'",
         },
       ]),
     );

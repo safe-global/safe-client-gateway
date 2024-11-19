@@ -544,4 +544,37 @@ describe('Events queue processing e2e tests', () => {
       expect(cacheContent).toBeNull();
     });
   });
+
+  it.each(['NEW_DELEGATE', 'UPDATED_DELEGATE', 'DELETED_DELEGATE'])(
+    '%s clears delegates',
+    async (type) => {
+      const cacheDir = new CacheDir(
+        `${TEST_SAFE.chainId}_delegates_${TEST_SAFE.address}`,
+        '',
+      );
+      await redisClient.hSet(
+        `${cacheKeyPrefix}-${cacheDir.key}`,
+        cacheDir.field,
+        faker.string.alpha(),
+      );
+      const data = {
+        type,
+        chainId: TEST_SAFE.chainId,
+        address: TEST_SAFE.address,
+        delegate: faker.finance.ethereumAddress(),
+        delegator: faker.finance.ethereumAddress(),
+        label: faker.lorem.word(),
+      };
+
+      await channel.sendToQueue(queueName, data);
+
+      await retry(async () => {
+        const cacheContent = await redisClient.hGet(
+          `${cacheKeyPrefix}-${cacheDir.key}`,
+          cacheDir.field,
+        );
+        expect(cacheContent).toBeNull();
+      });
+    },
+  );
 });
