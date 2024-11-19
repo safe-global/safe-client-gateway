@@ -40,8 +40,8 @@ export class Transaction {
   id: string;
   @ApiPropertyOptional({ type: String, nullable: true })
   txHash: `0x${string}` | null;
-  @ApiPropertyOptional({ type: Number, nullable: true })
-  timestamp: number | null;
+  @ApiProperty()
+  timestamp: number;
   @ApiProperty({ enum: TransactionStatus })
   txStatus: string;
   @ApiProperty({
@@ -72,7 +72,7 @@ export class Transaction {
 
   constructor(
     id: string,
-    timestamp: number | null,
+    timestamp: number,
     txStatus: string,
     txInfo: TransactionInfo,
     executionInfo: ExecutionInfo | null = null,
