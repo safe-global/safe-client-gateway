@@ -21,8 +21,6 @@ describe('Migration 00007_targeted_messaging_update', () => {
   });
 
   it('runs successfully', async () => {
-    await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
     const result = await migrator.test({
       migration: '00007_targeted_messaging_update',
       after: async (sql: Sql) => {
@@ -57,8 +55,6 @@ describe('Migration 00007_targeted_messaging_update', () => {
 
   describe('Outreaches update', () => {
     it('should throw an error if the unique(source_id) constraint is violated', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       await migrator.test({
         migration: '00007_targeted_messaging_update',
         after: async (sql: Sql) => {
@@ -89,8 +85,6 @@ describe('Migration 00007_targeted_messaging_update', () => {
     });
 
     it('should default to null for source_file, source_file_processed_date, and source_file_checksum', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       await migrator.test({
         migration: '00007_targeted_messaging_update',
         after: async (sql: Sql) => {

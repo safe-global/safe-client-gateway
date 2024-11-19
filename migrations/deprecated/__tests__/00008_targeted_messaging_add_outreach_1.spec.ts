@@ -19,8 +19,6 @@ describe('Migration 00008_targeted_messaging_add_outreach_1', () => {
   });
 
   it('runs successfully', async () => {
-    await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
     const result = await migrator.test({
       migration: '00008_targeted_messaging_add_outreach_1',
       after: async (sql: Sql) => {
