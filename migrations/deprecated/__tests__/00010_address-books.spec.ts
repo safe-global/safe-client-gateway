@@ -42,10 +42,6 @@ describe('Migration 00010_address-books', () => {
     migrator = new PostgresDatabaseMigrator(sql);
   });
 
-  beforeEach(async () => {
-    await sql`DROP TABLE IF EXISTS groups, accounts, outreaches, targeted_safes, submissions CASCADE;`;
-  });
-
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
   });
