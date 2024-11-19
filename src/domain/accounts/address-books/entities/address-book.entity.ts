@@ -9,8 +9,9 @@ export const AddressBookItemSchema = z.object({
 });
 
 export const AddressBookSchema = RowSchema.extend({
-  data: z.array(AddressBookItemSchema),
   accountId: AccountSchema.shape.id,
+  chainId: z.string(),
+  data: z.array(AddressBookItemSchema),
 });
 
 export type AddressBookItem = z.infer<typeof AddressBookItemSchema>;

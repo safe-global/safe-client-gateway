@@ -9,13 +9,14 @@ import { UpdateAddressBookItemDto } from '@/domain/accounts/address-books/entiti
 import { AddressBookItemNotFoundError } from '@/domain/accounts/address-books/errors/address-book-item-not-found.error';
 import { AddressBookNotFoundError } from '@/domain/accounts/address-books/errors/address-book-not-found.error';
 import { Account } from '@/domain/accounts/entities/account.entity';
+import { IAddressBooksDataSource } from '@/domain/interfaces/address-books.datasource.interface';
 import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { max } from 'lodash';
 import postgres from 'postgres';
 
 @Injectable()
-export class AddressBooksDatasource {
+export class AddressBooksDatasource implements IAddressBooksDataSource {
   constructor(
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
     @Inject(IEncryptionApiManager)
@@ -25,9 +26,13 @@ export class AddressBooksDatasource {
 
   async createAddressBookItem(args: {
     account: Account;
+    chainId: string;
     createAddressBookItemDto: CreateAddressBookItemDto;
   }): Promise<AddressBookItem> {
-    const addressBook = await this.getOrCreateAddressBook(args.account);
+    const addressBook = await this.getOrCreateAddressBook(
+      args.account,
+      args.chainId,
+    );
     const addressBookItem = {
       id: (max(addressBook.data.map((i) => i.id)) ?? 0) + 1,
       address: args.createAddressBookItemDto.address,
@@ -38,10 +43,13 @@ export class AddressBooksDatasource {
     return addressBookItem;
   }
 
-  async getAddressBook(account: Account): Promise<AddressBook> {
+  async getAddressBook(args: {
+    account: Account;
+    chainId: string;
+  }): Promise<AddressBook> {
     const [dbAddressBook] = await this.sql<
       DbAddressBook[]
-    >`SELECT * FROM address_books WHERE account_id = ${account.id}`;
+    >`SELECT * FROM address_books WHERE account_id = ${args.account.id} AND chain_id = ${args.chainId}`;
     if (!dbAddressBook) throw new AddressBookNotFoundError();
     return this.addressBookMapper.map(dbAddressBook);
   }
@@ -76,13 +84,16 @@ export class AddressBooksDatasource {
     await this.updateAddressBook(addressBook);
   }
 
-  private async getOrCreateAddressBook(account: Account): Promise<AddressBook> {
+  private async getOrCreateAddressBook(
+    account: Account,
+    chainId: string,
+  ): Promise<AddressBook> {
     try {
-      return await this.getAddressBook(account);
+      return await this.getAddressBook({ account, chainId });
     } catch (err) {
       if (err instanceof AddressBookNotFoundError) {
         return this.addressBookMapper.map(
-          await this.createAddressBook({ account }),
+          await this.createAddressBook({ account, chainId }),
         );
       }
       throw err;
@@ -91,16 +102,18 @@ export class AddressBooksDatasource {
 
   private async createAddressBook(args: {
     account: Account;
+    chainId: string;
   }): Promise<DbAddressBook> {
     const encryptionApi = await this.encryptionApiManager.getApi();
     const encryptedBlob = await encryptionApi.encryptBlob([]);
     const [dbAddressBook] = await this.sql<DbAddressBook[]>`
-      INSERT INTO address_books (data, key, iv, account_id)
+      INSERT INTO address_books (account_id, chain_id, data, key, iv)
       VALUES (
+        ${args.account.id},
+        ${args.chainId},
         ${encryptedBlob.encryptedData},
         ${encryptedBlob.encryptedDataKey},
-        ${encryptedBlob.iv},
-        ${args.account.id}
+        ${encryptedBlob.iv}
       ) RETURNING *;
     `;
     return dbAddressBook;

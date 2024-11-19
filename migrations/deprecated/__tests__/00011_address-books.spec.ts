@@ -24,10 +24,11 @@ interface AccountRow {
 
 interface AddressBooksRow {
   id: number;
+  account_id: number;
+  chain_id: string;
   data: Buffer;
   key: Buffer;
   iv: Buffer;
-  account_id: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -51,33 +52,42 @@ describe('Migration 00011_address-books', () => {
       migration: '00011_address-books',
       after: async (sql: postgres.Sql) => {
         return {
-          account_data_types: {
+          address_books: {
             columns:
               await sql`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'address_books'`,
             rows: await sql`SELECT * FROM account_data_settings`,
+            indexes:
+              await sql`SELECT indexname FROM pg_indexes WHERE tablename = 'address_books'`,
           },
         };
       },
     });
 
     expect(result.after).toStrictEqual({
-      account_data_types: {
+      address_books: {
         columns: expect.arrayContaining([
           { column_name: 'id' },
+          { column_name: 'account_id' },
+          { column_name: 'chain_id' },
           { column_name: 'created_at' },
           { column_name: 'updated_at' },
           { column_name: 'data' },
           { column_name: 'key' },
           { column_name: 'iv' },
-          { column_name: 'account_id' },
         ]),
         rows: [],
+        indexes: expect.arrayContaining([
+          {
+            indexname: 'idx_address_books_account_id_chain_id',
+          },
+        ]),
       },
     });
   });
 
   it('should add one AddressBook and update its row timestamps', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
+    const chainId = faker.string.numeric();
     let accountRows: AccountRow[] = [];
     let addressBooks: Partial<AddressBooksRow>[] = [];
 
@@ -90,10 +100,11 @@ describe('Migration 00011_address-books', () => {
           >`INSERT INTO accounts (address, name, name_hash) VALUES (${accountAddress}, 'name', 'hash') RETURNING *;`;
           addressBooks = [
             {
+              account_id: accountRows[0].id,
+              chain_id: chainId,
               data: Buffer.from(faker.string.alphanumeric()),
               key: Buffer.from(faker.string.alphanumeric()),
               iv: Buffer.from(faker.string.alphanumeric()),
-              account_id: accountRows[0].id,
             },
           ];
           return sql<
@@ -119,7 +130,7 @@ describe('Migration 00011_address-books', () => {
     // only updated_at should be updated after the row is updated
     const afterUpdate = await sql<AddressBooksRow[]>`UPDATE address_books
         SET data = ${Buffer.from(faker.string.alphanumeric())}
-        WHERE account_id = ${accountRows[0].id}
+        WHERE account_id = ${accountRows[0].id} AND chain_id = ${chainId}
         RETURNING *;`;
     const updatedAtAfterUpdate = new Date(afterUpdate[0].updated_at);
     const createdAtAfterUpdate = new Date(afterUpdate[0].created_at);
@@ -140,10 +151,11 @@ describe('Migration 00011_address-books', () => {
           >`INSERT INTO accounts (address, name, name_hash) VALUES (${accountAddress}, 'name', 'hash') RETURNING *;`;
           await sql<AddressBooksRow[]>`INSERT INTO address_books ${sql([
             {
+              account_id: accountRows[0].id,
+              chain_id: faker.string.numeric(),
               data: Buffer.from(faker.string.alphanumeric()),
               key: Buffer.from(faker.string.alphanumeric()),
               iv: Buffer.from(faker.string.alphanumeric()),
-              account_id: accountRows[0].id,
             },
           ])}`;
           await sql`DELETE FROM accounts WHERE id = ${accountRows[0].id};`;
@@ -156,7 +168,7 @@ describe('Migration 00011_address-books', () => {
     expect(addressBooksRows).toHaveLength(0);
   });
 
-  it('should throw an error if the unique(account_id) constraint is violated', async () => {
+  it('should throw an error if the unique(account_id, chain_id) constraint is violated', async () => {
     const accountAddress = getAddress(faker.finance.ethereumAddress());
     let accountRows: AccountRow[] = [];
 
@@ -166,26 +178,29 @@ describe('Migration 00011_address-books', () => {
         accountRows = await sql<
           AccountRow[]
         >`INSERT INTO accounts (address, name, name_hash) VALUES (${accountAddress}, 'name', 'hash') RETURNING *;`;
-
+        const duplicatedChainId = faker.string.numeric();
+        const duplicatedAccountId = accountRows[0].id;
         await sql<AddressBooksRow[]>`INSERT INTO address_books ${sql([
           {
+            account_id: duplicatedAccountId,
+            chain_id: duplicatedChainId,
             data: Buffer.from(faker.string.alphanumeric()),
             key: Buffer.from(faker.string.alphanumeric()),
             iv: Buffer.from(faker.string.alphanumeric()),
-            account_id: accountRows[0].id,
           },
         ])}`;
         await expect(
           sql`INSERT INTO address_books ${sql([
             {
+              account_id: duplicatedAccountId,
+              chain_id: duplicatedChainId,
               data: Buffer.from(faker.string.alphanumeric()),
               key: Buffer.from(faker.string.alphanumeric()),
               iv: Buffer.from(faker.string.alphanumeric()),
-              account_id: accountRows[0].id,
             },
           ])}`,
         ).rejects.toThrow(
-          'duplicate key value violates unique constraint "unique_account"',
+          'duplicate key value violates unique constraint "unique_account_id_chain_id"',
         );
       },
     });

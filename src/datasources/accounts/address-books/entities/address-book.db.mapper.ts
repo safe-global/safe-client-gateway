@@ -26,8 +26,9 @@ export class AddressBookDbMapper {
     );
     return {
       id: addressBook.id,
-      data: decryptedData,
       accountId: addressBook.account_id,
+      chainId: addressBook.chain_id,
+      data: decryptedData,
       created_at: convertToDate(addressBook.created_at),
       updated_at: convertToDate(addressBook.updated_at),
     };
