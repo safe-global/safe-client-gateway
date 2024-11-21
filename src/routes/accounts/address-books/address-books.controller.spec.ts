@@ -44,6 +44,8 @@ import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/acc
 import { AccountDataTypeNames } from '@/domain/accounts/entities/account-data-type.entity';
 import { accountDataSettingBuilder } from '@/domain/accounts/entities/__tests__/account-data-setting.builder';
 import { createAddressBookItemDtoBuilder } from '@/domain/accounts/address-books/entities/__tests__/create-address-book-item.dto.builder';
+import { AddressBookNotFoundError } from '@/domain/accounts/address-books/errors/address-book-not-found.error';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
@@ -104,6 +106,8 @@ describe('AddressBooksController', () => {
       const protectedEndpoints = [
         AddressBooksController.prototype.getAddressBook,
         AddressBooksController.prototype.createAddressBookItem,
+        AddressBooksController.prototype.deleteAddressBook,
+        AddressBooksController.prototype.deleteAddressBookItem,
       ];
       protectedEndpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
     });
@@ -151,6 +155,40 @@ describe('AddressBooksController', () => {
             address: item.address,
           })),
         });
+    });
+
+    it('should return a 404 if the AddressBook does not exist', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.AddressBook)
+          .with('is_active', true)
+          .build(),
+      ];
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', true)
+          .build(),
+      ]);
+      addressBooksDatasource.getAddressBook.mockImplementation(() => {
+        throw new AddressBookNotFoundError();
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/accounts/${address}/address-books/${chainId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404);
     });
 
     it('should fail if the authPayload does not match the URL address', async () => {
@@ -343,6 +381,345 @@ describe('AddressBooksController', () => {
           code: 500,
           message: 'Internal server error',
         });
+    });
+  });
+
+  describe('DELETE /accounts/:address/address-books/:chainId', () => {
+    it('should delete an AddressBook', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.AddressBook)
+          .with('is_active', true)
+          .build(),
+      ];
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', true)
+          .build(),
+      ]);
+      const addressBook = addressBookBuilder().build();
+      addressBooksDatasource.getAddressBook.mockResolvedValue(addressBook);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/address-books/${chainId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(addressBooksDatasource.deleteAddressBook).toHaveBeenCalledWith(
+        addressBook,
+      );
+    });
+
+    it('should return a 404 if the AddressBook does not exist', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.AddressBook)
+          .with('is_active', true)
+          .build(),
+      ];
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', true)
+          .build(),
+      ]);
+      addressBooksDatasource.getAddressBook.mockImplementation(() => {
+        throw new AddressBookNotFoundError();
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/address-books/${chainId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404);
+
+      expect(addressBooksDatasource.deleteAddressBook).not.toHaveBeenCalled();
+    });
+
+    it('should fail if the authPayload does not match the URL address', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', getAddress(faker.finance.ethereumAddress())) // Different address
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/address-books/${chainId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(401);
+
+      expect(addressBooksDatasource.deleteAddressBook).not.toHaveBeenCalled();
+    });
+
+    it('should fail if the account does not have the AddressBooks data setting enabled', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.AddressBook)
+          .with('is_active', true)
+          .build(),
+      ];
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', false) // AddressBooks setting is not enabled
+          .build(),
+      ]);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/address-books/${chainId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(410);
+
+      expect(addressBooksDatasource.deleteAddressBook).not.toHaveBeenCalled();
+    });
+
+    it('should not propagate a database error', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      accountsRepository.getAccount.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await request(app.getHttpServer())
+        .delete(`/v1/accounts/${address}/address-books/${chainId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(500)
+        .expect({
+          code: 500,
+          message: 'Internal server error',
+        });
+
+      expect(addressBooksDatasource.deleteAddressBook).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('DELETE /accounts/:address/address-books/:chainId/:addressBookItemId', () => {
+    it('should delete an AddressBookItem', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const addressBookItemId = faker.number.int({
+        min: 1,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.AddressBook)
+          .with('is_active', true)
+          .build(),
+      ];
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', true)
+          .build(),
+      ]);
+      const addressBook = addressBookBuilder().build();
+      addressBooksDatasource.getAddressBook.mockResolvedValue(addressBook);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${address}/address-books/${chainId}/${addressBookItemId}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(addressBooksDatasource.deleteAddressBookItem).toHaveBeenCalledWith(
+        {
+          addressBook,
+          id: addressBookItemId,
+        },
+      );
+    });
+
+    it('should return a 404 if the AddressBook does not exist', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const addressBookItemId = faker.number.int({
+        min: 1,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.AddressBook)
+          .with('is_active', true)
+          .build(),
+      ];
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', true)
+          .build(),
+      ]);
+      addressBooksDatasource.getAddressBook.mockImplementation(() => {
+        throw new AddressBookNotFoundError();
+      });
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${address}/address-books/${chainId}/${addressBookItemId}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404);
+
+      expect(
+        addressBooksDatasource.deleteAddressBookItem,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should fail if the authPayload does not match the URL address', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const addressBookItemId = faker.number.int({
+        min: 1,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', getAddress(faker.finance.ethereumAddress())) // Different address
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${address}/address-books/${chainId}/${addressBookItemId}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(401);
+
+      expect(
+        addressBooksDatasource.deleteAddressBookItem,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should fail if the account does not have the AddressBooks data setting enabled', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const addressBookItemId = faker.number.int({
+        min: 1,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const account = accountBuilder().build();
+      const accountDataTypes = [
+        accountDataTypeBuilder()
+          .with('name', AccountDataTypeNames.AddressBook)
+          .with('is_active', true)
+          .build(),
+      ];
+      accountsRepository.getAccount.mockResolvedValue(account);
+      accountsRepository.getDataTypes.mockResolvedValue(accountDataTypes);
+      accountsRepository.getAccountDataSettings.mockResolvedValue([
+        accountDataSettingBuilder()
+          .with('account_id', account.id)
+          .with('account_data_type_id', accountDataTypes[0].id)
+          .with('enabled', false) // AddressBooks setting is not enabled
+          .build(),
+      ]);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${address}/address-books/${chainId}/${addressBookItemId}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(410);
+
+      expect(
+        addressBooksDatasource.deleteAddressBookItem,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should not propagate a database error', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const addressBookItemId = faker.number.int({
+        min: 1,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('chain_id', chainId)
+        .with('signer_address', address)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      accountsRepository.getAccount.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await request(app.getHttpServer())
+        .delete(
+          `/v1/accounts/${address}/address-books/${chainId}/${addressBookItemId}`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(500)
+        .expect({
+          code: 500,
+          message: 'Internal server error',
+        });
+
+      expect(
+        addressBooksDatasource.deleteAddressBookItem,
+      ).not.toHaveBeenCalled();
     });
   });
 });

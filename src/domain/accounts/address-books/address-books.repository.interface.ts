@@ -24,6 +24,19 @@ export interface IAddressBooksRepository {
     chainId: string;
     createAddressBookItemDto: CreateAddressBookItemDto;
   }): Promise<AddressBookItem>;
+
+  deleteAddressBook(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+  }): Promise<void>;
+
+  deleteAddressBookItem(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+    addressBookItemId: number;
+  }): Promise<void>;
 }
 
 @Module({

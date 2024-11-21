@@ -86,6 +86,56 @@ export class AddressBooksRepository implements IAddressBooksRepository {
     });
   }
 
+  async deleteAddressBook(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+  }): Promise<void> {
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+    await this.checkAddressBooksIsEnabled({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const account = await this.accountsRepository.getAccount({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const addressBook = await this.datasource.getAddressBook({
+      account,
+      chainId: args.chainId,
+    });
+    return this.datasource.deleteAddressBook(addressBook);
+  }
+
+  async deleteAddressBookItem(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+    addressBookItemId: number;
+  }): Promise<void> {
+    if (!args.authPayload.isForSigner(args.address)) {
+      throw new UnauthorizedException();
+    }
+    await this.checkAddressBooksIsEnabled({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const account = await this.accountsRepository.getAccount({
+      authPayload: args.authPayload,
+      address: args.address,
+    });
+    const addressBook = await this.datasource.getAddressBook({
+      account,
+      chainId: args.chainId,
+    });
+    return this.datasource.deleteAddressBookItem({
+      addressBook,
+      id: args.addressBookItemId,
+    });
+  }
+
   // TODO: Extract this functionality in AccountsRepository['checkIsEnabled(DataType, Account)']
   private async checkAddressBooksIsEnabled(args: {
     authPayload: AuthPayload;

@@ -36,6 +36,23 @@ export class AddressBooksService {
     return this.mapAddressBookItem(domainAddressBookItem);
   }
 
+  async deleteAddressBook(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+  }): Promise<void> {
+    await this.repository.deleteAddressBook(args);
+  }
+
+  async deleteAddressBookItem(args: {
+    authPayload: AuthPayload;
+    address: `0x${string}`;
+    chainId: string;
+    addressBookItemId: number;
+  }): Promise<void> {
+    await this.repository.deleteAddressBookItem(args);
+  }
+
   private mapAddressBook(domainAddressBook: DomainAddressBook): AddressBook {
     return {
       id: domainAddressBook.id.toString(),
