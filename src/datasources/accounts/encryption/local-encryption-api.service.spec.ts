@@ -3,6 +3,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { encryptedBlobBuilder } from '@/datasources/accounts/encryption/entities/__tests__/encrypted-blob.builder';
 import { LocalEncryptionApiService } from '@/datasources/accounts/encryption/local-encryption-api.service';
 import { faker } from '@faker-js/faker/.';
+import { randomBytes } from 'crypto';
 
 const mockConfigurationService = {
   get: jest.fn(),
@@ -17,8 +18,9 @@ describe('LocalEncryptionApiService', () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'application.isProduction') return false;
       if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
-      if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
-      if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
+      if (key === 'accounts.encryption.local.key')
+        return new Uint8Array(randomBytes(32).buffer);
+      if (key === 'accounts.encryption.local.iv') return randomBytes(16);
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new LocalEncryptionApiService(mockConfigurationService);
@@ -29,8 +31,9 @@ describe('LocalEncryptionApiService', () => {
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
         if (key === 'application.isProduction') return true;
         if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
-        if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
-        if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
+        if (key === 'accounts.encryption.local.key')
+          return new Uint8Array(randomBytes(32).buffer);
+        if (key === 'accounts.encryption.local.iv') return randomBytes(16);
         throw new Error(`Unexpected key: ${key}`);
       });
       target = new LocalEncryptionApiService(mockConfigurationService);
@@ -44,8 +47,9 @@ describe('LocalEncryptionApiService', () => {
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
         if (key === 'application.isProduction') return true;
         if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
-        if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
-        if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
+        if (key === 'accounts.encryption.local.key')
+          return new Uint8Array(randomBytes(32).buffer);
+        if (key === 'accounts.encryption.local.iv') return randomBytes(16);
         throw new Error(`Unexpected key: ${key}`);
       });
       target = new LocalEncryptionApiService(mockConfigurationService);
@@ -77,8 +81,9 @@ describe('LocalEncryptionApiService', () => {
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
         if (key === 'application.isProduction') return true;
         if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
-        if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
-        if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
+        if (key === 'accounts.encryption.local.key')
+          return new Uint8Array(randomBytes(32).buffer);
+        if (key === 'accounts.encryption.local.iv') return randomBytes(16);
         throw new Error(`Unexpected key: ${key}`);
       });
       target = new LocalEncryptionApiService(mockConfigurationService);
@@ -94,8 +99,9 @@ describe('LocalEncryptionApiService', () => {
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
         if (key === 'application.isProduction') return true;
         if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
-        if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
-        if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
+        if (key === 'accounts.encryption.local.key')
+          return new Uint8Array(randomBytes(32).buffer);
+        if (key === 'accounts.encryption.local.iv') return randomBytes(16);
         throw new Error(`Unexpected key: ${key}`);
       });
       target = new LocalEncryptionApiService(mockConfigurationService);

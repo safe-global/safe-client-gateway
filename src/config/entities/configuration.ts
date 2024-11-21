@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+
 // Custom configuration for the application
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -34,8 +36,9 @@ export default () => ({
       },
       local: {
         algorithm: process.env.LOCAL_ENCRYPTION_ALGORITHM || 'aes-256-cbc',
-        key: process.env.LOCAL_ENCRYPTION_KEY || 'a'.repeat(64),
-        iv: process.env.LOCAL_ENCRYPTION_IV || 'b'.repeat(32),
+        key:
+          process.env.LOCAL_ENCRYPTION_KEY || randomBytes(32).toString('hex'),
+        iv: process.env.LOCAL_ENCRYPTION_IV || randomBytes(16).toString('hex'),
       },
     },
   },

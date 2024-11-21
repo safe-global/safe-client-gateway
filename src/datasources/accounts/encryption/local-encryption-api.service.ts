@@ -2,7 +2,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { EncryptedBlob } from '@/datasources/accounts/encryption/entities/encrypted-blob.entity';
 import type { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
 import { Injectable } from '@nestjs/common';
-import * as crypto from 'crypto';
+import { createCipheriv, createDecipheriv } from 'crypto';
 
 @Injectable()
 export class LocalEncryptionApiService implements IEncryptionApi {
@@ -36,7 +36,7 @@ export class LocalEncryptionApiService implements IEncryptionApi {
     if (this.isProduction) {
       throw new Error('Local encryption is not suitable for production usage');
     }
-    const cipher = crypto.createCipheriv(this.algorithm, this.key, this.iv);
+    const cipher = createCipheriv(this.algorithm, this.key, this.iv);
     let encrypted = cipher.update(data, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     return Promise.resolve(encrypted);
@@ -46,7 +46,7 @@ export class LocalEncryptionApiService implements IEncryptionApi {
     if (this.isProduction) {
       throw new Error('Local encryption is not suitable for production usage');
     }
-    const decipher = crypto.createDecipheriv(this.algorithm, this.key, this.iv);
+    const decipher = createDecipheriv(this.algorithm, this.key, this.iv);
     let decrypted = decipher.update(data, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return Promise.resolve(decrypted);
@@ -74,14 +74,14 @@ export class LocalEncryptionApiService implements IEncryptionApi {
     };
   }
 
-  async decryptBlob(encryptedBlob: EncryptedBlob): Promise<unknown> {
+  async decryptBlob<T>(encryptedBlob: EncryptedBlob): Promise<T> {
     if (this.isProduction) {
       throw new Error('Local encryption is not suitable for production usage');
     }
     const decryptedKey = await this.decrypt(
       encryptedBlob.encryptedDataKey.toString('hex'),
     );
-    const decipher = crypto.createDecipheriv(
+    const decipher = createDecipheriv(
       this.algorithm,
       Buffer.from(decryptedKey, 'hex'),
       encryptedBlob.iv,

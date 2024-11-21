@@ -8,7 +8,7 @@ import {
   KMSClient,
 } from '@aws-sdk/client-kms';
 import { Inject, Injectable } from '@nestjs/common';
-import * as crypto from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 @Injectable()
 export class AwsEncryptionApiService implements IEncryptionApi {
@@ -52,7 +52,7 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     return Buffer.from(decryptedData.Plaintext).toString('utf8');
   }
 
-  async encryptBlob(data: unknown): Promise<EncryptedBlob> {
+  async encryptBlob<T>(data: T): Promise<EncryptedBlob> {
     if ((typeof data !== 'object' && !Array.isArray(data)) || data === null) {
       throw new Error('Data must be an object or array');
     }
@@ -65,8 +65,8 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     if (!Plaintext || !CiphertextBlob) {
       throw new Error('Failed to generate data key');
     }
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(this.algorithm, Plaintext, iv);
+    const iv = randomBytes(16);
+    const cipher = createCipheriv(this.algorithm, Plaintext, iv);
     return {
       encryptedData: Buffer.concat([
         cipher.update(JSON.stringify(data), 'utf8'),
@@ -77,7 +77,7 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     };
   }
 
-  async decryptBlob(encryptedBlob: EncryptedBlob): Promise<unknown> {
+  async decryptBlob<T>(encryptedBlob: EncryptedBlob): Promise<T> {
     const { encryptedData, encryptedDataKey, iv } = encryptedBlob;
     const { Plaintext } = await this.kmsClient.send(
       new DecryptCommand({ CiphertextBlob: encryptedDataKey }),
@@ -85,7 +85,7 @@ export class AwsEncryptionApiService implements IEncryptionApi {
     if (!Plaintext) {
       throw new Error('Failed to decrypt data key');
     }
-    const decipher = crypto.createDecipheriv(this.algorithm, Plaintext, iv);
+    const decipher = createDecipheriv(this.algorithm, Plaintext, iv);
     const decryptedData = Buffer.concat([
       decipher.update(encryptedData),
       decipher.final(),

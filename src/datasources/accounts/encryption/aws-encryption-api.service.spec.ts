@@ -10,7 +10,7 @@ import {
 } from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker/.';
 import { mockClient } from 'aws-sdk-client-mock';
-import * as crypto from 'crypto';
+import { randomBytes } from 'crypto';
 
 const mockConfigurationService = {
   get: jest.fn(),
@@ -93,7 +93,7 @@ describe('AwsEncryptionApiService', () => {
   describe('encryptBlob/decryptBlob', () => {
     it('should encrypt and decrypt arrays of objects correctly', async () => {
       const data = [JSON.parse(fakeJson()), JSON.parse(fakeJson())];
-      const key = new Uint8Array(crypto.randomBytes(32).buffer);
+      const key = randomBytes(32);
       const encryptedBlob = encryptedBlobBuilder().build();
       kmsMock.on(GenerateDataKeyCommand).resolves({
         Plaintext: Buffer.from(key),
