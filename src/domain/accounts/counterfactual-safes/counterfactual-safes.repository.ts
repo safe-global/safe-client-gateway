@@ -142,6 +142,7 @@ export class CounterfactualSafesRepository
     return this.datasource.deleteCounterfactualSafesForAccount(account);
   }
 
+  // TODO: Extract this functionality in AccountsRepository['checkIsEnabled(DataType, Account)']
   private async checkCounterfactualSafesIsEnabled(args: {
     authPayload: AuthPayload;
     address: `0x${string}`;
@@ -165,6 +166,7 @@ export class CounterfactualSafesRepository
     }
   }
 
+  // TODO: Extract this functionality in AccountsRepository['checkIsActive(DataType)']
   private async checkCounterfactualSafeDataTypeIsActive(): Promise<AccountDataType> {
     const dataTypes = await this.accountsRepository.getDataTypes();
     const counterfactualSafeDataType = dataTypes.find(

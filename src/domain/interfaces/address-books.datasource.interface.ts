@@ -6,9 +6,9 @@ import type { CreateAddressBookItemDto } from '@/domain/accounts/address-books/e
 import type { UpdateAddressBookItemDto } from '@/domain/accounts/address-books/entities/update-address-book.item.dto.entity';
 import type { Account } from '@/domain/accounts/entities/account.entity';
 
-export const IAddressBooksDataSource = Symbol('IAddressBooksDataSource');
+export const IAddressBooksDatasource = Symbol('IAddressBooksDatasource');
 
-export interface IAddressBooksDataSource {
+export interface IAddressBooksDatasource {
   createAddressBookItem(args: {
     account: Account;
     chainId: string;
