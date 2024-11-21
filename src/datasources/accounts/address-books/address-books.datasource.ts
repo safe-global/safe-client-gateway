@@ -9,14 +9,14 @@ import { UpdateAddressBookItemDto } from '@/domain/accounts/address-books/entiti
 import { AddressBookItemNotFoundError } from '@/domain/accounts/address-books/errors/address-book-item-not-found.error';
 import { AddressBookNotFoundError } from '@/domain/accounts/address-books/errors/address-book-not-found.error';
 import { Account } from '@/domain/accounts/entities/account.entity';
-import { IAddressBooksDataSource } from '@/domain/interfaces/address-books.datasource.interface';
+import { IAddressBooksDatasource } from '@/domain/interfaces/address-books.datasource.interface';
 import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { max } from 'lodash';
 import postgres from 'postgres';
 
 @Injectable()
-export class AddressBooksDatasource implements IAddressBooksDataSource {
+export class AddressBooksDatasource implements IAddressBooksDatasource {
   constructor(
     @Inject('DB_INSTANCE') private readonly sql: postgres.Sql,
     @Inject(IEncryptionApiManager)
