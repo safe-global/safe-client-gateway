@@ -22,7 +22,7 @@ export class AddressBook {
   accountId: string;
   @ApiProperty()
   chainId: string;
-  @ApiProperty()
+  @ApiProperty({ type: AddressBookItem, isArray: true })
   data: AddressBookItem[];
 
   constructor(

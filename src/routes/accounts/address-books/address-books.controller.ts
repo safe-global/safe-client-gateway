@@ -1,13 +1,11 @@
-import {
-  CreateAddressBookItemDto,
-  CreateAddressBookItemDtoSchema,
-} from '@/domain/accounts/address-books/entities/create-address-book-item.dto.entity';
+import { CreateAddressBookItemDtoSchema } from '@/domain/accounts/address-books/entities/create-address-book-item.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { AddressBooksService } from '@/routes/accounts/address-books/address-books.service';
 import {
   AddressBook,
   AddressBookItem,
 } from '@/routes/accounts/address-books/entities/address-book.entity';
+import { CreateAddressBookItemDto } from '@/routes/accounts/address-books/entities/create-address-book-item.dto.entity';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
