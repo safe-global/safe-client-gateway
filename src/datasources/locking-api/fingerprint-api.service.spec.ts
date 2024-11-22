@@ -211,5 +211,71 @@ describe('FingerprintApiService', () => {
         isVpn: vpn.data?.result,
       });
     });
+
+    it('should return isVpn:false for a low confidence score', async () => {
+      const eligibilityRequest = eligibilityRequestBuilder().build();
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
+          ipInfo: null,
+          locationSpoofing: fingerprintLocationSpoofingBuilder().build(),
+          vpn: fingerprintVpnBuilder()
+            .with('data', { result: true, confidence: 'low' })
+            .build(),
+        })
+        .build();
+      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+
+      const result = await service.checkEligibility(eligibilityRequest);
+
+      expect(result).toEqual({
+        requestId: eligibilityRequest.requestId,
+        isAllowed: expect.anything(),
+        isVpn: false,
+      });
+    });
+
+    it('should return isVpn:false for a medium confidence score', async () => {
+      const eligibilityRequest = eligibilityRequestBuilder().build();
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
+          ipInfo: null,
+          locationSpoofing: fingerprintLocationSpoofingBuilder().build(),
+          vpn: fingerprintVpnBuilder()
+            .with('data', { result: true, confidence: 'medium' })
+            .build(),
+        })
+        .build();
+      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+
+      const result = await service.checkEligibility(eligibilityRequest);
+
+      expect(result).toEqual({
+        requestId: eligibilityRequest.requestId,
+        isAllowed: expect.anything(),
+        isVpn: false,
+      });
+    });
+
+    it('should return isVpn:true for a high confidence score', async () => {
+      const eligibilityRequest = eligibilityRequestBuilder().build();
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
+          ipInfo: null,
+          locationSpoofing: fingerprintLocationSpoofingBuilder().build(),
+          vpn: fingerprintVpnBuilder()
+            .with('data', { result: true, confidence: 'high' })
+            .build(),
+        })
+        .build();
+      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+
+      const result = await service.checkEligibility(eligibilityRequest);
+
+      expect(result).toEqual({
+        requestId: eligibilityRequest.requestId,
+        isAllowed: expect.anything(),
+        isVpn: true,
+      });
+    });
   });
 });
