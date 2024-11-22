@@ -64,7 +64,9 @@ describe('FingerprintApiService', () => {
           locationSpoofing: fingerprintLocationSpoofingBuilder()
             .with('data', { result: false })
             .build(),
-          vpn: fingerprintVpnBuilder().with('data', { result: false }).build(),
+          vpn: fingerprintVpnBuilder()
+            .with('data', { result: false, confidence: 'high' })
+            .build(),
         })
         .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
@@ -93,7 +95,9 @@ describe('FingerprintApiService', () => {
           locationSpoofing: fingerprintLocationSpoofingBuilder()
             .with('data', { result: false })
             .build(),
-          vpn: fingerprintVpnBuilder().with('data', { result: false }).build(),
+          vpn: fingerprintVpnBuilder()
+            .with('data', { result: false, confidence: 'high' })
+            .build(),
         })
         .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
@@ -122,7 +126,9 @@ describe('FingerprintApiService', () => {
           locationSpoofing: fingerprintLocationSpoofingBuilder()
             .with('data', { result: false })
             .build(),
-          vpn: fingerprintVpnBuilder().with('data', { result: true }).build(),
+          vpn: fingerprintVpnBuilder()
+            .with('data', { result: true, confidence: 'high' })
+            .build(),
         })
         .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
@@ -144,7 +150,9 @@ describe('FingerprintApiService', () => {
           locationSpoofing: fingerprintLocationSpoofingBuilder()
             .with('data', { result: false })
             .build(),
-          vpn: fingerprintVpnBuilder().with('data', { result: true }).build(),
+          vpn: fingerprintVpnBuilder()
+            .with('data', { result: true, confidence: 'high' })
+            .build(),
         })
         .build();
       (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);

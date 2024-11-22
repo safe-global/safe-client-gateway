@@ -29,7 +29,13 @@ export const FingerprintIpInfoSchema = z.object({
 export type FingerprintIpInfo = z.infer<typeof FingerprintIpInfoSchema>;
 
 export const FingerprintVpnSchema = z.object({
-  data: z.object({ result: z.boolean() }).nullish().default(null),
+  data: z
+    .object({
+      result: z.boolean(),
+      confidence: z.enum(['low', 'medium', 'high']),
+    })
+    .nullish()
+    .default(null),
 });
 
 export type FingerprintVpn = z.infer<typeof FingerprintVpnSchema>;

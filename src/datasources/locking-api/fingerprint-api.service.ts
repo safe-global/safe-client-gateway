@@ -39,7 +39,9 @@ export class FingerprintApiService implements IIdentityApi {
     return {
       requestId,
       isAllowed: this.isAllowed(unsealedData),
-      isVpn: unsealedData.products.vpn?.data?.result === true,
+      isVpn:
+        unsealedData.products.vpn?.data?.result === true &&
+        unsealedData.products.vpn?.data?.confidence === 'high',
     };
   }
 
