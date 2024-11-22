@@ -277,5 +277,27 @@ describe('FingerprintApiService', () => {
         isVpn: true,
       });
     });
+
+    it('should return isVpn:false for an unknown confidence score', async () => {
+      const eligibilityRequest = eligibilityRequestBuilder().build();
+      const unsealedData = fingerprintUnsealedDataBuilder()
+        .with('products', {
+          ipInfo: null,
+          locationSpoofing: fingerprintLocationSpoofingBuilder().build(),
+          vpn: fingerprintVpnBuilder()
+            .with('data', { result: true, confidence: 'unknown' })
+            .build(),
+        })
+        .build();
+      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+
+      const result = await service.checkEligibility(eligibilityRequest);
+
+      expect(result).toEqual({
+        requestId: eligibilityRequest.requestId,
+        isAllowed: expect.anything(),
+        isVpn: false,
+      });
+    });
   });
 });
