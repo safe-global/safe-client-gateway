@@ -1,9 +1,12 @@
+import { AddressBookSchema } from '@/domain/accounts/address-books/entities/address-book.entity';
+import { AddressBookItemNameSchema } from '@/domain/accounts/address-books/entities/schemas/address-book-item-name.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 
 export const UpdateAddressBookItemDtoSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  address: z.string(),
+  id: AddressBookSchema.shape.id,
+  name: AddressBookItemNameSchema,
+  address: AddressSchema,
 });
 
 export class UpdateAddressBookItemDto
