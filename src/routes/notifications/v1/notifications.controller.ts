@@ -12,10 +12,7 @@ import { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-d
 import { NotificationsService } from '@/routes/notifications/v1/notifications.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type {
-  UpsertSubscriptionsDto,
-  UpsertSubscriptionsSafesDto,
-} from '@/routes/notifications/v2/entities/upsert-subscriptions.dto.entity';
+import type { UpsertSubscriptionsSafesDto } from '@/routes/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 import type { UUID } from 'crypto';
@@ -71,26 +68,28 @@ export class NotificationsController {
     }
   }
 
-  private async createV2RegisterDto(args: RegisterDeviceDto): Promise<
-    Array<{
-      upsertSubscriptionsDto: UpsertSubscriptionsDto;
-      authPayload: AuthPayload;
-    }>
+  private async createV2RegisterDto(
+    args: RegisterDeviceDto,
+  ): Promise<
+    Array<Parameters<NotificationsServiceV2['upsertSubscriptions']>[0]>
   > {
-    const safeV2Array: Array<{
-      authPayload: AuthPayload;
-      upsertSubscriptionsDto: UpsertSubscriptionsDto & {
-        signature: `0x${string}`;
-      };
-    }> = [];
+    const safeV2Array: Array<
+      Parameters<NotificationsServiceV2['upsertSubscriptions']>[0] & {
+        upsertSubscriptionsDto: {
+          safes: Array<UpsertSubscriptionsSafesDto>;
+          signature: `0x${string}`;
+        };
+      }
+    > = [];
 
     const safesV1Registrations = args.safeRegistrations;
 
     for (const safeV1Registration of safesV1Registrations) {
       if (safeV1Registration.safes.length) {
-        const safeV2: {
-          authPayload: AuthPayload;
-          upsertSubscriptionsDto: UpsertSubscriptionsDto & {
+        const safeV2: Parameters<
+          NotificationsServiceV2['upsertSubscriptions']
+        >[0] & {
+          upsertSubscriptionsDto: {
             safes: Array<UpsertSubscriptionsSafesDto>;
             signature: `0x${string}`;
           };
