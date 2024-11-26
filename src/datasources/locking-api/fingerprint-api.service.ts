@@ -77,7 +77,8 @@ export class FingerprintApiService implements IIdentityApi {
   private isVpn(unsealedData: FingerprintUnsealedData): boolean {
     return (
       unsealedData.products.vpn?.data?.result === true &&
-      unsealedData.products.vpn?.data?.confidence === 'high'
+      (unsealedData.products.vpn?.data?.confidence === 'medium' ||
+        unsealedData.products.vpn?.data?.confidence === 'high')
     );
   }
 }

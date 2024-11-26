@@ -234,7 +234,7 @@ describe('FingerprintApiService', () => {
       });
     });
 
-    it('should return isVpn:false for a medium confidence score', async () => {
+    it('should return isVpn:true for a medium confidence score', async () => {
       const eligibilityRequest = eligibilityRequestBuilder().build();
       const unsealedData = fingerprintUnsealedDataBuilder()
         .with('products', {
@@ -252,7 +252,7 @@ describe('FingerprintApiService', () => {
       expect(result).toEqual({
         requestId: eligibilityRequest.requestId,
         isAllowed: expect.anything(),
-        isVpn: false,
+        isVpn: true,
       });
     });
 
