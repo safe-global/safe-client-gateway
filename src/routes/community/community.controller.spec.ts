@@ -52,6 +52,7 @@ import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
 import { eligibilityBuilder } from '@/domain/community/entities/__tests__/eligibility.builder';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Community (Unit)', () => {
   let app: INestApplication<Server>;
@@ -109,7 +110,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns`:
-            return Promise.resolve({ data: campaignsPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignsPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -137,7 +141,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns`:
-            return Promise.resolve({ data: campaignsPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignsPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -164,7 +171,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns`:
-            return Promise.resolve({ data: campaignsPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignsPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -231,7 +241,7 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}`:
-            return Promise.resolve({ data: campaign, status: 200 });
+            return Promise.resolve({ data: rawify(campaign), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -251,7 +261,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${invalidCampaign.resourceId}`:
-            return Promise.resolve({ data: invalidCampaign, status: 200 });
+            return Promise.resolve({
+              data: rawify(invalidCampaign),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -312,7 +325,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
-            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignActivityPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -344,7 +360,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
-            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignActivityPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -391,7 +410,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
-            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignActivityPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -451,7 +473,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/activities`:
-            return Promise.resolve({ data: campaignActivityPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignActivityPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -521,7 +546,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/leaderboard`:
-            return Promise.resolve({ data: campaignRankPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignRankPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -550,7 +578,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/leaderboard`:
-            return Promise.resolve({ data: campaignRankPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignRankPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -581,7 +612,10 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${campaign.resourceId}/leaderboard`:
-            return Promise.resolve({ data: campaignRankPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(campaignRankPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -651,7 +685,7 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`:
-            return Promise.resolve({ data: campaignRank, status: 200 });
+            return Promise.resolve({ data: rawify(campaignRank), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -685,7 +719,7 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/campaigns/${resourceId}/leaderboard/${safeAddress}`:
-            return Promise.resolve({ data: campaignRank, status: 200 });
+            return Promise.resolve({ data: rawify(campaignRank), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -786,7 +820,7 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard`:
-            return Promise.resolve({ data: leaderboard, status: 200 });
+            return Promise.resolve({ data: rawify(leaderboard), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -824,7 +858,7 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard`:
-            return Promise.resolve({ data: leaderboard, status: 200 });
+            return Promise.resolve({ data: rawify(leaderboard), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -862,7 +896,7 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard`:
-            return Promise.resolve({ data: leaderboard, status: 200 });
+            return Promise.resolve({ data: rawify(leaderboard), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -915,7 +949,7 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard/${lockingRank.holder}`:
-            return Promise.resolve({ data: lockingRank, status: 200 });
+            return Promise.resolve({ data: rawify(lockingRank), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -947,7 +981,7 @@ describe('Community (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${lockingBaseUri}/api/v1/leaderboard/${safeAddress}`:
-            return Promise.resolve({ data: lockingRank, status: 200 });
+            return Promise.resolve({ data: rawify(lockingRank), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -1013,7 +1047,10 @@ describe('Community (Unit)', () => {
         switch (url) {
           // Service will have checksummed address
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
-            return Promise.resolve({ data: lockingHistoryPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(lockingHistoryPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -1059,7 +1096,10 @@ describe('Community (Unit)', () => {
         switch (url) {
           // Service will have checksummed address
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
-            return Promise.resolve({ data: lockingHistoryPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(lockingHistoryPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -1115,7 +1155,10 @@ describe('Community (Unit)', () => {
         switch (url) {
           // Service will have checksummed address
           case `${lockingBaseUri}/api/v1/all-events/${getAddress(safeAddress)}`:
-            return Promise.resolve({ data: lockingHistoryPage, status: 200 });
+            return Promise.resolve({
+              data: rawify(lockingHistoryPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }

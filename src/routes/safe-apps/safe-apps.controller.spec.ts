@@ -28,6 +28,7 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Safe Apps Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -94,7 +95,10 @@ describe('Safe Apps Controller (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
-          return Promise.resolve({ data: safeAppsResponse, status: 200 });
+          return Promise.resolve({
+            data: rawify(safeAppsResponse),
+            status: 200,
+          });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -154,7 +158,7 @@ describe('Safe Apps Controller (Unit)', () => {
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
           return Promise.resolve({
-            data: [
+            data: rawify([
               {
                 ...safeAppsResponse[0],
                 accessControl: {
@@ -162,7 +166,7 @@ describe('Safe Apps Controller (Unit)', () => {
                   value: null,
                 },
               },
-            ],
+            ]),
             status: 200,
           });
         }
@@ -215,7 +219,10 @@ describe('Safe Apps Controller (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         if (url === getSafeAppsUrl) {
-          return Promise.resolve({ data: safeAppsResponse, status: 200 });
+          return Promise.resolve({
+            data: rawify(safeAppsResponse),
+            status: 200,
+          });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });

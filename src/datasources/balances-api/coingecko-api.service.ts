@@ -24,10 +24,6 @@ import { Chain } from '@/domain/chains/entities/chain.entity';
 import { z } from 'zod';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 
-/**
- * TODO: Move all usage of Raw to NetworkService/CacheFirstDataSource after fully migrated
- * to "Raw" type implementation.
- */
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
   /**
@@ -134,7 +130,7 @@ export class CoingeckoApi implements IPricesApi {
       });
       const url = `${this.baseUrl}/simple/price`;
       const result = await this.dataSource
-        .get<Raw<AssetPrice>>({
+        .get<AssetPrice>({
           cacheDir,
           url,
           networkRequest: {
@@ -221,7 +217,7 @@ export class CoingeckoApi implements IPricesApi {
       const cacheDir = CacheRouter.getPriceFiatCodesCacheDir();
       const url = `${this.baseUrl}/simple/supported_vs_currencies`;
       const result = await this.dataSource
-        .get<Raw<string[]>>({
+        .get<string[]>({
           cacheDir,
           url,
           networkRequest: {
@@ -337,7 +333,7 @@ export class CoingeckoApi implements IPricesApi {
   }): Promise<Raw<AssetPrice>> {
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const { data } = await this.networkService.get<Raw<AssetPrice>>({
+      const { data } = await this.networkService.get<AssetPrice>({
         url,
         networkRequest: {
           params: {

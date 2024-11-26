@@ -157,7 +157,7 @@ describe('Balances API Manager Tests', () => {
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(rawify(chain));
-      dataSourceMock.get.mockResolvedValue([]);
+      dataSourceMock.get.mockResolvedValue(rawify([]));
       coingeckoApiMock.getTokenPrices.mockResolvedValue(rawify([]));
       const balancesApiManager = new BalancesApiManager(
         configurationService,

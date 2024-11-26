@@ -42,10 +42,6 @@ import { z } from 'zod';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
-/**
- * TODO: Move all usage of Raw to NetworkService/CacheFirstDataSource after fully migrated
- * to "Raw" type implementation.
- */
 @Injectable()
 export class ZerionBalancesApi implements IBalancesApi {
   private static readonly COLLECTIBLES_SORTING = '-floor_price';
@@ -138,17 +134,18 @@ export class ZerionBalancesApi implements IBalancesApi {
           sort: 'value',
         },
       };
-      const { data } = await this.networkService.get<ZerionBalances>({
-        url,
-        networkRequest,
-      });
-      const zerionBalances = ZerionBalancesSchema.parse(data);
+      const zerionBalances = await this.networkService
+        .get<ZerionBalances>({
+          url,
+          networkRequest,
+        })
+        .then(({ data }) => ZerionBalancesSchema.parse(data));
       await this.cacheService.hSet(
         cacheDir,
         JSON.stringify(zerionBalances.data),
         this.defaultExpirationTimeInSeconds,
       );
-      return this._mapBalances(chainName, data.data);
+      return this._mapBalances(chainName, zerionBalances.data);
     } catch (error) {
       if (error instanceof LimitReachedError) {
         throw error;
@@ -197,10 +194,12 @@ export class ZerionBalancesApi implements IBalancesApi {
             ...(pageAfter && { 'page[after]': pageAfter }),
           },
         };
-        const { data } = await this.networkService.get<ZerionCollectibles>({
-          url,
-          networkRequest,
-        });
+        const data = await this.networkService
+          .get<ZerionCollectibles>({
+            url,
+            networkRequest,
+          })
+          .then(({ data }) => ZerionCollectiblesSchema.parse(data));
         await this.cacheService.hSet(
           cacheDir,
           JSON.stringify(data),

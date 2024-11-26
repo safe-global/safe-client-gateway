@@ -34,6 +34,7 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Estimations Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -87,17 +88,19 @@ describe('Estimations Controller (Unit)', () => {
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
         const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
         if (url === chainsUrl) {
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         }
         if (url === getSafeUrl) {
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         }
         if (url === multisigTransactionsUrl) {
           return Promise.resolve({
-            data: pageBuilder()
-              .with('count', 1)
-              .with('results', [multisigTransactionToJson(lastTransaction)])
-              .build(),
+            data: rawify(
+              pageBuilder()
+                .with('count', 1)
+                .with('results', [multisigTransactionToJson(lastTransaction)])
+                .build(),
+            ),
             status: 200,
           });
         }
@@ -106,7 +109,7 @@ describe('Estimations Controller (Unit)', () => {
       networkService.post.mockImplementation(({ url }) => {
         const estimationsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/estimations/`;
         return url === estimationsUrl
-          ? Promise.resolve({ data: estimation, status: 200 })
+          ? Promise.resolve({ data: rawify(estimation), status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`);
       });
 
@@ -139,17 +142,19 @@ describe('Estimations Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
       if (url === chainsUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url === multisigTransactionsUrl) {
         return Promise.resolve({
-          data: pageBuilder()
-            .with('count', 1)
-            .with('results', [multisigTransactionToJson(lastTransaction)])
-            .build(),
+          data: rawify(
+            pageBuilder()
+              .with('count', 1)
+              .with('results', [multisigTransactionToJson(lastTransaction)])
+              .build(),
+          ),
           status: 200,
         });
       }
@@ -158,7 +163,7 @@ describe('Estimations Controller (Unit)', () => {
     networkService.post.mockImplementation(({ url }) => {
       const estimationsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/estimations/`;
       return url === estimationsUrl
-        ? Promise.resolve({ data: estimation, status: 200 })
+        ? Promise.resolve({ data: rawify(estimation), status: 200 })
         : Promise.reject(`No matching rule for url: ${url}`);
     });
 
@@ -219,17 +224,19 @@ describe('Estimations Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url === multisigTransactionsUrl) {
         return Promise.resolve({
-          data: pageBuilder()
-            .with('count', 1)
-            .with('results', [multisigTransactionToJson(lastTransaction)])
-            .build(),
+          data: rawify(
+            pageBuilder()
+              .with('count', 1)
+              .with('results', [multisigTransactionToJson(lastTransaction)])
+              .build(),
+          ),
           status: 200,
         });
       }
@@ -239,7 +246,7 @@ describe('Estimations Controller (Unit)', () => {
       // Param ValidationPipe checksums address
       const estimationsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/estimations/`;
       return url === estimationsUrl
-        ? Promise.resolve({ data: estimation, status: 200 })
+        ? Promise.resolve({ data: rawify(estimation), status: 200 })
         : Promise.reject(`No matching rule for url: ${url}`);
     });
 
@@ -272,14 +279,16 @@ describe('Estimations Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url === multisigTransactionsUrl) {
         return Promise.resolve({
-          data: pageBuilder().with('count', 0).with('results', []).build(),
+          data: rawify(
+            pageBuilder().with('count', 0).with('results', []).build(),
+          ),
           status: 200,
         });
       }
@@ -289,7 +298,7 @@ describe('Estimations Controller (Unit)', () => {
       // Param ValidationPipe checksums address
       const estimationsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/estimations/`;
       return url === estimationsUrl
-        ? Promise.resolve({ data: estimation, status: 200 })
+        ? Promise.resolve({ data: rawify(estimation), status: 200 })
         : Promise.reject(`No matching rule for url: ${url}`);
     });
 
@@ -325,17 +334,19 @@ describe('Estimations Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}`;
       const multisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/`;
       if (url === chainsUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url === multisigTransactionsUrl) {
         return Promise.resolve({
-          data: pageBuilder()
-            .with('count', 1)
-            .with('results', [multisigTransactionToJson(lastTransaction)])
-            .build(),
+          data: rawify(
+            pageBuilder()
+              .with('count', 1)
+              .with('results', [multisigTransactionToJson(lastTransaction)])
+              .build(),
+          ),
           status: 200,
         });
       }
@@ -345,7 +356,7 @@ describe('Estimations Controller (Unit)', () => {
       // Param ValidationPipe checksums address
       const estimationsUrl = `${chain.transactionService}/api/v1/safes/${getAddress(address)}/multisig-transactions/estimations/`;
       return url === estimationsUrl
-        ? Promise.resolve({ data: estimation, status: 200 })
+        ? Promise.resolve({ data: rawify(estimation), status: 200 })
         : Promise.reject(`No matching rule for url: ${url}`);
     });
 
