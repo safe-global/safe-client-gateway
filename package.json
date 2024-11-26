@@ -64,7 +64,7 @@
     "@faker-js/faker": "^9.2.0",
     "@nestjs/schematics": "^10.2.3",
     "@nestjs/testing": "^10.4.9",
-    "@smithy/util-stream": "^3.1.9",
+    "@smithy/util-stream": "^3.3.1",
     "@types/amqplib": "^0",
     "@types/cookie-parser": "^1.4.7",
     "@types/express": "^5.0.0",
