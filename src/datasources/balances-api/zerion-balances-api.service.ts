@@ -194,7 +194,7 @@ export class ZerionBalancesApi implements IBalancesApi {
             ...(pageAfter && { 'page[after]': pageAfter }),
           },
         };
-        const data = await this.networkService
+        const zerionCollectibles = await this.networkService
           .get<ZerionCollectibles>({
             url,
             networkRequest,
@@ -202,10 +202,13 @@ export class ZerionBalancesApi implements IBalancesApi {
           .then(({ data }) => ZerionCollectiblesSchema.parse(data));
         await this.cacheService.hSet(
           cacheDir,
-          JSON.stringify(data),
+          JSON.stringify(zerionCollectibles),
           this.defaultExpirationTimeInSeconds,
         );
-        return this._buildCollectiblesPage(data.links.next, data.data);
+        return this._buildCollectiblesPage(
+          zerionCollectibles.links.next,
+          zerionCollectibles.data,
+        );
       } catch (error) {
         throw this.httpErrorFactory.from(error);
       }

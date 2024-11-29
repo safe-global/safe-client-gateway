@@ -287,6 +287,7 @@ export class KilnApi implements IStakingApi {
         data: TransactionStatus;
       }>(args)
       .then((res) => {
+        // Ensuring response is { data: T }, the data is parsed in the domain
         return z.object({ data: z.unknown() }).parse(res) as { data: Raw<T> };
       });
   }
