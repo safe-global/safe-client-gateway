@@ -38,7 +38,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { getAddress } from 'viem';
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -147,7 +147,7 @@ export class ZerionBalancesApi implements IBalancesApi {
       );
       return this._mapBalances(chainName, zerionBalances.data);
     } catch (error) {
-      if (error instanceof LimitReachedError) {
+      if (error instanceof LimitReachedError || error instanceof ZodError) {
         throw error;
       }
       throw this.httpErrorFactory.from(error);
@@ -210,6 +210,9 @@ export class ZerionBalancesApi implements IBalancesApi {
           zerionCollectibles.data,
         );
       } catch (error) {
+        if (error instanceof ZodError) {
+          throw error;
+        }
         throw this.httpErrorFactory.from(error);
       }
     }
