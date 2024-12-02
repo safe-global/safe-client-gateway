@@ -17,10 +17,6 @@ import { Chain } from '@/domain/chains/entities/chain.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { AssetPricesSchema } from '@/datasources/balances-api/entities/asset-price.entity';
 
-/**
- * TODO: Move all usage of Raw to NetworkService/CacheFirstDataSource after fully migrated
- * to "Raw" type implementation.
- */
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
   private readonly defaultExpirationTimeInSeconds: number;
@@ -71,7 +67,7 @@ export class SafeBalancesApi implements IBalancesApi {
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
       const data = await this.dataSource
-        .get<Raw<Balance[]>>({
+        .get<Balance[]>({
           cacheDir,
           url,
           notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -116,7 +112,7 @@ export class SafeBalancesApi implements IBalancesApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/collectibles/`;
-      return await this.dataSource.get<Raw<Page<Collectible>>>({
+      return await this.dataSource.get<Page<Collectible>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,

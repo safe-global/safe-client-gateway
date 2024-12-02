@@ -15,11 +15,8 @@ import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
 import type { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
 import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
+import { z } from 'zod';
 
-/**
- * TODO: Move all usage of Raw to NetworkService after fully migrated
- * to "Raw" type implementation.
- */
 export class KilnApi implements IStakingApi {
   public static DefiVaultStatsChains: {
     [key in (typeof DefiVaultStatsChains)[number]]: string;
@@ -59,9 +56,8 @@ export class KilnApi implements IStakingApi {
     try {
       const url = `${this.baseUrl}/v1/deployments`;
       const cacheDir = CacheRouter.getStakingDeploymentsCacheDir();
-      // Note: Kiln always return { data: T }
-      const { data } = await this.dataSource.get<{
-        data: Raw<Array<Deployment>>;
+      const { data } = await this.get<{
+        data: Array<Deployment>;
       }>({
         cacheDir,
         url,
@@ -85,8 +81,7 @@ export class KilnApi implements IStakingApi {
     try {
       const url = `${this.baseUrl}/v1/eth/network-stats`;
       const cacheDir = CacheRouter.getStakingNetworkStatsCacheDir();
-      // Note: Kiln always return { data: T }
-      const { data } = await this.dataSource.get<{ data: Raw<NetworkStats> }>({
+      const { data } = await this.get<{ data: NetworkStats }>({
         cacheDir,
         url,
         networkRequest: {
@@ -109,9 +104,8 @@ export class KilnApi implements IStakingApi {
     try {
       const url = `${this.baseUrl}/v1/eth/kiln-stats`;
       const cacheDir = CacheRouter.getStakingDedicatedStakingStatsCacheDir();
-      // Note: Kiln always return { data: T }
-      const { data } = await this.dataSource.get<{
-        data: Raw<DedicatedStakingStats>;
+      const { data } = await this.get<{
+        data: DedicatedStakingStats;
       }>({
         cacheDir,
         url,
@@ -122,7 +116,7 @@ export class KilnApi implements IStakingApi {
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.stakingExpirationTimeInSeconds,
-      });
+      }).then((res) => z.object({ data: z.any() }).parse(res));
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -137,9 +131,8 @@ export class KilnApi implements IStakingApi {
     try {
       const url = `${this.baseUrl}/v1/eth/onchain/v2/network-stats`;
       const cacheDir = CacheRouter.getStakingPooledStakingStatsCacheDir(pool);
-      // Note: Kiln always return { data: T }
-      const { data } = await this.dataSource.get<{
-        data: Raw<PooledStakingStats>;
+      const { data } = await this.get<{
+        data: PooledStakingStats;
       }>({
         cacheDir,
         url,
@@ -153,7 +146,7 @@ export class KilnApi implements IStakingApi {
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.stakingExpirationTimeInSeconds,
-      });
+      }).then((res) => z.object({ data: z.any() }).parse(res));
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -171,9 +164,8 @@ export class KilnApi implements IStakingApi {
         chainId: this.chainId,
         vault,
       });
-      // Note: Kiln always return { data: T }
-      const { data } = await this.dataSource.get<{
-        data: Raw<Array<DefiVaultStats>>;
+      const { data } = await this.get<{
+        data: Array<DefiVaultStats>;
       }>({
         cacheDir,
         url,
@@ -187,7 +179,7 @@ export class KilnApi implements IStakingApi {
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.stakingExpirationTimeInSeconds,
-      });
+      }).then((res) => z.object({ data: z.any() }).parse(res));
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -216,9 +208,8 @@ export class KilnApi implements IStakingApi {
         safeAddress: args.safeAddress,
         validatorsPublicKeys: args.validatorsPublicKeys,
       });
-      // Note: Kiln always return { data: T }
-      const { data } = await this.dataSource.get<{
-        data: Raw<Array<Stake>>;
+      const { data } = await this.get<{
+        data: Array<Stake>;
       }>({
         cacheDir,
         url,
@@ -234,7 +225,7 @@ export class KilnApi implements IStakingApi {
         },
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.stakingExpirationTimeInSeconds,
-      });
+      }).then((res) => z.object({ data: z.any() }).parse(res));
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -263,10 +254,7 @@ export class KilnApi implements IStakingApi {
         chainId: this.chainId,
         txHash,
       });
-      // Note: Kiln always return { data: T }
-      const { data } = await this.dataSource.get<{
-        data: Raw<TransactionStatus>;
-      }>({
+      const { data } = await this.get<TransactionStatus>({
         cacheDir,
         url,
         networkRequest: {
@@ -284,6 +272,24 @@ export class KilnApi implements IStakingApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  /**
+   * Parses response from Raw<T> to { data: Raw<T> } as Kiln API returns { data: T }
+   * @param args - arguments for {@link CacheFirstDataSource.get}
+   * @returns rawified response
+   */
+  private async get<T>(
+    args: Parameters<typeof this.dataSource.get>[0],
+  ): Promise<{ data: Raw<T> }> {
+    return this.dataSource
+      .get<{
+        data: TransactionStatus;
+      }>(args)
+      .then((res) => {
+        // Ensuring response is { data: T }, the data is parsed in the domain
+        return z.object({ data: z.unknown() }).parse(res) as { data: Raw<T> };
+      });
   }
 
   /**

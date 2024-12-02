@@ -56,6 +56,7 @@ import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.mo
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { rawify } from '@/validation/entities/raw.entity';
 
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
 describe.skip('Post Hook Events for Notifications (Unit)', () => {
@@ -164,7 +165,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
         return Promise.resolve({
-          data: chain,
+          data: rawify(chain),
           status: 200,
         });
       } else {
@@ -218,7 +219,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -241,9 +242,11 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           ];
           return Promise.resolve({
             status: 200,
-            data: pageBuilder()
-              .with('results', [faker.helpers.arrayElement(transfers)])
-              .build(),
+            data: rawify(
+              pageBuilder()
+                .with('results', [faker.helpers.arrayElement(transfers)])
+                .build(),
+            ),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -298,7 +301,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -324,9 +327,11 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           ];
           return Promise.resolve({
             status: 200,
-            data: pageBuilder()
-              .with('results', [faker.helpers.arrayElement(transfers)])
-              .build(),
+            data: rawify(
+              pageBuilder()
+                .with('results', [faker.helpers.arrayElement(transfers)])
+                .build(),
+            ),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -375,7 +380,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -383,7 +388,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (
           url ===
@@ -391,7 +396,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: multisigTransaction,
+            data: rawify(multisigTransaction),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -447,7 +452,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -455,7 +460,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -509,7 +514,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -517,7 +522,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (
           url ===
@@ -525,7 +530,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: multisigTransaction,
+            data: rawify(multisigTransaction),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -577,7 +582,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -585,7 +590,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (
           url ===
@@ -593,7 +598,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: multisigTransaction,
+            data: rawify(multisigTransaction),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -661,7 +666,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -669,7 +674,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (
           url ===
@@ -677,7 +682,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: message,
+            data: rawify(message),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -733,7 +738,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -741,7 +746,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -796,7 +801,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -804,7 +809,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (
           url ===
@@ -812,7 +817,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: message,
+            data: rawify(message),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -864,7 +869,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -872,7 +877,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (
           url ===
@@ -880,7 +885,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: message,
+            data: rawify(message),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -954,7 +959,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -962,12 +967,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', delegates).build(),
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else if (
           url ===
@@ -975,7 +980,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: multisigTransaction,
+            data: rawify(multisigTransaction),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1033,7 +1038,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1041,12 +1046,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', delegates).build(),
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1102,7 +1107,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1110,12 +1115,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', delegates).build(),
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else if (
           url ===
@@ -1123,7 +1128,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: multisigTransaction,
+            data: rawify(multisigTransaction),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1181,7 +1186,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1189,12 +1194,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', delegates).build(),
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else if (
           url ===
@@ -1202,7 +1207,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: multisigTransaction,
+            data: rawify(multisigTransaction),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1272,7 +1277,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1280,12 +1285,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', delegates).build(),
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else if (
           url ===
@@ -1293,7 +1298,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: message,
+            data: rawify(message),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1351,7 +1356,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1359,12 +1364,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', delegates).build(),
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1421,7 +1426,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1429,12 +1434,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', delegates).build(),
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else if (
           url ===
@@ -1442,7 +1447,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: message,
+            data: rawify(message),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1500,7 +1505,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1508,12 +1513,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', delegates).build(),
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else if (
           url ===
@@ -1521,7 +1526,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: message,
+            data: rawify(message),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1590,7 +1595,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1598,12 +1603,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', []).build(),
+            data: rawify(pageBuilder().with('results', []).build()),
           });
         } else if (
           url ===
@@ -1611,7 +1616,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: multisigTransaction,
+            data: rawify(multisigTransaction),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1657,7 +1662,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
-            data: chain,
+            data: rawify(chain),
             status: 200,
           });
         } else if (
@@ -1665,12 +1670,12 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: safe,
+            data: rawify(safe),
           });
         } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
           return Promise.resolve({
             status: 200,
-            data: pageBuilder().with('results', []).build(),
+            data: rawify(pageBuilder().with('results', []).build()),
           });
         } else if (
           url ===
@@ -1678,7 +1683,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         ) {
           return Promise.resolve({
             status: 200,
-            data: message,
+            data: rawify(message),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -1759,7 +1764,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
         return Promise.resolve({
-          data: chain,
+          data: rawify(chain),
           status: 200,
         });
       } else if (
@@ -1767,22 +1772,24 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       ) {
         return Promise.resolve({
           status: 200,
-          data: safe,
+          data: rawify(safe),
         });
       } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
         return Promise.resolve({
           status: 200,
-          data: pageBuilder()
-            .with(
-              'results',
-              delegateSubscriptions.map((subscription) => {
-                return delegateBuilder()
-                  .with('delegate', subscription.subscriber)
-                  .with('safe', safe.address)
-                  .build();
-              }),
-            )
-            .build(),
+          data: rawify(
+            pageBuilder()
+              .with(
+                'results',
+                delegateSubscriptions.map((subscription) => {
+                  return delegateBuilder()
+                    .with('delegate', subscription.subscriber)
+                    .with('safe', safe.address)
+                    .build();
+                }),
+              )
+              .build(),
+          ),
         });
       } else if (
         url ===
@@ -1790,7 +1797,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       ) {
         return Promise.resolve({
           status: 200,
-          data: multisigTransaction,
+          data: rawify(multisigTransaction),
         });
       } else {
         return Promise.reject(`No matching rule for url: ${url}`);
@@ -1900,7 +1907,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
         return Promise.resolve({
-          data: chain,
+          data: rawify(chain),
           status: 200,
         });
       } else if (
@@ -1908,22 +1915,24 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       ) {
         return Promise.resolve({
           status: 200,
-          data: safe,
+          data: rawify(safe),
         });
       } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
         return Promise.resolve({
           status: 200,
-          data: pageBuilder()
-            .with(
-              'results',
-              delegateSubscriptions.map((subscription) => {
-                return delegateBuilder()
-                  .with('delegate', subscription.subscriber)
-                  .with('safe', safe.address)
-                  .build();
-              }),
-            )
-            .build(),
+          data: rawify(
+            pageBuilder()
+              .with(
+                'results',
+                delegateSubscriptions.map((subscription) => {
+                  return delegateBuilder()
+                    .with('delegate', subscription.subscriber)
+                    .with('safe', safe.address)
+                    .build();
+                }),
+              )
+              .build(),
+          ),
         });
       } else if (
         url ===
@@ -1931,7 +1940,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       ) {
         return Promise.resolve({
           status: 200,
-          data: message,
+          data: rawify(message),
         });
       } else {
         return Promise.reject(`No matching rule for url: ${url}`);
@@ -1999,7 +2008,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
         return Promise.resolve({
-          data: chain,
+          data: rawify(chain),
           status: 200,
         });
       } else {
@@ -2091,7 +2100,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({
-          data: chain,
+          data: rawify(chain),
           status: 200,
         });
       } else if (
@@ -2099,7 +2108,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       ) {
         return Promise.resolve({
           status: 200,
-          data: safe,
+          data: rawify(safe),
         });
       } else if (
         url ===
@@ -2107,7 +2116,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       ) {
         return Promise.resolve({
           status: 200,
-          data: multisigTransaction,
+          data: rawify(multisigTransaction),
         });
       } else if (
         url ===
@@ -2115,7 +2124,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       ) {
         return Promise.resolve({
           status: 200,
-          data: message,
+          data: rawify(message),
         });
       } else {
         return Promise.reject(`No matching rule for url: ${url}`);
