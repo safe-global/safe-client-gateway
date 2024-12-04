@@ -1,6 +1,6 @@
 import type { UUID } from 'crypto';
 import { faker } from '@faker-js/faker/.';
-import { UnauthorizedException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { type ILoggingService } from '@/logging/logging.interface';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository';
@@ -395,8 +395,9 @@ describe('NotificationsRepositoryV2', () => {
         safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
       };
 
-      await notificationsRepository.deleteSubscription(args);
+      const result = notificationsRepository.deleteSubscription(args);
 
+      await expect(result).rejects.toThrow();
       expect(notificationSubscriptionRepository.findOne).toHaveBeenCalledTimes(
         1,
       );
@@ -411,10 +412,45 @@ describe('NotificationsRepositoryV2', () => {
       });
       expect(notificationSubscriptionRepository.remove).not.toHaveBeenCalled();
     });
+
+    it('Should throw NotFoundException if no subscription is found', async () => {
+      notificationSubscriptionRepository.findOne.mockResolvedValue(null);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionRepository,
+      );
+
+      const args = {
+        deviceUuid: faker.string.uuid() as UUID,
+        chainId: faker.number.int({ min: 0 }).toString(),
+        safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+      };
+
+      const result = notificationsRepository.deleteSubscription(args);
+
+      await expect(result).rejects.toThrow(
+        new NotFoundException('No Subscription Found!'),
+      );
+      expect(notificationSubscriptionRepository.findOne).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(notificationSubscriptionRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          chain_id: args.chainId,
+          safe_address: args.safeAddress,
+          push_notification_device: {
+            device_uuid: args.deviceUuid,
+          },
+        },
+      });
+    });
   });
 
   describe('deleteDevice()', () => {
     it('Should delete a device successfully', async () => {
+      notificationDeviceRepository.delete.mockResolvedValue({
+        affected: 1,
+        raw: [],
+      });
       mockPostgresDatabaseService.getRepository.mockResolvedValue(
         notificationDeviceRepository,
       );
@@ -423,6 +459,28 @@ describe('NotificationsRepositoryV2', () => {
 
       await notificationsRepository.deleteDevice(deviceUuid);
 
+      expect(notificationDeviceRepository.delete).toHaveBeenCalled();
+      expect(notificationDeviceRepository.delete).toHaveBeenCalledWith({
+        device_uuid: deviceUuid,
+      });
+    });
+
+    it('Should throw if a device uuid does not exist', async () => {
+      notificationDeviceRepository.delete.mockResolvedValue({
+        affected: 0,
+        raw: [],
+      });
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationDeviceRepository,
+      );
+
+      const deviceUuid = faker.string.uuid() as UUID;
+
+      const result = notificationsRepository.deleteDevice(deviceUuid);
+
+      await expect(result).rejects.toThrow(
+        new NotFoundException('No Device Found!'),
+      );
       expect(notificationDeviceRepository.delete).toHaveBeenCalled();
       expect(notificationDeviceRepository.delete).toHaveBeenCalledWith({
         device_uuid: deviceUuid,
