@@ -4,6 +4,7 @@ import {
   Delete,
   HttpCode,
   Inject,
+  NotFoundException,
   Param,
   Post,
 } from '@nestjs/common';
@@ -154,15 +155,37 @@ export class NotificationsController {
     @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
   ): Promise<void> {
     if (this.isPushNotificationV2Enabled) {
-      // Compatibility with V2
+      return await this.unregisterDeviceV2Compatible(chainId, uuid);
+    }
+
+    await this.notificationsService.unregisterDevice({ chainId, uuid });
+  }
+
+  private async unregisterDeviceV2Compatible(
+    chainId: string,
+    uuid: UUID,
+  ): Promise<void> {
+    try {
       await this.notificationServiceV2.deleteDevice(uuid);
+    } catch (error: unknown) {
+      if (error instanceof NotFoundException) {
+        // Do not throw a NotFound error when attempting to remove the token from the CGW,
+        // This ensures the TX service remove method is called
+      } else {
+        throw error;
+      }
     }
 
     try {
       await this.notificationsService.unregisterDevice({ chainId, uuid });
-    } catch {
+    } catch (error: unknown) {
       // The token might already have been removed from the TX service.
-      // If this happens, the TX service will throw an error, but it is safe to ignore it.
+      // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
+      if (error instanceof Error) {
+        if ('code' in error && error.code !== 404) {
+          throw error;
+        }
+      }
     }
   }
 
@@ -174,13 +197,35 @@ export class NotificationsController {
     safeAddress: `0x${string}`,
   ): Promise<void> {
     if (this.isPushNotificationV2Enabled) {
+      return this.unregisterSafeV2Compatible(chainId, uuid, safeAddress);
+    }
+
+    await this.notificationsService.unregisterSafe({
+      chainId,
+      uuid,
+      safeAddress,
+    });
+  }
+
+  private async unregisterSafeV2Compatible(
+    chainId: string,
+    uuid: UUID,
+    safeAddress: `0x${string}`,
+  ): Promise<void> {
+    try {
       // Compatibility with V2
-      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
       await this.notificationServiceV2.deleteSubscription({
         deviceUuid: uuid,
         chainId: chainId,
         safeAddress: safeAddress,
       });
+    } catch (error: unknown) {
+      if (error instanceof NotFoundException) {
+        // Do not throw a NotFound error when attempting to remove the token from the CGW,
+        // This ensures the TX service remove method is called
+      } else {
+        throw error;
+      }
     }
 
     try {
@@ -189,9 +234,14 @@ export class NotificationsController {
         uuid,
         safeAddress,
       });
-    } catch {
+    } catch (error: unknown) {
       // The token might already have been removed from the TX service.
-      // If this happens, the TX service will throw an error, but it is safe to ignore it.
+      // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
+      if (error instanceof Error) {
+        if ('code' in error && error.code !== 404) {
+          throw error;
+        }
+      }
     }
   }
 }
