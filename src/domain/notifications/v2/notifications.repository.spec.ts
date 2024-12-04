@@ -422,7 +422,7 @@ describe('NotificationsRepositoryV2', () => {
       const args = {
         deviceUuid: faker.string.uuid() as UUID,
         chainId: faker.number.int({ min: 0 }).toString(),
-        safeAddress: faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+        safeAddress: getAddress(faker.finance.ethereumAddress()),
       };
 
       const result = notificationsRepository.deleteSubscription(args);
