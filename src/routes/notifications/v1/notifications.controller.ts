@@ -21,6 +21,10 @@ import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.
 import { recoverMessageAddress } from 'viem';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
@@ -35,6 +39,9 @@ export class NotificationsController {
 
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.isPushNotificationV2Enabled =
       this.configurationService.getOrThrow<boolean>(
@@ -48,37 +55,51 @@ export class NotificationsController {
   async registerDevice(
     @Body() registerDeviceDto: RegisterDeviceDto,
   ): Promise<void> {
-    if (this.isPushNotificationV2Enabled) {
-      // Compatibility with V2
-      const compatibleV2Requests =
-        await this.createV2RegisterDto(registerDeviceDto);
+    if (!this.isPushNotificationV2Enabled) {
+      return await this.notificationsService.registerDevice(registerDeviceDto);
+    }
 
-      const v2Requests = [];
+    // Compatibility with V2
+    const compatibleV2Requests =
+      await this.createV2RegisterDto(registerDeviceDto);
 
-      for (const compatibleV2Request of compatibleV2Requests) {
-        v2Requests.push(
-          await this.notificationServiceV2.upsertSubscriptions(
-            compatibleV2Request,
-          ),
+    const v2Requests = [];
+
+    for (const compatibleV2Request of compatibleV2Requests) {
+      v2Requests.push(
+        await this.notificationServiceV2.upsertSubscriptions(
+          compatibleV2Request,
+        ),
+      );
+    }
+    await Promise.all(v2Requests);
+
+    // Remove tokens from the old service to prevent duplication.
+    if (registerDeviceDto.uuid) {
+      const unregistrationRequests = [];
+      for (const safeRegistration of registerDeviceDto.safeRegistrations) {
+        unregistrationRequests.push(
+          this.notificationsService.unregisterDevice({
+            chainId: safeRegistration.chainId,
+            uuid: registerDeviceDto.uuid,
+          }),
         );
       }
-      await Promise.all(v2Requests);
 
-      // Remove tokens from the old service to prevent duplication.
-      if (registerDeviceDto.uuid) {
-        const unregistrationRequests = [];
-        for (const safeRegistration of registerDeviceDto.safeRegistrations) {
-          unregistrationRequests.push(
-            this.notificationsService.unregisterDevice({
-              chainId: safeRegistration.chainId,
-              uuid: registerDeviceDto.uuid,
-            }),
-          );
-        }
-        await Promise.all(unregistrationRequests).catch(() => {}); // If the device is not already registered, the TX service will throw a 404 error, but we can safely ignore it.
-      }
-    } else {
-      await this.notificationsService.registerDevice(registerDeviceDto);
+      await Promise.allSettled(unregistrationRequests).then(
+        (results: Array<PromiseSettledResult<unknown>>) => {
+          for (const result of results) {
+            // If the device is not already registered, the TX service will throw a 404 error, but we can safely ignore it.
+            if (
+              result.status === 'rejected' &&
+              'code' in result.reason &&
+              result.reason.code !== 404
+            ) {
+              this.loggingService.error(result.reason);
+            }
+          }
+        },
+      );
     }
   }
 
