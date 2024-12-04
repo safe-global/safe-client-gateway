@@ -2,6 +2,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { AwsEncryptionApiService } from '@/datasources/accounts/encryption/aws-encryption-api.service';
 import { EncryptionApiManager } from '@/datasources/accounts/encryption/encryption-api.manager';
 import { LocalEncryptionApiService } from '@/datasources/accounts/encryption/local-encryption-api.service';
+import { randomBytes } from 'crypto';
 
 const mockConfigurationService = {
   get: jest.fn(),
@@ -20,8 +21,10 @@ describe('EncryptionApiManager', () => {
       if (key === 'accounts.encryption.type') return 'local';
       if (key === 'application.isProduction') return false;
       if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
-      if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
-      if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
+      if (key === 'accounts.encryption.local.key')
+        return randomBytes(32).toString('hex');
+      if (key === 'accounts.encryption.local.iv')
+        return randomBytes(16).toString('hex');
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new EncryptionApiManager(mockConfigurationService);
@@ -36,8 +39,10 @@ describe('EncryptionApiManager', () => {
       if (key === 'accounts.encryption.type') return 'local';
       if (key === 'application.isProduction') return false;
       if (key === 'accounts.encryption.local.algorithm') return 'aes-256-cbc';
-      if (key === 'accounts.encryption.local.key') return 'a'.repeat(64);
-      if (key === 'accounts.encryption.local.iv') return 'b'.repeat(32);
+      if (key === 'accounts.encryption.local.key')
+        return randomBytes(32).toString('hex');
+      if (key === 'accounts.encryption.local.iv')
+        return randomBytes(16).toString('hex');
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new EncryptionApiManager(mockConfigurationService);
@@ -52,6 +57,9 @@ describe('EncryptionApiManager', () => {
   it('should get a AwsEncryptionApiService', async () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'accounts.encryption.type') return 'aws';
+      if (key === 'accounts.encryption.awsKms.keyId')
+        return randomBytes(32).toString('hex');
+      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-cbc';
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new EncryptionApiManager(mockConfigurationService);
@@ -64,6 +72,9 @@ describe('EncryptionApiManager', () => {
   it('should return the same instance of AwsEncryptionApiService on a second call', async () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'accounts.encryption.type') return 'aws';
+      if (key === 'accounts.encryption.awsKms.keyId')
+        return randomBytes(32).toString('hex');
+      if (key === 'accounts.encryption.awsKms.algorithm') return 'aes-256-cbc';
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new EncryptionApiManager(mockConfigurationService);

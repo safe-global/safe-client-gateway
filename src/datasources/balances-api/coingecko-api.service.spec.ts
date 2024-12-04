@@ -3,13 +3,17 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CoingeckoApi } from '@/datasources/balances-api/coingecko-api.service';
 import { faker } from '@faker-js/faker';
 import type { CacheFirstDataSource } from '../cache/cache.first.data.source';
-import type { AssetPrice } from '@/datasources/balances-api/entities/asset-price.entity';
+import {
+  AssetPricesSchema,
+  type AssetPrice,
+} from '@/datasources/balances-api/entities/asset-price.entity';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { sortBy } from 'lodash';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
@@ -106,7 +110,9 @@ describe('CoingeckoAPI', () => {
   });
 
   it('should return fiat codes (using an API key)', async () => {
-    mockCacheFirstDataSource.get.mockResolvedValue(['usd', 'eur', 'eth']);
+    mockCacheFirstDataSource.get.mockResolvedValue(
+      rawify(['usd', 'eur', 'eth']),
+    );
 
     const fiatCodes = await service.getFiatCodes();
 
@@ -125,7 +131,9 @@ describe('CoingeckoAPI', () => {
   });
 
   it('should return fiat codes (with no API key)', async () => {
-    mockCacheFirstDataSource.get.mockResolvedValue(['usd', 'eur', 'eth']);
+    mockCacheFirstDataSource.get.mockResolvedValue(
+      rawify(['usd', 'eur', 'eth']),
+    );
     fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
     const service = new CoingeckoApi(
       fakeConfigurationService,
@@ -184,7 +192,7 @@ describe('CoingeckoAPI', () => {
     };
     mockCacheService.hGet.mockResolvedValue(undefined);
     mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
+      data: rawify(coingeckoPrice),
       status: 200,
     });
 
@@ -235,7 +243,7 @@ describe('CoingeckoAPI', () => {
     };
     mockCacheService.hGet.mockResolvedValue(undefined);
     mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
+      data: rawify(coingeckoPrice),
       status: 200,
     });
     const service = new CoingeckoApi(
@@ -295,7 +303,7 @@ describe('CoingeckoAPI', () => {
     };
     mockCacheService.hGet.mockResolvedValue(undefined);
     mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
+      data: rawify(coingeckoPrice),
       status: 200,
     });
 
@@ -396,7 +404,7 @@ describe('CoingeckoAPI', () => {
     };
     mockCacheService.hGet.mockResolvedValue(undefined);
     mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
+      data: rawify(coingeckoPrice),
       status: 200,
     });
     fakeConfigurationService.set(
@@ -500,19 +508,21 @@ describe('CoingeckoAPI', () => {
     );
     mockCacheService.hGet.mockResolvedValueOnce(undefined);
     mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
+      data: rawify(coingeckoPrice),
       status: 200,
     });
 
-    const assetPrices = await service.getTokenPrices({
-      chain,
-      tokenAddresses: [
-        firstTokenAddress,
-        secondTokenAddress,
-        thirdTokenAddress,
-      ],
-      fiatCode,
-    });
+    const assetPrices = await service
+      .getTokenPrices({
+        chain,
+        tokenAddresses: [
+          firstTokenAddress,
+          secondTokenAddress,
+          thirdTokenAddress,
+        ],
+        fiatCode,
+      })
+      .then(AssetPricesSchema.parse);
 
     expect(sortBy(assetPrices, (i) => Object.keys(i)[0])).toEqual(
       sortBy(
@@ -602,19 +612,21 @@ describe('CoingeckoAPI', () => {
     );
     mockCacheService.hGet.mockResolvedValueOnce(undefined);
     mockNetworkService.get.mockResolvedValue({
-      data: coingeckoPrice,
+      data: rawify(coingeckoPrice),
       status: 200,
     });
 
-    const assetPrices = await service.getTokenPrices({
-      chain,
-      tokenAddresses: [
-        firstTokenAddress,
-        secondTokenAddress,
-        thirdTokenAddress,
-      ],
-      fiatCode,
-    });
+    const assetPrices = await service
+      .getTokenPrices({
+        chain,
+        tokenAddresses: [
+          firstTokenAddress,
+          secondTokenAddress,
+          thirdTokenAddress,
+        ],
+        fiatCode,
+      })
+      .then(AssetPricesSchema.parse);
 
     expect(sortBy(assetPrices, (i) => Object.keys(i)[0])).toEqual(
       sortBy(
@@ -678,7 +690,7 @@ describe('CoingeckoAPI', () => {
     const fiatCode = faker.finance.currencyCode();
     const lowerCaseFiatCode = fiatCode.toLowerCase();
     const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
-    mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
+    mockCacheFirstDataSource.get.mockResolvedValue(rawify(expectedAssetPrice));
 
     await service.getNativeCoinPrice({ chain, fiatCode });
 
@@ -707,7 +719,7 @@ describe('CoingeckoAPI', () => {
     const fiatCode = faker.finance.currencyCode();
     const lowerCaseFiatCode = fiatCode.toLowerCase();
     const expectedAssetPrice: AssetPrice = { gnosis: { eur: 98.86 } };
-    mockCacheFirstDataSource.get.mockResolvedValue(expectedAssetPrice);
+    mockCacheFirstDataSource.get.mockResolvedValue(rawify(expectedAssetPrice));
     fakeConfigurationService.set('balances.providers.safe.prices.apiKey', null);
     const service = new CoingeckoApi(
       fakeConfigurationService,

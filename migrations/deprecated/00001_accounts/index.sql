@@ -1,5 +1,4 @@
-DROP TABLE IF EXISTS groups,
-accounts CASCADE;
+DROP TABLE IF EXISTS groups, accounts CASCADE;
 
 CREATE TABLE
     groups (

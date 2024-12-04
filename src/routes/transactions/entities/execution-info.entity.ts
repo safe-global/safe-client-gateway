@@ -6,7 +6,7 @@ export enum ExecutionInfoType {
 }
 
 export abstract class ExecutionInfo {
-  @ApiProperty()
+  @ApiProperty({ enum: ExecutionInfoType })
   type: ExecutionInfoType;
 
   protected constructor(type: ExecutionInfoType) {

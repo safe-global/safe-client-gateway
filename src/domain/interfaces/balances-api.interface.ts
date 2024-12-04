@@ -2,6 +2,7 @@ import type { Balance } from '@/domain/balances/entities/balance.entity';
 import type { Chain } from '@/domain/chains/entities/chain.entity';
 import type { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import type { Page } from '@/domain/entities/page.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 export interface IBalancesApi {
   getBalances(args: {
@@ -10,7 +11,7 @@ export interface IBalancesApi {
     chain: Chain;
     trusted?: boolean;
     excludeSpam?: boolean;
-  }): Promise<Balance[]>;
+  }): Promise<Raw<Balance[]>>;
 
   clearBalances(args: {
     chainId: string;
@@ -24,12 +25,12 @@ export interface IBalancesApi {
     offset?: number;
     trusted?: boolean;
     excludeSpam?: boolean;
-  }): Promise<Page<Collectible>>;
+  }): Promise<Raw<Page<Collectible>>>;
 
   clearCollectibles(args: {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void>;
 
-  getFiatCodes(): Promise<string[]>;
+  getFiatCodes(): Promise<Raw<string[]>>;
 }

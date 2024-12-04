@@ -14,7 +14,7 @@ export enum TransactionInfoType {
 }
 
 export class TransactionInfo {
-  @ApiProperty()
+  @ApiProperty({ enum: TransactionInfoType })
   type: TransactionInfoType;
   @ApiPropertyOptional({ type: String, nullable: true })
   humanDescription: string | null;

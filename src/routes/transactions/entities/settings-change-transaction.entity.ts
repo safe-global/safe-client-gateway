@@ -7,6 +7,8 @@ import {
 } from '@/routes/transactions/entities/transaction-info.entity';
 
 export class SettingsChangeTransaction extends TransactionInfo {
+  @ApiProperty({ enum: [TransactionInfoType.SettingsChange] })
+  override type = TransactionInfoType.SettingsChange;
   @ApiProperty()
   dataDecoded: DataDecoded;
   @ApiPropertyOptional({ type: SettingsChange, nullable: true })

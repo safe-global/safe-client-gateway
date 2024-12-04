@@ -14,7 +14,7 @@ export enum SettingsChangeType {
 }
 
 export abstract class SettingsChange {
-  @ApiProperty()
+  @ApiProperty({ enum: SettingsChangeType })
   type: SettingsChangeType;
 
   protected constructor(type: SettingsChangeType) {

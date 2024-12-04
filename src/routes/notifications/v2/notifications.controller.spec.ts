@@ -45,6 +45,9 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address-books/__tests__/test.address-books.datasource.module';
+import { AddressBooksDatasourceModule } from '@/datasources/accounts/address-books/address-books.datasource.module';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Notifications Controller V2 (Unit)', () => {
   let app: INestApplication<Server>;
@@ -74,6 +77,8 @@ describe('Notifications Controller V2 (Unit)', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(AccountsDatasourceModule)
       .useModule(TestAccountsDataSourceModule)
+      .overrideModule(AddressBooksDatasourceModule)
+      .useModule(TestAddressBooksDataSourceModule)
       .overrideModule(CounterfactualSafesDatasourceModule)
       .useModule(TestCounterfactualSafesDataSourceModule)
       .overrideModule(TargetedMessagingDatasourceModule)
@@ -134,22 +139,24 @@ describe('Notifications Controller V2 (Unit)', () => {
           const chain = chains[safe.chainId];
 
           if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
             return Promise.resolve({
-              data: safeBuilder()
-                .with('address', safe.address)
-                .with('owners', [signerAddress])
-                .build(),
+              data: rawify(
+                safeBuilder()
+                  .with('address', safe.address)
+                  .with('owners', [signerAddress])
+                  .build(),
+              ),
               status: 200,
             });
           }
           if (url === `${chain.transactionService}/api/v2/delegates/`) {
             return Promise.resolve({
-              data: pageBuilder().with('results', []).build(),
+              data: rawify(pageBuilder().with('results', []).build()),
               status: 200,
             });
           }
@@ -200,26 +207,28 @@ describe('Notifications Controller V2 (Unit)', () => {
           const chain = chains[safe.chainId];
 
           if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
             return Promise.resolve({
-              data: safeBuilder().with('address', safe.address).build(),
+              data: rawify(safeBuilder().with('address', safe.address).build()),
               status: 200,
             });
           }
           if (url === `${chain.transactionService}/api/v2/delegates/`) {
             return Promise.resolve({
-              data: pageBuilder()
-                .with('results', [
-                  delegateBuilder()
-                    .with('delegate', signerAddress)
-                    .with('safe', safe.address)
-                    .build(),
-                ])
-                .build(),
+              data: rawify(
+                pageBuilder()
+                  .with('results', [
+                    delegateBuilder()
+                      .with('delegate', signerAddress)
+                      .with('safe', safe.address)
+                      .build(),
+                  ])
+                  .build(),
+              ),
               status: 200,
             });
           }
@@ -272,22 +281,24 @@ describe('Notifications Controller V2 (Unit)', () => {
           const chain = chains[safe.chainId];
 
           if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
             return Promise.resolve({
-              data: safeBuilder()
-                .with('address', safe.address)
-                .with('owners', [signerAddress])
-                .build(),
+              data: rawify(
+                safeBuilder()
+                  .with('address', safe.address)
+                  .with('owners', [signerAddress])
+                  .build(),
+              ),
               status: 200,
             });
           }
           if (url === `${chain.transactionService}/api/v2/delegates/`) {
             return Promise.resolve({
-              data: pageBuilder().with('results', []).build(),
+              data: rawify(pageBuilder().with('results', []).build()),
               status: 200,
             });
           }
@@ -342,22 +353,24 @@ describe('Notifications Controller V2 (Unit)', () => {
           const chain = chains[safe.chainId];
 
           if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
             return Promise.resolve({
-              data: safeBuilder()
-                .with('address', safe.address)
-                .with('owners', [signerAddress])
-                .build(),
+              data: rawify(
+                safeBuilder()
+                  .with('address', safe.address)
+                  .with('owners', [signerAddress])
+                  .build(),
+              ),
               status: 200,
             });
           }
           if (url === `${chain.transactionService}/api/v2/delegates/`) {
             return Promise.resolve({
-              data: pageBuilder().with('results', []).build(),
+              data: rawify(pageBuilder().with('results', []).build()),
               status: 200,
             });
           }
@@ -427,22 +440,24 @@ describe('Notifications Controller V2 (Unit)', () => {
           const chain = chains[safe.chainId];
 
           if (url === `${safeConfigUrl}/api/v1/chains/${safe.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (
             url === `${chain.transactionService}/api/v1/safes/${safe.address}`
           ) {
             return Promise.resolve({
-              data: safeBuilder()
-                .with('address', safe.address)
-                .with('owners', [signerAddress])
-                .build(),
+              data: rawify(
+                safeBuilder()
+                  .with('address', safe.address)
+                  .with('owners', [signerAddress])
+                  .build(),
+              ),
               status: 200,
             });
           }
           if (url === `${chain.transactionService}/api/v2/delegates/`) {
             return Promise.resolve({
-              data: pageBuilder().with('results', []).build(),
+              data: rawify(pageBuilder().with('results', []).build()),
               status: 200,
             });
           }

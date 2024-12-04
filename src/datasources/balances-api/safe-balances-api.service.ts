@@ -3,7 +3,10 @@ import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.sourc
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { Balance } from '@/domain/balances/entities/balance.entity';
+import {
+  Balance,
+  BalancesSchema,
+} from '@/domain/balances/entities/balance.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
@@ -11,6 +14,9 @@ import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { Injectable } from '@nestjs/common';
 import { Chain } from '@/domain/chains/entities/chain.entity';
+import { rawify, type Raw } from '@/validation/entities/raw.entity';
+import { AssetPricesSchema } from '@/datasources/balances-api/entities/asset-price.entity';
+import { ZodError } from 'zod';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
@@ -54,28 +60,37 @@ export class SafeBalancesApi implements IBalancesApi {
     chain: Chain;
     trusted?: boolean;
     excludeSpam?: boolean;
-  }): Promise<Balance[]> {
+  }): Promise<Raw<Balance[]>> {
     try {
       const cacheDir = CacheRouter.getBalancesCacheDir({
         chainId: this.chainId,
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/balances/`;
-      const data = await this.dataSource.get<Balance[]>({
-        cacheDir,
-        url,
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-        networkRequest: {
-          params: {
-            trusted: args.trusted,
-            exclude_spam: args.excludeSpam,
+      const data = await this.dataSource
+        .get<Balance[]>({
+          cacheDir,
+          url,
+          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+          networkRequest: {
+            params: {
+              trusted: args.trusted,
+              exclude_spam: args.excludeSpam,
+            },
           },
-        },
-        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
-      });
+          expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        })
+        .then(BalancesSchema.parse);
 
-      return this._mapBalances(data, args.fiatCode, args.chain);
+      return this._mapBalances({
+        balances: data,
+        fiatCode: args.fiatCode,
+        chain: args.chain,
+      });
     } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
+      }
       throw this.httpErrorFactory.from(error);
     }
   }
@@ -94,14 +109,14 @@ export class SafeBalancesApi implements IBalancesApi {
     offset?: number;
     trusted?: boolean;
     excludeSpam?: boolean;
-  }): Promise<Page<Collectible>> {
+  }): Promise<Raw<Page<Collectible>>> {
     try {
       const cacheDir = CacheRouter.getCollectiblesCacheDir({
         chainId: this.chainId,
         ...args,
       });
       const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/collectibles/`;
-      return await this.dataSource.get({
+      return await this.dataSource.get<Page<Collectible>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -128,7 +143,7 @@ export class SafeBalancesApi implements IBalancesApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  async getFiatCodes(): Promise<string[]> {
+  async getFiatCodes(): Promise<Raw<string[]>> {
     return this.coingeckoApi.getFiatCodes();
   }
 
@@ -142,41 +157,43 @@ export class SafeBalancesApi implements IBalancesApi {
     });
   }
 
-  private async _mapBalances(
-    balances: Balance[],
-    fiatCode: string,
-    chain: Chain,
-  ): Promise<Balance[]> {
-    const tokenAddresses = balances
+  private async _mapBalances(args: {
+    balances: Balance[];
+    fiatCode: string;
+    chain: Chain;
+  }): Promise<Raw<Balance[]>> {
+    const tokenAddresses = args.balances
       .map((balance) => balance.tokenAddress)
       .filter((address): address is `0x${string}` => address !== null);
 
-    const assetPrices = await this.coingeckoApi.getTokenPrices({
-      chain,
-      fiatCode,
-      tokenAddresses,
-    });
+    const assetPrices = await this.coingeckoApi
+      .getTokenPrices({
+        chain: args.chain,
+        fiatCode: args.fiatCode,
+        tokenAddresses,
+      })
+      .then(AssetPricesSchema.parse);
 
-    const lowerCaseAssetPrices = assetPrices?.map((assetPrice) =>
+    const lowerCaseAssetPrices = assetPrices.map((assetPrice) =>
       Object.fromEntries(
         Object.entries(assetPrice).map(([k, v]) => [k.toLowerCase(), v]),
       ),
     );
 
-    return await Promise.all(
-      balances.map(async (balance) => {
+    const balances = await Promise.all(
+      args.balances.map(async (balance) => {
         const tokenAddress = balance.tokenAddress?.toLowerCase() ?? null;
         let price: number | null;
         if (tokenAddress === null) {
           price = await this.coingeckoApi.getNativeCoinPrice({
-            chain,
-            fiatCode,
+            chain: args.chain,
+            fiatCode: args.fiatCode,
           });
         } else {
           const found = lowerCaseAssetPrices.find(
             (assetPrice) => assetPrice[tokenAddress],
           );
-          price = found?.[tokenAddress]?.[fiatCode.toLowerCase()] ?? null;
+          price = found?.[tokenAddress]?.[args.fiatCode.toLowerCase()] ?? null;
         }
         const fiatBalance = this._getFiatBalance(price, balance);
         return {
@@ -186,6 +203,8 @@ export class SafeBalancesApi implements IBalancesApi {
         };
       }),
     );
+
+    return rawify(balances);
   }
 
   private _getFiatBalance(

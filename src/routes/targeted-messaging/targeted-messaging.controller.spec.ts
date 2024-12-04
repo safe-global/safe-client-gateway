@@ -26,6 +26,7 @@ import { SubmissionNotFoundError } from '@/domain/targeted-messaging/errors/subm
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker/.';
 import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
@@ -100,10 +101,10 @@ describe('TargetedMessagingController', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({
-              data: safe,
+              data: rawify(safe),
               status: 200,
             });
           default:
@@ -148,10 +149,10 @@ describe('TargetedMessagingController', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({
-              data: safe,
+              data: rawify(safe),
               status: 200,
             });
           default:
@@ -214,10 +215,10 @@ describe('TargetedMessagingController', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({
-              data: safe,
+              data: rawify(safe),
               status: 200,
             });
           default:
@@ -290,10 +291,10 @@ describe('TargetedMessagingController', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({
-              data: safe,
+              data: rawify(safe),
               status: 200,
             });
           default:
@@ -360,10 +361,10 @@ describe('TargetedMessagingController', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({
-              data: safe,
+              data: rawify(safe),
               status: 200,
             });
           default:
@@ -412,10 +413,10 @@ describe('TargetedMessagingController', () => {
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({
-              data: safe,
+              data: rawify(safe),
               status: 200,
             });
           default:

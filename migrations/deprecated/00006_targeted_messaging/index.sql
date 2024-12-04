@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;
+
 CREATE TABLE outreaches (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

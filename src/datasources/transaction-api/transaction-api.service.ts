@@ -32,10 +32,6 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { get } from 'lodash';
 
-/**
- * TODO: Move all usage of Raw to NetworkService after fully migrated
- * to "Raw" type implementation.
- */
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
   private static readonly HOLESKY_CHAIN_ID = '17000';
@@ -122,7 +118,7 @@ export class TransactionApi implements ITransactionApi {
     try {
       const cacheDir = CacheRouter.getBackboneCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about`;
-      return await this.dataSource.get<Raw<Backbone>>({
+      return await this.dataSource.get<Backbone>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -139,7 +135,7 @@ export class TransactionApi implements ITransactionApi {
     try {
       const cacheDir = CacheRouter.getSingletonsCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about/singletons/`;
-      return await this.dataSource.get<Raw<Singleton[]>>({
+      return await this.dataSource.get<Singleton[]>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -154,7 +150,7 @@ export class TransactionApi implements ITransactionApi {
     try {
       const cacheDir = CacheRouter.getIndexingCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about/indexing/`;
-      return await this.dataSource.get<Raw<IndexingStatus>>({
+      return await this.dataSource.get<IndexingStatus>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -172,7 +168,7 @@ export class TransactionApi implements ITransactionApi {
         safeAddress,
       });
       const url = `${this.baseUrl}/api/v1/safes/${safeAddress}`;
-      return await this.dataSource.get<Raw<Safe>>({
+      return await this.dataSource.get<Safe>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -263,7 +259,7 @@ export class TransactionApi implements ITransactionApi {
         contractAddress,
       });
       const url = `${this.baseUrl}/api/v1/contracts/${contractAddress}`;
-      return await this.dataSource.get<Raw<Contract>>({
+      return await this.dataSource.get<Contract>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.contractNotFoundExpirationTimeSeconds,
@@ -288,7 +284,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/delegates/`;
-      return await this.dataSource.get<Raw<Page<Delegate>>>({
+      return await this.dataSource.get<Page<Delegate>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -322,7 +318,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v2/delegates/`;
-      return await this.dataSource.get<Raw<Page<Delegate>>>({
+      return await this.dataSource.get<Page<Delegate>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -340,6 +336,14 @@ export class TransactionApi implements ITransactionApi {
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
+  }
+
+  async clearDelegates(safeAddress?: `0x${string}`): Promise<void> {
+    const cacheKey = CacheRouter.getDelegatesCacheKey({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    await this.cacheService.deleteByKey(cacheKey);
   }
 
   async postDelegate(args: {
@@ -460,7 +464,7 @@ export class TransactionApi implements ITransactionApi {
         transferId,
       });
       const url = `${this.baseUrl}/api/v1/transfer/${transferId}`;
-      return await this.dataSource.get<Raw<Transfer>>({
+      return await this.dataSource.get<Transfer>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -484,7 +488,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/transfers/`;
-      return await this.dataSource.get<Raw<Page<Transfer>>>({
+      return await this.dataSource.get<Page<Transfer>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -528,7 +532,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/incoming-transfers/`;
-      return await this.dataSource.get<Raw<Page<Transfer>>>({
+      return await this.dataSource.get<Page<Transfer>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -579,7 +583,7 @@ export class TransactionApi implements ITransactionApi {
   async getSafesByModule(moduleAddress: `0x${string}`): Promise<Raw<SafeList>> {
     try {
       const url = `${this.baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
-      const { data } = await this.networkService.get<Raw<SafeList>>({ url });
+      const { data } = await this.networkService.get<SafeList>({ url });
       return data;
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -597,7 +601,7 @@ export class TransactionApi implements ITransactionApi {
         moduleTransactionId,
       });
       const url = `${this.baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
-      return await this.dataSource.get<Raw<ModuleTransaction>>({
+      return await this.dataSource.get<ModuleTransaction>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -622,7 +626,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/module-transactions/`;
-      return await this.dataSource.get<Raw<Page<ModuleTransaction>>>({
+      return await this.dataSource.get<Page<ModuleTransaction>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -670,7 +674,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/multisig-transactions/`;
-      return await this.dataSource.get<Raw<Page<MultisigTransaction>>>({
+      return await this.dataSource.get<Page<MultisigTransaction>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -714,7 +718,7 @@ export class TransactionApi implements ITransactionApi {
         safeTransactionHash,
       });
       const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
-      return await this.dataSource.get<Raw<MultisigTransaction>>({
+      return await this.dataSource.get<MultisigTransaction>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -754,7 +758,7 @@ export class TransactionApi implements ITransactionApi {
   // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
   async getCreationTransaction(
     safeAddress: `0x${string}`,
-  ): Promise<CreationTransaction> {
+  ): Promise<Raw<CreationTransaction>> {
     try {
       const cacheDir = CacheRouter.getCreationTransactionCacheDir({
         chainId: this.chainId,
@@ -786,7 +790,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/all-transactions/`;
-      return await this.dataSource.get<Raw<Page<Transaction>>>({
+      return await this.dataSource.get<Page<Transaction>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -824,7 +828,7 @@ export class TransactionApi implements ITransactionApi {
         address,
       });
       const url = `${this.baseUrl}/api/v1/tokens/${address}`;
-      return await this.dataSource.get<Raw<Token>>({
+      return await this.dataSource.get<Token>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.tokenNotFoundExpirationTimeSeconds,
@@ -847,7 +851,7 @@ export class TransactionApi implements ITransactionApi {
         ...args,
       });
       const url = `${this.baseUrl}/api/v1/tokens/`;
-      return await this.dataSource.get<Raw<Page<Token>>>({
+      return await this.dataSource.get<Page<Token>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -873,7 +877,7 @@ export class TransactionApi implements ITransactionApi {
         ownerAddress,
       });
       const url = `${this.baseUrl}/api/v1/owners/${ownerAddress}/safes/`;
-      return await this.dataSource.get<Raw<SafeList>>({
+      return await this.dataSource.get<SafeList>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -961,7 +965,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         messageHash,
       });
-      return await this.dataSource.get<Raw<Message>>({
+      return await this.dataSource.get<Message>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -983,7 +987,7 @@ export class TransactionApi implements ITransactionApi {
         chainId: this.chainId,
         ...args,
       });
-      return await this.dataSource.get<Raw<Page<Message>>>({
+      return await this.dataSource.get<Page<Message>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -1039,7 +1043,7 @@ export class TransactionApi implements ITransactionApi {
   }): Promise<Raw<Message>> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/messages/`;
-      const { data } = await this.networkService.post<Raw<Message>>({
+      const { data } = await this.networkService.post<Message>({
         url,
         data: {
           message: args.message,

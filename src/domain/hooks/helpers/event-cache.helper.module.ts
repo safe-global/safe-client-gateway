@@ -9,6 +9,7 @@ import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repositor
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { TransactionsRepositoryModule } from '@/domain/transactions/transactions.repository.interface';
+import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TransactionsRepositoryModule } from '@/domain/transactions/transactions
     BlockchainRepositoryModule,
     ChainsRepositoryModule,
     CollectiblesRepositoryModule,
+    DelegatesV2RepositoryModule,
     MessagesRepositoryModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,

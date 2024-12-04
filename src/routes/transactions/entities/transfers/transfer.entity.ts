@@ -7,7 +7,7 @@ export enum TransferType {
 }
 
 export abstract class Transfer {
-  @ApiProperty()
+  @ApiProperty({ enum: TransferType })
   type: TransferType;
 
   protected constructor(type: TransferType) {

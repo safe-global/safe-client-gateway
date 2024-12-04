@@ -35,9 +35,10 @@ import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { getAddress } from 'viem';
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 
@@ -96,7 +97,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     chain: Chain;
     safeAddress: `0x${string}`;
     fiatCode: string;
-  }): Promise<Balance[]> {
+  }): Promise<Raw<Balance[]>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
         `Unsupported currency code: ${args.fiatCode}`,
@@ -133,19 +134,20 @@ export class ZerionBalancesApi implements IBalancesApi {
           sort: 'value',
         },
       };
-      const { data } = await this.networkService.get<ZerionBalances>({
-        url,
-        networkRequest,
-      });
-      const zerionBalances = ZerionBalancesSchema.parse(data);
+      const zerionBalances = await this.networkService
+        .get<ZerionBalances>({
+          url,
+          networkRequest,
+        })
+        .then(({ data }) => ZerionBalancesSchema.parse(data));
       await this.cacheService.hSet(
         cacheDir,
         JSON.stringify(zerionBalances.data),
         this.defaultExpirationTimeInSeconds,
       );
-      return this._mapBalances(chainName, data.data);
+      return this._mapBalances(chainName, zerionBalances.data);
     } catch (error) {
-      if (error instanceof LimitReachedError) {
+      if (error instanceof LimitReachedError || error instanceof ZodError) {
         throw error;
       }
       throw this.httpErrorFactory.from(error);
@@ -166,7 +168,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     safeAddress: `0x${string}`;
     limit?: number;
     offset?: number;
-  }): Promise<Page<Collectible>> {
+  }): Promise<Raw<Page<Collectible>>> {
     const cacheDir = CacheRouter.getZerionCollectiblesCacheDir({
       ...args,
       chainId: args.chain.chainId,
@@ -192,17 +194,25 @@ export class ZerionBalancesApi implements IBalancesApi {
             ...(pageAfter && { 'page[after]': pageAfter }),
           },
         };
-        const { data } = await this.networkService.get<ZerionCollectibles>({
-          url,
-          networkRequest,
-        });
+        const zerionCollectibles = await this.networkService
+          .get<ZerionCollectibles>({
+            url,
+            networkRequest,
+          })
+          .then(({ data }) => ZerionCollectiblesSchema.parse(data));
         await this.cacheService.hSet(
           cacheDir,
-          JSON.stringify(data),
+          JSON.stringify(zerionCollectibles),
           this.defaultExpirationTimeInSeconds,
         );
-        return this._buildCollectiblesPage(data.links.next, data.data);
+        return this._buildCollectiblesPage(
+          zerionCollectibles.links.next,
+          zerionCollectibles.data,
+        );
       } catch (error) {
+        if (error instanceof ZodError) {
+          throw error;
+        }
         throw this.httpErrorFactory.from(error);
       }
     }
@@ -219,8 +229,8 @@ export class ZerionBalancesApi implements IBalancesApi {
   private _mapBalances(
     chainName: string,
     zerionBalances: ZerionBalance[],
-  ): Balance[] {
-    return zerionBalances
+  ): Raw<Balance[]> {
+    const balances = zerionBalances
       .filter((zb) => zb.attributes.flags.displayable)
       .map((zb) => {
         const implementation = zb.attributes.fungible_info.implementations.find(
@@ -242,11 +252,12 @@ export class ZerionBalancesApi implements IBalancesApi {
           fiatConversion,
         };
       });
+    return rawify(balances);
   }
 
-  async getFiatCodes(): Promise<string[]> {
+  async getFiatCodes(): Promise<Raw<string[]>> {
     // Resolving to conform with interface
-    return Promise.resolve(this.fiatCodes);
+    return Promise.resolve(rawify(this.fiatCodes));
   }
 
   private _mapErc20Balance(
@@ -300,15 +311,15 @@ export class ZerionBalancesApi implements IBalancesApi {
   private _buildCollectiblesPage(
     next: string | null,
     data: ZerionCollectible[],
-  ): Page<Collectible> {
+  ): Raw<Page<Collectible>> {
     // Zerion does not provide the items count.
     // Zerion does not provide a "previous" cursor.
-    return {
+    return rawify({
       count: null,
       next: next ? this._decodeZerionPagination(next) : null,
       previous: null,
       results: this._mapCollectibles(data),
-    };
+    });
   }
 
   private _mapCollectibles(

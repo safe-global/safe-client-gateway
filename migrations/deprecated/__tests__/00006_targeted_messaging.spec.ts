@@ -23,8 +23,6 @@ describe('Migration 00006_targeted_messaging', () => {
   });
 
   it('runs successfully', async () => {
-    await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
     const result = await migrator.test({
       migration: '00006_targeted_messaging',
       after: async (sql: Sql) => {
@@ -82,8 +80,6 @@ describe('Migration 00006_targeted_messaging', () => {
 
   describe('Outreaches', () => {
     it('should upsert the updated_at timestamp when updating an outreach', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       const result: {
         before: unknown;
         after: Outreach[];
@@ -120,8 +116,6 @@ describe('Migration 00006_targeted_messaging', () => {
     });
 
     it('should throw an error if the unique(name) constraint is violated', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       await migrator.test({
         migration: '00006_targeted_messaging',
         after: async (sql: Sql) => {
@@ -142,8 +136,6 @@ describe('Migration 00006_targeted_messaging', () => {
 
   describe('TargetedSafes', () => {
     it('should upsert the updated_at timestamp when updating a targeted_safe', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       const result: {
         before: unknown;
         after: TargetedSafe[];
@@ -186,8 +178,6 @@ describe('Migration 00006_targeted_messaging', () => {
     });
 
     it('should throw an error if the unique(address, outreach_id) constraint is violated', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       await migrator.test({
         migration: '00006_targeted_messaging',
         after: async (sql: Sql) => {
@@ -214,8 +204,6 @@ describe('Migration 00006_targeted_messaging', () => {
 
   describe('Submissions', () => {
     it('should upsert the updated_at timestamp when updating a submission', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       const result: {
         before: unknown;
         after: Submission[];
@@ -260,8 +248,6 @@ describe('Migration 00006_targeted_messaging', () => {
     });
 
     it('should trigger a cascade delete when the referenced target_safe is deleted', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       const result: {
         before: unknown;
         after: Submission[];
@@ -291,8 +277,6 @@ describe('Migration 00006_targeted_messaging', () => {
     });
 
     it('should throw an error if the unique(targeted_safe_id, signer_address) constraint is violated', async () => {
-      await sql`DROP TABLE IF EXISTS outreaches, targeted_safes, submissions CASCADE;`;
-
       await migrator.test({
         migration: '00006_targeted_messaging',
         after: async (sql: Sql) => {
