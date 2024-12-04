@@ -16,6 +16,7 @@ import { NotificationDevice } from '@/datasources/notifications/entities/notific
 import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
+import { getAddress } from 'viem';
 
 describe('NotificationsRepositoryV2', () => {
   let notificationsRepository: INotificationsRepositoryV2;
