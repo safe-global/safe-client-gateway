@@ -47,15 +47,13 @@ export class NotificationsController {
   async registerDevice(
     @Body() registerDeviceDto: RegisterDeviceDto,
   ): Promise<void> {
-    await this.notificationsService.registerDevice(registerDeviceDto);
-
     if (this.isPushNotificationV2Enabled) {
       // Compatibility with V2
-      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
       const compatibleV2Requests =
         await this.createV2RegisterDto(registerDeviceDto);
 
       const v2Requests = [];
+
       for (const compatibleV2Request of compatibleV2Requests) {
         v2Requests.push(
           await this.notificationServiceV2.upsertSubscriptions(
@@ -63,8 +61,23 @@ export class NotificationsController {
           ),
         );
       }
-
       await Promise.all(v2Requests);
+
+      // Remove tokens from the old service to prevent duplication.
+      if (registerDeviceDto.uuid) {
+        const unregistrationRequests = [];
+        for (const safeRegistration of registerDeviceDto.safeRegistrations) {
+          unregistrationRequests.push(
+            this.notificationsService.unregisterDevice({
+              chainId: safeRegistration.chainId,
+              uuid: registerDeviceDto.uuid,
+            }),
+          );
+        }
+        await Promise.all(unregistrationRequests).catch(() => {}); // If the device is not already registered, the TX service will throw a 404 error, but we can safely ignore it.
+      }
+    } else {
+      await this.notificationsService.registerDevice(registerDeviceDto);
     }
   }
 
@@ -140,12 +153,16 @@ export class NotificationsController {
     @Param('chainId') chainId: string,
     @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
   ): Promise<void> {
-    await this.notificationsService.unregisterDevice({ chainId, uuid });
-
     if (this.isPushNotificationV2Enabled) {
       // Compatibility with V2
-      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
       await this.notificationServiceV2.deleteDevice(uuid);
+    }
+
+    try {
+      await this.notificationsService.unregisterDevice({ chainId, uuid });
+    } catch {
+      // The token might already have been removed from the TX service.
+      // If this happens, the TX service will throw an error, but it is safe to ignore it.
     }
   }
 
@@ -156,12 +173,6 @@ export class NotificationsController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
   ): Promise<void> {
-    await this.notificationsService.unregisterSafe({
-      chainId,
-      uuid,
-      safeAddress,
-    });
-
     if (this.isPushNotificationV2Enabled) {
       // Compatibility with V2
       // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
@@ -170,6 +181,17 @@ export class NotificationsController {
         chainId: chainId,
         safeAddress: safeAddress,
       });
+    }
+
+    try {
+      await this.notificationsService.unregisterSafe({
+        chainId,
+        uuid,
+        safeAddress,
+      });
+    } catch {
+      // The token might already have been removed from the TX service.
+      // If this happens, the TX service will throw an error, but it is safe to ignore it.
     }
   }
 }

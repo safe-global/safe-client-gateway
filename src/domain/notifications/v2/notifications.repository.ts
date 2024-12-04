@@ -6,6 +6,7 @@ import type { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notif
 import {
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -368,9 +369,11 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       },
     });
 
-    if (subscription) {
-      await notificationsSubscriptionsRepository.remove(subscription);
+    if (!subscription) {
+      throw new NotFoundException('No Subscription Found!');
     }
+
+    await notificationsSubscriptionsRepository.remove(subscription);
   }
 
   public async deleteDevice(deviceUuid: UUID): Promise<void> {
@@ -379,8 +382,12 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
         NotificationDevice,
       );
 
-    await notificationsDeviceRepository.delete({
+    const deleteResult = await notificationsDeviceRepository.delete({
       device_uuid: deviceUuid,
     });
+
+    if (!deleteResult.affected) {
+      throw new NotFoundException('No Device Found!');
+    }
   }
 }
