@@ -17,7 +17,7 @@ import { IAccountsDatasource } from '@/domain/interfaces/accounts.datasource.int
 import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
-import { IpSchema } from '@/validation/entities/schemas/ip.schema';
+import { z } from 'zod';
 import {
   Inject,
   Injectable,
@@ -247,8 +247,8 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
    * @param clientIp - client IP address.
    */
   private async checkCreationRateLimit(clientIp: string): Promise<void> {
-    const { success: isValidIp } = IpSchema.safeParse(clientIp);
-    if (!clientIp || !isValidIp) {
+    const { success: isValidIp } = z.string().ip().safeParse(clientIp);
+    if (!isValidIp) {
       this.loggingService.warn(
         `Invalid client IP while creating account: ${clientIp}`,
       );
