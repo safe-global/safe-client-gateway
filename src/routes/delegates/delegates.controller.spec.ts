@@ -125,11 +125,8 @@ describe('Delegates controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/delegates?safe=${safe}`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('Should return empty result', async () => {

@@ -196,8 +196,8 @@ describe('Transactions History Controller (Unit)', () => {
       .get(
         `/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/history/`,
       )
-      .expect(500)
-      .expect({ statusCode: 500, message: 'Internal server error' });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('Should return only creation transaction', async () => {

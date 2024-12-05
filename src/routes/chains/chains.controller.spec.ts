@@ -304,10 +304,10 @@ describe('Chains Controller (Unit)', () => {
         status: 200,
       });
 
-      await request(app.getHttpServer()).get('/v1/chains').expect(500).expect({
-        statusCode: 500,
-        message: 'Internal server error',
-      });
+      await request(app.getHttpServer())
+        .get('/v1/chains')
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
       expect(networkService.get).toHaveBeenCalledTimes(1);
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${safeConfigUrl}/api/v1/chains`,
@@ -444,11 +444,8 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/backbone')
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
 
       expect(networkService.get).toHaveBeenCalledTimes(2);
       expect(networkService.get.mock.calls[0][0].url).toBe(
@@ -633,11 +630,8 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get('/v1/chains/1/about/master-copies')
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
   });
 
@@ -766,11 +760,8 @@ describe('Chains Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainResponse.chainId}/about/indexing`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
   });
 

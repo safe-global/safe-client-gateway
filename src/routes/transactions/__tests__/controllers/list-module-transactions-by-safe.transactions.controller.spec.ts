@@ -144,11 +144,8 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/module-transactions`)
-      .expect(500)
-      .expect({
-        statusCode: 500,
-        message: 'Internal server error',
-      });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('Get module transaction should return 404', async () => {

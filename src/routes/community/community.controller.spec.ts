@@ -152,11 +152,8 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/campaigns`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('should forward the pagination parameters', async () => {
@@ -272,11 +269,8 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/campaigns/${invalidCampaign.resourceId}`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('should forward an error from the service', async () => {
@@ -486,11 +480,8 @@ describe('Community (Unit)', () => {
         .get(
           `/v1/community/campaigns/${campaign.resourceId}/activities?holder=${holder}`,
         )
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('should forward an error from the service', () => {
@@ -589,11 +580,8 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/campaigns/${campaign.resourceId}/leaderboard`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('should forward the pagination parameters', async () => {
@@ -727,11 +715,8 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/campaigns/${resourceId}/leaderboard/${safeAddress}`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('should forward an error from the service', async () => {
@@ -904,11 +889,8 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/locking/leaderboard`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('should forward an error from the service', async () => {
@@ -989,11 +971,8 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/locking/${safeAddress}/rank`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('should forward an error from the service', async () => {
@@ -1166,11 +1145,8 @@ describe('Community (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/community/locking/${safeAddress}/history`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
 
     it('should forward an error from the service', async () => {

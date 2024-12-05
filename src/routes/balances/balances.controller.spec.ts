@@ -808,7 +808,7 @@ describe('Balances Controller (Unit)', () => {
       });
     });
 
-    it(`503 error if validation fails`, async () => {
+    it(`502 error if validation fails`, async () => {
       const chainId = '1';
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
@@ -838,10 +838,10 @@ describe('Balances Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
-        .expect(503)
+        .expect(502)
         .expect({
-          code: 503,
-          message: 'Service unavailable',
+          statusCode: 502,
+          message: 'Bad gateway',
         });
 
       expect(networkService.get.mock.calls.length).toBe(3);

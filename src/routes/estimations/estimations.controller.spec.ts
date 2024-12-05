@@ -177,11 +177,8 @@ describe('Estimations Controller (Unit)', () => {
         data: faker.string.hexadecimal({ length: 32 }),
         operation: 0,
       })
-      .expect(500)
-      .expect({
-        statusCode: 500,
-        message: 'Internal server error',
-      });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('Should get a validation error', async () => {

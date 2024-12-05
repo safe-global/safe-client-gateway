@@ -193,11 +193,8 @@ describe('Owners Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
   });
 
@@ -452,11 +449,8 @@ describe('Owners Controller (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/owners/${ownerAddress}/safes`)
-        .expect(500)
-        .expect({
-          statusCode: 500,
-          message: 'Internal server error',
-        });
+        .expect(502)
+        .expect({ statusCode: 502, message: 'Bad gateway' });
     });
   });
 });

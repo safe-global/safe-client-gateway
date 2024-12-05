@@ -16,6 +16,7 @@ import { Injectable } from '@nestjs/common';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { AssetPricesSchema } from '@/datasources/balances-api/entities/asset-price.entity';
+import { ZodError } from 'zod';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
@@ -87,6 +88,9 @@ export class SafeBalancesApi implements IBalancesApi {
         chain: args.chain,
       });
     } catch (error) {
+      if (error instanceof ZodError) {
+        throw error;
+      }
       throw this.httpErrorFactory.from(error);
     }
   }
