@@ -1,7 +1,6 @@
 import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { z } from 'zod';
 
 export const UpsertSubscriptionsDtoSchema = z.object({
@@ -14,7 +13,7 @@ export const UpsertSubscriptionsDtoSchema = z.object({
     }),
   ),
   deviceType: z.nativeEnum(DeviceType),
-  deviceUuid: UuidSchema.nullish().default(null),
+  deviceUuid: z.string().uuid().nullish().default(null),
 });
 
 export type UpsertSubscriptionsDto = z.infer<

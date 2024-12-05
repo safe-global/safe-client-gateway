@@ -8,7 +8,7 @@ import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+import { z } from 'zod';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
@@ -45,7 +45,8 @@ export class NotificationsControllerV2 {
   @Get('chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress')
   @UseGuards(AuthGuard)
   getSafeSubscription(
-    @Param('deviceUuid', new ValidationPipe(UuidSchema)) deviceUuid: UUID,
+    @Param('deviceUuid', new ValidationPipe(z.string().uuid()))
+    deviceUuid: UUID,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
@@ -63,7 +64,8 @@ export class NotificationsControllerV2 {
     'chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress',
   )
   deleteSubscription(
-    @Param('deviceUuid', new ValidationPipe(UuidSchema)) deviceUuid: UUID,
+    @Param('deviceUuid', new ValidationPipe(z.string().uuid()))
+    deviceUuid: UUID,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
@@ -78,7 +80,8 @@ export class NotificationsControllerV2 {
   @Delete('chains/:chainId/notifications/devices/:deviceUuid')
   deleteDevice(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) _chainId: string,
-    @Param('deviceUuid', new ValidationPipe(UuidSchema)) deviceUuid: UUID,
+    @Param('deviceUuid', new ValidationPipe(z.string().uuid()))
+    deviceUuid: UUID,
   ): Promise<void> {
     return this.notificationsService.deleteDevice(deviceUuid);
   }
