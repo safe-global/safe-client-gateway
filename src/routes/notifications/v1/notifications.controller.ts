@@ -4,6 +4,7 @@ import {
   Delete,
   HttpCode,
   Inject,
+  NotFoundException,
   Param,
   Post,
 } from '@nestjs/common';
@@ -20,6 +21,10 @@ import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.
 import { recoverMessageAddress } from 'viem';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  LoggingService,
+  type ILoggingService,
+} from '@/logging/logging.interface';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
@@ -34,6 +39,9 @@ export class NotificationsController {
 
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.isPushNotificationV2Enabled =
       this.configurationService.getOrThrow<boolean>(
@@ -47,24 +55,51 @@ export class NotificationsController {
   async registerDevice(
     @Body() registerDeviceDto: RegisterDeviceDto,
   ): Promise<void> {
-    await this.notificationsService.registerDevice(registerDeviceDto);
+    if (!this.isPushNotificationV2Enabled) {
+      return await this.notificationsService.registerDevice(registerDeviceDto);
+    }
 
-    if (this.isPushNotificationV2Enabled) {
-      // Compatibility with V2
-      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
-      const compatibleV2Requests =
-        await this.createV2RegisterDto(registerDeviceDto);
+    // Compatibility with V2
+    const compatibleV2Requests =
+      await this.createV2RegisterDto(registerDeviceDto);
 
-      const v2Requests = [];
-      for (const compatibleV2Request of compatibleV2Requests) {
-        v2Requests.push(
-          await this.notificationServiceV2.upsertSubscriptions(
-            compatibleV2Request,
-          ),
+    const v2Requests = [];
+
+    for (const compatibleV2Request of compatibleV2Requests) {
+      v2Requests.push(
+        await this.notificationServiceV2.upsertSubscriptions(
+          compatibleV2Request,
+        ),
+      );
+    }
+    await Promise.all(v2Requests);
+
+    // Remove tokens from the old service to prevent duplication.
+    if (registerDeviceDto.uuid) {
+      const unregistrationRequests = [];
+      for (const safeRegistration of registerDeviceDto.safeRegistrations) {
+        unregistrationRequests.push(
+          this.notificationsService.unregisterDevice({
+            chainId: safeRegistration.chainId,
+            uuid: registerDeviceDto.uuid,
+          }),
         );
       }
 
-      await Promise.all(v2Requests);
+      await Promise.allSettled(unregistrationRequests).then(
+        (results: Array<PromiseSettledResult<unknown>>) => {
+          for (const result of results) {
+            // If the device is not already registered, the TX service will throw a 404 error, but we can safely ignore it.
+            if (
+              result.status === 'rejected' &&
+              'code' in result.reason &&
+              result.reason.code !== 404
+            ) {
+              this.loggingService.error(result.reason);
+            }
+          }
+        },
+      );
     }
   }
 
@@ -140,12 +175,37 @@ export class NotificationsController {
     @Param('chainId') chainId: string,
     @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
   ): Promise<void> {
-    await this.notificationsService.unregisterDevice({ chainId, uuid });
-
     if (this.isPushNotificationV2Enabled) {
-      // Compatibility with V2
-      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
+      return await this.unregisterDeviceV2Compatible(chainId, uuid);
+    }
+
+    await this.notificationsService.unregisterDevice({ chainId, uuid });
+  }
+
+  private async unregisterDeviceV2Compatible(
+    chainId: string,
+    uuid: UUID,
+  ): Promise<void> {
+    try {
       await this.notificationServiceV2.deleteDevice(uuid);
+    } catch (error: unknown) {
+      if (error instanceof NotFoundException) {
+        // Do not throw a NotFound error when attempting to remove the token from the CGW,
+        // This ensures the TX service remove method is called
+      } else {
+        throw error;
+      }
+    }
+
+    try {
+      await this.notificationsService.unregisterDevice({ chainId, uuid });
+    } catch (error: unknown) {
+      // The token might already have been removed from the TX service.
+      // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
+      const errorObject = error as { code?: number };
+      if (errorObject?.code !== 404) {
+        throw error;
+      }
     }
   }
 
@@ -156,20 +216,51 @@ export class NotificationsController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
   ): Promise<void> {
+    if (this.isPushNotificationV2Enabled) {
+      return this.unregisterSafeV2Compatible(chainId, uuid, safeAddress);
+    }
+
     await this.notificationsService.unregisterSafe({
       chainId,
       uuid,
       safeAddress,
     });
+  }
 
-    if (this.isPushNotificationV2Enabled) {
+  private async unregisterSafeV2Compatible(
+    chainId: string,
+    uuid: UUID,
+    safeAddress: `0x${string}`,
+  ): Promise<void> {
+    try {
       // Compatibility with V2
-      // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
       await this.notificationServiceV2.deleteSubscription({
         deviceUuid: uuid,
         chainId: chainId,
         safeAddress: safeAddress,
       });
+    } catch (error: unknown) {
+      if (error instanceof NotFoundException) {
+        // Do not throw a NotFound error when attempting to remove the token from the CGW,
+        // This ensures the TX service remove method is called
+      } else {
+        throw error;
+      }
+    }
+
+    try {
+      await this.notificationsService.unregisterSafe({
+        chainId,
+        uuid,
+        safeAddress,
+      });
+    } catch (error: unknown) {
+      // The token might already have been removed from the TX service.
+      // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
+      const errorObject = error as { code?: number };
+      if (errorObject?.code !== 404) {
+        throw error;
+      }
     }
   }
 }

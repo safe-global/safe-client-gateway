@@ -19,6 +19,7 @@ import { notificationDeviceBuilder } from '@/datasources/notifications/entities/
 import { NotificationType as NotificationTypeEnum } from '@/domain/notifications/v2/entities/notification.entity';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import type { ConfigService } from '@nestjs/config';
+import { NotFoundException } from '@nestjs/common';
 
 describe('NotificationsRepositoryV2', () => {
   const mockLoggingService = {
@@ -527,6 +528,34 @@ describe('NotificationsRepositoryV2', () => {
       expect(subscriptionAfterRemoval).toHaveLength(0);
     });
 
+    it('Should throw NotFoundException if a subscription does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      const notificationSubscriptionRepository = dataSource.getRepository(
+        NotificationSubscription,
+      );
+      jest.spyOn(notificationSubscriptionRepository, 'remove');
+
+      const subscription = await notificationSubscriptionRepository.findBy({
+        safe_address: upsertSubscriptionsDto.safes[0].address,
+        chain_id: upsertSubscriptionsDto.safes[0].chainId,
+        signer_address: authPayload.signer_address,
+      });
+
+      const result = notificationsRepositoryService.deleteSubscription({
+        deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+        chainId: upsertSubscriptionsDto.safes[0].chainId,
+        safeAddress: upsertSubscriptionsDto.safes[0].address,
+      });
+
+      await expect(result).rejects.toThrow(
+        new NotFoundException('No Subscription Found!'),
+      );
+      expect(subscription).toHaveLength(0);
+    });
+
     it('Should not try to remove if a subscription does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -543,12 +572,13 @@ describe('NotificationsRepositoryV2', () => {
         signer_address: authPayload.signer_address,
       });
 
-      await notificationsRepositoryService.deleteSubscription({
+      const result = notificationsRepositoryService.deleteSubscription({
         deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
         chainId: upsertSubscriptionsDto.safes[0].chainId,
         safeAddress: upsertSubscriptionsDto.safes[0].address,
       });
 
+      await expect(result).rejects.toThrow();
       expect(subscription).toHaveLength(0);
       expect(notificationSubscriptionRepository.remove).not.toHaveBeenCalled();
     });
@@ -573,24 +603,18 @@ describe('NotificationsRepositoryV2', () => {
       expect(findDevice).toBeNull();
     });
 
-    it('Should not throw if a uuid does not exist', async () => {
+    it('Should throw NotFoundException if a uuid does not exist', async () => {
       const deviceDto = notificationDeviceBuilder()
         .with('id', faker.number.int({ min: 1, max: 1999 }))
         .build();
 
-      const notificationDeviceRepository =
-        dataSource.getRepository(NotificationDevice);
-
-      const result = await notificationsRepositoryService.deleteDevice(
+      const result = notificationsRepositoryService.deleteDevice(
         deviceDto.device_uuid,
       );
 
-      const findDevice = await notificationDeviceRepository.findOneBy({
-        device_uuid: deviceDto.device_uuid,
-      });
-
-      expect(findDevice).toBeNull();
-      expect(result).toBeUndefined();
+      await expect(result).rejects.toThrow(
+        new NotFoundException('No Device Found!'),
+      );
     });
 
     it('Should delete a device with its subscription', async () => {
