@@ -28,12 +28,9 @@ import request from 'supertest';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
 import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
-import { NotificationsDatasourceModule } from '@/datasources/notifications/notifications.datasource.module';
-import { TestNotificationsDatasourceModule } from '@/datasources/notifications/__tests__/test.notifications.datasource.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { INotificationsDatasource } from '@/domain/interfaces/notifications.datasource.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -57,12 +54,15 @@ import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.post
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
+import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
+import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
 
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
 describe.skip('Post Hook Events for Notifications (Unit)', () => {
   let app: INestApplication<Server>;
   let pushNotificationsApi: jest.MockedObjectDeep<IPushNotificationsApi>;
-  let notificationsDatasource: jest.MockedObjectDeep<INotificationsDatasource>;
+  let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: IConfigurationService;
   let authToken: string;
@@ -99,17 +99,18 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       .useModule(TestPostgresDatabaseModuleV2)
       .overrideModule(PushNotificationsApiModule)
       .useModule(TestPushNotificationsApiModule)
-      .overrideModule(NotificationsDatasourceModule)
-      .useModule(TestNotificationsDatasourceModule)
+      .overrideModule(NotificationsRepositoryV2Module)
+      .useModule(TestNotificationsRepositoryV2Module)
       .compile();
     app = moduleFixture.createNestApplication();
 
     networkService = moduleFixture.get(NetworkService);
     pushNotificationsApi = moduleFixture.get(IPushNotificationsApi);
-    notificationsDatasource = moduleFixture.get(INotificationsDatasource);
     configurationService = moduleFixture.get(IConfigurationService);
     authToken = configurationService.getOrThrow('auth.token');
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+
+    notificationsRepository = moduleFixture.get(INotificationsRepositoryV2);
 
     await app.init();
   }
@@ -161,7 +162,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       },
     );
     const chain = chainBuilder().build();
-    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
+    notificationsRepository.getSubscribersBySafe.mockResolvedValue(subscribers);
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
         return Promise.resolve({
@@ -212,7 +213,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           count: { min: 1, max: 5 },
         },
       );
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -294,7 +295,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           count: { min: 1, max: 5 },
         },
       );
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -373,7 +374,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         )
         .with('threshold', faker.number.int({ min: 2 }))
         .build();
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -445,7 +446,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           subscribers.map((subscriber) => subscriber.subscriber),
         )
         .build();
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -497,7 +498,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           subscribers.map((subscriber) => subscriber.subscriber),
         )
         .build();
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const multisigTransaction = multisigTransactionBuilder()
@@ -566,7 +567,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }));
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const confirmations = faker.helpers
@@ -659,7 +660,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           subscribers.map((subscriber) => subscriber.subscriber),
         )
         .build();
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -731,7 +732,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           subscribers.map((subscriber) => subscriber.subscriber),
         )
         .build();
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -783,7 +784,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           subscribers.map((subscriber) => subscriber.subscriber),
         )
         .build();
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const message = messageBuilder()
@@ -853,7 +854,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }));
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const confirmations = faker.helpers
@@ -952,7 +953,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           .with('safe', event.address)
           .build();
       });
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -1031,7 +1032,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           .with('safe', event.address)
           .build();
       });
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -1084,7 +1085,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           count: { min: 1, max: 5 },
         },
       );
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const delegates = subscribers.map((subscriber) => {
@@ -1164,7 +1165,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }));
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const delegates = subscribers.map((subscriber) => {
@@ -1270,7 +1271,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           .with('safe', event.address)
           .build();
       });
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -1343,7 +1344,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           count: { min: 1, max: 5 },
         },
       );
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const delegates = subscribers.map((subscriber) => {
@@ -1402,7 +1403,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           count: { min: 1, max: 5 },
         },
       );
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const delegates = subscribers.map((subscriber) => {
@@ -1483,7 +1484,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         deviceUuid: faker.string.uuid() as UUID,
         cloudMessagingToken: faker.string.alphanumeric(),
       }));
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
       const delegates = subscribers.map((subscriber) => {
@@ -1588,7 +1589,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           count: { min: 1, max: 5 },
         },
       );
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -1655,7 +1656,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           count: { min: 1, max: 5 },
         },
       );
-      notificationsDatasource.getSubscribersBySafe.mockResolvedValue(
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
 
@@ -1755,7 +1756,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           .build(),
       ])
       .build();
-    notificationsDatasource.getSubscribersBySafe.mockResolvedValue([
+    notificationsRepository.getSubscribersBySafe.mockResolvedValue([
       ...ownerSubscriptions,
       ...delegateSubscriptions,
       ...nonOwnerDelegateSubscriptions,
@@ -1898,7 +1899,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
           .build(),
       ])
       .build();
-    notificationsDatasource.getSubscribersBySafe.mockResolvedValue([
+    notificationsRepository.getSubscribersBySafe.mockResolvedValue([
       ...ownerSubscriptions,
       ...delegateSubscriptions,
       ...nonOwnerDelegateSubscriptions,
@@ -2004,7 +2005,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       },
     );
     const chain = chainBuilder().build();
-    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
+    notificationsRepository.getSubscribersBySafe.mockResolvedValue(subscribers);
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
         return Promise.resolve({
@@ -2033,8 +2034,8 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       .send(event)
       .expect(202);
 
-    expect(notificationsDatasource.deleteDevice).toHaveBeenCalledTimes(1);
-    expect(notificationsDatasource.deleteDevice).toHaveBeenNthCalledWith(
+    expect(notificationsRepository.deleteDevice).toHaveBeenCalledTimes(1);
+    expect(notificationsRepository.deleteDevice).toHaveBeenNthCalledWith(
       1,
       subscribers[0].deviceUuid,
     );
@@ -2096,7 +2097,7 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         count: safe.owners.length,
       },
     );
-    notificationsDatasource.getSubscribersBySafe.mockResolvedValue(subscribers);
+    notificationsRepository.getSubscribersBySafe.mockResolvedValue(subscribers);
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({

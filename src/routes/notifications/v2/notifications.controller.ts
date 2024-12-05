@@ -2,7 +2,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import {
   UpsertSubscriptionsDto,
   UpsertSubscriptionsDtoSchema,
-} from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
+} from '@/routes/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
@@ -22,7 +22,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
-import type { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
+import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
