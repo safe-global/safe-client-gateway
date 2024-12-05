@@ -202,10 +202,9 @@ export class NotificationsController {
     } catch (error: unknown) {
       // The token might already have been removed from the TX service.
       // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
-      if (error instanceof Error) {
-        if ('code' in error && error.code !== 404) {
-          throw error;
-        }
+      const errorObject = error as { code?: number };
+      if (errorObject?.code !== 404) {
+        throw error;
       }
     }
   }
@@ -258,10 +257,9 @@ export class NotificationsController {
     } catch (error: unknown) {
       // The token might already have been removed from the TX service.
       // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
-      if (error instanceof Error) {
-        if ('code' in error && error.code !== 404) {
-          throw error;
-        }
+      const errorObject = error as { code?: number };
+      if (errorObject?.code !== 404) {
+        throw error;
       }
     }
   }
