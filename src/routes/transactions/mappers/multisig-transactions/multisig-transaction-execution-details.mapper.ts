@@ -147,12 +147,12 @@ export class MultisigTransactionExecutionDetailsMapper {
     } = args.transaction;
 
     if (
-      !data ||
-      !safeTxGas ||
-      !baseGas ||
-      !gasPrice ||
-      !gasToken ||
-      !refundReceiver
+      data === null ||
+      safeTxGas === null ||
+      baseGas === null ||
+      gasPrice === null ||
+      gasToken === null ||
+      refundReceiver === null
     ) {
       return null;
     }
