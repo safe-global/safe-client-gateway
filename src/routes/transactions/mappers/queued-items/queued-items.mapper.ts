@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { groupBy } from 'lodash';
+import groupBy from 'lodash/groupBy';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { MultisigTransactionMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction.mapper';

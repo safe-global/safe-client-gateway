@@ -16,7 +16,9 @@ import {
   NetworkService,
   INetworkService,
 } from '@/datasources/network/network.service.interface';
-import { difference, get, random } from 'lodash';
+import difference from 'lodash/difference';
+import get from 'lodash/get';
+import random from 'lodash/random';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { asError } from '@/logging/utils';

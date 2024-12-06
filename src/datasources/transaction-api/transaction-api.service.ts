@@ -30,7 +30,7 @@ import type { AddConfirmationDto } from '@/domain/transactions/entities/add-conf
 import type { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
-import { get } from 'lodash';
+import get from 'lodash/get';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';

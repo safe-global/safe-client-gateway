@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { groupBy } from 'lodash';
+import groupBy from 'lodash/groupBy';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import {
   isCreationTransaction,

@@ -9,7 +9,7 @@ import {
 } from '@/datasources/balances-api/entities/asset-price.entity';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { sortBy } from 'lodash';
+import sortBy from 'lodash/sortBy';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
