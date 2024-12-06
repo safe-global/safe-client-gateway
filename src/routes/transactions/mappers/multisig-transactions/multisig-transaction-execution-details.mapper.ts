@@ -13,9 +13,14 @@ import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
 } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
+import semverSatisfies from 'semver/functions/satisfies';
+import { getTypesForEIP712Domain, hashDomain, hashStruct } from 'viem';
 
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
+  private static readonly CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
+  private static readonly BASE_GAS_SAFETX_HASH_VERSION = '>=1.0.0';
+
   constructor(
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
@@ -46,6 +51,8 @@ export class MultisigTransactionExecutionDetailsMapper {
     const proposedByDelegate = transaction.proposedByDelegate
       ? new AddressInfo(transaction.proposedByDelegate)
       : null;
+    const domainHash = this.getDomainHash({ chainId, safe });
+    const messageHash = this.getMessageHash({ chainId, safe, transaction });
 
     const [gasTokenInfo, executor, refundReceiver, rejectors] =
       await Promise.all([
@@ -65,25 +72,127 @@ export class MultisigTransactionExecutionDetailsMapper {
         this._getRejectors(chainId, transaction),
       ]);
 
-    return new MultisigExecutionDetails(
-      transaction.submissionDate.getTime(),
-      transaction.nonce,
-      transaction.safeTxGas?.toString() ?? '0',
-      transaction.baseGas?.toString() ?? '0',
-      transaction.gasPrice?.toString() ?? '0',
+    return new MultisigExecutionDetails({
+      submittedAt: transaction.submissionDate.getTime(),
+      nonce: transaction.nonce,
+      safeTxGas: transaction.safeTxGas?.toString() ?? '0',
+      baseGas: transaction.baseGas?.toString() ?? '0',
+      gasPrice: transaction.gasPrice?.toString() ?? '0',
       gasToken,
       refundReceiver,
-      transaction.safeTxHash,
+      safeTxHash: transaction.safeTxHash,
+      domainHash,
+      messageHash,
       executor,
       signers,
-      transaction.confirmationsRequired,
+      confirmationsRequired: transaction.confirmationsRequired,
       confirmations,
       rejectors,
       gasTokenInfo,
-      transaction.trusted,
+      trusted: transaction.trusted,
       proposer,
       proposedByDelegate,
+    });
+  }
+
+  private getDomainHash(args: {
+    chainId: string;
+    safe: Safe;
+  }): `0x${string}` | null {
+    if (!args.safe.version) {
+      return null;
+    }
+
+    // >=1.3.0 Safe contracts include the `chainId` in domain separator
+    const includesChainId = semverSatisfies(
+      args.safe.version,
+      MultisigTransactionExecutionDetailsMapper.CHAIN_ID_DOMAIN_HASH_VERSION,
     );
+    const domain = {
+      ...(includesChainId && { chainId: Number(args.chainId) }),
+      verifyingContract: args.safe.address,
+    };
+
+    return hashDomain({
+      domain: {
+        chainId: Number(args.chainId),
+        verifyingContract: args.safe.address,
+      },
+      types: {
+        EIP712Domain: getTypesForEIP712Domain({ domain }),
+      },
+    });
+  }
+
+  private getMessageHash(args: {
+    chainId: string;
+    safe: Safe;
+    transaction: MultisigTransaction;
+  }): `0x${string}` | null {
+    if (!args.safe.version) {
+      return null;
+    }
+
+    const {
+      to,
+      value,
+      data,
+      operation,
+      safeTxGas,
+      baseGas,
+      gasPrice,
+      gasToken,
+      refundReceiver,
+      nonce,
+    } = args.transaction;
+
+    if (
+      !data ||
+      !safeTxGas ||
+      !baseGas ||
+      !gasPrice ||
+      !gasToken ||
+      !refundReceiver
+    ) {
+      return null;
+    }
+
+    // >=1.0.0 Safe contracts use `baseGas` instead of `dataGas`
+    const usesBaseGas = semverSatisfies(
+      args.safe.version,
+      MultisigTransactionExecutionDetailsMapper.BASE_GAS_SAFETX_HASH_VERSION,
+    );
+    const dataGasOrBaseGas = usesBaseGas ? 'baseGas' : 'dataGas';
+
+    return hashStruct({
+      primaryType: 'SafeTx',
+      data: {
+        to,
+        value,
+        data,
+        operation,
+        safeTxGas,
+        [dataGasOrBaseGas]: baseGas,
+        gasPrice,
+        gasToken,
+        refundReceiver,
+        nonce,
+      },
+      types: {
+        SafeTx: [
+          { name: 'to', type: 'address' },
+          { name: 'value', type: 'uint256' },
+          { name: 'data', type: 'bytes' },
+          { name: 'operation', type: 'uint8' },
+          { name: 'safeTxGas', type: 'uint256' },
+          { name: dataGasOrBaseGas, type: 'uint256' },
+          { name: 'gasPrice', type: 'uint256' },
+          { name: 'gasToken', type: 'address' },
+          { name: 'refundReceiver', type: 'address' },
+          { name: 'nonce', type: 'uint256' },
+        ],
+      },
+    });
   }
 
   /**
