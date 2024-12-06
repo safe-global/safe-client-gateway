@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { isEmpty } from 'lodash';
+import isEmpty from 'lodash/isEmpty';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';

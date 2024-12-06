@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { max } from 'lodash';
+import max from 'lodash/max';
 import semver from 'semver';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { Singleton } from '@/domain/chains/entities/singleton.entity';

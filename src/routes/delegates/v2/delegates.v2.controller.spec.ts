@@ -29,7 +29,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { omit } from 'lodash';
+import omit from 'lodash/omit';
 import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';

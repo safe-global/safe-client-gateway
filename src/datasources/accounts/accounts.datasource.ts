@@ -26,7 +26,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import crypto from 'crypto';
-import { omit } from 'lodash';
+import omit from 'lodash/omit';
 import postgres from 'postgres';
 
 @Injectable()
