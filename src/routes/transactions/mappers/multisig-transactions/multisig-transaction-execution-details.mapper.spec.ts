@@ -417,8 +417,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
           !transaction.baseGas ||
           !transaction.gasPrice ||
           !transaction.gasToken ||
-          !transaction.refundReceiver ||
-          !transaction.nonce
+          !transaction.refundReceiver
         ) {
           // Appease TypeScript
           throw new Error('Missing transaction data');
