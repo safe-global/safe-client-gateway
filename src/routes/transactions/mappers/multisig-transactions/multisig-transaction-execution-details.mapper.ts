@@ -17,9 +17,6 @@ import { SafeTypedDataHelper } from '@/domain/contracts/safe-typed-data.helper';
 
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
-  private static readonly CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
-  private static readonly BASE_GAS_SAFETX_HASH_VERSION = '>=1.0.0';
-
   constructor(
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,

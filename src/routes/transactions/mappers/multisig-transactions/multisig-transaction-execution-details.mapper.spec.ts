@@ -315,6 +315,30 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     );
   });
 
+  it('should return null SafeTx message hash if safe version is null', async () => {
+    const chainId = faker.string.numeric();
+    const safe = safeBuilder().with('version', null).build();
+    const transaction = multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .build();
+    safeRepository.getMultisigTransactions.mockResolvedValue(
+      pageBuilder<MultisigTransaction>().with('results', []).build(),
+    );
+
+    const actual = await mapper.mapMultisigExecutionDetails(
+      chainId,
+      transaction,
+      safe,
+    );
+
+    expect(actual).toEqual(
+      expect.objectContaining({
+        type: 'MULTISIG',
+        messageHash: null,
+      }),
+    );
+  });
+
   it.each([
     'data' as const,
     'safeTxGas' as const,
@@ -349,28 +373,4 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       );
     },
   );
-
-  it('should return null SafeTx hash if safe version is null', async () => {
-    const chainId = faker.string.numeric();
-    const safe = safeBuilder().with('version', null).build();
-    const transaction = multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .build();
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>().with('results', []).build(),
-    );
-
-    const actual = await mapper.mapMultisigExecutionDetails(
-      chainId,
-      transaction,
-      safe,
-    );
-
-    expect(actual).toEqual(
-      expect.objectContaining({
-        type: 'MULTISIG',
-        messageHash: null,
-      }),
-    );
-  });
 });
