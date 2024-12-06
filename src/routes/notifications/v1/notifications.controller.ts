@@ -29,7 +29,7 @@ import {
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
 export class NotificationsController {
-  private isPushNotificationV2Enabled = false;
+  private isPushNotificationV2Enabled: boolean;
   constructor(
     // Adding NotificationServiceV2 to ensure compatibility with V1.
     // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
