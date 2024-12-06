@@ -20,6 +20,7 @@ import {
   keccak256,
   parseAbiParameters,
 } from 'viem';
+import { SafeTypedDataHelper } from '@/domain/contracts/safe-typed-data.helper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -42,11 +43,13 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    const safeTypedDataHelper = new SafeTypedDataHelper();
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,
       tokenRepository,
       safeRepository,
       loggingService,
+      safeTypedDataHelper,
     );
   });
 
