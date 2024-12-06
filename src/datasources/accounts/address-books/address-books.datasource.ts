@@ -33,7 +33,7 @@ export class AddressBooksDatasource implements IAddressBooksDatasource {
       args.chainId,
     );
     const addressBookItem = {
-      id: (Math.max(...addressBook.data.map((i) => i.id)) ?? 0) + 1,
+      id: Math.max(...addressBook.data.map((i) => i.id).concat(0)) + 1,
       address: args.createAddressBookItemDto.address,
       name: args.createAddressBookItemDto.name,
     };
