@@ -15,7 +15,8 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigConfirmationDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { getAddress } from 'viem';
-import { SafeTypedDataHelper } from '@/domain/contracts/safe-typed-data.helper';
+import { TypedDataMapper } from '@/domain/common/mappers/typed-data.mapper';
+import { TypedData } from '@/routes/transactions/entities/typed-data/typed-data.entity';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -38,7 +39,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    const safeTypedDataHelper = new SafeTypedDataHelper();
+    const safeTypedDataHelper = new TypedDataMapper();
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,
       tokenRepository,
@@ -91,6 +92,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
+        typedData: expect.any(TypedData),
       }),
     );
   });
@@ -158,6 +160,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
+        typedData: expect.any(TypedData),
       }),
     );
   });
@@ -227,6 +230,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
+        typedData: expect.any(TypedData),
       }),
     );
   });
@@ -290,87 +294,4 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       }),
     );
   });
-
-  it('should return null domainHash if safe version is null', async () => {
-    const chainId = faker.string.numeric();
-    const safe = safeBuilder().with('version', null).build();
-    const transaction = multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .build();
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>().with('results', []).build(),
-    );
-
-    const actual = await mapper.mapMultisigExecutionDetails(
-      chainId,
-      transaction,
-      safe,
-    );
-
-    expect(actual).toEqual(
-      expect.objectContaining({
-        type: 'MULTISIG',
-        domainHash: null,
-      }),
-    );
-  });
-
-  it('should return null SafeTx message hash if safe version is null', async () => {
-    const chainId = faker.string.numeric();
-    const safe = safeBuilder().with('version', null).build();
-    const transaction = multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .build();
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>().with('results', []).build(),
-    );
-
-    const actual = await mapper.mapMultisigExecutionDetails(
-      chainId,
-      transaction,
-      safe,
-    );
-
-    expect(actual).toEqual(
-      expect.objectContaining({
-        type: 'MULTISIG',
-        messageHash: null,
-      }),
-    );
-  });
-
-  it.each([
-    'data' as const,
-    'safeTxGas' as const,
-    'baseGas' as const,
-    'gasPrice' as const,
-    'gasToken' as const,
-    'refundReceiver' as const,
-  ])(
-    'should return null SafeTx message hash if transaction %s is null',
-    async (field) => {
-      const chainId = faker.string.numeric();
-      const safe = safeBuilder().with('version', null).build();
-      const transaction = multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with(field, null)
-        .build();
-      safeRepository.getMultisigTransactions.mockResolvedValue(
-        pageBuilder<MultisigTransaction>().with('results', []).build(),
-      );
-
-      const actual = await mapper.mapMultisigExecutionDetails(
-        chainId,
-        transaction,
-        safe,
-      );
-
-      expect(actual).toEqual(
-        expect.objectContaining({
-          type: 'MULTISIG',
-          messageHash: null,
-        }),
-      );
-    },
-  );
 });

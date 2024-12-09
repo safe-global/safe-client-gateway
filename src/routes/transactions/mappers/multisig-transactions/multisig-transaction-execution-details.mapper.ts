@@ -13,7 +13,7 @@ import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
 } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
-import { SafeTypedDataHelper } from '@/domain/contracts/safe-typed-data.helper';
+import { TypedDataMapper } from '@/domain/common/mappers/typed-data.mapper';
 
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
@@ -22,8 +22,8 @@ export class MultisigTransactionExecutionDetailsMapper {
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(SafeTypedDataHelper)
-    private readonly safeTypedDataHelper: SafeTypedDataHelper,
+    @Inject(TypedDataMapper)
+    private readonly typedDataMapper: TypedDataMapper,
   ) {}
 
   async mapMultisigExecutionDetails(
@@ -49,11 +49,7 @@ export class MultisigTransactionExecutionDetailsMapper {
     const proposedByDelegate = transaction.proposedByDelegate
       ? new AddressInfo(transaction.proposedByDelegate)
       : null;
-    const domainHash = this.safeTypedDataHelper.getDomainHash({
-      chainId,
-      safe,
-    });
-    const messageHash = this.safeTypedDataHelper.getSafeTxMessageHash({
+    const typedData = this.typedDataMapper.mapSafeTxTypedData({
       chainId,
       safe,
       transaction,
@@ -77,27 +73,26 @@ export class MultisigTransactionExecutionDetailsMapper {
         this._getRejectors(chainId, transaction),
       ]);
 
-    return new MultisigExecutionDetails({
-      submittedAt: transaction.submissionDate.getTime(),
-      nonce: transaction.nonce,
-      safeTxGas: transaction.safeTxGas?.toString() ?? '0',
-      baseGas: transaction.baseGas?.toString() ?? '0',
-      gasPrice: transaction.gasPrice?.toString() ?? '0',
+    return new MultisigExecutionDetails(
+      transaction.submissionDate.getTime(),
+      transaction.nonce,
+      transaction.safeTxGas?.toString() ?? '0',
+      transaction.baseGas?.toString() ?? '0',
+      transaction.gasPrice?.toString() ?? '0',
       gasToken,
       refundReceiver,
-      safeTxHash: transaction.safeTxHash,
-      domainHash,
-      messageHash,
+      transaction.safeTxHash,
       executor,
       signers,
-      confirmationsRequired: transaction.confirmationsRequired,
+      transaction.confirmationsRequired,
       confirmations,
       rejectors,
       gasTokenInfo,
-      trusted: transaction.trusted,
+      transaction.trusted,
       proposer,
       proposedByDelegate,
-    });
+      typedData,
+    );
   }
 
   /**

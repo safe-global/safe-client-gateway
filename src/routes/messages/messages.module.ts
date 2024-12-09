@@ -6,6 +6,7 @@ import { MessagesService } from '@/routes/messages/messages.service';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { MessagesRepositoryModule } from '@/domain/messages/messages.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
+import { TypedDataMapper } from '@/domain/common/mappers/typed-data.mapper';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repositor
     SafeRepositoryModule,
   ],
   controllers: [MessagesController],
-  providers: [MessagesService, MessageMapper],
+  providers: [MessagesService, MessageMapper, TypedDataMapper],
 })
 export class MessagesModule {}

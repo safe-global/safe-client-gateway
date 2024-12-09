@@ -5,6 +5,7 @@ import {
   ExecutionDetails,
   ExecutionDetailsType,
 } from '@/routes/transactions/entities/transaction-details/execution-details.entity';
+import { TypedData } from '@/routes/transactions/entities/typed-data/typed-data.entity';
 
 export class MultisigConfirmationDetails {
   @ApiProperty()
@@ -44,10 +45,6 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   refundReceiver: AddressInfo;
   @ApiProperty()
   safeTxHash: string;
-  @ApiPropertyOptional({ nullable: true })
-  domainHash: `0x${string}` | null;
-  @ApiPropertyOptional({ nullable: true })
-  messageHash: `0x${string}` | null;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   executor: AddressInfo | null;
   @ApiProperty()
@@ -66,47 +63,47 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   proposer!: AddressInfo | null;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   proposedByDelegate!: AddressInfo | null;
+  @ApiProperty({ type: TypedData })
+  typedData: TypedData;
 
-  constructor(args: {
-    submittedAt: number;
-    nonce: number;
-    safeTxGas: string;
-    baseGas: string;
-    gasPrice: string;
-    gasToken: string;
-    refundReceiver: AddressInfo;
-    safeTxHash: string;
-    domainHash: `0x${string}` | null;
-    messageHash: `0x${string}` | null;
-    executor: AddressInfo | null;
-    signers: AddressInfo[];
-    confirmationsRequired: number;
-    confirmations: MultisigConfirmationDetails[];
-    rejectors: AddressInfo[];
-    gasTokenInfo: Token | null;
-    trusted: boolean;
-    proposer: AddressInfo | null;
-    proposedByDelegate: AddressInfo | null;
-  }) {
+  constructor(
+    submittedAt: number,
+    nonce: number,
+    safeTxGas: string,
+    baseGas: string,
+    gasPrice: string,
+    gasToken: string,
+    refundReceiver: AddressInfo,
+    safeTxHash: string,
+    executor: AddressInfo | null,
+    signers: AddressInfo[],
+    confirmationsRequired: number,
+    confirmations: MultisigConfirmationDetails[],
+    rejectors: AddressInfo[],
+    gasTokenInfo: Token | null,
+    trusted: boolean,
+    proposer: AddressInfo | null,
+    proposedByDelegate: AddressInfo | null,
+    typedData: TypedData,
+  ) {
     super(ExecutionDetailsType.Multisig);
-    this.submittedAt = args.submittedAt;
-    this.nonce = args.nonce;
-    this.safeTxGas = args.safeTxGas;
-    this.baseGas = args.baseGas;
-    this.gasPrice = args.gasPrice;
-    this.gasToken = args.gasToken;
-    this.refundReceiver = args.refundReceiver;
-    this.safeTxHash = args.safeTxHash;
-    this.domainHash = args.domainHash;
-    this.messageHash = args.messageHash;
-    this.executor = args.executor;
-    this.signers = args.signers;
-    this.confirmationsRequired = args.confirmationsRequired;
-    this.confirmations = args.confirmations;
-    this.rejectors = args.rejectors;
-    this.gasTokenInfo = args.gasTokenInfo;
-    this.trusted = args.trusted;
-    this.proposer = args.proposer;
-    this.proposedByDelegate = args.proposedByDelegate;
+    this.submittedAt = submittedAt;
+    this.nonce = nonce;
+    this.safeTxGas = safeTxGas;
+    this.baseGas = baseGas;
+    this.gasPrice = gasPrice;
+    this.gasToken = gasToken;
+    this.refundReceiver = refundReceiver;
+    this.safeTxHash = safeTxHash;
+    this.executor = executor;
+    this.signers = signers;
+    this.confirmationsRequired = confirmationsRequired;
+    this.confirmations = confirmations;
+    this.rejectors = rejectors;
+    this.gasTokenInfo = gasTokenInfo;
+    this.trusted = trusted;
+    this.proposer = proposer;
+    this.proposedByDelegate = proposedByDelegate;
+    this.typedData = typedData;
   }
 }
