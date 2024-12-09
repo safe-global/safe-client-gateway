@@ -5,6 +5,7 @@ import {
   ExecutionDetails,
   ExecutionDetailsType,
 } from '@/routes/transactions/entities/transaction-details/execution-details.entity';
+import { TypedData } from '@/routes/transactions/entities/typed-data/typed-data.entity';
 
 export class MultisigConfirmationDetails {
   @ApiProperty()
@@ -62,6 +63,8 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   proposer!: AddressInfo | null;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   proposedByDelegate!: AddressInfo | null;
+  @ApiProperty({ type: TypedData })
+  typedData: TypedData;
 
   constructor(
     submittedAt: number,
@@ -81,6 +84,7 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     trusted: boolean,
     proposer: AddressInfo | null,
     proposedByDelegate: AddressInfo | null,
+    typedData: TypedData,
   ) {
     super(ExecutionDetailsType.Multisig);
     this.submittedAt = submittedAt;
@@ -100,5 +104,6 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     this.trusted = trusted;
     this.proposer = proposer;
     this.proposedByDelegate = proposedByDelegate;
+    this.typedData = typedData;
   }
 }
