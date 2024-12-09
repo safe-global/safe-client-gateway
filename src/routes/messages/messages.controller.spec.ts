@@ -115,31 +115,37 @@ describe('Messages controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
         .expect(200)
-        .expect({
-          messageHash: message.messageHash,
-          status: MessageStatus.Confirmed,
-          logoUri: null,
-          name: null,
-          message: message.message,
-          creationTimestamp: message.created.getTime(),
-          modifiedTimestamp: message.modified.getTime(),
-          confirmationsSubmitted: messageConfirmations.length,
-          confirmationsRequired: safe.threshold,
-          proposedBy: {
-            value: message.proposedBy,
-            name: null,
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            messageHash: message.messageHash,
+            status: MessageStatus.Confirmed,
             logoUri: null,
-          },
-          confirmations: messageConfirmations.map((confirmation) => ({
-            owner: {
-              value: confirmation.owner,
+            name: null,
+            message: message.message,
+            creationTimestamp: message.created.getTime(),
+            modifiedTimestamp: message.modified.getTime(),
+            confirmationsSubmitted: messageConfirmations.length,
+            confirmationsRequired: safe.threshold,
+            proposedBy: {
+              value: message.proposedBy,
               name: null,
               logoUri: null,
             },
-            signature: confirmation.signature,
-          })),
-          preparedSignature: message.preparedSignature,
-          origin: message.origin,
+            confirmations: messageConfirmations.map((confirmation) => ({
+              owner: {
+                value: confirmation.owner,
+                name: null,
+                logoUri: null,
+              },
+              signature: confirmation.signature,
+            })),
+            preparedSignature: message.preparedSignature,
+            origin: message.origin,
+            typedData: {
+              domainHash: expect.any(String),
+              messageHash: expect.any(String),
+            },
+          });
         });
     });
 
@@ -183,31 +189,37 @@ describe('Messages controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
         .expect(200)
-        .expect({
-          messageHash: message.messageHash,
-          status: MessageStatus.Confirmed,
-          logoUri: safeApps[1].iconUrl,
-          name: safeApps[1].name,
-          message: message.message,
-          creationTimestamp: message.created.getTime(),
-          modifiedTimestamp: message.modified.getTime(),
-          confirmationsSubmitted: messageConfirmations.length,
-          confirmationsRequired: safe.threshold,
-          proposedBy: {
-            value: message.proposedBy,
-            name: null,
-            logoUri: null,
-          },
-          confirmations: messageConfirmations.map((confirmation) => ({
-            owner: {
-              value: confirmation.owner,
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            messageHash: message.messageHash,
+            status: MessageStatus.Confirmed,
+            logoUri: safeApps[1].iconUrl,
+            name: safeApps[1].name,
+            message: message.message,
+            creationTimestamp: message.created.getTime(),
+            modifiedTimestamp: message.modified.getTime(),
+            confirmationsSubmitted: messageConfirmations.length,
+            confirmationsRequired: safe.threshold,
+            proposedBy: {
+              value: message.proposedBy,
               name: null,
               logoUri: null,
             },
-            signature: confirmation.signature,
-          })),
-          preparedSignature: message.preparedSignature,
-          origin: message.origin,
+            confirmations: messageConfirmations.map((confirmation) => ({
+              owner: {
+                value: confirmation.owner,
+                name: null,
+                logoUri: null,
+              },
+              signature: confirmation.signature,
+            })),
+            preparedSignature: message.preparedSignature,
+            origin: message.origin,
+            typedData: {
+              domainHash: expect.any(String),
+              messageHash: expect.any(String),
+            },
+          });
         });
     });
 
@@ -248,31 +260,37 @@ describe('Messages controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
         .expect(200)
-        .expect({
-          messageHash: message.messageHash,
-          status: MessageStatus.NeedsConfirmation,
-          logoUri: null,
-          name: null,
-          message: message.message,
-          creationTimestamp: message.created.getTime(),
-          modifiedTimestamp: message.modified.getTime(),
-          confirmationsSubmitted: messageConfirmations.length,
-          confirmationsRequired: safe.threshold,
-          proposedBy: {
-            value: message.proposedBy,
-            name: null,
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            messageHash: message.messageHash,
+            status: MessageStatus.NeedsConfirmation,
             logoUri: null,
-          },
-          confirmations: messageConfirmations.map((confirmation) => ({
-            owner: {
-              value: confirmation.owner,
+            name: null,
+            message: message.message,
+            creationTimestamp: message.created.getTime(),
+            modifiedTimestamp: message.modified.getTime(),
+            confirmationsSubmitted: messageConfirmations.length,
+            confirmationsRequired: safe.threshold,
+            proposedBy: {
+              value: message.proposedBy,
               name: null,
               logoUri: null,
             },
-            signature: confirmation.signature,
-          })),
-          preparedSignature: null,
-          origin: message.origin,
+            confirmations: messageConfirmations.map((confirmation) => ({
+              owner: {
+                value: confirmation.owner,
+                name: null,
+                logoUri: null,
+              },
+              signature: confirmation.signature,
+            })),
+            preparedSignature: null,
+            origin: message.origin,
+            typedData: {
+              domainHash: expect.any(String),
+              messageHash: expect.any(String),
+            },
+          });
         });
     });
 
@@ -316,31 +334,37 @@ describe('Messages controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
         .expect(200)
-        .expect({
-          messageHash: message.messageHash,
-          status: MessageStatus.NeedsConfirmation,
-          logoUri: safeApps[2].iconUrl,
-          name: safeApps[2].name,
-          message: message.message,
-          creationTimestamp: message.created.getTime(),
-          modifiedTimestamp: message.modified.getTime(),
-          confirmationsSubmitted: messageConfirmations.length,
-          confirmationsRequired: safe.threshold,
-          proposedBy: {
-            value: message.proposedBy,
-            name: null,
-            logoUri: null,
-          },
-          confirmations: messageConfirmations.map((confirmation) => ({
-            owner: {
-              value: confirmation.owner,
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            messageHash: message.messageHash,
+            status: MessageStatus.NeedsConfirmation,
+            logoUri: safeApps[2].iconUrl,
+            name: safeApps[2].name,
+            message: message.message,
+            creationTimestamp: message.created.getTime(),
+            modifiedTimestamp: message.modified.getTime(),
+            confirmationsSubmitted: messageConfirmations.length,
+            confirmationsRequired: safe.threshold,
+            proposedBy: {
+              value: message.proposedBy,
               name: null,
               logoUri: null,
             },
-            signature: confirmation.signature,
-          })),
-          preparedSignature: null,
-          origin: message.origin,
+            confirmations: messageConfirmations.map((confirmation) => ({
+              owner: {
+                value: confirmation.owner,
+                name: null,
+                logoUri: null,
+              },
+              signature: confirmation.signature,
+            })),
+            preparedSignature: null,
+            origin: message.origin,
+            typedData: {
+              domainHash: expect.any(String),
+              messageHash: expect.any(String),
+            },
+          });
         });
     });
 
@@ -381,31 +405,37 @@ describe('Messages controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
         .expect(200)
-        .expect({
-          messageHash: message.messageHash,
-          status: MessageStatus.NeedsConfirmation,
-          logoUri: null,
-          name: null,
-          message: message.message,
-          creationTimestamp: message.created.getTime(),
-          modifiedTimestamp: message.modified.getTime(),
-          confirmationsSubmitted: messageConfirmations.length,
-          confirmationsRequired: safe.threshold,
-          proposedBy: {
-            value: message.proposedBy,
-            name: null,
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            messageHash: message.messageHash,
+            status: MessageStatus.NeedsConfirmation,
             logoUri: null,
-          },
-          confirmations: messageConfirmations.map((confirmation) => ({
-            owner: {
-              value: confirmation.owner,
+            name: null,
+            message: message.message,
+            creationTimestamp: message.created.getTime(),
+            modifiedTimestamp: message.modified.getTime(),
+            confirmationsSubmitted: messageConfirmations.length,
+            confirmationsRequired: safe.threshold,
+            proposedBy: {
+              value: message.proposedBy,
               name: null,
               logoUri: null,
             },
-            signature: confirmation.signature,
-          })),
-          preparedSignature: null,
-          origin: message.origin,
+            confirmations: messageConfirmations.map((confirmation) => ({
+              owner: {
+                value: confirmation.owner,
+                name: null,
+                logoUri: null,
+              },
+              signature: confirmation.signature,
+            })),
+            preparedSignature: null,
+            origin: message.origin,
+            typedData: {
+              domainHash: expect.any(String),
+              messageHash: expect.any(String),
+            },
+          });
         });
     });
 
@@ -444,31 +474,37 @@ describe('Messages controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
         .expect(200)
-        .expect({
-          messageHash: message.messageHash,
-          status: MessageStatus.NeedsConfirmation,
-          logoUri: null,
-          name: null,
-          message: message.message,
-          creationTimestamp: message.created.getTime(),
-          modifiedTimestamp: message.modified.getTime(),
-          confirmationsSubmitted: messageConfirmations.length,
-          confirmationsRequired: safe.threshold,
-          proposedBy: {
-            value: message.proposedBy,
-            name: null,
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            messageHash: message.messageHash,
+            status: MessageStatus.NeedsConfirmation,
             logoUri: null,
-          },
-          confirmations: messageConfirmations.map((confirmation) => ({
-            owner: {
-              value: confirmation.owner,
+            name: null,
+            message: message.message,
+            creationTimestamp: message.created.getTime(),
+            modifiedTimestamp: message.modified.getTime(),
+            confirmationsSubmitted: messageConfirmations.length,
+            confirmationsRequired: safe.threshold,
+            proposedBy: {
+              value: message.proposedBy,
               name: null,
               logoUri: null,
             },
-            signature: confirmation.signature,
-          })),
-          preparedSignature: null,
-          origin: message.origin,
+            confirmations: messageConfirmations.map((confirmation) => ({
+              owner: {
+                value: confirmation.owner,
+                name: null,
+                logoUri: null,
+              },
+              signature: confirmation.signature,
+            })),
+            preparedSignature: null,
+            origin: message.origin,
+            typedData: {
+              domainHash: expect.any(String),
+              messageHash: expect.any(String),
+            },
+          });
         });
     });
   });
@@ -582,6 +618,10 @@ describe('Messages controller', () => {
                   })),
                   preparedSignature: null,
                   origin: message.origin,
+                  typedData: {
+                    domainHash: expect.any(String),
+                    messageHash: expect.any(String),
+                  },
                 },
               ])
               .build(),

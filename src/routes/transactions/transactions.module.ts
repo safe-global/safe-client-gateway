@@ -1,6 +1,6 @@
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
-import { SafeTypedDataHelper } from '@/domain/contracts/safe-typed-data.helper';
+import { TypedDataMapper } from '@/domain/common/mappers/typed-data.mapper';
 import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
 import { HumanDescriptionRepositoryModule } from '@/domain/human-description/human-description.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
@@ -91,9 +91,9 @@ import { Module } from '@nestjs/common';
     NativeStakingMapper,
     QueuedItemsMapper,
     SafeAppInfoMapper,
-    SafeTypedDataHelper,
     SettingsChangeMapper,
     SwapTransferInfoMapper,
+    TypedDataMapper,
     TransactionDataMapper,
     TransactionPreviewMapper,
     TransactionsHistoryMapper,
