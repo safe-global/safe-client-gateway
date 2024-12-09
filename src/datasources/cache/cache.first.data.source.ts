@@ -20,7 +20,6 @@ import {
   Transaction,
 } from '@/domain/safe/entities/transaction.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { isArray } from 'lodash';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Raw } from '@/validation/entities/raw.entity';
 
@@ -232,7 +231,7 @@ export class CacheFirstDataSource {
       cacheWriteTime: new Date(),
       requestStartTime: new Date(requestStartTime),
       txHashes:
-        isArray(data?.results) && // no validation executed yet at this point
+        Array.isArray(data?.results) && // no validation executed yet at this point
         data.results.map((transaction) => {
           if (isMultisigTransaction(transaction)) {
             return {

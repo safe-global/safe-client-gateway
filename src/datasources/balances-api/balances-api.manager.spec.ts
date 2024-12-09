@@ -9,7 +9,7 @@ import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { sample } from 'lodash';
+import sample from 'lodash/sample';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import { rawify } from '@/validation/entities/raw.entity';
