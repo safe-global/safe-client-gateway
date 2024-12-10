@@ -325,8 +325,10 @@ describe('NotificationsRepositoryV2', () => {
               id: In(subscriptionIds),
             },
           },
-          relations: ['notification_type'],
+          relations: ['notification_type', 'notification_subscription'],
         });
+
+      expect(subscriptionNotificationTypes.length).toBeGreaterThan(0);
 
       const upsertNotificationTypes: Array<string> = [];
       upsertSubscriptionsDto.safes.map((safe) => {
@@ -334,7 +336,7 @@ describe('NotificationsRepositoryV2', () => {
       });
 
       for (const subscriptionNotificationType of subscriptionNotificationTypes) {
-        upsertNotificationTypes.includes(
+        expect(upsertNotificationTypes).toContain(
           subscriptionNotificationType.notification_type.name,
         );
       }

@@ -212,20 +212,19 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       (subscriptionIdentifier) => subscriptionIdentifier.id,
     );
 
-    const subscriptions = await this.getSubscriptionsById(subscriptionIds);
+    const subscriptions = await this.getSubscriptionsById(
+      entityManager,
+      subscriptionIds,
+    );
 
     return subscriptions;
   }
 
-  public async getSubscriptionsById(
+  private async getSubscriptionsById(
+    entityManager: EntityManager,
     subscriptionIds: Array<number>,
   ): Promise<Array<NotificationSubscription>> {
-    const notificationSubscriptionRepository =
-      await this.postgresDatabaseService.getRepository(
-        NotificationSubscription,
-      );
-
-    return await notificationSubscriptionRepository.find({
+    return await entityManager.find(NotificationSubscription, {
       where: { id: In(subscriptionIds) },
     });
   }
