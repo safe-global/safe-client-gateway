@@ -12,6 +12,7 @@ import { Account } from '@/domain/accounts/entities/account.entity';
 import { IAddressBooksDatasource } from '@/domain/interfaces/address-books.datasource.interface';
 import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
+import max from 'lodash/max';
 import postgres from 'postgres';
 
 @Injectable()
@@ -33,7 +34,7 @@ export class AddressBooksDatasource implements IAddressBooksDatasource {
       args.chainId,
     );
     const addressBookItem = {
-      id: Math.max(...addressBook.data.map((i) => i.id).concat(0)) + 1,
+      id: max(addressBook.data.map((i) => i.id)) ?? 0,
       address: args.createAddressBookItemDto.address,
       name: args.createAddressBookItemDto.name,
     };
