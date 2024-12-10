@@ -244,9 +244,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-s3@npm:^3.703.0":
-  version: 3.703.0
-  resolution: "@aws-sdk/client-s3@npm:3.703.0"
+"@aws-sdk/client-s3@npm:^3.705.0":
+  version: 3.705.0
+  resolution: "@aws-sdk/client-s3@npm:3.705.0"
   dependencies:
     "@aws-crypto/sha1-browser": "npm:5.2.0"
     "@aws-crypto/sha256-browser": "npm:5.2.0"
@@ -306,7 +306,7 @@ __metadata:
     "@smithy/util-utf8": "npm:^3.0.0"
     "@smithy/util-waiter": "npm:^3.1.9"
     tslib: "npm:^2.6.2"
-  checksum: 10/bd78caa4f8d64a1c396c67a2eb945e7b4076219483d3ccc8eab6a0dfb337a0f544bba7fdaabec16a634ff0be9d1529f5b6c363a7bf840fb666779e5dfb310bb1
+  checksum: 10/da5907a5f39288b89d547085d1566aca9f58effc95f0449921c8ac86bb4c17f771e11a6fd264807c46147a51e8bd45df410f0a76502d7767c5274ebc065dd35a
   languageName: node
   linkType: hard
 
@@ -8386,7 +8386,7 @@ __metadata:
   resolution: "safe-client-gateway@workspace:."
   dependencies:
     "@aws-sdk/client-kms": "npm:^3.699.0"
-    "@aws-sdk/client-s3": "npm:^3.703.0"
+    "@aws-sdk/client-s3": "npm:^3.705.0"
     "@faker-js/faker": "npm:^9.3.0"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:^6.1.0"
     "@nestjs/cli": "npm:^10.4.8"
