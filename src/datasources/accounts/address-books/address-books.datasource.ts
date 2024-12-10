@@ -12,7 +12,7 @@ import { Account } from '@/domain/accounts/entities/account.entity';
 import { IAddressBooksDatasource } from '@/domain/interfaces/address-books.datasource.interface';
 import { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { max } from 'lodash';
+import max from 'lodash/max';
 import postgres from 'postgres';
 
 @Injectable()

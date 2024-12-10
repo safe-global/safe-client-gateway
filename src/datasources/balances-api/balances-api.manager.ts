@@ -12,7 +12,7 @@ import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.in
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { intersection } from 'lodash';
+import intersection from 'lodash/intersection';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { z } from 'zod';

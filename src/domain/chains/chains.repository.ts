@@ -15,7 +15,7 @@ import {
   IndexingStatusSchema,
 } from '@/domain/indexing/entities/indexing-status.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { differenceBy } from 'lodash';
+import differenceBy from 'lodash/differenceBy';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
