@@ -307,14 +307,20 @@ describe('NotificationsRepositoryV2', () => {
       const notificationSubscriptionNotificationTypeRepository =
         dataSource.getRepository(NotificationSubscriptionNotificationType);
 
-      const subscriptions = await notificationSubscriptionRepository.findBy({
-        signer_address: authPayload.signer_address,
-        chain_id: upsertSubscriptionsDto.safes[0].chainId,
-        safe_address: upsertSubscriptionsDto.safes[0].address,
-        push_notification_device: {
-          device_uuid: upsertSubscriptionResult.deviceUuid,
-        },
-      });
+      const subscriptions: Array<NotificationSubscription> = [];
+      for (const safe of upsertSubscriptionsDto.safes) {
+        const subscriptionQuery =
+          await notificationSubscriptionRepository.findBy({
+            signer_address: authPayload.signer_address,
+            chain_id: safe.chainId,
+            safe_address: safe.address,
+            push_notification_device: {
+              device_uuid: upsertSubscriptionResult.deviceUuid,
+            },
+          });
+        subscriptions.push(...subscriptionQuery);
+      }
+
       const subscriptionIds = subscriptions.map(
         (subscription) => subscription.id,
       );
@@ -328,13 +334,14 @@ describe('NotificationsRepositoryV2', () => {
           relations: ['notification_type', 'notification_subscription'],
         });
 
-      expect(subscriptionNotificationTypes.length).toBeGreaterThan(0);
-
       const upsertNotificationTypes: Array<string> = [];
       upsertSubscriptionsDto.safes.map((safe) => {
         upsertNotificationTypes.push(...safe.notificationTypes);
       });
 
+      expect(upsertNotificationTypes.length).toBe(
+        subscriptionNotificationTypes.length,
+      );
       for (const subscriptionNotificationType of subscriptionNotificationTypes) {
         expect(upsertNotificationTypes).toContain(
           subscriptionNotificationType.notification_type.name,
