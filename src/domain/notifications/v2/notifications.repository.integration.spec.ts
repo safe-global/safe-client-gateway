@@ -307,14 +307,20 @@ describe('NotificationsRepositoryV2', () => {
       const notificationSubscriptionNotificationTypeRepository =
         dataSource.getRepository(NotificationSubscriptionNotificationType);
 
-      const subscriptions = await notificationSubscriptionRepository.findBy({
-        signer_address: authPayload.signer_address,
-        chain_id: upsertSubscriptionsDto.safes[0].chainId,
-        safe_address: upsertSubscriptionsDto.safes[0].address,
-        push_notification_device: {
-          device_uuid: upsertSubscriptionResult.deviceUuid,
-        },
-      });
+      const subscriptions: Array<NotificationSubscription> = [];
+      for (const safe of upsertSubscriptionsDto.safes) {
+        const subscriptionQuery =
+          await notificationSubscriptionRepository.findBy({
+            signer_address: authPayload.signer_address,
+            chain_id: safe.chainId,
+            safe_address: safe.address,
+            push_notification_device: {
+              device_uuid: upsertSubscriptionResult.deviceUuid,
+            },
+          });
+        subscriptions.push(...subscriptionQuery);
+      }
+
       const subscriptionIds = subscriptions.map(
         (subscription) => subscription.id,
       );
@@ -325,7 +331,7 @@ describe('NotificationsRepositoryV2', () => {
               id: In(subscriptionIds),
             },
           },
-          relations: ['notification_type'],
+          relations: ['notification_type', 'notification_subscription'],
         });
 
       const upsertNotificationTypes: Array<string> = [];
@@ -333,8 +339,11 @@ describe('NotificationsRepositoryV2', () => {
         upsertNotificationTypes.push(...safe.notificationTypes);
       });
 
+      expect(upsertNotificationTypes.length).toBe(
+        subscriptionNotificationTypes.length,
+      );
       for (const subscriptionNotificationType of subscriptionNotificationTypes) {
-        upsertNotificationTypes.includes(
+        expect(upsertNotificationTypes).toContain(
           subscriptionNotificationType.notification_type.name,
         );
       }
