@@ -18,6 +18,7 @@ import { CollectiblesModule } from '@/routes/collectibles/collectibles.module';
 import { CommunityModule } from '@/routes/community/community.module';
 import { ContractsModule } from '@/routes/contracts/contracts.module';
 import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
+import { DeduplicationInterceptor } from '@/routes/common/interceptors/deduplication.interceptor';
 import { DelegatesModule } from '@/routes/delegates/delegates.module';
 import {
   HooksModule,
@@ -159,6 +160,10 @@ export class AppModule implements NestModule {
         {
           provide: APP_INTERCEPTOR,
           useClass: CacheControlInterceptor,
+        },
+        {
+          provide: APP_INTERCEPTOR,
+          useClass: DeduplicationInterceptor,
         },
         {
           provide: APP_FILTER,
