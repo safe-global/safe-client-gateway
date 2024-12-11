@@ -94,6 +94,8 @@ export class Chain {
   shortName: string;
   @ApiProperty()
   theme: ApiTheme;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  recommendedMasterCopyVersion: string | null;
 
   constructor(args: {
     chainId: string;
@@ -117,6 +119,7 @@ export class Chain {
     chainLogoUri: string | null;
     balancesProvider: BalancesProvider;
     contractAddresses: ContractAddresses;
+    recommendedMasterCopyVersion: string | null;
   }) {
     this.chainId = args.chainId;
     this.chainName = args.chainName;
@@ -139,5 +142,6 @@ export class Chain {
     this.theme = args.theme;
     this.balancesProvider = args.balancesProvider;
     this.contractAddresses = args.contractAddresses;
+    this.recommendedMasterCopyVersion = args.recommendedMasterCopyVersion;
   }
 }

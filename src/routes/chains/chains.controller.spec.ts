@@ -137,6 +137,8 @@ describe('Chains Controller (Unit)', () => {
               features: chainsResponse.results[0].features,
               balancesProvider: chainsResponse.results[0].balancesProvider,
               contractAddresses: chainsResponse.results[0].contractAddresses,
+              recommendedMasterCopyVersion:
+                chainsResponse.results[0].recommendedMasterCopyVersion,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -164,6 +166,8 @@ describe('Chains Controller (Unit)', () => {
               features: chainsResponse.results[1].features,
               balancesProvider: chainsResponse.results[1].balancesProvider,
               contractAddresses: chainsResponse.results[1].contractAddresses,
+              recommendedMasterCopyVersion:
+                chainsResponse.results[1].recommendedMasterCopyVersion,
             },
           ],
         });
@@ -252,6 +256,8 @@ describe('Chains Controller (Unit)', () => {
               features: chainsResponse.results[0].features,
               balancesProvider: chainsResponse.results[0].balancesProvider,
               contractAddresses: chainsResponse.results[0].contractAddresses,
+              recommendedMasterCopyVersion:
+                chainsResponse.results[0].recommendedMasterCopyVersion,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -279,6 +285,8 @@ describe('Chains Controller (Unit)', () => {
               features: chainsResponse.results[1].features,
               balancesProvider: chainsResponse.results[1].balancesProvider,
               contractAddresses: chainsResponse.results[1].contractAddresses,
+              recommendedMasterCopyVersion:
+                chainsResponse.results[1].recommendedMasterCopyVersion,
             },
           ],
         });
@@ -351,6 +359,7 @@ describe('Chains Controller (Unit)', () => {
           : chainDomain.ensRegistryAddress,
         balancesProvider: chainDomain.balancesProvider,
         contractAddresses: chainDomain.contractAddresses,
+        recommendedMasterCopyVersion: chainDomain.recommendedMasterCopyVersion,
       };
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainDomain),
