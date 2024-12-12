@@ -184,11 +184,14 @@ export class NotificationsController {
 
   private validateTimestamp(timestamp: number): void {
     const now = new Date().getTime();
-    const currentTimestampInSeconds = Math.floor(now / 1000);
-    const expires =
-      timestamp + NotificationsController.REGISTRATION_TIMESTAMP_EXPIRY;
+    const expires = Math.floor(
+      (now + NotificationsController.REGISTRATION_TIMESTAMP_EXPIRY) / 1000,
+    );
 
-    if (currentTimestampInSeconds > expires) {
+    if (
+      Math.abs(expires - timestamp) >
+      NotificationsController.REGISTRATION_TIMESTAMP_EXPIRY
+    ) {
       throw new BadRequestException('The signature is expired!');
     }
   }

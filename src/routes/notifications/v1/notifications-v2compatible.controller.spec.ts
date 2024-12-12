@@ -224,7 +224,41 @@ describe('Notifications Controller (Unit)', () => {
       expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
     });
 
-    it(`Should pass if the timestamp in request is newer than ${REGISTRATION_TIMESTAMP_EXPIRY_MINUTES} minutes ago`, async () => {
+    it(`Should throw if the timestamp is more than ${REGISTRATION_TIMESTAMP_EXPIRY_MINUTES} minutes in the future`, async () => {
+      const registerDeviceDto = await buildInputDto();
+      const expiryThresholdSeconds = REGISTRATION_TIMESTAMP_EXPIRY + 60;
+      const expiryDateTime =
+        parseInt(registerDeviceDto.timestamp!) + expiryThresholdSeconds;
+      const expiredTimestampInSeconds = Math.floor(expiryDateTime);
+      registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
+      networkService.get.mockImplementation(({ url }) =>
+        url.includes(`${safeConfigUrl}/api/v1/chains/`)
+          ? Promise.resolve({
+              data: rawify(chainBuilder().build()),
+              status: 200,
+            })
+          : rejectForUrl(url),
+      );
+      networkService.post.mockImplementation(({ url }) =>
+        url.includes('/api/v1/notifications/devices/')
+          ? Promise.resolve({ data: rawify({}), status: 200 })
+          : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send(registerDeviceDto)
+        .expect(400)
+        .expect({
+          message: 'The signature is expired!',
+          error: 'Bad Request',
+          statusCode: 400,
+        });
+
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
+    });
+
+    it(`Should pass if the timestamp in within then last ${REGISTRATION_TIMESTAMP_EXPIRY_MINUTES} minutes`, async () => {
       const registerDeviceDto = await buildInputDto();
       const expiredDateTime = parseInt(registerDeviceDto.timestamp!) * 1000;
       const expiredTimestampInSeconds = Math.floor(expiredDateTime / 1000);
