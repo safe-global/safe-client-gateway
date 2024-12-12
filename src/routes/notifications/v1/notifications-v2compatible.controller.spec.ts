@@ -49,6 +49,9 @@ describe('Notifications Controller (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
   let notificationServiceV2: jest.MockedObjectDeep<NotificationsServiceV2>;
+  const REGISTRATION_TIMESTAMP_EXPIRY_MINUTES = 5;
+  const REGISTRATION_TIMESTAMP_EXPIRY =
+    REGISTRATION_TIMESTAMP_EXPIRY_MINUTES * 60;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -103,9 +106,7 @@ describe('Notifications Controller (Unit)', () => {
   ): Promise<RegisterDeviceDto> => {
     const uuid = faker.string.uuid() as UUID;
     const cloudMessagingToken = faker.string.uuid() as UUID;
-    const timestamp = faker.date.recent();
-    timestamp.setMilliseconds(0);
-    const timestampWithoutMilliseconds = timestamp.getTime();
+    const currentTimestampInSeconds = Math.floor(new Date().getTime() / 1000);
 
     const safeRegistrations = await Promise.all(
       faker.helpers.multiple(
@@ -114,7 +115,7 @@ describe('Notifications Controller (Unit)', () => {
             signaturePrefix: 'gnosis-safe',
             uuid,
             cloudMessagingToken,
-            timestamp: timestampWithoutMilliseconds,
+            timestamp: currentTimestampInSeconds,
           });
           return safeRegistration
             .with('chainId', faker.number.int({ min: 1, max: 100 }).toString())
@@ -128,7 +129,7 @@ describe('Notifications Controller (Unit)', () => {
       await registerDeviceDtoBuilder({
         uuid,
         cloudMessagingToken,
-        timestamp: timestampWithoutMilliseconds,
+        timestamp: currentTimestampInSeconds,
       })
     )
       .with('safeRegistrations', safeRegistrations)
@@ -189,8 +190,69 @@ describe('Notifications Controller (Unit)', () => {
       },
     );
 
+    it(`Should throw if the timestamp in request is older than ${REGISTRATION_TIMESTAMP_EXPIRY_MINUTES} minutes ago`, async () => {
+      const registerDeviceDto = await buildInputDto();
+      const expiryThresholdSeconds = REGISTRATION_TIMESTAMP_EXPIRY + 60;
+      const expiredDateTime =
+        parseInt(registerDeviceDto.timestamp!) - expiryThresholdSeconds;
+      const expiredTimestampInSeconds = Math.floor(expiredDateTime);
+      registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
+      networkService.get.mockImplementation(({ url }) =>
+        url.includes(`${safeConfigUrl}/api/v1/chains/`)
+          ? Promise.resolve({
+              data: rawify(chainBuilder().build()),
+              status: 200,
+            })
+          : rejectForUrl(url),
+      );
+      networkService.post.mockImplementation(({ url }) =>
+        url.includes('/api/v1/notifications/devices/')
+          ? Promise.resolve({ data: rawify({}), status: 200 })
+          : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send(registerDeviceDto)
+        .expect(400)
+        .expect({
+          message: 'The signature is expired!',
+          error: 'Bad Request',
+          statusCode: 400,
+        });
+
+      expect(notificationServiceV2.upsertSubscriptions).not.toHaveBeenCalled();
+    });
+
+    it(`Should pass if the timestamp in request is newer than ${REGISTRATION_TIMESTAMP_EXPIRY_MINUTES} minutes ago`, async () => {
+      const registerDeviceDto = await buildInputDto();
+      const expiredDateTime = parseInt(registerDeviceDto.timestamp!) * 1000;
+      const expiredTimestampInSeconds = Math.floor(expiredDateTime / 1000);
+      registerDeviceDto.timestamp = expiredTimestampInSeconds.toString();
+      networkService.get.mockImplementation(({ url }) =>
+        url.includes(`${safeConfigUrl}/api/v1/chains/`)
+          ? Promise.resolve({
+              data: rawify(chainBuilder().build()),
+              status: 200,
+            })
+          : rejectForUrl(url),
+      );
+      networkService.post.mockImplementation(({ url }) =>
+        url.includes('/api/v1/notifications/devices/')
+          ? Promise.resolve({ data: rawify({}), status: 200 })
+          : rejectForUrl(url),
+      );
+
+      await request(app.getHttpServer())
+        .post('/v1/register/notifications')
+        .send(registerDeviceDto)
+        .expect(200);
+
+      expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalled();
+    });
+
     it('Should not log the error if a device is not found in the TX service', async () => {
-      loggingService.error = jest.fn();
+      jest.spyOn(loggingService, 'error');
       const registerDeviceDto = await buildInputDto();
       networkService.get.mockImplementation(({ url }) =>
         url.includes(`${safeConfigUrl}/api/v1/chains/`)

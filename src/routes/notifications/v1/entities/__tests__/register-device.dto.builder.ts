@@ -6,33 +6,25 @@ import type { RegisterDeviceDto } from '@/routes/notifications/v1/entities/regis
 import { safeRegistrationBuilder } from '@/routes/notifications/v1/entities/__tests__/safe-registration.builder';
 import type { UUID } from 'crypto';
 
-export async function registerDeviceDtoBuilder(args?: {
-  uuid?: UUID;
-  cloudMessagingToken?: UUID;
-  timestamp?: number;
+export async function registerDeviceDtoBuilder(args: {
+  uuid: UUID;
+  cloudMessagingToken: UUID;
+  timestamp: number;
 }): Promise<IBuilder<RegisterDeviceDto>> {
-  const uuid = args?.uuid ?? (faker.string.uuid() as UUID);
-  const cloudMessagingToken =
-    args?.cloudMessagingToken ?? (faker.string.uuid() as UUID);
-  const timestamp = new Date(args?.timestamp ?? faker.date.recent());
-  timestamp.setMilliseconds(0);
-  const timestampWithoutMilliseconds = timestamp.getTime();
   const signaturePrefix = 'gnosis-safe';
   const safeRegistrations = await safeRegistrationBuilder({
     signaturePrefix,
-    uuid,
-    cloudMessagingToken,
-    timestamp: timestampWithoutMilliseconds,
+    ...args,
   });
 
   return new Builder<RegisterDeviceDto>()
-    .with('uuid', uuid)
-    .with('cloudMessagingToken', cloudMessagingToken)
+    .with('uuid', args.uuid)
+    .with('cloudMessagingToken', args.cloudMessagingToken)
     .with('buildNumber', faker.string.numeric())
     .with('bundle', faker.internet.domainName())
     .with('deviceType', faker.helpers.objectValue(DeviceType))
     .with('version', faker.system.semver())
-    .with('timestamp', timestamp.toString())
+    .with('timestamp', args.timestamp.toString())
     .with(
       'safeRegistrations',
       faker.helpers.multiple(() => safeRegistrations.build(), {
