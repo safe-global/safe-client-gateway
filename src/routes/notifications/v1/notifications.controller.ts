@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -18,7 +19,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 import type { UUID } from 'crypto';
 import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
-import { recoverMessageAddress } from 'viem';
+import { keccak256, recoverMessageAddress, toBytes } from 'viem';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
@@ -29,6 +30,7 @@ import {
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
 export class NotificationsController {
+  private static REGISTRATION_TIMESTAMP_EXPIRY = 5 * 60;
   private isPushNotificationV2Enabled: boolean;
   constructor(
     // Adding NotificationServiceV2 to ensure compatibility with V1.
@@ -57,6 +59,10 @@ export class NotificationsController {
   ): Promise<void> {
     if (!this.isPushNotificationV2Enabled) {
       return await this.notificationsService.registerDevice(registerDeviceDto);
+    }
+
+    if (registerDeviceDto.timestamp) {
+      this.validateTimestamp(parseInt(registerDeviceDto.timestamp));
     }
 
     // Compatibility with V2
@@ -151,12 +157,18 @@ export class NotificationsController {
     }
 
     for (const [index, safeV2] of safeV2Array.entries()) {
-      const safeAddresses = safeV2.upsertSubscriptionsDto.safes.map(
-        (safeV2Safes) => safeV2Safes.address,
+      const safeAddresses = args.safeRegistrations.flatMap(
+        (safe) => safe.safes,
       );
 
       const recoveredAddress = await recoverMessageAddress({
-        message: `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
+        message: {
+          raw: keccak256(
+            toBytes(
+              `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
+            ),
+          ),
+        },
         signature: safeV2.upsertSubscriptionsDto.signature,
       });
 
@@ -168,6 +180,23 @@ export class NotificationsController {
     }
 
     return safeV2Array;
+  }
+
+  private validateTimestamp(timestamp: number): void {
+    const currentDate = new Date();
+    currentDate.setMinutes(currentDate.getMinutes() + 5);
+    const currentTimestampInSeconds = Math.floor(currentDate.getTime() / 1000);
+
+    const inputDate = new Date(timestamp * 1000);
+    inputDate.setMinutes(inputDate.getMinutes() + 5);
+    const inputTimestampInSeconds = Math.floor(inputDate.getTime() / 1000);
+
+    if (
+      currentTimestampInSeconds - inputTimestampInSeconds >
+      NotificationsController.REGISTRATION_TIMESTAMP_EXPIRY
+    ) {
+      throw new BadRequestException('The signature is expired!');
+    }
   }
 
   @Delete('chains/:chainId/notifications/devices/:uuid')
