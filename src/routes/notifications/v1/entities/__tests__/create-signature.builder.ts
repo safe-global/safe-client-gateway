@@ -11,6 +11,6 @@ export async function safeRegistrationSignatureBuilder(args: {
   const privateKey = generatePrivateKey();
   const signer = privateKeyToAccount(privateKey);
   return await signer.signMessage({
-    message: `${args.signaturePrefix}-${args.timestamp}${args.uuid}${args.cloudMessagingToken}${args.safeAddresses.sort().join('')}`,
+    message: `${args.signaturePrefix}${args.timestamp}${args.uuid}${args.cloudMessagingToken}${args.safeAddresses.sort().join('')}`,
   });
 }
