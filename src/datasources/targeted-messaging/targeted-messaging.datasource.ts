@@ -101,6 +101,19 @@ export class TargetedMessagingDatasource
     return this.outreachDbMapper.map(dbOutreach);
   }
 
+  async getOutreach(outreachId: number): Promise<Outreach> {
+    const [dbOutreach] = await this.sql<
+      DbOutreach[]
+    >`SELECT * FROM outreaches WHERE id = ${outreachId}`.catch((err) => {
+      this.loggingService.warn(
+        `Error getting outreach: ${asError(err).message}`,
+      );
+      throw new UnprocessableEntityException('Error getting outreach');
+    });
+
+    return this.outreachDbMapper.map(dbOutreach);
+  }
+
   async getUnprocessedOutreaches(): Promise<Outreach[]> {
     const dbOutreaches = await this.sql<
       DbOutreach[]
@@ -137,6 +150,10 @@ export class TargetedMessagingDatasource
     return this.outreachDbMapper.map(updatedDbOutreach);
   }
 
+  // const createSingleTargetedSafe = await targetedMessagingDatasource.createTargetedSafes({
+  //   outreachId: yourOutreachId,
+  //   addresses: [`0x${yourSingleAddress}`] // Array with just one address
+  // });
   async createTargetedSafes(
     createTargetedSafesDto: CreateTargetedSafesDto,
   ): Promise<Array<TargetedSafe>> {

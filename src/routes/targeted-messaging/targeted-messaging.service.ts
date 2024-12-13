@@ -51,6 +51,17 @@ export class TargetedMessagingService {
     signerAddress: `0x${string}`;
     createSubmissionDto: CreateSubmissionDto;
   }): Promise<Submission> {
+    const outreach = await this.repository.getOutreach({
+      outreachId: args.outreachId,
+    });
+
+    if (outreach.targetAll) {
+      await this.repository.createTargetedSafes({
+        outreachId: args.outreachId,
+        addresses: [args.safeAddress],
+      });
+    }
+
     const targetedSafe = await this.repository.getTargetedSafe(args);
     try {
       await this.repository.getSubmission({

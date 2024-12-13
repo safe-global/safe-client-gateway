@@ -1,5 +1,7 @@
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entities/create-targeted-safes.dto.entity';
+import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
 import { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import { ITargetedMessagingRepository } from '@/domain/targeted-messaging/targeted-messaging.repository.interface';
@@ -23,6 +25,12 @@ export class TargetedMessagingRepository
     return this.datasource.getTargetedSafe(args);
   }
 
+  async createTargetedSafes(
+    args: CreateTargetedSafesDto,
+  ): Promise<TargetedSafe[]> {
+    return this.datasource.createTargetedSafes(args);
+  }
+
   async getSubmission(args: {
     chainId: string;
     targetedSafe: TargetedSafe;
@@ -44,5 +52,9 @@ export class TargetedMessagingRepository
     signerAddress: `0x${string}`;
   }): Promise<Submission> {
     return this.datasource.createSubmission(args);
+  }
+
+  async getOutreach(args: { outreachId: number }): Promise<Outreach> {
+    return this.datasource.getOutreach(args.outreachId);
   }
 }
