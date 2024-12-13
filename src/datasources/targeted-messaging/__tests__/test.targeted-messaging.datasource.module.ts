@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 
 const targetedMessagingDatasource = {
   getUnprocessedOutreaches: jest.fn(),
+  getOutreach: jest.fn(),
   createOutreach: jest.fn(),
   createTargetedSafes: jest.fn(),
   getTargetedSafe: jest.fn(),

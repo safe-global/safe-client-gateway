@@ -115,6 +115,7 @@ describe('TargetedMessagingDataSource tests', () => {
         sourceFile: dto.sourceFile,
         sourceFileProcessedDate: null,
         sourceFileChecksum: null,
+        targetAll: false,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
@@ -132,6 +133,39 @@ describe('TargetedMessagingDataSource tests', () => {
     });
   });
 
+  describe('getOutreach', () => {
+    it('gets an outreach successfully', async () => {
+      const dto = createOutreachDtoBuilder().build();
+      const created = await target.createOutreach(dto);
+
+      const result = await target.getOutreach(created.id);
+
+      expect(result).toStrictEqual({
+        id: created.id,
+        name: dto.name,
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+        sourceId: dto.sourceId,
+        type: dto.type,
+        teamName: dto.teamName,
+        sourceFile: dto.sourceFile,
+        sourceFileProcessedDate: null,
+        sourceFileChecksum: null,
+        targetAll: false,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      });
+    });
+
+    it('throws if the outreach does not exist', async () => {
+      const nonExistentId = faker.number.int({ min: 1000, max: 9999 });
+
+      await expect(target.getOutreach(nonExistentId)).rejects.toThrow(
+        'Outreach not found',
+      );
+    });
+  });
+
   describe('updateOutreach', () => {
     it('should update an outreach successfully', async () => {
       const dto = createOutreachDtoBuilder().build();
@@ -143,6 +177,7 @@ describe('TargetedMessagingDataSource tests', () => {
         endDate: faker.date.recent(),
         teamName: faker.string.alphanumeric(),
         type: faker.string.alphanumeric(),
+        targetAll: false,
       };
 
       const result = await target.updateOutreach(updateOutreachDto);
@@ -158,6 +193,7 @@ describe('TargetedMessagingDataSource tests', () => {
         sourceFile: dto.sourceFile,
         sourceFileProcessedDate: dto.sourceFileProcessedDate,
         sourceFileChecksum: dto.sourceFileChecksum,
+        targetAll: updateOutreachDto.targetAll,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });

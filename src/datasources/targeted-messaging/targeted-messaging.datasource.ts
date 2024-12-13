@@ -111,6 +111,10 @@ export class TargetedMessagingDatasource
       throw new UnprocessableEntityException('Error getting outreach');
     });
 
+    if (!dbOutreach) {
+      throw new UnprocessableEntityException('Outreach not found');
+    }
+
     return this.outreachDbMapper.map(dbOutreach);
   }
 
@@ -150,10 +154,6 @@ export class TargetedMessagingDatasource
     return this.outreachDbMapper.map(updatedDbOutreach);
   }
 
-  // const createSingleTargetedSafe = await targetedMessagingDatasource.createTargetedSafes({
-  //   outreachId: yourOutreachId,
-  //   addresses: [`0x${yourSingleAddress}`] // Array with just one address
-  // });
   async createTargetedSafes(
     createTargetedSafesDto: CreateTargetedSafesDto,
   ): Promise<Array<TargetedSafe>> {
