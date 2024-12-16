@@ -155,6 +155,7 @@ export default (): ReturnType<typeof configuration> => ({
     counterfactualBalances: false,
     accounts: false,
     pushNotifications: false,
+    hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
