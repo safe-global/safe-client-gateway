@@ -1,2 +1,3 @@
 ALTER TABLE outreaches 
     ADD COLUMN target_all BOOLEAN NOT NULL DEFAULT FALSE;
+    
