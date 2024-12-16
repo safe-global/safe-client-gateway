@@ -17,5 +17,5 @@ export function createOutreachDtoBuilder(): IBuilder<CreateOutreachDto> {
     .with('sourceFile', `${faker.string.alphanumeric(5)}.json`)
     .with('sourceFileProcessedDate', null)
     .with('sourceFileChecksum', null)
-    .with('targetAll', false);
+    .with('targetAll', faker.datatype.boolean());
 }

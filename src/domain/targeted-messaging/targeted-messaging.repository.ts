@@ -27,7 +27,7 @@ export class TargetedMessagingRepository
 
   async createTargetedSafes(
     args: CreateTargetedSafesDto,
-  ): Promise<TargetedSafe[]> {
+  ): Promise<Array<TargetedSafe>> {
     return this.datasource.createTargetedSafes(args);
   }
 
@@ -54,7 +54,7 @@ export class TargetedMessagingRepository
     return this.datasource.createSubmission(args);
   }
 
-  async getOutreach(args: { outreachId: number }): Promise<Outreach> {
-    return this.datasource.getOutreach(args.outreachId);
+  async getOutreach(outreachId: number): Promise<Outreach> {
+    return this.datasource.getOutreach(outreachId);
   }
 }

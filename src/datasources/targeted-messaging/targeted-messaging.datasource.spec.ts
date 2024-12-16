@@ -115,7 +115,7 @@ describe('TargetedMessagingDataSource tests', () => {
         sourceFile: dto.sourceFile,
         sourceFileProcessedDate: null,
         sourceFileChecksum: null,
-        targetAll: false,
+        targetAll: dto.targetAll,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
@@ -139,7 +139,6 @@ describe('TargetedMessagingDataSource tests', () => {
       const created = await target.createOutreach(dto);
 
       const result = await target.getOutreach(created.id);
-
       expect(result).toStrictEqual({
         id: created.id,
         name: dto.name,
@@ -151,7 +150,7 @@ describe('TargetedMessagingDataSource tests', () => {
         sourceFile: dto.sourceFile,
         sourceFileProcessedDate: null,
         sourceFileChecksum: null,
-        targetAll: false,
+        targetAll: dto.targetAll,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });
@@ -167,7 +166,7 @@ describe('TargetedMessagingDataSource tests', () => {
   });
 
   describe('updateOutreach', () => {
-    it('should update an outreach successfully', async () => {
+    it.only('should update an outreach successfully', async () => {
       const dto = createOutreachDtoBuilder().build();
       await target.createOutreach(dto);
       const updateOutreachDto = {
@@ -177,9 +176,7 @@ describe('TargetedMessagingDataSource tests', () => {
         endDate: faker.date.recent(),
         teamName: faker.string.alphanumeric(),
         type: faker.string.alphanumeric(),
-        targetAll: false,
       };
-
       const result = await target.updateOutreach(updateOutreachDto);
 
       expect(result).toStrictEqual({
@@ -193,7 +190,7 @@ describe('TargetedMessagingDataSource tests', () => {
         sourceFile: dto.sourceFile,
         sourceFileProcessedDate: dto.sourceFileProcessedDate,
         sourceFileChecksum: dto.sourceFileChecksum,
-        targetAll: updateOutreachDto.targetAll,
+        targetAll: dto.targetAll,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
       });

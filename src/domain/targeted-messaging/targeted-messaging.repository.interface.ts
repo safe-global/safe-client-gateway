@@ -17,9 +17,11 @@ export interface ITargetedMessagingRepository {
     safeAddress: `0x${string}`;
   }): Promise<TargetedSafe>;
 
-  createTargetedSafes(args: CreateTargetedSafesDto): Promise<TargetedSafe[]>;
+  createTargetedSafes(
+    args: CreateTargetedSafesDto,
+  ): Promise<Array<TargetedSafe>>;
 
-  getOutreach(args: { outreachId: number }): Promise<Outreach>;
+  getOutreach(outreachId: number): Promise<Outreach>;
 
   getSubmission(args: {
     chainId: string;

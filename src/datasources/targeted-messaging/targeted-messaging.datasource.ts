@@ -58,7 +58,7 @@ export class TargetedMessagingDatasource
     createOutreachDto: CreateOutreachDto,
   ): Promise<Outreach> {
     const [dbOutreach] = await this.sql<DbOutreach[]>`
-      INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name, source_file, source_file_processed_date, source_file_checksum)
+      INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name, source_file, target_all, source_file_processed_date, source_file_checksum)
       VALUES (
         ${createOutreachDto.name}, 
         ${createOutreachDto.startDate}, 
@@ -67,6 +67,7 @@ export class TargetedMessagingDatasource
         ${createOutreachDto.type}, 
         ${createOutreachDto.teamName},
         ${createOutreachDto.sourceFile},
+        ${createOutreachDto.targetAll},
         ${createOutreachDto.sourceFileProcessedDate},
         ${createOutreachDto.sourceFileChecksum}
         )
@@ -89,7 +90,7 @@ export class TargetedMessagingDatasource
       start_date = ${updateOutreachDto.startDate},
       end_date = ${updateOutreachDto.endDate},
       type = ${updateOutreachDto.type},
-      team_name = ${updateOutreachDto.teamName}
+      team_name = ${updateOutreachDto.teamName} 
     WHERE source_id = ${updateOutreachDto.sourceId}
     RETURNING *`.catch((err) => {
       this.loggingService.warn(
@@ -104,12 +105,14 @@ export class TargetedMessagingDatasource
   async getOutreach(outreachId: number): Promise<Outreach> {
     const [dbOutreach] = await this.sql<
       DbOutreach[]
-    >`SELECT * FROM outreaches WHERE id = ${outreachId}`.catch((err) => {
-      this.loggingService.warn(
-        `Error getting outreach: ${asError(err).message}`,
-      );
-      throw new UnprocessableEntityException('Error getting outreach');
-    });
+    >`SELECT target_all FROM outreaches WHERE id = ${outreachId}`.catch(
+      (err) => {
+        this.loggingService.warn(
+          `Error getting outreach: ${asError(err).message}`,
+        );
+        throw new UnprocessableEntityException('Error getting outreach');
+      },
+    );
 
     if (!dbOutreach) {
       throw new UnprocessableEntityException('Outreach not found');

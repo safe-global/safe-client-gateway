@@ -52,9 +52,7 @@ export class TargetedMessagingService {
     try {
       return await this.repository.getTargetedSafe(args);
     } catch (err) {
-      const outreach = await this.repository.getOutreach({
-        outreachId: args.outreachId,
-      });
+      const outreach = await this.repository.getOutreach(args.outreachId);
 
       if (!outreach.targetAll) {
         // Safe is not targeted
