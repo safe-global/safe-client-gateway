@@ -215,8 +215,6 @@ describe('Chains Controller (Unit)', () => {
       networkService.get.mockResolvedValueOnce({
         data: rawify({
           ...chainsResponse,
-          // Ensure count does not include invalid chains
-          count: chainsResponse.results.length + invalidChains.length,
           results: [...chainsResponse.results, ...invalidChains],
         }),
         status: 200,
