@@ -7,7 +7,7 @@ INSERT INTO outreaches (
     team_name,
     source_file,
     source_file_checksum,
-	target_all
+    target_all
 ) VALUES (
     2,
     'micro-campaign',
