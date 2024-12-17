@@ -65,7 +65,13 @@ export class OutreachFileProcessor implements OnModuleInit {
       this.loggingService.info(
         `[Outreach ${outreach.id}] Processing outreach ${outreach.sourceId}`,
       );
-      await this.processOutreach(outreach);
+      if (outreach.targetAll) {
+        this.loggingService.info(
+          `[Outreach ${outreach.id}] Targeting all safes. No file to process`,
+        );
+      } else {
+        await this.processOutreach(outreach);
+      }
     }
   }
 
