@@ -1,6 +1,5 @@
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { CreateTargetedSafesDto } from '@/domain/targeted-messaging/entities/create-targeted-safes.dto.entity';
 import { Outreach } from '@/domain/targeted-messaging/entities/outreach.entity';
 import { Submission } from '@/domain/targeted-messaging/entities/submission.entity';
 import { TargetedSafe } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
@@ -25,10 +24,14 @@ export class TargetedMessagingRepository
     return this.datasource.getTargetedSafe(args);
   }
 
-  async createTargetedSafes(
-    args: CreateTargetedSafesDto,
-  ): Promise<Array<TargetedSafe>> {
-    return this.datasource.createTargetedSafes(args);
+  async addSafeToOutreach(args: {
+    outreachId: number;
+    safeAddress: `0x${string}`;
+  }): Promise<Array<TargetedSafe>> {
+    return this.datasource.createTargetedSafes({
+      outreachId: args.outreachId,
+      addresses: [args.safeAddress],
+    });
   }
 
   async getSubmission(args: {

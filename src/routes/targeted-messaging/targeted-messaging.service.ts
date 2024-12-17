@@ -59,9 +59,9 @@ export class TargetedMessagingService {
         throw err;
       }
 
-      const [targetedSafe] = await this.repository.createTargetedSafes({
+      const [targetedSafe] = await this.repository.addSafeToOutreach({
         outreachId: args.outreachId,
-        addresses: [args.safeAddress],
+        safeAddress: args.safeAddress,
       });
 
       return targetedSafe;
