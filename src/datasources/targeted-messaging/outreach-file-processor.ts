@@ -62,14 +62,14 @@ export class OutreachFileProcessor implements OnModuleInit {
   private async processOutreachFiles(): Promise<void> {
     const outreaches = await this.datasource.getUnprocessedOutreaches();
     for (const outreach of outreaches) {
-      this.loggingService.info(
-        `[Outreach ${outreach.id}] Processing outreach ${outreach.sourceId}`,
-      );
       if (outreach.targetAll) {
         this.loggingService.info(
           `[Outreach ${outreach.id}] Targeting all safes. No file to process`,
         );
       } else {
+        this.loggingService.info(
+          `[Outreach ${outreach.id}] Processing outreach ${outreach.sourceId}`,
+        );
         await this.processOutreach(outreach);
       }
     }
