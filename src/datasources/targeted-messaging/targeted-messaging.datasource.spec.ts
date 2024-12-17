@@ -137,7 +137,6 @@ describe('TargetedMessagingDataSource tests', () => {
     it('gets an outreach successfully', async () => {
       const dto = createOutreachDtoBuilder().build();
       const created = await target.createOutreach(dto);
-      console.log('created', created);
 
       const result = await target.getOutreachOrFail(created.id);
       expect(result.targetAll).toStrictEqual(dto.targetAll);
