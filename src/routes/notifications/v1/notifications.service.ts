@@ -124,16 +124,14 @@ export class NotificationsService {
     registrationResults: PromiseSettledResult<DomainSafeRegistration>[],
     safeRegistrations: SafeRegistration[],
   ): string {
-    const successChainIds = (
-      registrationResults.filter(
-        ({ status }) => status === 'fulfilled',
-      ) as PromiseFulfilledResult<DomainSafeRegistration>[]
-    ).map((registrationResult) => registrationResult.value.chainId);
+    const failedRegistrationChainIds = registrationResults
+      .map((result, index) => ({
+        result,
+        safeRegistration: safeRegistrations[index],
+      }))
+      .filter(({ result }) => result.status === 'rejected')
+      .map(({ safeRegistration }) => safeRegistration.chainId);
 
-    const erroredChainIds = safeRegistrations
-      .map((safeRegistration) => safeRegistration.chainId)
-      .filter((chainId) => !successChainIds.includes(chainId));
-
-    return `Push notification registration failed for chain IDs: ${erroredChainIds}`;
+    return `Push notification registration failed for chain IDs: ${failedRegistrationChainIds}`;
   }
 }
