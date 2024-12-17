@@ -21,7 +21,7 @@ export interface ITargetedMessagingRepository {
     args: CreateTargetedSafesDto,
   ): Promise<Array<TargetedSafe>>;
 
-  getOutreach(outreachId: number): Promise<Outreach>;
+  getOutreachOrFail(outreachId: number): Promise<Outreach>;
 
   getSubmission(args: {
     chainId: string;

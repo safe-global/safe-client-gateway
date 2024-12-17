@@ -133,12 +133,12 @@ describe('TargetedMessagingDataSource tests', () => {
     });
   });
 
-  describe('getOutreach', () => {
+  describe('getOutreachOrFail', () => {
     it('gets an outreach successfully', async () => {
       const dto = createOutreachDtoBuilder().build();
       const created = await target.createOutreach(dto);
 
-      const result = await target.getOutreach(created.id);
+      const result = await target.getOutreachOrFail(created.id);
       expect(result).toStrictEqual({
         id: created.id,
         name: dto.name,
@@ -159,7 +159,7 @@ describe('TargetedMessagingDataSource tests', () => {
     it('throws if the outreach does not exist', async () => {
       const nonExistentId = faker.number.int({ min: 1000, max: 9999 });
 
-      await expect(target.getOutreach(nonExistentId)).rejects.toThrow(
+      await expect(target.getOutreachOrFail(nonExistentId)).rejects.toThrow(
         'Outreach not found',
       );
     });

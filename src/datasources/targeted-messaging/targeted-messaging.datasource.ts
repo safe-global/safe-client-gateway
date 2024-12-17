@@ -26,6 +26,7 @@ import { asError } from '@/logging/utils';
 import {
   Inject,
   Injectable,
+  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
@@ -90,7 +91,7 @@ export class TargetedMessagingDatasource
       start_date = ${updateOutreachDto.startDate},
       end_date = ${updateOutreachDto.endDate},
       type = ${updateOutreachDto.type},
-      team_name = ${updateOutreachDto.teamName} 
+      team_name = ${updateOutreachDto.teamName}
     WHERE source_id = ${updateOutreachDto.sourceId}
     RETURNING *`.catch((err) => {
       this.loggingService.warn(
@@ -102,7 +103,7 @@ export class TargetedMessagingDatasource
     return this.outreachDbMapper.map(dbOutreach);
   }
 
-  async getOutreach(outreachId: number): Promise<Outreach> {
+  async getOutreachOrFail(outreachId: number): Promise<Outreach> {
     const [dbOutreach] = await this.sql<
       DbOutreach[]
     >`SELECT target_all FROM outreaches WHERE id = ${outreachId}`.catch(
@@ -115,7 +116,7 @@ export class TargetedMessagingDatasource
     );
 
     if (!dbOutreach) {
-      throw new UnprocessableEntityException('Outreach not found');
+      throw new NotFoundException('Outreach not found');
     }
 
     return this.outreachDbMapper.map(dbOutreach);

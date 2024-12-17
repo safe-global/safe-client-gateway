@@ -321,13 +321,11 @@ describe('TargetedMessagingController', () => {
     it('should create a submission for a campaign without targeting enabled', async () => {
       const outreachId = faker.number.int();
       const chain = chainBuilder().build();
-      const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
       const submission = submissionBuilder().build();
       const safe = safeBuilder()
         .with('owners', [
           getAddress(faker.finance.ethereumAddress()),
-          signerAddress,
+          submission.signerAddress,
         ])
         .build();
       const targetedSafe = targetedSafeBuilder()
@@ -345,7 +343,7 @@ describe('TargetedMessagingController', () => {
       targetedMessagingDatasource.createSubmission.mockResolvedValueOnce(
         submission,
       );
-      targetedMessagingDatasource.getOutreach.mockResolvedValue({
+      targetedMessagingDatasource.getOutreachOrFail.mockResolvedValue({
         id: expect.any(Number),
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
@@ -377,7 +375,7 @@ describe('TargetedMessagingController', () => {
 
       await request(app.getHttpServer())
         .post(
-          `/v1/targeted-messaging/outreaches/${outreachId}/chains/${chain.chainId}/safes/${safeAddress}/signers/${signerAddress}/submissions`,
+          `/v1/targeted-messaging/outreaches/${outreachId}/chains/${chain.chainId}/safes/${safe.address}/signers/${submission.signerAddress}/submissions`,
         )
         .send({ completed: true })
         .expect(201)
@@ -518,7 +516,7 @@ describe('TargetedMessagingController', () => {
       targetedMessagingDatasource.getTargetedSafe.mockRejectedValue(
         new TargetedSafeNotFoundError(),
       );
-      targetedMessagingDatasource.getOutreach.mockResolvedValue({
+      targetedMessagingDatasource.getOutreachOrFail.mockResolvedValue({
         id: expect.any(Number),
         created_at: expect.any(Date),
         updated_at: expect.any(Date),

@@ -54,7 +54,7 @@ export class TargetedMessagingRepository
     return this.datasource.createSubmission(args);
   }
 
-  async getOutreach(outreachId: number): Promise<Outreach> {
-    return this.datasource.getOutreach(outreachId);
+  async getOutreachOrFail(outreachId: number): Promise<Outreach> {
+    return this.datasource.getOutreachOrFail(outreachId);
   }
 }
