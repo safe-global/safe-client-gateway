@@ -317,6 +317,7 @@ describe('OutreachFileProcessor', () => {
         .with('sourceId', outreachFile.campaign_id)
         .with('sourceFile', sourceFile)
         .with('sourceFileChecksum', fileChecksum)
+        .with('targetAll', false)
         .build(),
     );
     const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
