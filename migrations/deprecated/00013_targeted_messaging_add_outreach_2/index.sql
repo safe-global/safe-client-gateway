@@ -5,7 +5,7 @@ INSERT INTO outreaches (
     end_date,
     type,
     team_name,
-	target_all
+    target_all
 ) VALUES (
     2,
     'micro-campaign',
@@ -13,5 +13,5 @@ INSERT INTO outreaches (
     '2025-03-01 00:00:00.000',
     '',
     '',
-	true
+    true
 );
