@@ -26,6 +26,7 @@ import { asError } from '@/logging/utils';
 import {
   Inject,
   Injectable,
+  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import postgres from 'postgres';
@@ -58,7 +59,7 @@ export class TargetedMessagingDatasource
     createOutreachDto: CreateOutreachDto,
   ): Promise<Outreach> {
     const [dbOutreach] = await this.sql<DbOutreach[]>`
-      INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name, source_file, source_file_processed_date, source_file_checksum)
+      INSERT INTO outreaches (name, start_date, end_date, source_id, type, team_name, source_file, target_all, source_file_processed_date, source_file_checksum)
       VALUES (
         ${createOutreachDto.name}, 
         ${createOutreachDto.startDate}, 
@@ -67,6 +68,7 @@ export class TargetedMessagingDatasource
         ${createOutreachDto.type}, 
         ${createOutreachDto.teamName},
         ${createOutreachDto.sourceFile},
+        ${createOutreachDto.targetAll},
         ${createOutreachDto.sourceFileProcessedDate},
         ${createOutreachDto.sourceFileChecksum}
         )
@@ -97,6 +99,25 @@ export class TargetedMessagingDatasource
       );
       throw new UnprocessableEntityException('Error updating outreach');
     });
+
+    return this.outreachDbMapper.map(dbOutreach);
+  }
+
+  async getOutreachOrFail(outreachId: number): Promise<Outreach> {
+    const [dbOutreach] = await this.sql<
+      DbOutreach[]
+    >`SELECT target_all FROM outreaches WHERE id = ${outreachId}`.catch(
+      (err) => {
+        this.loggingService.warn(
+          `Error getting outreach: ${asError(err).message}`,
+        );
+        throw new UnprocessableEntityException('Error getting outreach');
+      },
+    );
+
+    if (!dbOutreach) {
+      throw new NotFoundException('Outreach not found');
+    }
 
     return this.outreachDbMapper.map(dbOutreach);
   }
