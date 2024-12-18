@@ -45,7 +45,7 @@ export class TargetedMessagingService {
     }
   }
 
-  private async getOrCreateTargetedSafe(args: {
+  private async getOrAddSafeToOutreach(args: {
     outreachId: number;
     safeAddress: `0x${string}`;
   }): Promise<TargetedSafe> {
@@ -75,7 +75,7 @@ export class TargetedMessagingService {
     signerAddress: `0x${string}`;
     createSubmissionDto: CreateSubmissionDto;
   }): Promise<Submission> {
-    const targetedSafe = await this.getOrCreateTargetedSafe(args);
+    const targetedSafe = await this.getOrAddSafeToOutreach(args);
     try {
       await this.repository.getSubmission({
         chainId: args.chainId,
