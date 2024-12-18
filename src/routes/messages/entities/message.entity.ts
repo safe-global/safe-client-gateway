@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MessageConfirmation } from '@/routes/messages/entities/message-confirmation.entity';
+import { TypedData } from '@/routes/transactions/entities/typed-data/typed-data.entity';
 
 export enum MessageStatus {
   NeedsConfirmation = 'NEEDS_CONFIRMATION',
@@ -34,6 +35,8 @@ export class Message {
   preparedSignature: `0x${string}` | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   origin: string | null;
+  @ApiProperty({ type: TypedData })
+  typedData: TypedData;
 
   constructor(
     messageHash: `0x${string}`,
@@ -49,6 +52,7 @@ export class Message {
     confirmations: MessageConfirmation[],
     preparedSignature: `0x${string}` | null,
     origin: string | null,
+    typedData: TypedData,
   ) {
     this.messageHash = messageHash;
     this.status = status;
@@ -63,5 +67,6 @@ export class Message {
     this.confirmations = confirmations;
     this.preparedSignature = preparedSignature;
     this.origin = origin;
+    this.typedData = typedData;
   }
 }

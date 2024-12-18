@@ -11,6 +11,8 @@ import {
   MessageStatus,
   Message,
 } from '@/routes/messages/entities/message.entity';
+import { TypedDataMapper } from '@/domain/common/mappers/typed-data.mapper';
+import type { TypedDataDefinition } from 'viem';
 
 @Injectable()
 export class MessageMapper {
@@ -18,6 +20,8 @@ export class MessageMapper {
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: SafeAppsRepository,
     private readonly addressInfoHelper: AddressInfoHelper,
+    @Inject(TypedDataMapper)
+    private readonly typedDataMapper: TypedDataMapper,
   ) {}
 
   async mapMessageItems(
@@ -42,6 +46,7 @@ export class MessageMapper {
           message.confirmations,
           message.preparedSignature,
           message.origin,
+          message.typedData,
         );
       }),
     );
@@ -72,6 +77,11 @@ export class MessageMapper {
       message.preparedSignature && status === MessageStatus.Confirmed
         ? message.preparedSignature
         : null;
+    const typedData = this.typedDataMapper.mapSafeMessageTypedData({
+      chainId,
+      safe,
+      message: message.message as string | TypedDataDefinition,
+    });
 
     return new Message(
       message.messageHash,
@@ -87,6 +97,7 @@ export class MessageMapper {
       confirmations,
       preparedSignature,
       message.origin,
+      typedData,
     );
   }
 
