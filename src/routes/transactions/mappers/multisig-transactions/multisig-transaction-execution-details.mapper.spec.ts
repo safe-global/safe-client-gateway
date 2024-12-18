@@ -16,7 +16,6 @@ import { MultisigConfirmationDetails } from '@/routes/transactions/entities/tran
 import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { getAddress } from 'viem';
 import { TypedDataMapper } from '@/domain/common/mappers/typed-data.mapper';
-import { TypedData } from '@/routes/transactions/entities/typed-data/typed-data.entity';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -31,6 +30,7 @@ const safeRepository = jest.mocked({
 } as jest.MockedObjectDeep<SafeRepository>);
 
 const loggingService = jest.mocked({
+  error: jest.fn(),
   debug: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
@@ -39,7 +39,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    const safeTypedDataHelper = new TypedDataMapper();
+    const safeTypedDataHelper = new TypedDataMapper(loggingService);
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,
       tokenRepository,
@@ -81,8 +81,6 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasToken: transaction.gasToken,
         refundReceiver: addressInfo,
         safeTxHash: transaction.safeTxHash,
-        domainHash: expect.any(String),
-        messageHash: expect.any(String),
         executor: addressInfo,
         signers: safe.owners.map((owner) => new AddressInfo(owner)),
         confirmationsRequired: transaction.confirmationsRequired,
@@ -92,7 +90,10 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
-        typedData: expect.any(TypedData),
+        typedData: {
+          domainHash: expect.any(String),
+          messageHash: expect.any(String),
+        },
       }),
     );
   });
@@ -149,8 +150,6 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasToken: NULL_ADDRESS,
         refundReceiver: addressInfo,
         safeTxHash: transaction.safeTxHash,
-        domainHash: expect.any(String),
-        messageHash: expect.any(String),
         executor: addressInfo,
         signers: safe.owners.map((owner) => new AddressInfo(owner)),
         confirmationsRequired: transaction.confirmationsRequired,
@@ -160,7 +159,10 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
-        typedData: expect.any(TypedData),
+        typedData: {
+          domainHash: expect.any(String),
+          messageHash: expect.any(String),
+        },
       }),
     );
   });
@@ -219,8 +221,6 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         gasToken: NULL_ADDRESS,
         refundReceiver: addressInfo,
         safeTxHash: transaction.safeTxHash,
-        domainHash: expect.any(String),
-        messageHash: expect.any(String),
         executor: addressInfo,
         signers: safe.owners.map((owner) => new AddressInfo(owner)),
         confirmationsRequired: transaction.confirmationsRequired,
@@ -230,7 +230,10 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
-        typedData: expect.any(TypedData),
+        typedData: {
+          domainHash: expect.any(String),
+          messageHash: expect.any(String),
+        },
       }),
     );
   });
