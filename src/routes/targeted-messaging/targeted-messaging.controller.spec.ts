@@ -318,7 +318,7 @@ describe('TargetedMessagingController', () => {
         });
     });
 
-    it('should create a submission for a campaign without targeting enabled', async () => {
+    it('should create a submission for a campaign targeting all Safes', async () => {
       const outreachId = faker.number.int();
       const chain = chainBuilder().build();
       const submission = submissionBuilder().build();
