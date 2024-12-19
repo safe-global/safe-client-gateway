@@ -43,7 +43,7 @@ describe('SafeSchema', () => {
 
   it('should allow an integer nonce', () => {
     const safe = safeBuilder()
-      .with('nonce', faker.number.int({ min: 1 }))
+      .with('nonce', faker.number.int({ min: 0 }))
       .build();
 
     const result = SafeSchema.safeParse(safe);
