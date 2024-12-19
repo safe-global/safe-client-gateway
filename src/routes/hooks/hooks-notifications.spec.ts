@@ -65,6 +65,7 @@ import {
 } from '@/routes/hooks/entities/__tests__/delegate-events.builder';
 import type { ConsumeMessage } from 'amqplib';
 
+// TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
 describe('Hook Events for Notifications (Unit)', () => {
   let app: INestApplication<Server>;
   let pushNotificationsApi: jest.MockedObjectDeep<IPushNotificationsApi>;
