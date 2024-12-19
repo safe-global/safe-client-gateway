@@ -24,7 +24,6 @@ import { moduleTransactionEventBuilder } from '@/routes/hooks/entities/__tests__
 import { incomingEtherEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-ether.builder';
 import { incomingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-token.builder';
 import { newMessageConfirmationEventBuilder } from '@/routes/hooks/entities/__tests__/new-message-confirmation.builder';
-import request from 'supertest';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
 import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
@@ -57,16 +56,23 @@ import { rawify } from '@/validation/entities/raw.entity';
 import { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
+import { IQueuesApiService } from '@/datasources/queues/queues-api.service.interface';
+import { reorgDetectedEventBuilder } from '@/routes/hooks/entities/__tests__/reorg-detected.builder';
+import {
+  deletedDelegateEventBuilder,
+  newDelegateEventBuilder,
+  updatedDelegateEventBuilder,
+} from '@/routes/hooks/entities/__tests__/delegate-events.builder';
+import type { ConsumeMessage } from 'amqplib';
 
-// TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
-describe.skip('Post Hook Events for Notifications (Unit)', () => {
+describe('Hook Events for Notifications (Unit)', () => {
   let app: INestApplication<Server>;
   let pushNotificationsApi: jest.MockedObjectDeep<IPushNotificationsApi>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: IConfigurationService;
-  let authToken: string;
   let safeConfigUrl: string;
+  let queuesApiService: jest.MockedObjectDeep<IQueuesApiService>;
 
   const defaultConfiguration = configuration();
   const testConfiguration = (): ReturnType<typeof configuration> => {
@@ -107,9 +113,8 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
     networkService = moduleFixture.get(NetworkService);
     pushNotificationsApi = moduleFixture.get(IPushNotificationsApi);
     configurationService = moduleFixture.get(IConfigurationService);
-    authToken = configurationService.getOrThrow('auth.token');
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-
+    queuesApiService = moduleFixture.get(IQueuesApiService);
     notificationsRepository = moduleFixture.get(INotificationsRepositoryV2);
 
     await app.init();
@@ -133,13 +138,14 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       newConfirmationEventBuilder().build(),
       newMessageConfirmationEventBuilder().build(),
       safeCreatedEventBuilder().build(),
+      reorgDetectedEventBuilder().build(),
+      newDelegateEventBuilder().build(),
+      updatedDelegateEventBuilder().build(),
+      deletedDelegateEventBuilder().build(),
     ].map((event) => [event.type, event]),
   )('should not enqueue notifications for %s events', async (_, event) => {
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(event)
-      .expect(202);
+    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
   });
@@ -174,11 +180,8 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       }
     });
 
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(event)
-      .expect(202);
+    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
       subscribers.length,
@@ -254,11 +257,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
@@ -339,11 +341,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     },
@@ -404,11 +405,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
@@ -468,11 +468,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -538,11 +537,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -606,11 +604,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length - confirmations.length,
@@ -690,11 +687,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
@@ -754,11 +750,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -825,11 +820,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -893,11 +887,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length - confirmations.length,
@@ -988,11 +981,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
@@ -1059,11 +1051,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -1136,11 +1127,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -1215,11 +1205,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length - confirmations.length,
@@ -1306,11 +1295,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
@@ -1377,11 +1365,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -1455,11 +1442,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -1534,11 +1520,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length - confirmations.length,
@@ -1624,11 +1609,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -1691,11 +1675,10 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        .expect(202);
+      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
 
       expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
     });
@@ -1805,11 +1788,8 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       }
     });
 
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(event)
-      .expect(202);
+    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(3);
     expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
@@ -1948,11 +1928,8 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       }
     });
 
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(event)
-      .expect(202);
+    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(3);
     expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
@@ -2028,11 +2005,8 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       })
       .mockResolvedValue();
 
-    await request(app.getHttpServer())
-      .post(`/hooks/events`)
-      .set('Authorization', `Basic ${authToken}`)
-      .send(event)
-      .expect(202);
+    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(notificationsRepository.deleteDevice).toHaveBeenCalledTimes(1);
     expect(notificationsRepository.deleteDevice).toHaveBeenNthCalledWith(
@@ -2137,13 +2111,11 @@ describe.skip('Post Hook Events for Notifications (Unit)', () => {
       .mockRejectedValueOnce(new Error('Other error'))
       .mockResolvedValue();
 
+    const cb = queuesApiService.subscribe.mock.calls[0][1];
     for (const event of events) {
-      await request(app.getHttpServer())
-        .post(`/hooks/events`)
-        .set('Authorization', `Basic ${authToken}`)
-        .send(event)
-        // Doesn't throw
-        .expect(202);
+      await cb({
+        content: Buffer.from(JSON.stringify(event)),
+      } as ConsumeMessage);
     }
 
     expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
