@@ -16,7 +16,7 @@ export class SafeState {
   readonly nonce: number;
   @ApiProperty()
   readonly threshold: number;
-  @ApiProperty()
+  @ApiProperty({ type: AddressInfo, isArray: true, nullable: false })
   readonly owners: AddressInfo[];
   @ApiProperty()
   readonly implementation: AddressInfo;
