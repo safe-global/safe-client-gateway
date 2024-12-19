@@ -13,6 +13,7 @@ import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
 } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
+import { TypedDataMapper } from '@/domain/common/mappers/typed-data.mapper';
 
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
@@ -21,6 +22,8 @@ export class MultisigTransactionExecutionDetailsMapper {
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(TypedDataMapper)
+    private readonly typedDataMapper: TypedDataMapper,
   ) {}
 
   async mapMultisigExecutionDetails(
@@ -46,6 +49,11 @@ export class MultisigTransactionExecutionDetailsMapper {
     const proposedByDelegate = transaction.proposedByDelegate
       ? new AddressInfo(transaction.proposedByDelegate)
       : null;
+    const typedData = this.typedDataMapper.mapSafeTxTypedData({
+      chainId,
+      safe,
+      transaction,
+    });
 
     const [gasTokenInfo, executor, refundReceiver, rejectors] =
       await Promise.all([
@@ -83,6 +91,7 @@ export class MultisigTransactionExecutionDetailsMapper {
       transaction.trusted,
       proposer,
       proposedByDelegate,
+      typedData,
     );
   }
 
