@@ -622,23 +622,23 @@ describe('Hook Events for Notifications (Unit)', () => {
       expect(
         notificationsRepository.enqueueNotification.mock.calls,
       ).toStrictEqual(
-        expect.arrayContaining(
-          subscribers
-            .filter((subscriber) => {
-              return confirmations.every((confirmation) => {
-                return confirmation.owner !== subscriber.subscriber;
-              });
-            })
-            .map((subscriber) => {
-              return {
+        subscribers
+          .filter((subscriber) => {
+            return confirmations.every((confirmation) => {
+              return confirmation.owner !== subscriber.subscriber;
+            });
+          })
+          .map((subscriber) => {
+            return [
+              {
                 token: subscriber.cloudMessagingToken,
                 deviceUuid: subscriber.deviceUuid,
                 notification: {
                   data: { ...event, type: 'CONFIRMATION_REQUEST' },
                 },
-              };
-            }),
-        ),
+              },
+            ];
+          }),
       );
     });
 
@@ -912,23 +912,23 @@ describe('Hook Events for Notifications (Unit)', () => {
       expect(
         notificationsRepository.enqueueNotification.mock.calls,
       ).toStrictEqual(
-        expect.arrayContaining(
-          subscribers
-            .filter((subscriber) => {
-              return confirmations.every((confirmation) => {
-                return confirmation.owner !== subscriber.subscriber;
-              });
-            })
-            .map((subscriber) => {
-              return {
+        subscribers
+          .filter((subscriber) => {
+            return confirmations.every((confirmation) => {
+              return confirmation.owner !== subscriber.subscriber;
+            });
+          })
+          .map((subscriber) => {
+            return [
+              {
                 token: subscriber.cloudMessagingToken,
                 deviceUuid: subscriber.deviceUuid,
                 notification: {
                   data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
                 },
-              };
-            }),
-        ),
+              },
+            ];
+          }),
       );
     });
   });
@@ -1235,23 +1235,23 @@ describe('Hook Events for Notifications (Unit)', () => {
       expect(
         notificationsRepository.enqueueNotification.mock.calls,
       ).toStrictEqual(
-        expect.arrayContaining(
-          subscribers
-            .filter((subscriber) => {
-              return confirmations.every((confirmation) => {
-                return confirmation.owner !== subscriber.subscriber;
-              });
-            })
-            .map((subscriber) => {
-              return {
+        subscribers
+          .filter((subscriber) => {
+            return confirmations.every((confirmation) => {
+              return confirmation.owner !== subscriber.subscriber;
+            });
+          })
+          .map((subscriber) => {
+            return [
+              {
                 token: subscriber.cloudMessagingToken,
                 deviceUuid: subscriber.deviceUuid,
                 notification: {
                   data: { ...event, type: 'CONFIRMATION_REQUEST' },
                 },
-              };
-            }),
-        ),
+              },
+            ];
+          }),
       );
     });
 
@@ -1557,23 +1557,23 @@ describe('Hook Events for Notifications (Unit)', () => {
       expect(
         notificationsRepository.enqueueNotification.mock.calls,
       ).toStrictEqual(
-        expect.arrayContaining(
-          subscribers
-            .filter((subscriber) => {
-              return confirmations.every((confirmation) => {
-                return confirmation.owner !== subscriber.subscriber;
-              });
-            })
-            .map((subscriber) => {
-              return {
+        subscribers
+          .filter((subscriber) => {
+            return confirmations.every((confirmation) => {
+              return confirmation.owner !== subscriber.subscriber;
+            });
+          })
+          .map((subscriber) => {
+            return [
+              {
                 token: subscriber.cloudMessagingToken,
                 deviceUuid: subscriber.deviceUuid,
                 notification: {
                   data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
                 },
-              };
-            }),
-        ),
+              },
+            ];
+          }),
       );
     });
   });
