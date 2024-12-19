@@ -5,7 +5,7 @@ import type { IPushNotificationsApi } from '@/domain/interfaces/push-notificatio
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
 import type { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
 import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
-import { upsertSubscriptionsDtoBuilder } from '@/datasources/notifications/__tests__/upsert-subscriptions.dto.entity.builder';
+import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';

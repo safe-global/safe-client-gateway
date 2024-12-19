@@ -20,7 +20,7 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/upsert-subscriptions.dto.entity.builder';
+import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 import type { Chain } from '@/routes/chains/entities/chain.entity';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
