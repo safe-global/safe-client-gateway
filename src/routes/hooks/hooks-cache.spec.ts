@@ -44,6 +44,7 @@ import {
   updatedDelegateEventBuilder,
 } from '@/routes/hooks/entities/__tests__/delegate-events.builder';
 
+// TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
 describe('Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
