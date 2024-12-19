@@ -8,7 +8,7 @@ export class SafeOverview {
   readonly chainId: string;
   @ApiProperty()
   readonly threshold: number;
-  @ApiProperty()
+  @ApiProperty({ type: AddressInfo, isArray: true, nullable: false })
   readonly owners: Array<AddressInfo>;
   @ApiProperty()
   readonly fiatTotal: string;
