@@ -1,27 +1,14 @@
 import { DeviceType } from '@/domain/notifications/v2/entities/device-type.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification-type.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+import {
+  UpsertSubscriptionsSafesDto as DomainUpsertSubscriptionsSafesDto,
+  UpsertSubscriptionsDto as DomainUpsertSubscriptionsDto,
+} from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { UUID } from 'crypto';
-import { z } from 'zod';
-
-export const UpsertSubscriptionsDtoSafeSchema = z.object({
-  chainId: NumericStringSchema,
-  address: AddressSchema,
-  notificationTypes: z.array(z.nativeEnum(NotificationType)),
-});
-
-export const UpsertSubscriptionsDtoSchema = z.object({
-  cloudMessagingToken: z.string(),
-  safes: z.array(UpsertSubscriptionsDtoSafeSchema),
-  deviceType: z.nativeEnum(DeviceType),
-  deviceUuid: UuidSchema.nullish().default(null),
-});
 
 export class UpsertSubscriptionsSafesDto
-  implements z.infer<typeof UpsertSubscriptionsDtoSafeSchema>
+  implements DomainUpsertSubscriptionsSafesDto
 {
   @ApiProperty()
   chainId!: string;
@@ -37,9 +24,7 @@ export class UpsertSubscriptionsSafesDto
   notificationTypes!: Array<NotificationType>;
 }
 
-export class UpsertSubscriptionsDto
-  implements z.infer<typeof UpsertSubscriptionsDtoSchema>
-{
+export class UpsertSubscriptionsDto implements DomainUpsertSubscriptionsDto {
   @ApiProperty()
   cloudMessagingToken!: string;
 

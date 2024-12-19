@@ -1,5 +1,5 @@
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';

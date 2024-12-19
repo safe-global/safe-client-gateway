@@ -1,4 +1,4 @@
-import type { UpsertSubscriptionsDto } from '@/datasources/notifications/entities/upsert-subscriptions.dto.entity';
+import type { UpsertSubscriptionsDto } from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 import type { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
@@ -28,7 +28,7 @@ export const createV2RegisterDtoBuilder = async (
         upsertSubscriptionsDto: {
           cloudMessagingToken: args.cloudMessagingToken,
           deviceType: args.deviceType,
-          deviceUuid: (args.uuid as UUID | undefined) || undefined,
+          deviceUuid: (args.uuid as UUID | undefined) ?? null,
           safes: [],
           signature: safeV1Registration.signatures[0] as `0x${string}`,
         },
