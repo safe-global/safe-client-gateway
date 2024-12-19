@@ -24,7 +24,6 @@ import { moduleTransactionEventBuilder } from '@/routes/hooks/entities/__tests__
 import { incomingEtherEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-ether.builder';
 import { incomingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-token.builder';
 import { newMessageConfirmationEventBuilder } from '@/routes/hooks/entities/__tests__/new-message-confirmation.builder';
-import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
 import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -68,7 +67,6 @@ import type { ConsumeMessage } from 'amqplib';
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
 describe('Hook Events for Notifications (Unit)', () => {
   let app: INestApplication<Server>;
-  let pushNotificationsApi: jest.MockedObjectDeep<IPushNotificationsApi>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: IConfigurationService;
@@ -112,7 +110,6 @@ describe('Hook Events for Notifications (Unit)', () => {
     app = moduleFixture.createNestApplication();
 
     networkService = moduleFixture.get(NetworkService);
-    pushNotificationsApi = moduleFixture.get(IPushNotificationsApi);
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     queuesApiService = moduleFixture.get(IQueuesApiService);
@@ -148,7 +145,7 @@ describe('Hook Events for Notifications (Unit)', () => {
     const cb = queuesApiService.subscribe.mock.calls[0][1];
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
-    expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+    expect(notificationsRepository.enqueueNotification).not.toHaveBeenCalled();
   });
 
   it.each(
@@ -184,15 +181,17 @@ describe('Hook Events for Notifications (Unit)', () => {
     const cb = queuesApiService.subscribe.mock.calls[0][1];
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+    expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
       subscribers.length,
     );
     subscribers.forEach((subscriber, i) => {
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
-        i + 1,
-        subscriber.cloudMessagingToken,
-        { data: event },
-      );
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).toHaveBeenNthCalledWith(i + 1, {
+        token: subscriber.cloudMessagingToken,
+        deviceUuid: subscriber.deviceUuid,
+        notification: { data: event },
+      });
     });
   });
   it.each(
@@ -263,14 +262,16 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
       );
       subscribers.forEach((subscriber, i) => {
         expect(
-          pushNotificationsApi.enqueueNotification,
-        ).toHaveBeenNthCalledWith(i + 1, subscriber.cloudMessagingToken, {
-          data: event,
+          notificationsRepository.enqueueNotification,
+        ).toHaveBeenNthCalledWith(i + 1, {
+          token: subscriber.cloudMessagingToken,
+          deviceUuid: subscriber.deviceUuid,
+          notification: { data: event },
         });
       });
     },
@@ -347,7 +348,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     },
   );
 
@@ -411,17 +414,16 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
       );
       subscribers.forEach((subscriber, i) => {
         expect(
-          pushNotificationsApi.enqueueNotification,
-        ).toHaveBeenNthCalledWith(i + 1, subscriber.cloudMessagingToken, {
-          data: {
-            ...event,
-            type: 'CONFIRMATION_REQUEST',
-          },
+          notificationsRepository.enqueueNotification,
+        ).toHaveBeenNthCalledWith(i + 1, {
+          token: subscriber.cloudMessagingToken,
+          deviceUuid: subscriber.deviceUuid,
+          notification: { data: { ...event, type: 'CONFIRMATION_REQUEST' } },
         });
       });
     });
@@ -474,7 +476,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it('should not enqueue PENDING_MULTISIG_TRANSACTION event notifications if the Safe has a threshold > 1 but the owner has signed', async () => {
@@ -543,7 +547,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it("should only enqueue PENDING_MULTISIG_TRANSACTION event notifications for those that haven't signed", async () => {
@@ -610,10 +616,12 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length - confirmations.length,
       );
-      expect(pushNotificationsApi.enqueueNotification.mock.calls).toStrictEqual(
+      expect(
+        notificationsRepository.enqueueNotification.mock.calls,
+      ).toStrictEqual(
         expect.arrayContaining(
           subscribers
             .filter((subscriber) => {
@@ -621,15 +629,15 @@ describe('Hook Events for Notifications (Unit)', () => {
                 return confirmation.owner !== subscriber.subscriber;
               });
             })
-            .map((subscriber) => [
-              subscriber.cloudMessagingToken,
-              {
-                data: {
-                  ...event,
-                  type: 'CONFIRMATION_REQUEST',
+            .map((subscriber) => {
+              return {
+                token: subscriber.cloudMessagingToken,
+                deviceUuid: subscriber.deviceUuid,
+                notification: {
+                  data: { ...event, type: 'CONFIRMATION_REQUEST' },
                 },
-              },
-            ]),
+              };
+            }),
         ),
       );
     });
@@ -693,16 +701,17 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
       );
       subscribers.forEach((subscriber, i) => {
         expect(
-          pushNotificationsApi.enqueueNotification,
-        ).toHaveBeenNthCalledWith(i + 1, subscriber.cloudMessagingToken, {
-          data: {
-            ...event,
-            type: 'MESSAGE_CONFIRMATION_REQUEST',
+          notificationsRepository.enqueueNotification,
+        ).toHaveBeenNthCalledWith(i + 1, {
+          token: subscriber.cloudMessagingToken,
+          deviceUuid: subscriber.deviceUuid,
+          notification: {
+            data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
           },
         });
       });
@@ -756,7 +765,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it('should not enqueue MESSAGE_CONFIRMATION_REQUEST event notifications if the Safe has a threshold > 1 but the owner has signed', async () => {
@@ -826,7 +837,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it("should only enqueue MESSAGE_CONFIRMATION_REQUEST event notifications for those that haven't signed", async () => {
@@ -893,10 +906,12 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length - confirmations.length,
       );
-      expect(pushNotificationsApi.enqueueNotification.mock.calls).toStrictEqual(
+      expect(
+        notificationsRepository.enqueueNotification.mock.calls,
+      ).toStrictEqual(
         expect.arrayContaining(
           subscribers
             .filter((subscriber) => {
@@ -904,15 +919,15 @@ describe('Hook Events for Notifications (Unit)', () => {
                 return confirmation.owner !== subscriber.subscriber;
               });
             })
-            .map((subscriber) => [
-              subscriber.cloudMessagingToken,
-              {
-                data: {
-                  ...event,
-                  type: 'MESSAGE_CONFIRMATION_REQUEST',
+            .map((subscriber) => {
+              return {
+                token: subscriber.cloudMessagingToken,
+                deviceUuid: subscriber.deviceUuid,
+                notification: {
+                  data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
                 },
-              },
-            ]),
+              };
+            }),
         ),
       );
     });
@@ -987,17 +1002,16 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
       );
       subscribers.forEach((subscriber, i) => {
         expect(
-          pushNotificationsApi.enqueueNotification,
-        ).toHaveBeenNthCalledWith(i + 1, subscriber.cloudMessagingToken, {
-          data: {
-            ...event,
-            type: 'CONFIRMATION_REQUEST',
-          },
+          notificationsRepository.enqueueNotification,
+        ).toHaveBeenNthCalledWith(i + 1, {
+          token: subscriber.cloudMessagingToken,
+          deviceUuid: subscriber.deviceUuid,
+          notification: { data: { ...event, type: 'CONFIRMATION_REQUEST' } },
         });
       });
     });
@@ -1057,7 +1071,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it('should not enqueue PENDING_MULTISIG_TRANSACTION event notifications if the Safe has a threshold > 1 but the delegate has signed', async () => {
@@ -1133,7 +1149,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it("should only enqueue PENDING_MULTISIG_TRANSACTION event notifications for those that haven't signed", async () => {
@@ -1211,10 +1229,12 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length - confirmations.length,
       );
-      expect(pushNotificationsApi.enqueueNotification.mock.calls).toStrictEqual(
+      expect(
+        notificationsRepository.enqueueNotification.mock.calls,
+      ).toStrictEqual(
         expect.arrayContaining(
           subscribers
             .filter((subscriber) => {
@@ -1222,15 +1242,15 @@ describe('Hook Events for Notifications (Unit)', () => {
                 return confirmation.owner !== subscriber.subscriber;
               });
             })
-            .map((subscriber) => [
-              subscriber.cloudMessagingToken,
-              {
-                data: {
-                  ...event,
-                  type: 'CONFIRMATION_REQUEST',
+            .map((subscriber) => {
+              return {
+                token: subscriber.cloudMessagingToken,
+                deviceUuid: subscriber.deviceUuid,
+                notification: {
+                  data: { ...event, type: 'CONFIRMATION_REQUEST' },
                 },
-              },
-            ]),
+              };
+            }),
         ),
       );
     });
@@ -1301,16 +1321,17 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length,
       );
       subscribers.forEach((subscriber, i) => {
         expect(
-          pushNotificationsApi.enqueueNotification,
-        ).toHaveBeenNthCalledWith(i + 1, subscriber.cloudMessagingToken, {
-          data: {
-            ...event,
-            type: 'MESSAGE_CONFIRMATION_REQUEST',
+          notificationsRepository.enqueueNotification,
+        ).toHaveBeenNthCalledWith(i + 1, {
+          token: subscriber.cloudMessagingToken,
+          deviceUuid: subscriber.deviceUuid,
+          notification: {
+            data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
           },
         });
       });
@@ -1371,7 +1392,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it('should not enqueue MESSAGE_CONFIRMATION_REQUEST event notifications if the Safe has a threshold > 1 but the delegate has signed', async () => {
@@ -1448,7 +1471,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it("should only enqueue MESSAGE_CONFIRMATION_REQUEST event notifications for those that haven't signed", async () => {
@@ -1526,10 +1551,12 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+      expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
         subscribers.length - confirmations.length,
       );
-      expect(pushNotificationsApi.enqueueNotification.mock.calls).toStrictEqual(
+      expect(
+        notificationsRepository.enqueueNotification.mock.calls,
+      ).toStrictEqual(
         expect.arrayContaining(
           subscribers
             .filter((subscriber) => {
@@ -1537,15 +1564,15 @@ describe('Hook Events for Notifications (Unit)', () => {
                 return confirmation.owner !== subscriber.subscriber;
               });
             })
-            .map((subscriber) => [
-              subscriber.cloudMessagingToken,
-              {
-                data: {
-                  ...event,
-                  type: 'MESSAGE_CONFIRMATION_REQUEST',
+            .map((subscriber) => {
+              return {
+                token: subscriber.cloudMessagingToken,
+                deviceUuid: subscriber.deviceUuid,
+                notification: {
+                  data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
                 },
-              },
-            ]),
+              };
+            }),
         ),
       );
     });
@@ -1615,7 +1642,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
 
     it("should not enqueue MESSAGE_CONFIRMATION_REQUEST event notifications if the Safe has a threshold > 1 and the subscriber hasn't yet signed", async () => {
@@ -1681,7 +1710,9 @@ describe('Hook Events for Notifications (Unit)', () => {
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
 
-      expect(pushNotificationsApi.enqueueNotification).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -1792,35 +1823,31 @@ describe('Hook Events for Notifications (Unit)', () => {
     const cb = queuesApiService.subscribe.mock.calls[0][1];
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(3);
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
-      1,
-      ownerSubscriptions[1].cloudMessagingToken,
-      {
-        data: {
-          ...event,
-          type: 'CONFIRMATION_REQUEST',
-        },
-      },
-    );
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
-      2,
-      delegateSubscriptions[0].cloudMessagingToken,
-      {
-        data: {
-          ...event,
-          type: 'CONFIRMATION_REQUEST',
-        },
-      },
-    );
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
+    expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
       3,
-      delegateSubscriptions[1].cloudMessagingToken,
+    );
+    expect(notificationsRepository.enqueueNotification).toHaveBeenNthCalledWith(
+      1,
       {
-        data: {
-          ...event,
-          type: 'CONFIRMATION_REQUEST',
-        },
+        token: ownerSubscriptions[1].cloudMessagingToken,
+        deviceUuid: ownerSubscriptions[1].deviceUuid,
+        notification: { data: { ...event, type: 'CONFIRMATION_REQUEST' } },
+      },
+    );
+    expect(notificationsRepository.enqueueNotification).toHaveBeenNthCalledWith(
+      2,
+      {
+        token: delegateSubscriptions[0].cloudMessagingToken,
+        deviceUuid: delegateSubscriptions[0].deviceUuid,
+        notification: { data: { ...event, type: 'CONFIRMATION_REQUEST' } },
+      },
+    );
+    expect(notificationsRepository.enqueueNotification).toHaveBeenNthCalledWith(
+      3,
+      {
+        token: delegateSubscriptions[1].cloudMessagingToken,
+        deviceUuid: delegateSubscriptions[1].deviceUuid,
+        notification: { data: { ...event, type: 'CONFIRMATION_REQUEST' } },
       },
     );
   });
@@ -1932,34 +1959,36 @@ describe('Hook Events for Notifications (Unit)', () => {
     const cb = queuesApiService.subscribe.mock.calls[0][1];
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(3);
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
-      1,
-      ownerSubscriptions[1].cloudMessagingToken,
-      {
-        data: {
-          ...event,
-          type: 'MESSAGE_CONFIRMATION_REQUEST',
-        },
-      },
-    );
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
-      2,
-      delegateSubscriptions[0].cloudMessagingToken,
-      {
-        data: {
-          ...event,
-          type: 'MESSAGE_CONFIRMATION_REQUEST',
-        },
-      },
-    );
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenNthCalledWith(
+    expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
       3,
-      delegateSubscriptions[1].cloudMessagingToken,
+    );
+    expect(notificationsRepository.enqueueNotification).toHaveBeenNthCalledWith(
+      1,
       {
-        data: {
-          ...event,
-          type: 'MESSAGE_CONFIRMATION_REQUEST',
+        token: ownerSubscriptions[1].cloudMessagingToken,
+        deviceUuid: ownerSubscriptions[1].deviceUuid,
+        notification: {
+          data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
+        },
+      },
+    );
+    expect(notificationsRepository.enqueueNotification).toHaveBeenNthCalledWith(
+      2,
+      {
+        token: delegateSubscriptions[0].cloudMessagingToken,
+        deviceUuid: delegateSubscriptions[0].deviceUuid,
+        notification: {
+          data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
+        },
+      },
+    );
+    expect(notificationsRepository.enqueueNotification).toHaveBeenNthCalledWith(
+      3,
+      {
+        token: delegateSubscriptions[1].cloudMessagingToken,
+        deviceUuid: delegateSubscriptions[1].deviceUuid,
+        notification: {
+          data: { ...event, type: 'MESSAGE_CONFIRMATION_REQUEST' },
         },
       },
     );
@@ -1995,7 +2024,7 @@ describe('Hook Events for Notifications (Unit)', () => {
       }
     });
 
-    pushNotificationsApi.enqueueNotification
+    notificationsRepository.enqueueNotification
       // Specific error regarding unregistered/stale tokens
       // @see https://firebase.google.com/docs/cloud-messaging/send-message#rest
       .mockRejectedValueOnce({
@@ -2106,7 +2135,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         return Promise.reject(`No matching rule for url: ${url}`);
       }
     });
-    pushNotificationsApi.enqueueNotification
+    notificationsRepository.enqueueNotification
       .mockRejectedValueOnce(new Error('Error enqueueing notification'))
       .mockResolvedValueOnce()
       .mockRejectedValueOnce(new Error('Other error'))
@@ -2119,7 +2148,7 @@ describe('Hook Events for Notifications (Unit)', () => {
       } as ConsumeMessage);
     }
 
-    expect(pushNotificationsApi.enqueueNotification).toHaveBeenCalledTimes(
+    expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
       events.length,
     );
   });
