@@ -10,7 +10,7 @@ import type { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notif
 import { notificationTypeBuilder } from '@/datasources/notifications/entities/__tests__/notification-type.entity.db.builder';
 import { notificationSubscriptionBuilder } from '@/datasources/notifications/entities/__tests__/notification-subscription.entity.db.builder';
 import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
-import { upsertSubscriptionsDtoBuilder } from '@/datasources/notifications/__tests__/upsert-subscriptions.dto.entity.builder';
+import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
 import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';

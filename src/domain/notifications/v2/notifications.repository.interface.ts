@@ -1,4 +1,4 @@
-import type { UpsertSubscriptionsDto } from '@/routes/notifications/v1/entities/upsert-subscriptions.dto.entity';
+import type { UpsertSubscriptionsDto } from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import type { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import type { UUID } from 'crypto';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';

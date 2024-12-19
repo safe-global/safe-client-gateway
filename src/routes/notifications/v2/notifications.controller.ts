@@ -1,8 +1,6 @@
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import {
-  UpsertSubscriptionsDto,
-  UpsertSubscriptionsDtoSchema,
-} from '@/routes/notifications/v2/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDto } from '@/routes/notifications/v2/entities/upsert-subscriptions.dto.entity';
+import { UpsertSubscriptionsDtoSchema } from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
