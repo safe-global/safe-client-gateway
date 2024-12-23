@@ -14,7 +14,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should not verify an CreateAddressBookItemDto with a shorter name', () => {
+  it('should not verify a CreateAddressBookItemDto with a shorter name', () => {
     const createAddressBookItemDto = createAddressBookItemDtoBuilder()
       .with('name', faker.string.alphanumeric({ length: 2 }))
       .build();
@@ -28,7 +28,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
         code: 'too_small',
         inclusive: true,
         exact: false,
-        message: 'Address Books items names must be at least 3 characters long',
+        message: 'Address book entry names must be at least 3 characters long',
         minimum: 3,
         path: ['name'],
         type: 'string',
@@ -36,7 +36,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
     ]);
   });
 
-  it('should not verify an CreateAddressBookItemDto with a number name', () => {
+  it('should not verify a CreateAddressBookItemDto with a number name', () => {
     const createAddressBookItemDto = createAddressBookItemDtoBuilder()
       // @ts-expect-error - should be strings
       .with('name', faker.number.int())
@@ -57,7 +57,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
     ]);
   });
 
-  it('should not verify an CreateAddressBookItemDto with a longer name', () => {
+  it('should not verify a CreateAddressBookItemDto with a longer name', () => {
     const createAddressBookItemDto = createAddressBookItemDtoBuilder()
       .with('name', faker.string.alphanumeric({ length: 51 }))
       .build();
@@ -71,7 +71,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
         code: 'too_big',
         inclusive: true,
         exact: false,
-        message: 'Address Books items names must be at most 50 characters long',
+        message: 'Address book entry names must be at most 50 characters long',
         maximum: 50,
         path: ['name'],
         type: 'string',
@@ -79,7 +79,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
     ]);
   });
 
-  it('should not verify an CreateAddressBookItemDto with a malformed name', () => {
+  it('should not verify a CreateAddressBookItemDto with a malformed name', () => {
     const createAddressBookItemDto = createAddressBookItemDtoBuilder()
       .with('name', '////')
       .build();
@@ -92,14 +92,14 @@ describe('CreateAddressBookItemDtoSchema', () => {
       {
         code: 'invalid_string',
         message:
-          'Address Books items names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
+          'Address book entry names must start with a letter or number and ca Contain alphanumeric characters, periods, underscores, or hyphens',
         path: ['name'],
         validation: 'regex',
       },
     ]);
   });
 
-  it('should not verify an CreateAddressBookItemDto with a malformed address', () => {
+  it('should not verify a CreateAddressBookItemDto with a malformed address', () => {
     const createAddressBookItemDto = createAddressBookItemDtoBuilder()
       .with('address', '0x123')
       .build();
@@ -117,7 +117,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
     ]);
   });
 
-  it('should checksum the address of an CreateAddressBookItemDto', () => {
+  it('should checksum the address of a CreateAddressBookItemDto', () => {
     const createAddressBookItemDto = createAddressBookItemDtoBuilder().build();
     // @ts-expect-error - address should be `0x${string}`
     createAddressBookItemDto.address =
