@@ -92,7 +92,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
       {
         code: 'invalid_string',
         message:
-          'Address book entry names must start with a letter or number and ca Contain alphanumeric characters, periods, underscores, or hyphens',
+          'Address book entry names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
         path: ['name'],
         validation: 'regex',
       },
