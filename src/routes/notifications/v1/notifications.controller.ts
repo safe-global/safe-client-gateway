@@ -19,13 +19,19 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 import type { UUID } from 'crypto';
 import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
-import { keccak256, recoverMessageAddress, toBytes } from 'viem';
+import {
+  keccak256,
+  recoverAddress,
+  recoverMessageAddress,
+  toBytes,
+} from 'viem';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
+import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
@@ -157,20 +163,35 @@ export class NotificationsController {
     }
 
     for (const [index, safeV2] of safeV2Array.entries()) {
-      const safeAddresses = args.safeRegistrations.flatMap(
-        (safe) => safe.safes,
+      const safeAddresses = safeV2.upsertSubscriptionsDto.safes.map(
+        (safeV2Safes) => safeV2Safes.address,
       );
 
-      const recoveredAddress = await recoverMessageAddress({
-        message: {
-          raw: keccak256(
+      /**
+       * @todo Explore the feasibility of using a unified method to recover signatures for both web and other clients.
+       */
+      let recoveredAddress: `0x${string}`;
+      if (args.deviceType === DeviceType.Web) {
+        recoveredAddress = await recoverMessageAddress({
+          message: {
+            raw: keccak256(
+              toBytes(
+                `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
+              ),
+            ),
+          },
+          signature: safeV2.upsertSubscriptionsDto.signature,
+        });
+      } else {
+        recoveredAddress = await recoverAddress({
+          hash: keccak256(
             toBytes(
               `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
             ),
           ),
-        },
-        signature: safeV2.upsertSubscriptionsDto.signature,
-      });
+          signature: safeV2.upsertSubscriptionsDto.signature,
+        });
+      }
 
       safeV2.authPayload.chain_id =
         safeV2.upsertSubscriptionsDto.safes[0].chainId;
