@@ -42,6 +42,7 @@ import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
+import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -167,6 +168,9 @@ describe('Notifications Controller (Unit)', () => {
           .expect(200)
           .expect({});
 
+        const deleteAllDeviceOwners =
+          registerDeviceDto.deviceType !== DeviceType.Web;
+
         // @TODO Remove NotificationModuleV2 after all clients have migrated and compatibility is no longer needed.
         // We call V2 as many times as we have a registration with at least one safe
         const safeRegistrationsWithSafe =
@@ -185,7 +189,11 @@ describe('Notifications Controller (Unit)', () => {
           const nthCall = index + 1; // Convert zero-based index to a one-based call number
           expect(
             notificationServiceV2.upsertSubscriptions,
-          ).toHaveBeenNthCalledWith(nthCall, upsertSubscriptionsV2);
+          ).toHaveBeenNthCalledWith(
+            nthCall,
+            upsertSubscriptionsV2,
+            deleteAllDeviceOwners,
+          );
         }
       },
     );

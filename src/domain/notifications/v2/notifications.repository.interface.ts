@@ -13,10 +13,13 @@ export interface INotificationsRepositoryV2 {
     notification: FirebaseNotification;
   }): Promise<void>;
 
-  upsertSubscriptions(args: {
-    authPayload: AuthPayload;
-    upsertSubscriptionsDto: UpsertSubscriptionsDto;
-  }): Promise<{
+  upsertSubscriptions(
+    args: {
+      authPayload: AuthPayload;
+      upsertSubscriptionsDto: UpsertSubscriptionsDto;
+    },
+    deleteAllDeviceOwners?: boolean,
+  ): Promise<{
     deviceUuid: UUID;
   }>;
 
