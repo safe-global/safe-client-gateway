@@ -204,6 +204,8 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   redis: {
+    user: process.env.REDIS_USER || undefined,
+    pass: process.env.REDIS_PASS || undefined,
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
   },
