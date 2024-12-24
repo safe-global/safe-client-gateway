@@ -35,6 +35,7 @@ import {
 } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import { UUID } from 'crypto';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
+import uniqBy from 'lodash/uniqBy';
 
 type EventToNotify =
   | DeletedMultisigTransactionEvent
@@ -163,11 +164,13 @@ export class EventNotificationsHelper {
       cloudMessagingToken: string;
     }>
   > {
-    const subscriptions =
+    const subscriptions = uniqBy(
       await this.notificationsRepository.getSubscribersBySafe({
         chainId: event.chainId,
         safeAddress: event.address,
-      });
+      }),
+      'cloudMessagingToken',
+    );
 
     if (!this.isOwnerOrDelegateOnlyEventToNotify(event)) {
       return subscriptions;
