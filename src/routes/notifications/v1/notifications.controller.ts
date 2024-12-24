@@ -77,10 +77,14 @@ export class NotificationsController {
 
     const v2Requests = [];
 
+    const deleteAllDeviceOwners =
+      registerDeviceDto.deviceType !== DeviceType.Web;
+
     for (const compatibleV2Request of compatibleV2Requests) {
       v2Requests.push(
         await this.notificationServiceV2.upsertSubscriptions(
           compatibleV2Request,
+          deleteAllDeviceOwners,
         ),
       );
     }

@@ -92,15 +92,24 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     return isNotFound && isUnregistered;
   }
 
-  public async upsertSubscriptions(args: {
-    authPayload: AuthPayload;
-    upsertSubscriptionsDto: UpsertSubscriptionsDto;
-  }): Promise<{
+  public async upsertSubscriptions(
+    args: {
+      authPayload: AuthPayload;
+      upsertSubscriptionsDto: UpsertSubscriptionsDto;
+    },
+    deleteAllDeviceOwners?: boolean,
+  ): Promise<{
     deviceUuid: UUID;
   }> {
     const deviceUuid = await this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager): Promise<UUID> => {
         const device = await this.upsertDevice(entityManager, args);
+        if (deleteAllDeviceOwners) {
+          // Some clients, such as the mobile app, do not call the delete endpoint to remove an owner key.
+          // Instead, they resend the updated list of owners without the key they want to delete.
+          // In such cases, we need to clear all the previous owners to ensure the update is applied correctly.
+          await this.deleteDeviceOwners(entityManager, device.id);
+        }
         await this.deletePreviousSubscriptions(entityManager, {
           deviceId: device.id,
           signerAddress: args.authPayload.signer_address,
@@ -145,6 +154,23 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     );
 
     return { id: queryResult.identifiers[0].id, device_uuid: deviceUuid };
+  }
+
+  private async deleteDeviceOwners(
+    entityManager: EntityManager,
+    deviceId: number,
+  ): Promise<void> {
+    const deviceSubscriptions = await entityManager.find(
+      NotificationSubscription,
+      {
+        where: {
+          push_notification_device: {
+            id: deviceId,
+          },
+        },
+      },
+    );
+    await entityManager.remove(deviceSubscriptions);
   }
 
   private async deletePreviousSubscriptions(
