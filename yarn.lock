@@ -2972,11 +2972,11 @@ __metadata:
   linkType: hard
 
 "@types/amqplib@npm:^0":
-  version: 0.10.5
-  resolution: "@types/amqplib@npm:0.10.5"
+  version: 0.10.6
+  resolution: "@types/amqplib@npm:0.10.6"
   dependencies:
     "@types/node": "npm:*"
-  checksum: 10/7c7fb01c08ad399d67b573990d4072a64c486264af01249c278c43171ce47228525ae73c73aa686c28a0474468561b34e5fe2d7a8bec2da1464bf852a06a0d4a
+  checksum: 10/63548c4d0e0fc6f09db04c94084116d6dfdd84ce82fdff82cb89518b1e4cd9e94f4a5768913ee5c2dcc17f390bd890fed534c0f17aaf84aa2049e96841a08350
   languageName: node
   linkType: hard
 
