@@ -74,6 +74,8 @@ export class EventNotificationsHelper {
 
     const subscriptions = await this.getRelevantSubscribers(event);
 
+    console.log('NotificationsToSend:', subscriptions);
+
     return await Promise.allSettled(
       subscriptions.map(async (subscription) => {
         const data = await this.mapEventNotification(
