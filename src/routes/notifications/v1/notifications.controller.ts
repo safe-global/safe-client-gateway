@@ -67,6 +67,8 @@ export class NotificationsController {
       return await this.notificationsService.registerDevice(registerDeviceDto);
     }
 
+    console.log('PushNotificationRequest:', JSON.stringify(registerDeviceDto));
+
     if (registerDeviceDto.timestamp) {
       this.validateTimestamp(parseInt(registerDeviceDto.timestamp));
     }
@@ -244,6 +246,7 @@ export class NotificationsController {
     @Param('chainId') chainId: string,
     @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
   ): Promise<void> {
+    console.log('ControllerUnregisterDevice:', chainId, uuid);
     if (this.isPushNotificationV2Enabled) {
       return await this.unregisterDeviceV2Compatible(chainId, uuid);
     }
@@ -269,6 +272,7 @@ export class NotificationsController {
     try {
       await this.notificationsService.unregisterDevice({ chainId, uuid });
     } catch (error: unknown) {
+      console.log('NotificationUnregisterError:', error);
       // The token might already have been removed from the TX service.
       // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
       const errorObject = error as { code?: number };
@@ -285,6 +289,7 @@ export class NotificationsController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
   ): Promise<void> {
+    console.log('ControllerUnregisterSafe:', chainId, uuid, safeAddress);
     if (this.isPushNotificationV2Enabled) {
       return this.unregisterSafeV2Compatible(chainId, uuid, safeAddress);
     }
@@ -324,6 +329,7 @@ export class NotificationsController {
         safeAddress,
       });
     } catch (error: unknown) {
+      console.log('NotificationUnregisterError:', error);
       // The token might already have been removed from the TX service.
       // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
       const errorObject = error as { code?: number };

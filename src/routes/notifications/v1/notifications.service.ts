@@ -84,6 +84,7 @@ export class NotificationsService {
     chainId: string;
     uuid: string;
   }): Promise<void> {
+    console.log('UnregisterDevice:', args.uuid, args.chainId);
     return this.notificationsRepository.unregisterDevice(args);
   }
 
