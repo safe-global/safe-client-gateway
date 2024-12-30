@@ -8503,7 +8503,7 @@ __metadata:
     "@nestjs/testing": "npm:^10.4.15"
     "@nestjs/typeorm": "npm:^10.0.2"
     "@safe-global/safe-deployments": "npm:^1.37.22"
-    "@smithy/util-stream": "npm:^3.3.2"
+    "@smithy/util-stream": "npm:^3.3.3"
     "@types/amqplib": "npm:^0"
     "@types/cookie-parser": "npm:^1.4.8"
     "@types/express": "npm:^5.0.0"
