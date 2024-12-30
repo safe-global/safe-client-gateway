@@ -44,6 +44,7 @@ export class ModuleTransactionDetailsMapper {
       txHash: transaction.transactionHash,
       detailedExecutionInfo: new ModuleExecutionDetails(moduleAddress),
       safeAppInfo: null,
+      note: null,
     };
   }
 
