@@ -47,6 +47,11 @@ export class HooksRepositoryWithNotifications
   }
 
   async onEvent(event: Event): Promise<unknown> {
+    console.log(
+      'Incoming Event:',
+      JSON.stringify(event),
+      '-----------------------------',
+    );
     const isSupportedChainId = await this.eventCacheHelper.isSupportedChainMemo(
       event.chainId,
     );
