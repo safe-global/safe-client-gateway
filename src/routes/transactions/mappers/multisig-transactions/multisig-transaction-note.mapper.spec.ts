@@ -31,7 +31,10 @@ describe('Multisig Transaction note mapper (Unit)', () => {
 
   it('should return undefined if `origin` does not contain a note', () => {
     const transaction = multisigTransactionBuilder()
-      .with('origin', '{"url":"uniswap.org","name":"Uniswap"}')
+      .with(
+        'origin',
+        JSON.stringify({ name: faker.word.noun(), url: faker.internet.url() }),
+      )
       .build();
 
     const note = mapper.mapTxNote(transaction);
