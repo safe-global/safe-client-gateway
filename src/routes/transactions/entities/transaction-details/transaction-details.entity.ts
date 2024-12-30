@@ -47,5 +47,5 @@ export class TransactionDetails {
   @ApiPropertyOptional({ type: SafeAppInfo, nullable: true })
   safeAppInfo!: SafeAppInfo | null;
   @ApiPropertyOptional({ type: String, nullable: true })
-  note?: string;
+  note!: string | null;
 }

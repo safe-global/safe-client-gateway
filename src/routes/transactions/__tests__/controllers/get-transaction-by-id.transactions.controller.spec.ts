@@ -271,6 +271,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           },
           txHash: moduleTransaction.transactionHash,
           safeAppInfo: null,
+          note: null,
         });
       });
   });
@@ -371,6 +372,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           detailedExecutionInfo: null,
           txHash: transfer.transactionHash,
           safeAppInfo: null,
+          note: null,
         });
       });
   });

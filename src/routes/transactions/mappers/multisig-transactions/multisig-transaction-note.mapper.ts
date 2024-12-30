@@ -3,7 +3,7 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 
 @Injectable()
 export class MultisigTransactionNoteMapper {
-  mapTxNote(transaction: MultisigTransaction): string | undefined {
+  mapTxNote(transaction: MultisigTransaction): string | null {
     if (transaction.origin) {
       try {
         const origin = JSON.parse(transaction.origin);
@@ -15,5 +15,6 @@ export class MultisigTransactionNoteMapper {
         // Ignore, no note
       }
     }
+    return null;
   }
 }

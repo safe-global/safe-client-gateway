@@ -26,7 +26,7 @@ describe('Multisig Transaction note mapper (Unit)', () => {
 
     const note = mapper.mapTxNote(transaction);
 
-    expect(note).toBeUndefined();
+    expect(note).toBeNull();
   });
 
   it('should return undefined if `origin` does not contain a note', () => {
@@ -36,7 +36,7 @@ describe('Multisig Transaction note mapper (Unit)', () => {
 
     const note = mapper.mapTxNote(transaction);
 
-    expect(note).toBeUndefined();
+    expect(note).toBeNull();
   });
 
   it('should return undefined if `origin` is null', () => {
@@ -46,6 +46,6 @@ describe('Multisig Transaction note mapper (Unit)', () => {
 
     const note = mapper.mapTxNote(transaction);
 
-    expect(note).toBeUndefined();
+    expect(note).toBeNull();
   });
 });
