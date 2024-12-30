@@ -1,3 +1,4 @@
+import { faker } from '@faker-js/faker';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 
@@ -5,13 +6,17 @@ const mapper = new MultisigTransactionNoteMapper();
 
 describe('Multisig Transaction note mapper (Unit)', () => {
   it('should parse transaction `origin` and return a note', () => {
+    const noteText = faker.lorem.sentence();
     const transaction = multisigTransactionBuilder()
-      .with('origin', '{"name":"{\\"note\\":\\"This is a note\\"}"}')
+      .with(
+        'origin',
+        JSON.stringify({ name: JSON.stringify({ note: noteText }) }),
+      )
       .build();
 
     const note = mapper.mapTxNote(transaction);
 
-    expect(note).toBe('This is a note');
+    expect(note).toBe(noteText);
   });
 
   it('should return undefined if `origin` is not a valid JSON', () => {
