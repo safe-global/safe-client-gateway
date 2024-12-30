@@ -13,13 +13,10 @@ export interface INotificationsRepositoryV2 {
     notification: FirebaseNotification;
   }): Promise<void>;
 
-  upsertSubscriptions(
-    args: {
-      authPayload: AuthPayload;
-      upsertSubscriptionsDto: UpsertSubscriptionsDto;
-    },
-    deleteAllDeviceOwners?: boolean,
-  ): Promise<{
+  upsertSubscriptions(args: {
+    authPayload: AuthPayload;
+    upsertSubscriptionsDto: UpsertSubscriptionsDto;
+  }): Promise<{
     deviceUuid: UUID;
   }>;
 
@@ -29,6 +26,8 @@ export interface INotificationsRepositoryV2 {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<Array<NotificationType>>;
+
+  deleteDeviceOwners(deviceUUid: UUID): Promise<void>;
 
   getSubscribersBySafe(args: {
     chainId: string;

@@ -12,19 +12,17 @@ export class NotificationsServiceV2 {
     private readonly notificationsRepository: INotificationsRepositoryV2,
   ) {}
 
-  async upsertSubscriptions(
-    args: {
-      authPayload: AuthPayload;
-      upsertSubscriptionsDto: UpsertSubscriptionsDto;
-    },
-    deleteAllDeviceOwners?: boolean,
-  ): Promise<{
+  async upsertSubscriptions(args: {
+    authPayload: AuthPayload;
+    upsertSubscriptionsDto: UpsertSubscriptionsDto;
+  }): Promise<{
     deviceUuid: UUID;
   }> {
-    return this.notificationsRepository.upsertSubscriptions(
-      args,
-      deleteAllDeviceOwners,
-    );
+    return this.notificationsRepository.upsertSubscriptions(args);
+  }
+
+  async deleteDeviceOwners(deviceUuidd: UUID): Promise<void> {
+    await this.notificationsRepository.deleteDeviceOwners(deviceUuidd);
   }
 
   async getSafeSubscription(args: {
