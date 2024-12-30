@@ -176,17 +176,13 @@ describe('Notifications Controller V2 (Unit)', () => {
       );
       expect(
         notificationsRepository.upsertSubscriptions,
-      ).toHaveBeenNthCalledWith(
-        1,
-        {
-          authPayload: {
-            signer_address: signerAddress,
-            chain_id: authPayloadDto.chain_id,
-          },
-          upsertSubscriptionsDto,
+      ).toHaveBeenNthCalledWith(1, {
+        authPayload: {
+          signer_address: signerAddress,
+          chain_id: authPayloadDto.chain_id,
         },
-        undefined,
-      );
+        upsertSubscriptionsDto,
+      });
     });
 
     it('should upsert subscription(s) for delegates', async () => {
@@ -255,17 +251,13 @@ describe('Notifications Controller V2 (Unit)', () => {
       );
       expect(
         notificationsRepository.upsertSubscriptions,
-      ).toHaveBeenNthCalledWith(
-        1,
-        {
-          authPayload: {
-            signer_address: signerAddress,
-            chain_id: authPayloadDto.chain_id,
-          },
-          upsertSubscriptionsDto,
+      ).toHaveBeenNthCalledWith(1, {
+        authPayload: {
+          signer_address: signerAddress,
+          chain_id: authPayloadDto.chain_id,
         },
-        undefined,
-      );
+        upsertSubscriptionsDto,
+      });
     });
 
     it('should allow subscription upsertion with a token with the same signer_address from a different chain_id', async () => {
@@ -332,17 +324,13 @@ describe('Notifications Controller V2 (Unit)', () => {
       );
       expect(
         notificationsRepository.upsertSubscriptions,
-      ).toHaveBeenNthCalledWith(
-        1,
-        {
-          authPayload: {
-            signer_address: signerAddress,
-            chain_id: authPayloadDto.chain_id,
-          },
-          upsertSubscriptionsDto,
+      ).toHaveBeenNthCalledWith(1, {
+        authPayload: {
+          signer_address: signerAddress,
+          chain_id: authPayloadDto.chain_id,
         },
-        undefined,
-      );
+        upsertSubscriptionsDto,
+      });
     });
 
     it('should allow subscription(s) to the same Safe with different devices', async () => {

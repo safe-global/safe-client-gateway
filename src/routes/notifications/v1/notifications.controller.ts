@@ -82,11 +82,19 @@ export class NotificationsController {
     const deleteAllDeviceOwners =
       registerDeviceDto.deviceType !== DeviceType.Web;
 
+    if (deleteAllDeviceOwners && registerDeviceDto.uuid !== undefined) {
+      // Some clients, such as the mobile app, do not call the delete endpoint to remove an owner key.
+      // Instead, they resend the updated list of owners without the key they want to delete.
+      // In such cases, we need to clear all the previous owners to ensure the update is applied correctly.
+      await this.notificationServiceV2.deleteDeviceOwners(
+        registerDeviceDto.uuid,
+      );
+    }
+
     for (const compatibleV2Request of compatibleV2Requests) {
       v2Requests.push(
         await this.notificationServiceV2.upsertSubscriptions(
           compatibleV2Request,
-          deleteAllDeviceOwners,
         ),
       );
     }
@@ -138,7 +146,10 @@ export class NotificationsController {
     const safesV1Registrations = args.safeRegistrations;
 
     for (const safeV1Registration of safesV1Registrations) {
-      for (const safeV1Signature of safeV1Registration.signatures) {
+      const signatureArray = safeV1Registration.signatures.length
+        ? safeV1Registration.signatures
+        : [undefined];
+      for (const safeV1Signature of signatureArray) {
         if (safeV1Registration.safes.length) {
           const safeV2: Parameters<
             NotificationsServiceV2['upsertSubscriptions']
@@ -153,7 +164,7 @@ export class NotificationsController {
               deviceType: args.deviceType,
               deviceUuid: (args.uuid as UUID) || undefined,
               safes: [],
-              signature: safeV1Signature as `0x${string}`,
+              signature: (safeV1Signature as `0x${string}`) ?? undefined,
             },
             authPayload: new AuthPayload(),
           };
@@ -175,11 +186,14 @@ export class NotificationsController {
         (safeV2Safes) => safeV2Safes.address,
       );
 
-      const recoveredAddress = await this.recoverAddress({
-        registerDeviceDto: args,
-        safeV2Dto: safeV2,
-        safeAddresses,
-      });
+      let recoveredAddress: `0x${string}` | undefined = undefined;
+      if (safeV2.upsertSubscriptionsDto.signature) {
+        recoveredAddress = await this.recoverAddress({
+          registerDeviceDto: args,
+          safeV2Dto: safeV2,
+          safeAddresses,
+        });
+      }
 
       safeV2.authPayload.chain_id =
         safeV2.upsertSubscriptionsDto.safes[0].chainId;
