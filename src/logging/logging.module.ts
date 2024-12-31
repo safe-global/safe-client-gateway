@@ -30,9 +30,13 @@ const LoggerTransports = Symbol('LoggerTransports');
 function winstonTransportsFactory(
   configurationService: IConfigurationService,
 ): Array<Transport> | Transport {
+  const prettyColorize =
+    configurationService.getOrThrow<boolean>('log.prettyColorize');
   return new winston.transports.Console({
     level: configurationService.getOrThrow<string>('log.level'),
-    format: winston.format.json(),
+    format: prettyColorize
+      ? winston.format.prettyPrint({ colorize: true })
+      : winston.format.json(),
   });
 }
 

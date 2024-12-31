@@ -270,6 +270,7 @@ export default () => ({
   log: {
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+    prettyColorize: process.env.LOG_PRETTY_COLORIZE?.toLowerCase() === 'true',
   },
   owners: {
     // There is no hook to invalidate the owners, so defaulting 0 disables the cache
