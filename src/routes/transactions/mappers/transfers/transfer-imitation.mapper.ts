@@ -69,11 +69,11 @@ export class TransferImitationMapper {
    * @returns - mapped transactions
    */
   mapImitations(args: {
-    transactions: Array<TransactionItem>;
+    transactions: TransactionItem[];
     previousTransaction: TransactionItem | undefined;
     showImitations: boolean;
-  }): Array<TransactionItem> {
-    const mappedTransactions: Array<TransactionItem> = [];
+  }): TransactionItem[] {
+    const mappedTransactions: TransactionItem[] = [];
 
     // Iterate in reverse order as transactions are date descending
     for (let i = args.transactions.length - 1; i >= 0; i--) {

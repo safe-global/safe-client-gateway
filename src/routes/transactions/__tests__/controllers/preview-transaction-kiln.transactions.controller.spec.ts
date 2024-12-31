@@ -108,7 +108,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
         const networkStats = networkStatsBuilder().build();
         // Transaction being proposed (no stakes exists)
-        const stakes: Array<Stake> = [];
+        const stakes: Stake[] = [];
         const safe = safeBuilder().build();
         const data = depositEncoder().encode();
         const value = getNumberString(64 * 10 ** 18 + 1);
@@ -251,7 +251,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
         const networkStats = networkStatsBuilder().build();
         // Transaction being proposed (no stakes exists)
-        const stakes: Array<Stake> = [];
+        const stakes: Stake[] = [];
         const safe = safeBuilder().build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('data', multiSendTransaction.encode())

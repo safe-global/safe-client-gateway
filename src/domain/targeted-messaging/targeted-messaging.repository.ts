@@ -27,7 +27,7 @@ export class TargetedMessagingRepository
   async addSafeToOutreach(args: {
     outreachId: number;
     safeAddress: `0x${string}`;
-  }): Promise<Array<TargetedSafe>> {
+  }): Promise<TargetedSafe[]> {
     return this.datasource.createTargetedSafes({
       outreachId: args.outreachId,
       addresses: [args.safeAddress],

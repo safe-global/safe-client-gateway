@@ -537,7 +537,7 @@ describe('Chains Controller (Unit)', () => {
         data: rawify(domainSingletonsResponse),
         status: 200,
       });
-      const masterCopiesResponse: Array<MasterCopy> = [
+      const masterCopiesResponse: MasterCopy[] = [
         {
           address: domainSingletonsResponse[0].address,
           version: domainSingletonsResponse[0].version,

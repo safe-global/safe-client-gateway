@@ -15,7 +15,7 @@ export const ISwapsRepository = Symbol('ISwapsRepository');
 export interface ISwapsRepository {
   getOrder(chainId: string, orderUid: `0x${string}`): Promise<Order>;
 
-  getOrders(chainId: string, txHash: string): Promise<Array<Order>>;
+  getOrders(chainId: string, txHash: string): Promise<Order[]>;
 
   getFullAppData(
     chainId: string,
@@ -36,7 +36,7 @@ export class SwapsRepository implements ISwapsRepository {
     return OrderSchema.parse(order);
   }
 
-  async getOrders(chainId: string, txHash: string): Promise<Array<Order>> {
+  async getOrders(chainId: string, txHash: string): Promise<Order[]> {
     const api = await this.swapsApiFactory.getApi(chainId);
     const order = await api.getOrders(txHash);
     return OrdersSchema.parse(order);

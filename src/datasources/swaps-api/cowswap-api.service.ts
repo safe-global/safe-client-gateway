@@ -22,10 +22,10 @@ export class CowSwapApi implements ISwapsApi {
     }
   }
 
-  async getOrders(txHash: string): Promise<Raw<Array<Order>>> {
+  async getOrders(txHash: string): Promise<Raw<Order[]>> {
     try {
       const url = `${this.baseUrl}/api/v1/transactions/${txHash}/orders`;
-      const { data } = await this.networkService.get<Array<Order>>({
+      const { data } = await this.networkService.get<Order[]>({
         url,
       });
       return data;

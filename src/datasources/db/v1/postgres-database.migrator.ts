@@ -135,7 +135,7 @@ export class PostgresDatabaseMigrator {
    *
    * @returns array of {@link Migration}
    */
-  private getMigrations(path: string): Array<Migration> {
+  private getMigrations(path: string): Migration[] {
     const migrations = fs
       .readdirSync(path)
       .filter((file) => {
@@ -219,7 +219,7 @@ export class PostgresDatabaseMigrator {
    * @returns last run {@link Migration}
    */
   private async getLastRunMigration(): Promise<Migration> {
-    const [last] = await this.sql<Array<Migration>>`SELECT
+    const [last] = await this.sql<Migration[]>`SELECT
                                                         id
                                                     FROM
                                                         ${this.sql(PostgresDatabaseMigrator.MIGRATIONS_TABLE)}

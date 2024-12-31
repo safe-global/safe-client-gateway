@@ -125,7 +125,7 @@ export class DatabaseMigrator {
    *
    * @returns {Promise<Array<LockSchema>>} A promise that resolves to an array of LockSchema objects.
    */
-  private async selectLock(connection: DataSource): Promise<Array<LockSchema>> {
+  private async selectLock(connection: DataSource): Promise<LockSchema[]> {
     return await connection.query(
       `SELECT "id", "status" FROM "${this.LOCK_TABLE_NAME}";`,
     );

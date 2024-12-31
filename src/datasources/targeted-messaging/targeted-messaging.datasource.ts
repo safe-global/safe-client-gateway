@@ -160,7 +160,7 @@ export class TargetedMessagingDatasource
 
   async createTargetedSafes(
     createTargetedSafesDto: CreateTargetedSafesDto,
-  ): Promise<Array<TargetedSafe>> {
+  ): Promise<TargetedSafe[]> {
     const targetedSafes = await this.sql.begin(async (sql) => {
       const inserted = await sql<[{ id: number }]>`
         INSERT INTO targeted_safes

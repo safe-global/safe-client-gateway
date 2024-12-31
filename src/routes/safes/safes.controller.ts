@@ -62,7 +62,7 @@ export class SafesController {
     excludeSpam: boolean,
     @Query('wallet_address', new ValidationPipe(AddressSchema.optional()))
     walletAddress?: `0x${string}`,
-  ): Promise<Array<SafeOverview>> {
+  ): Promise<SafeOverview[]> {
     return this.service.getSafeOverview({
       currency,
       addresses,

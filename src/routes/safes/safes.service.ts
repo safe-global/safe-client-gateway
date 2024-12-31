@@ -101,7 +101,7 @@ export class SafesService {
 
     let moduleAddressesInfo: AddressInfo[] | null = null;
     if (safe.modules) {
-      const moduleInfoCollection: Array<AddressInfo> =
+      const moduleInfoCollection: AddressInfo[] =
         await this.addressInfoHelper.getCollection(args.chainId, safe.modules, [
           'CONTRACT',
         ]);
@@ -134,7 +134,7 @@ export class SafesService {
     trusted: boolean;
     excludeSpam: boolean;
     walletAddress?: `0x${string}`;
-  }): Promise<Array<SafeOverview>> {
+  }): Promise<SafeOverview[]> {
     const limitedSafes = args.addresses.slice(0, this.maxOverviews);
 
     const settledOverviews = await Promise.allSettled(
@@ -181,7 +181,7 @@ export class SafesService {
       }),
     );
 
-    const safeOverviews: Array<SafeOverview> = [];
+    const safeOverviews: SafeOverview[] = [];
 
     for (const safeOverview of settledOverviews) {
       if (safeOverview.status === 'rejected') {
@@ -205,7 +205,7 @@ export class SafesService {
   }
 
   private computeAwaitingConfirmation(args: {
-    transactions: Array<MultisigTransaction>;
+    transactions: MultisigTransaction[];
     walletAddress: `0x${string}`;
   }): number {
     return args.transactions.reduce(
@@ -306,7 +306,9 @@ export class SafesService {
           page.status === 'fulfilled',
       )
       .flatMap(
-        ({ value }): (MultisigTransaction | ModuleTransaction | Transfer)[] =>
+        ({
+          value,
+        }): Array<MultisigTransaction | ModuleTransaction | Transfer> =>
           value.results,
       )
       .map((tx) => {

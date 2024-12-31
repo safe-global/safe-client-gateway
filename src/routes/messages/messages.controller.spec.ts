@@ -80,7 +80,7 @@ describe('Messages controller', () => {
   describe('GET messages by hash', () => {
     it('Get a confirmed message with no safe app associated', async () => {
       const chain = chainBuilder().build();
-      const safeApps: Array<SafeApp> = [];
+      const safeApps: SafeApp[] = [];
       const messageConfirmations = faker.helpers.multiple(
         () => messageConfirmationBuilder().build(),
         { count: { min: 2, max: 5 } },
@@ -213,7 +213,7 @@ describe('Messages controller', () => {
 
     it('Get an unconfirmed message with no safe app associated', async () => {
       const chain = chainBuilder().build();
-      const safeApps: Array<SafeApp> = [];
+      const safeApps: SafeApp[] = [];
       const messageConfirmations = faker.helpers.multiple(
         () => messageConfirmationBuilder().build(),
         { count: { min: 2, max: 5 } },

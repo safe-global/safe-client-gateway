@@ -307,7 +307,7 @@ describe('NotificationsRepositoryV2', () => {
       const notificationSubscriptionNotificationTypeRepository =
         dataSource.getRepository(NotificationSubscriptionNotificationType);
 
-      const subscriptions: Array<NotificationSubscription> = [];
+      const subscriptions: NotificationSubscription[] = [];
       for (const safe of upsertSubscriptionsDto.safes) {
         const subscriptionQuery =
           await notificationSubscriptionRepository.findBy({
@@ -334,7 +334,7 @@ describe('NotificationsRepositoryV2', () => {
           relations: ['notification_type', 'notification_subscription'],
         });
 
-      const upsertNotificationTypes: Array<string> = [];
+      const upsertNotificationTypes: string[] = [];
       upsertSubscriptionsDto.safes.map((safe) => {
         upsertNotificationTypes.push(...safe.notificationTypes);
       });

@@ -22,7 +22,7 @@ export interface ITargetedMessagingDatasource {
 
   createTargetedSafes(
     createTargetedSafesDto: CreateTargetedSafesDto,
-  ): Promise<Array<TargetedSafe>>;
+  ): Promise<TargetedSafe[]>;
 
   getTargetedSafe(args: {
     outreachId: number;

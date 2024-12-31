@@ -20,7 +20,7 @@ export class AlertTransaction
   hash!: string;
   from!: `0x${string}`;
   to!: `0x${string}`;
-  logs!: Array<AlertLog>;
+  logs!: AlertLog[];
   input!: string;
   value!: string;
   nonce!: string;

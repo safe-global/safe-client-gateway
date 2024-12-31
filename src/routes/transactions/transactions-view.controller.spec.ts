@@ -587,7 +587,7 @@ describe('TransactionsViewController tests', () => {
           const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
           const networkStats = networkStatsBuilder().build();
           // Transaction being proposed (no stakes exists)
-          const stakes: Array<Stake> = [];
+          const stakes: Stake[] = [];
           const safeAddress = faker.finance.ethereumAddress();
           const data = encodeFunctionData({
             abi: parseAbi(['function deposit() external payable']),
@@ -801,7 +801,7 @@ describe('TransactionsViewController tests', () => {
           const networkStats = networkStatsBuilder().build();
           const safeAddress = faker.finance.ethereumAddress();
           // Transaction being proposed (no stakes exists)
-          const stakes: Array<Stake> = [];
+          const stakes: Stake[] = [];
           const data = encodeFunctionData({
             abi: parseAbi(['function deposit() external payable']),
           });
@@ -905,7 +905,7 @@ describe('TransactionsViewController tests', () => {
           const networkStats = networkStatsBuilder().build();
           const safeAddress = faker.finance.ethereumAddress();
           // Transaction being proposed (no stakes exists)
-          const stakes: Array<Stake> = [];
+          const stakes: Stake[] = [];
           const depositData = encodeFunctionData({
             abi: parseAbi(['function deposit() external payable']),
           });

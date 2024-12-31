@@ -56,7 +56,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
 
   it('should return null if no SafeApp is found and origin is not null', async () => {
     const chainId = faker.string.numeric();
-    const safeApps: Array<SafeApp> = [];
+    const safeApps: SafeApp[] = [];
     const transactionOrigin = {
       url: faker.internet.url({ appendSlash: false }),
       name: faker.word.words(),

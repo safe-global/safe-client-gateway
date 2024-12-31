@@ -54,7 +54,7 @@ export class StakingRepository implements IStakingRepository {
     return deployment;
   }
 
-  private async getDeployments(chainId: string): Promise<Array<Deployment>> {
+  private async getDeployments(chainId: string): Promise<Deployment[]> {
     const stakingApi = await this.stakingApiFactory.getApi(chainId);
     const deployments = await stakingApi.getDeployments();
     return DeploymentsSchema.parse(deployments);

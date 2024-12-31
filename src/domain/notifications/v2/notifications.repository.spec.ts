@@ -147,7 +147,8 @@ describe('NotificationsRepositoryV2', () => {
         upsertSubscriptionsDto: upsertSubscriptionsDto,
       });
 
-      const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
+      const subscriptionsToInsert: Array<Partial<NotificationSubscription>> =
+        [];
       for (const safe of upsertSubscriptionsDto.safes) {
         const device = new NotificationDevice();
         device.id = deviceId;
@@ -183,7 +184,8 @@ describe('NotificationsRepositoryV2', () => {
         upsertSubscriptionsDto: upsertSubscriptionsDto,
       });
 
-      const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
+      const subscriptionsToInsert: Array<Partial<NotificationSubscription>> =
+        [];
       for (const safe of upsertSubscriptionsDto.safes) {
         const device = new NotificationDevice();
         device.id = deviceId;
@@ -259,7 +261,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should return an empty array if there is no notification type for safe', async () => {
-      const mockNotificationTypes: Array<NotificationType> = [];
+      const mockNotificationTypes: NotificationType[] = [];
       notificationTypeRepository.find.mockResolvedValue(mockNotificationTypes);
       mockPostgresDatabaseService.getRepository.mockResolvedValue(
         notificationTypeRepository,

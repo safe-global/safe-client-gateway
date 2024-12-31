@@ -26,7 +26,7 @@ type TransactionAddedEventArgs = {
 
 type TransactionAddedEvent = {
   data: Hex;
-  topics: [signature: Hex, ...args: Array<Hex>];
+  topics: [signature: Hex, ...args: Hex[]];
 };
 
 class TransactionAddedEventBuilder<T extends TransactionAddedEventArgs>

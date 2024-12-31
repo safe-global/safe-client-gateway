@@ -17,7 +17,7 @@ export interface INotificationsDatasource {
     deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-  }): Promise<Array<NotificationType>>;
+  }): Promise<NotificationType[]>;
 
   getSubscribersBySafe(args: {
     chainId: string;

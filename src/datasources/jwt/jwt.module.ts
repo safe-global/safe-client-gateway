@@ -38,7 +38,7 @@ function jwtClientFactory() {
       options: {
         issuer: string;
         secretOrPrivateKey: string;
-        algorithms?: Array<jwt.Algorithm>;
+        algorithms?: jwt.Algorithm[];
       },
     ): T => {
       return jwt.verify(token, options.secretOrPrivateKey, {
@@ -53,7 +53,7 @@ function jwtClientFactory() {
       options: {
         issuer: string;
         secretOrPrivateKey: string;
-        algorithms?: Array<jwt.Algorithm>;
+        algorithms?: jwt.Algorithm[];
       },
     ): JwtPayloadWithClaims<T> => {
       // Client has `decode` method but we also want to verify the signature

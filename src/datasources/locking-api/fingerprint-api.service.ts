@@ -15,7 +15,7 @@ import { Inject } from '@nestjs/common';
 
 export class FingerprintApiService implements IIdentityApi {
   private readonly eligibilityEncryptionKey: string;
-  private readonly nonEligibleCountryCodes: Array<string>;
+  private readonly nonEligibleCountryCodes: string[];
 
   constructor(
     @Inject(IConfigurationService)

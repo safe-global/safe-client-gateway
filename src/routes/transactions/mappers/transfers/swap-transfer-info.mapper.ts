@@ -127,7 +127,7 @@ export class SwapTransferInfoMapper {
    * @returns the {@link Order} if found, otherwise `undefined`
    */
   private findOrderByTransfer(
-    orders: Array<Order>,
+    orders: Order[],
     transfer: DomainTransfer,
   ): Order | undefined {
     return orders.find((order) => {

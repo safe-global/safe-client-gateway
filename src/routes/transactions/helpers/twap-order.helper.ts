@@ -134,7 +134,7 @@ export class TwapOrderHelper {
     twapStruct: TwapStruct;
     executionDate: Date;
     chainId: string;
-  }): Array<GPv2OrderParameters> {
+  }): GPv2OrderParameters[] {
     return Array.from({ length: Number(args.twapStruct.n) }, (_, index) => {
       return {
         sellToken: args.twapStruct.sellToken,

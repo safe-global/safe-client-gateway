@@ -9,7 +9,7 @@ export class SafeOverview {
   @ApiProperty()
   readonly threshold: number;
   @ApiProperty({ type: AddressInfo, isArray: true })
-  readonly owners: Array<AddressInfo>;
+  readonly owners: AddressInfo[];
   @ApiProperty()
   readonly fiatTotal: string;
   @ApiProperty()
@@ -21,7 +21,7 @@ export class SafeOverview {
     address: AddressInfo,
     chainId: string,
     threshold: number,
-    owners: Array<AddressInfo>,
+    owners: AddressInfo[],
     fiatTotal: string,
     queued: number,
     awaitingConfirmation: number | null,

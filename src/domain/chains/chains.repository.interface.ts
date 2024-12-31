@@ -21,7 +21,7 @@ export interface IChainsRepository {
   /**
    * Gets all the {@link Chain} available across pages
    */
-  getAllChains(): Promise<Array<Chain>>;
+  getAllChains(): Promise<Chain[]>;
 
   /**
    * Gets the {@link Chain} associated with {@link chainId}

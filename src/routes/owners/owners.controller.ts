@@ -28,7 +28,7 @@ export class OwnersController {
   async getAllSafesByOwner(
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
     ownerAddress: `0x${string}`,
-  ): Promise<{ [chainId: string]: Array<string> }> {
+  ): Promise<{ [chainId: string]: string[] }> {
     return this.ownersService.getAllSafesByOwner({ ownerAddress });
   }
 }

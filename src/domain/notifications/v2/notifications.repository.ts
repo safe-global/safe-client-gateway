@@ -185,8 +185,8 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       upsertSubscriptionsDto: UpsertSubscriptionsDto;
       deviceId: number;
     },
-  ): Promise<Array<NotificationSubscription>> {
-    const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
+  ): Promise<NotificationSubscription[]> {
+    const subscriptionsToInsert: Array<Partial<NotificationSubscription>> = [];
     for (const safe of args.upsertSubscriptionsDto.safes) {
       const device = new NotificationDevice();
       device.id = args.deviceId;
@@ -208,7 +208,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
         'push_notification_device',
       ],
     );
-    const subscriptionIds: Array<number> = insertResult.identifiers.map(
+    const subscriptionIds: number[] = insertResult.identifiers.map(
       (subscriptionIdentifier) => subscriptionIdentifier.id,
     );
 
@@ -222,8 +222,8 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
 
   private async getSubscriptionsById(
     entityManager: EntityManager,
-    subscriptionIds: Array<number>,
-  ): Promise<Array<NotificationSubscription>> {
+    subscriptionIds: number[],
+  ): Promise<NotificationSubscription[]> {
     return await entityManager.find(NotificationSubscription, {
       where: { id: In(subscriptionIds) },
     });
@@ -233,7 +233,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     entityManager: EntityManager,
     arg: {
       upsertSubscriptionsDto: UpsertSubscriptionsDto;
-      subscriptions: Array<NotificationSubscription>;
+      subscriptions: NotificationSubscription[];
     },
   ): Promise<void> {
     const notificationTypesMap = new Map<string, NotificationType>(); // A map of all the notification types in request along with their database entity
@@ -281,7 +281,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     deviceUuid: UUID;
     chainId: string;
     safeAddress: `0x${string}`;
-  }): Promise<Array<NotificationType>> {
+  }): Promise<NotificationType[]> {
     if (!args.authPayload.signer_address) {
       throw new UnauthorizedException();
     }

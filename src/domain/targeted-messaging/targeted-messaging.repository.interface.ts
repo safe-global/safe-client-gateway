@@ -19,7 +19,7 @@ export interface ITargetedMessagingRepository {
   addSafeToOutreach(args: {
     outreachId: number;
     safeAddress: `0x${string}`;
-  }): Promise<Array<TargetedSafe>>;
+  }): Promise<TargetedSafe[]>;
 
   getOutreachOrFail(outreachId: number): Promise<Outreach>;
 

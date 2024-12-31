@@ -31,7 +31,7 @@ export class EventCacheHelper {
   private static readonly UNSUPPORTED_CHAIN_EVENT = 'unsupported_chain_event';
   public isSupportedChainMemo: ((chainId: string) => Promise<boolean>) &
     MemoizedFunction;
-  private unsupportedChains: Array<string> = [];
+  private unsupportedChains: string[] = [];
 
   constructor(
     @Inject(IBalancesRepository)
@@ -108,7 +108,7 @@ export class EventCacheHelper {
 
   public async onEventClearCache<
     E extends Extract<Event, { type: Event['type'] }>,
-  >(event: E): Promise<Array<void>> {
+  >(event: E): Promise<void[]> {
     const eventHandler = this.EventTypeHandler[event.type] as (
       event: E,
     ) => Array<Promise<void>>;

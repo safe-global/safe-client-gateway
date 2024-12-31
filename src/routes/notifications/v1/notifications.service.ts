@@ -121,7 +121,7 @@ export class NotificationsService {
   }
 
   private getErrorMessage(
-    registrationResults: PromiseSettledResult<DomainSafeRegistration>[],
+    registrationResults: Array<PromiseSettledResult<DomainSafeRegistration>>,
     safeRegistrations: SafeRegistration[],
   ): string {
     const failedRegistrationChainIds = registrationResults

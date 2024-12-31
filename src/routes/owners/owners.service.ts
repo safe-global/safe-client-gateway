@@ -19,7 +19,7 @@ export class OwnersService {
 
   async getAllSafesByOwner(args: {
     ownerAddress: `0x${string}`;
-  }): Promise<{ [chainId: string]: Array<string> }> {
+  }): Promise<{ [chainId: string]: string[] }> {
     return this.safeRepository.getAllSafesByOwner(args);
   }
 }

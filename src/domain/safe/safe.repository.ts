@@ -425,7 +425,7 @@ export class SafeRepository implements ISafeRepository {
 
   async getAllSafesByOwner(args: {
     ownerAddress: `0x${string}`;
-  }): Promise<{ [chainId: string]: Array<string> }> {
+  }): Promise<{ [chainId: string]: string[] }> {
     const chains = await this.chainsRepository.getAllChains();
     const allSafeLists = await Promise.all(
       chains.map(async ({ chainId }) => {

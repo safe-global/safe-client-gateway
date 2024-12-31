@@ -48,7 +48,7 @@ export class JwtService implements IJwtService {
     options: {
       issuer: string;
       secretOrPrivateKey: string;
-      algorithms?: Array<Algorithm>;
+      algorithms?: Algorithm[];
     } = {
       issuer: this.issuer,
       secretOrPrivateKey: this.secret,
@@ -62,7 +62,7 @@ export class JwtService implements IJwtService {
     options: {
       issuer: string;
       secretOrPrivateKey: string;
-      algorithms?: Array<Algorithm>;
+      algorithms?: Algorithm[];
     } = {
       issuer: this.issuer,
       secretOrPrivateKey: this.secret,

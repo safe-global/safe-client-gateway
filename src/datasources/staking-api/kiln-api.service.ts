@@ -52,11 +52,11 @@ export class KilnApi implements IStakingApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
-  async getDeployments(): Promise<Raw<Array<Deployment>>> {
+  async getDeployments(): Promise<Raw<Deployment[]>> {
     const url = `${this.baseUrl}/v1/deployments`;
     const cacheDir = CacheRouter.getStakingDeploymentsCacheDir();
     return await this.get<{
-      data: Array<Deployment>;
+      data: Deployment[];
     }>({
       cacheDir,
       url,
@@ -137,14 +137,14 @@ export class KilnApi implements IStakingApi {
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getDefiVaultStats(
     vault: `0x${string}`,
-  ): Promise<Raw<Array<DefiVaultStats>>> {
+  ): Promise<Raw<DefiVaultStats[]>> {
     const url = `${this.baseUrl}/v1/defi/network-stats`;
     const cacheDir = CacheRouter.getStakingDefiVaultStatsCacheDir({
       chainId: this.chainId,
       vault,
     });
     return await this.get<{
-      data: Array<DefiVaultStats>;
+      data: DefiVaultStats[];
     }>({
       cacheDir,
       url,
@@ -183,7 +183,7 @@ export class KilnApi implements IStakingApi {
       validatorsPublicKeys: args.validatorsPublicKeys,
     });
     return await this.get<{
-      data: Array<Stake>;
+      data: Stake[];
     }>({
       cacheDir,
       url,

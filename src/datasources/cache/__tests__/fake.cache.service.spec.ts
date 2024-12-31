@@ -41,7 +41,7 @@ describe('FakeCacheService', () => {
   });
 
   it('clears keys', async () => {
-    const actions: Promise<void>[] = [];
+    const actions: Array<Promise<void>> = [];
     for (let i = 0; i < 5; i++) {
       actions.push(
         target.hSet(

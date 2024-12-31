@@ -48,7 +48,7 @@ export class NotificationsControllerV2 {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
     @Auth() authPayload: AuthPayload,
-  ): Promise<Array<NotificationType>> {
+  ): Promise<NotificationType[]> {
     return this.notificationsService.getSafeSubscription({
       authPayload,
       deviceUuid,

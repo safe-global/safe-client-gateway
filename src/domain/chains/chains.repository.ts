@@ -64,8 +64,8 @@ export class ChainsRepository implements IChainsRepository {
     return valid;
   }
 
-  async getAllChains(): Promise<Array<Chain>> {
-    const chains: Array<Chain> = [];
+  async getAllChains(): Promise<Chain[]> {
+    const chains: Chain[] = [];
 
     let offset = 0;
     let next = null;

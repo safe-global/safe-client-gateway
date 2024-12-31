@@ -10,7 +10,7 @@ import type { Raw } from '@/validation/entities/raw.entity';
 export const IStakingApi = Symbol('IStakingApi');
 
 export interface IStakingApi {
-  getDeployments(): Promise<Raw<Array<Deployment>>>;
+  getDeployments(): Promise<Raw<Deployment[]>>;
 
   getNetworkStats(): Promise<Raw<NetworkStats>>;
 
@@ -18,7 +18,7 @@ export interface IStakingApi {
 
   getPooledStakingStats(pool: `0x${string}`): Promise<Raw<PooledStakingStats>>;
 
-  getDefiVaultStats(vault: `0x${string}`): Promise<Raw<Array<DefiVaultStats>>>;
+  getDefiVaultStats(vault: `0x${string}`): Promise<Raw<DefiVaultStats[]>>;
 
   getStakes(args: {
     safeAddress: `0x${string}`;

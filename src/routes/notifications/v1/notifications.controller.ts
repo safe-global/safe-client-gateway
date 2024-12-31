@@ -117,7 +117,7 @@ export class NotificationsController {
     const safeV2Array: Array<
       Parameters<NotificationsServiceV2['upsertSubscriptions']>[0] & {
         upsertSubscriptionsDto: {
-          safes: Array<UpsertSubscriptionsSafesDto>;
+          safes: UpsertSubscriptionsSafesDto[];
           signature: `0x${string}`;
         };
       }
@@ -131,7 +131,7 @@ export class NotificationsController {
           NotificationsServiceV2['upsertSubscriptions']
         >[0] & {
           upsertSubscriptionsDto: {
-            safes: Array<UpsertSubscriptionsSafesDto>;
+            safes: UpsertSubscriptionsSafesDto[];
             signature: `0x${string}`;
           };
         } = {

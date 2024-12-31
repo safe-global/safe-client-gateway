@@ -116,7 +116,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
 
   decodeDepositEvent(args: {
     data: `0x${string}`;
-    topics: [signature: `0x${string}`, ...args: `0x${string}`[]];
+    topics: [signature: `0x${string}`, ...args: Array<`0x${string}`>];
   }): {
     pubkey: `0x${string}`;
     withdrawal_credentials: `0x${string}`;
@@ -138,7 +138,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
 
   decodeWithdrawal(args: {
     data: `0x${string}`;
-    topics: [signature: `0x${string}`, ...args: `0x${string}`[]];
+    topics: [signature: `0x${string}`, ...args: Array<`0x${string}`>];
   }): {
     withdrawer: `0x${string}`;
     feeRecipient: `0x${string}`;

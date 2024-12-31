@@ -21,7 +21,7 @@ export class UpsertSubscriptionsSafesDto
     enum: NotificationType,
     enumName: 'NotificationType',
   })
-  notificationTypes!: Array<NotificationType>;
+  notificationTypes!: NotificationType[];
 }
 
 export class UpsertSubscriptionsDto implements DomainUpsertSubscriptionsDto {
@@ -29,7 +29,7 @@ export class UpsertSubscriptionsDto implements DomainUpsertSubscriptionsDto {
   cloudMessagingToken!: string;
 
   @ApiProperty({ isArray: true, type: UpsertSubscriptionsSafesDto })
-  safes!: Array<UpsertSubscriptionsSafesDto>;
+  safes!: UpsertSubscriptionsSafesDto[];
 
   @ApiProperty({ enum: DeviceType, enumName: 'DeviceType' })
   deviceType!: DeviceType;

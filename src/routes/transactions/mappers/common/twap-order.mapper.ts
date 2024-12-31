@@ -91,7 +91,7 @@ export class TwapOrderMapper {
     // to avoid requesting too many orders
     const hasAbundantParts = twapParts.length > this.maxNumberOfParts;
 
-    let partsToFetch: Array<GPv2OrderParameters>;
+    let partsToFetch: GPv2OrderParameters[];
 
     // If the transaction is not executed, there are no parts to fetch
     if (!transaction.executionDate) {
@@ -200,7 +200,7 @@ export class TwapOrderMapper {
   }
 
   private getActivePart(args: {
-    twapParts: Array<GPv2OrderParameters>;
+    twapParts: GPv2OrderParameters[];
     executionDate: Date | null;
   }): GPv2OrderParameters | null {
     if (!args.executionDate) {
@@ -216,11 +216,11 @@ export class TwapOrderMapper {
   }
 
   private async getPartOrders(args: {
-    partsToFetch: Array<GPv2OrderParameters>;
+    partsToFetch: GPv2OrderParameters[];
     chainId: string;
     safeAddress: `0x${string}`;
-  }): Promise<Array<KnownOrder> | null> {
-    const orders: Array<KnownOrder> = [];
+  }): Promise<KnownOrder[] | null> {
+    const orders: KnownOrder[] = [];
 
     for (const part of args.partsToFetch) {
       const partFullAppData = await this.swapsRepository.getFullAppData(
@@ -265,8 +265,8 @@ export class TwapOrderMapper {
   private async getOrderStatus(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    twapParts: Array<GPv2OrderParameters>;
-    partOrders: Array<KnownOrder> | null;
+    twapParts: GPv2OrderParameters[];
+    partOrders: KnownOrder[] | null;
     activeOrderUid: `0x${string}` | null;
     executionDate: Date | null;
   }): Promise<OrderStatus> {
@@ -312,19 +312,19 @@ export class TwapOrderMapper {
     }
   }
 
-  private getExecutedSellAmount(orders: Array<KnownOrder>): bigint {
+  private getExecutedSellAmount(orders: KnownOrder[]): bigint {
     return orders.reduce((acc, order) => {
       return acc + BigInt(order.executedSellAmount);
     }, BigInt(0));
   }
 
-  private getExecutedBuyAmount(orders: Array<KnownOrder>): bigint {
+  private getExecutedBuyAmount(orders: KnownOrder[]): bigint {
     return orders.reduce((acc, order) => {
       return acc + BigInt(order.executedBuyAmount);
     }, BigInt(0));
   }
 
-  private getExecutedSurplusFee(orders: Array<KnownOrder>): bigint {
+  private getExecutedSurplusFee(orders: KnownOrder[]): bigint {
     return orders.reduce((acc, order) => {
       return acc + BigInt(order.executedSurplusFee ?? BigInt(0));
     }, BigInt(0));

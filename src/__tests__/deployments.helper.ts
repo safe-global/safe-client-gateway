@@ -123,9 +123,9 @@ const versionsByDeploymentByChainId = getVersionsByChainIdByDeploymentMap();
 
 export function getDeploymentVersionsByChainIds(
   contractAlias: keyof typeof deploymentAliases,
-  chainIds: Array<string>,
-): Record<string, Array<string>> {
-  return chainIds.reduce<Record<string, Array<string>>>((acc, chainId) => {
+  chainIds: string[],
+): Record<string, string[]> {
+  return chainIds.reduce<Record<string, string[]>>((acc, chainId) => {
     acc[chainId] = versionsByDeploymentByChainId[contractAlias][chainId] ?? [];
     return acc;
   }, {});

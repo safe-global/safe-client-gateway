@@ -4,5 +4,5 @@ import { LockingRank } from '@/routes/community/entities/locking-rank.entity';
 
 export class LockingRankPage extends Page<LockingRank> {
   @ApiProperty({ type: LockingRank, isArray: true })
-  results!: Array<LockingRank>;
+  results!: LockingRank[];
 }

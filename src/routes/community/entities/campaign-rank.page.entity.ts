@@ -4,5 +4,5 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CampaignRankPage extends Page<CampaignRank> {
   @ApiProperty({ type: CampaignRank, isArray: true })
-  results!: Array<CampaignRank>;
+  results!: CampaignRank[];
 }
