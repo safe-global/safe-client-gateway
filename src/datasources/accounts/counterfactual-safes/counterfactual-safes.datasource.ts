@@ -160,12 +160,15 @@ export class CounterfactualSafesDatasource
   }
 
   private async checkCreationRateLimit(account: Account): Promise<void> {
-    const current = await this.cacheService.increment(
-      CacheRouter.getRateLimitCacheKey(
-        `${CounterfactualSafesDatasource.COUNTERFACTUAL_SAFES_CREATION_CACHE_PREFIX}_${account.address}`,
-      ),
-      this.counterfactualSafesCreationRateLimitPeriodSeconds,
-    );
+    const current =
+      (await this.cacheService.increment(
+        CacheRouter.getRateLimitCacheKey(
+          `${CounterfactualSafesDatasource.COUNTERFACTUAL_SAFES_CREATION_CACHE_PREFIX}_${account.address}`,
+        ),
+        this.counterfactualSafesCreationRateLimitPeriodSeconds,
+        // If the current value cannot be retrieved from Redis (e.g., due to an error or timeout),
+        // we allow the user to proceed without blocking their operation.
+      )) ?? 0;
     if (current > this.counterfactualSafesCreationRateLimitCalls) {
       this.loggingService.warn(
         `Limit of ${this.counterfactualSafesCreationRateLimitCalls} reached for account ${account.address}`,

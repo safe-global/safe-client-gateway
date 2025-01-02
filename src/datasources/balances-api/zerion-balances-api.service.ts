@@ -380,12 +380,15 @@ export class ZerionBalancesApi implements IBalancesApi {
   }
 
   private async _checkRateLimit(): Promise<void> {
-    const current = await this.cacheService.increment(
-      CacheRouter.getRateLimitCacheKey(
-        ZerionBalancesApi.RATE_LIMIT_CACHE_KEY_PREFIX,
-      ),
-      this.limitPeriodSeconds,
-    );
+    const current =
+      (await this.cacheService.increment(
+        CacheRouter.getRateLimitCacheKey(
+          ZerionBalancesApi.RATE_LIMIT_CACHE_KEY_PREFIX,
+        ),
+        this.limitPeriodSeconds,
+        // If the current value cannot be retrieved from Redis (e.g., due to an error or timeout),
+        // we allow the user to proceed without blocking their operation.
+      )) ?? 0;
     if (current > this.limitCalls) throw new LimitReachedError();
   }
 }

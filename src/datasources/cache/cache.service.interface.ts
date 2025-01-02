@@ -13,12 +13,12 @@ export interface ICacheService {
 
   hGet(cacheDir: CacheDir): Promise<string | undefined>;
 
-  deleteByKey(key: string): Promise<number>;
+  deleteByKey(key: string): Promise<number | undefined>;
 
   increment(
     cacheKey: string,
     expireTimeSeconds: number | undefined,
-  ): Promise<number>;
+  ): Promise<number | undefined>;
 
   setCounter(
     key: string,
