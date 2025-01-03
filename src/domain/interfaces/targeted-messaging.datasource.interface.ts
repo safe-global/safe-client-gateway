@@ -16,7 +16,7 @@ export interface ITargetedMessagingDatasource {
 
   updateOutreach(updateOutreachDto: UpdateOutreachDto): Promise<Outreach>;
 
-  getUnprocessedOutreaches(): Promise<Outreach[]>;
+  getUnprocessedOutreaches(): Promise<Array<Outreach>>;
 
   markOutreachAsProcessed(outreach: Outreach): Promise<Outreach>;
 

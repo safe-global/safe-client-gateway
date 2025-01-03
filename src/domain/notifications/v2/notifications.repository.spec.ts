@@ -147,7 +147,8 @@ describe('NotificationsRepositoryV2', () => {
         upsertSubscriptionsDto: upsertSubscriptionsDto,
       });
 
-      const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
+      const subscriptionsToInsert: Array<Partial<NotificationSubscription>> =
+        [];
       for (const safe of upsertSubscriptionsDto.safes) {
         const device = new NotificationDevice();
         device.id = deviceId;
@@ -183,7 +184,8 @@ describe('NotificationsRepositoryV2', () => {
         upsertSubscriptionsDto: upsertSubscriptionsDto,
       });
 
-      const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
+      const subscriptionsToInsert: Array<Partial<NotificationSubscription>> =
+        [];
       for (const safe of upsertSubscriptionsDto.safes) {
         const device = new NotificationDevice();
         device.id = deviceId;

@@ -62,7 +62,7 @@ export class Chain {
   @ApiProperty()
   beaconChainExplorerUriTemplate: ApiBeaconChainExplorerUriTemplate;
   @ApiProperty()
-  disabledWallets: string[];
+  disabledWallets: Array<string>;
   @ApiPropertyOptional({ type: String, nullable: true })
   ensRegistryAddress: `0x${string}` | null;
   @ApiProperty()
@@ -70,7 +70,7 @@ export class Chain {
   @ApiProperty()
   contractAddresses: ContractAddresses;
   @ApiProperty()
-  features: string[];
+  features: Array<string>;
   @ApiProperty({
     type: 'array',
     items: {
@@ -106,8 +106,8 @@ export class Chain {
     transactionService: string;
     blockExplorerUriTemplate: BlockExplorerUriTemplate;
     beaconChainExplorerUriTemplate: BeaconChainExplorerUriTemplate;
-    disabledWallets: string[];
-    features: string[];
+    disabledWallets: Array<string>;
+    features: Array<string>;
     gasPrice: Array<GasPriceOracle | GasPriceFixed | GasPriceFixedEIP1559>;
     publicRpcUri: RpcUri;
     rpcUri: RpcUri;

@@ -17,11 +17,11 @@ export class SafeState {
   @ApiProperty()
   readonly threshold: number;
   @ApiProperty({ type: AddressInfo, isArray: true })
-  readonly owners: AddressInfo[];
+  readonly owners: Array<AddressInfo>;
   @ApiProperty()
   readonly implementation: AddressInfo;
   @ApiPropertyOptional({ type: AddressInfo, isArray: true, nullable: true })
-  readonly modules: AddressInfo[] | null;
+  readonly modules: Array<AddressInfo> | null;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   readonly fallbackHandler: AddressInfo | null;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
@@ -44,14 +44,14 @@ export class SafeState {
     chainId: string,
     nonce: number,
     threshold: number,
-    owners: AddressInfo[],
+    owners: Array<AddressInfo>,
     implementation: AddressInfo,
     implementationVersionState: MasterCopyVersionState,
     collectiblesTag: string | null,
     txQueuedTag: string | null,
     txHistoryTag: string | null,
     messagesTag: string | null,
-    modules: AddressInfo[] | null,
+    modules: Array<AddressInfo> | null,
     fallbackHandler: AddressInfo | null,
     guard: AddressInfo | null,
     version: string | null,

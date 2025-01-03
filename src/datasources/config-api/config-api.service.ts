@@ -99,7 +99,7 @@ export class ConfigApi implements IConfigApi {
     clientUrl?: string;
     onlyListed?: boolean;
     url?: string;
-  }): Promise<Raw<SafeApp[]>> {
+  }): Promise<Raw<Array<SafeApp>>> {
     try {
       const providerUrl = `${this.baseUri}/api/v1/safe-apps/`;
       const params = {

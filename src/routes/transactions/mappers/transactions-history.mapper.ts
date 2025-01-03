@@ -42,7 +42,7 @@ export class TransactionsHistoryMapper {
 
   async mapTransactionsHistory(
     chainId: string,
-    transactionsDomain: TransactionDomain[],
+    transactionsDomain: Array<TransactionDomain>,
     safe: Safe,
     offset: number,
     timezoneOffset: number,
@@ -108,7 +108,7 @@ export class TransactionsHistoryMapper {
   }
 
   private async getPreviousTransaction(args: {
-    transactionsDomain: TransactionDomain[];
+    transactionsDomain: Array<TransactionDomain>;
     chainId: string;
     safe: Safe;
     onlyTrusted: boolean;
@@ -129,13 +129,13 @@ export class TransactionsHistoryMapper {
   }
 
   private async getMappedTransactions(args: {
-    transactionsDomain: TransactionDomain[];
+    transactionsDomain: Array<TransactionDomain>;
     chainId: string;
     safe: Safe;
     previousTransaction: TransactionItem | undefined;
     onlyTrusted: boolean;
     showImitations: boolean;
-  }): Promise<TransactionItem[]> {
+  }): Promise<Array<TransactionItem>> {
     const mappedTransactions = await Promise.all(
       args.transactionsDomain.map((transaction) => {
         return this.mapTransaction(
@@ -158,10 +158,10 @@ export class TransactionsHistoryMapper {
   }
 
   private groupByDay(
-    transactions: TransactionItem[],
+    transactions: Array<TransactionItem>,
     timezoneOffset: number,
     timezone?: string,
-  ): TransactionItem[][] {
+  ): Array<Array<TransactionItem>> {
     const grouped = groupBy(transactions, ({ transaction }) => {
       // timestamp will always be defined for historical transactions
       const date = new Date(transaction.timestamp ?? 0);
@@ -188,11 +188,11 @@ export class TransactionsHistoryMapper {
   }
 
   private async mapTransfers(
-    transfers: Transfer[],
+    transfers: Array<Transfer>,
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
-  ): Promise<TransactionItem[]> {
+  ): Promise<Array<TransactionItem>> {
     const limitedTransfers = transfers.slice(0, this.maxNestedTransfers);
 
     const nestedTransactions = await this.transferMapper.mapTransfers({
@@ -212,7 +212,7 @@ export class TransactionsHistoryMapper {
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
-  ): Promise<TransactionItem | TransactionItem[] | undefined> {
+  ): Promise<TransactionItem | Array<TransactionItem> | undefined> {
     if (isMultisigTransaction(transaction)) {
       return new TransactionItem(
         await this.multisigTransactionMapper.mapTransaction(

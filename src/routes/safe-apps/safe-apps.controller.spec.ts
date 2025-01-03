@@ -119,7 +119,7 @@ describe('Safe Apps Controller (Unit)', () => {
               type: 'DOMAIN_ALLOWLIST',
               value: (
                 safeAppsResponse[0].accessControl as {
-                  value: string[] | null;
+                  value: Array<string> | null;
                   type: SafeAppAccessControlPolicies.DomainAllowlist;
                 }
               ).value,

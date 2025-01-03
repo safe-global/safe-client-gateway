@@ -56,7 +56,7 @@ export class CoingeckoApi implements IPricesApi {
   /**
    * Token addresses that will be cached with a highRefreshRateTokensTtlSeconds TTL.
    */
-  private readonly highRefreshRateTokens: string[];
+  private readonly highRefreshRateTokens: Array<string>;
   /**
    * TTL in seconds for high-rate refresh token prices.
    */
@@ -97,7 +97,7 @@ export class CoingeckoApi implements IPricesApi {
     // Coingecko expects the token addresses to be lowercase, so lowercase addresses are enforced here.
     this.highRefreshRateTokens = this.configurationService
       .getOrThrow<
-        string[]
+        Array<string>
       >('balances.providers.safe.prices.highRefreshRateTokens')
       .map((tokenAddress) => tokenAddress.toLowerCase());
 
@@ -174,9 +174,9 @@ export class CoingeckoApi implements IPricesApi {
    */
   async getTokenPrices(args: {
     chain: Chain;
-    tokenAddresses: string[];
+    tokenAddresses: Array<string>;
     fiatCode: string;
-  }): Promise<Raw<AssetPrice[]>> {
+  }): Promise<Raw<Array<AssetPrice>>> {
     try {
       const chainName = args.chain.pricesProvider.chainName;
       if (chainName == null) {
@@ -214,12 +214,12 @@ export class CoingeckoApi implements IPricesApi {
     }
   }
 
-  async getFiatCodes(): Promise<Raw<string[]>> {
+  async getFiatCodes(): Promise<Raw<Array<string>>> {
     try {
       const cacheDir = CacheRouter.getPriceFiatCodesCacheDir();
       const url = `${this.baseUrl}/simple/supported_vs_currencies`;
       const result = await this.dataSource
-        .get<string[]>({
+        .get<Array<string>>({
           cacheDir,
           url,
           networkRequest: {
@@ -253,10 +253,10 @@ export class CoingeckoApi implements IPricesApi {
    */
   private async _getTokenPricesFromCache(args: {
     chainName: string;
-    tokenAddresses: string[];
+    tokenAddresses: Array<string>;
     fiatCode: string;
-  }): Promise<AssetPrice[]> {
-    const result: AssetPrice[] = [];
+  }): Promise<Array<AssetPrice>> {
+    const result: Array<AssetPrice> = [];
     for (const tokenAddress of args.tokenAddresses) {
       const cacheDir = CacheRouter.getTokenPriceCacheDir({
         ...args,
@@ -281,9 +281,9 @@ export class CoingeckoApi implements IPricesApi {
    */
   private async _getTokenPricesFromNetwork(args: {
     chainName: string;
-    tokenAddresses: string[];
+    tokenAddresses: Array<string>;
     fiatCode: string;
-  }): Promise<AssetPrice[]> {
+  }): Promise<Array<AssetPrice>> {
     const prices = await this._requestPricesFromNetwork({
       ...args,
       tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
@@ -330,7 +330,7 @@ export class CoingeckoApi implements IPricesApi {
    */
   private async _requestPricesFromNetwork(args: {
     chainName: string;
-    tokenAddresses: string[];
+    tokenAddresses: Array<string>;
     fiatCode: string;
   }): Promise<Raw<AssetPrice>> {
     try {

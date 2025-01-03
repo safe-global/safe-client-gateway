@@ -40,5 +40,5 @@ export class NotificationType
       notificationSubscriptionType.notification_type,
     { onDelete: 'CASCADE' },
   )
-  notification_subscription_notification_type!: NotificationSubscriptionNotificationType[];
+  notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;
 }

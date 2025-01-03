@@ -99,7 +99,7 @@ export class SafesService {
       this.modifiedMessageTag(args.chainId, args.safeAddress),
     ]);
 
-    let moduleAddressesInfo: AddressInfo[] | null = null;
+    let moduleAddressesInfo: Array<AddressInfo> | null = null;
     if (safe.modules) {
       const moduleInfoCollection: Array<AddressInfo> =
         await this.addressInfoHelper.getCollection(args.chainId, safe.modules, [
@@ -306,7 +306,9 @@ export class SafesService {
           page.status === 'fulfilled',
       )
       .flatMap(
-        ({ value }): (MultisigTransaction | ModuleTransaction | Transfer)[] =>
+        ({
+          value,
+        }): Array<MultisigTransaction | ModuleTransaction | Transfer> =>
           value.results,
       )
       .map((tx) => {
@@ -342,7 +344,7 @@ export class SafesService {
   private computeVersionState(
     safe: Safe,
     recommendedMasterCopyVersion: string,
-    supportedSingletons: Singleton[],
+    supportedSingletons: Array<Singleton>,
   ): MasterCopyVersionState {
     // If the safe version is null we return UNKNOWN
     if (safe.version === null) return MasterCopyVersionState.UNKNOWN;

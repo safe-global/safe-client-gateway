@@ -68,7 +68,7 @@ export class ChainsService {
     return this.backboneRepository.getBackbone(chainId);
   }
 
-  async getMasterCopies(chainId: string): Promise<MasterCopy[]> {
+  async getMasterCopies(chainId: string): Promise<Array<MasterCopy>> {
     const result = await this.chainsRepository.getSingletons(chainId);
 
     return result.map((singleton) => ({

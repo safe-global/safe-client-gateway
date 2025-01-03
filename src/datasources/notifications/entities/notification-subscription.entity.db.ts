@@ -99,5 +99,5 @@ export class NotificationSubscription
     (notificationSubscriptionNotificationType) =>
       notificationSubscriptionNotificationType.id,
   )
-  notification_subscription_notification_type!: NotificationSubscriptionNotificationType[];
+  notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;
 }

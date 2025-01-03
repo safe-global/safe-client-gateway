@@ -128,7 +128,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .build(),
     ];
     const contractResponse = contractBuilder().build();
-    const transactions: MultisigTransaction[] = [
+    const transactions: Array<MultisigTransaction> = [
       multisigToJson(
         multisigTransactionBuilder()
           .with('safe', safeAddress)
@@ -305,7 +305,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .with('name', faker.word.words())
         .build(),
     ];
-    const transactions: MultisigTransaction[] = [
+    const transactions: Array<MultisigTransaction> = [
       multisigToJson(
         multisigTransactionBuilder()
           .with('safe', safeAddress)
@@ -502,7 +502,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .with('nonce', 1)
       .build();
     const safeAppsResponse = [safeAppBuilder().build()];
-    const transactions: MultisigTransaction[] = [
+    const transactions: Array<MultisigTransaction> = [
       multisigToJson(
         multisigTransactionBuilder()
           .with('safe', safeAddress)
