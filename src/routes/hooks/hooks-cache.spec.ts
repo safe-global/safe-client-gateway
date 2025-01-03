@@ -44,6 +44,13 @@ import {
   updatedDelegateEventBuilder,
 } from '@/routes/hooks/entities/__tests__/delegate-events.builder';
 
+function getSubscriptionCallback(
+  queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,
+): (msg: ConsumeMessage) => Promise<void> {
+  // First call, second argument
+  return queuesApiService.subscribe.mock.calls[0][1];
+}
+
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
 describe('Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;
@@ -161,7 +168,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -215,7 +222,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -269,7 +276,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -315,7 +322,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -367,7 +374,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -426,7 +433,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -477,7 +484,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -523,7 +530,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -564,7 +571,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -630,7 +637,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -674,7 +681,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -705,7 +712,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -739,7 +746,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -768,7 +775,7 @@ describe('Hook Events for Cache (Unit)', () => {
     });
     const api = await stakingApiManager.getApi(chainId);
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     const newApi = await stakingApiManager.getApi(chainId);
@@ -798,7 +805,7 @@ describe('Hook Events for Cache (Unit)', () => {
     });
     const api = await blockchainApiManager.getApi(chainId);
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     const newApi = await blockchainApiManager.getApi(chainId);
@@ -828,7 +835,7 @@ describe('Hook Events for Cache (Unit)', () => {
     });
     const api = await transactionApiManager.getApi(chainId);
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     const newApi = await transactionApiManager.getApi(chainId);
@@ -859,7 +866,7 @@ describe('Hook Events for Cache (Unit)', () => {
     });
     const api = await balancesApiManager.getApi(chainId, safeAddress);
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     const newApi = await balancesApiManager.getApi(chainId, safeAddress);
@@ -894,7 +901,7 @@ describe('Hook Events for Cache (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -927,7 +934,7 @@ describe('Hook Events for Cache (Unit)', () => {
       faker.number.int({ min: 1 }),
     );
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
@@ -961,7 +968,7 @@ describe('Hook Events for Cache (Unit)', () => {
       faker.number.int({ min: 1 }),
     );
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
