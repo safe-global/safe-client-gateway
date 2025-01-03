@@ -16,6 +16,13 @@ import { Server } from 'net';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
+// We expect 500 instead of the status code of the DataSourceError
+// The reason is that this test webserver does not have logic to map
+// DataSourceErrors to HTTP responses (it is not the goal of this test)
+// The goal of the test is to test that we are logging correctly
+// (see expects below)
+const expectedDatasourceErrorCode = 500;
+
 const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   info: jest.fn(),
   debug: jest.fn(),
@@ -23,7 +30,7 @@ const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
   warn: jest.fn(),
 };
 
-class errorWithCode extends Error {
+class ErrorWithCode extends Error {
   private readonly code: number;
 
   public constructor(message: string, code: number) {
@@ -57,12 +64,12 @@ class TestController {
 
   @Get('error-level-info-with-code')
   errorLevelInfoWithCode(): void {
-    throw new errorWithCode('error', 430);
+    throw new ErrorWithCode('error', 430);
   }
 
   @Get('error-level-error-with-code')
   errorLevelErrorWithCode(): void {
-    throw new errorWithCode('error', 530);
+    throw new ErrorWithCode('error', 530);
   }
 
   @Get('server-error-non-http')
@@ -129,11 +136,6 @@ describe('RouteLoggerInterceptor tests', () => {
   it('500 Datasource error triggers error level', async () => {
     await request(app.getHttpServer())
       .get('/test/server-data-source-error')
-      // We expect 500 instead of the status code of the DataSourceError
-      // The reason is that this test webserver does not have logic to map
-      // DataSourceErrors to HTTP responses (it is not the goal of this test)
-      // The goal of the test is to test that we are logging correctly
-      // (see expects below)
       .expect(500);
 
     expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
@@ -157,12 +159,7 @@ describe('RouteLoggerInterceptor tests', () => {
   it('500 Any error triggers error level', async () => {
     await request(app.getHttpServer())
       .get('/test/error-level-error-with-code')
-      // We expect 500 instead of the status code of the DataSourceError
-      // The reason is that this test webserver does not have logic to map
-      // DataSourceErrors to HTTP responses (it is not the goal of this test)
-      // The goal of the test is to test that we are logging correctly
-      // (see expects below)
-      .expect(500);
+      .expect(expectedDatasourceErrorCode);
 
     expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
     expect(mockLoggingService.error).toHaveBeenCalledWith({
@@ -206,12 +203,7 @@ describe('RouteLoggerInterceptor tests', () => {
   it('400 Validation error triggers info level', async () => {
     await request(app.getHttpServer())
       .get('/test/validation-error')
-      // We expect 500 instead of the status code of the DataSourceError
-      // The reason is that this test webserver does not have logic to map
-      // DataSourceErrors to HTTP responses (it is not the goal of this test)
-      // The goal of the test is to test that we are logging correctly
-      // (see expects below)
-      .expect(500);
+      .expect(expectedDatasourceErrorCode);
 
     expect(mockLoggingService.info).toHaveBeenCalledTimes(1);
     expect(mockLoggingService.info).toHaveBeenCalledWith({
@@ -244,12 +236,7 @@ describe('RouteLoggerInterceptor tests', () => {
   it('400 Any error triggers info level', async () => {
     await request(app.getHttpServer())
       .get('/test/error-level-info-with-code')
-      // We expect 500 instead of the status code of the DataSourceError
-      // The reason is that this test webserver does not have logic to map
-      // DataSourceErrors to HTTP responses (it is not the goal of this test)
-      // The goal of the test is to test that we are logging correctly
-      // (see expects below)
-      .expect(500);
+      .expect(expectedDatasourceErrorCode);
 
     expect(mockLoggingService.info).toHaveBeenCalledTimes(1);
     expect(mockLoggingService.info).toHaveBeenCalledWith({
