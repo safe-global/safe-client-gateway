@@ -6,6 +6,10 @@ import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { CacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import {
+  PromiseTimeoutError,
+  promiseWithTimeout,
+} from '@/domain/common/utils/promise';
 
 export type RedisClientType = ReturnType<typeof createClient>;
 
@@ -15,13 +19,23 @@ async function redisClientFactory(
 ): Promise<RedisClientType> {
   const redisHost = configurationService.getOrThrow<string>('redis.host');
   const redisPort = configurationService.getOrThrow<string>('redis.port');
+  const redisTimeout = configurationService.getOrThrow<number>('redis.timeout');
   const client: RedisClientType = createClient({
     url: `redis://${redisHost}:${redisPort}`,
   });
   client.on('error', (err) =>
     loggingService.error(`Redis client error: ${err}`),
   );
-  await client.connect();
+  client.on('end', () => {
+    loggingService.error('Redis client terminated!');
+  });
+  try {
+    await promiseWithTimeout(client.connect(), redisTimeout);
+  } catch (error) {
+    if (error instanceof PromiseTimeoutError) {
+      loggingService.error('Redis connect timed out!');
+    }
+  }
   return client;
 }
 
