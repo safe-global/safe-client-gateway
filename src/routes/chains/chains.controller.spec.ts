@@ -529,7 +529,7 @@ describe('Chains Controller (Unit)', () => {
         data: rawify(chainResponse),
         status: 200,
       });
-      const domainSingletonsResponse: Singleton[] = [
+      const domainSingletonsResponse: Array<Singleton> = [
         singletonBuilder().build(),
         singletonBuilder().build(),
       ];

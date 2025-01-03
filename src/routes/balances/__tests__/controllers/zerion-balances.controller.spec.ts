@@ -46,8 +46,8 @@ describe('Balances Controller (Unit)', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
-  let zerionChainIds: string[];
-  let zerionCurrencies: string[];
+  let zerionChainIds: Array<string>;
+  let zerionCurrencies: Array<string>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
   beforeEach(async () => {

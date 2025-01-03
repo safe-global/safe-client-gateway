@@ -40,7 +40,7 @@ describe('Zerion Collectibles Controller', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let zerionBaseUri: string;
-  let zerionChainIds: string[];
+  let zerionChainIds: Array<string>;
 
   beforeEach(async () => {
     jest.clearAllMocks();

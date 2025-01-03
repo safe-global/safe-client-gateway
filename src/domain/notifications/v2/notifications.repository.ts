@@ -186,7 +186,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       deviceId: number;
     },
   ): Promise<Array<NotificationSubscription>> {
-    const subscriptionsToInsert: Partial<NotificationSubscription>[] = [];
+    const subscriptionsToInsert: Array<Partial<NotificationSubscription>> = [];
     for (const safe of args.upsertSubscriptionsDto.safes) {
       const device = new NotificationDevice();
       device.id = args.deviceId;

@@ -175,7 +175,7 @@ export class KilnApi implements IStakingApi {
   async getStakes(args: {
     safeAddress: `0x${string}`;
     validatorsPublicKeys: Array<`0x${string}`>;
-  }): Promise<Raw<Stake[]>> {
+  }): Promise<Raw<Array<Stake>>> {
     const url = `${this.baseUrl}/v1/eth/stakes`;
     const cacheDir = CacheRouter.getStakingStakesCacheDir({
       chainId: this.chainId,

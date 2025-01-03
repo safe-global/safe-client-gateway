@@ -326,7 +326,7 @@ describe('OutreachFileProcessor', () => {
     await fileProcessor.onModuleInit();
 
     // assert the Targeted Safes were created
-    const targetedSafes: DbTargetedSafe[] =
+    const targetedSafes: Array<DbTargetedSafe> =
       await sql`SELECT * FROM targeted_safes WHERE outreach_id = ${created.id}`;
     expect(targetedSafes).toHaveLength(outreachFile.safe_addresses.length);
     // assert the Targeted Safes addresses were checksummed

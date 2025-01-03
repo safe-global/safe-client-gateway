@@ -131,11 +131,11 @@ export class TransactionApi implements ITransactionApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
-  async getSingletons(): Promise<Raw<Singleton[]>> {
+  async getSingletons(): Promise<Raw<Array<Singleton>>> {
     try {
       const cacheDir = CacheRouter.getSingletonsCacheDir(this.chainId);
       const url = `${this.baseUrl}/api/v1/about/singletons/`;
-      return await this.dataSource.get<Singleton[]>({
+      return await this.dataSource.get<Array<Singleton>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -890,8 +890,8 @@ export class TransactionApi implements ITransactionApi {
 
   async postDeviceRegistration(args: {
     device: Device;
-    safes: string[];
-    signatures: string[];
+    safes: Array<string>;
+    signatures: Array<string>;
   }): Promise<void> {
     try {
       const url = `${this.baseUrl}/api/v1/notifications/devices/`;

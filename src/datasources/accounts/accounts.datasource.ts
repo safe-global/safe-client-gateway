@@ -114,7 +114,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
 
   async getAccount(address: `0x${string}`): Promise<Account> {
     const cacheDir = CacheRouter.getAccountCacheDir(address);
-    const [account] = await this.cachedQueryResolver.get<Account[]>({
+    const [account] = await this.cachedQueryResolver.get<Array<Account>>({
       cacheDir,
       query: this.sql`SELECT * FROM accounts WHERE address = ${address}`,
       ttl: this.defaultExpirationTimeInSeconds,
@@ -146,9 +146,9 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
     }
   }
 
-  async getDataTypes(): Promise<AccountDataType[]> {
+  async getDataTypes(): Promise<Array<AccountDataType>> {
     const cacheDir = CacheRouter.getAccountDataTypesCacheDir();
-    return this.cachedQueryResolver.get<AccountDataType[]>({
+    return this.cachedQueryResolver.get<Array<AccountDataType>>({
       cacheDir,
       query: this.sql`SELECT * FROM account_data_types`,
       ttl: MAX_TTL,
@@ -157,10 +157,10 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
 
   async getAccountDataSettings(
     address: `0x${string}`,
-  ): Promise<AccountDataSetting[]> {
+  ): Promise<Array<AccountDataSetting>> {
     const account = await this.getAccount(address);
     const cacheDir = CacheRouter.getAccountDataSettingsCacheDir(address);
-    return this.cachedQueryResolver.get<AccountDataSetting[]>({
+    return this.cachedQueryResolver.get<Array<AccountDataSetting>>({
       cacheDir,
       query: this.sql`
         SELECT ads.* FROM account_data_settings ads
@@ -184,7 +184,7 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
   async upsertAccountDataSettings(args: {
     address: `0x${string}`;
     upsertAccountDataSettingsDto: UpsertAccountDataSettingsDto;
-  }): Promise<AccountDataSetting[]> {
+  }): Promise<Array<AccountDataSetting>> {
     const { accountDataSettings } = args.upsertAccountDataSettingsDto;
     await this.checkDataTypes(accountDataSettings);
     const account = await this.getAccount(args.address);

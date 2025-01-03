@@ -32,7 +32,7 @@ export class BalancesService {
       ...args,
       chain,
     });
-    const balances: Balance[] = domainBalances.map((balance) =>
+    const balances: Array<Balance> = domainBalances.map((balance) =>
       this._mapBalance(balance, chain.nativeCurrency),
     );
     const fiatTotal = balances
@@ -80,7 +80,7 @@ export class BalancesService {
     };
   }
 
-  async getSupportedFiatCodes(): Promise<string[]> {
+  async getSupportedFiatCodes(): Promise<Array<string>> {
     return this.balancesRepository.getFiatCodes();
   }
 }

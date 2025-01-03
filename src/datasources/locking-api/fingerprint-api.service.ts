@@ -27,7 +27,7 @@ export class FingerprintApiService implements IIdentityApi {
         'locking.eligibility.fingerprintEncryptionKey',
       );
     this.nonEligibleCountryCodes = this.configurationService.getOrThrow<
-      string[]
+      Array<string>
     >('locking.eligibility.nonEligibleCountryCodes');
   }
 

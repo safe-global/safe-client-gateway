@@ -12,7 +12,7 @@ import { RequestScopedLoggingService } from '@/logging/logging.service';
  * @param configurationService - the configuration service to retrieve service-level settings
  */
 function winstonFactory(
-  transports: Transport[] | Transport,
+  transports: Array<Transport> | Transport,
   configurationService: IConfigurationService,
 ): winston.Logger {
   return winston.createLogger({
@@ -29,7 +29,7 @@ const LoggerTransports = Symbol('LoggerTransports');
  */
 function winstonTransportsFactory(
   configurationService: IConfigurationService,
-): Transport[] | Transport {
+): Array<Transport> | Transport {
   return new winston.transports.Console({
     level: configurationService.getOrThrow<string>('log.level'),
     format: winston.format.json(),

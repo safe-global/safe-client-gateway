@@ -58,5 +58,5 @@ export class NotificationDevice
       onDelete: 'CASCADE',
     },
   )
-  notification_subscriptions!: NotificationSubscription[];
+  notification_subscriptions!: Array<NotificationSubscription>;
 }

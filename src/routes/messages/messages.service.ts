@@ -96,8 +96,8 @@ export class MessagesService {
    * @returns ordered tuples containing [timestamp, message[]]
    */
   private getOrderedGroups(
-    messages: DomainMessage[],
-  ): [number, DomainMessage[]][] {
+    messages: Array<DomainMessage>,
+  ): Array<[number, Array<DomainMessage>]> {
     const groups = groupBy(messages, (m) =>
       Date.UTC(
         m.created.getUTCFullYear(),
