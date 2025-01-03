@@ -64,6 +64,13 @@ import {
 } from '@/routes/hooks/entities/__tests__/delegate-events.builder';
 import type { ConsumeMessage } from 'amqplib';
 
+function getSubscriptionCallback(
+  queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,
+): (msg: ConsumeMessage) => Promise<void> {
+  // First call, second argument
+  return queuesApiService.subscribe.mock.calls[0][1];
+}
+
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
 describe('Hook Events for Notifications (Unit)', () => {
   let app: INestApplication<Server>;
@@ -142,7 +149,7 @@ describe('Hook Events for Notifications (Unit)', () => {
       deletedDelegateEventBuilder().build(),
     ].map((event) => [event.type, event]),
   )('should not enqueue notifications for %s events', async (_, event) => {
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(notificationsRepository.enqueueNotification).not.toHaveBeenCalled();
@@ -178,7 +185,7 @@ describe('Hook Events for Notifications (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
@@ -257,7 +264,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -343,7 +350,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -409,7 +416,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -471,7 +478,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -542,7 +549,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -611,7 +618,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -696,7 +703,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -760,7 +767,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -832,7 +839,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -901,7 +908,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -997,7 +1004,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1066,7 +1073,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1144,7 +1151,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1224,7 +1231,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1316,7 +1323,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1387,7 +1394,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1466,7 +1473,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1546,7 +1553,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1637,7 +1644,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1705,7 +1712,7 @@ describe('Hook Events for Notifications (Unit)', () => {
         }
       });
 
-      const cb = queuesApiService.subscribe.mock.calls[0][1];
+      const cb = getSubscriptionCallback(queuesApiService);
       await cb({
         content: Buffer.from(JSON.stringify(event)),
       } as ConsumeMessage);
@@ -1820,7 +1827,7 @@ describe('Hook Events for Notifications (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
@@ -1956,7 +1963,7 @@ describe('Hook Events for Notifications (Unit)', () => {
       }
     });
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
@@ -2035,7 +2042,7 @@ describe('Hook Events for Notifications (Unit)', () => {
       })
       .mockResolvedValue();
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
     expect(notificationsRepository.deleteDevice).toHaveBeenCalledTimes(1);
@@ -2141,7 +2148,7 @@ describe('Hook Events for Notifications (Unit)', () => {
       .mockRejectedValueOnce(new Error('Other error'))
       .mockResolvedValue();
 
-    const cb = queuesApiService.subscribe.mock.calls[0][1];
+    const cb = getSubscriptionCallback(queuesApiService);
     for (const event of events) {
       await cb({
         content: Buffer.from(JSON.stringify(event)),
