@@ -13,10 +13,13 @@ async function redisClientFactory(
   configurationService: IConfigurationService,
   loggingService: ILoggingService,
 ): Promise<RedisClientType> {
+  const redisUser = configurationService.get<string>('redis.user');
+  const redisPass = configurationService.get<string>('redis.pass');
   const redisHost = configurationService.getOrThrow<string>('redis.host');
   const redisPort = configurationService.getOrThrow<string>('redis.port');
+  const authString = redisUser && redisPass ? `${redisUser}:${redisPass}@` : '';
   const client: RedisClientType = createClient({
-    url: `redis://${redisHost}:${redisPort}`,
+    url: `redis://${authString}${redisHost}:${redisPort}`,
   });
   client.on('error', (err) =>
     loggingService.error(`Redis client error: ${err}`),
