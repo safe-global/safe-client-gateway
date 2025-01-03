@@ -7,9 +7,8 @@ export class MultisigTransactionNoteMapper {
     if (transaction.origin) {
       try {
         const origin = JSON.parse(transaction.origin);
-        const parsedName = origin.name && JSON.parse(String(origin.name));
-        if (typeof parsedName.note === 'string') {
-          return parsedName.note;
+        if (typeof origin.note === 'string') {
+          return origin.note;
         }
       } catch {
         // Ignore, no note

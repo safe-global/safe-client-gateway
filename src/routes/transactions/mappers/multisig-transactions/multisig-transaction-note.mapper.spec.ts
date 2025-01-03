@@ -8,10 +8,7 @@ describe('Multisig Transaction note mapper (Unit)', () => {
   it('should parse transaction `origin` and return a note', () => {
     const noteText = faker.lorem.sentence();
     const transaction = multisigTransactionBuilder()
-      .with(
-        'origin',
-        JSON.stringify({ name: JSON.stringify({ note: noteText }) }),
-      )
+      .with('origin', JSON.stringify({ note: noteText }))
       .build();
 
     const note = mapper.mapTxNote(transaction);
