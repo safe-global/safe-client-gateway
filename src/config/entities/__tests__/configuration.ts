@@ -176,6 +176,7 @@ export default (): ReturnType<typeof configuration> => ({
   log: {
     level: 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+    prettyColorize: process.env.LOG_PRETTY_COLORIZE?.toLowerCase() === 'true',
   },
   mappings: {
     imitation: {
