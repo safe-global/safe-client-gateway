@@ -42,7 +42,6 @@ describe('GelatoApi', () => {
       'expirationTimeInSeconds.default',
       expirationTimeInSeconds,
     );
-    fakeConfigurationService.set('relay.baseUri', '');
     redisClient = await redisClientFactory();
     cacheService = new RedisCacheService(
       redisClient,
