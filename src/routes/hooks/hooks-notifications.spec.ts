@@ -17,6 +17,7 @@ import { safeAppsEventBuilder } from '@/routes/hooks/entities/__tests__/safe-app
 import { outgoingEtherEventBuilder } from '@/routes/hooks/entities/__tests__/outgoing-ether.builder';
 import { outgoingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/outgoing-token.builder';
 import { newConfirmationEventBuilder } from '@/routes/hooks/entities/__tests__/new-confirmation.builder';
+import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { safeCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/safe-created.build';
 import { deletedMultisigTransactionEventBuilder } from '@/routes/hooks/entities/__tests__/deleted-multisig-transaction.builder';
 import { executedTransactionEventBuilder } from '@/routes/hooks/entities/__tests__/executed-transaction.builder';
@@ -72,7 +73,7 @@ function getSubscriptionCallback(
 }
 
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
-describe('Hook Events for Notifications (Unit)', () => {
+describe('Hook Events for Notifications (Unit) pt. 1', () => {
   let app: INestApplication<Server>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
@@ -2001,57 +2002,6 @@ describe('Hook Events for Notifications (Unit)', () => {
     );
   });
 
-  it('should cleanup unregistered tokens', async () => {
-    // Events that are notified "as is" for simplicity
-    const event = faker.helpers.arrayElement([
-      deletedMultisigTransactionEventBuilder().build(),
-      executedTransactionEventBuilder().build(),
-      moduleTransactionEventBuilder().build(),
-    ]);
-    const subscribers = faker.helpers.multiple(
-      () => ({
-        subscriber: getAddress(faker.finance.ethereumAddress()),
-        deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
-      }),
-      {
-        count: { min: 2, max: 5 },
-      },
-    );
-    const chain = chainBuilder().build();
-    notificationsRepository.getSubscribersBySafe.mockResolvedValue(subscribers);
-    networkService.get.mockImplementation(({ url }) => {
-      if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
-        return Promise.resolve({
-          data: rawify(chain),
-          status: 200,
-        });
-      } else {
-        return Promise.reject(`No matching rule for url: ${url}`);
-      }
-    });
-
-    notificationsRepository.enqueueNotification
-      // Specific error regarding unregistered/stale tokens
-      // @see https://firebase.google.com/docs/cloud-messaging/send-message#rest
-      .mockRejectedValueOnce({
-        code: 404,
-        message: faker.lorem.words(),
-        status: 'UNREGISTERED',
-        details: [],
-      })
-      .mockResolvedValue();
-
-    const cb = getSubscriptionCallback(queuesApiService);
-    await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
-
-    expect(notificationsRepository.deleteDevice).toHaveBeenCalledTimes(1);
-    expect(notificationsRepository.deleteDevice).toHaveBeenNthCalledWith(
-      1,
-      subscribers[0].deviceUuid,
-    );
-  });
-
   it('should not fail to send all notifications if one throws', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().with('threshold', 2).build();
@@ -2157,6 +2107,125 @@ describe('Hook Events for Notifications (Unit)', () => {
 
     expect(notificationsRepository.enqueueNotification).toHaveBeenCalledTimes(
       events.length,
+    );
+  });
+});
+
+// Due to mocking complexity, we split the tests into two suites
+// Here we do not mock the NotificationsRepository, but the PushNotificationsApi
+describe('Hook Events for Notifications (Unit) pt. 2', () => {
+  let app: INestApplication<Server>;
+  let pushNotificationsApi: jest.MockedObjectDeep<IPushNotificationsApi>;
+  let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
+  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let configurationService: IConfigurationService;
+  let safeConfigUrl: string;
+  let queuesApiService: jest.MockedObjectDeep<IQueuesApiService>;
+
+  const defaultConfiguration = configuration();
+  const testConfiguration = (): ReturnType<typeof configuration> => {
+    return {
+      ...defaultConfiguration,
+      features: {
+        ...defaultConfiguration.features,
+        pushNotifications: true,
+      },
+    };
+  };
+
+  async function initApp(): Promise<void> {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule.register(testConfiguration)],
+    })
+      .overrideModule(PostgresDatabaseModule)
+      .useModule(TestPostgresDatabaseModule)
+      .overrideModule(TargetedMessagingDatasourceModule)
+      .useModule(TestTargetedMessagingDatasourceModule)
+      .overrideModule(CacheModule)
+      .useModule(TestCacheModule)
+      .overrideModule(RequestScopedLoggingModule)
+      .useModule(TestLoggingModule)
+      .overrideModule(NetworkModule)
+      .useModule(TestNetworkModule)
+      .overrideModule(QueuesApiModule)
+      .useModule(TestQueuesApiModule)
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
+      .overrideModule(PushNotificationsApiModule)
+      .useModule(TestPushNotificationsApiModule)
+      .compile();
+    app = moduleFixture.createNestApplication();
+
+    networkService = moduleFixture.get(NetworkService);
+    pushNotificationsApi = moduleFixture.get(IPushNotificationsApi);
+    configurationService = moduleFixture.get(IConfigurationService);
+    safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    queuesApiService = moduleFixture.get(IQueuesApiService);
+    notificationsRepository = moduleFixture.get(INotificationsRepositoryV2);
+
+    await app.init();
+  }
+
+  beforeEach(async () => {
+    jest.resetAllMocks();
+    await initApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('should cleanup unregistered tokens', async () => {
+    // Events that are notified "as is" for simplicity
+    const event = faker.helpers.arrayElement([
+      deletedMultisigTransactionEventBuilder().build(),
+      executedTransactionEventBuilder().build(),
+      moduleTransactionEventBuilder().build(),
+    ]);
+    const subscribers = faker.helpers.multiple(
+      () => ({
+        subscriber: getAddress(faker.finance.ethereumAddress()),
+        deviceUuid: faker.string.uuid() as UUID,
+        cloudMessagingToken: faker.string.alphanumeric(),
+      }),
+      {
+        count: { min: 2, max: 5 },
+      },
+    );
+    const chain = chainBuilder().build();
+    jest
+      .spyOn(notificationsRepository, 'getSubscribersBySafe')
+      .mockResolvedValue(subscribers);
+    const deleteDeviceSpy = jest.spyOn(notificationsRepository, 'deleteDevice');
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
+        return Promise.resolve({
+          data: rawify(chain),
+          status: 200,
+        });
+      } else {
+        return Promise.reject(`No matching rule for url: ${url}`);
+      }
+    });
+
+    pushNotificationsApi.enqueueNotification
+      // Specific error regarding unregistered/stale tokens
+      // @see https://firebase.google.com/docs/cloud-messaging/send-message#rest
+      .mockRejectedValueOnce({
+        code: 404,
+        message: faker.lorem.words(),
+        status: 'UNREGISTERED',
+        details: [],
+      })
+      .mockResolvedValue();
+
+    const cb = getSubscriptionCallback(queuesApiService);
+    await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
+
+    expect(deleteDeviceSpy).toHaveBeenCalledTimes(1);
+    expect(deleteDeviceSpy).toHaveBeenNthCalledWith(
+      1,
+      subscribers[0].deviceUuid,
     );
   });
 });
