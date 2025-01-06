@@ -8540,7 +8540,7 @@ __metadata:
     typeorm: "npm:^0.3.20"
     typescript: "npm:^5.7.2"
     typescript-eslint: "npm:^8.19.0"
-    viem: "npm:^2.22.1"
+    viem: "npm:^2.22.2"
     winston: "npm:^3.17.0"
     zod: "npm:^3.24.1"
   languageName: unknown
@@ -9650,9 +9650,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^2.22.1":
-  version: 2.22.1
-  resolution: "viem@npm:2.22.1"
+"viem@npm:^2.22.2":
+  version: 2.22.2
+  resolution: "viem@npm:2.22.2"
   dependencies:
     "@noble/curves": "npm:1.7.0"
     "@noble/hashes": "npm:1.6.1"
@@ -9668,7 +9668,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/4a6b101ee98b86b55406c81ca44703b9622b635e6ce441dc21f7dcf26accf2a6c96530556d38f101c629a24a5aa38d6fbfb0ec37601da9d0a30969cf96b48559
+  checksum: 10/374b37fdd4b1344e3a864434b20263f3f64536eef3142d4866fb971a7d204bfb1a12dc42c042b622b088fda6344e7f92f30be1e54bdcddb2d561bf1fad6c1c42
   languageName: node
   linkType: hard
 
