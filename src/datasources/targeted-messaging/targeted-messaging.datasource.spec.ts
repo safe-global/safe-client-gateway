@@ -1,6 +1,9 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
@@ -29,14 +32,21 @@ const mockConfigurationService = jest.mocked({
 } as jest.MockedObjectDeep<IConfigurationService>);
 
 describe('TargetedMessagingDataSource tests', () => {
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
   let sql: postgres.Sql;
   let migrator: PostgresDatabaseMigrator;
   let target: TargetedMessagingDatasource;
   const testDbFactory = new TestDbFactory();
 
   beforeAll(async () => {
-    fakeCacheService = new FakeCacheService();
+    redisClient = await redisClientFactory();
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      mockConfigurationService,
+      '',
+    );
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
@@ -45,10 +55,10 @@ describe('TargetedMessagingDataSource tests', () => {
     });
 
     target = new TargetedMessagingDatasource(
-      fakeCacheService,
+      cacheService,
       sql,
       mockLoggingService,
-      new CachedQueryResolver(mockLoggingService, fakeCacheService),
+      new CachedQueryResolver(mockLoggingService, cacheService),
       mockConfigurationService,
       new OutreachDbMapper(),
       new SubmissionDbMapper(),
@@ -58,11 +68,13 @@ describe('TargetedMessagingDataSource tests', () => {
 
   beforeEach(async () => {
     await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
+    await redisClient.flushAll();
     jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
+    await redisClient.quit();
   });
 
   describe('getUnprocessedOutreaches', () => {
@@ -279,14 +291,14 @@ describe('TargetedMessagingDataSource tests', () => {
       );
 
       // cache is empty
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
       await target.getTargetedSafe({
         outreachId: outreach.id,
         safeAddress: createTargetedSafesDto.addresses[0],
       });
       // cache is updated
-      cacheContent = await fakeCacheService.hGet(cacheDir);
+      cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
 
       // second call is cached
@@ -296,7 +308,7 @@ describe('TargetedMessagingDataSource tests', () => {
       });
 
       // Clear the cache by creating new targetedSafes
-      cacheContent = await fakeCacheService.hGet(cacheDir);
+      cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
       const anotherCreateTargetedSafesDto = createTargetedSafesDtoBuilder()
         .with('outreachId', outreach.id)
@@ -307,8 +319,8 @@ describe('TargetedMessagingDataSource tests', () => {
         .build();
       await target.createTargetedSafes(anotherCreateTargetedSafesDto);
       // cache is cleared
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
 
       // third call is not cached
       await target.getTargetedSafe({
@@ -316,7 +328,7 @@ describe('TargetedMessagingDataSource tests', () => {
         safeAddress: createTargetedSafesDto.addresses[0],
       });
       // cache is updated
-      cacheContent = await fakeCacheService.hGet(cacheDir);
+      cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
     });
   });
@@ -370,14 +382,14 @@ describe('TargetedMessagingDataSource tests', () => {
       );
 
       // first call is not cached
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
       await target.getTargetedSafe({
         outreachId: outreach.id,
         safeAddress: createTargetedSafesDto.addresses[0],
       });
       // cache is updated
-      cacheContent = await fakeCacheService.hGet(cacheDir);
+      cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
 
       // second call is cached
@@ -393,7 +405,7 @@ describe('TargetedMessagingDataSource tests', () => {
           outreachId: outreach.id,
         }),
       );
-      cacheContent = await fakeCacheService.hGet(cacheDir);
+      cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
     });
 
@@ -408,8 +420,8 @@ describe('TargetedMessagingDataSource tests', () => {
       );
 
       // first call is not cached
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
       await expect(
         target.getTargetedSafe({
           outreachId: outreach.id,
@@ -417,8 +429,8 @@ describe('TargetedMessagingDataSource tests', () => {
         }),
       ).rejects.toThrow(TargetedSafeNotFoundError);
       // second call is also not cached
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
       await expect(
         target.getTargetedSafe({
           outreachId: outreach.id,
@@ -426,8 +438,8 @@ describe('TargetedMessagingDataSource tests', () => {
         }),
       ).rejects.toThrow(TargetedSafeNotFoundError);
       // cache is still empty
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
     });
 
     it('throws if the targetedSafe does not exist', async () => {
@@ -545,14 +557,14 @@ describe('TargetedMessagingDataSource tests', () => {
       });
 
       // first call is not cached
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
       await target.getSubmission({
         targetedSafe: targetedSafes[0],
         signerAddress,
       });
       // second call is cached
-      cacheContent = await fakeCacheService.hGet(cacheDir);
+      cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
       const result = await target.getSubmission({
         targetedSafe: targetedSafes[0],
@@ -613,8 +625,8 @@ describe('TargetedMessagingDataSource tests', () => {
       );
 
       // first call is not cached
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
       await expect(
         target.getSubmission({
           targetedSafe: targetedSafes[0],
@@ -622,8 +634,8 @@ describe('TargetedMessagingDataSource tests', () => {
         }),
       ).rejects.toThrow(SubmissionNotFoundError);
       // second call is also not  cached
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
       await expect(
         target.getSubmission({
           targetedSafe: targetedSafes[0],
@@ -631,8 +643,8 @@ describe('TargetedMessagingDataSource tests', () => {
         }),
       ).rejects.toThrow(SubmissionNotFoundError);
       // cache is still empty
-      cacheContent = await fakeCacheService.hGet(cacheDir);
-      expect(cacheContent).toBeUndefined();
+      cacheContent = await cacheService.hGet(cacheDir);
+      expect(cacheContent).toBeNull();
     });
 
     it('throws if trying to create a submission for the same targetedSafe and signerAddress', async () => {

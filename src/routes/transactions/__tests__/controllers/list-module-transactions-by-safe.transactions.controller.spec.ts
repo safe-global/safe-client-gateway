@@ -4,7 +4,6 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import {
@@ -18,7 +17,6 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -49,8 +47,6 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -71,7 +67,7 @@ describe('List module transactions by Safe - Transactions Controller (Unit)', ()
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

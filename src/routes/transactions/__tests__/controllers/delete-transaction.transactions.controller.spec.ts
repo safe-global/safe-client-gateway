@@ -4,7 +4,6 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -14,7 +13,7 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import type { DeleteTransactionDto } from '@/routes/transactions/entities/delete-transaction.dto.entity';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
@@ -24,7 +23,7 @@ import {
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
@@ -40,7 +39,8 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -52,8 +52,6 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -69,13 +67,15 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
-    fakeCacheService = moduleFixture.get(CacheService);
+    redisClient = moduleFixture.get('RedisClient');
+    cacheService = moduleFixture.get(CacheService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
+    await redisClient.flushAll();
     await app.close();
   });
 
@@ -176,18 +176,18 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       .expect(200);
 
     await expect(
-      fakeCacheService.hGet(
+      cacheService.hGet(
         new CacheDir(
           `${chain.chainId}_multisig_transaction_${tx.safeTxHash}`,
           '',
         ),
       ),
-    ).resolves.toBeUndefined();
+    ).resolves.toBeNull();
     await expect(
-      fakeCacheService.hGet(
+      cacheService.hGet(
         new CacheDir(`${chain.chainId}_multisig_transactions_${tx.safe}`, ''),
       ),
-    ).resolves.toBeUndefined();
+    ).resolves.toBeNull();
   });
 
   it('should forward an error from the Transaction Service', async () => {

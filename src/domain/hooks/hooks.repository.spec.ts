@@ -1,5 +1,8 @@
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import type { BalancesRepository } from '@/domain/balances/balances.repository';
 import type { BlockchainRepository } from '@/domain/blockchain/blockchain.repository';
 import type { ChainsRepository } from '@/domain/chains/chains.repository';
@@ -22,6 +25,7 @@ import type { TransactionsRepository } from '@/domain/transactions/transactions.
 import type { ILoggingService } from '@/logging/logging.interface';
 import { chainUpdateEventBuilder } from '@/routes/hooks/entities/__tests__/chain-update.builder';
 import { incomingTokenEventBuilder } from '@/routes/hooks/entities/__tests__/incoming-token.builder';
+import { faker } from '@faker-js/faker';
 
 const mockBalancesRepository = jest.mocked({
   clearApi: jest.fn(),
@@ -93,13 +97,25 @@ const mockEventNotificationsHelper = jest.mocked({
 
 describe('HooksRepository (Unit)', () => {
   let hooksRepository: HooksRepository;
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
   let eventCacheHelper: EventCacheHelper;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
 
-    fakeCacheService = new FakeCacheService();
+    redisClient = await redisClientFactory();
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'expirationTimeInSeconds.default') {
+        return faker.number.int();
+      }
+    });
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      mockConfigurationService,
+      '',
+    );
     eventCacheHelper = new EventCacheHelper(
       mockBalancesRepository,
       mockBlockchainRepository,
@@ -112,7 +128,7 @@ describe('HooksRepository (Unit)', () => {
       mockStakingRepository,
       mockTransactionsRepository,
       mockLoggingService,
-      fakeCacheService,
+      cacheService,
     );
     hooksRepository = new HooksRepository(
       mockLoggingService,
@@ -120,6 +136,14 @@ describe('HooksRepository (Unit)', () => {
       mockConfigurationService,
       eventCacheHelper,
     );
+  });
+
+  afterEach(async () => {
+    await redisClient.flushAll();
+  });
+
+  afterAll(async () => {
+    await redisClient.quit();
   });
 
   it('should process events for known chains and memoize the chain lookup', async () => {
@@ -265,20 +289,31 @@ describe('HooksRepository (Unit)', () => {
       chainId: chain.chainId,
       count: 4,
     });
-    // cache should be cleared after logging
-    await expect(fakeCacheService.getCounter(cacheKey)).resolves.toBeNull();
+    await expect(cacheService.getCounter(cacheKey)).resolves.toBe(0);
   });
 });
 
 describe('HooksRepositoryWithNotifications (Unit)', () => {
   let hooksRepositoryWithNotifications: HooksRepositoryWithNotifications;
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
   let eventCacheHelper: EventCacheHelper;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
 
-    fakeCacheService = new FakeCacheService();
+    redisClient = await redisClientFactory();
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'expirationTimeInSeconds.default') {
+        return faker.number.int();
+      }
+    });
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      mockConfigurationService,
+      '',
+    );
     eventCacheHelper = new EventCacheHelper(
       mockBalancesRepository,
       mockBlockchainRepository,
@@ -291,7 +326,7 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
       mockStakingRepository,
       mockTransactionsRepository,
       mockLoggingService,
-      fakeCacheService,
+      cacheService,
     );
     hooksRepositoryWithNotifications = new HooksRepositoryWithNotifications(
       mockLoggingService,
@@ -300,6 +335,14 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
       mockEventNotificationsHelper,
       eventCacheHelper,
     );
+  });
+
+  afterEach(async () => {
+    await redisClient.flushAll();
+  });
+
+  afterAll(async () => {
+    await redisClient.quit();
   });
 
   it('should process events for known chains and memoize the chain lookup', async () => {
@@ -409,7 +452,7 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     await hooksRepositoryWithNotifications.onEvent(event);
     await hooksRepositoryWithNotifications.onEvent(event);
 
-    await expect(fakeCacheService.getCounter(cacheKey)).resolves.toEqual(3);
+    await expect(cacheService.getCounter(cacheKey)).resolves.toEqual(3);
     expect(mockLoggingService.warn).not.toHaveBeenCalled();
     await eventCacheHelper.logUnsupportedEvents();
     expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
@@ -419,7 +462,7 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
       count: 3,
     });
     // cache should be cleared after logging
-    await expect(fakeCacheService.getCounter(cacheKey)).resolves.toBeNull();
+    await expect(cacheService.getCounter(cacheKey)).resolves.toBe(0);
   });
 
   it('should store the unsupported chain events for several chains and log them after UNSUPPORTED_EVENTS_LOG_INTERVAL', async () => {
@@ -449,8 +492,8 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
     await hooksRepositoryWithNotifications.onEvent(events[0]);
     await hooksRepositoryWithNotifications.onEvent(events[1]);
 
-    await expect(fakeCacheService.getCounter(cacheKeys[0])).resolves.toEqual(4);
-    await expect(fakeCacheService.getCounter(cacheKeys[1])).resolves.toEqual(3);
+    await expect(cacheService.getCounter(cacheKeys[0])).resolves.toEqual(4);
+    await expect(cacheService.getCounter(cacheKeys[1])).resolves.toEqual(3);
     expect(mockLoggingService.warn).not.toHaveBeenCalled();
     await eventCacheHelper.logUnsupportedEvents();
     expect(mockLoggingService.warn).toHaveBeenCalledTimes(2);
@@ -465,7 +508,7 @@ describe('HooksRepositoryWithNotifications (Unit)', () => {
       count: 3,
     });
     // cache should be cleared after logging
-    await expect(fakeCacheService.getCounter(cacheKeys[0])).resolves.toBeNull();
-    await expect(fakeCacheService.getCounter(cacheKeys[1])).resolves.toBeNull();
+    await expect(cacheService.getCounter(cacheKeys[0])).resolves.toBeNull();
+    await expect(cacheService.getCounter(cacheKeys[1])).resolves.toBeNull();
   });
 });

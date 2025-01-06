@@ -8,8 +8,6 @@ import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address
 import { AddressBooksDatasourceModule } from '@/datasources/accounts/address-books/address-books.datasource.module';
 import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
@@ -54,7 +52,6 @@ describe('AccountsController', () => {
 
   beforeEach(async () => {
     jest.resetAllMocks();
-    jest.useFakeTimers();
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -78,8 +75,6 @@ describe('AccountsController', () => {
       .useModule(TestCounterfactualSafesDataSourceModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -94,13 +89,11 @@ describe('AccountsController', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+    jest.useFakeTimers();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     jest.useRealTimers();
-  });
-
-  afterAll(async () => {
     await app.close();
   });
 

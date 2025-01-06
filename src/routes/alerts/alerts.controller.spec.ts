@@ -4,12 +4,10 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { faker } from '@faker-js/faker';
 import crypto from 'crypto';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import {
@@ -113,8 +111,6 @@ describe('Alerts (Unit)', () => {
         .useModule(
           AlertsApiConfigurationModule.register(alertsApiConfiguration),
         )
-        .overrideModule(CacheModule)
-        .useModule(TestCacheModule)
         .overrideModule(RequestScopedLoggingModule)
         .useModule(TestLoggingModule)
         .overrideModule(NetworkModule)
@@ -133,7 +129,7 @@ describe('Alerts (Unit)', () => {
       await app.init();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
       await app.close();
     });
 
@@ -903,8 +899,6 @@ describe('Alerts (Unit)', () => {
           .useModule(TestPostgresDatabaseModule)
           .overrideModule(TargetedMessagingDatasourceModule)
           .useModule(TestTargetedMessagingDatasourceModule)
-          .overrideModule(CacheModule)
-          .useModule(TestCacheModule)
           .overrideModule(RequestScopedLoggingModule)
           .useModule(TestLoggingModule)
           .overrideModule(NetworkModule)
@@ -919,7 +913,7 @@ describe('Alerts (Unit)', () => {
         await app.init();
       });
 
-      afterAll(async () => {
+      afterEach(async () => {
         await app.close();
       });
 

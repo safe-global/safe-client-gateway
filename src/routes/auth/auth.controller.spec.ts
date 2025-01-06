@@ -2,12 +2,11 @@ import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { EmailApiModule } from '@/datasources/email-api/email-api.module';
@@ -18,7 +17,7 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { faker } from '@faker-js/faker';
 import { createSiweMessage } from 'viem/siwe';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { getSecondsUntil } from '@/domain/common/utils/time';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
@@ -42,7 +41,8 @@ const verifySiweMessageMock = jest.fn();
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
-  let cacheService: FakeCacheService;
+  let cacheService: ICacheService;
+  let redisClient: RedisClientType;
   let blockchainApiManager: FakeBlockchainApiManager;
   let maxValidityPeriodInMs: number;
 
@@ -56,8 +56,6 @@ describe('AuthController', () => {
       .useModule(TestBlockchainApiManagerModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -71,6 +69,7 @@ describe('AuthController', () => {
       .compile();
 
     cacheService = moduleFixture.get(CacheService);
+    redisClient = moduleFixture.get('RedisClient');
     blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
@@ -107,12 +106,10 @@ describe('AuthController', () => {
     await initApp(testConfiguration);
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  afterEach(() => {
+  afterEach(async () => {
     jest.useRealTimers();
+    await redisClient.flushAll();
+    await app.close();
   });
 
   describe('GET /v1/auth/nonce', () => {

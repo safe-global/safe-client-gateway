@@ -6,7 +6,6 @@ import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import {
@@ -43,7 +42,7 @@ import type { Transfer } from '@/domain/safe/entities/transfer.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import {
@@ -73,6 +72,7 @@ describe('Transactions History Controller (Unit)', () => {
   let safeConfigUrl: string | undefined;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
+  let redisClient: RedisClientType;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -94,8 +94,6 @@ describe('Transactions History Controller (Unit)', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -109,12 +107,14 @@ describe('Transactions History Controller (Unit)', () => {
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    redisClient = moduleFixture.get('RedisClient');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
+    await redisClient.flushAll();
     await app.close();
   });
 

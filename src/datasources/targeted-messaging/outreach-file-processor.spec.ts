@@ -1,6 +1,9 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
 import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
@@ -43,7 +46,8 @@ function getChecksum(content: string): string {
 }
 
 describe('OutreachFileProcessor', () => {
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
   let sql: postgres.Sql;
   let migrator: PostgresDatabaseMigrator;
   let fileProcessor: OutreachFileProcessor;
@@ -56,7 +60,13 @@ describe('OutreachFileProcessor', () => {
   const fileChecksum = getChecksum(contentString);
 
   beforeAll(async () => {
-    fakeCacheService = new FakeCacheService();
+    redisClient = await redisClientFactory();
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      mockConfigurationService,
+      '',
+    );
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
@@ -68,10 +78,10 @@ describe('OutreachFileProcessor', () => {
     });
 
     targetedMessagingDatasource = new TargetedMessagingDatasource(
-      fakeCacheService,
+      cacheService,
       sql,
       mockLoggingService,
-      new CachedQueryResolver(mockLoggingService, fakeCacheService),
+      new CachedQueryResolver(mockLoggingService, cacheService),
       mockConfigurationService,
       new OutreachDbMapper(),
       new SubmissionDbMapper(),
@@ -80,7 +90,7 @@ describe('OutreachFileProcessor', () => {
 
     fileProcessor = new OutreachFileProcessor(
       mockLoggingService,
-      fakeCacheService,
+      cacheService,
       targetedMessagingDatasource,
       mockConfigurationService,
       mockCloudStorageApiService,
@@ -95,11 +105,13 @@ describe('OutreachFileProcessor', () => {
   afterEach(async () => {
     await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
     await rm(path.resolve(baseDir, fileName));
+    await redisClient.flushAll();
     jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
+    await redisClient.quit();
   });
 
   it('should not process Outreach data files of the lock is set', async () => {
@@ -107,7 +119,7 @@ describe('OutreachFileProcessor', () => {
     await targetedMessagingDatasource.createOutreach(
       createOutreachDtoBuilder().build(),
     );
-    await fakeCacheService.hSet(lockCacheKey, 'true', 10);
+    await cacheService.hSet(lockCacheKey, 'true', 10);
 
     await fileProcessor.onModuleInit();
 
@@ -126,14 +138,14 @@ describe('OutreachFileProcessor', () => {
         .build(),
     );
     const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
-    await fakeCacheService.deleteByKey(lockCacheKey.key);
+    await cacheService.deleteByKey(lockCacheKey.key);
 
     await fileProcessor.onModuleInit();
 
     expect(
       await targetedMessagingDatasource.getUnprocessedOutreaches(),
     ).toHaveLength(1);
-    expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+    expect(await cacheService.hGet(lockCacheKey)).toBeNull();
     expect(mockLoggingService.error).toHaveBeenCalledWith(
       `[Outreach ${created.id}] Error parsing data file: No source file`,
     );
@@ -169,14 +181,14 @@ describe('OutreachFileProcessor', () => {
         .build(),
     );
     const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
-    await fakeCacheService.deleteByKey(lockCacheKey.key);
+    await cacheService.deleteByKey(lockCacheKey.key);
 
     await fileProcessor.onModuleInit();
 
     expect(
       await targetedMessagingDatasource.getUnprocessedOutreaches(),
     ).toHaveLength(1);
-    expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+    expect(await cacheService.hGet(lockCacheKey)).toBeNull();
     expect(mockLoggingService.error).toHaveBeenCalledWith(
       `[Outreach ${created.id}] Error parsing data file: Checksum expected ${expectedChecksum}, but found ${fileChecksum}`,
     );
@@ -198,14 +210,14 @@ describe('OutreachFileProcessor', () => {
           .build(),
       );
       const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
-      await fakeCacheService.deleteByKey(lockCacheKey.key);
+      await cacheService.deleteByKey(lockCacheKey.key);
 
       await fileProcessor.onModuleInit();
 
       expect(
         await targetedMessagingDatasource.getUnprocessedOutreaches(),
       ).toHaveLength(1);
-      expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+      expect(await cacheService.hGet(lockCacheKey)).toBeNull();
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.stringContaining('is not valid JSON'),
       );
@@ -230,14 +242,14 @@ describe('OutreachFileProcessor', () => {
           .build(),
       );
       const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
-      await fakeCacheService.deleteByKey(lockCacheKey.key);
+      await cacheService.deleteByKey(lockCacheKey.key);
 
       await fileProcessor.onModuleInit();
 
       expect(
         await targetedMessagingDatasource.getUnprocessedOutreaches(),
       ).toHaveLength(1);
-      expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+      expect(await cacheService.hGet(lockCacheKey)).toBeNull();
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.stringContaining(
           `[Outreach ${created.id}] Error parsing data file`,
@@ -259,7 +271,7 @@ describe('OutreachFileProcessor', () => {
         .build(),
     );
     const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
-    await fakeCacheService.deleteByKey(lockCacheKey.key);
+    await cacheService.deleteByKey(lockCacheKey.key);
 
     await fileProcessor.onModuleInit();
 
@@ -283,7 +295,7 @@ describe('OutreachFileProcessor', () => {
         .build(),
     );
     const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
-    await fakeCacheService.deleteByKey(lockCacheKey.key);
+    await cacheService.deleteByKey(lockCacheKey.key);
 
     await fileProcessor.onModuleInit();
 
@@ -321,7 +333,7 @@ describe('OutreachFileProcessor', () => {
         .build(),
     );
     const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
-    await fakeCacheService.deleteByKey(lockCacheKey.key);
+    await cacheService.deleteByKey(lockCacheKey.key);
 
     await fileProcessor.onModuleInit();
 
@@ -349,7 +361,7 @@ describe('OutreachFileProcessor', () => {
         .build(),
     );
     const lockCacheKey = CacheRouter.getOutreachFileProcessorCacheDir();
-    await fakeCacheService.deleteByKey(lockCacheKey.key);
+    await cacheService.deleteByKey(lockCacheKey.key);
 
     await fileProcessor.onModuleInit();
 
@@ -360,6 +372,6 @@ describe('OutreachFileProcessor', () => {
     expect(
       await targetedMessagingDatasource.getUnprocessedOutreaches(),
     ).toHaveLength(0);
-    expect(await fakeCacheService.hGet(lockCacheKey)).toBeUndefined();
+    expect(await cacheService.hGet(lockCacheKey)).toBeNull();
   });
 });

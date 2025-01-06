@@ -1,7 +1,10 @@
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { AccountsDatasource } from '@/datasources/accounts/accounts.datasource';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
@@ -38,14 +41,21 @@ const encryptionApiMock = {
 } as jest.MockedObjectDeep<IEncryptionApi>;
 
 describe('AccountsDatasource tests', () => {
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
   let sql: postgres.Sql;
   let migrator: PostgresDatabaseMigrator;
   let target: AccountsDatasource;
   const testDbFactory = new TestDbFactory();
 
   beforeAll(async () => {
-    fakeCacheService = new FakeCacheService();
+    redisClient = await redisClientFactory();
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      mockConfigurationService,
+      '',
+    );
     sql = await testDbFactory.createTestDatabase(faker.string.uuid());
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
@@ -54,9 +64,9 @@ describe('AccountsDatasource tests', () => {
     });
 
     target = new AccountsDatasource(
-      fakeCacheService,
+      cacheService,
       sql,
-      new CachedQueryResolver(mockLoggingService, fakeCacheService),
+      new CachedQueryResolver(mockLoggingService, cacheService),
       mockLoggingService,
       mockConfigurationService,
       encryptionApiManagerMock,
@@ -68,12 +78,13 @@ describe('AccountsDatasource tests', () => {
 
   afterEach(async () => {
     await sql`TRUNCATE TABLE accounts, groups, account_data_types CASCADE`;
-    fakeCacheService.clear();
+    await redisClient.flushAll();
     jest.clearAllMocks();
   });
 
   afterAll(async () => {
     await testDbFactory.destroyTestDatabase(sql);
+    await redisClient.quit();
   });
 
   describe('createAccount', () => {
@@ -96,7 +107,7 @@ describe('AccountsDatasource tests', () => {
 
       // check the account is stored in the cache
       const cacheDir = new CacheDir(`account_${createAccountDto.address}`, '');
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      const cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toStrictEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -128,7 +139,7 @@ describe('AccountsDatasource tests', () => {
 
       // check the account is stored in the cache
       const cacheDir = new CacheDir(`account_${createAccountDto.address}`, '');
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      const cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toStrictEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -174,9 +185,9 @@ describe('AccountsDatasource tests', () => {
           return faker.number.int({ min: 10 });
       });
       target = new AccountsDatasource(
-        fakeCacheService,
+        cacheService,
         sql,
-        new CachedQueryResolver(mockLoggingService, fakeCacheService),
+        new CachedQueryResolver(mockLoggingService, cacheService),
         mockLoggingService,
         mockConfigurationService,
         encryptionApiManagerMock,
@@ -216,9 +227,9 @@ describe('AccountsDatasource tests', () => {
           return faker.number.int({ min: 10 });
       });
       target = new AccountsDatasource(
-        fakeCacheService,
+        cacheService,
         sql,
-        new CachedQueryResolver(mockLoggingService, fakeCacheService),
+        new CachedQueryResolver(mockLoggingService, cacheService),
         mockLoggingService,
         mockConfigurationService,
         encryptionApiManagerMock,
@@ -291,7 +302,7 @@ describe('AccountsDatasource tests', () => {
         }),
       );
       const cacheDir = new CacheDir(`account_${createAccountDto.address}`, '');
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      const cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toStrictEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -381,7 +392,7 @@ describe('AccountsDatasource tests', () => {
         `account_data_settings_${createAccountDto.address}`,
         '',
       );
-      await fakeCacheService.hSet(
+      await cacheService.hSet(
         accountDataSettingsCacheDir,
         faker.string.alpha(),
         MAX_TTL,
@@ -390,7 +401,7 @@ describe('AccountsDatasource tests', () => {
         `counterfactual_safes_${createAccountDto.address}`,
         '',
       );
-      await fakeCacheService.hSet(
+      await cacheService.hSet(
         counterfactualSafesCacheDir,
         faker.string.alpha(),
         MAX_TTL,
@@ -407,18 +418,18 @@ describe('AccountsDatasource tests', () => {
         `account_${createAccountDto.address}`,
         '',
       );
-      const cached = await fakeCacheService.hGet(accountCacheDir);
-      expect(cached).toBeUndefined();
+      const cached = await cacheService.hGet(accountCacheDir);
+      expect(cached).toBeNull();
 
       // the settings and counterfactual safes are deleted from the cache
-      const accountDataSettingsCached = await fakeCacheService.hGet(
+      const accountDataSettingsCached = await cacheService.hGet(
         accountDataSettingsCacheDir,
       );
-      expect(accountDataSettingsCached).toBeUndefined();
-      const counterfactualSafesCached = await fakeCacheService.hGet(
+      expect(accountDataSettingsCached).toBeNull();
+      const counterfactualSafesCached = await cacheService.hGet(
         counterfactualSafesCacheDir,
       );
-      expect(counterfactualSafesCached).toBeUndefined();
+      expect(counterfactualSafesCached).toBeNull();
 
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
@@ -485,7 +496,7 @@ describe('AccountsDatasource tests', () => {
         ),
       );
       const cacheDir = new CacheDir('account_data_types', '');
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      const cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toStrictEqual(
         expect.arrayContaining(
           dataTypes.map((dataType) =>
@@ -585,7 +596,7 @@ describe('AccountsDatasource tests', () => {
       );
 
       expect(actual).toStrictEqual(expect.arrayContaining(expected));
-      const cacheContent = await fakeCacheService.hGet(
+      const cacheContent = await cacheService.hGet(
         new CacheDir(`account_data_settings_${createAccountDto.address}`, ''),
       );
       expect(JSON.parse(cacheContent as string)).toStrictEqual(
@@ -726,7 +737,7 @@ describe('AccountsDatasource tests', () => {
         `account_data_settings_${createAccountDto.address}`,
         '',
       );
-      const cacheContent = await fakeCacheService.hGet(cacheDir);
+      const cacheContent = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cacheContent as string)).toStrictEqual(
         expect.arrayContaining(
           accountDataSettings.map((accountDataSetting) =>

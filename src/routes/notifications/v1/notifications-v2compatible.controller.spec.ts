@@ -4,7 +4,6 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
@@ -12,7 +11,7 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -49,6 +48,7 @@ describe('Notifications Controller (Unit)', () => {
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
   let notificationServiceV2: jest.MockedObjectDeep<NotificationsServiceV2>;
+  let redisClient: RedisClientType;
   const REGISTRATION_TIMESTAMP_EXPIRY_MINUTES = 5;
   const REGISTRATION_TIMESTAMP_EXPIRY =
     REGISTRATION_TIMESTAMP_EXPIRY_MINUTES * 60;
@@ -73,8 +73,6 @@ describe('Notifications Controller (Unit)', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -96,9 +94,15 @@ describe('Notifications Controller (Unit)', () => {
     loggingService = moduleFixture.get(LoggingService);
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    redisClient = moduleFixture.get('RedisClient');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  afterEach(async () => {
+    await redisClient.flushAll();
+    await app.close();
   });
 
   const buildInputDto = async (

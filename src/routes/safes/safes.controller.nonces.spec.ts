@@ -1,8 +1,7 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -37,6 +36,7 @@ describe('Safes Controller Nonces (Unit)', () => {
   let safeConfigUrl: string | undefined;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
+  let redisClient: RedisClientType;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -48,8 +48,6 @@ describe('Safes Controller Nonces (Unit)', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -63,9 +61,15 @@ describe('Safes Controller Nonces (Unit)', () => {
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    redisClient = moduleFixture.get('RedisClient');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  afterEach(async () => {
+    await redisClient.flushAll();
+    await app.close();
   });
 
   it('returns latest transaction nonce + 1 if greater than safe nonce', async () => {

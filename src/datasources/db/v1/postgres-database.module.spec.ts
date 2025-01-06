@@ -1,6 +1,6 @@
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { CacheModule } from '@/datasources/cache/cache.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { Test } from '@nestjs/testing';
@@ -37,7 +37,7 @@ describe('PostgresDatabaseModule tests', () => {
         PostgresDatabaseModule,
         ConfigurationModule.register(testConfiguration),
         TestLoggingModule,
-        TestCacheModule,
+        CacheModule,
       ],
     }).compile();
 

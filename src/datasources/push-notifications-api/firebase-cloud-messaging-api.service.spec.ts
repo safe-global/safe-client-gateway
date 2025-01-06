@@ -1,5 +1,8 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
@@ -8,6 +11,7 @@ import { firebaseNotificationBuilder } from '@/datasources/push-notifications-ap
 import { FirebaseCloudMessagingApiService } from '@/datasources/push-notifications-api/firebase-cloud-messaging-api.service';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
@@ -22,16 +26,21 @@ const mockHttpErrorFactory = jest.mocked({
   from: jest.fn(),
 } as jest.MockedObjectDeep<HttpErrorFactory>);
 
+const mockLoggingService = jest.mocked(
+  {} as jest.MockedObjectDeep<ILoggingService>,
+);
+
 describe('FirebaseCloudMessagingApiService', () => {
   let target: FirebaseCloudMessagingApiService;
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
 
   let pushNotificationsBaseUri: string;
   let pushNotificationsProject: string;
   let pushNotificationsServiceAccountClientEmail: string;
   let pushNotificationsServiceAccountPrivateKey: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.resetAllMocks();
 
     pushNotificationsBaseUri = faker.internet.url({ appendSlash: false });
@@ -56,15 +65,29 @@ describe('FirebaseCloudMessagingApiService', () => {
       'pushNotifications.serviceAccount.privateKey',
       pushNotificationsServiceAccountPrivateKey,
     );
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.default',
+      faker.number.int(),
+    );
 
-    fakeCacheService = new FakeCacheService();
+    redisClient = await redisClientFactory();
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      fakeConfigurationService,
+      '',
+    );
     target = new FirebaseCloudMessagingApiService(
       mockNetworkService,
       fakeConfigurationService,
-      fakeCacheService,
+      cacheService,
       mockJwtService,
       mockHttpErrorFactory,
     );
+  });
+
+  afterEach(async () => {
+    await redisClient.quit();
   });
 
   it('it should get an OAuth2 token if not cached, cache it and enqueue a notification', async () => {
@@ -112,16 +135,16 @@ describe('FirebaseCloudMessagingApiService', () => {
       },
     });
     // Cached OAuth2 token
-    expect(fakeCacheService.keyCount()).toBe(1);
+    await expect(redisClient.dbSize()).resolves.toBe(1);
     await expect(
-      fakeCacheService.hGet(new CacheDir('firebase_oauth2_token', '')),
+      cacheService.hGet(new CacheDir('firebase_oauth2_token', '')),
     ).resolves.toBe(oauth2Token);
   });
 
   it('should use an OAuth2 token from cache if available', async () => {
     const oauth2Token = faker.string.alphanumeric();
     const oauth2TokenExpiresIn = faker.number.int();
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       new CacheDir('firebase_oauth2_token', ''),
       oauth2Token,
       oauth2TokenExpiresIn,

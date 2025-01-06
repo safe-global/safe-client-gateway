@@ -1,6 +1,9 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { BlockchainApiManager } from '@/datasources/blockchain/blockchain-api.manager';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { rpcUriBuilder } from '@/domain/chains/entities/__tests__/rpc-uri.builder';
@@ -9,32 +12,56 @@ import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import { hexToNumber, toHex } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const configApiMock = jest.mocked({
   getChain: jest.fn(),
 } as jest.MockedObjectDeep<IConfigApi>);
 
+const mockLoggingService = jest.mocked(
+  {} as jest.MockedObjectDeep<ILoggingService>,
+);
+
 describe('BlockchainApiManager', () => {
   let target: BlockchainApiManager;
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
   const infuraApiKey = faker.string.hexadecimal({ length: 32 });
   const expirationTimeInSeconds = faker.number.int();
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.resetAllMocks();
 
-    fakeCacheService = new FakeCacheService();
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('blockchain.infura.apiKey', infuraApiKey);
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.default',
+      expirationTimeInSeconds,
+    );
     fakeConfigurationService.set(
       'expirationTimeInSeconds.rpc',
       expirationTimeInSeconds,
     );
+    redisClient = await redisClientFactory();
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      fakeConfigurationService,
+      '',
+    );
     target = new BlockchainApiManager(
       fakeConfigurationService,
       configApiMock,
-      fakeCacheService,
+      cacheService,
     );
+  });
+
+  afterEach(async () => {
+    await redisClient.flushAll();
+  });
+
+  afterAll(async () => {
+    await redisClient.quit();
   });
 
   describe('getApi', () => {
@@ -147,8 +174,9 @@ describe('BlockchainApiManager', () => {
         signal: expect.any(AbortSignal),
         url: chain.rpcUri.value,
       });
-      expect(fakeCacheService.keyCount()).toBe(1);
-      const cached = await fakeCacheService.hGet(cacheDir);
+
+      await expect(redisClient.dbSize()).resolves.toBe(1);
+      const cached = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cached!)).toBe(chainId);
 
       fetchSpy.mockRestore();
@@ -210,8 +238,8 @@ describe('BlockchainApiManager', () => {
         signal: expect.any(AbortSignal),
         url: chain.rpcUri.value,
       });
-      expect(fakeCacheService.keyCount()).toBe(1);
-      const cached = await fakeCacheService.hGet(cacheDir);
+      await expect(redisClient.dbSize()).resolves.toBe(1);
+      const cached = await cacheService.hGet(cacheDir);
       expect(JSON.parse(cached!)).toStrictEqual(blockByNumber);
 
       fetchSpy.mockRestore();

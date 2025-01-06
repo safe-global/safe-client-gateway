@@ -1,7 +1,6 @@
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
@@ -28,8 +27,6 @@ describe('AuthGuard', () => {
   let jwtService: IJwtService;
 
   beforeEach(async () => {
-    jest.useFakeTimers();
-
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
@@ -47,14 +44,12 @@ describe('AuthGuard', () => {
         AuthRepositoryModule,
       ],
       controllers: [TestController],
-    })
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .compile();
+    }).compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+    jest.useFakeTimers();
   });
 
   afterEach(async () => {

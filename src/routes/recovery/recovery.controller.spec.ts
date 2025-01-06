@@ -6,8 +6,6 @@ import { Test } from '@nestjs/testing';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -47,6 +45,7 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 
+// TODO: Remove remnants of Safe-Wallet-Signature-based guard
 describe('Recovery (Unit)', () => {
   let app: INestApplication<Server>;
   let alertsUrl: string;
@@ -80,8 +79,6 @@ describe('Recovery (Unit)', () => {
       .useModule(AlertsConfigurationModule.register(alertsConfiguration))
       .overrideModule(ALERTS_API_CONFIGURATION_MODULE)
       .useModule(AlertsApiConfigurationModule.register(alertsApiConfiguration))
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -106,12 +103,9 @@ describe('Recovery (Unit)', () => {
     await app.init();
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  afterEach(() => {
+  afterEach(async () => {
     jest.useRealTimers();
+    await app.close();
   });
 
   describe('AuthGuard', () => {

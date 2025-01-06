@@ -7,8 +7,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import {
   NetworkRequestError,
@@ -44,6 +43,7 @@ describe('Collectibles Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let redisClient: RedisClientType;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -64,8 +64,6 @@ describe('Collectibles Controller (Unit)', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -81,12 +79,14 @@ describe('Collectibles Controller (Unit)', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    redisClient = moduleFixture.get('RedisClient');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
+    await redisClient.flushAll();
     await app.close();
   });
 

@@ -1,8 +1,10 @@
 import { faker } from '@faker-js/faker';
 import { fakeJson } from '@/__tests__/faker';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -24,26 +26,42 @@ const mockNetworkService = jest.mocked(networkService);
 
 describe('CacheFirstDataSource', () => {
   let cacheFirstDataSource: CacheFirstDataSource;
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
   let fakeConfigurationService: FakeConfigurationService;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.resetAllMocks();
     jest.useFakeTimers();
-    fakeCacheService = new FakeCacheService();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('features.debugLogs', true);
     fakeConfigurationService.set('features.configHooksDebugLogs', false);
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.default',
+      faker.number.int(),
+    );
+    redisClient = await redisClientFactory();
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      fakeConfigurationService,
+      '',
+    );
     cacheFirstDataSource = new CacheFirstDataSource(
-      fakeCacheService,
+      cacheService,
       mockNetworkService,
       mockLoggingService,
       fakeConfigurationService,
     );
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     jest.useRealTimers();
+    await redisClient.flushAll();
+  });
+
+  afterAll(async () => {
+    await redisClient.quit();
   });
 
   it('should return the data returned by the underlying network interface and cache it', async () => {
@@ -69,8 +87,8 @@ describe('CacheFirstDataSource', () => {
 
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
-    expect(fakeCacheService.keyCount()).toBe(1); // only data is cached (as no invalidation happened yet at this point in time)
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(
+    await expect(redisClient.dbSize()).resolves.toBe(1); // only data is cached (as no invalidation happened yet at this point in time)
+    await expect(cacheService.hGet(cacheDir)).resolves.toEqual(
       JSON.stringify(data),
     );
   });
@@ -81,7 +99,7 @@ describe('CacheFirstDataSource', () => {
     const notFoundExpireTimeSeconds = faker.number.int();
     const data = JSON.parse(fakeJson());
     const invalidationTimeMs = jest.now(); // invalidation happens at this point in time
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
       invalidationTimeMs.toString(),
       faker.number.int({ min: 1 }),
@@ -105,8 +123,8 @@ describe('CacheFirstDataSource', () => {
 
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
-    expect(fakeCacheService.keyCount()).toBe(2); // both data and invalidation timestamp are cached
-    expect(await fakeCacheService.hGet(cacheDir)).toEqual(JSON.stringify(data)); // item is cached
+    await expect(redisClient.dbSize()).resolves.toBe(2); // both data and invalidation timestamp are cached
+    expect(await cacheService.hGet(cacheDir)).toEqual(JSON.stringify(data)); // item is cached
   });
 
   it('should return the network data but it should not cache it if the last invalidation happened after the request was initiated', async () => {
@@ -115,7 +133,7 @@ describe('CacheFirstDataSource', () => {
     const notFoundExpireTimeSeconds = faker.number.int();
     const data = JSON.parse(fakeJson());
     const invalidationTimeMs = jest.now() + 1; // invalidation happens 1 ms after this point in time
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
       invalidationTimeMs.toString(),
       faker.number.int({ min: 1 }),
@@ -139,19 +157,15 @@ describe('CacheFirstDataSource', () => {
 
     expect(actual).toEqual(data);
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
-    expect(fakeCacheService.keyCount()).toBe(1); // only invalidation timestamp is cached
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toEqual(undefined); // item is not cached
+    await expect(redisClient.dbSize()).resolves.toBe(1); // only invalidation timestamp is cached
+    await expect(cacheService.hGet(cacheDir)).resolves.toEqual(null); // item is not cached
   });
 
   it('should return the cached data without calling the underlying network interface', async () => {
     const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
     const notFoundExpireTimeSeconds = faker.number.int();
     const rawJson = fakeJson();
-    await fakeCacheService.hSet(
-      cacheDir,
-      rawJson,
-      faker.number.int({ min: 1 }),
-    );
+    await cacheService.hSet(cacheDir, rawJson, faker.number.int({ min: 1 }));
     mockNetworkService.get.mockImplementation(({ url }) =>
       Promise.reject(`Unexpected request to ${url}`),
     );
@@ -192,7 +206,7 @@ describe('CacheFirstDataSource', () => {
     ).rejects.toThrow(expectedError);
 
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
-    expect(fakeCacheService.keyCount()).toBe(1);
+    await expect(redisClient.dbSize()).resolves.toBe(1);
   });
 
   it('should return a 404 cached error without a second call to the underlying network interface', async () => {
@@ -228,7 +242,7 @@ describe('CacheFirstDataSource', () => {
     ).rejects.toThrow(expectedError);
 
     expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
-    expect(fakeCacheService.keyCount()).toBe(1);
+    await expect(redisClient.dbSize()).resolves.toBe(1);
   });
 
   it('should cache not found errors with the default TTL', async () => {

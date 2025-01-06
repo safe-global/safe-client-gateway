@@ -7,8 +7,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -48,6 +47,7 @@ describe('Chains Controller (Unit)', () => {
   let version: string;
   let buildNumber: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let redisClient: RedisClientType;
 
   const chainsResponse: Page<Chain> = {
     count: 2,
@@ -69,8 +69,6 @@ describe('Chains Controller (Unit)', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -91,9 +89,15 @@ describe('Chains Controller (Unit)', () => {
     version = configurationService.getOrThrow('about.version');
     buildNumber = configurationService.getOrThrow('about.buildNumber');
     networkService = moduleFixture.get(NetworkService);
+    redisClient = moduleFixture.get('RedisClient');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  });
+
+  afterEach(async () => {
+    await redisClient.flushAll();
+    await app.close();
   });
 
   describe('GET /chains', () => {

@@ -2,8 +2,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -93,6 +92,7 @@ describe('Relay controller', () => {
   let app: INestApplication<Server>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let redisClient: RedisClientType;
   let safeConfigUrl: string;
   let relayUrl: string;
 
@@ -115,8 +115,6 @@ describe('Relay controller', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -131,12 +129,14 @@ describe('Relay controller', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     relayUrl = configurationService.getOrThrow('relay.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    redisClient = moduleFixture.get('RedisClient');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
+    await redisClient.flushAll();
     await app.close();
   });
 

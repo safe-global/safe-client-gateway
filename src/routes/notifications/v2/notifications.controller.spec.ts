@@ -4,8 +4,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestAccountsDataSourceModule } from '@/datasources/accounts/__tests__/test.accounts.datasource.module';
 import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
@@ -55,6 +54,7 @@ describe('Notifications Controller V2 (Unit)', () => {
   let jwtService: IJwtService;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
+  let redisClient: RedisClientType;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -83,8 +83,6 @@ describe('Notifications Controller V2 (Unit)', () => {
       .useModule(TestCounterfactualSafesDataSourceModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -104,12 +102,14 @@ describe('Notifications Controller V2 (Unit)', () => {
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     networkService = moduleFixture.get(NetworkService);
     notificationsRepository = moduleFixture.get(INotificationsRepositoryV2);
+    redisClient = moduleFixture.get('RedisClient');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
 
   afterEach(async () => {
+    await redisClient.flushAll();
     await app.close();
   });
 

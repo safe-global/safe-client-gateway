@@ -7,28 +7,49 @@ import { getAddress } from 'viem';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { rawify } from '@/validation/entities/raw.entity';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockNetworkService = jest.mocked({
   post: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>);
 
+const mockLoggingService = jest.mocked(
+  {} as jest.MockedObjectDeep<ILoggingService>,
+);
+
 describe('GelatoApi', () => {
   let target: GelatoApi;
   let fakeConfigurationService: FakeConfigurationService;
-  let fakeCacheService: FakeCacheService;
+  let redisClient: RedisClientType;
+  let cacheService: ICacheService;
   let baseUri: string;
   let ttlSeconds: number;
   let httpErrorFactory: HttpErrorFactory;
+  const expirationTimeInSeconds = faker.number.int();
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.resetAllMocks();
 
     httpErrorFactory = new HttpErrorFactory();
     fakeConfigurationService = new FakeConfigurationService();
-    fakeCacheService = new FakeCacheService();
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.default',
+      expirationTimeInSeconds,
+    );
+    fakeConfigurationService.set('relay.baseUri', '');
+    redisClient = await redisClientFactory();
+    cacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      fakeConfigurationService,
+      '',
+    );
     baseUri = faker.internet.url({ appendSlash: false });
     ttlSeconds = faker.number.int();
     fakeConfigurationService.set('relay.baseUri', baseUri);
@@ -38,13 +59,26 @@ describe('GelatoApi', () => {
       mockNetworkService,
       fakeConfigurationService,
       httpErrorFactory,
-      fakeCacheService,
+      cacheService,
     );
+  });
+
+  afterEach(async () => {
+    await redisClient.quit();
   });
 
   it('should error if baseUri is not defined', () => {
     const fakeConfigurationService = new FakeConfigurationService();
-    const fakeCacheService = new FakeCacheService();
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.default',
+      expirationTimeInSeconds,
+    );
+    const fakeCacheService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      fakeConfigurationService,
+      '',
+    );
     const httpErrorFactory = new HttpErrorFactory();
 
     expect(
@@ -174,7 +208,7 @@ describe('GelatoApi', () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
       const count = faker.number.int({ min: 1 });
-      await fakeCacheService.hSet(
+      await cacheService.hSet(
         new CacheDir(`${chainId}_relay_${address}`, ''),
         count.toString(),
         ttlSeconds,
@@ -213,7 +247,7 @@ describe('GelatoApi', () => {
         count,
       });
 
-      const result = await fakeCacheService.hGet(
+      const result = await cacheService.hGet(
         new CacheDir(`${chainId}_relay_${address}`, ''),
       );
       expect(result).toBe(count.toString());

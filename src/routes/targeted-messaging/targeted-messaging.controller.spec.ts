@@ -2,8 +2,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
@@ -39,6 +38,7 @@ describe('TargetedMessagingController', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let redisClient: RedisClientType;
   let targetedMessagingDatasource: jest.MockedObjectDeep<ITargetedMessagingDatasource>;
 
   beforeEach(async () => {
@@ -53,8 +53,6 @@ describe('TargetedMessagingController', () => {
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
       .useModule(TestNetworkModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
@@ -69,6 +67,7 @@ describe('TargetedMessagingController', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    redisClient = moduleFixture.get('RedisClient');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -76,6 +75,7 @@ describe('TargetedMessagingController', () => {
 
   afterEach(async () => {
     jest.resetAllMocks();
+    await redisClient.flushAll();
     await app.close();
   });
 

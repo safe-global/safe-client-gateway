@@ -1,12 +1,11 @@
 import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
+import type { RedisClientType } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
@@ -80,6 +79,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
   let configurationService: IConfigurationService;
   let safeConfigUrl: string;
   let queuesApiService: jest.MockedObjectDeep<IQueuesApiService>;
+  let redisClient: RedisClientType;
 
   const defaultConfiguration = configuration();
   const testConfiguration = (): ReturnType<typeof configuration> => {
@@ -100,8 +100,6 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -122,6 +120,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     queuesApiService = moduleFixture.get(IQueuesApiService);
     notificationsRepository = moduleFixture.get(INotificationsRepositoryV2);
+    redisClient = moduleFixture.get('RedisClient');
 
     await app.init();
   }
@@ -131,7 +130,8 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
     await initApp();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
+    await redisClient.flushAll();
     await app.close();
   });
 
@@ -2141,8 +2141,6 @@ describe('Hook Events for Notifications (Unit) pt. 2', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -2171,7 +2169,7 @@ describe('Hook Events for Notifications (Unit) pt. 2', () => {
     await initApp();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 

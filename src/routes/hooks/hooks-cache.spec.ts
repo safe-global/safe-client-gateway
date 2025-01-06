@@ -2,17 +2,15 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -55,7 +53,7 @@ function getSubscriptionCallback(
 describe('Hook Events for Cache (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let fakeCacheService: FakeCacheService;
+  let cacheService: ICacheService;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: IConfigurationService;
   let stakingApiManager: IStakingApiManager;
@@ -72,8 +70,6 @@ describe('Hook Events for Cache (Unit)', () => {
       .useModule(TestPostgresDatabaseModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
       .overrideModule(RequestScopedLoggingModule)
       .useModule(TestLoggingModule)
       .overrideModule(NetworkModule)
@@ -85,7 +81,7 @@ describe('Hook Events for Cache (Unit)', () => {
       .compile();
     app = moduleFixture.createNestApplication();
 
-    fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
+    cacheService = moduleFixture.get<ICacheService>(CacheService);
     configurationService = moduleFixture.get(IConfigurationService);
     stakingApiManager =
       moduleFixture.get<IStakingApiManager>(IStakingApiManager);
@@ -106,7 +102,7 @@ describe('Hook Events for Cache (Unit)', () => {
     await initApp(configuration);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
 
@@ -144,7 +140,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_safe_balances_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -171,7 +167,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -200,7 +196,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_multisig_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -225,7 +221,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -254,7 +250,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_multisig_transaction_${payload.safeTxHash}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -279,7 +275,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -300,7 +296,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_safe_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -325,7 +321,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -352,7 +348,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_staking_stakes_${getAddress(safeAddress)}`,
       validatorsPublicKeys,
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       JSON.stringify(stakes),
       faker.number.int({ min: 1 }),
@@ -377,7 +373,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -409,7 +405,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_safe_collectibles_${safeAddress}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -436,7 +432,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -462,7 +458,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_transfers_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -487,7 +483,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -508,7 +504,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_incoming_transfers_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -533,7 +529,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -549,7 +545,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_module_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -574,7 +570,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -615,7 +611,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_all_transactions_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -640,7 +636,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -659,7 +655,7 @@ describe('Hook Events for Cache (Unit)', () => {
       `${chainId}_messages_${getAddress(safeAddress)}`,
       faker.string.alpha(),
     );
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -684,7 +680,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -694,7 +690,7 @@ describe('Hook Events for Cache (Unit)', () => {
   ])('$type clears chain', async (payload) => {
     const chain = chainBuilder().build();
     const cacheDir = new CacheDir(`${chain.chainId}_chain`, '');
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       JSON.stringify(chain),
       faker.number.int({ min: 1 }),
@@ -715,7 +711,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -725,7 +721,7 @@ describe('Hook Events for Cache (Unit)', () => {
   ])('$type clears chains', async (payload) => {
     const chain = chainBuilder().build();
     const cacheDir = new CacheDir(`chains`, '');
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       JSON.stringify(chain),
       faker.number.int({ min: 1 }),
@@ -749,7 +745,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -880,7 +876,7 @@ describe('Hook Events for Cache (Unit)', () => {
   ])('$type clears safe apps', async (payload) => {
     const chain = chainBuilder().build();
     const cacheDir = new CacheDir(`${chain.chainId}_safe_apps`, '');
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       JSON.stringify(chain),
       faker.number.int({ min: 1 }),
@@ -904,7 +900,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each([
@@ -928,7 +924,7 @@ describe('Hook Events for Cache (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -937,7 +933,7 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
   it.each(
@@ -962,7 +958,7 @@ describe('Hook Events for Cache (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    await fakeCacheService.hSet(
+    await cacheService.hSet(
       cacheDir,
       faker.string.alpha(),
       faker.number.int({ min: 1 }),
@@ -971,6 +967,6 @@ describe('Hook Events for Cache (Unit)', () => {
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(event)) } as ConsumeMessage);
 
-    await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    await expect(cacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 });
