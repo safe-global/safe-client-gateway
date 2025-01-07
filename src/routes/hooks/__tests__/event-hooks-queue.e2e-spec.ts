@@ -122,10 +122,12 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -168,10 +170,12 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -214,6 +218,7 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -252,6 +257,7 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -295,6 +301,7 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },

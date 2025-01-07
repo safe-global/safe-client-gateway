@@ -8,6 +8,7 @@ import { getAddress } from 'viem';
 export function executedTransactionEventBuilder(): IBuilder<ExecutedTransaction> {
   return new Builder<ExecutedTransaction>()
     .with('type', TransactionEventType.EXECUTED_MULTISIG_TRANSACTION)
+    .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('chainId', faker.string.numeric())
     .with('safeTxHash', faker.string.hexadecimal())
