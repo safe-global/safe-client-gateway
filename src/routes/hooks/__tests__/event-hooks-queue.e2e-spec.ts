@@ -421,6 +421,7 @@ describe('Events queue processing e2e tests', () => {
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
