@@ -69,7 +69,8 @@ export class RouteLoggerInterceptor implements NestInterceptor {
     } else if (error instanceof HttpException) {
       statusCode = error.getStatus();
     } else if (error instanceof ZodError) {
-      statusCode = HttpStatus.UNPROCESSABLE_ENTITY;
+      // Since we mainly use Zod for Datasource validation, we should throw a 502 Bad Gateway instead of a 422 Unprocessable Entity
+      statusCode = HttpStatus.BAD_GATEWAY;
     }
 
     const message = formatRouteLogMessage(
