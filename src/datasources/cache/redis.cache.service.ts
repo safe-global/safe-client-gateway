@@ -1,4 +1,9 @@
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  OnModuleDestroy,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { RedisClientType } from '@/datasources/cache/cache.module';
 import { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -40,11 +45,7 @@ export class RedisCacheService
   }
 
   async getCounter(key: string): Promise<number | null> {
-    if (!this.ready()) {
-      this.logRedisClientUnreadyState('getCounter');
-
-      return null;
-    }
+    this.validatgeRedisClientIsReady();
 
     const value = await this.client.get(this._prefixKey(key));
     const numericValue = Number(value);
@@ -56,14 +57,10 @@ export class RedisCacheService
     value: string,
     expireTimeSeconds: number | undefined,
   ): Promise<void> {
+    this.validatgeRedisClientIsReady();
+
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
       return;
-    }
-
-    if (!this.ready()) {
-      this.logRedisClientUnreadyState('hSet');
-
-      return undefined;
     }
 
     const key = this._prefixKey(cacheDir.key);
@@ -80,22 +77,14 @@ export class RedisCacheService
   }
 
   async hGet(cacheDir: CacheDir): Promise<string | undefined> {
-    if (!this.ready()) {
-      this.logRedisClientUnreadyState('hGet');
-
-      return undefined;
-    }
+    this.validatgeRedisClientIsReady();
 
     const key = this._prefixKey(cacheDir.key);
     return await this.timeout(this.client.hGet(key, cacheDir.field));
   }
 
-  async deleteByKey(key: string): Promise<number | undefined> {
-    if (!this.ready()) {
-      this.logRedisClientUnreadyState('deleteByKey');
-
-      return undefined;
-    }
+  async deleteByKey(key: string): Promise<number> {
+    this.validatgeRedisClientIsReady();
 
     const keyWithPrefix = this._prefixKey(key);
     // see https://redis.io/commands/unlink/
@@ -113,12 +102,8 @@ export class RedisCacheService
   async increment(
     cacheKey: string,
     expireTimeSeconds: number | undefined,
-  ): Promise<number | undefined> {
-    if (!this.ready()) {
-      this.logRedisClientUnreadyState('increment');
-
-      return undefined;
-    }
+  ): Promise<number> {
+    this.validatgeRedisClientIsReady();
 
     const transaction = this.client.multi().incr(cacheKey);
     if (expireTimeSeconds !== undefined && expireTimeSeconds > 0) {
@@ -133,11 +118,7 @@ export class RedisCacheService
     value: number,
     expireTimeSeconds: number,
   ): Promise<void> {
-    if (!this.ready()) {
-      this.logRedisClientUnreadyState('setCounter');
-
-      return undefined;
-    }
+    this.validatgeRedisClientIsReady();
 
     await this.client.set(key, value, { EX: expireTimeSeconds, NX: true });
   }
@@ -167,11 +148,8 @@ export class RedisCacheService
    * instance is not responding it invokes {@link forceQuit}.
    */
   async onModuleDestroy(): Promise<void> {
-    if (!this.ready()) {
-      this.logRedisClientUnreadyState('onModuleDestroy');
+    this.validatgeRedisClientIsReady();
 
-      return undefined;
-    }
     this.loggingService.info('Closing Redis connection...');
     try {
       await promiseWithTimeout(
@@ -190,11 +168,7 @@ export class RedisCacheService
    * Forces the closing of the Redis connection associated with this service.
    */
   private async forceQuit(): Promise<void> {
-    if (!this.ready()) {
-      this.logRedisClientUnreadyState('forceQuit');
-
-      return undefined;
-    }
+    this.validatgeRedisClientIsReady();
     this.loggingService.warn('Forcing Redis connection to close...');
     try {
       await this.client.disconnect();
@@ -207,7 +181,7 @@ export class RedisCacheService
   private async timeout<T>(
     queryObject: Promise<T>,
     timeout?: number,
-  ): Promise<T | undefined> {
+  ): Promise<T> {
     timeout =
       timeout ?? this.configurationService.getOrThrow<number>('redis.timeout');
     try {
@@ -215,17 +189,17 @@ export class RedisCacheService
     } catch (error) {
       if (error instanceof PromiseTimeoutError) {
         this.loggingService.error('Redis Query Timed out!');
-
-        return undefined;
       }
 
       throw error;
     }
   }
 
-  private logRedisClientUnreadyState(operation: string): void {
-    this.loggingService.error(
-      `Redis client is not ready. Redis ${operation} failed!`,
-    );
+  private validatgeRedisClientIsReady(): void {
+    if (!this.ready()) {
+      this.loggingService.error(`Redis client is not ready`);
+
+      throw new ServiceUnavailableException('Redis client is not ready');
+    }
   }
 }

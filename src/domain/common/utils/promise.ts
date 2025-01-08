@@ -1,16 +1,22 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-export const promiseWithTimeout = <T>(
+export const promiseWithTimeout = async <T>(
   promise: Promise<T>,
   timeout: number,
-): Promise<T | undefined> => {
+): Promise<T> => {
   let timeoutId: NodeJS.Timeout;
 
-  return Promise.race<T | undefined>([
+  return Promise.race<T>([
     promise,
     new Promise((_, reject) => {
       timeoutId = setTimeout(
-        () => reject(new PromiseTimeoutError('Promise timed out!', 500)),
+        () =>
+          reject(
+            new PromiseTimeoutError(
+              'Promise timed out!',
+              HttpStatus.INTERNAL_SERVER_ERROR,
+            ),
+          ),
         timeout,
       );
     }),

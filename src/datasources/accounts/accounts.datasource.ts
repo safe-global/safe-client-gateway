@@ -253,15 +253,12 @@ export class AccountsDatasource implements IAccountsDatasource, OnModuleInit {
         `Invalid client IP while creating account: ${clientIp}`,
       );
     } else {
-      const current =
-        (await this.cacheService.increment(
-          CacheRouter.getRateLimitCacheKey(
-            `${AccountsDatasource.ACCOUNT_CREATION_CACHE_PREFIX}_${clientIp}`,
-          ),
-          this.accountCreationRateLimitPeriodSeconds,
-          // If the current value cannot be retrieved from Redis (e.g., due to an error or timeout),
-          // we allow the user to proceed without blocking their operation.
-        )) ?? 0;
+      const current = await this.cacheService.increment(
+        CacheRouter.getRateLimitCacheKey(
+          `${AccountsDatasource.ACCOUNT_CREATION_CACHE_PREFIX}_${clientIp}`,
+        ),
+        this.accountCreationRateLimitPeriodSeconds,
+      );
       if (current > this.accountCreationRateLimitCalls) {
         this.loggingService.warn(
           `Limit of ${this.accountCreationRateLimitCalls} reached for IP ${clientIp}`,
