@@ -15,6 +15,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigConfirmationDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { getAddress } from 'viem';
+import { TypedDataMapper } from '@/domain/common/mappers/typed-data.mapper';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -29,6 +30,7 @@ const safeRepository = jest.mocked({
 } as jest.MockedObjectDeep<SafeRepository>);
 
 const loggingService = jest.mocked({
+  error: jest.fn(),
   debug: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
@@ -37,11 +39,13 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    const safeTypedDataHelper = new TypedDataMapper(loggingService);
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,
       tokenRepository,
       safeRepository,
       loggingService,
+      safeTypedDataHelper,
     );
   });
 
@@ -86,6 +90,10 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
+        typedData: {
+          domainHash: expect.any(String),
+          messageHash: expect.any(String),
+        },
       }),
     );
   });
@@ -151,6 +159,10 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
+        typedData: {
+          domainHash: expect.any(String),
+          messageHash: expect.any(String),
+        },
       }),
     );
   });
@@ -218,6 +230,10 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         trusted: transaction.trusted,
         proposer: new AddressInfo(transaction.proposer!),
         proposedByDelegate: null,
+        typedData: {
+          domainHash: expect.any(String),
+          messageHash: expect.any(String),
+        },
       }),
     );
   });
