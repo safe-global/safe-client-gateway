@@ -209,6 +209,7 @@ export default (): ReturnType<typeof configuration> => ({
     pass: process.env.REDIS_PASS,
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
+    timeout: process.env.REDIS_TIMEOUT || 1 * 1_000, // Milliseconds
   },
   relay: {
     baseUri: faker.internet.url({ appendSlash: false }),
