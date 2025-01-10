@@ -8,6 +8,7 @@ import { getAddress } from 'viem';
 export function pendingTransactionEventBuilder(): IBuilder<PendingTransaction> {
   return new Builder<PendingTransaction>()
     .with('type', TransactionEventType.PENDING_MULTISIG_TRANSACTION)
+    .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('chainId', faker.string.numeric())
     .with('safeTxHash', faker.string.hexadecimal());

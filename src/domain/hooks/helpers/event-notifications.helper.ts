@@ -347,6 +347,7 @@ export class EventNotificationsHelper {
 
     return {
       type: NotificationType.CONFIRMATION_REQUEST,
+      to: event.to,
       chainId: event.chainId,
       address: event.address,
       safeTxHash: event.safeTxHash,
