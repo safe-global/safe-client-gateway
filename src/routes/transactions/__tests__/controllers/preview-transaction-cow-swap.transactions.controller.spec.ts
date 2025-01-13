@@ -182,8 +182,8 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             executedSellAmount: order.executedSellAmount.toString(),
             executedBuyAmount: order.executedBuyAmount.toString(),
             explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
-            executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
-            executedFee: order.executedFee?.toString() ?? null,
+            executedSurplusFee: order.executedSurplusFee.toString(),
+            executedFee: order.executedFee.toString(),
             executedFeeToken: order.executedFeeToken,
             sellToken: {
               address: sellToken.address,
@@ -322,8 +322,8 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             executedSellAmount: order.executedSellAmount.toString(),
             executedBuyAmount: order.executedBuyAmount.toString(),
             explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
-            executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
-            executedFee: order.executedFee?.toString() ?? null,
+            executedSurplusFee: order.executedSurplusFee.toString(),
+            executedFee: order.executedFee.toString(),
             executedFeeToken: order.executedFeeToken,
             sellToken: {
               address: sellToken.address,
@@ -359,162 +359,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             addressInfoIndex: null,
           },
         });
-    });
-
-    it('should return executedSurplusFee/executedFee as null if not available', async () => {
-      const chain = chainBuilder().with('chainId', swapsChainId).build();
-      const safe = safeBuilder().build();
-      const dataDecoded = dataDecodedBuilder().build();
-      const preSignatureEncoder = setPreSignatureEncoder();
-      const preSignature = preSignatureEncoder.build();
-      const order = orderBuilder()
-        .with('uid', preSignature.orderUid)
-        .with('executedSurplusFee', null)
-        .with('executedFee', null)
-        .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
-        .build();
-      const buyToken = tokenBuilder().with('address', order.buyToken).build();
-      const sellToken = tokenBuilder().with('address', order.sellToken).build();
-      const previewTransactionDto = previewTransactionDtoBuilder()
-        .with('data', preSignatureEncoder.encode())
-        .with('operation', Operation.CALL)
-        .build();
-      const contractResponse = contractBuilder()
-        .with('address', previewTransactionDto.to)
-        .build();
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        }
-        if (url === `${swapsApiUrl}/api/v1/orders/${order.uid}`) {
-          return Promise.resolve({ data: rawify(order), status: 200 });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}`
-        ) {
-          return Promise.resolve({ data: rawify(buyToken), status: 200 });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.sellToken}`
-        ) {
-          return Promise.resolve({ data: rawify(sellToken), status: 200 });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
-        ) {
-          return Promise.resolve({ data: rawify(safe), status: 200 });
-        }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
-        ) {
-          return Promise.resolve({
-            data: rawify(contractResponse),
-            status: 200,
-          });
-        }
-        return Promise.reject(new Error(`Could not match ${url}`));
-      });
-      networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
-          return Promise.resolve({
-            data: rawify(dataDecoded),
-            status: 200,
-          });
-        }
-        return Promise.reject(new Error(`Could not match ${url}`));
-      });
-
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
-        )
-        .send(previewTransactionDto)
-        .expect(200)
-        .expect(({ body }) =>
-          expect(body.txInfo).toMatchObject({
-            type: 'SwapOrder',
-            executedSurplusFee: null,
-            executedFee: null,
-          }),
-        );
-    });
-
-    it('should return executedFeeToken as null if not available', async () => {
-      const chain = chainBuilder().with('chainId', swapsChainId).build();
-      const safe = safeBuilder().build();
-      const dataDecoded = dataDecodedBuilder().build();
-      const preSignatureEncoder = setPreSignatureEncoder();
-      const preSignature = preSignatureEncoder.build();
-      const order = orderBuilder()
-        .with('uid', preSignature.orderUid)
-        .with('executedFeeToken', null)
-        .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
-        .build();
-      const buyToken = tokenBuilder().with('address', order.buyToken).build();
-      const sellToken = tokenBuilder().with('address', order.sellToken).build();
-      const previewTransactionDto = previewTransactionDtoBuilder()
-        .with('data', preSignatureEncoder.encode())
-        .with('operation', Operation.CALL)
-        .build();
-      const contractResponse = contractBuilder()
-        .with('address', previewTransactionDto.to)
-        .build();
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        }
-        if (url === `${swapsApiUrl}/api/v1/orders/${order.uid}`) {
-          return Promise.resolve({ data: rawify(order), status: 200 });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.buyToken}`
-        ) {
-          return Promise.resolve({ data: rawify(buyToken), status: 200 });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/tokens/${order.sellToken}`
-        ) {
-          return Promise.resolve({ data: rawify(sellToken), status: 200 });
-        }
-        if (
-          url === `${chain.transactionService}/api/v1/safes/${safe.address}`
-        ) {
-          return Promise.resolve({ data: rawify(safe), status: 200 });
-        }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
-        ) {
-          return Promise.resolve({
-            data: rawify(contractResponse),
-            status: 200,
-          });
-        }
-        return Promise.reject(new Error(`Could not match ${url}`));
-      });
-      networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
-          return Promise.resolve({
-            data: rawify(dataDecoded),
-            status: 200,
-          });
-        }
-        return Promise.reject(new Error(`Could not match ${url}`));
-      });
-
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
-        )
-        .send(previewTransactionDto)
-        .expect(200)
-        .expect(({ body }) =>
-          expect(body.txInfo).toMatchObject({
-            type: 'SwapOrder',
-            executedFeeToken: null,
-          }),
-        );
     });
 
     it('should return a "standard" transaction preview if order data is not available', async () => {

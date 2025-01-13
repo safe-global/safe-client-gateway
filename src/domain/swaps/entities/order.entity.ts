@@ -100,9 +100,9 @@ export const OrderSchema = z.object({
     })
     .nullish()
     .default(null),
-  executedSurplusFee: z.coerce.bigint().nullish().default(null),
-  executedFee: z.coerce.bigint().nullish().default(null),
-  executedFeeToken: AddressSchema.nullish().default(null),
+  executedSurplusFee: z.coerce.bigint(),
+  executedFee: z.coerce.bigint(),
+  executedFeeToken: AddressSchema,
   fullAppData: FullAppDataSchema.shape.fullAppData,
 });
 

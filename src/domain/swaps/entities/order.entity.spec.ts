@@ -100,8 +100,6 @@ describe('OrderSchema', () => {
     'ethflowData',
     'onchainUser',
     'onchainOrderData',
-    'executedSurplusFee',
-    'executedFee',
     'fullAppData',
   ])('%s should default to null if value not present', (key) => {
     const order = orderBuilder().build();

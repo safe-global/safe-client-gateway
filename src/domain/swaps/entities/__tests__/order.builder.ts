@@ -12,9 +12,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
 export function orderBuilder(): IBuilder<Order> {
-  const executedFee = faker.datatype.boolean()
-    ? faker.number.bigInt({ min: 1 })
-    : null;
+  const executedFee = faker.number.bigInt({ min: 1 });
   const sellToken = getAddress(faker.finance.ethereumAddress());
   return (
     new Builder<Order>()
@@ -128,7 +126,7 @@ export function orderBuilder(): IBuilder<Order> {
       .with('executedFee', executedFee)
       // TODO: still tbd by CoW but this will be expressed in SURPLUS tokens
       // (BUY tokens for SELL orders and SELL tokens for BUY orders)
-      .with('executedFeeToken', executedFee ? sellToken : null)
+      .with('executedFeeToken', sellToken)
       .with('fullAppData', faker.datatype.boolean() ? JSON.stringify({}) : null)
   );
 }

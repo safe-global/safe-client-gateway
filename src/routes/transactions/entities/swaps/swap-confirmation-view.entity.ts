@@ -73,28 +73,25 @@ export class CowSwapConfirmationView implements Baseline, OrderInfo {
   })
   explorerUrl: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
-    nullable: true,
     description: 'The amount of fees paid for this order.',
     deprecated: true,
   })
-  executedSurplusFee: string | null;
+  executedSurplusFee: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
-    nullable: true,
     description: 'The amount of fees paid for this order.',
   })
-  executedFee: string | null;
+  executedFee: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
-    nullable: true,
     description:
       'The token in which the fee were paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
   })
-  executedFeeToken: `0x${string}` | null;
+  executedFeeToken: `0x${string}`;
 
   @ApiPropertyOptional({
     type: String,

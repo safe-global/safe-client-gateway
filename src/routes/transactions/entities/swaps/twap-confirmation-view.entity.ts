@@ -73,30 +73,27 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
   })
   executedSellAmount: string | null;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
-    nullable: true,
     description:
       'The executed surplus fee raw amount (no decimals), or null if there are too many parts',
     deprecated: true,
   })
-  executedSurplusFee: string | null;
+  executedSurplusFee: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
-    nullable: true,
     description:
       'The executed surplus fee raw amount (no decimals), or null if there are too many parts',
   })
-  executedFee: string | null;
+  executedFee: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
-    nullable: true,
     description:
       'The token in which the fee were paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
   })
-  executedFeeToken: `0x${string}` | null;
+  executedFeeToken: `0x${string}`;
 
   @ApiPropertyOptional({
     type: String,
@@ -171,9 +168,9 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
     buyAmount: string;
     executedSellAmount: string | null;
     executedBuyAmount: string | null;
-    executedSurplusFee: string | null;
-    executedFee: string | null;
-    executedFeeToken: `0x${string}` | null;
+    executedSurplusFee: string;
+    executedFee: string;
+    executedFeeToken: `0x${string}`;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     receiver: `0x${string}`;
