@@ -144,10 +144,10 @@ export class TwapOrderMapper {
         ? null
         : this.getExecutedBuyAmount(partOrders).toString();
 
-    const executedSurplusFee: TwapOrderInfo['executedSurplusFee'] =
+    const executedFee: TwapOrderInfo['executedFee'] =
       hasAbundantParts || !partOrders
         ? null
-        : this.getExecutedSurplusFee(partOrders).toString();
+        : this.getExecutedFee(partOrders).toString();
 
     const [sellToken, buyToken] = await Promise.all([
       this.swapOrderHelper.getToken({
@@ -170,7 +170,18 @@ export class TwapOrderMapper {
       buyAmount: twapOrderData.buyAmount,
       executedSellAmount,
       executedBuyAmount,
-      executedSurplusFee,
+      executedSurplusFee: executedFee,
+      executedFee,
+      // TODO: still tbd by CoW but this will be expressed in SURPLUS tokens
+      // (BUY tokens for SELL orders and SELL tokens for BUY orders)
+      executedFeeToken: new TokenInfo({
+        address: sellToken.address,
+        decimals: sellToken.decimals,
+        logoUri: sellToken.logoUri,
+        name: sellToken.name,
+        symbol: sellToken.symbol,
+        trusted: sellToken.trusted,
+      }),
       sellToken: new TokenInfo({
         address: sellToken.address,
         decimals: sellToken.decimals,
@@ -324,9 +335,9 @@ export class TwapOrderMapper {
     }, BigInt(0));
   }
 
-  private getExecutedSurplusFee(orders: Array<KnownOrder>): bigint {
+  private getExecutedFee(orders: Array<KnownOrder>): bigint {
     return orders.reduce((acc, order) => {
-      return acc + BigInt(order.executedSurplusFee ?? BigInt(0));
+      return acc + BigInt(order.executedFee ?? BigInt(0));
     }, BigInt(0));
   }
 }

@@ -334,6 +334,9 @@ describe('Transfer mapper (Unit)', () => {
             transfer.tokenInfo.decimals,
             transfer.tokenInfo.trusted,
           );
+          const sellToken = tokenBuilder().build() as TokenInfo & {
+            decimals: number;
+          };
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
             type: TransactionInfoType.SwapTransfer,
             humanDescription: null,
@@ -359,13 +362,13 @@ describe('Transfer mapper (Unit)', () => {
             buyAmount: '1608062657377840160',
             executedSellAmount: '10000000000000000000',
             executedBuyAmount: '1625650639290905524',
-            sellToken: tokenBuilder().build() as TokenInfo & {
-              decimals: number;
-            },
+            sellToken,
             buyToken: transfer.tokenInfo,
             explorerUrl:
               'https://explorer.cow.fi/orders/0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             executedSurplusFee: '1400734851526479789',
+            executedFee: '1400734851526479789',
+            executedFeeToken: sellToken,
             receiver: safe.address,
             owner: safe.address,
             fullAppData: {
@@ -456,6 +459,9 @@ describe('Transfer mapper (Unit)', () => {
             transfer.tokenInfo.decimals,
             transfer.tokenInfo.trusted,
           );
+          const sellToken = tokenBuilder().build() as TokenInfo & {
+            decimals: number;
+          };
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
             type: TransactionInfoType.SwapTransfer,
             humanDescription: null,
@@ -481,13 +487,13 @@ describe('Transfer mapper (Unit)', () => {
             buyAmount: '1608062657377840160',
             executedSellAmount: '10000000000000000000',
             executedBuyAmount: '1625650639290905524',
-            sellToken: tokenBuilder().build() as TokenInfo & {
-              decimals: number;
-            },
+            sellToken,
             buyToken: transfer.tokenInfo,
             explorerUrl:
               'https://explorer.cow.fi/orders/0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             executedSurplusFee: '1400734851526479789',
+            executedFee: '1400734851526479789',
+            executedFeeToken: sellToken,
             receiver: safe.address,
             owner: safe.address,
             fullAppData: {
@@ -576,6 +582,9 @@ describe('Transfer mapper (Unit)', () => {
             transfer.tokenInfo.decimals,
             transfer.tokenInfo.trusted,
           );
+          const sellToken = tokenBuilder().build() as TokenInfo & {
+            decimals: number;
+          };
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
             type: TransactionInfoType.SwapTransfer,
             humanDescription: null,
@@ -601,13 +610,13 @@ describe('Transfer mapper (Unit)', () => {
             buyAmount: '1608062657377840160',
             executedSellAmount: '10000000000000000000',
             executedBuyAmount: '1625650639290905524',
-            sellToken: tokenBuilder().build() as TokenInfo & {
-              decimals: number;
-            },
+            sellToken,
             buyToken: transfer.tokenInfo,
             explorerUrl:
               'https://explorer.cow.fi/orders/0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             executedSurplusFee: '1400734851526479789',
+            executedFee: '1400734851526479789',
+            executedFeeToken: sellToken,
             receiver: safe.address,
             owner: safe.address,
             fullAppData: {
