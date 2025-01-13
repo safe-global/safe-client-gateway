@@ -5,9 +5,11 @@ import {
   NetworkService,
   INetworkService,
 } from '@/datasources/network/network.service.interface';
+import { OctavGetPortfolioSchema } from '@/datasources/portfolio-api/entities/octav-get-portfolio.entity';
 import { IPortfolioApi } from '@/domain/interfaces/portfolio-api.interface';
-import { Portfolio } from '@/domain/portfolio/entities/portfolio.entity';
-import { Raw } from '@/validation/entities/raw.entity';
+import { rawify } from '@/validation/entities/raw.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
+import type { Portfolio } from '@/domain/portfolio/entities/portfolio.entity';
 
 @Injectable()
 export class OctavApi implements IPortfolioApi {
@@ -30,19 +32,25 @@ export class OctavApi implements IPortfolioApi {
   async getPortfolio(safeAddress: `0x${string}`): Promise<Raw<Portfolio>> {
     try {
       const url = `${this.baseUri}/api/rest/portfolio`;
-      const { data: portfolio } = await this.networkService.get<Portfolio>({
-        url,
-        networkRequest: {
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
+      const portfolios = await this.networkService
+        .get<Array<Portfolio>>({
+          url,
+          networkRequest: {
+            headers: {
+              Authorization: `Bearer ${this.apiKey}`,
+            },
+            params: {
+              addresses: safeAddress,
+              includeImages: true,
+            },
           },
-          params: {
-            addresses: safeAddress,
-            includeImages: true,
-          },
-        },
-      });
-      return portfolio;
+        })
+        .then((res) => {
+          return OctavGetPortfolioSchema.parse(res.data).getPortfolio;
+        });
+
+      // As we are only fetching the portfolio of one Safe, there will only be one element
+      return rawify(portfolios[0]);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
