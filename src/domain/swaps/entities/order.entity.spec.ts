@@ -78,6 +78,7 @@ describe('OrderSchema', () => {
     'from',
     'owner',
     'onchainUser',
+    'executedFeeToken',
   ])('%s should be checksummed', (key) => {
     const order = {
       ...orderBuilder().build(),
@@ -100,6 +101,7 @@ describe('OrderSchema', () => {
     'onchainUser',
     'onchainOrderData',
     'executedSurplusFee',
+    'executedFee',
     'fullAppData',
   ])('%s should default to null if value not present', (key) => {
     const order = orderBuilder().build();

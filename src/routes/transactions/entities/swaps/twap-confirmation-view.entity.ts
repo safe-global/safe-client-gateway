@@ -78,8 +78,25 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
     nullable: true,
     description:
       'The executed surplus fee raw amount (no decimals), or null if there are too many parts',
+    deprecated: true,
   })
   executedSurplusFee: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description:
+      'The executed surplus fee raw amount (no decimals), or null if there are too many parts',
+  })
+  executedFee: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description:
+      'The token in which the fee were paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
+  })
+  executedFeeToken: `0x${string}` | null;
 
   @ApiPropertyOptional({
     type: String,
@@ -155,6 +172,8 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
     executedSellAmount: string | null;
     executedBuyAmount: string | null;
     executedSurplusFee: string | null;
+    executedFee: string | null;
+    executedFeeToken: `0x${string}` | null;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     receiver: `0x${string}`;
@@ -179,6 +198,8 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
     this.executedSellAmount = args.executedSellAmount;
     this.executedBuyAmount = args.executedBuyAmount;
     this.executedSurplusFee = args.executedSurplusFee;
+    this.executedFee = args.executedFee;
+    this.executedFeeToken = args.executedFeeToken;
     this.sellToken = args.sellToken;
     this.buyToken = args.buyToken;
     this.receiver = args.receiver;

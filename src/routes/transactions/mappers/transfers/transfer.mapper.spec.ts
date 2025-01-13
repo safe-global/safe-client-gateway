@@ -366,6 +366,8 @@ describe('Transfer mapper (Unit)', () => {
             explorerUrl:
               'https://explorer.cow.fi/orders/0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             executedSurplusFee: '1400734851526479789',
+            executedFee: '1400734851526479789',
+            executedFeeToken: '0x0625afb445c3b6b7b929342a04a22599fd5dbb59',
             receiver: safe.address,
             owner: safe.address,
             fullAppData: {
@@ -488,6 +490,8 @@ describe('Transfer mapper (Unit)', () => {
             explorerUrl:
               'https://explorer.cow.fi/orders/0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             executedSurplusFee: '1400734851526479789',
+            executedFee: '1400734851526479789',
+            executedFeeToken: '0x0625afb445c3b6b7b929342a04a22599fd5dbb59',
             receiver: safe.address,
             owner: safe.address,
             fullAppData: {
@@ -608,6 +612,8 @@ describe('Transfer mapper (Unit)', () => {
             explorerUrl:
               'https://explorer.cow.fi/orders/0xf48010ff178567a04cb9e82341325d2bdcbf646b4ed54ef0305163368819f4bd2a73e61bd15b25b6958b4da3bfc759ca4db249b96686709e',
             executedSurplusFee: '1400734851526479789',
+            executedFee: '1400734851526479789',
+            executedFeeToken: '0x0625afb445c3b6b7b929342a04a22599fd5dbb59',
             receiver: safe.address,
             owner: safe.address,
             fullAppData: {

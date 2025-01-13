@@ -73,6 +73,8 @@ export class SwapOrderMapper {
       }),
       explorerUrl: this.swapOrderHelper.getOrderExplorerUrl(order).toString(),
       executedSurplusFee: order.executedSurplusFee?.toString() ?? null,
+      executedFee: order.executedFee?.toString() ?? null,
+      executedFeeToken: order.executedFeeToken,
       receiver: order.receiver,
       owner: order.owner,
       fullAppData: order.fullAppData,

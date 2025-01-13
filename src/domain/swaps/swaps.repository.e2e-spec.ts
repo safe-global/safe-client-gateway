@@ -29,6 +29,8 @@ const orderIds = {
         executedSellAmount: BigInt('20000000000000000000000'),
         executedSellAmountBeforeFees: BigInt('20000000000000000000000'),
         executedSurplusFee: BigInt('344394908543621220441'),
+        executedFee: BigInt('344394908543621220441'),
+        executedFeeToken: '0x710287D1D39DCf62094A83EBB3e736e79400068a',
         feeAmount: BigInt('0'),
         from: null,
         fullAppData:
@@ -74,6 +76,8 @@ const orderIds = {
         executedSellAmount: BigInt('60000000000000000000'),
         executedSellAmountBeforeFees: BigInt('60000000000000000000'),
         executedSurplusFee: BigInt('746134584595989'),
+        executedFee: BigInt('746134584595989'),
+        executedFeeToken: '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d',
         feeAmount: BigInt('0'),
         from: null,
         fullAppData:
