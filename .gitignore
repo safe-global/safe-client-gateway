@@ -45,6 +45,8 @@ lerna-debug.log*
 
 # env
 .env
+.env.test
+.env.dev
 
 # Database mounted volume
 data
