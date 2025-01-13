@@ -44,6 +44,7 @@ export class BalancesController {
   }
 
   @Get('balances/supported-fiat-codes')
+  @ApiOkResponse({ type: [String] })
   async getSupportedFiatCodes(): Promise<Array<string>> {
     return this.balancesService.getSupportedFiatCodes();
   }
