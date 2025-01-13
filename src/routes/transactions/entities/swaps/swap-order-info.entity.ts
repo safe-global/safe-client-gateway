@@ -27,7 +27,7 @@ export interface OrderInfo {
   explorerUrl: string;
   executedSurplusFee: string;
   executedFee: string;
-  executedFeeToken: `0x${string}`;
+  executedFeeToken: TokenInfo;
   receiver: string | null;
   owner: `0x${string}`;
   fullAppData: Record<string, unknown> | null;
@@ -110,7 +110,7 @@ export class SwapOrderTransactionInfo
     description:
       'The token in which the fee were paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
   })
-  executedFeeToken: `0x${string}`;
+  executedFeeToken: TokenInfo;
 
   @ApiPropertyOptional({
     type: String,
@@ -146,7 +146,7 @@ export class SwapOrderTransactionInfo
     explorerUrl: string;
     executedSurplusFee: string;
     executedFee: string;
-    executedFeeToken: `0x${string}`;
+    executedFeeToken: TokenInfo;
     receiver: string | null;
     owner: `0x${string}`;
     fullAppData: Record<string, unknown> | null;

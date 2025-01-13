@@ -184,7 +184,14 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
             executedSurplusFee: order.executedSurplusFee.toString(),
             executedFee: order.executedFee.toString(),
-            executedFeeToken: order.executedFeeToken,
+            executedFeeToken: {
+              address: sellToken.address,
+              decimals: sellToken.decimals,
+              logoUri: sellToken.logoUri,
+              name: sellToken.name,
+              symbol: sellToken.symbol,
+              trusted: sellToken.trusted,
+            },
             sellToken: {
               address: sellToken.address,
               decimals: sellToken.decimals,
@@ -324,7 +331,14 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
             executedSurplusFee: order.executedSurplusFee.toString(),
             executedFee: order.executedFee.toString(),
-            executedFeeToken: order.executedFeeToken,
+            executedFeeToken: {
+              address: sellToken.address,
+              decimals: sellToken.decimals,
+              logoUri: sellToken.logoUri,
+              name: sellToken.name,
+              symbol: sellToken.symbol,
+              trusted: sellToken.trusted,
+            },
             sellToken: {
               address: sellToken.address,
               decimals: sellToken.decimals,
@@ -742,7 +756,14 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             executedBuyAmount: '0',
             executedSurplusFee: '0',
             executedFee: '0',
-            executedFeeToken: sellToken.address,
+            executedFeeToken: {
+              address: sellToken.address,
+              decimals: sellToken.decimals,
+              logoUri: sellToken.logoUri,
+              name: sellToken.name,
+              symbol: sellToken.symbol,
+              trusted: sellToken.trusted,
+            },
             sellToken: {
               address: sellToken.address,
               decimals: sellToken.decimals,
@@ -880,7 +901,14 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             executedBuyAmount: '0',
             executedSurplusFee: '0',
             executedFee: '0',
-            executedFeeToken: sellToken.address,
+            executedFeeToken: {
+              address: sellToken.address,
+              decimals: sellToken.decimals,
+              logoUri: sellToken.logoUri,
+              name: sellToken.name,
+              symbol: sellToken.symbol,
+              trusted: sellToken.trusted,
+            },
             sellToken: {
               address: sellToken.address,
               decimals: sellToken.decimals,

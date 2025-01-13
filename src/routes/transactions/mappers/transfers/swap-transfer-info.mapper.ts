@@ -106,7 +106,7 @@ export class SwapTransferInfoMapper {
       explorerUrl: this.swapOrderHelper.getOrderExplorerUrl(order).toString(),
       executedSurplusFee: order.executedSurplusFee.toString(),
       executedFee: order.executedFee.toString(),
-      executedFeeToken: order.executedFeeToken,
+      executedFeeToken: sellToken,
       receiver: order.receiver,
       owner: order.owner,
       fullAppData: order.fullAppData,

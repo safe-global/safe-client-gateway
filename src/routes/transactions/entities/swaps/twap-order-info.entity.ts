@@ -46,7 +46,7 @@ export type TwapOrderInfo = {
   // Nullable as TWAP may have too many parts, or is being previewed
   executedSurplusFee: string | null;
   executedFee: string | null;
-  executedFeeToken: `0x${string}`;
+  executedFeeToken: TokenInfo;
   sellToken: TokenInfo;
   buyToken: TokenInfo;
   receiver: `0x${string}`;
@@ -139,7 +139,7 @@ export class TwapOrderTransactionInfo
     description:
       'The token in which the fee were paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
   })
-  executedFeeToken: `0x${string}`;
+  executedFeeToken: TokenInfo;
 
   @ApiProperty({ description: 'The sell token of the TWAP' })
   sellToken: TokenInfo;
@@ -206,7 +206,7 @@ export class TwapOrderTransactionInfo
     executedBuyAmount: string | null;
     executedSurplusFee: string | null;
     executedFee: string | null;
-    executedFeeToken: `0x${string}`;
+    executedFeeToken: TokenInfo;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     receiver: `0x${string}`;

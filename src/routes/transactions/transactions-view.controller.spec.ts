@@ -203,7 +203,14 @@ describe('TransactionsViewController tests', () => {
             explorerUrl: expect.any(String),
             executedSurplusFee: order.executedSurplusFee.toString(),
             executedFee: order.executedFee.toString(),
-            executedFeeToken: order.executedFeeToken,
+            executedFeeToken: {
+              address: sellToken.address,
+              decimals: sellToken.decimals,
+              logoUri: sellToken.logoUri,
+              name: sellToken.name,
+              symbol: sellToken.symbol,
+              trusted: sellToken.trusted,
+            },
             sellToken: {
               address: sellToken.address,
               decimals: sellToken.decimals,

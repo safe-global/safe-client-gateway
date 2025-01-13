@@ -232,7 +232,14 @@ export class TransactionsViewService {
       }),
       executedSurplusFee: order.executedSurplusFee.toString(),
       executedFee: order.executedFee.toString(),
-      executedFeeToken: order.executedFeeToken,
+      executedFeeToken: new TokenInfo({
+        address: sellToken.address,
+        decimals: sellToken.decimals,
+        logoUri: sellToken.logoUri,
+        name: sellToken.name,
+        symbol: sellToken.symbol,
+        trusted: sellToken.trusted,
+      }),
       receiver: order.receiver,
       owner: order.owner,
       fullAppData: order.fullAppData,
@@ -294,7 +301,14 @@ export class TransactionsViewService {
       executedFee: '0',
       // TODO: still tbd by CoW but this will be expressed in SURPLUS tokens
       // (BUY tokens for SELL orders and SELL tokens for BUY orders)
-      executedFeeToken: sellToken.address,
+      executedFeeToken: new TokenInfo({
+        address: sellToken.address,
+        decimals: sellToken.decimals,
+        logoUri: sellToken.logoUri,
+        name: sellToken.name,
+        symbol: sellToken.symbol,
+        trusted: sellToken.trusted,
+      }),
       sellToken: new TokenInfo({
         address: sellToken.address,
         decimals: sellToken.decimals,

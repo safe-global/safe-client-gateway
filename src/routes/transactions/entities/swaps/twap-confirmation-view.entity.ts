@@ -93,7 +93,7 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
     description:
       'The token in which the fee were paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
   })
-  executedFeeToken: `0x${string}`;
+  executedFeeToken: TokenInfo;
 
   @ApiPropertyOptional({
     type: String,
@@ -170,7 +170,7 @@ export class CowSwapTwapConfirmationView implements Baseline, TwapOrderInfo {
     executedBuyAmount: string | null;
     executedSurplusFee: string;
     executedFee: string;
-    executedFeeToken: `0x${string}`;
+    executedFeeToken: TokenInfo;
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     receiver: `0x${string}`;
