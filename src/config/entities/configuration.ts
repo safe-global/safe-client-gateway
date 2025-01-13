@@ -296,6 +296,11 @@ export default () => ({
       maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${10}`),
     },
   },
+  portfolio: {
+    baseUri:
+      process.env.PORTFOLIO_API_BASE_URI || 'https://octav-api.hasura.app',
+    apiKey: process.env.PORTFOLIO_API_KEY,
+  },
   pushNotifications: {
     baseUri:
       process.env.PUSH_NOTIFICATIONS_API_BASE_URI ||
