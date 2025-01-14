@@ -33,7 +33,6 @@ const orderIds = {
         from: null,
         fullAppData:
           '{"version":"0.4.0","appCode":"DefiLlama","environment":"production","metadata":{"referrer":{"version":"0.1.0","address":"0x08a3c2A819E3de7ACa384c798269B3Ce1CD0e437"}}}',
-        fullFeeAmount: BigInt('0'),
         invalidated: false,
         isLiquidityOrder: false,
         kind: 'sell',
@@ -78,7 +77,6 @@ const orderIds = {
         from: null,
         fullAppData:
           '{"appCode":"CoW Swap","environment":"production","metadata":{"orderClass":{"orderClass":"market"},"quote":{"slippageBips":"200"}},"version":"0.11.0"}',
-        fullFeeAmount: BigInt('0'),
         invalidated: false,
         isLiquidityOrder: false,
         kind: 'sell',
