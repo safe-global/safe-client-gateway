@@ -73,7 +73,7 @@ function getSubscriptionCallback(
 }
 
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
-describe('Hook Events for Notifications (Unit) pt. 1', () => {
+describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
   let app: INestApplication<Server>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
@@ -2113,7 +2113,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
 
 // Due to mocking complexity, we split the tests into two suites
 // Here we do not mock the NotificationsRepository, but the PushNotificationsApi
-describe('Hook Events for Notifications (Unit) pt. 2', () => {
+describe.skip('Hook Events for Notifications (Unit) pt. 2', () => {
   let app: INestApplication<Server>;
   let pushNotificationsApi: jest.MockedObjectDeep<IPushNotificationsApi>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;

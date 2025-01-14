@@ -103,6 +103,11 @@ export class NotificationsController {
     }
     await Promise.all(v2Requests);
 
+    // Register the token to the transaction service before removing it so that the service has the latest UUID.
+    /**
+     * @todo Remove the old service after all clients have migrated to the new service.
+     */
+    await this.notificationsService.registerDevice(registerDeviceDto);
     // Remove tokens from the old service to prevent duplication.
     if (registerDeviceDto.uuid) {
       const unregistrationRequests = [];
@@ -118,7 +123,6 @@ export class NotificationsController {
           }),
         );
       }
-
       await Promise.allSettled(unregistrationRequests).then(
         (results: Array<PromiseSettledResult<unknown>>) => {
           for (const result of results) {
@@ -287,7 +291,9 @@ export class NotificationsController {
     try {
       await this.notificationServiceV2.deleteDevice(uuid);
     } catch (error: unknown) {
+      console.log('NotificationUnregisterErrorNotFound:', error);
       if (error instanceof NotFoundException) {
+        console.log('NotificationUnregisterErrorNotFound:', error);
         // Do not throw a NotFound error when attempting to remove the token from the CGW,
         // This ensures the TX service remove method is called
       } else {
@@ -296,9 +302,10 @@ export class NotificationsController {
     }
 
     try {
+      console.log('here-----');
       await this.notificationsService.unregisterDevice({ chainId, uuid });
     } catch (error: unknown) {
-      console.log('NotificationUnregisterError:', error);
+      console.log('NotificationUnregisterErrorTX---:', error);
       // The token might already have been removed from the TX service.
       // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
       const errorObject = error as { code?: number };
