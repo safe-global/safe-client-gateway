@@ -217,7 +217,6 @@ describe('TwapOrderMapper', () => {
       status: 'fulfilled',
       class: 'limit',
       settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-      solverFee: '0',
       isLiquidityOrder: false,
       fullAppData:
         '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -256,8 +255,6 @@ describe('TwapOrderMapper', () => {
       status: 'fulfilled',
       class: 'limit',
       settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-
-      solverFee: '0',
       isLiquidityOrder: false,
       fullAppData:
         '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -395,7 +392,6 @@ describe('TwapOrderMapper', () => {
       status: 'fulfilled',
       class: 'limit',
       settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-      solverFee: '0',
       isLiquidityOrder: false,
       fullAppData:
         '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -627,7 +623,6 @@ describe('TwapOrderMapper', () => {
       status: 'fulfilled',
       class: 'limit',
       settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-      solverFee: '0',
       isLiquidityOrder: false,
       fullAppData: JSON.parse(
         '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -726,7 +721,6 @@ describe('TwapOrderMapper', () => {
       status: 'fulfilled',
       class: 'limit',
       settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-      solverFee: '0',
       isLiquidityOrder: false,
       fullAppData: JSON.parse(
         '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -931,7 +925,6 @@ describe('TwapOrderMapper', () => {
           status: 'open',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1049,7 +1042,6 @@ describe('TwapOrderMapper', () => {
           status: 'fulfilled',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1167,7 +1159,6 @@ describe('TwapOrderMapper', () => {
           status: 'fulfilled',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1206,7 +1197,6 @@ describe('TwapOrderMapper', () => {
           status: 'fulfilled',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1327,7 +1317,6 @@ describe('TwapOrderMapper', () => {
           status: 'fulfilled',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1366,7 +1355,6 @@ describe('TwapOrderMapper', () => {
           status: 'fulfilled',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1406,7 +1394,6 @@ describe('TwapOrderMapper', () => {
           status: 'open',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1524,7 +1511,6 @@ describe('TwapOrderMapper', () => {
           status: 'fulfilled',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1563,7 +1549,6 @@ describe('TwapOrderMapper', () => {
           status: 'fulfilled',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',
@@ -1602,7 +1587,6 @@ describe('TwapOrderMapper', () => {
           status: 'expired',
           class: 'limit',
           settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-          solverFee: '0',
           isLiquidityOrder: false,
           fullAppData:
             '{"appCode":"Safe Wallet Swaps","metadata":{"orderClass":{"orderClass":"twap"},"partnerFee":{"bps":35,"recipient":"0x63695Eee2c3141BDE314C5a6f89B98E62808d716"},"quote":{"slippageBips":1000},"widget":{"appCode":"CoW Swap-SafeApp","environment":"production"}},"version":"1.1.0"}',

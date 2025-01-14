@@ -262,7 +262,6 @@ describe('SwapTransferInfoMapper', () => {
         status: 'fulfilled',
         class: 'limit',
         settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-        solverFee: '0',
         isLiquidityOrder: false,
         fullAppData:
           '{"appCode":"CoW Swap","environment":"production","metadata":{"orderClass":{"orderClass":"market"},"quote":{"slippageBips":50},"utm":{"utmContent":"header-cta-button","utmMedium":"web","utmSource":"cow.fi"}},"version":"1.1.0"}',
@@ -298,7 +297,6 @@ describe('SwapTransferInfoMapper', () => {
         status: 'fulfilled',
         class: 'limit',
         settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-        solverFee: '0',
         isLiquidityOrder: false,
         fullAppData:
           '{"appCode":"CoW Swap","environment":"production","metadata":{"orderClass":{"orderClass":"market"},"quote":{"slippageBips":50},"utm":{"utmContent":"header-cta-button","utmMedium":"web","utmSource":"cow.fi"}},"version":"1.1.0"}',
@@ -420,7 +418,6 @@ describe('SwapTransferInfoMapper', () => {
         status: 'fulfilled',
         class: 'limit',
         settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-        solverFee: '0',
         isLiquidityOrder: false,
         fullAppData:
           '{"appCode":"CoW Swap","environment":"production","metadata":{"orderClass":{"orderClass":"market"},"quote":{"slippageBips":50},"utm":{"utmContent":"header-cta-button","utmMedium":"web","utmSource":"cow.fi"}},"version":"1.1.0"}',
@@ -456,7 +453,6 @@ describe('SwapTransferInfoMapper', () => {
         status: 'fulfilled',
         class: 'limit',
         settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-        solverFee: '0',
         isLiquidityOrder: false,
         fullAppData:
           '{"appCode":"CoW Swap","environment":"production","metadata":{"orderClass":{"orderClass":"market"},"quote":{"slippageBips":50},"utm":{"utmContent":"header-cta-button","utmMedium":"web","utmSource":"cow.fi"}},"version":"1.1.0"}',
