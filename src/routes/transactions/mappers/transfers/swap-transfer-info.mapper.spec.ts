@@ -262,7 +262,6 @@ describe('SwapTransferInfoMapper', () => {
         status: 'fulfilled',
         class: 'limit',
         settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-        fullFeeAmount: '0',
         solverFee: '0',
         isLiquidityOrder: false,
         fullAppData:
@@ -299,7 +298,6 @@ describe('SwapTransferInfoMapper', () => {
         status: 'fulfilled',
         class: 'limit',
         settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-        fullFeeAmount: '0',
         solverFee: '0',
         isLiquidityOrder: false,
         fullAppData:
@@ -422,7 +420,6 @@ describe('SwapTransferInfoMapper', () => {
         status: 'fulfilled',
         class: 'limit',
         settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-        fullFeeAmount: '0',
         solverFee: '0',
         isLiquidityOrder: false,
         fullAppData:
@@ -459,7 +456,6 @@ describe('SwapTransferInfoMapper', () => {
         status: 'fulfilled',
         class: 'limit',
         settlementContract: '0x9008d19f58aabd9ed0d60971565aa8510560ab41',
-        fullFeeAmount: '0',
         solverFee: '0',
         isLiquidityOrder: false,
         fullAppData:
