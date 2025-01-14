@@ -77,6 +77,8 @@ export class NotificationsController {
     const compatibleV2Requests =
       await this.createV2RegisterDto(registerDeviceDto);
 
+    console.log('CompatibleV2Requests:', JSON.stringify(compatibleV2Requests));
+
     const v2Requests = [];
 
     const deleteAllDeviceOwners =
@@ -86,6 +88,7 @@ export class NotificationsController {
       // Some clients, such as the mobile app, do not call the delete endpoint to remove an owner key.
       // Instead, they resend the updated list of owners without the key they want to delete.
       // In such cases, we need to clear all the previous owners to ensure the update is applied correctly.
+      console.log('deleteDeviceOwnersFor:', registerDeviceDto.uuid);
       await this.notificationServiceV2.deleteDeviceOwners(
         registerDeviceDto.uuid,
       );
@@ -104,6 +107,10 @@ export class NotificationsController {
     if (registerDeviceDto.uuid) {
       const unregistrationRequests = [];
       for (const safeRegistration of registerDeviceDto.safeRegistrations) {
+        console.log(
+          'TokensToRemoveFromTheOldTxService:',
+          JSON.stringify(registerDeviceDto.uuid),
+        );
         unregistrationRequests.push(
           this.notificationsService.unregisterDevice({
             chainId: safeRegistration.chainId,
@@ -121,6 +128,11 @@ export class NotificationsController {
               'code' in result.reason &&
               result.reason.code !== 404
             ) {
+              console.log(
+                'ErrorOccuredUnregisteringTheDecive:',
+                result.reason,
+                result.reason.code,
+              );
               this.loggingService.error(result.reason);
             }
           }
