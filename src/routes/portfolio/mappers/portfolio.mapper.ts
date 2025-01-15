@@ -86,7 +86,6 @@ export class PortfolioMapper {
       args.portfolio.assetByProtocols,
     )) {
       const assetByProtocolOnChain = assetByProtocol.chains[key];
-
       if (assetByProtocolOnChain) {
         results.push(
           new PositionItem({
@@ -145,7 +144,9 @@ export class PortfolioMapper {
         if (this.isComplexPosition(protocolPosition)) {
           return this.mapComplexPosition(protocolPosition);
         }
-        throw new Error(`Protocol unknown. type=${type}`);
+        throw new Error(
+          `Unknown position. type=${type}, assets=${protocolPosition.assets.length}, protocolPositions=${protocolPosition.protocolPositions.length}`,
+        );
       });
   }
 
@@ -181,7 +182,7 @@ export class PortfolioMapper {
     position: DomainProtocolPosition,
   ): ComplexProtocolPosition {
     const positions = position.protocolPositions.map((position) => {
-      return this.mapComplexPositionProtocolPosition(position);
+      return this.mapNestedProtocolPosition(position);
     });
     return new ComplexProtocolPosition({
       name: position.name,
@@ -190,7 +191,7 @@ export class PortfolioMapper {
     });
   }
 
-  private mapComplexPositionProtocolPosition(
+  private mapNestedProtocolPosition(
     position: DomainNestedProtocolPosition,
   ): NestedProtocolPosition {
     console.log(position);
@@ -207,14 +208,6 @@ export class PortfolioMapper {
     // Merge all different assets into a type-discriminated array
     const assets = Object.entries(assetTypes).flatMap(([type, assets]) => {
       return assets.map((asset) => {
-        try {
-          this.mapPositionAsset({
-            type: type as keyof typeof assetTypes,
-            asset,
-          });
-        } catch (e) {
-          console.log(e, assetTypes);
-        }
         return this.mapPositionAsset({
           type: type as keyof typeof assetTypes,
           asset,
