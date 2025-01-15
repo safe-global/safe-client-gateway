@@ -3,12 +3,7 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import type { UUID } from 'crypto';
 import { Column, Entity, Unique, PrimaryGeneratedColumn } from 'typeorm';
 import { z } from 'zod';
-
-export enum UserStatus {
-  Active = 'ACTIVE',
-  //   Inactive = 'INACTIVE',
-  Pending = 'PENDING',
-}
+import { UserStatus } from '@/domain/users/entities/user.entity';
 
 export const UserSchema = RowSchema.extend({
   id: UuidSchema,
