@@ -1,17 +1,19 @@
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
 import {
   ProtocolChainKeys,
   ProtocolPositionType,
-  type AssetByProtocol,
-  type ComplexPosition,
-  type Portfolio,
-  type PortfolioAsset,
-  type ProtocolPositions,
-  type RegularPosition,
 } from '@/domain/portfolio/entities/portfolio.entity';
-import { getAddress } from 'viem';
+import type {
+  AssetByProtocol,
+  Portfolio,
+  PortfolioAsset,
+  ProtocolPosition,
+  ProtocolPositions,
+  NestedProtocolPosition,
+} from '@/domain/portfolio/entities/portfolio.entity';
 
 export function portfolioBuilder(): IBuilder<Portfolio> {
   return new Builder<Portfolio>().with(
@@ -65,12 +67,7 @@ export function protocolPositionsBuilder(): IBuilder<ProtocolPositions> {
     max: 5,
   });
   for (const type of types) {
-    builder.with(
-      type,
-      faker.datatype.boolean()
-        ? regularPositionBuilder().build()
-        : complexPositionBuilder().build(),
-    );
+    builder.with(type, protocolPositionBuilder().build());
   }
   return builder;
 }
@@ -84,38 +81,59 @@ function getPortfolioAssets(): Array<PortfolioAsset> {
   });
 }
 
-export function regularPositionBuilder(): IBuilder<RegularPosition> {
-  return new Builder<RegularPosition>()
-    .with('name', faker.string.sample())
-    .with('assets', getPortfolioAssets())
-    .with('totalValue', faker.string.numeric());
+export function protocolPositionBuilder(): IBuilder<ProtocolPosition> {
+  return faker.datatype.boolean()
+    ? regularProtocolPositionBuilder()
+    : complexProtocolPositionBuilder();
 }
 
-export function complexPositionBuilder(): IBuilder<ComplexPosition> {
-  return new Builder<ComplexPosition>()
+function regularProtocolPositionBuilder(): IBuilder<ProtocolPosition> {
+  return (
+    new Builder<ProtocolPosition>()
+      .with('name', faker.string.sample())
+      // Regular as it only has assets
+      .with('assets', getPortfolioAssets())
+      .with('protocolPositions', [])
+      .with('totalValue', faker.string.numeric())
+  );
+}
+
+function complexProtocolPositionBuilder(): IBuilder<ProtocolPosition> {
+  return (
+    new Builder<ProtocolPosition>()
+      .with('name', faker.string.sample())
+      // Complex as it only has protocolPositions
+      .with('assets', [])
+      .with(
+        'protocolPositions',
+        faker.helpers.multiple(() => nestedProtocolPositionBuilder().build(), {
+          count: {
+            min: 1,
+            max: 5,
+          },
+        }),
+      )
+      .with('totalValue', faker.string.numeric())
+  );
+}
+
+export function nestedProtocolPositionBuilder(): IBuilder<NestedProtocolPosition> {
+  function getOptionalPortfolioAssets(): Array<PortfolioAsset> | undefined {
+    return faker.datatype.boolean() ? getPortfolioAssets() : undefined;
+  }
+
+  return new Builder<NestedProtocolPosition>()
     .with('name', faker.string.sample())
+    .with('value', faker.string.numeric())
     .with(
-      'protocolPositions',
-      faker.helpers.multiple(() => complexPositionPositionBuilder().build(), {
+      'assets',
+      faker.helpers.multiple(() => portfolioAssetBuilder().build(), {
         count: {
           min: 1,
           max: 5,
         },
       }),
-    );
-}
-
-function getOptionalPortfolioAssets(): Array<PortfolioAsset> | undefined {
-  return faker.datatype.boolean() ? getPortfolioAssets() : undefined;
-}
-
-export function complexPositionPositionBuilder(): IBuilder<
-  ComplexPosition['protocolPositions'][number]
-> {
-  return new Builder<ComplexPosition['protocolPositions'][number]>()
-    .with('name', faker.string.sample())
-    .with('value', faker.string.numeric())
-    .with('assets', getPortfolioAssets())
+    )
     .with('borrowAssets', getOptionalPortfolioAssets())
     .with('dexAssets', getOptionalPortfolioAssets())
     .with('rewardAssets', getOptionalPortfolioAssets())
