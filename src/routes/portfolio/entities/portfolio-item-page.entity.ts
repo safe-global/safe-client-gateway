@@ -1,6 +1,6 @@
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 import { Page } from '@/routes/common/entities/page.entity';
-import { PositionItem } from '@/routes/portfolio/entities/positions';
+import { PositionItem } from '@/routes/portfolio/entities/position.entity';
 
 @ApiExtraModels(PositionItem)
 export class PortfolioItemPage extends Page<PositionItem> {

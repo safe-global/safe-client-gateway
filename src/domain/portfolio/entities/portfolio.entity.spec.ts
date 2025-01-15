@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import {
   assetByProtocolBuilder,
-  assetByProtocolChainBuilder,
+  assetByProtocolChainsBuilder,
   nestedProtocolPositionBuilder,
   portfolioAssetBuilder,
   portfolioBuilder,
@@ -432,7 +432,7 @@ describe('Portfolio', () => {
 
   describe('AssetByProtocolChainSchema', () => {
     it('should validate an AssetByProtocolChain', () => {
-      const assetByProtocolChain = assetByProtocolChainBuilder().build();
+      const assetByProtocolChain = assetByProtocolChainsBuilder().build();
 
       const result = AssetByProtocolChainSchema.safeParse(assetByProtocolChain);
 
@@ -441,7 +441,7 @@ describe('Portfolio', () => {
 
     it('should not allow an unknown position chain key', () => {
       const key = faker.word.noun() as (typeof ProtocolChainKeys)[number];
-      const assetByProtocolChain = assetByProtocolChainBuilder()
+      const assetByProtocolChain = assetByProtocolChainsBuilder()
         .with(key, {
           protocolPositions: protocolPositionsBuilder().build(),
         })

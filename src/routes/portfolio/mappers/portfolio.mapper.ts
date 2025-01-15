@@ -13,7 +13,7 @@ import {
   NestedProtocolPosition,
   PositionItem,
   RegularProtocolPosition,
-} from '@/routes/portfolio/entities/positions';
+} from '@/routes/portfolio/entities/position.entity';
 import {
   PortfolioAsset,
   PortfolioAssetType,

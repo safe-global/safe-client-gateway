@@ -5,10 +5,13 @@ import {
 } from '@nestjs/swagger';
 import { PortfolioAsset } from '@/routes/portfolio/entities/portfolio-asset.entity';
 
-type Position = {
+type BasePosition = {
   name: string;
+  fiatBalance: string;
+};
+
+type Position = BasePosition & {
   assets: Array<PortfolioAsset>;
-  value: string;
 };
 
 enum PositionType {
@@ -27,7 +30,7 @@ export class RegularProtocolPosition implements Position {
   assets: Array<PortfolioAsset>;
 
   @ApiProperty()
-  value: string;
+  fiatBalance: string;
 
   constructor(args: {
     name: string;
@@ -36,14 +39,20 @@ export class RegularProtocolPosition implements Position {
   }) {
     this.name = args.name;
     this.assets = args.assets;
-    this.value = args.fiatBalance;
+    this.fiatBalance = args.fiatBalance;
   }
 }
 
-export class NestedProtocolPosition
-  extends RegularProtocolPosition
-  implements Position
-{
+export class NestedProtocolPosition implements Position {
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty({ type: PortfolioAsset, isArray: true })
+  assets: Array<PortfolioAsset>;
+
+  @ApiProperty()
+  fiatBalance: string;
+
   @ApiPropertyOptional({
     type: String,
     nullable: true,
@@ -56,16 +65,14 @@ export class NestedProtocolPosition
     healthRate?: string;
     assets: Array<PortfolioAsset>;
   }) {
-    super({
-      name: args.name,
-      assets: args.assets,
-      fiatBalance: args.fiatBalance,
-    });
+    this.name = args.name;
+    this.assets = args.assets;
+    this.fiatBalance = args.fiatBalance;
     this.healthRate = args.healthRate;
   }
 }
 
-export class ComplexProtocolPosition {
+export class ComplexProtocolPosition implements BasePosition {
   @ApiProperty({ enum: [PositionType.Complex] })
   type = PositionType.Complex;
 
@@ -89,7 +96,7 @@ export class ComplexProtocolPosition {
   }
 }
 
-export class PositionItem {
+export class PositionItem implements BasePosition {
   @ApiProperty()
   fiatBalance: string;
 
