@@ -75,12 +75,17 @@ export class ComplexProtocolPosition {
   @ApiProperty({ type: NestedProtocolPosition, isArray: true })
   positions: Array<NestedProtocolPosition>;
 
+  @ApiProperty()
+  fiatBalance: string;
+
   constructor(args: {
     name: string;
     positions: Array<NestedProtocolPosition>;
+    fiatBalance: string;
   }) {
     this.name = args.name;
     this.positions = args.positions;
+    this.fiatBalance = args.fiatBalance;
   }
 }
 

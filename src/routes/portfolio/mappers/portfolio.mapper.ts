@@ -177,17 +177,20 @@ export class PortfolioMapper {
   private mapComplexPosition(
     position: DomainProtocolPosition,
   ): ComplexProtocolPosition {
+    const positions = position.protocolPositions.map((position) => {
+      return this.mapComplexPositionProtocolPosition(position);
+    });
     return new ComplexProtocolPosition({
       name: position.name,
-      positions: position.protocolPositions.map(
-        this.mapComplexPositionProtocolPosition,
-      ),
+      positions,
+      fiatBalance: position.totalValue,
     });
   }
 
   private mapComplexPositionProtocolPosition(
     position: DomainNestedProtocolPosition,
   ): NestedProtocolPosition {
+    console.log(position);
     const assetTypes: {
       [key in PortfolioAssetType]: Array<DomainPortfolioAsset>;
     } = {
@@ -201,6 +204,14 @@ export class PortfolioMapper {
     // Merge all different assets into a type-discriminated array
     const assets = Object.entries(assetTypes).flatMap(([type, assets]) => {
       return assets.map((asset) => {
+        try {
+          this.mapPositionAsset({
+            type: type as keyof typeof assetTypes,
+            asset,
+          });
+        } catch (e) {
+          console.log(e, assetTypes);
+        }
         return this.mapPositionAsset({
           type: type as keyof typeof assetTypes,
           asset,
