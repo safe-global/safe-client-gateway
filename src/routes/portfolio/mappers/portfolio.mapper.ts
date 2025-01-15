@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import {
-  ComplexPosition as DomainComplexPosition,
+  ProtocolPosition as DomainProtocolPosition,
   Portfolio as DomainPortfolio,
   PortfolioAsset as DomainPortfolioAsset,
   ProtocolChainKeys as DomainPortfolioChainKeys,
-  RegularPosition as DomainRegularPosition,
+  NestedProtocolPosition as DomainNestedProtocolPosition,
 } from '@/domain/portfolio/entities/portfolio.entity';
 import { PortfolioItemPage } from '@/routes/portfolio/entities/portfolio-item-page.entity';
 import {
-  ComplexPosition,
-  ComplexPositionPosition,
+  ComplexProtocolPosition,
+  NestedProtocolPosition,
   PositionItem,
-  RegularPosition,
+  RegularProtocolPosition,
 } from '@/routes/portfolio/entities/positions';
 import {
   PortfolioAsset,
@@ -90,18 +90,26 @@ export class PortfolioMapper {
         continue;
       }
 
-      const protocolPositions = Object.values(
+      const protocolPositions = Object.entries(
         assetByProtocolOnChain.protocolPositions,
-      ).map((protocolPosition) => {
-        if (!this.isComplexPosition(protocolPosition)) {
-          return this.mapRegularPosition(protocolPosition);
-        }
-        return this.mapComplexPosition(protocolPosition);
-      });
+      )
+        .filter(([type]) => {
+          return type !== 'WALLET';
+        })
+        .map(([, protocolPosition]) => {
+          if (this.isRegularPosition(protocolPosition)) {
+            return this.mapRegularPosition(protocolPosition);
+          }
+          if (this.isComplexPosition(protocolPosition)) {
+            return this.mapComplexPosition(protocolPosition);
+          }
+          // TODO: Add log
+          throw new Error('Invalid protocol position!');
+        });
 
       results.push(
         new PositionItem({
-          value: assetByProtocol.value,
+          fiatBalance: assetByProtocol.value,
           name: assetByProtocol.name,
           logoUri: assetByProtocol.imgLarge,
           protocolPositions,
@@ -138,35 +146,38 @@ export class PortfolioMapper {
     return chain[0] as keyof typeof PortfolioMapper.ChainKeys;
   }
 
-  /**
-   * Checks if protocol position is complex: whether it has nested positions
-   *
-   * @param position - {@link DomainRegularPosition} or {@link DomainComplexPosition} to check
-   *
-   * @returns true if the position is complex, otherwise false
-   */
-  private isComplexPosition(
-    position: DomainRegularPosition | DomainComplexPosition,
-  ): position is DomainComplexPosition {
-    return 'protocolPositions' in position;
+  private isRegularPosition(position: DomainProtocolPosition): boolean {
+    return (
+      position.assets.length > 0 && position.protocolPositions.length === 0
+    );
   }
 
-  private mapRegularPosition(position: DomainRegularPosition): RegularPosition {
+  private isComplexPosition(position: DomainProtocolPosition): boolean {
+    return (
+      position.assets.length === 0 && position.protocolPositions.length > 0
+    );
+  }
+
+  private mapRegularPosition(
+    position: DomainProtocolPosition,
+  ): RegularProtocolPosition {
     const assets = position.assets.map((asset) => {
       return this.mapPositionAsset({
         type: PortfolioAssetType.General,
         asset,
       });
     });
-    return new RegularPosition({
+    return new RegularProtocolPosition({
       name: position.name,
       assets,
-      value: position.totalValue,
+      fiatBalance: position.totalValue,
     });
   }
 
-  private mapComplexPosition(position: DomainComplexPosition): ComplexPosition {
-    return new ComplexPosition({
+  private mapComplexPosition(
+    position: DomainProtocolPosition,
+  ): ComplexProtocolPosition {
+    return new ComplexProtocolPosition({
       name: position.name,
       positions: position.protocolPositions.map(
         this.mapComplexPositionProtocolPosition,
@@ -175,8 +186,8 @@ export class PortfolioMapper {
   }
 
   private mapComplexPositionProtocolPosition(
-    position: DomainComplexPosition['protocolPositions'][number],
-  ): ComplexPositionPosition {
+    position: DomainNestedProtocolPosition,
+  ): NestedProtocolPosition {
     const assetTypes: {
       [key in PortfolioAssetType]: Array<DomainPortfolioAsset>;
     } = {
@@ -197,9 +208,9 @@ export class PortfolioMapper {
       });
     });
 
-    return new ComplexPositionPosition({
+    return new NestedProtocolPosition({
       name: position.name,
-      value: position.value,
+      fiatBalance: position.value,
       healthRate: position.healthRate,
       assets,
     });

@@ -16,7 +16,7 @@ enum PositionType {
   Complex = 'COMPLEX',
 }
 
-export class RegularPosition implements Position {
+export class RegularProtocolPosition implements Position {
   @ApiProperty({ enum: [PositionType.Regular] })
   type = PositionType.Regular;
 
@@ -32,16 +32,16 @@ export class RegularPosition implements Position {
   constructor(args: {
     name: string;
     assets: Array<PortfolioAsset>;
-    value: string;
+    fiatBalance: string;
   }) {
     this.name = args.name;
     this.assets = args.assets;
-    this.value = args.value;
+    this.value = args.fiatBalance;
   }
 }
 
-export class ComplexPositionPosition
-  extends RegularPosition
+export class NestedProtocolPosition
+  extends RegularProtocolPosition
   implements Position
 {
   @ApiPropertyOptional({
@@ -52,32 +52,32 @@ export class ComplexPositionPosition
 
   constructor(args: {
     name: string;
-    value: string;
+    fiatBalance: string;
     healthRate?: string;
     assets: Array<PortfolioAsset>;
   }) {
     super({
       name: args.name,
       assets: args.assets,
-      value: args.value,
+      fiatBalance: args.fiatBalance,
     });
     this.healthRate = args.healthRate;
   }
 }
 
-export class ComplexPosition {
+export class ComplexProtocolPosition {
   @ApiProperty({ enum: [PositionType.Complex] })
   type = PositionType.Complex;
 
   @ApiProperty()
   name: string;
 
-  @ApiProperty({ type: ComplexPositionPosition, isArray: true })
-  positions: Array<ComplexPositionPosition>;
+  @ApiProperty({ type: NestedProtocolPosition, isArray: true })
+  positions: Array<NestedProtocolPosition>;
 
   constructor(args: {
     name: string;
-    positions: Array<ComplexPositionPosition>;
+    positions: Array<NestedProtocolPosition>;
   }) {
     this.name = args.name;
     this.positions = args.positions;
@@ -86,7 +86,7 @@ export class ComplexPosition {
 
 export class PositionItem {
   @ApiProperty()
-  value: string;
+  fiatBalance: string;
 
   @ApiProperty()
   name: string;
@@ -96,20 +96,20 @@ export class PositionItem {
 
   @ApiProperty({
     oneOf: [
-      { $ref: getSchemaPath(RegularPosition) },
-      { $ref: getSchemaPath(ComplexPosition) },
+      { $ref: getSchemaPath(RegularProtocolPosition) },
+      { $ref: getSchemaPath(ComplexProtocolPosition) },
     ],
     isArray: true,
   })
-  protocolPositions: Array<RegularPosition | ComplexPosition>;
+  protocolPositions: Array<RegularProtocolPosition | ComplexProtocolPosition>;
 
   constructor(args: {
-    value: string;
+    fiatBalance: string;
     name: string;
     logoUri: string;
-    protocolPositions: Array<RegularPosition | ComplexPosition>;
+    protocolPositions: Array<RegularProtocolPosition | ComplexProtocolPosition>;
   }) {
-    this.value = args.value;
+    this.fiatBalance = args.fiatBalance;
     this.name = args.name;
     this.logoUri = args.logoUri;
     this.protocolPositions = args.protocolPositions;
