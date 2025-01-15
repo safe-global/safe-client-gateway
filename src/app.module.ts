@@ -59,7 +59,6 @@ import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
-import { UserRepositoryModule } from '@/domain/users/users.repository.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -78,7 +77,6 @@ export class AppModule implements NestModule {
     return {
       module: AppModule,
       imports: [
-        UserRepositoryModule,
         PostgresDatabaseModule,
         // features
         AboutModule,
