@@ -194,7 +194,6 @@ export class PortfolioMapper {
   private mapNestedProtocolPosition(
     position: DomainNestedProtocolPosition,
   ): NestedProtocolPosition {
-    console.log(position);
     const assetTypes: {
       [key in PortfolioAssetType]: Array<DomainPortfolioAsset>;
     } = {
