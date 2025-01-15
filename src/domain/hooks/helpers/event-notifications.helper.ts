@@ -28,6 +28,7 @@ import {
   MessageConfirmationNotification,
   Notification,
   NotificationType,
+  ExecutedMultisigTransactionNotification,
 } from '@/domain/notifications/v2/entities/notification.entity';
 import {
   DelegatesV2RepositoryModule,
@@ -234,12 +235,13 @@ export class EventNotificationsHelper {
       return true;
     }
 
-    const delegates = await this.delegatesRepository.getDelegates(args);
+    const delegates = await this.delegatesRepository.getDelegates({
+      chainId: args.chainId,
+      delegate: args.subscriber,
+    });
+
     return !!delegates?.results.some((delegate) => {
-      return (
-        delegate.safe === args.safeAddress &&
-        delegate.delegate === args.subscriber
-      );
+      return safe.owners.includes(delegate.delegator);
     });
   }
 
@@ -270,6 +272,10 @@ export class EventNotificationsHelper {
         event,
         subscriber,
       );
+    } else if (
+      event.type === TransactionEventType.EXECUTED_MULTISIG_TRANSACTION
+    ) {
+      return await this.mapExecutedMultisigTransactionEventNotification(event);
     } else if (event.type === TransactionEventType.MESSAGE_CREATED) {
       if (!subscriber) {
         return null;
@@ -355,6 +361,24 @@ export class EventNotificationsHelper {
     return {
       type: NotificationType.CONFIRMATION_REQUEST,
       to: event.to,
+      chainId: event.chainId,
+      address: event.address,
+      safeTxHash: event.safeTxHash,
+    };
+  }
+
+  private async mapExecutedMultisigTransactionEventNotification(
+    event: ExecutedTransactionEvent,
+  ): Promise<ExecutedMultisigTransactionNotification | null> {
+    const transaction = await this.safeRepository.getMultiSigTransaction({
+      chainId: event.chainId,
+      safeTransactionHash: event.safeTxHash,
+    });
+
+    return {
+      txHash: transaction.transactionHash as `0x${string}`,
+      failed: String(!transaction.isSuccessful),
+      type: TransactionEventType.EXECUTED_MULTISIG_TRANSACTION,
       chainId: event.chainId,
       address: event.address,
       safeTxHash: event.safeTxHash,
