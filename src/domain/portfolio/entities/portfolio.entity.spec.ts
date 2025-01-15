@@ -3,27 +3,26 @@ import { getAddress } from 'viem';
 import {
   assetByProtocolBuilder,
   assetByProtocolChainBuilder,
-  complexPositionBuilder,
-  complexPositionPositionBuilder,
+  nestedProtocolPositionBuilder,
   portfolioAssetBuilder,
   portfolioBuilder,
+  protocolPositionBuilder,
   protocolPositionsBuilder,
-  regularPositionBuilder,
 } from '@/domain/portfolio/entities/__tests__/portfolio.builder';
 import {
   AssetByProtocolChainSchema,
   AssetByProtocolSchema,
-  ComplexPositionPositionSchema,
-  ComplexPositionSchema,
+  NestedProtocolPositionSchema,
   PortfolioAssetSchema,
   PortfolioSchema,
+  ProtocolPositionSchema,
   ProtocolPositionsSchema,
-  RegularPositionSchema,
 } from '@/domain/portfolio/entities/portfolio.entity';
 import type {
-  ComplexPositionPosition,
+  NestedProtocolPosition,
   PortfolioAsset,
   ProtocolChainKeys,
+  ProtocolPosition,
   ProtocolPositionType,
 } from '@/domain/portfolio/entities/portfolio.entity';
 
@@ -101,7 +100,7 @@ describe('Portfolio', () => {
 
     it('should not allow a non-url imgSmall', () => {
       const portfolioAssets = portfolioAssetBuilder()
-        .with('imgSmall', faker.string.sample())
+        .with('imgSmall', faker.string.numeric())
         .build();
 
       const result = PortfolioAssetSchema.safeParse(portfolioAssets);
@@ -182,82 +181,26 @@ describe('Portfolio', () => {
     });
   });
 
-  describe('RegularPositionSchema', () => {
-    it('should validate a RegularPosition', () => {
-      const regularPosition = regularPositionBuilder().build();
+  describe('NestedProtocolPositionSchema', () => {
+    it('should validate a NestedProtocolPosition', () => {
+      const nestedProtocolPosition = nestedProtocolPositionBuilder().build();
 
-      const result = RegularPositionSchema.safeParse(regularPosition);
-
-      expect(result.success).toBe(true);
-    });
-
-    it('should not allow a non-numerical totalValue', () => {
-      const regularPosition = regularPositionBuilder()
-        .with('totalValue', faker.string.alpha())
-        .build();
-
-      const result = RegularPositionSchema.safeParse(regularPosition);
-
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'custom',
-          message: 'Invalid base-10 numeric string',
-          path: ['totalValue'],
-        },
-      ]);
-    });
-
-    it('should not validate an invalid RegularPosition', () => {
-      const regularPosition = { invalid: 'regularPosition' };
-
-      const result = RegularPositionSchema.safeParse(regularPosition);
-
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Required',
-          path: ['name'],
-          received: 'undefined',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'array',
-          message: 'Required',
-          path: ['assets'],
-          received: 'undefined',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Required',
-          path: ['totalValue'],
-          received: 'undefined',
-        },
-      ]);
-    });
-  });
-
-  describe('ComplexPositionPositionSchema', () => {
-    it('should validate a ComplexPositionPosition', () => {
-      const complexPositionPosition = complexPositionPositionBuilder().build();
-
-      const result = ComplexPositionPositionSchema.safeParse(
-        complexPositionPosition,
+      const result = NestedProtocolPositionSchema.safeParse(
+        nestedProtocolPosition,
       );
 
       expect(result.success).toBe(true);
     });
 
-    it.each<keyof ComplexPositionPosition>(['value', 'healthRate'])(
+    it.each<keyof NestedProtocolPosition>(['value', 'healthRate'])(
       'should not allow a non-numerical %s',
       (key) => {
-        const complexPositionPosition = complexPositionPositionBuilder()
+        const nestedProtocolPosition = nestedProtocolPositionBuilder()
           .with(key, faker.string.alpha())
           .build();
 
-        const result = ComplexPositionPositionSchema.safeParse(
-          complexPositionPosition,
+        const result = NestedProtocolPositionSchema.safeParse(
+          nestedProtocolPosition,
         );
 
         expect(!result.success && result.error.issues).toStrictEqual([
@@ -270,11 +213,29 @@ describe('Portfolio', () => {
       },
     );
 
-    it('should not validate an invalid ComplexPositionPosition', () => {
-      const complexPositionPosition = { invalid: 'complexPositionPosition' };
+    it.each<keyof NestedProtocolPosition>([
+      'healthRate',
+      'borrowAssets',
+      'dexAssets',
+      'rewardAssets',
+      'supplyAssets',
+    ])('should allow an optional %s', (key) => {
+      const nestedProtocolPosition = nestedProtocolPositionBuilder()
+        .with(key, undefined)
+        .build();
 
-      const result = ComplexPositionPositionSchema.safeParse(
-        complexPositionPosition,
+      const result = NestedProtocolPositionSchema.safeParse(
+        nestedProtocolPosition,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should not validate an invalid NestedProtocolPosition', () => {
+      const nestedProtocolPosition = { invalid: 'nestedProtocolPosition' };
+
+      const result = NestedProtocolPositionSchema.safeParse(
+        nestedProtocolPosition,
       );
 
       expect(!result.success && result.error.issues).toStrictEqual([
@@ -303,19 +264,48 @@ describe('Portfolio', () => {
     });
   });
 
-  describe('ComplexPositionSchema', () => {
-    it('should validate a ComplexPosition', () => {
-      const complexPosition = complexPositionBuilder().build();
+  describe('ProtocolPositionSchema', () => {
+    it('should validate a ProtocolPosition', () => {
+      const protocolPosition = protocolPositionBuilder().build();
 
-      const result = ComplexPositionSchema.safeParse(complexPosition);
+      const result = ProtocolPositionSchema.safeParse(protocolPosition);
 
       expect(result.success).toBe(true);
     });
 
-    it('should not validate an invalid ComplexPosition', () => {
-      const complexPosition = { invalid: 'complexPosition' };
+    it.each<keyof ProtocolPosition>(['assets', 'protocolPositions'])(
+      'it should allow an empty %s',
+      (key) => {
+        const protocolPosition = protocolPositionBuilder()
+          .with(key, [])
+          .build();
 
-      const result = ComplexPositionSchema.safeParse(complexPosition);
+        const result = ProtocolPositionSchema.safeParse(protocolPosition);
+
+        expect(result.success).toBe(true);
+      },
+    );
+
+    it('should not allow a non-numerical totalValue', () => {
+      const protocolPosition = protocolPositionBuilder()
+        .with('totalValue', faker.string.alpha())
+        .build();
+
+      const result = ProtocolPositionSchema.safeParse(protocolPosition);
+
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: ['totalValue'],
+        },
+      ]);
+    });
+
+    it('should not validate an invalid ProtocolPosition', () => {
+      const protocolPosition = { invalid: 'protocolPosition' };
+
+      const result = ProtocolPositionSchema.safeParse(protocolPosition);
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
@@ -329,7 +319,21 @@ describe('Portfolio', () => {
           code: 'invalid_type',
           expected: 'array',
           message: 'Required',
+          path: ['assets'],
+          received: 'undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'array',
+          message: 'Required',
           path: ['protocolPositions'],
+          received: 'undefined',
+        },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          message: 'Required',
+          path: ['totalValue'],
           received: 'undefined',
         },
       ]);
@@ -348,12 +352,7 @@ describe('Portfolio', () => {
     it('should not allow an unknown position type', () => {
       const type = faker.word.verb() as (typeof ProtocolPositionType)[number];
       const protocolPositions = protocolPositionsBuilder()
-        .with(
-          type,
-          faker.datatype.boolean()
-            ? regularPositionBuilder().build()
-            : complexPositionBuilder().build(),
-        )
+        .with(type, protocolPositionBuilder().build())
         .build();
 
       const result = ProtocolPositionsSchema.safeParse(protocolPositions);
@@ -403,7 +402,7 @@ describe('Portfolio', () => {
     it('should not validate an invalid ProtocolPosition', () => {
       const protocolPositions = { invalid: 'protocolPositions' };
 
-      const result = ComplexPositionPositionSchema.safeParse(protocolPositions);
+      const result = NestedProtocolPositionSchema.safeParse(protocolPositions);
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {

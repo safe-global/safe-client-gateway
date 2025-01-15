@@ -19,18 +19,7 @@ export type PortfolioAsset = z.infer<typeof PortfolioAssetSchema>;
 
 // Positions
 
-// Regular positions only have top-level assets, no nested protocolPositions assets
-export const RegularPositionSchema = z.object({
-  name: z.string(),
-  assets: z.array(PortfolioAssetSchema),
-  totalValue: NumericStringSchema,
-});
-
-export type RegularPosition = z.infer<typeof RegularPositionSchema>;
-
-// Complex positions no top-level assets, but nested protocolPositions assets
-
-export const ComplexPositionPositionSchema = z.object({
+export const NestedProtocolPositionSchema = z.object({
   name: z.string(),
   value: NumericStringSchema,
   healthRate: NumericStringSchema.optional(),
@@ -41,16 +30,25 @@ export const ComplexPositionPositionSchema = z.object({
   supplyAssets: z.array(PortfolioAssetSchema).optional(),
 });
 
-export type ComplexPositionPosition = z.infer<
-  typeof ComplexPositionPositionSchema
+export type NestedProtocolPosition = z.infer<
+  typeof NestedProtocolPositionSchema
 >;
 
-export const ComplexPositionSchema = z.object({
+/**
+ * "regular" positions have assets, and no protocolPositions
+ * "complex" positions have no assets, and protocolPositions
+ *
+ * Splitting this into "regular" and "complex" schemas proved difficult
+ * as WALLET position type can have no assets or protocolPositions
+ */
+export const ProtocolPositionSchema = z.object({
   name: z.string(),
-  protocolPositions: z.array(ComplexPositionPositionSchema),
+  assets: z.array(PortfolioAssetSchema),
+  protocolPositions: z.array(NestedProtocolPositionSchema),
+  totalValue: NumericStringSchema,
 });
 
-export type ComplexPosition = z.infer<typeof ComplexPositionSchema>;
+export type ProtocolPosition = z.infer<typeof ProtocolPositionSchema>;
 
 export const ProtocolPositionType = [
   'DEPOSIT',
@@ -87,7 +85,7 @@ export const ProtocolPositionType = [
 
 export const ProtocolPositionsSchema = z.record(
   z.enum(ProtocolPositionType),
-  RegularPositionSchema.or(ComplexPositionSchema),
+  ProtocolPositionSchema,
 );
 
 export type ProtocolPositions = z.infer<typeof ProtocolPositionsSchema>;
