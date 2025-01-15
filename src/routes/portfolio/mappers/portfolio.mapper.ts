@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   ProtocolPosition as DomainProtocolPosition,
+  ProtocolPositions as DomainProtocolPositions,
   Portfolio as DomainPortfolio,
   PortfolioAsset as DomainPortfolioAsset,
   ProtocolChainKeys as DomainPortfolioChainKeys,
@@ -86,35 +87,18 @@ export class PortfolioMapper {
     )) {
       const assetByProtocolOnChain = assetByProtocol.chains[key];
 
-      if (!assetByProtocolOnChain) {
-        continue;
+      if (assetByProtocolOnChain) {
+        results.push(
+          new PositionItem({
+            fiatBalance: assetByProtocol.value,
+            name: assetByProtocol.name,
+            logoUri: assetByProtocol.imgLarge,
+            protocolPositions: this.mapProtocolPositions(
+              assetByProtocolOnChain.protocolPositions,
+            ),
+          }),
+        );
       }
-
-      const protocolPositions = Object.entries(
-        assetByProtocolOnChain.protocolPositions,
-      )
-        .filter(([type]) => {
-          return type !== 'WALLET';
-        })
-        .map(([, protocolPosition]) => {
-          if (this.isRegularPosition(protocolPosition)) {
-            return this.mapRegularPosition(protocolPosition);
-          }
-          if (this.isComplexPosition(protocolPosition)) {
-            return this.mapComplexPosition(protocolPosition);
-          }
-          // TODO: Add log
-          throw new Error('Invalid protocol position!');
-        });
-
-      results.push(
-        new PositionItem({
-          fiatBalance: assetByProtocol.value,
-          name: assetByProtocol.name,
-          logoUri: assetByProtocol.imgLarge,
-          protocolPositions,
-        }),
-      );
     }
 
     return new PortfolioItemPage({
@@ -144,6 +128,25 @@ export class PortfolioMapper {
       throw new Error(`${chainId} is not supported!`);
     }
     return chain[0] as keyof typeof PortfolioMapper.ChainKeys;
+  }
+
+  private mapProtocolPositions(
+    protocolPositions: DomainProtocolPositions,
+  ): Array<RegularProtocolPosition | ComplexProtocolPosition> {
+    return Object.entries(protocolPositions)
+      .filter(([type]) => {
+        // We are not interested in wallet positions in the portfolio
+        return type !== 'WALLET';
+      })
+      .map(([type, protocolPosition]) => {
+        if (this.isRegularPosition(protocolPosition)) {
+          return this.mapRegularPosition(protocolPosition);
+        }
+        if (this.isComplexPosition(protocolPosition)) {
+          return this.mapComplexPosition(protocolPosition);
+        }
+        throw new Error(`Protocol unknown. type=${type}`);
+      });
   }
 
   private isRegularPosition(position: DomainProtocolPosition): boolean {
