@@ -28,7 +28,6 @@ import {
   MessageConfirmationNotification,
   Notification,
   NotificationType,
-  ExecutedMultisigTransactionNotification,
 } from '@/domain/notifications/v2/entities/notification.entity';
 import {
   DelegatesV2RepositoryModule,
@@ -272,10 +271,6 @@ export class EventNotificationsHelper {
         event,
         subscriber,
       );
-    } else if (
-      event.type === TransactionEventType.EXECUTED_MULTISIG_TRANSACTION
-    ) {
-      return this.mapExecutedMultisigTransactionEventNotification(event);
     } else if (event.type === TransactionEventType.MESSAGE_CREATED) {
       if (!subscriber) {
         return null;
@@ -349,9 +344,19 @@ export class EventNotificationsHelper {
     });
 
     // Subscriber has already signed - do not notify
+    const delegates = await this.delegatesRepository.getDelegates({
+      chainId: event.chainId,
+      delegate: subscriber,
+    });
+    const delegators = delegates?.results.map(
+      (delegate) => delegate?.delegator,
+    );
     const hasSubscriberSigned = transaction.confirmations?.some(
       (confirmation) => {
-        return confirmation.owner === subscriber;
+        return (
+          confirmation.owner === subscriber ||
+          delegators.includes(confirmation.owner)
+        );
       },
     );
     if (hasSubscriberSigned) {
@@ -361,20 +366,6 @@ export class EventNotificationsHelper {
     return {
       type: NotificationType.CONFIRMATION_REQUEST,
       to: event.to,
-      chainId: event.chainId,
-      address: event.address,
-      safeTxHash: event.safeTxHash,
-    };
-  }
-
-  private mapExecutedMultisigTransactionEventNotification(
-    event: ExecutedTransactionEvent,
-  ): ExecutedMultisigTransactionNotification | null {
-    return {
-      txHash: event.txHash,
-      failed: event.failed,
-      to: event.to,
-      type: TransactionEventType.EXECUTED_MULTISIG_TRANSACTION,
       chainId: event.chainId,
       address: event.address,
       safeTxHash: event.safeTxHash,

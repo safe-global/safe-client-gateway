@@ -25,10 +25,7 @@ export type ConfirmationRequestNotification = Omit<
 export type DeletedMultisigTransactionNotification =
   DeletedMultisigTransactionEvent;
 
-export type ExecutedMultisigTransactionNotification =
-  ExecutedTransactionEvent & {
-    failed: string;
-  };
+export type ExecutedMultisigTransactionNotification = ExecutedTransactionEvent;
 
 export type IncomingEtherNotification = IncomingEtherEvent;
 
