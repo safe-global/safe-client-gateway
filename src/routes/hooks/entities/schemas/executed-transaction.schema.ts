@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 export const ExecutedTransactionEventSchema = z.object({
   type: z.literal(TransactionEventType.EXECUTED_MULTISIG_TRANSACTION),
+  to: AddressSchema,
   address: AddressSchema,
   chainId: z.string(),
   safeTxHash: z.string(),

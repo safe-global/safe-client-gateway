@@ -177,10 +177,12 @@ describe('Hook Events for Cache (Unit)', () => {
   it.each([
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -231,10 +233,12 @@ describe('Hook Events for Cache (Unit)', () => {
   it.each([
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -285,6 +289,7 @@ describe('Hook Events for Cache (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -331,6 +336,7 @@ describe('Hook Events for Cache (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -383,6 +389,7 @@ describe('Hook Events for Cache (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -442,6 +449,7 @@ describe('Hook Events for Cache (Unit)', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
@@ -585,6 +593,7 @@ describe('Hook Events for Cache (Unit)', () => {
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
     },
