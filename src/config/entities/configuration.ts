@@ -299,7 +299,7 @@ export default () => ({
   portfolio: {
     baseUri:
       process.env.PORTFOLIO_API_BASE_URI || 'https://octav-api.hasura.app',
-    apiKey: process.env.PORTFOLIO_API_KEY,
+    apiKey: process.env.PORTFOLIO_API_KEY || 'TODO',
   },
   pushNotifications: {
     baseUri:
