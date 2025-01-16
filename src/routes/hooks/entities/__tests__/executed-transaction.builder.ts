@@ -11,7 +11,7 @@ export function executedTransactionEventBuilder(): IBuilder<ExecutedTransaction>
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('chainId', faker.string.numeric())
-    .with('safeTxHash', faker.string.hexadecimal())
-    .with('txHash', faker.string.hexadecimal())
+    .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
+    .with('txHash', faker.string.hexadecimal() as `0x${string}`)
     .with('failed', faker.helpers.arrayElement(['true', 'false']));
 }

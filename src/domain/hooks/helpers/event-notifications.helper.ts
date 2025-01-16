@@ -371,7 +371,7 @@ export class EventNotificationsHelper {
     event: ExecutedTransactionEvent,
   ): ExecutedMultisigTransactionNotification | null {
     return {
-      txHash: event.txHash as `0x${string}`,
+      txHash: event.txHash,
       failed: event.failed,
       type: TransactionEventType.EXECUTED_MULTISIG_TRANSACTION,
       chainId: event.chainId,

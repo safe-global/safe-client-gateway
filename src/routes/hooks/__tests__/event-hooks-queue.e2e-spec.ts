@@ -130,6 +130,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
     },
     {
       type: 'NEW_CONFIRMATION',
@@ -178,6 +179,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
     },
     {
       type: 'NEW_CONFIRMATION',
@@ -221,6 +223,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
     },
     {
       type: 'MODULE_TRANSACTION',
@@ -260,6 +263,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
     },
     {
       type: 'INCOMING_TOKEN',
@@ -304,6 +308,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
     },
     {
       type: 'INCOMING_TOKEN',
@@ -424,6 +429,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
     },
     {
       type: 'INCOMING_TOKEN',
