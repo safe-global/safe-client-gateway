@@ -9,6 +9,7 @@ export const ExecutedTransactionEventSchema = z.object({
   chainId: z.string(),
   safeTxHash: z.string(),
   txHash: z.string(),
+  failed: z.union([z.literal('true'), z.literal('false')]),
 });
 
 export type ExecutedTransactionEvent = z.infer<

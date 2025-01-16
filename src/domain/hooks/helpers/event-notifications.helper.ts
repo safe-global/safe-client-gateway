@@ -275,7 +275,7 @@ export class EventNotificationsHelper {
     } else if (
       event.type === TransactionEventType.EXECUTED_MULTISIG_TRANSACTION
     ) {
-      return await this.mapExecutedMultisigTransactionEventNotification(event);
+      return this.mapExecutedMultisigTransactionEventNotification(event);
     } else if (event.type === TransactionEventType.MESSAGE_CREATED) {
       if (!subscriber) {
         return null;
@@ -367,17 +367,12 @@ export class EventNotificationsHelper {
     };
   }
 
-  private async mapExecutedMultisigTransactionEventNotification(
+  private mapExecutedMultisigTransactionEventNotification(
     event: ExecutedTransactionEvent,
-  ): Promise<ExecutedMultisigTransactionNotification | null> {
-    const transaction = await this.safeRepository.getMultiSigTransaction({
-      chainId: event.chainId,
-      safeTransactionHash: event.safeTxHash,
-    });
-
+  ): ExecutedMultisigTransactionNotification | null {
     return {
-      txHash: transaction.transactionHash as `0x${string}`,
-      failed: String(!transaction.isSuccessful),
+      txHash: event.txHash as `0x${string}`,
+      failed: event.failed,
       type: TransactionEventType.EXECUTED_MULTISIG_TRANSACTION,
       chainId: event.chainId,
       address: event.address,
