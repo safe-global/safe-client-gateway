@@ -67,8 +67,6 @@ export class NotificationsController {
       return await this.notificationsService.registerDevice(registerDeviceDto);
     }
 
-    console.log('PushNotificationRequest:', JSON.stringify(registerDeviceDto));
-
     if (registerDeviceDto.timestamp) {
       this.validateTimestamp(parseInt(registerDeviceDto.timestamp));
     }
@@ -76,8 +74,6 @@ export class NotificationsController {
     // Compatibility with V2
     const compatibleV2Requests =
       await this.createV2RegisterDto(registerDeviceDto);
-
-    console.log('CompatibleV2Requests:', JSON.stringify(compatibleV2Requests));
 
     const v2Requests = [];
 
@@ -88,7 +84,6 @@ export class NotificationsController {
       // Some clients, such as the mobile app, do not call the delete endpoint to remove an owner key.
       // Instead, they resend the updated list of owners without the key they want to delete.
       // In such cases, we need to clear all the previous owners to ensure the update is applied correctly.
-      console.log('deleteDeviceOwnersFor:', registerDeviceDto.uuid);
       await this.notificationServiceV2.deleteDeviceOwners(
         registerDeviceDto.uuid,
       );
@@ -103,19 +98,10 @@ export class NotificationsController {
     }
     await Promise.all(v2Requests);
 
-    // Register the token to the transaction service before removing it so that the service has the latest UUID.
-    /**
-     * @todo Remove the old service after all clients have migrated to the new service.
-     */
-    await this.notificationsService.registerDevice(registerDeviceDto);
     // Remove tokens from the old service to prevent duplication.
     if (registerDeviceDto.uuid) {
       const unregistrationRequests = [];
       for (const safeRegistration of registerDeviceDto.safeRegistrations) {
-        console.log(
-          'TokensToRemoveFromTheOldTxService:',
-          JSON.stringify(registerDeviceDto.uuid),
-        );
         unregistrationRequests.push(
           this.notificationsService.unregisterDevice({
             chainId: safeRegistration.chainId,
@@ -132,11 +118,6 @@ export class NotificationsController {
               'code' in result.reason &&
               result.reason.code !== 404
             ) {
-              console.log(
-                'ErrorOccuredUnregisteringTheDecive:',
-                result.reason,
-                result.reason.code,
-              );
               this.loggingService.error(result.reason);
             }
           }
@@ -276,7 +257,6 @@ export class NotificationsController {
     @Param('chainId') chainId: string,
     @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
   ): Promise<void> {
-    console.log('ControllerUnregisterDevice:', chainId, uuid);
     if (this.isPushNotificationV2Enabled) {
       return await this.unregisterDeviceV2Compatible(chainId, uuid);
     }
@@ -291,9 +271,7 @@ export class NotificationsController {
     try {
       await this.notificationServiceV2.deleteDevice(uuid);
     } catch (error: unknown) {
-      console.log('NotificationUnregisterErrorNotFound:', error);
       if (error instanceof NotFoundException) {
-        console.log('NotificationUnregisterErrorNotFound:', error);
         // Do not throw a NotFound error when attempting to remove the token from the CGW,
         // This ensures the TX service remove method is called
       } else {
@@ -302,10 +280,8 @@ export class NotificationsController {
     }
 
     try {
-      console.log('here-----');
       await this.notificationsService.unregisterDevice({ chainId, uuid });
     } catch (error: unknown) {
-      console.log('NotificationUnregisterErrorTX---:', error);
       // The token might already have been removed from the TX service.
       // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
       const errorObject = error as { code?: number };
@@ -322,7 +298,6 @@ export class NotificationsController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
   ): Promise<void> {
-    console.log('ControllerUnregisterSafe:', chainId, uuid, safeAddress);
     if (this.isPushNotificationV2Enabled) {
       return this.unregisterSafeV2Compatible(chainId, uuid, safeAddress);
     }
@@ -362,7 +337,6 @@ export class NotificationsController {
         safeAddress,
       });
     } catch (error: unknown) {
-      console.log('NotificationUnregisterError:', error);
       // The token might already have been removed from the TX service.
       // If this happens, the TX service will throw a 404 error, but it is safe to ignore it.
       const errorObject = error as { code?: number };

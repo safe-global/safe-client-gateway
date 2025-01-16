@@ -68,14 +68,11 @@ export class EventNotificationsHelper {
    * @param event - {@link Event} to notify about
    */
   public async onEventEnqueueNotifications(event: Event): Promise<unknown> {
-    console.log('NotificationToEnqueue:', JSON.stringify(event));
     if (!this.isEventToNotify(event)) {
       return;
     }
 
     const subscriptions = await this.getRelevantSubscribers(event);
-
-    console.log('NotificationSubscriptions:', JSON.stringify(subscriptions));
 
     return await Promise.allSettled(
       subscriptions.map(async (subscription) => {
@@ -83,7 +80,6 @@ export class EventNotificationsHelper {
           event,
           subscription.subscriber,
         );
-        console.log('NotificationData:', JSON.stringify(data));
 
         if (!data) {
           return;
