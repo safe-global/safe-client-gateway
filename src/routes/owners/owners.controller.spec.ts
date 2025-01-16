@@ -33,11 +33,14 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { LoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -66,6 +69,7 @@ describe('Owners Controller (Unit)', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    loggingService = moduleFixture.get(LoggingService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -368,6 +372,73 @@ describe('Owners Controller (Unit)', () => {
           [chainId1]: safesOnChain1.map((safe) => getAddress(safe)),
           [chainId2]: safesOnChain2.map((safe) => getAddress(safe)),
         });
+    });
+
+    it('should gracefully handle chain-specific Transaction Service error', async () => {
+      jest.spyOn(loggingService, 'warn');
+      const ownerAddress = faker.finance.ethereumAddress();
+      const chainId1 = faker.string.numeric();
+      const chainId2 = faker.string.numeric({ exclude: [chainId1] });
+      const chain1 = chainBuilder().with('chainId', chainId1).build();
+      const chain2 = chainBuilder().with('chainId', chainId2).build();
+      const safesOnChain1 = [
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+        faker.finance.ethereumAddress(),
+      ];
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(
+                pageBuilder()
+                  .with('results', [chain1, chain2])
+                  .with('next', null)
+                  .build(),
+              ),
+              status: 200,
+            });
+          }
+          case `${safeConfigUrl}/api/v1/chains/${chainId1}`: {
+            return Promise.resolve({
+              data: rawify(chain1),
+              status: 200,
+            });
+          }
+          case `${safeConfigUrl}/api/v1/chains/${chainId2}`: {
+            return Promise.resolve({
+              data: rawify(chain2),
+              status: 200,
+            });
+          }
+          // ValidationPipe checksums ownerAddress param
+          case `${chain1.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+            return Promise.resolve({
+              data: rawify({ safes: safesOnChain1 }),
+              status: 200,
+            });
+          }
+          case `${chain2.transactionService}/api/v1/owners/${getAddress(ownerAddress)}/safes/`: {
+            return Promise.reject(new Error('Test error'));
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/owners/${ownerAddress}/safes`)
+        .expect(200)
+        .expect({
+          // Only "working" chain. Validation schema checksums addresses
+          [chainId1]: safesOnChain1.map((safe) => getAddress(safe)),
+        });
+      expect(loggingService.warn).toHaveBeenCalledTimes(1);
+      expect(loggingService.warn).toHaveBeenNthCalledWith(
+        1,
+        `Failed to fetch Safe owners. chainId=${chainId2}`,
+      );
     });
 
     it('Failure: Config API fails', async () => {

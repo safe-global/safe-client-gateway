@@ -427,7 +427,8 @@ export class SafeRepository implements ISafeRepository {
     ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }> {
     const chains = await this.chainsRepository.getAllChains();
-    const allSafeLists = await Promise.all(
+    // Gracefully handle errors in case singular Transaction Service throws
+    const allSafeLists = await Promise.allSettled(
       chains.map(async ({ chainId }) => {
         const safeList = await this.getSafesByOwner({
           chainId,
@@ -441,12 +442,20 @@ export class SafeRepository implements ISafeRepository {
       }),
     );
 
-    return allSafeLists.reduce((acc, { chainId, safeList }) => {
-      return {
-        ...acc,
-        [chainId]: safeList.safes,
-      };
-    }, {});
+    const result: { [chainId: string]: Array<string> } = {};
+
+    for (const [index, allSafeList] of allSafeLists.entries()) {
+      if (allSafeList.status === 'fulfilled') {
+        result[allSafeList.value.chainId] = allSafeList.value.safeList.safes;
+      } else {
+        const chainId = chains[index].chainId;
+        this.loggingService.warn(
+          `Failed to fetch Safe owners. chainId=${chainId}`,
+        );
+      }
+    }
+
+    return result;
   }
 
   async getLastTransactionSortedByNonce(args: {
