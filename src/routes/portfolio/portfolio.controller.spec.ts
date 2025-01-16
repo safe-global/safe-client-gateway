@@ -20,7 +20,15 @@ import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messag
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { portfolioBuilder } from '@/domain/portfolio/entities/__tests__/portfolio.builder';
+import {
+  assetByProtocolBuilder,
+  assetByProtocolChainsBuilder,
+  assetByProtocolsBuilder,
+  nestedProtocolPositionBuilder,
+  portfolioAssetBuilder,
+  portfolioBuilder,
+  protocolPositionBuilder,
+} from '@/domain/portfolio/entities/__tests__/portfolio.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { PortfolioMapper } from '@/routes/portfolio/mappers/portfolio.mapper';
 import request from 'supertest';
@@ -28,6 +36,7 @@ import type { TestingModule } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'http';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { ProtocolPositionType } from '@/domain/portfolio/entities/portfolio.entity';
 
 describe('PortfolioController', () => {
   let app: INestApplication<Server>;
@@ -83,6 +92,7 @@ describe('PortfolioController', () => {
     await app.close();
   });
 
+  // Note: tests happy path. Mapping intricacies are covered by PortfolioMapper suite
   it('should return the mapped portfolio', async () => {
     const [key, chainId] = faker.helpers.arrayElement(chains);
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -108,9 +118,8 @@ describe('PortfolioController', () => {
           results: expect.any(Array),
           count: Object.values(portfolio.assetByProtocols).reduce(
             (acc, cur) => {
-              const chain = cur.chains[key];
-              if (chain) {
-                acc += Object.values(chain.protocolPositions).length;
+              if (cur.chains[key]) {
+                acc++;
               }
               return acc;
             },
@@ -122,11 +131,125 @@ describe('PortfolioController', () => {
       });
   });
 
-  it.todo('should fail on API errors');
+  it('should fail on API errors', async () => {
+    const [chainId] = faker.helpers.arrayElement(chains);
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    networkService.get.mockImplementationOnce(({ url, networkRequest }) => {
+      if (
+        url === `${portfolioApiUrl}/api/rest/portfolio` &&
+        networkRequest?.params?.addresses === safeAddress
+      ) {
+        return Promise.reject(new Error('Test error'));
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
 
-  it.todo('should fail on validation errors');
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/portfolio`)
+      .expect(503)
+      .expect({
+        code: 503,
+        message: 'Service unavailable',
+      });
+  });
 
-  it.todo('should fail on unsupported chains');
+  it('should fail on validation errors', async () => {
+    const [chainId] = faker.helpers.arrayElement(chains);
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    networkService.get.mockImplementationOnce(({ url, networkRequest }) => {
+      if (
+        url === `${portfolioApiUrl}/api/rest/portfolio` &&
+        networkRequest?.params?.addresses === safeAddress
+      ) {
+        return Promise.resolve({
+          data: rawify({ invalid: 'portfolio' }),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
 
-  it.todo('should fail with unsupported positions');
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/portfolio`)
+      .expect(503)
+      .expect({
+        code: 503,
+        message: 'Service unavailable',
+      });
+  });
+
+  it('should fail on unsupported chains', async () => {
+    const chainId = '0';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const portfolio = portfolioBuilder().build();
+    networkService.get.mockImplementationOnce(({ url, networkRequest }) => {
+      if (
+        url === `${portfolioApiUrl}/api/rest/portfolio` &&
+        networkRequest?.params?.addresses === safeAddress
+      ) {
+        return Promise.resolve({
+          data: rawify({ getPortfolio: [portfolio] }),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/portfolio`)
+      .expect(500)
+      .expect({
+        code: 500,
+        message: 'Internal server error',
+      });
+  });
+
+  it('should fail with unsupported positions', async () => {
+    const [key, chainId] = faker.helpers.arrayElement(chains);
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const protocol = faker.string.sample();
+    const protocolType = faker.helpers.arrayElement(
+      ProtocolPositionType.filter((type) => type !== 'WALLET'),
+    );
+    const protocolPosition = protocolPositionBuilder()
+      // Unknown as both assets and protocolPositions are present
+      .with('assets', [portfolioAssetBuilder().build()])
+      .with('protocolPositions', [nestedProtocolPositionBuilder().build()])
+      .build();
+    const protocolPositions = { [protocolType]: protocolPosition };
+    const assetByProtocolChains = assetByProtocolChainsBuilder()
+      .with(key, {
+        protocolPositions,
+      })
+      .build();
+    const assetByProtocol = assetByProtocolBuilder()
+      .with('chains', assetByProtocolChains)
+      .build();
+    const assetByProtocols = assetByProtocolsBuilder()
+      .with(protocol, assetByProtocol)
+      .build();
+    const portfolio = portfolioBuilder()
+      .with('assetByProtocols', assetByProtocols)
+      .build();
+    networkService.get.mockImplementationOnce(({ url, networkRequest }) => {
+      if (
+        url === `${portfolioApiUrl}/api/rest/portfolio` &&
+        networkRequest?.params?.addresses === safeAddress
+      ) {
+        return Promise.resolve({
+          data: rawify({ getPortfolio: [portfolio] }),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/portfolio`)
+      .expect(500)
+      .expect({
+        code: 500,
+        message: 'Internal server error',
+      });
+  });
 });

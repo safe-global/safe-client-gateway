@@ -31,7 +31,9 @@ describe('PortfolioMapper', () => {
   it('should map regular positions', () => {
     const [key, chainId] = faker.helpers.arrayElement(chainKeys);
     const protocol = faker.string.sample();
-    const protocolType = faker.helpers.arrayElement(ProtocolPositionType);
+    const protocolType = faker.helpers.arrayElement(
+      ProtocolPositionType.filter((type) => type !== 'WALLET'),
+    );
     const regularProtocolPosition = regularProtocolPositionBuilder().build();
     const protocolPositions = { [protocolType]: regularProtocolPosition };
     const assetByProtocolChains = assetByProtocolChainsBuilder()
@@ -92,7 +94,9 @@ describe('PortfolioMapper', () => {
   it('should map complex positions, with typed assets', () => {
     const [key, chainId] = faker.helpers.arrayElement(chainKeys);
     const protocol = faker.string.sample();
-    const protocolType = faker.helpers.arrayElement(ProtocolPositionType);
+    const protocolType = faker.helpers.arrayElement(
+      ProtocolPositionType.filter((type) => type !== 'WALLET'),
+    );
     const nestedProtocolPosition = nestedProtocolPositionBuilder().build();
     const complexProtocolPosition = complexProtocolPositionBuilder()
       .with('protocolPositions', [nestedProtocolPosition])
@@ -228,7 +232,9 @@ describe('PortfolioMapper', () => {
     const [key, chainId] = faker.helpers.arrayElement(chainKeys);
     const regularProtocol = faker.string.sample();
     const complexProtocol = faker.string.sample();
-    const protocolType = faker.helpers.arrayElement(ProtocolPositionType);
+    const protocolType = faker.helpers.arrayElement(
+      ProtocolPositionType.filter((type) => type !== 'WALLET'),
+    );
     const regularProtocolPosition = regularProtocolPositionBuilder().build();
     const regularProtocolPositions = {
       [protocolType]: regularProtocolPosition,
@@ -401,6 +407,38 @@ describe('PortfolioMapper', () => {
     });
   });
 
+  it('should not include wallet assets in the results', () => {
+    const [key, chainId] = faker.helpers.arrayElement(chainKeys);
+    const protocol = faker.string.sample();
+    // Can be regular, complex or not constrain to a specific type
+    const protocolPosition = protocolPositionBuilder().build();
+    const protocolPositions = { WALLET: protocolPosition };
+    const assetByProtocolChains = assetByProtocolChainsBuilder()
+      .with(key, {
+        protocolPositions,
+      })
+      .build();
+    const assetByProtocol = assetByProtocolBuilder()
+      .with('chains', assetByProtocolChains)
+      .build();
+    const assetByProtocols = { [protocol]: assetByProtocol };
+    const portfolio = portfolioBuilder()
+      .with('assetByProtocols', assetByProtocols)
+      .build();
+
+    const result = target.mapChainPortfolio({
+      chainId,
+      portfolio,
+    });
+
+    expect(result).toEqual({
+      results: [],
+      count: 0,
+      next: null,
+      previous: null,
+    });
+  });
+
   it('should return no results if no positions are found', () => {
     const [key, chainId] = faker.helpers.arrayElement(chainKeys);
     const protocol = faker.string.sample();
@@ -433,7 +471,9 @@ describe('PortfolioMapper', () => {
   it('should throw for unknown position types', () => {
     const [key, chainId] = faker.helpers.arrayElement(chainKeys);
     const protocol = faker.string.sample();
-    const protocolType = faker.helpers.arrayElement(ProtocolPositionType);
+    const protocolType = faker.helpers.arrayElement(
+      ProtocolPositionType.filter((type) => type !== 'WALLET'),
+    );
     const protocolPosition = protocolPositionBuilder()
       // Unknown as both assets and protocolPositions are present
       .with('assets', [portfolioAssetBuilder().build()])

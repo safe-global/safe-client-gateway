@@ -13,7 +13,7 @@ import {
   NestedProtocolPosition,
   PositionItem,
   RegularProtocolPosition,
-} from '@/routes/portfolio/entities/position.entity';
+} from '@/routes/portfolio/entities/position-item.entity';
 import {
   PortfolioAsset,
   PortfolioAssetType,
@@ -86,18 +86,24 @@ export class PortfolioMapper {
       args.portfolio.assetByProtocols,
     )) {
       const assetByProtocolOnChain = assetByProtocol.chains[key];
-      if (assetByProtocolOnChain) {
-        results.push(
-          new PositionItem({
-            fiatBalance: assetByProtocol.value,
-            name: assetByProtocol.name,
-            logoUri: assetByProtocol.imgLarge,
-            protocolPositions: this.mapProtocolPositions(
-              assetByProtocolOnChain.protocolPositions,
-            ),
-          }),
-        );
+      if (!assetByProtocolOnChain) {
+        continue;
       }
+
+      const protocolPositions = this.mapProtocolPositions(
+        assetByProtocolOnChain.protocolPositions,
+      );
+      if (protocolPositions.length === 0) {
+        continue;
+      }
+      results.push(
+        new PositionItem({
+          fiatBalance: assetByProtocol.value,
+          name: assetByProtocol.name,
+          logoUri: assetByProtocol.imgLarge,
+          protocolPositions,
+        }),
+      );
     }
 
     return new PortfolioItemPage({
