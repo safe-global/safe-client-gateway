@@ -373,6 +373,7 @@ export class EventNotificationsHelper {
     return {
       txHash: event.txHash,
       failed: event.failed,
+      to: event.to,
       type: TransactionEventType.EXECUTED_MULTISIG_TRANSACTION,
       chainId: event.chainId,
       address: event.address,
