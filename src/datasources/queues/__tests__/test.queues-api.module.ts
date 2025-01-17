@@ -19,7 +19,7 @@ import { Module } from '@nestjs/common';
       provide: QueueReadiness,
       useFactory: (): jest.MockedObjectDeep<IQueueReadiness> => {
         return jest.mocked({
-          isReady: jest.fn(),
+          isReady: jest.fn().mockReturnValue(true),
         });
       },
     },

@@ -10,6 +10,7 @@ import {
   IQueueReadiness,
   QueueReadiness,
 } from '@/domain/interfaces/queue-readiness.interface';
+import { HealthCheckError } from '@/domain/health/entities/healthError.entity';
 
 @Injectable()
 export class HealthRepository implements IHealthRepository {
@@ -19,19 +20,51 @@ export class HealthRepository implements IHealthRepository {
     @Inject(QueueReadiness) private readonly queuesApi: IQueueReadiness,
   ) {}
 
+  async isAlive(): Promise<HealthEntity> {
+    try {
+      this.isAmqpHealthy();
+      await this.isRedisHealthy();
+
+      return HealthEntity.READY;
+    } catch (error) {
+      if (error instanceof HealthCheckError) {
+        this.loggingService.warn(error.message);
+      }
+
+      return HealthEntity.NOT_READY;
+    }
+  }
+
   async isReady(): Promise<HealthEntity> {
     try {
+      this.isAmqpHealthy();
+      await this.isRedisHealthy();
+
+      return HealthEntity.READY;
+    } catch (error) {
+      if (error instanceof HealthCheckError) {
+        this.loggingService.warn(error.message);
+      }
+
+      return HealthEntity.NOT_READY;
+    }
+  }
+
+  async isRedisHealthy(): Promise<boolean> {
+    try {
       await this.cacheService.ping();
+
+      return true;
     } catch {
-      this.loggingService.warn('Cache service connection is not established');
-      return HealthEntity.NOT_READY;
+      throw new HealthCheckError('Cache service connection is not established');
     }
+  }
 
+  isAmqpHealthy(): boolean {
     if (!this.queuesApi.isReady()) {
-      this.loggingService.warn('AMQP connection is not established');
-      return HealthEntity.NOT_READY;
+      throw new HealthCheckError('AMQP connection is not established');
     }
 
-    return HealthEntity.READY;
+    return true;
   }
 }
