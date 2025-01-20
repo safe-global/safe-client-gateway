@@ -71,6 +71,17 @@ export class EventNotificationsHelper {
     if (!this.isEventToNotify(event)) {
       return;
     }
+    if (event.type === TransactionEventType.PENDING_MULTISIG_TRANSACTION) {
+      console.log('Event is NEW_CONFIRMATION: ', event.safeTxHash);
+      const transaction = await this.safeRepository.getMultiSigTransaction({
+        chainId: event.chainId,
+        safeTransactionHash: event.safeTxHash,
+      });
+      console.log(
+        'TX ' + event.safeTxHash + ' From the TX service: ',
+        transaction,
+      );
+    }
 
     const subscriptions = await this.getRelevantSubscribers(event);
 
