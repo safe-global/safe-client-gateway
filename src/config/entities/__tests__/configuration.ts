@@ -196,6 +196,10 @@ export default (): ReturnType<typeof configuration> => ({
   owners: {
     ownersTtlSeconds: faker.number.int(),
   },
+  portfolio: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    apiKey: faker.string.hexadecimal({ length: 32 }),
+  },
   pushNotifications: {
     baseUri: faker.internet.url({ appendSlash: false }),
     project: faker.word.noun(),

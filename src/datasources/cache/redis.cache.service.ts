@@ -188,7 +188,10 @@ export class RedisCacheService
       return await promiseWithTimeout(queryObject, timeout);
     } catch (error) {
       if (error instanceof PromiseTimeoutError) {
-        this.loggingService.error('Redis Query Timed out!');
+        /**
+         * @todo: Uncomment this line after the issue on Redis is fixed.
+         */
+        // this.loggingService.error('Redis Query Timed out!');
       }
 
       throw error;
@@ -197,7 +200,10 @@ export class RedisCacheService
 
   private validatgeRedisClientIsReady(): void {
     if (!this.ready()) {
-      this.loggingService.error(`Redis client is not ready`);
+      /**
+       * @todo: Uncomment this line after the issue on Redis is fixed.
+       */
+      // this.loggingService.error(`Redis client is not ready`);
 
       throw new ServiceUnavailableException('Redis client is not ready');
     }

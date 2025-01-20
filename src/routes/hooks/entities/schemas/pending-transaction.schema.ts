@@ -4,6 +4,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const PendingTransactionEventSchema = z.object({
   type: z.literal(TransactionEventType.PENDING_MULTISIG_TRANSACTION),
+  to: AddressSchema,
   address: AddressSchema,
   chainId: z.string(),
   safeTxHash: z.string(),

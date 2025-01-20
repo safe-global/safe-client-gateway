@@ -43,3 +43,6 @@ process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL =
   'email@fake-email.com';
 process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY =
   'fake-private-key';
+
+// For E2E tests, portfolio API dummy value
+process.env.PORTFOLIO_API_KEY = 'fake-api-key';

@@ -107,7 +107,6 @@ describe('Swap Order Helper tests', () => {
         feeAmount: order.feeAmount,
         from: order.from,
         fullAppData: order.fullAppData,
-        fullFeeAmount: order.fullFeeAmount,
         invalidated: order.invalidated,
         isLiquidityOrder: order.isLiquidityOrder,
         kind: order.kind,

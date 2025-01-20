@@ -90,7 +90,6 @@ export function orderBuilder(): IBuilder<Order> {
       .with('executedFeeAmount', faker.number.bigInt({ min: 1 }))
       .with('invalidated', faker.datatype.boolean())
       .with('status', faker.helpers.arrayElement(Object.values(OrderStatus)))
-      .with('fullFeeAmount', faker.number.bigInt({ min: 1 }))
       .with('isLiquidityOrder', faker.datatype.boolean())
       .with(
         'ethflowData',

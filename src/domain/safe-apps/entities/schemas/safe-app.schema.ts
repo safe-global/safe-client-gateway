@@ -18,6 +18,7 @@ export enum SafeAppSocialProfilePlatforms {
   Discord = 'DISCORD',
   GitHub = 'GITHUB',
   Twitter = 'TWITTER',
+  Telegram = 'TELEGRAM',
   Unknown = 'UNKNOWN',
 }
 

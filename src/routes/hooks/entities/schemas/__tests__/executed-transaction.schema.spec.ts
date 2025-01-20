@@ -42,44 +42,51 @@ describe('ExecutedTransactionEventSchema', () => {
     );
   });
 
-  it('should not allow a non-address address', () => {
-    const executedTransactionEvent = executedTransactionEventBuilder()
-      .with('address', faker.string.sample() as `0x${string}`)
-      .build();
+  it.each(['to' as const, 'address' as const])(
+    'should not allow a non-address %s',
+    (field) => {
+      const executedTransactionEvent = executedTransactionEventBuilder()
+        .with(field, faker.string.sample() as `0x${string}`)
+        .build();
 
-    const result = ExecutedTransactionEventSchema.safeParse(
-      executedTransactionEvent,
-    );
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: ['address'],
-        },
-      ]),
-    );
-  });
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            message: 'Invalid address',
+            path: [field],
+          },
+        ]),
+      );
+    },
+  );
 
-  it('should checksum the address', () => {
-    const nonChecksummedAddress = faker.finance
-      .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
-    const executedTransactionEvent = executedTransactionEventBuilder()
-      .with('address', nonChecksummedAddress)
-      .build();
+  it.each(['to' as const, 'address' as const])(
+    'should checksum the %s',
+    (field) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as `0x${string}`;
+      const executedTransactionEvent = executedTransactionEventBuilder()
+        .with(field, nonChecksummedAddress)
+        .build();
 
-    const result = ExecutedTransactionEventSchema.safeParse(
-      executedTransactionEvent,
-    );
-    expect(result.success && result.data.address).toBe(
-      getAddress(nonChecksummedAddress),
-    );
-  });
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
+      expect(result.success && result.data[field]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    },
+  );
 
   it.each([
     'type' as const,
+    'to' as const,
     'address' as const,
     'chainId' as const,
     'safeTxHash' as const,
