@@ -423,6 +423,8 @@ export class SafeRepository implements ISafeRepository {
     return SafeListSchema.parse(safeList);
   }
 
+  // TODO: Remove with /owners/:ownerAddress/safes
+  // @deprecated
   async deprecated__getAllSafesByOwner(args: {
     ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }> {

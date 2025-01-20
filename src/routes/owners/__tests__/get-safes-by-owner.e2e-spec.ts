@@ -47,13 +47,11 @@ describe('Get safes by owner e2e test', () => {
     await redisClient.quit();
   });
 
-  it('GET /v1/chains/<chain_id>/owners/<owner_address>/safes', async () => {
+  it('GET /owners/<owner_address>/safes', async () => {
     const ownerCacheKey = `${cacheKeyPrefix}-${TEST_SAFE.chainId}_owner_safes_${TEST_SAFE.owners[0]}`;
 
     await request(app.getHttpServer())
-      .get(
-        `/v1/chains/${TEST_SAFE.chainId}/owners/${TEST_SAFE.owners[0]}/safes`,
-      )
+      .get(`/chains/${TEST_SAFE.chainId}/owners/${TEST_SAFE.owners[0]}/safes`)
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual(
