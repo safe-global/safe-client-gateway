@@ -423,9 +423,35 @@ export class SafeRepository implements ISafeRepository {
     return SafeListSchema.parse(safeList);
   }
 
-  async getAllSafesByOwner(args: {
+  async deprecated__getAllSafesByOwner(args: {
     ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }> {
+    const chains = await this.chainsRepository.getAllChains();
+    const allSafeLists = await Promise.all(
+      chains.map(async ({ chainId }) => {
+        const safeList = await this.getSafesByOwner({
+          chainId,
+          ownerAddress: args.ownerAddress,
+        });
+
+        return {
+          chainId,
+          safeList,
+        };
+      }),
+    );
+
+    return allSafeLists.reduce((acc, { chainId, safeList }) => {
+      return {
+        ...acc,
+        [chainId]: safeList.safes,
+      };
+    }, {});
+  }
+
+  async getAllSafesByOwner(args: {
+    ownerAddress: `0x${string}`;
+  }): Promise<{ [chainId: string]: Array<string> | null }> {
     const chains = await this.chainsRepository.getAllChains();
     const allSafeLists = await Promise.allSettled(
       chains.map(async ({ chainId }) => {
@@ -441,17 +467,22 @@ export class SafeRepository implements ISafeRepository {
       }),
     );
 
-    const result: { [chainId: string]: Array<string> } = {};
+    const result: { [chainId: string]: Array<string> | null } = {};
 
     for (const [index, allSafeList] of allSafeLists.entries()) {
-      if (allSafeList.status === 'fulfilled') {
-        result[allSafeList.value.chainId] = allSafeList.value.safeList.safes;
-      } else {
-        const chainId = chains[index].chainId;
+      const chainId = chains[index].chainId;
+
+      if (allSafeList.status === 'rejected') {
         this.loggingService.warn(
           `Failed to fetch Safe owners. chainId=${chainId}`,
         );
       }
+
+      result[chainId] =
+        allSafeList.status === 'fulfilled'
+          ? allSafeList.value.safeList.safes
+          : // Transaction Service threw; could own Safes or not
+            null;
     }
 
     return result;

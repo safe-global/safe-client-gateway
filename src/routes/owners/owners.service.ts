@@ -17,9 +17,15 @@ export class OwnersService {
     return this.safeRepository.getSafesByOwner(args);
   }
 
-  async getAllSafesByOwner(args: {
+  async deprecated__getAllSafesByOwner(args: {
     ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }> {
+    return this.safeRepository.deprecated__getAllSafesByOwner(args);
+  }
+
+  async getAllSafesByOwner(args: {
+    ownerAddress: `0x${string}`;
+  }): Promise<{ [chainId: string]: Array<string> | null }> {
     return this.safeRepository.getAllSafesByOwner(args);
   }
 }
