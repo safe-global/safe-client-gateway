@@ -472,17 +472,14 @@ export class SafeRepository implements ISafeRepository {
     for (const [index, allSafeList] of allSafeLists.entries()) {
       const chainId = chains[index].chainId;
 
-      if (allSafeList.status === 'rejected') {
+      if (allSafeList.status === 'fulfilled') {
+        result[chainId] = allSafeList.value.safeList.safes;
+      } else {
+        result[chainId] = null;
         this.loggingService.warn(
           `Failed to fetch Safe owners. chainId=${chainId}`,
         );
       }
-
-      result[chainId] =
-        allSafeList.status === 'fulfilled'
-          ? allSafeList.value.safeList.safes
-          : // Transaction Service threw; could own Safes or not
-            null;
     }
 
     return result;
