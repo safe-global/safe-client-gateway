@@ -427,7 +427,6 @@ export class SafeRepository implements ISafeRepository {
     ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }> {
     const chains = await this.chainsRepository.getAllChains();
-    // Gracefully handle errors in case singular Transaction Service throws
     const allSafeLists = await Promise.allSettled(
       chains.map(async ({ chainId }) => {
         const safeList = await this.getSafesByOwner({
