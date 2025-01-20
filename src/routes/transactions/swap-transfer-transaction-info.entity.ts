@@ -117,7 +117,7 @@ export class SwapTransferTransactionInfo
 
   @ApiProperty({
     description:
-      'The token in which the fee were paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
+      'The token in which the fee was paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
   })
   executedFeeToken: TokenInfo;
 
