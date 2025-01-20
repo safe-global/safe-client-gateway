@@ -14,43 +14,44 @@ import { HealthCheckError } from '@/domain/health/entities/healthError.entity';
 
 @Injectable()
 export class HealthRepository implements IHealthRepository {
-  constructor(
+  public constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(CacheReadiness) private readonly cacheService: ICacheReadiness,
     @Inject(QueueReadiness) private readonly queuesApi: IQueueReadiness,
   ) {}
 
-  async isAlive(): Promise<HealthEntity> {
+  public async isAlive(): Promise<HealthEntity> {
     try {
-      this.isAmqpHealthy();
-      await this.isRedisHealthy();
+      await this.checkMainServicesStatus();
 
       return HealthEntity.READY;
     } catch (error) {
-      if (error instanceof HealthCheckError) {
-        this.loggingService.warn(error.message);
-      }
+      this.logHealthCheckError(error);
 
       return HealthEntity.NOT_READY;
     }
   }
 
-  async isReady(): Promise<HealthEntity> {
+  public async isReady(): Promise<HealthEntity> {
     try {
-      this.isAmqpHealthy();
-      await this.isRedisHealthy();
+      await this.checkMainServicesStatus();
 
       return HealthEntity.READY;
     } catch (error) {
-      if (error instanceof HealthCheckError) {
-        this.loggingService.warn(error.message);
-      }
+      this.logHealthCheckError(error);
 
       return HealthEntity.NOT_READY;
     }
   }
 
-  async isRedisHealthy(): Promise<boolean> {
+  private async checkMainServicesStatus(): Promise<boolean> {
+    this.isAmqpHealthy();
+    await this.isRedisHealthy();
+
+    return true;
+  }
+
+  private async isRedisHealthy(): Promise<boolean> {
     try {
       await this.cacheService.ping();
 
@@ -60,11 +61,17 @@ export class HealthRepository implements IHealthRepository {
     }
   }
 
-  isAmqpHealthy(): boolean {
+  private isAmqpHealthy(): boolean {
     if (!this.queuesApi.isReady()) {
       throw new HealthCheckError('AMQP connection is not established');
     }
 
     return true;
+  }
+
+  private logHealthCheckError(error: unknown): void {
+    if (error instanceof HealthCheckError) {
+      this.loggingService.warn(error.message);
+    }
   }
 }
