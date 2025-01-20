@@ -46,7 +46,6 @@ import { RelayControllerModule } from '@/routes/relay/relay.controller.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/routes/auth/auth.module';
-import { TransactionsViewControllerModule } from '@/routes/transactions/transactions-view.controller';
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
 import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
@@ -109,7 +108,6 @@ export class AppModule implements NestModule {
         SafesModule,
         TargetedMessagingModule,
         TransactionsModule,
-        TransactionsViewControllerModule,
         // common
         CacheModule,
         // Module for storing and reading from the async local storage
