@@ -119,7 +119,9 @@ export default (): ReturnType<typeof configuration> => ({
         ssl: {
           enabled: true,
           requestCert: true,
-          rejectUnauthorized: true,
+          rejectUnauthorized:
+            process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED?.toLowerCase() !==
+            'false',
           caPath: process.env.POSTGRES_SSL_CA_PATH,
         },
       },
