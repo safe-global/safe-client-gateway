@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiExcludeController, ApiOkResponse } from '@nestjs/swagger';
-import { Health, HealthStatus } from '@/routes/health/entities/health.entity';
+import { Health } from '@/routes/health/entities/health.entity';
 import { HealthService } from '@/routes/health/health.service';
 
 @Controller({ path: 'health' })
@@ -10,8 +10,8 @@ export class HealthController {
 
   @ApiOkResponse({ type: Health })
   @Get('live')
-  liveness(): Health {
-    return new Health(HealthStatus.OK);
+  liveness(): Promise<Health> {
+    return this.service.isAlive();
   }
 
   @ApiOkResponse({ type: Health })

@@ -16,6 +16,7 @@ export interface IHealthRepository {
    * returns {@link HealthEntity.NOT_READY}
    */
   isReady(): Promise<HealthEntity>;
+  isAlive(): Promise<HealthEntity>;
 }
 
 @Module({
