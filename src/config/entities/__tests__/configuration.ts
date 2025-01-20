@@ -120,7 +120,8 @@ export default (): ReturnType<typeof configuration> => ({
           enabled: true,
           requestCert: true,
           rejectUnauthorized: true,
-          caPath: process.env.POSTGRES_SSL_CA_PATH,
+          caPath:
+            process.env.POSTGRES_SSL_CA_PATH || 'db_config/test/server.crt',
         },
       },
     },
