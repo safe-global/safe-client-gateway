@@ -30,8 +30,8 @@
     "migration:revert": "yarn typeorm migration:revert"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "^3.726.1",
-    "@aws-sdk/client-s3": "^3.726.1",
+    "@aws-sdk/client-kms": "^3.731.1",
+    "@aws-sdk/client-s3": "^3.731.1",
     "@fingerprintjs/fingerprintjs-pro-server-api": "^6.1.0",
     "@nestjs/cli": "^10.4.9",
     "@nestjs/common": "^10.4.15",
