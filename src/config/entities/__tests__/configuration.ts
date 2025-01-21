@@ -155,6 +155,7 @@ export default (): ReturnType<typeof configuration> => ({
     delegatesV2: false,
     counterfactualBalances: false,
     accounts: false,
+    users: false,
     pushNotifications: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,

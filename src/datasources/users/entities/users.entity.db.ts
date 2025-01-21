@@ -1,24 +1,17 @@
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
-import type { UUID } from 'crypto';
-import { Column, Entity, Unique, PrimaryGeneratedColumn } from 'typeorm';
-import { z } from 'zod';
-import { UserStatus } from '@/domain/users/entities/user.entity';
-
-export const UserSchema = RowSchema.extend({
-  id: UuidSchema,
-  status: z.nativeEnum(UserStatus),
-});
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  UserStatus,
+  User as DomainUser,
+} from '@/domain/users/entities/user.entity';
 
 @Entity('users')
-@Unique('id', ['id'])
-export class User implements z.infer<typeof UserSchema> {
-  @PrimaryGeneratedColumn('uuid')
-  id!: UUID;
+export class User implements DomainUser {
+  @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_id' })
+  id!: number;
 
+  @Index('idx_user_status')
   @Column({
-    type: 'enum',
-    enum: UserStatus,
+    type: 'integer',
   })
   status!: UserStatus;
 
@@ -31,7 +24,6 @@ export class User implements z.infer<typeof UserSchema> {
   @Column({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at!: Date;
 }
