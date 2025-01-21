@@ -2006,18 +2006,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/typeorm@npm:^10.0.2":
-  version: 10.0.2
-  resolution: "@nestjs/typeorm@npm:10.0.2"
-  dependencies:
-    uuid: "npm:9.0.1"
+"@nestjs/typeorm@npm:^11.0.0":
+  version: 11.0.0
+  resolution: "@nestjs/typeorm@npm:11.0.0"
   peerDependencies:
-    "@nestjs/common": ^8.0.0 || ^9.0.0 || ^10.0.0
-    "@nestjs/core": ^8.0.0 || ^9.0.0 || ^10.0.0
+    "@nestjs/common": ^10.0.0 || ^11.0.0
+    "@nestjs/core": ^10.0.0 || ^11.0.0
     reflect-metadata: ^0.1.13 || ^0.2.0
     rxjs: ^7.2.0
     typeorm: ^0.3.0
-  checksum: 10/f01484e45cb8e44f5fdcd4b5e837b016d07770ed74e8dc4f3804bb6e71c02ceb5ce116e6abe610fcd88030fb3cf54b440f7229126cc5bf51c02ff666215639e1
+  checksum: 10/2bfd490565ba2a0b007efecb4eedd5a24c4df126cdbbb0dd99b082653596674ac78f911f55422330256e5f6a8d49f615510c9ec1447c486749f8becf9d3679a5
   languageName: node
   linkType: hard
 
@@ -8555,7 +8553,7 @@ __metadata:
     "@nestjs/serve-static": "npm:^4.0.2"
     "@nestjs/swagger": "npm:^8.1.1"
     "@nestjs/testing": "npm:^10.4.15"
-    "@nestjs/typeorm": "npm:^10.0.2"
+    "@nestjs/typeorm": "npm:^11.0.0"
     "@safe-global/safe-deployments": "npm:^1.37.22"
     "@smithy/util-stream": "npm:^4.0.1"
     "@types/amqplib": "npm:^0"
@@ -9670,7 +9668,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"uuid@npm:9.0.1, uuid@npm:^9.0.0, uuid@npm:^9.0.1":
+"uuid@npm:^9.0.0, uuid@npm:^9.0.1":
   version: 9.0.1
   resolution: "uuid@npm:9.0.1"
   bin:
