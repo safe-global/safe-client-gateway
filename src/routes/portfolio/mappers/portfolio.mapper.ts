@@ -141,7 +141,7 @@ export class PortfolioMapper {
     return Object.entries(protocolPositions)
       .filter(([type]) => {
         // We are not interested in wallet positions in the portfolio
-        return type !== 'WALLET';
+        return type !== 'WALLET' && type !== 'UNKNOWN';
       })
       .map(([type, protocolPosition]) => {
         if (this.isRegularPosition(protocolPosition)) {

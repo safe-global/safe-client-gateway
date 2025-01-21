@@ -130,6 +130,50 @@ describe('PortfolioController', () => {
       });
   });
 
+  it('should filter unknown position types', async () => {
+    const [key, chainId] = faker.helpers.arrayElement(chains);
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const protocol = faker.string.sample();
+    const protocolType = faker.word.noun();
+    // Can be regular, complex or not constrain to a specific type
+    const protocolPosition = protocolPositionBuilder().build();
+    const protocolPositions = { [protocolType]: protocolPosition };
+    const assetByProtocolChains = assetByProtocolChainsBuilder()
+      .with(key, {
+        protocolPositions,
+      })
+      .build();
+    const assetByProtocol = assetByProtocolBuilder()
+      .with('chains', assetByProtocolChains)
+      .build();
+    const assetByProtocols = { [protocol]: assetByProtocol };
+    const portfolio = portfolioBuilder()
+      .with('assetByProtocols', assetByProtocols)
+      .build();
+    networkService.get.mockImplementationOnce(({ url, networkRequest }) => {
+      if (
+        url === `${portfolioApiUrl}/api/rest/portfolio` &&
+        networkRequest?.params?.addresses === safeAddress
+      ) {
+        return Promise.resolve({
+          data: rawify({ getPortfolio: [portfolio] }),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safeAddress}/portfolio`)
+      .expect(200)
+      .expect({
+        results: [],
+        count: 0,
+        next: null,
+        previous: null,
+      });
+  });
+
   it('should fail on API errors', async () => {
     const [chainId] = faker.helpers.arrayElement(chains);
     const safeAddress = getAddress(faker.finance.ethereumAddress());

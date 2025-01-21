@@ -19,6 +19,10 @@ describe('PortfolioMapper', () => {
     [keyof typeof PortfolioMapper.ChainKeys, string]
   >;
 
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
   it('should throw for unknown chains', () => {
     const chainId = '0';
     const portfolio = portfolioBuilder().build();

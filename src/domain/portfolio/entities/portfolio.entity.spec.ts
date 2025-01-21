@@ -349,54 +349,20 @@ describe('Portfolio', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should not allow an unknown position type', () => {
-      const type = faker.word.verb() as (typeof ProtocolPositionType)[number];
-      const protocolPositions = protocolPositionsBuilder()
+    it('should set unknown position types as UNKNOWN', () => {
+      const type = faker.word.noun() as (typeof ProtocolPositionType)[number];
+      const allProtocolPositions = protocolPositionsBuilder()
         .with(type, protocolPositionBuilder().build())
         .build();
+      const { [type]: unknownProtocolPosition, ...protocolPositions } =
+        allProtocolPositions;
 
-      const result = ProtocolPositionsSchema.safeParse(protocolPositions);
+      const result = ProtocolPositionsSchema.safeParse(allProtocolPositions);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'invalid_enum_value',
-          message: `Invalid enum value. Expected 'DEPOSIT' | 'FARMING' | 'GOVERNANCE' | 'INSURANCEBUYER' | 'INSURANCESELLER' | 'INVESTMENT' | 'LENDING' | 'LEVERAGE' | 'LEVERAGED FARMING' | 'LIQUIDITYPOOL' | 'LOCKED' | 'MARGIN' | 'MARGINPS' | 'NFTBORROWER' | 'NFTFRACTION' | 'NFTLENDER' | 'NFTLENDING' | 'NFTLIQUIDITYPOOL' | 'NFTSTAKED' | 'OPTIONSBUYER' | 'OPTIONSSELLER' | 'PERPETUALS' | 'REWARDS' | 'SPOT' | 'STAKED' | 'VAULT' | 'VAULTPS' | 'VESTING' | 'WALLET' | 'YIELD', received '${type}'`,
-          options: [
-            'DEPOSIT',
-            'FARMING',
-            'GOVERNANCE',
-            'INSURANCEBUYER',
-            'INSURANCESELLER',
-            'INVESTMENT',
-            'LENDING',
-            'LEVERAGE',
-            'LEVERAGED FARMING',
-            'LIQUIDITYPOOL',
-            'LOCKED',
-            'MARGIN',
-            'MARGINPS',
-            'NFTBORROWER',
-            'NFTFRACTION',
-            'NFTLENDER',
-            'NFTLENDING',
-            'NFTLIQUIDITYPOOL',
-            'NFTSTAKED',
-            'OPTIONSBUYER',
-            'OPTIONSSELLER',
-            'PERPETUALS',
-            'REWARDS',
-            'SPOT',
-            'STAKED',
-            'VAULT',
-            'VAULTPS',
-            'VESTING',
-            'WALLET',
-            'YIELD',
-          ],
-          path: [type],
-          received: type,
-        },
-      ]);
+      expect(result.success && result.data).toEqual({
+        ...protocolPositions,
+        UNKNOWN: unknownProtocolPosition,
+      });
     });
 
     it('should not validate an invalid ProtocolPosition', () => {
