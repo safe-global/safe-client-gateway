@@ -61,7 +61,7 @@ export const DEFAULT_CONFIGURATION: Array<(app: INestApplication) => void> = [
 
 // Not exported outside {@link NestFactoryStatic} as of v11.0.3
 // @see https://github.com/nestjs/nest/blob/bab9ed65e8d33d3304204e5c1ed0c74e2b5a90b5/packages/core/nest-factory.ts#L33
-type IEntryNestModule = Parameters<NestFactoryStatic['create']>[0];
+export type IEntryNestModule = Parameters<NestFactoryStatic['create']>[0];
 
 /**
  * The main goal of {@link AppProvider} is to provide
