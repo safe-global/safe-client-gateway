@@ -50,7 +50,6 @@ export const ProtocolPositionSchema = z.object({
 
 export type ProtocolPosition = z.infer<typeof ProtocolPositionSchema>;
 
-// TODO: Gracefully handle unknown positions
 export const ProtocolPositionType = [
   'DEPOSIT',
   'FARMING',
