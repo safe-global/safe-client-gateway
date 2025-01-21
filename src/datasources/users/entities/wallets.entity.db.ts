@@ -21,7 +21,7 @@ export const WalletSchema = RowSchema.extend({
 @Entity('wallets')
 @Unique(['address'])
 export class Wallet implements z.infer<typeof WalletSchema> {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_wallet_id' })
   id!: number;
 
   @ManyToOne(() => User, (user) => user.id, {
