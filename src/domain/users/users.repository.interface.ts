@@ -1,5 +1,11 @@
+import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import type { User, UserStatus } from '@/domain/users/entities/user.entity';
+
 export const IUsersRepository = Symbol('IUsersRepository');
 
-// TODO: remove lint exception after class is implemented
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface IUsersRepository {}
+export interface IUsersRepository {
+  createUserWithWallet(args: {
+    status: UserStatus;
+    authPayload: AuthPayload;
+  }): Promise<User>;
+}
