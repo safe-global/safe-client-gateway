@@ -10,10 +10,11 @@ import {
 import { z } from 'zod';
 import { getAddress } from 'viem';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { User } from '@/datasources/users/entities/users.entity.db';
+import { User, UserSchema } from '@/datasources/users/entities/users.entity.db';
 
 export const WalletSchema = RowSchema.extend({
   address: AddressSchema,
+  user: UserSchema,
 });
 
 @Entity('wallets')
