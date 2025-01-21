@@ -44,9 +44,9 @@ describe('PortfolioMapper', () => {
     const assetByProtocol = assetByProtocolBuilder()
       .with('chains', assetByProtocolChains)
       .build();
-    const assetByProtocols = assetByProtocolsBuilder()
-      .with(protocol, assetByProtocol)
-      .build();
+    const assetByProtocols = {
+      [protocol]: assetByProtocol,
+    };
     const portfolio = portfolioBuilder()
       .with('assetByProtocols', assetByProtocols)
       .build();
@@ -262,10 +262,10 @@ describe('PortfolioMapper', () => {
     const complexAssetByProtocol = assetByProtocolBuilder()
       .with('chains', complexAssetByProtocolChains)
       .build();
-    const assetByProtocols = assetByProtocolsBuilder()
-      .with(regularProtocol, regularAssetByProtocol)
-      .with(complexProtocol, complexAssetByProtocol)
-      .build();
+    const assetByProtocols = {
+      [regularProtocol]: regularAssetByProtocol,
+      [complexProtocol]: complexAssetByProtocol,
+    };
     const portfolio = portfolioBuilder()
       .with('assetByProtocols', assetByProtocols)
       .build();
@@ -448,9 +448,9 @@ describe('PortfolioMapper', () => {
     const assetByProtocol = assetByProtocolBuilder()
       .with('chains', assetByProtocolChains)
       .build();
-    const assetByProtocols = assetByProtocolsBuilder()
-      .with(protocol, assetByProtocol)
-      .build();
+    const assetByProtocols = {
+      [protocol]: assetByProtocol,
+    };
     const portfolio = portfolioBuilder()
       .with('assetByProtocols', assetByProtocols)
       .build();
@@ -488,9 +488,7 @@ describe('PortfolioMapper', () => {
     const assetByProtocol = assetByProtocolBuilder()
       .with('chains', assetByProtocolChains)
       .build();
-    const assetByProtocols = assetByProtocolsBuilder()
-      .with(protocol, assetByProtocol)
-      .build();
+    const assetByProtocols = { [protocol]: assetByProtocol };
     const portfolio = portfolioBuilder()
       .with('assetByProtocols', assetByProtocols)
       .build();

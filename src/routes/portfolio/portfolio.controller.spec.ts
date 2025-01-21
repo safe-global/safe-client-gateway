@@ -23,7 +23,6 @@ import { NetworkService } from '@/datasources/network/network.service.interface'
 import {
   assetByProtocolBuilder,
   assetByProtocolChainsBuilder,
-  assetByProtocolsBuilder,
   nestedProtocolPositionBuilder,
   portfolioAssetBuilder,
   portfolioBuilder,
@@ -225,9 +224,9 @@ describe('PortfolioController', () => {
     const assetByProtocol = assetByProtocolBuilder()
       .with('chains', assetByProtocolChains)
       .build();
-    const assetByProtocols = assetByProtocolsBuilder()
-      .with(protocol, assetByProtocol)
-      .build();
+    const assetByProtocols = {
+      [protocol]: assetByProtocol,
+    };
     const portfolio = portfolioBuilder()
       .with('assetByProtocols', assetByProtocols)
       .build();
