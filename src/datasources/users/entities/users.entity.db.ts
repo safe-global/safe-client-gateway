@@ -12,7 +12,6 @@ export class User implements DomainUser {
   @Index('idx_user_status')
   @Column({
     type: 'integer',
-    enum: UserStatus,
   })
   status!: UserStatus;
 

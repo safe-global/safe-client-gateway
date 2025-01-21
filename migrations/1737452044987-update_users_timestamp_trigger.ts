@@ -1,6 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateUsersTimestampTrigger1737366563505
+export class UpdateUsersTimestampTrigger1737452044987
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
