@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { json } from 'express';
 import cookieParser from 'cookie-parser';
+import type { NestFactoryStatic } from '@nestjs/core/nest-factory';
 
 function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -58,6 +59,10 @@ export const DEFAULT_CONFIGURATION: Array<(app: INestApplication) => void> = [
   configureCookies,
 ];
 
+// Not exported outside {@link NestFactoryStatic} as of v11.0.3
+// @see https://github.com/nestjs/nest/blob/bab9ed65e8d33d3304204e5c1ed0c74e2b5a90b5/packages/core/nest-factory.ts#L33
+type IEntryNestModule = Parameters<NestFactoryStatic['create']>[0];
+
 /**
  * The main goal of {@link AppProvider} is to provide
  * a {@link INestApplication}.
@@ -68,7 +73,7 @@ export const DEFAULT_CONFIGURATION: Array<(app: INestApplication) => void> = [
  * Each provider should have a {@link configuration} which specifies
  * the steps taken to configure the application
  */
-export abstract class AppProvider<T> {
+export abstract class AppProvider<T extends IEntryNestModule> {
   protected abstract readonly configuration: Array<
     (app: INestApplication) => void
   >;
@@ -88,7 +93,9 @@ export abstract class AppProvider<T> {
  * This provider should be used to retrieve the actual implementation of the
  * service
  */
-export class DefaultAppProvider<T> extends AppProvider<T> {
+export class DefaultAppProvider<
+  T extends IEntryNestModule,
+> extends AppProvider<T> {
   protected readonly configuration: Array<(app: INestApplication) => void> =
     DEFAULT_CONFIGURATION;
 

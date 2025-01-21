@@ -129,7 +129,7 @@ export class AppModule implements NestModule {
           // Excludes the paths under '/' (base url) from being served as static content
           // If we do not exclude these paths, the service will try to find the file and
           // return 500 for files that do not exist instead of a 404
-          exclude: ['/(.*)'],
+          exclude: ['{*any}'],
         }),
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
@@ -181,6 +181,6 @@ export class AppModule implements NestModule {
       // The ClsMiddleware needs to be applied before the LoggerMiddleware
       // in order to generate the request ids that will be logged afterward
       .apply(ClsMiddleware, NotFoundLoggerMiddleware)
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
+      .forRoutes({ path: '{*any}', method: RequestMethod.ALL });
   }
 }
