@@ -6,4 +6,5 @@ export const mockEntityManager = {
   query: jest.fn(),
   upsert: jest.fn(),
   createQueryBuilder: jest.fn().mockImplementation(() => mockQueryBuilder),
+  getRepository: jest.fn(),
 } as jest.MockedObjectDeep<EntityManager>;

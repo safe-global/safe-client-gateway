@@ -8,6 +8,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
+import { EntityManager } from 'typeorm';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -18,25 +19,25 @@ export class UsersRepository implements IUsersRepository {
   createUserWithWallet(args: {
     status: UserStatus;
     authPayload: AuthPayload;
-  }): Promise<DomainUser> {
-    return this.postgresDatabaseService.transaction(async (entityManager) => {
-      const userRepository = entityManager.getRepository(User);
-      const walletRepository = entityManager.getRepository(Wallet);
+  }): Promise<Pick<DomainUser, 'id'>> {
+    return this.postgresDatabaseService.transaction(
+      async (entityManager: EntityManager) => {
+        const userRepository = entityManager.getRepository(User);
+        const walletRepository = entityManager.getRepository(Wallet);
 
-      const user = userRepository.create({
-        status: args.status,
-      });
+        const user = userRepository.create({
+          status: args.status,
+        });
 
-      const createdUser = await userRepository.save(user);
+        const userInsertResult = await userRepository.insert(user);
 
-      const wallet = walletRepository.create({
-        user: createdUser,
-        address: args.authPayload.signer_address,
-      });
+        await walletRepository.insert({
+          user: user,
+          address: args.authPayload.signer_address,
+        });
 
-      await walletRepository.save(wallet);
-
-      return createdUser;
-    });
+        return { id: userInsertResult.identifiers[0].id };
+      },
+    );
   }
 }

@@ -7,5 +7,5 @@ export interface IUsersRepository {
   createUserWithWallet(args: {
     status: UserStatus;
     authPayload: AuthPayload;
-  }): Promise<User>;
+  }): Promise<Pick<User, 'id'>>;
 }
