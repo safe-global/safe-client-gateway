@@ -86,7 +86,7 @@ describe('PostgresDatabaseService', () => {
   beforeEach(() => {});
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('migrate()', () => {
@@ -130,7 +130,20 @@ describe('PostgresDatabaseService', () => {
       expect(mockLoggingService.info).toHaveBeenCalledTimes(3);
     });
 
-    it('Should not truncate locks if an error occurs', async () => {
+    it('Should truncate locks if a migration error occurs', async () => {
+      connection.query.mockResolvedValue(jest.fn());
+      connection.runMigrations.mockRejectedValue(() => {
+        throw new Error('Migration Error');
+      });
+
+      await expect(databaseMigratorService.migrate()).rejects.toThrow(
+        'Migration Error',
+      );
+
+      expect(connection.query).toHaveBeenNthCalledWith(4, truncateLockQuery);
+    });
+
+    it('Should not truncate locks if retries are exhausted', async () => {
       connection.query.mockResolvedValue([{ id: 1, status: 1 }]);
 
       await expect(databaseMigratorService.migrate()).rejects.toThrow(
