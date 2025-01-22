@@ -58,6 +58,7 @@ import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
+import { UsersModule } from '@/routes/users/users.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -68,6 +69,7 @@ export class AppModule implements NestModule {
     const {
       auth: isAuthFeatureEnabled,
       accounts: isAccountsFeatureEnabled,
+      users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       delegatesV2: isDelegatesV2Enabled,
       pushNotifications: isPushNotificationsEnabled,
@@ -108,6 +110,7 @@ export class AppModule implements NestModule {
         SafesModule,
         TargetedMessagingModule,
         TransactionsModule,
+        ...(isUsersFeatureEnabled ? [UsersModule] : []),
         // common
         CacheModule,
         // Module for storing and reading from the async local storage

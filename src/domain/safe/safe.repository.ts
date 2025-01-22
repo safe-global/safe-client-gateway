@@ -423,7 +423,9 @@ export class SafeRepository implements ISafeRepository {
     return SafeListSchema.parse(safeList);
   }
 
-  async getAllSafesByOwner(args: {
+  // TODO: Remove with /owners/:ownerAddress/safes
+  // @deprecated
+  async deprecated__getAllSafesByOwner(args: {
     ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }> {
     const chains = await this.chainsRepository.getAllChains();
@@ -447,6 +449,42 @@ export class SafeRepository implements ISafeRepository {
         [chainId]: safeList.safes,
       };
     }, {});
+  }
+
+  async getAllSafesByOwner(args: {
+    ownerAddress: `0x${string}`;
+  }): Promise<{ [chainId: string]: Array<string> | null }> {
+    const chains = await this.chainsRepository.getAllChains();
+    const allSafeLists = await Promise.allSettled(
+      chains.map(async ({ chainId }) => {
+        const safeList = await this.getSafesByOwner({
+          chainId,
+          ownerAddress: args.ownerAddress,
+        });
+
+        return {
+          chainId,
+          safeList,
+        };
+      }),
+    );
+
+    const result: { [chainId: string]: Array<string> | null } = {};
+
+    for (const [index, allSafeList] of allSafeLists.entries()) {
+      const chainId = chains[index].chainId;
+
+      if (allSafeList.status === 'fulfilled') {
+        result[chainId] = allSafeList.value.safeList.safes;
+      } else {
+        result[chainId] = null;
+        this.loggingService.warn(
+          `Failed to fetch Safe owners. chainId=${chainId}`,
+        );
+      }
+    }
+
+    return result;
   }
 
   async getLastTransactionSortedByNonce(args: {
