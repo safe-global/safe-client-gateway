@@ -11,7 +11,7 @@ import { RequestScopedLoggingService } from '@/logging/logging.service';
  * @param transports - the logger transports to be used in the winston instance
  * @param configurationService - the configuration service to retrieve service-level settings
  */
-function winstonFactory(
+export function winstonFactory(
   transports: Array<Transport> | Transport,
   configurationService: IConfigurationService,
 ): winston.Logger {
@@ -27,7 +27,7 @@ const LoggerTransports = Symbol('LoggerTransports');
  * Factory which provides a collection of transports to be used by the
  * logger instance
  */
-function winstonTransportsFactory(
+export function winstonTransportsFactory(
   configurationService: IConfigurationService,
 ): Array<Transport> | Transport {
   const prettyColorize =
@@ -36,7 +36,7 @@ function winstonTransportsFactory(
     level: configurationService.getOrThrow<string>('log.level'),
     format: prettyColorize
       ? winston.format.prettyPrint({ colorize: true })
-      : winston.format.json(),
+      : winston.format.combine(winston.format.errors(), winston.format.json()),
   });
 }
 
