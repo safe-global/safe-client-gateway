@@ -11,9 +11,13 @@ const mockConfigurationService = jest.mocked({
 } as jest.MockedObjectDeep<IConfigurationService>);
 
 describe('logger factory', () => {
+  let consoleSpy: jest.SpyInstance;
+  let logger: winston.Logger;
+
   beforeEach(() => {
     jest.resetAllMocks();
 
+    consoleSpy = jest.spyOn(winston.transports.Console.prototype, 'log');
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       switch (key) {
         case 'log.silent': {
@@ -30,13 +34,11 @@ describe('logger factory', () => {
         }
       }
     });
+    const transports = winstonTransportsFactory(mockConfigurationService);
+    logger = winstonFactory(transports, mockConfigurationService);
   });
 
-  const transports = winstonTransportsFactory(mockConfigurationService);
-  const logger = winstonFactory(transports, mockConfigurationService);
-
   it('logs string message', () => {
-    jest.spyOn(winston.transports.Console.prototype, 'log');
     const level = faker.helpers.arrayElement([
       'info',
       'warn',
@@ -47,8 +49,8 @@ describe('logger factory', () => {
 
     logger.log(level, { message });
 
-    expect(winston.transports.Console.prototype.log).toHaveBeenCalledTimes(1);
-    expect(winston.transports.Console.prototype.log).toHaveBeenNthCalledWith(
+    expect(consoleSpy).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenNthCalledWith(
       1,
       {
         level,
@@ -64,7 +66,6 @@ describe('logger factory', () => {
   });
 
   it('logs Error message', () => {
-    jest.spyOn(winston.transports.Console.prototype, 'log');
     const level = faker.helpers.arrayElement([
       'info',
       'warn',
@@ -75,8 +76,8 @@ describe('logger factory', () => {
 
     logger.log(level, { message: new Error(message) });
 
-    expect(winston.transports.Console.prototype.log).toHaveBeenCalledTimes(1);
-    expect(winston.transports.Console.prototype.log).toHaveBeenNthCalledWith(
+    expect(consoleSpy).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenNthCalledWith(
       1,
       {
         level,
