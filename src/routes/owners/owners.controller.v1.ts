@@ -10,7 +10,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
   path: '',
   version: '1',
 })
-export class OwnersController {
+export class OwnersControllerV1 {
   constructor(private readonly ownersService: OwnersService) {}
 
   @ApiOkResponse({ type: SafeList })
@@ -29,6 +29,6 @@ export class OwnersController {
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
     ownerAddress: `0x${string}`,
   ): Promise<{ [chainId: string]: Array<string> }> {
-    return this.ownersService.getAllSafesByOwner({ ownerAddress });
+    return this.ownersService.deprecated__getAllSafesByOwner({ ownerAddress });
   }
 }

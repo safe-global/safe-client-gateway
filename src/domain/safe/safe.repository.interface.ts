@@ -175,9 +175,13 @@ export interface ISafeRepository {
     ownerAddress: `0x${string}`;
   }): Promise<SafeList>;
 
-  getAllSafesByOwner(args: {
+  deprecated__getAllSafesByOwner(args: {
     ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }>;
+
+  getAllSafesByOwner(args: {
+    ownerAddress: `0x${string}`;
+  }): Promise<{ [chainId: string]: Array<string> | null }>;
 
   getLastTransactionSortedByNonce(args: {
     chainId: string;
