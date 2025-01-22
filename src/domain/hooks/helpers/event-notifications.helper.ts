@@ -71,17 +71,6 @@ export class EventNotificationsHelper {
     if (!this.isEventToNotify(event)) {
       return;
     }
-    if (event.type === TransactionEventType.PENDING_MULTISIG_TRANSACTION) {
-      console.log('Event is NEW_CONFIRMATION: ', event.safeTxHash);
-      const transaction = await this.safeRepository.getMultiSigTransaction({
-        chainId: event.chainId,
-        safeTransactionHash: event.safeTxHash,
-      });
-      console.log(
-        'TX ' + event.safeTxHash + ' From the TX service: ',
-        transaction,
-      );
-    }
 
     const subscriptions = await this.getRelevantSubscribers(event);
 
@@ -246,7 +235,7 @@ export class EventNotificationsHelper {
       delegate: args.subscriber,
     });
 
-    return !!delegates?.results.some((delegate) => {
+    return delegates?.results.some((delegate) => {
       return safe.owners.includes(delegate.delegator);
     });
   }
@@ -410,8 +399,19 @@ export class EventNotificationsHelper {
     });
 
     // Subscriber has already signed - do not notify
-    const hasSubscriberSigned = message.confirmations.some((confirmation) => {
-      return confirmation.owner === subscriber;
+    const delegates = await this.delegatesRepository.getDelegates({
+      chainId: event.chainId,
+      delegate: subscriber,
+    });
+    const delegators = delegates?.results.map(
+      (delegate) => delegate?.delegator,
+    );
+
+    const hasSubscriberSigned = message.confirmations?.some((confirmation) => {
+      return (
+        confirmation.owner === subscriber ||
+        delegators.includes(confirmation.owner)
+      );
     });
     if (hasSubscriberSigned) {
       return null;

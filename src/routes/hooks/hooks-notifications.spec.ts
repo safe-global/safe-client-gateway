@@ -73,7 +73,7 @@ function getSubscriptionCallback(
 }
 
 // TODO: Migrate to E2E tests as TransactionEventType events are already being received via queue.
-describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
+describe('Hook Events for Notifications (Unit) pt. 1', () => {
   let app: INestApplication<Server>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
@@ -167,7 +167,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       }),
       {
         count: { min: 1, max: 5 },
@@ -218,7 +218,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
             null,
           ]),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -301,7 +301,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
             null,
           ]),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -373,7 +373,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -390,6 +390,12 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
+      const delegates = subscribers.map((subscriber) => {
+        return delegateBuilder()
+          .with('delegate', subscriber.subscriber)
+          .with('safe', event.address)
+          .build();
+      });
 
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
@@ -411,6 +417,11 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
           return Promise.resolve({
             status: 200,
             data: rawify(multisigTransaction),
+          });
+        } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
+          return Promise.resolve({
+            status: 200,
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -443,7 +454,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -496,7 +507,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -578,7 +589,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       const subscribers = owners.map((owner) => ({
         subscriber: owner,
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       }));
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -587,6 +598,20 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         .arrayElements(owners, { min: 1, max: owners.length - 1 })
         .map((owner) => {
           return confirmationBuilder().with('owner', owner).build();
+        });
+
+      const delegates = owners
+        .filter((owner) => {
+          return confirmations.every(
+            (confirmation) => confirmation.owner !== owner,
+          );
+        })
+        .map((owner) => {
+          return delegateBuilder()
+            .with('delegate', getAddress(faker.finance.ethereumAddress()))
+            .with('delegator', owner)
+            .with('safe', event.address)
+            .build();
         });
       const multisigTransaction = multisigTransactionBuilder()
         .with('safe', event.address)
@@ -613,6 +638,11 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
           return Promise.resolve({
             status: 200,
             data: rawify(multisigTransaction),
+          });
+        } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
+          return Promise.resolve({
+            status: 200,
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -660,7 +690,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -677,6 +707,13 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
+      const delegates = safe.owners.map((owner) => {
+        return delegateBuilder()
+          .with('delegate', getAddress(faker.finance.ethereumAddress()))
+          .with('delegator', owner)
+          .with('safe', event.address)
+          .build();
+      });
 
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
@@ -698,6 +735,11 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
           return Promise.resolve({
             status: 200,
             data: rawify(message),
+          });
+        } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
+          return Promise.resolve({
+            status: 200,
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else {
           return Promise.reject(`No matching rule for url: ${url}`);
@@ -732,7 +774,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -785,7 +827,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -868,7 +910,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       const subscribers = owners.map((owner) => ({
         subscriber: owner,
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       }));
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -883,6 +925,20 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         .with('confirmations', confirmations)
         .build();
 
+      const delegates = owners
+        .filter((owner) => {
+          return confirmations.every(
+            (confirmation) => confirmation.owner !== owner,
+          );
+        })
+        .map((owner) => {
+          return delegateBuilder()
+            .with('delegate', getAddress(faker.finance.ethereumAddress()))
+            .with('delegator', owner)
+            .with('safe', event.address)
+            .build();
+        });
+
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
           return Promise.resolve({
@@ -895,6 +951,11 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
           return Promise.resolve({
             status: 200,
             data: rawify(safe),
+          });
+        } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
+          return Promise.resolve({
+            status: 200,
+            data: rawify(pageBuilder().with('results', delegates).build()),
           });
         } else if (
           url ===
@@ -958,15 +1019,16 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
         },
       );
-      const delegates = subscribers.map((subscriber) => {
+      const delegates = safe.owners.map((owner) => {
         return delegateBuilder()
-          .with('delegate', subscriber.subscriber)
+          .with('delegate', getAddress(faker.finance.ethereumAddress()))
+          .with('delegator', owner)
           .with('safe', event.address)
           .build();
       });
@@ -1035,7 +1097,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -1095,7 +1157,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -1180,21 +1242,28 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       const subscribers = owners.map((owner) => ({
         subscriber: owner,
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       }));
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
-      const delegates = subscribers.map((subscriber) => {
-        return delegateBuilder()
-          .with('delegate', subscriber.subscriber)
-          .with('safe', event.address)
-          .build();
-      });
       const confirmations = faker.helpers
         .arrayElements(owners, { min: 1, max: owners.length - 1 })
         .map((owner) => {
           return confirmationBuilder().with('owner', owner).build();
+        });
+      const delegates = owners
+        .filter((owner) => {
+          return confirmations.every(
+            (confirmation) => confirmation.owner !== owner,
+          );
+        })
+        .map((owner) => {
+          return delegateBuilder()
+            .with('delegate', getAddress(faker.finance.ethereumAddress()))
+            .with('delegator', owner)
+            .with('safe', event.address)
+            .build();
         });
       const multisigTransaction = multisigTransactionBuilder()
         .with('safe', event.address)
@@ -1277,16 +1346,17 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
         },
       );
-      const delegates = subscribers.map((subscriber) => {
+      const delegates = safe.owners.map((owner) => {
         return delegateBuilder()
-          .with('delegate', subscriber.subscriber)
-          .with('safe', event.address)
+          .with('delegate', getAddress(faker.finance.ethereumAddress()))
+          .with('delegator', owner)
+          .with('safe', safe.address)
           .build();
       });
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
@@ -1356,7 +1426,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -1416,7 +1486,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         () => ({
           subscriber: getAddress(faker.finance.ethereumAddress()),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -1502,7 +1572,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       const subscribers = owners.map((owner) => ({
         subscriber: owner,
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       }));
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
@@ -1604,7 +1674,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
             null,
           ]),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -1672,7 +1742,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
             null,
           ]),
           deviceUuid: faker.string.uuid() as UUID,
-          cloudMessagingToken: faker.string.alphanumeric(),
+          cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
         }),
         {
           count: { min: 1, max: 5 },
@@ -1727,56 +1797,64 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
   it('should enqueue CONFIRMATION_REQUEST event notifications accordingly for a mixture of subscribers: owners, delegates and non-owner/delegates', async () => {
     const event = pendingTransactionEventBuilder().build();
     const chain = chainBuilder().with('chainId', event.chainId).build();
+    const safeOwners = [
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+    ];
     const ownerSubscriptions = [
       {
-        subscriber: getAddress(faker.finance.ethereumAddress()),
+        subscriber: safeOwners[0],
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
       {
-        subscriber: getAddress(faker.finance.ethereumAddress()),
+        subscriber: safeOwners[1],
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
     ];
     const delegateSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
     ];
+    const delegateDelegators = {
+      [delegateSubscriptions[0].subscriber]: safeOwners[2],
+      [delegateSubscriptions[1].subscriber]: safeOwners[3],
+    };
     const nonOwnerDelegateSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
       {
         subscriber: null,
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
     ];
     const safe = safeBuilder()
       .with('address', event.address)
-      .with('threshold', 2)
+      .with('threshold', 3)
       .with(
         'owners',
-        ownerSubscriptions.map((subscription) => subscription.subscriber),
+        safeOwners.map((owners) => owners),
       )
       .build();
     const multisigTransaction = multisigTransactionBuilder()
       .with('safe', event.address)
       .with('confirmations', [
-        confirmationBuilder()
-          .with('owner', ownerSubscriptions[0].subscriber)
-          .build(),
+        confirmationBuilder().with('owner', safeOwners[0]).build(),
       ])
       .build();
     notificationsRepository.getSubscribersBySafe.mockResolvedValue([
@@ -1785,7 +1863,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       ...nonOwnerDelegateSubscriptions,
     ]);
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(({ url, networkRequest }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
         return Promise.resolve({
           data: rawify(chain),
@@ -1799,21 +1877,21 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
           data: rawify(safe),
         });
       } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        const payloadDelegate = networkRequest?.params
+          ?.delegate as `0x${string}`;
+        const delegator = delegateDelegators[payloadDelegate];
+        const results = delegator
+          ? [
+              delegateBuilder()
+                .with('delegate', payloadDelegate)
+                .with('delegator', delegator)
+                .with('safe', safe.address)
+                .build(),
+            ]
+          : [];
         return Promise.resolve({
           status: 200,
-          data: rawify(
-            pageBuilder()
-              .with(
-                'results',
-                delegateSubscriptions.map((subscription) => {
-                  return delegateBuilder()
-                    .with('delegate', subscription.subscriber)
-                    .with('safe', safe.address)
-                    .build();
-                }),
-              )
-              .build(),
-          ),
+          data: rawify(pageBuilder().with('results', results).build()),
         });
       } else if (
         url ===
@@ -1863,56 +1941,64 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
   it('should enqueue MESSAGE_CONFIRMATION_REQUEST event notifications accordingly for a mixture of subscribers: owners, delegates and non-owner/delegates', async () => {
     const event = messageCreatedEventBuilder().build();
     const chain = chainBuilder().with('chainId', event.chainId).build();
+    const safeOwners = [
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+    ];
     const ownerSubscriptions = [
       {
-        subscriber: getAddress(faker.finance.ethereumAddress()),
+        subscriber: safeOwners[0],
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
       {
-        subscriber: getAddress(faker.finance.ethereumAddress()),
+        subscriber: safeOwners[1],
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
     ];
     const delegateSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
     ];
+    const delegateDelegators = {
+      [delegateSubscriptions[0].subscriber]: safeOwners[2],
+      [delegateSubscriptions[1].subscriber]: safeOwners[3],
+    };
     const nonOwnerDelegateSubscriptions = [
       {
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
       {
         subscriber: null,
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       },
     ];
     const safe = safeBuilder()
       .with('address', event.address)
-      .with('threshold', 2)
+      .with('threshold', 3)
       .with(
         'owners',
-        ownerSubscriptions.map((subscription) => subscription.subscriber),
+        safeOwners.map((owner) => owner),
       )
       .build();
     const message = messageBuilder()
       .with('messageHash', event.messageHash as `0x${string}`)
       .with('confirmations', [
-        messageConfirmationBuilder()
-          .with('owner', ownerSubscriptions[0].subscriber)
-          .build(),
+        messageConfirmationBuilder().with('owner', safeOwners[0]).build(),
       ])
       .build();
     notificationsRepository.getSubscribersBySafe.mockResolvedValue([
@@ -1921,7 +2007,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       ...nonOwnerDelegateSubscriptions,
     ]);
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(({ url, networkRequest }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
         return Promise.resolve({
           data: rawify(chain),
@@ -1935,21 +2021,21 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
           data: rawify(safe),
         });
       } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        const payloadDelegate = networkRequest?.params
+          ?.delegate as `0x${string}`;
+        const delegator = delegateDelegators[payloadDelegate];
+        const results = delegator
+          ? [
+              delegateBuilder()
+                .with('delegate', payloadDelegate)
+                .with('delegator', delegator)
+                .with('safe', safe.address)
+                .build(),
+            ]
+          : [];
         return Promise.resolve({
           status: 200,
-          data: rawify(
-            pageBuilder()
-              .with(
-                'results',
-                delegateSubscriptions.map((subscription) => {
-                  return delegateBuilder()
-                    .with('delegate', subscription.subscriber)
-                    .with('safe', safe.address)
-                    .build();
-                }),
-              )
-              .build(),
-          ),
+          data: rawify(pageBuilder().with('results', results).build()),
         });
       } else if (
         url ===
@@ -2052,12 +2138,18 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
       (_, i) => ({
         subscriber: safe.owners[i],
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       }),
       {
         count: safe.owners.length,
       },
     );
+    const delegates = subscribers.map((subscriber) => {
+      return delegateBuilder()
+        .with('delegate', subscriber.subscriber)
+        .with('safe', safe.address)
+        .build();
+    });
     notificationsRepository.getSubscribersBySafe.mockResolvedValue(subscribers);
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -2079,6 +2171,11 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
         return Promise.resolve({
           status: 200,
           data: rawify(multisigTransaction),
+        });
+      } else if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        return Promise.resolve({
+          status: 200,
+          data: rawify(pageBuilder().with('results', delegates).build()),
         });
       } else if (
         url ===
@@ -2113,7 +2210,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 1', () => {
 
 // Due to mocking complexity, we split the tests into two suites
 // Here we do not mock the NotificationsRepository, but the PushNotificationsApi
-describe.skip('Hook Events for Notifications (Unit) pt. 2', () => {
+describe('Hook Events for Notifications (Unit) pt. 2', () => {
   let app: INestApplication<Server>;
   let pushNotificationsApi: jest.MockedObjectDeep<IPushNotificationsApi>;
   let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
@@ -2186,7 +2283,7 @@ describe.skip('Hook Events for Notifications (Unit) pt. 2', () => {
       () => ({
         subscriber: getAddress(faker.finance.ethereumAddress()),
         deviceUuid: faker.string.uuid() as UUID,
-        cloudMessagingToken: faker.string.alphanumeric(),
+        cloudMessagingToken: faker.string.alphanumeric({ length: 20 }),
       }),
       {
         count: { min: 2, max: 5 },
