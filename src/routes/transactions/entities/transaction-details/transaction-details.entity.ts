@@ -9,7 +9,8 @@ import { TransactionData } from '@/routes/transactions/entities/transaction-data
 import { ModuleExecutionDetails } from '@/routes/transactions/entities/transaction-details/module-execution-details.entity';
 import { MultisigExecutionDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
-import { getTxInfoSchema, TransactionInfo } from '../transaction-info.entity';
+import { TransactionInfo } from '../transaction-info.entity';
+import { getTxInfoSchema } from '../../helpers/tx-info-schema';
 
 @ApiExtraModels(
   TransactionInfo,

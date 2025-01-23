@@ -1,6 +1,7 @@
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
-import { getTxInfoSchema, TransactionInfo } from './transaction-info.entity';
+import { TransactionInfo } from './transaction-info.entity';
+import { getTxInfoSchema } from '../helpers/tx-info-schema';
 
 @ApiExtraModels(TransactionInfo)
 export class TransactionPreview {
