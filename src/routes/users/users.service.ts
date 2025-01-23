@@ -24,7 +24,7 @@ export class UsersService {
     return this.mapAccount(domainUser);
   }
 
-  private mapAccount(domainUser: DomainUser): User {
+  private mapAccount(domainUser: Pick<DomainUser, 'id'>): User {
     return new User(domainUser.id.toString());
   }
 }

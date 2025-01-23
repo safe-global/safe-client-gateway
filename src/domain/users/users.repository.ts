@@ -9,6 +9,7 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
+import { DuplicateWalletError } from '@/domain/users/wallets/errors/duplicate-wallet.error';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -24,6 +25,12 @@ export class UsersRepository implements IUsersRepository {
       async (entityManager: EntityManager) => {
         const userRepository = entityManager.getRepository(User);
         const walletRepository = entityManager.getRepository(Wallet);
+
+        const existingWallet = await walletRepository.findOne({
+          where: { address: args.authPayload.signer_address },
+        });
+
+        if (existingWallet) throw new DuplicateWalletError();
 
         const user = userRepository.create({
           status: args.status,

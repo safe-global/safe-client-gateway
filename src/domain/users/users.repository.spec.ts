@@ -8,6 +8,7 @@ import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
 import type { EntityManager } from 'typeorm';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
+import { userBuilder } from '@/datasources/users/entities/__tests__/users.entity.db.builder';
 
 describe('UsersRepository', () => {
   let usersRepository: IUsersRepository;
@@ -35,7 +36,7 @@ describe('UsersRepository', () => {
       const authPayload = new AuthPayload(authPayloadDto);
       const status = UserStatus.ACTIVE;
 
-      const mockUser = { id: 1, status: UserStatus.ACTIVE };
+      const mockUser = userBuilder().build();
       mockUserRepository.create.mockReturnValue(mockUser);
       mockUserRepository.insert.mockResolvedValue({
         identifiers: [{ id: mockUser.id }],
@@ -60,30 +61,5 @@ describe('UsersRepository', () => {
 
       expect(result).toEqual({ id: mockUser.id });
     });
-
-    // it('should rollback transaction if user creation fails', async () => {
-    //   const authPayloadDto = authPayloadDtoBuilder().build();
-    //   const authPayload = new AuthPayload(authPayloadDto);
-    //   const status = UserStatus.ACTIVE;
-
-    //   const mockUser = { id: 1, status: UserStatus.ACTIVE };
-    //   mockUserRepository.create.mockReturnValue(mockUser);
-    //   mockUserRepository.insert.mockRejectedValue(new Error('Database error'));
-
-    //   await expect(
-    //     usersRepository.createUserWithWallet({
-    //       status,
-    //       authPayload,
-    //     }),
-    //   ).rejects.toThrow('Database error');
-
-    //   expect(mockPostgresDatabaseService.transaction).toHaveBeenCalledTimes(1);
-    //   expect(mockUserRepository.create).toHaveBeenCalledWith({
-    //     status: UserStatus.ACTIVE,
-    //   });
-    //   expect(mockUserRepository.insert).toHaveBeenCalledWith(mockUser);
-    //   // Wallet insert should not happen if user insert fails
-    //   expect(mockWalletRepository.insert).not.toHaveBeenCalled();
-    // });
   });
 });
