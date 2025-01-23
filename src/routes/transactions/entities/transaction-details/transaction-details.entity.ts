@@ -8,11 +8,11 @@ import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity
 import { TransactionData } from '@/routes/transactions/entities/transaction-data.entity';
 import { ModuleExecutionDetails } from '@/routes/transactions/entities/transaction-details/module-execution-details.entity';
 import { MultisigExecutionDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
-import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
+import { TransactionInfoDto } from '../transaction-info.dto.entity';
 
 @ApiExtraModels(
-  TransactionInfo,
+  TransactionInfoDto,
   TransactionData,
   MultisigExecutionDetails,
   ModuleExecutionDetails,
@@ -27,8 +27,8 @@ export class TransactionDetails {
   executedAt!: number | null;
   @ApiProperty({ enum: TransactionStatus })
   txStatus!: TransactionStatus;
-  @ApiProperty({ type: TransactionInfo, nullable: true })
-  txInfo!: TransactionInfo;
+  @ApiProperty({ type: TransactionInfoDto, nullable: true })
+  txInfo!: TransactionInfoDto | null;
   @ApiPropertyOptional({ type: TransactionData, nullable: true })
   txData!: TransactionData | null;
   @ApiPropertyOptional({
