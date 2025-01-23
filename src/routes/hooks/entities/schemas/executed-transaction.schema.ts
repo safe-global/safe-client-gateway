@@ -11,6 +11,7 @@ export const ExecutedTransactionEventSchema = z.object({
   safeTxHash: HexSchema,
   txHash: HexSchema,
   failed: z.enum(['true', 'false']),
+  data: HexSchema.nullish().default(null),
 });
 
 export type ExecutedTransactionEvent = z.infer<
