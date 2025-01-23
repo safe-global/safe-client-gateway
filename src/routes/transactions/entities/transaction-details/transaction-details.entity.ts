@@ -9,10 +9,10 @@ import { TransactionData } from '@/routes/transactions/entities/transaction-data
 import { ModuleExecutionDetails } from '@/routes/transactions/entities/transaction-details/module-execution-details.entity';
 import { MultisigExecutionDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
-import { TransactionInfoDto } from '../transaction-info.dto.entity';
+import { getTxInfoSchema, TransactionInfo } from '../transaction-info.entity';
 
 @ApiExtraModels(
-  TransactionInfoDto,
+  TransactionInfo,
   TransactionData,
   MultisigExecutionDetails,
   ModuleExecutionDetails,
@@ -27,8 +27,8 @@ export class TransactionDetails {
   executedAt!: number | null;
   @ApiProperty({ enum: TransactionStatus })
   txStatus!: TransactionStatus;
-  @ApiProperty({ type: TransactionInfoDto, nullable: true })
-  txInfo!: TransactionInfoDto | null;
+  @ApiProperty(getTxInfoSchema())
+  txInfo!: TransactionInfo;
   @ApiPropertyOptional({ type: TransactionData, nullable: true })
   txData!: TransactionData | null;
   @ApiPropertyOptional({

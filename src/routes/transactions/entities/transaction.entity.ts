@@ -9,9 +9,9 @@ import { ModuleExecutionInfo } from '@/routes/transactions/entities/module-execu
 import { MultisigExecutionInfo } from '@/routes/transactions/entities/multisig-execution-info.entity';
 import { SafeAppInfo } from '@/routes/transactions/entities/safe-app-info.entity';
 import { TransactionStatus } from '@/routes/transactions/entities/transaction-status.entity';
-import { TransactionInfoDto } from './transaction-info.dto.entity';
+import { getTxInfoSchema, TransactionInfo } from './transaction-info.entity';
 
-@ApiExtraModels(TransactionInfoDto)
+@ApiExtraModels(TransactionInfo)
 export class Transaction {
   @ApiProperty()
   id: string;
@@ -21,8 +21,8 @@ export class Transaction {
   timestamp: number;
   @ApiProperty({ enum: TransactionStatus })
   txStatus: string;
-  @ApiProperty({ type: TransactionInfoDto, nullable: true })
-  txInfo: TransactionInfoDto;
+  @ApiProperty(getTxInfoSchema())
+  txInfo: TransactionInfo;
   @ApiPropertyOptional({
     oneOf: [
       { $ref: getSchemaPath(MultisigExecutionInfo) },
@@ -38,7 +38,7 @@ export class Transaction {
     id: string,
     timestamp: number,
     txStatus: TransactionStatus,
-    txInfo: TransactionInfoDto,
+    txInfo: TransactionInfo,
     executionInfo: ExecutionInfo | null = null,
     safeAppInfo: SafeAppInfo | null = null,
     txHash: `0x${string}` | null = null,
