@@ -11,5 +11,8 @@ export function pendingTransactionEventBuilder(): IBuilder<PendingTransaction> {
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('chainId', faker.string.numeric())
-    .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`);
+    .with(
+      'safeTxHash',
+      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+    );
 }

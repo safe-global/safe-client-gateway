@@ -8,6 +8,9 @@ export type NotificationContent = {
   body?: string;
 };
 
+/**
+ * @link https://firebase.google.com/docs/cloud-messaging/concept-options
+ */
 export type FireabaseNotificationApn = {
   apns: {
     payload: {

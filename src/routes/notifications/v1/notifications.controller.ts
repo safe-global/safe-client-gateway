@@ -84,7 +84,7 @@ export class NotificationsController {
       // Some clients, such as the mobile app, do not call the delete endpoint to remove an owner key.
       // Instead, they resend the updated list of owners without the key they want to delete.
       // In such cases, we need to clear all the previous owners to ensure the update is applied correctly.
-      await this.notificationServiceV2.deleteDeviceOwners(
+      await this.notificationServiceV2.deleteDeviceAndSubscriptions(
         registerDeviceDto.uuid,
       );
     }
@@ -145,7 +145,7 @@ export class NotificationsController {
     for (const safeV1Registration of safesV1Registrations) {
       const signatureArray = safeV1Registration.signatures.length
         ? safeV1Registration.signatures
-        : [undefined];
+        : [undefined]; // The signature for mobile clients can be empty so we need to pass undefined here
       for (const safeV1Signature of signatureArray) {
         if (safeV1Registration.safes.length) {
           const safeV2: Parameters<
@@ -232,21 +232,13 @@ export class NotificationsController {
     if (args.registerDeviceDto.deviceType === DeviceType.Web) {
       return await recoverMessageAddress({
         message: {
-          raw: keccak256(
-            toBytes(
-              `gnosis-safe${args.registerDeviceDto.timestamp}${args.registerDeviceDto.uuid}${args.registerDeviceDto.cloudMessagingToken}${args.safeAddresses.sort().join('')}`,
-            ),
-          ),
+          raw: this.messageToRecover(args),
         },
         signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
       });
     } else {
       return await recoverAddress({
-        hash: keccak256(
-          toBytes(
-            `gnosis-safe${args.registerDeviceDto.timestamp}${args.registerDeviceDto.uuid}${args.registerDeviceDto.cloudMessagingToken}${args.safeAddresses.sort().join('')}`,
-          ),
-        ),
+        hash: this.messageToRecover(args),
         signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
       });
     }
@@ -344,5 +336,22 @@ export class NotificationsController {
         throw error;
       }
     }
+  }
+
+  private messageToRecover(args: {
+    registerDeviceDto: RegisterDeviceDto;
+    safeV2Dto: Parameters<NotificationsServiceV2['upsertSubscriptions']>[0] & {
+      upsertSubscriptionsDto: {
+        safes: Array<UpsertSubscriptionsSafesDto>;
+        signature: `0x${string}`;
+      };
+    };
+    safeAddresses: Array<`0x${string}`>;
+  }): `0x${string}` {
+    return keccak256(
+      toBytes(
+        `gnosis-safe${args.registerDeviceDto.timestamp}${args.registerDeviceDto.uuid}${args.registerDeviceDto.cloudMessagingToken}${args.safeAddresses.sort().join('')}`,
+      ),
+    );
   }
 }

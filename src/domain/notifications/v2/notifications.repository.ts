@@ -147,7 +147,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     return { id: queryResult.identifiers[0].id, device_uuid: deviceUuid };
   }
 
-  public async deleteDeviceOwners(deviceUuid: UUID): Promise<void> {
+  public async deleteDeviceAndSubscriptions(deviceUuid: UUID): Promise<void> {
     const deviceSubscriptionsRepository =
       await this.postgresDatabaseService.getRepository<NotificationSubscription>(
         NotificationSubscription,

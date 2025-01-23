@@ -27,7 +27,7 @@ export interface INotificationsRepositoryV2 {
     safeAddress: `0x${string}`;
   }): Promise<Array<NotificationType>>;
 
-  deleteDeviceOwners(deviceUUid: UUID): Promise<void>;
+  deleteDeviceAndSubscriptions(deviceUUid: UUID): Promise<void>;
 
   getSubscribersBySafe(args: {
     chainId: string;

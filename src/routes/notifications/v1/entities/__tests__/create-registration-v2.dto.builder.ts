@@ -60,21 +60,13 @@ export const createV2RegisterDtoBuilder = async (
     if (args.deviceType === DeviceType.Web) {
       recoveredAddress = await recoverMessageAddress({
         message: {
-          raw: keccak256(
-            toBytes(
-              `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
-            ),
-          ),
+          raw: messageToRecover(args, safeAddresses),
         },
         signature: safeV2.upsertSubscriptionsDto.signature,
       });
     } else {
       recoveredAddress = await recoverAddress({
-        hash: keccak256(
-          toBytes(
-            `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
-          ),
-        ),
+        hash: messageToRecover(args, safeAddresses),
         signature: safeV2.upsertSubscriptionsDto.signature,
       });
     }
@@ -87,4 +79,15 @@ export const createV2RegisterDtoBuilder = async (
   }
 
   return safeV2Array;
+};
+
+const messageToRecover = (
+  args: RegisterDeviceDto,
+  safeAddresses: Array<`0x${string}`>,
+): `0x${string}` => {
+  return keccak256(
+    toBytes(
+      `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
+    ),
+  );
 };

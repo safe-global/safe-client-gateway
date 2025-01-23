@@ -30,8 +30,8 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
   private static readonly Scope =
     'https://www.googleapis.com/auth/firebase.messaging';
 
-  private static readonly defaultIosNotificationTitle = 'New Activity';
-  private static readonly defaultIosNotificationBody =
+  private static readonly DefaultIosNotificationTitle = 'New Activity';
+  private static readonly DefaultIosNotificationBody =
     'New Activity with your Safe';
 
   private readonly baseUrl: string;
@@ -86,10 +86,10 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
             alert: {
               title:
                 notification?.title ??
-                FirebaseCloudMessagingApiService.defaultIosNotificationTitle,
+                FirebaseCloudMessagingApiService.DefaultIosNotificationTitle,
               body:
                 notification?.body ??
-                FirebaseCloudMessagingApiService.defaultIosNotificationBody,
+                FirebaseCloudMessagingApiService.DefaultIosNotificationBody,
             },
             'mutable-content': 1,
           },
