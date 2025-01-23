@@ -152,14 +152,20 @@ export class DatabaseMigrator {
    * @returns {Promise<void>} An empty promise that resolves when the migration is complete.
    */
   private async runMigration(connection: DataSource): Promise<void> {
-    const migrations = await connection.runMigrations({ transaction: 'all' });
+    try {
+      const migrations = await connection.runMigrations({ transaction: 'all' });
 
-    if (migrations && migrations.length > 0) {
-      this.loggingService.info(
-        `Migrations: Successfully executed ${migrations.length} migrations.`,
-      );
-    } else {
-      this.loggingService.info('Migrations: No migrations to execute.');
+      if (migrations && migrations.length > 0) {
+        this.loggingService.info(
+          `Migrations: Successfully executed ${migrations.length} migrations.`,
+        );
+      } else {
+        this.loggingService.info('Migrations: No migrations to execute.');
+      }
+    } catch (error) {
+      await this.truncateLocks(connection);
+
+      throw error;
     }
   }
 }
