@@ -19,13 +19,19 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 import type { UUID } from 'crypto';
 import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
-import { keccak256, recoverMessageAddress, toBytes } from 'viem';
+import {
+  keccak256,
+  recoverAddress,
+  recoverMessageAddress,
+  toBytes,
+} from 'viem';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
+import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })
@@ -71,6 +77,18 @@ export class NotificationsController {
 
     const v2Requests = [];
 
+    const deleteAllDeviceOwners =
+      registerDeviceDto.deviceType !== DeviceType.Web;
+
+    if (deleteAllDeviceOwners && registerDeviceDto.uuid !== undefined) {
+      // Some clients, such as the mobile app, do not call the delete endpoint to remove an owner key.
+      // Instead, they resend the updated list of owners without the key they want to delete.
+      // In such cases, we need to clear all the previous owners to ensure the update is applied correctly.
+      await this.notificationServiceV2.deleteDeviceAndSubscriptions(
+        registerDeviceDto.uuid,
+      );
+    }
+
     for (const compatibleV2Request of compatibleV2Requests) {
       v2Requests.push(
         await this.notificationServiceV2.upsertSubscriptions(
@@ -91,7 +109,6 @@ export class NotificationsController {
           }),
         );
       }
-
       await Promise.allSettled(unregistrationRequests).then(
         (results: Array<PromiseSettledResult<unknown>>) => {
           for (const result of results) {
@@ -126,51 +143,54 @@ export class NotificationsController {
     const safesV1Registrations = args.safeRegistrations;
 
     for (const safeV1Registration of safesV1Registrations) {
-      if (safeV1Registration.safes.length) {
-        const safeV2: Parameters<
-          NotificationsServiceV2['upsertSubscriptions']
-        >[0] & {
-          upsertSubscriptionsDto: {
-            safes: Array<UpsertSubscriptionsSafesDto>;
-            signature: `0x${string}`;
+      const signatureArray = safeV1Registration.signatures.length
+        ? safeV1Registration.signatures
+        : [undefined]; // The signature for mobile clients can be empty so we need to pass undefined here
+      for (const safeV1Signature of signatureArray) {
+        if (safeV1Registration.safes.length) {
+          const safeV2: Parameters<
+            NotificationsServiceV2['upsertSubscriptions']
+          >[0] & {
+            upsertSubscriptionsDto: {
+              safes: Array<UpsertSubscriptionsSafesDto>;
+              signature: `0x${string}`;
+            };
+          } = {
+            upsertSubscriptionsDto: {
+              cloudMessagingToken: args.cloudMessagingToken,
+              deviceType: args.deviceType,
+              deviceUuid: (args.uuid as UUID) || undefined,
+              safes: [],
+              signature: (safeV1Signature as `0x${string}`) ?? undefined,
+            },
+            authPayload: new AuthPayload(),
           };
-        } = {
-          upsertSubscriptionsDto: {
-            cloudMessagingToken: args.cloudMessagingToken,
-            deviceType: args.deviceType,
-            deviceUuid: (args.uuid as UUID) || undefined,
-            safes: [],
-            signature: safeV1Registration.signatures[0] as `0x${string}`,
-          },
-          authPayload: new AuthPayload(),
-        };
-        const uniqueSafeAddresses = new Set(safeV1Registration.safes);
-        for (const safeAddresses of uniqueSafeAddresses) {
-          safeV2.upsertSubscriptionsDto.safes.push({
-            address: safeAddresses as `0x${string}`,
-            chainId: safeV1Registration.chainId,
-            notificationTypes: Object.values(NotificationType),
-          });
+          const uniqueSafeAddresses = new Set(safeV1Registration.safes);
+          for (const safeAddresses of uniqueSafeAddresses) {
+            safeV2.upsertSubscriptionsDto.safes.push({
+              address: safeAddresses as `0x${string}`,
+              chainId: safeV1Registration.chainId,
+              notificationTypes: Object.values(NotificationType),
+            });
+          }
+          safeV2Array.push(safeV2);
         }
-        safeV2Array.push(safeV2);
       }
     }
 
     for (const [index, safeV2] of safeV2Array.entries()) {
-      const safeAddresses = args.safeRegistrations.flatMap(
-        (safe) => safe.safes,
+      const safeAddresses = safeV2.upsertSubscriptionsDto.safes.map(
+        (safeV2Safes) => safeV2Safes.address,
       );
 
-      const recoveredAddress = await recoverMessageAddress({
-        message: {
-          raw: keccak256(
-            toBytes(
-              `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
-            ),
-          ),
-        },
-        signature: safeV2.upsertSubscriptionsDto.signature,
-      });
+      let recoveredAddress: `0x${string}` | undefined = undefined;
+      if (safeV2.upsertSubscriptionsDto.signature) {
+        recoveredAddress = await this.recoverAddress({
+          registerDeviceDto: args,
+          safeV2Dto: safeV2,
+          safeAddresses,
+        });
+      }
 
       safeV2.authPayload.chain_id =
         safeV2.upsertSubscriptionsDto.safes[0].chainId;
@@ -193,6 +213,34 @@ export class NotificationsController {
       NotificationsController.REGISTRATION_TIMESTAMP_EXPIRY
     ) {
       throw new BadRequestException('The signature is expired!');
+    }
+  }
+
+  private async recoverAddress(args: {
+    registerDeviceDto: RegisterDeviceDto;
+    safeV2Dto: Parameters<NotificationsServiceV2['upsertSubscriptions']>[0] & {
+      upsertSubscriptionsDto: {
+        safes: Array<UpsertSubscriptionsSafesDto>;
+        signature: `0x${string}`;
+      };
+    };
+    safeAddresses: Array<`0x${string}`>;
+  }): Promise<`0x${string}`> {
+    /**
+     * @todo Explore the feasibility of using a unified method to recover signatures for both web and other clients.
+     */
+    if (args.registerDeviceDto.deviceType === DeviceType.Web) {
+      return await recoverMessageAddress({
+        message: {
+          raw: this.messageToRecover(args),
+        },
+        signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
+      });
+    } else {
+      return await recoverAddress({
+        hash: this.messageToRecover(args),
+        signature: args.safeV2Dto.upsertSubscriptionsDto.signature,
+      });
     }
   }
 
@@ -288,5 +336,22 @@ export class NotificationsController {
         throw error;
       }
     }
+  }
+
+  private messageToRecover(args: {
+    registerDeviceDto: RegisterDeviceDto;
+    safeV2Dto: Parameters<NotificationsServiceV2['upsertSubscriptions']>[0] & {
+      upsertSubscriptionsDto: {
+        safes: Array<UpsertSubscriptionsSafesDto>;
+        signature: `0x${string}`;
+      };
+    };
+    safeAddresses: Array<`0x${string}`>;
+  }): `0x${string}` {
+    return keccak256(
+      toBytes(
+        `gnosis-safe${args.registerDeviceDto.timestamp}${args.registerDeviceDto.uuid}${args.registerDeviceDto.cloudMessagingToken}${args.safeAddresses.sort().join('')}`,
+      ),
+    );
   }
 }

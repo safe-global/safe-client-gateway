@@ -103,6 +103,17 @@ describe('FirebaseCloudMessagingApiService', () => {
         message: {
           token: fcmToken,
           ...notification,
+          apns: {
+            payload: {
+              aps: {
+                alert: {
+                  title: notification.notification?.title,
+                  body: notification.notification?.body,
+                },
+                'mutable-content': 1,
+              },
+            },
+          },
         },
       },
       networkRequest: {
@@ -141,6 +152,17 @@ describe('FirebaseCloudMessagingApiService', () => {
         message: {
           token: fcmToken,
           ...notification,
+          apns: {
+            payload: {
+              aps: {
+                alert: {
+                  title: notification.notification?.title,
+                  body: notification.notification?.body,
+                },
+                'mutable-content': 1,
+              },
+            },
+          },
         },
       },
       networkRequest: {

@@ -1,5 +1,6 @@
 import { TransactionEventType } from '@/routes/hooks/entities/event-type.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { z } from 'zod';
 
 export const ExecutedTransactionEventSchema = z.object({
@@ -7,8 +8,9 @@ export const ExecutedTransactionEventSchema = z.object({
   to: AddressSchema,
   address: AddressSchema,
   chainId: z.string(),
-  safeTxHash: z.string(),
-  txHash: z.string(),
+  safeTxHash: HexSchema,
+  txHash: HexSchema,
+  failed: z.enum(['true', 'false']),
 });
 
 export type ExecutedTransactionEvent = z.infer<

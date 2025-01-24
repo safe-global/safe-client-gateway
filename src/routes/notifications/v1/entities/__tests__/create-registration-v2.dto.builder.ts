@@ -2,8 +2,14 @@ import type { UpsertSubscriptionsDto } from '@/domain/notifications/v2/entities/
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationType } from '@/domain/notifications/v2/entities/notification.entity';
 import type { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
-import type { UUID } from 'crypto';
-import { getAddress, keccak256, recoverMessageAddress, toBytes } from 'viem';
+import {
+  getAddress,
+  keccak256,
+  recoverAddress,
+  recoverMessageAddress,
+  toBytes,
+} from 'viem';
+import { DeviceType } from '@/domain/notifications/v1/entities/device.entity';
 
 export const createV2RegisterDtoBuilder = async (
   args: RegisterDeviceDto,
@@ -28,7 +34,7 @@ export const createV2RegisterDtoBuilder = async (
         upsertSubscriptionsDto: {
           cloudMessagingToken: args.cloudMessagingToken,
           deviceType: args.deviceType,
-          deviceUuid: (args.uuid as UUID | undefined) ?? null,
+          deviceUuid: args.uuid ?? null,
           safes: [],
           signature: safeV1Registration.signatures[0] as `0x${string}`,
         },
@@ -46,18 +52,24 @@ export const createV2RegisterDtoBuilder = async (
   }
 
   for (const [index, safeV2] of safeV2Array.entries()) {
-    const safeAddresses = args.safeRegistrations.flatMap((safe) => safe.safes);
+    const safeAddresses = safeV2.upsertSubscriptionsDto.safes.map(
+      (safeV2Safes) => safeV2Safes.address,
+    );
 
-    const recoveredAddress = await recoverMessageAddress({
-      message: {
-        raw: keccak256(
-          toBytes(
-            `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
-          ),
-        ),
-      },
-      signature: safeV2.upsertSubscriptionsDto.signature,
-    });
+    let recoveredAddress: `0x${string}`;
+    if (args.deviceType === DeviceType.Web) {
+      recoveredAddress = await recoverMessageAddress({
+        message: {
+          raw: messageToRecover(args, safeAddresses),
+        },
+        signature: safeV2.upsertSubscriptionsDto.signature,
+      });
+    } else {
+      recoveredAddress = await recoverAddress({
+        hash: messageToRecover(args, safeAddresses),
+        signature: safeV2.upsertSubscriptionsDto.signature,
+      });
+    }
 
     safeV2.authPayload.chain_id =
       safeV2.upsertSubscriptionsDto.safes[0].chainId;
@@ -67,4 +79,15 @@ export const createV2RegisterDtoBuilder = async (
   }
 
   return safeV2Array;
+};
+
+const messageToRecover = (
+  args: RegisterDeviceDto,
+  safeAddresses: Array<`0x${string}`>,
+): `0x${string}` => {
+  return keccak256(
+    toBytes(
+      `gnosis-safe${args.timestamp}${args.uuid}${args.cloudMessagingToken}${safeAddresses.sort().join('')}`,
+    ),
+  );
 };
