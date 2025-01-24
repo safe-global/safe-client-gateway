@@ -198,6 +198,11 @@ export class SafeBalancesApi implements IBalancesApi {
         const fiatBalance = this._getFiatBalance(price, balance);
         return {
           ...balance,
+          token: {
+            ...balance.token,
+            decimals:
+              balance.token?.decimals ?? SafeBalancesApi.DEFAULT_DECIMALS,
+          },
           fiatBalance: fiatBalance ? getNumberString(fiatBalance) : null,
           fiatConversion: price ? getNumberString(price) : null,
         };
