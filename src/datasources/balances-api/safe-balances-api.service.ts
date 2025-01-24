@@ -17,12 +17,12 @@ import { Chain } from '@/domain/chains/entities/chain.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
 import { AssetPricesSchema } from '@/datasources/balances-api/entities/asset-price.entity';
 import { ZodError } from 'zod';
+import { DEFAULT_DECIMALS } from '@/domain/tokens/entities/schemas/token.schema';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
-  private static readonly DEFAULT_DECIMALS = 18;
   private static readonly HOLESKY_CHAIN_ID = '17000';
 
   constructor(
@@ -198,11 +198,6 @@ export class SafeBalancesApi implements IBalancesApi {
         const fiatBalance = this._getFiatBalance(price, balance);
         return {
           ...balance,
-          token: {
-            ...balance.token,
-            decimals:
-              balance.token?.decimals ?? SafeBalancesApi.DEFAULT_DECIMALS,
-          },
           fiatBalance: fiatBalance ? getNumberString(fiatBalance) : null,
           fiatConversion: price ? getNumberString(price) : null,
         };
@@ -218,7 +213,7 @@ export class SafeBalancesApi implements IBalancesApi {
   ): number | null {
     return price !== null
       ? (price * Number(balance.balance)) /
-          10 ** (balance.token?.decimals ?? SafeBalancesApi.DEFAULT_DECIMALS)
+          10 ** (balance.token?.decimals ?? DEFAULT_DECIMALS)
       : null;
   }
 }
