@@ -26,14 +26,14 @@ describe('TokenSchema', () => {
     );
   });
 
-  it('should allow undefined decimals', () => {
+  it('should fallback to default decimals', () => {
     const token = tokenBuilder().build();
     // @ts-expect-error - inferred type doesn't allow optional properties
     delete token.decimals;
 
     const result = TokenSchema.safeParse(token);
 
-    expect(result.success && result.data.decimals).toBe(null);
+    expect(result.success && result.data.decimals).toBe(18);
   });
 
   it.each<keyof Token>([
