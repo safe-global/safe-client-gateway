@@ -51,7 +51,7 @@ describe('UsersRepository', () => {
       });
 
       expect(mockUserRepository.create).toHaveBeenCalledWith({
-        status: UserStatus.ACTIVE,
+        status,
       });
       expect(mockUserRepository.insert).toHaveBeenCalledWith(mockUser);
 
