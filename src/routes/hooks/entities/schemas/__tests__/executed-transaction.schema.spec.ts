@@ -106,4 +106,45 @@ describe('ExecutedTransactionEventSchema', () => {
         result.error.issues[0].path[0] === field,
     ).toBe(true);
   });
+
+  it('should not allow a non-hex data', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder()
+      .with('data', faker.string.sample() as `0x${string}`)
+      .build();
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['data'],
+      },
+    ]);
+  });
+
+  it('should allow undefined data', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder().build();
+    delete executedTransactionEvent.data;
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(result.success && result.data.data).toBe(undefined);
+  });
+
+  it('should allow null data, defaulting to undefined', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder().build();
+    // @ts-expect-error - inferred schema expects undefined
+    executedTransactionEvent.data = null;
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(result.success && result.data.data).toBe(undefined);
+  });
 });

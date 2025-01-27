@@ -131,6 +131,7 @@ describe('Events queue processing e2e tests', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'NEW_CONFIRMATION',
@@ -180,6 +181,7 @@ describe('Events queue processing e2e tests', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'NEW_CONFIRMATION',
@@ -224,6 +226,7 @@ describe('Events queue processing e2e tests', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'MODULE_TRANSACTION',
@@ -264,6 +267,7 @@ describe('Events queue processing e2e tests', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',
@@ -309,6 +313,7 @@ describe('Events queue processing e2e tests', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',
@@ -430,6 +435,7 @@ describe('Events queue processing e2e tests', () => {
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',
