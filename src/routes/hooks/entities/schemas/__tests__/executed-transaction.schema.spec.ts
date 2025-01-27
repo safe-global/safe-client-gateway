@@ -125,15 +125,26 @@ describe('ExecutedTransactionEventSchema', () => {
     ]);
   });
 
-  it('should allow undefined data, defaulting to empty hex', () => {
+  it('should allow undefined data', () => {
     const executedTransactionEvent = executedTransactionEventBuilder().build();
-    // @ts-expect-error - inferred schema expects data
     delete executedTransactionEvent.data;
 
     const result = ExecutedTransactionEventSchema.safeParse(
       executedTransactionEvent,
     );
 
-    expect(result.success && result.data.data).toBe('0x');
+    expect(result.success && result.data.data).toBe(undefined);
+  });
+
+  it('should allow null data, defaulting to undefined', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder().build();
+    // @ts-expect-error - inferred schema expects undefined
+    executedTransactionEvent.data = null;
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(result.success && result.data.data).toBe(undefined);
   });
 });
