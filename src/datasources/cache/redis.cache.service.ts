@@ -188,10 +188,7 @@ export class RedisCacheService
       return await promiseWithTimeout(queryObject, timeout);
     } catch (error) {
       if (error instanceof PromiseTimeoutError) {
-        /**
-         * @todo: Uncomment this line after the issue on Redis is fixed.
-         */
-        // this.loggingService.error('Redis Query Timed out!');
+        throw new PromiseTimeoutError('Redis Query Timed Out!`');
       }
 
       throw error;

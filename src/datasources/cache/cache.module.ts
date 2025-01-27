@@ -21,6 +21,9 @@ async function redisClientFactory(
   const redisPass = configurationService.get<string>('redis.pass');
   const redisHost = configurationService.getOrThrow<string>('redis.host');
   const redisPort = configurationService.getOrThrow<string>('redis.port');
+  const redisQueueMaxLength = configurationService.getOrThrow<number>(
+    'redis.queueMaxLength',
+  );
   const redisTimeout = configurationService.getOrThrow<number>('redis.timeout');
   const client: RedisClientType = createClient({
     socket: {
@@ -29,7 +32,9 @@ async function redisClientFactory(
     },
     username: redisUser,
     password: redisPass,
+    commandsQueueMaxLength: redisQueueMaxLength,
   });
+  client.on('ready', () => loggingService.debug('Redis server is ready.'));
   client.on('error', (err) =>
     loggingService.error(`Redis client error: ${err}`),
   );

@@ -320,6 +320,7 @@ export default () => ({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
     timeout: process.env.REDIS_TIMEOUT || 2 * 1_000, // Milliseconds
+    queueMaxLength: process.env.REDIS_COMMANDS_QUEUE_MAX_LENGTH || 1000,
   },
   relay: {
     baseUri:
