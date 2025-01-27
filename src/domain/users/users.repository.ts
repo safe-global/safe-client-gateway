@@ -1,15 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import type { IUsersRepository } from '@/domain/users/users.repository.interface';
-import {
-  User as DomainUser,
-  UserStatus,
-} from '@/domain/users/entities/user.entity';
+import { User, UserStatus } from '@/domain/users/entities/user.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { User } from '@/datasources/users/entities/users.entity.db';
+import { User as DbUser } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
-import { DuplicateWalletError } from '@/domain/users/wallets/errors/duplicate-wallet.error';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -20,17 +16,20 @@ export class UsersRepository implements IUsersRepository {
   createUserWithWallet(args: {
     status: UserStatus;
     authPayload: AuthPayload;
-  }): Promise<Pick<DomainUser, 'id'>> {
+  }): Promise<Pick<User, 'id'>> {
     return this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
-        const userRepository = entityManager.getRepository(User);
+        const userRepository = entityManager.getRepository(DbUser);
         const walletRepository = entityManager.getRepository(Wallet);
 
         const existingWallet = await walletRepository.findOne({
           where: { address: args.authPayload.signer_address },
         });
 
-        if (existingWallet) throw new DuplicateWalletError();
+        if (existingWallet)
+          throw new ConflictException(
+            'A wallet with the same address already exists',
+          );
 
         const user = userRepository.create({
           status: args.status,

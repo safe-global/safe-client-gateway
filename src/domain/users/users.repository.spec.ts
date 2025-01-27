@@ -10,20 +10,21 @@ import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
 import { userBuilder } from '@/datasources/users/entities/__tests__/users.entity.db.builder';
 
-describe('UsersRepository', () => {
-  let usersRepository: IUsersRepository;
-  const mockUserRepository = { ...mockRepository };
-  const mockWalletRepository = { ...mockRepository };
-  const mockEntityManager: EntityManager = {
-    getRepository: jest.fn((entity) => {
-      if (entity === User) return mockUserRepository;
-      if (entity === Wallet) return mockWalletRepository;
-      return null;
-    }),
-  } as unknown as EntityManager;
+let usersRepository: IUsersRepository;
+const mockUserRepository = { ...mockRepository };
+const mockWalletRepository = { ...mockRepository };
+const mockEntityManager: EntityManager = {
+  getRepository: jest.fn((entity) => {
+    if (entity === User) return mockUserRepository;
+    if (entity === Wallet) return mockWalletRepository;
+    return null;
+  }),
+} as unknown as EntityManager;
 
+describe('UsersRepository', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
     usersRepository = new UsersRepository(mockPostgresDatabaseService);
     mockPostgresDatabaseService.transaction.mockImplementation((fn) =>
       fn(mockEntityManager),
