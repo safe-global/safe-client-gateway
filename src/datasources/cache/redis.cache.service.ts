@@ -45,7 +45,7 @@ export class RedisCacheService
   }
 
   async getCounter(key: string): Promise<number | null> {
-    this.validatgeRedisClientIsReady();
+    this.validateRedisClientIsReady();
 
     const value = await this.client.get(this._prefixKey(key));
     const numericValue = Number(value);
@@ -57,7 +57,7 @@ export class RedisCacheService
     value: string,
     expireTimeSeconds: number | undefined,
   ): Promise<void> {
-    this.validatgeRedisClientIsReady();
+    this.validateRedisClientIsReady();
 
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
       return;
@@ -77,14 +77,14 @@ export class RedisCacheService
   }
 
   async hGet(cacheDir: CacheDir): Promise<string | undefined> {
-    this.validatgeRedisClientIsReady();
+    this.validateRedisClientIsReady();
 
     const key = this._prefixKey(cacheDir.key);
     return await this.timeout(this.client.hGet(key, cacheDir.field));
   }
 
   async deleteByKey(key: string): Promise<number> {
-    this.validatgeRedisClientIsReady();
+    this.validateRedisClientIsReady();
 
     const keyWithPrefix = this._prefixKey(key);
     // see https://redis.io/commands/unlink/
@@ -103,7 +103,7 @@ export class RedisCacheService
     cacheKey: string,
     expireTimeSeconds: number | undefined,
   ): Promise<number> {
-    this.validatgeRedisClientIsReady();
+    this.validateRedisClientIsReady();
 
     const transaction = this.client.multi().incr(cacheKey);
     if (expireTimeSeconds !== undefined && expireTimeSeconds > 0) {
@@ -118,7 +118,7 @@ export class RedisCacheService
     value: number,
     expireTimeSeconds: number,
   ): Promise<void> {
-    this.validatgeRedisClientIsReady();
+    this.validateRedisClientIsReady();
 
     await this.client.set(key, value, { EX: expireTimeSeconds, NX: true });
   }
@@ -148,7 +148,7 @@ export class RedisCacheService
    * instance is not responding it invokes {@link forceQuit}.
    */
   async onModuleDestroy(): Promise<void> {
-    this.validatgeRedisClientIsReady();
+    this.validateRedisClientIsReady();
 
     this.loggingService.info('Closing Redis connection...');
     try {
@@ -168,7 +168,7 @@ export class RedisCacheService
    * Forces the closing of the Redis connection associated with this service.
    */
   private async forceQuit(): Promise<void> {
-    this.validatgeRedisClientIsReady();
+    this.validateRedisClientIsReady();
     this.loggingService.warn('Forcing Redis connection to close...');
     try {
       await this.client.disconnect();
@@ -198,7 +198,7 @@ export class RedisCacheService
     }
   }
 
-  private validatgeRedisClientIsReady(): void {
+  private validateRedisClientIsReady(): void {
     if (!this.ready()) {
       /**
        * @todo: Uncomment this line after the issue on Redis is fixed.
