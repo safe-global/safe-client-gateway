@@ -1,4 +1,4 @@
-import type { INestApplication } from '@nestjs/common';
+import type { DynamicModule, INestApplication } from '@nestjs/common';
 import { VersioningType } from '@nestjs/common';
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { json } from 'express';
 import cookieParser from 'cookie-parser';
+import type { TestingModule } from '@nestjs/testing';
 
 function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -90,7 +91,7 @@ export const DEFAULT_CONFIGURATION: Array<(app: INestApplication) => void> = [
  * Each provider should have a {@link configuration} which specifies
  * the steps taken to configure the application
  */
-export abstract class AppProvider<T> {
+export abstract class AppProvider<T extends DynamicModule | TestingModule> {
   protected abstract readonly configuration: Array<
     (app: INestApplication) => void
   >;
@@ -110,7 +111,9 @@ export abstract class AppProvider<T> {
  * This provider should be used to retrieve the actual implementation of the
  * service
  */
-export class DefaultAppProvider<T> extends AppProvider<T> {
+export class DefaultAppProvider<
+  T extends DynamicModule,
+> extends AppProvider<T> {
   protected readonly configuration: Array<(app: INestApplication) => void> =
     DEFAULT_CONFIGURATION;
 
