@@ -29,35 +29,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
     super(KilnAbi);
   }
 
-  // TODO: When confirmation view endpoint is removed, remove this
-  // and use this.helpers.isDeposit instead
-  decodeDeposit(
-    data: `0x${string}`,
-  ): { method: string; parameters: [] } | null {
-    if (!this.helpers.isDeposit(data)) {
-      return null;
-    }
-    try {
-      const decoded = this.decodeFunctionData({ data });
-      if (decoded.functionName !== 'deposit') {
-        throw new Error('Data is not of deposit type');
-      }
-      return {
-        method: decoded.functionName,
-        parameters: [],
-      };
-    } catch (e) {
-      this.loggingService.debug(e);
-      return null;
-    }
-  }
-
-  // TODO: When confirmation view endpoint is removed, return only
-  // publicKeys and don't format it like DataDecoded
-  decodeValidatorsExit(data: `0x${string}`): {
-    method: string;
-    parameters: Array<KilnRequestValidatorsExitParameters>;
-  } | null {
+  decodeValidatorsExit(data: `0x${string}`): `0x${string}` | null {
     if (!this.helpers.isRequestValidatorsExit(data)) {
       return null;
     }
@@ -66,29 +38,14 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
       if (decoded.functionName !== 'requestValidatorsExit') {
         throw new Error('Data is not of requestValidatorsExit type');
       }
-      return {
-        method: decoded.functionName,
-        parameters: [
-          {
-            name: '_publicKeys',
-            type: 'bytes',
-            value: decoded.args[0],
-            valueDecoded: null,
-          },
-        ],
-      };
+      return decoded.args[0];
     } catch (e) {
       this.loggingService.debug(e);
       return null;
     }
   }
 
-  // TODO: When confirmation view endpoint is removed, return only
-  // publicKeys and don't format it like DataDecoded
-  decodeBatchWithdrawCLFee(data: `0x${string}`): {
-    method: string;
-    parameters: Array<KilnBatchWithdrawCLFeeParameters>;
-  } | null {
+  decodeBatchWithdrawCLFee(data: `0x${string}`): `0x${string}` | null {
     if (!this.helpers.isBatchWithdrawCLFee(data)) {
       return null;
     }
@@ -97,17 +54,7 @@ export class KilnDecoder extends AbiDecoder<typeof KilnAbi> {
       if (decoded.functionName !== 'batchWithdrawCLFee') {
         throw new Error('Data is not of batchWithdrawCLFee type');
       }
-      return {
-        method: decoded.functionName,
-        parameters: [
-          {
-            name: '_publicKeys',
-            type: 'bytes',
-            value: decoded.args[0],
-            valueDecoded: null,
-          },
-        ],
-      };
+      return decoded.args[0];
     } catch (e) {
       this.loggingService.debug(e);
       return null;
