@@ -125,7 +125,7 @@ describe('ExecutedTransactionEventSchema', () => {
     ]);
   });
 
-  it('should allow undefined data, defaulting to null', () => {
+  it('should allow undefined data, defaulting to empty hex', () => {
     const executedTransactionEvent = executedTransactionEventBuilder().build();
     // @ts-expect-error - inferred schema expects data
     delete executedTransactionEvent.data;
@@ -134,6 +134,6 @@ describe('ExecutedTransactionEventSchema', () => {
       executedTransactionEvent,
     );
 
-    expect(result.success && result.data.data).toBe(null);
+    expect(result.success && result.data.data).toBe('0x');
   });
 });
