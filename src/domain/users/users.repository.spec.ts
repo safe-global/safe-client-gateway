@@ -105,7 +105,7 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.addWalletToUser({
           authPayload,
-          newSignerAddress: newSignerAddressMock as `0x${string}`,
+          newSignerAddress: newSignerAddressMock,
         }),
       ).rejects.toThrow(UnauthorizedException);
     });
