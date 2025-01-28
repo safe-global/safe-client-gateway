@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { User, UserStatus } from '@/domain/users/entities/user.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
@@ -55,13 +60,17 @@ export class UsersRepository implements IUsersRepository {
       async (entityManager: EntityManager) => {
         const walletRepository = entityManager.getRepository(Wallet);
 
+        if (!args.authPayload.signer_address) {
+          throw new UnauthorizedException();
+        }
+
         const authenticatedWallet = await walletRepository.findOne({
           where: { address: args.authPayload.signer_address },
           relations: { user: true },
         });
 
         if (!authenticatedWallet?.user) {
-          throw new Error('User not found');
+          throw new NotFoundException('User not found');
         }
 
         const walletAlreadyExists = Boolean(
