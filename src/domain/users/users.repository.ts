@@ -79,7 +79,10 @@ export class UsersRepository implements IUsersRepository {
           });
           return { id: walletInsertResult.identifiers[0].id };
         } catch (error) {
-          if (error instanceof QueryFailedError) {
+          if (
+            error instanceof QueryFailedError &&
+            error.driverError.code === '23505'
+          ) {
             throw new ConflictException(
               `A wallet with the same address already exists`,
             );

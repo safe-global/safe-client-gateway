@@ -123,7 +123,7 @@ describe('UsersRepository', () => {
           authPayload,
           newSignerAddress: newSignerAddressMock,
         }),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(new NotFoundException('User not found'));
     });
 
     it('should throw a ConflictException if the wallet already exists', async () => {
@@ -132,17 +132,23 @@ describe('UsersRepository', () => {
 
       const newSignerAddressMock = getAddress(faker.finance.ethereumAddress());
       const mockWallet = walletBuilder().build();
-      mockWalletRepository.findOne.mockResolvedValueOnce(mockWallet);
-      mockWalletRepository.insert.mockRejectedValue(
-        new QueryFailedError('', [], new Error()),
+      const mockUniqueConstraintError = new QueryFailedError(
+        'query',
+        [],
+        Object.assign(new Error(), { driverError: { code: '23505' } }),
       );
+
+      mockWalletRepository.findOne.mockResolvedValueOnce(mockWallet);
+      mockWalletRepository.insert.mockRejectedValue(mockUniqueConstraintError);
 
       await expect(
         usersRepository.addWalletToUser({
           authPayload,
           newSignerAddress: newSignerAddressMock,
         }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(
+        new ConflictException('A wallet with the same address already exists'),
+      );
     });
   });
 });
