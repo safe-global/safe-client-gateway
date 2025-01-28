@@ -112,7 +112,7 @@ describe('Human descriptions mapper (Unit)', () => {
     );
 
     expect(humanDescription).toEqual(
-      `Send ${formatUnits(mockAmount, token.decimals)} ${token.symbol} to ${truncateAddress(mockAddress)}`,
+      `Send ${formatUnits(mockAmount, token.decimals!)} ${token.symbol} to ${truncateAddress(mockAddress)}`,
     );
   });
 
@@ -189,7 +189,7 @@ describe('Human descriptions mapper (Unit)', () => {
     );
 
     expect(humanDescription).toEqual(
-      `Send ${formatUnits(mockAmount, token.decimals)} ${token.symbol} to ${truncateAddress(mockAddress)} via ${mockSafeAppName}`,
+      `Send ${formatUnits(mockAmount, token.decimals!)} ${token.symbol} to ${truncateAddress(mockAddress)} via ${mockSafeAppName}`,
     );
   });
 });
