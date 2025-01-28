@@ -5,12 +5,17 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
-import type { EntityManager } from 'typeorm';
+import { QueryFailedError, type EntityManager } from 'typeorm';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
 import { userBuilder } from '@/datasources/users/entities/__tests__/users.entity.db.builder';
 import { walletBuilder } from '@/datasources/users/entities/__tests__/wallets.entity.db.builder';
 import { faker } from '@faker-js/faker/.';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 let usersRepository: IUsersRepository;
 const mockUserRepository = { ...mockRepository };
@@ -74,7 +79,6 @@ describe('UsersRepository', () => {
       const newSignerAddressMock = faker.finance.ethereumAddress();
       const mockWallet = walletBuilder().build();
       mockWalletRepository.findOne.mockResolvedValueOnce(mockWallet);
-      mockUserRepository.findOne.mockResolvedValueOnce(null);
       mockWalletRepository.insert.mockResolvedValue({
         identifiers: [{ id: mockWallet.id }],
         generatedMaps: [{ id: 1 }],
@@ -92,6 +96,52 @@ describe('UsersRepository', () => {
       });
 
       expect(result).toEqual({ id: mockWallet.id });
+    });
+
+    it('should throw an UnauthorizedException if the auth payload is empty', async () => {
+      const authPayload = new AuthPayload();
+      const newSignerAddressMock = faker.finance.ethereumAddress();
+
+      await expect(
+        usersRepository.addWalletToUser({
+          authPayload,
+          newSignerAddress: newSignerAddressMock as `0x${string}`,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw a NotFoundException if the user is not found', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      const newSignerAddressMock = faker.finance.ethereumAddress();
+      mockWalletRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        usersRepository.addWalletToUser({
+          authPayload,
+          newSignerAddress: newSignerAddressMock as `0x${string}`,
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw a ConflictException if the wallet already exists', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      const newSignerAddressMock = faker.finance.ethereumAddress();
+      const mockWallet = walletBuilder().build();
+      mockWalletRepository.findOne.mockResolvedValueOnce(mockWallet);
+      mockWalletRepository.insert.mockRejectedValue(
+        new QueryFailedError('', [], new Error()),
+      );
+
+      await expect(
+        usersRepository.addWalletToUser({
+          authPayload,
+          newSignerAddress: newSignerAddressMock as `0x${string}`,
+        }),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });
