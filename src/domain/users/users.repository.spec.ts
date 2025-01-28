@@ -100,7 +100,7 @@ describe('UsersRepository', () => {
 
     it('should throw an UnauthorizedException if the auth payload is empty', async () => {
       const authPayload = new AuthPayload();
-      const newSignerAddressMock = faker.finance.ethereumAddress();
+      const newSignerAddressMock = getAddress(faker.finance.ethereumAddress());
 
       await expect(
         usersRepository.addWalletToUser({
