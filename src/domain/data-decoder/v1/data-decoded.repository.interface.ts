@@ -1,6 +1,6 @@
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { Module } from '@nestjs/common';
-import { DataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository';
+import { DataDecodedRepository } from '@/domain/data-decoder/v1/data-decoded.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 
 export const IDataDecodedRepository = Symbol('IDataDecodedRepository');

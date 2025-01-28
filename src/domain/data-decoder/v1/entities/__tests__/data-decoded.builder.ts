@@ -4,7 +4,7 @@ import { Builder } from '@/__tests__/builder';
 import type {
   DataDecoded,
   DataDecodedParameter,
-} from '@/domain/data-decoder/entities/data-decoded.entity';
+} from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 
 export function dataDecodedBuilder(): IBuilder<DataDecoded> {
   return new Builder<DataDecoded>()

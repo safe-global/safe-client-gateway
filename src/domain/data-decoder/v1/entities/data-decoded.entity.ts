@@ -1,7 +1,7 @@
 import type {
   DataDecodedParameterSchema,
   DataDecodedSchema,
-} from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
+} from '@/domain/data-decoder/v1/entities/schemas/data-decoded.schema';
 import type { z } from 'zod';
 
 export type DataDecodedParameter = z.infer<typeof DataDecodedParameterSchema>;

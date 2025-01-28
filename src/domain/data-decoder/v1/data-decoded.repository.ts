@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { IDataDecodedRepository } from '@/domain/data-decoder/v1/data-decoded.repository.interface';
+import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { DataDecodedSchema } from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
+import { DataDecodedSchema } from '@/domain/data-decoder/v1/entities/schemas/data-decoded.schema';
 
 @Injectable()
 export class DataDecodedRepository implements IDataDecodedRepository {

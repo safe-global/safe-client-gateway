@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
