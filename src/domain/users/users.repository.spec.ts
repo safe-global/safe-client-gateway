@@ -16,6 +16,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { getAddress } from 'viem';
 
 let usersRepository: IUsersRepository;
 const mockUserRepository = { ...mockRepository };
@@ -120,7 +121,7 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.addWalletToUser({
           authPayload,
-          newSignerAddress: newSignerAddressMock as `0x${string}`,
+          newSignerAddress: newSignerAddressMock,
         }),
       ).rejects.toThrow(NotFoundException);
     });
@@ -129,7 +130,7 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
 
-      const newSignerAddressMock = faker.finance.ethereumAddress();
+      const newSignerAddressMock = getAddress(faker.finance.ethereumAddress());
       const mockWallet = walletBuilder().build();
       mockWalletRepository.findOne.mockResolvedValueOnce(mockWallet);
       mockWalletRepository.insert.mockRejectedValue(
@@ -139,7 +140,7 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.addWalletToUser({
           authPayload,
-          newSignerAddress: newSignerAddressMock as `0x${string}`,
+          newSignerAddress: newSignerAddressMock,
         }),
       ).rejects.toThrow(ConflictException);
     });
