@@ -22,4 +22,9 @@ export interface IUsersRepository {
     walletAddress: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void>;
+
+  removeWalletFromUser(args: {
+    addressToRemove: `0x${string}`;
+    authPayload: AuthPayload;
+  }): Promise<void>;
 }

@@ -9,6 +9,14 @@ import type { EntityManager } from 'typeorm';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
 import { userBuilder } from '@/datasources/users/entities/__tests__/users.entity.db.builder';
+import { faker } from '@faker-js/faker/.';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { walletBuilder } from '@/datasources/users/entities/__tests__/wallets.entity.db.builder';
+import { getAddress } from 'viem';
 
 let usersRepository: IUsersRepository;
 const mockUserRepository = { ...mockRepository };
@@ -61,6 +69,97 @@ describe('UsersRepository', () => {
       });
 
       expect(result).toEqual({ id: mockUser.id });
+    });
+  });
+
+  describe('removeWalletFromUser', () => {
+    it('should remove a wallet from a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      const addressToRemove = getAddress(faker.finance.ethereumAddress());
+
+      const mockAuthenticatedWallet = walletBuilder().build();
+      mockWalletRepository.findOne.mockResolvedValueOnce(
+        mockAuthenticatedWallet,
+      );
+      mockWalletRepository.delete.mockResolvedValue({ affected: 1, raw: {} });
+
+      await usersRepository.removeWalletFromUser({
+        authPayload,
+        addressToRemove: addressToRemove,
+      });
+
+      expect(mockWalletRepository.delete).toHaveBeenCalledWith({
+        user: mockAuthenticatedWallet.user,
+        address: addressToRemove,
+      });
+    });
+
+    it('should throw an UnauthorizedException if the auth payload is empty', async () => {
+      const authPayload = new AuthPayload();
+      const addressToRemove = getAddress(faker.finance.ethereumAddress());
+
+      await expect(
+        usersRepository.removeWalletFromUser({
+          authPayload,
+          addressToRemove: addressToRemove,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw an ConflictException if the user tries to remove the currently authenticated wallet', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      await expect(
+        usersRepository.removeWalletFromUser({
+          authPayload,
+          addressToRemove: authPayload.signer_address as `0x${string}`,
+        }),
+      ).rejects.toThrow(
+        new ConflictException('Cannot remove the current wallet'),
+      );
+    });
+
+    it('should throw a NotFoundException if the user is not found', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      const addressToRemove = getAddress(faker.finance.ethereumAddress());
+
+      mockWalletRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        usersRepository.removeWalletFromUser({
+          authPayload,
+          addressToRemove: addressToRemove,
+        }),
+      ).rejects.toThrow(new NotFoundException('User not found'));
+    });
+
+    it('should throw a NotFoundException if the wallet does not exist for the user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      const addressToRemove = getAddress(faker.finance.ethereumAddress());
+
+      const mockAuthenticatedWallet = walletBuilder().build();
+      mockWalletRepository.findOne.mockResolvedValueOnce(
+        mockAuthenticatedWallet,
+      );
+      mockWalletRepository.delete.mockResolvedValue({ affected: 0, raw: {} });
+
+      await expect(
+        usersRepository.removeWalletFromUser({
+          authPayload,
+          addressToRemove: addressToRemove,
+        }),
+      ).rejects.toThrow(
+        new NotFoundException(
+          `A wallet with address ${addressToRemove} does not exist for the current user`,
+        ),
+      );
     });
   });
 });
