@@ -10,7 +10,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { User as DbUser } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
-import { EntityManager } from 'typeorm';
+import { EntityManager, QueryFailedError } from 'typeorm';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -56,13 +56,12 @@ export class UsersRepository implements IUsersRepository {
     newSignerAddress: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<Pick<Wallet, 'id'>> {
+    if (!args.authPayload.signer_address) {
+      throw new UnauthorizedException();
+    }
     return await this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
         const walletRepository = entityManager.getRepository(Wallet);
-
-        if (!args.authPayload.signer_address) {
-          throw new UnauthorizedException();
-        }
 
         const authenticatedWallet = await walletRepository.findOne({
           where: { address: args.authPayload.signer_address },
@@ -73,24 +72,20 @@ export class UsersRepository implements IUsersRepository {
           throw new NotFoundException('User not found');
         }
 
-        const walletAlreadyExists = Boolean(
-          await walletRepository.findOne({
-            where: { address: args.newSignerAddress },
-          }),
-        );
-
-        if (walletAlreadyExists) {
-          throw new ConflictException(
-            'A wallet with the same address already exists',
-          );
+        try {
+          const walletInsertResult = await walletRepository.insert({
+            user: authenticatedWallet.user,
+            address: args.newSignerAddress,
+          });
+          return { id: walletInsertResult.identifiers[0].id };
+        } catch (error) {
+          if (error instanceof QueryFailedError) {
+            throw new ConflictException(
+              `A wallet with the same address already exists`,
+            );
+          }
+          throw error;
         }
-
-        const walletInsertResult = await walletRepository.insert({
-          user: authenticatedWallet.user,
-          address: args.newSignerAddress,
-        });
-
-        return { id: walletInsertResult.identifiers[0].id };
       },
     );
   }
