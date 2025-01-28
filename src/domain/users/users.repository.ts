@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { User, UserStatus } from '@/domain/users/entities/user.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
@@ -45,5 +50,79 @@ export class UsersRepository implements IUsersRepository {
         return { id: userInsertResult.identifiers[0].id };
       },
     );
+  }
+
+  async getUser(authPayload: AuthPayload): Promise<{
+    id: User['id'];
+    status: User['status'];
+    wallets: Array<{ address: Wallet['address']; id: Wallet['id'] }>;
+  }> {
+    if (!authPayload.signer_address) {
+      throw new UnauthorizedException();
+    }
+
+    return await this.postgresDatabaseService.transaction(
+      async (entityManager: EntityManager) => {
+        const walletRepository = entityManager.getRepository(Wallet);
+
+        const authenticatedWallet = await walletRepository.findOne({
+          where: { address: authPayload.signer_address },
+          relations: { user: true },
+        });
+
+        if (!authenticatedWallet?.user) {
+          throw new NotFoundException('User not found');
+        }
+
+        const wallets = await walletRepository.findBy({
+          user: authenticatedWallet.user,
+        });
+
+        return {
+          id: authenticatedWallet.user.id,
+          status: authenticatedWallet.user.status,
+          wallets: wallets.map((wallet) => ({
+            id: wallet.id,
+            address: wallet.address,
+          })),
+        };
+      },
+    );
+  }
+
+  async deleteUser(authPayload: AuthPayload): Promise<void> {
+    if (!authPayload.signer_address) {
+      throw new UnauthorizedException();
+    }
+
+    await this.postgresDatabaseService.transaction(
+      async (entityManager: EntityManager) => {
+        const walletRepository = entityManager.getRepository(Wallet);
+        const userRepository = entityManager.getRepository(DbUser);
+
+        const authenticatedWallet = await walletRepository.findOne({
+          where: { address: authPayload.signer_address },
+          relations: { user: true },
+        });
+
+        if (!authenticatedWallet?.user) {
+          throw new NotFoundException('User not found');
+        }
+
+        // TODO: Check that it also deletes all wallets of that user
+        await userRepository.delete(authenticatedWallet.user);
+      },
+    );
+  }
+
+  async deleteWallet(args: {
+    walletAddress: `0x${string}`;
+    authPayload: AuthPayload;
+  }): Promise<void> {
+    const walletRepository =
+      await this.postgresDatabaseService.getRepository(Wallet);
+
+    // TODO: Make sure this doesn't delete the user with remaining wallets or create orphans
+    await walletRepository.delete({ address: args.walletAddress });
   }
 }
