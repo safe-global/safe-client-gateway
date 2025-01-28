@@ -114,7 +114,7 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
 
-      const newSignerAddressMock = faker.finance.ethereumAddress();
+      const newSignerAddressMock = getAddress(faker.finance.ethereumAddress());
       mockWalletRepository.findOne.mockResolvedValueOnce(null);
 
       await expect(
