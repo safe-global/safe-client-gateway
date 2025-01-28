@@ -103,31 +103,36 @@ export class TransferInfoMapper {
   ): Promise<Transfer> {
     if (domainTransfer.type === 'ERC20_TRANSFER') {
       const { tokenAddress, value } = domainTransfer;
-      const token: Token | null = await this.getToken(
-        chainId,
-        tokenAddress,
-      ).catch(() => null);
+      const token = await this.getToken(chainId, tokenAddress).catch(
+        () => null,
+      );
+      if (token?.type !== 'ERC20') {
+        throw Error('Token is not ERC-20');
+      }
       return new Erc20Transfer(
         tokenAddress,
         value,
-        token?.name,
-        token?.symbol,
-        token?.logoUri,
-        token?.decimals,
-        token?.trusted,
+        token.name,
+        token.symbol,
+        token.logoUri,
+        token.decimals,
+        token.trusted,
       );
     } else if (domainTransfer.type === 'ERC721_TRANSFER') {
       const { tokenAddress, tokenId } = domainTransfer;
       const token = await this.getToken(chainId, tokenAddress).catch(
         () => null,
       );
+      if (token?.type !== 'ERC721') {
+        throw Error('Token is not ERC-721');
+      }
       return new Erc721Transfer(
         tokenAddress,
         tokenId,
-        token?.name,
-        token?.symbol,
-        token?.logoUri,
-        token?.trusted,
+        token.name,
+        token.symbol,
+        token.logoUri,
+        token.trusted,
       );
     } else if (domainTransfer.type === 'ETHER_TRANSFER') {
       return new NativeCoinTransfer(domainTransfer.value);

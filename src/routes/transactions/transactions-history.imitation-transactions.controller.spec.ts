@@ -24,8 +24,7 @@ import {
   toJson as multisigTransactionToJson,
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { TokenType } from '@/domain/tokens/entities/token.entity';
+import { erc20TokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import type {
   ERC20Transfer,
@@ -136,7 +135,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     }
 
     const multisigExecutionDate = new Date('2024-03-20T09:41:25Z');
-    const multisigToken = tokenBuilder().with('type', TokenType.Erc20).build();
+    const multisigToken = erc20TokenBuilder().build();
     // Use value higher than BigInt(2) as we use tolerance +/- BigInt(1) to signify outside tolerance
     // later in tests, and values of 0 are not mapped
     const testValueBuffer = valueTolerance + faker.number.bigInt({ min: 2 });
@@ -145,7 +144,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         min: testValueBuffer,
         max: testValueBuffer + valueTolerance,
       }),
-      multisigToken.decimals!,
+      multisigToken.decimals,
     );
     const multisigTransfer = {
       ...erc20TransferBuilder()
@@ -203,9 +202,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
     } as MultisigTransaction;
 
-    const notImitatedMultisigToken = tokenBuilder()
-      .with('type', TokenType.Erc20)
-      .build();
+    const notImitatedMultisigToken = erc20TokenBuilder().build();
     const notImitatedMultisigTransfer = {
       ...erc20TransferBuilder()
         .with('executionDate', multisigExecutionDate)
@@ -264,8 +261,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
     const imitationAddress = getImitationAddress(multisigTransfer.to);
     const imitationExecutionDate = new Date('2024-03-20T09:42:58Z');
-    const imitationToken = tokenBuilder()
-      .with('type', TokenType.Erc20)
+    const imitationToken = erc20TokenBuilder()
       .with('decimals', multisigToken.decimals)
       .build();
 
@@ -1333,7 +1329,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     describe('Intolerant value', () => {
       const intolerantDiff = parseUnits(
         valueTolerance * BigInt(2),
-        multisigToken.decimals!,
+        multisigToken.decimals,
       );
       const valueIntolerantIncomingTransaction = ((): EthereumTransaction => {
         const transaction = structuredClone(imitationIncomingTransaction);
@@ -2480,7 +2476,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     });
 
     it('should detect imitation tokens using differing decimals', async () => {
-      const differentDecimals = multisigToken.decimals! + 1;
+      const differentDecimals = multisigToken.decimals + 1;
       const differentValue = multisigTransfer.value + '0';
       const imitationWithDifferentDecimalsAddress = getImitationAddress(
         multisigTransfer.to,
@@ -2488,8 +2484,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       const imitationWithDifferentDecimalsExecutionDate = new Date(
         '2024-03-20T09:42:58Z',
       );
-      const imitationWithDifferentDecimalsToken = tokenBuilder()
-        .with('type', TokenType.Erc20)
+      const imitationWithDifferentDecimalsToken = erc20TokenBuilder()
         .with('decimals', differentDecimals)
         .build();
 
@@ -2665,7 +2660,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
   describe('Echo transfers', () => {
     const multisigExecutionDate = new Date('2024-03-20T09:42:58Z');
-    const multisigToken = tokenBuilder().with('type', TokenType.Erc20).build();
+    const multisigToken = erc20TokenBuilder().build();
     const multisigTransfer = {
       ...erc20TransferBuilder()
         .with('executionDate', multisigExecutionDate)
@@ -2676,7 +2671,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           parseUnits(
             // Value vastly above echo limit for testing flagging
             (echoLimit * faker.number.bigInt({ min: 3, max: 9 })).toString(),
-            multisigToken.decimals!,
+            multisigToken.decimals,
           ).toString(),
         )
         .build(),
@@ -2729,8 +2724,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
     } as MultisigTransaction;
 
-    const notImitatedMultisigToken = tokenBuilder()
-      .with('type', TokenType.Erc20)
+    const notImitatedMultisigToken = erc20TokenBuilder()
       .with('decimals', multisigToken.decimals)
       .build();
     const notImitatedMultisigTransfer = {
@@ -2806,7 +2800,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             'value',
             parseUnits(
               faker.number.bigInt({ min: 1, max: echoLimit }).toString(),
-              multisigToken.decimals!,
+              multisigToken.decimals,
             ).toString(),
           )
           .with('executionDate', imitationExecutionDate)
@@ -3587,7 +3581,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             'value',
             parseUnits(
               faker.number.bigInt({ min: echoLimit }).toString(),
-              multisigToken.decimals!,
+              multisigToken.decimals,
             ).toString(),
           )
           .with('executionDate', aboveLimitExecutionDate)
