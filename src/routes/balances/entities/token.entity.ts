@@ -1,11 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TokenType } from '@/routes/balances/entities/token-type.entity';
 
 export class Token {
   @ApiProperty()
   address!: `0x${string}`;
-  @ApiProperty()
-  decimals!: number;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  decimals!: number | null;
   @ApiProperty()
   logoUri?: string;
   @ApiProperty()

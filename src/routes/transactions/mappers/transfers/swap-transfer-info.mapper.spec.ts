@@ -119,7 +119,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapsRepository.getOrders.mockResolvedValue([order]);
     mockSwapOrderHelper.getToken.mockResolvedValue({
       ...token,
-      decimals: token.decimals,
+      decimals: token.decimals!,
     });
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
@@ -202,7 +202,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapsRepository.getOrders.mockResolvedValue([order]);
     mockSwapOrderHelper.getToken.mockResolvedValue({
       ...token,
-      decimals: token.decimals,
+      decimals: token.decimals!,
     });
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
@@ -364,7 +364,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapsRepository.getOrders.mockResolvedValue(orders);
     mockSwapOrderHelper.getToken.mockResolvedValue({
       ...token,
-      decimals: token.decimals,
+      decimals: token.decimals!,
     });
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),

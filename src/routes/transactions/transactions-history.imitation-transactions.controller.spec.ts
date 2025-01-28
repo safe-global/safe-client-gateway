@@ -145,7 +145,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         min: testValueBuffer,
         max: testValueBuffer + valueTolerance,
       }),
-      multisigToken.decimals,
+      multisigToken.decimals!,
     );
     const multisigTransfer = {
       ...erc20TransferBuilder()
@@ -1333,7 +1333,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     describe('Intolerant value', () => {
       const intolerantDiff = parseUnits(
         valueTolerance * BigInt(2),
-        multisigToken.decimals,
+        multisigToken.decimals!,
       );
       const valueIntolerantIncomingTransaction = ((): EthereumTransaction => {
         const transaction = structuredClone(imitationIncomingTransaction);
@@ -2480,7 +2480,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     });
 
     it('should detect imitation tokens using differing decimals', async () => {
-      const differentDecimals = multisigToken.decimals + 1;
+      const differentDecimals = multisigToken.decimals! + 1;
       const differentValue = multisigTransfer.value + '0';
       const imitationWithDifferentDecimalsAddress = getImitationAddress(
         multisigTransfer.to,
@@ -2676,7 +2676,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           parseUnits(
             // Value vastly above echo limit for testing flagging
             (echoLimit * faker.number.bigInt({ min: 3, max: 9 })).toString(),
-            multisigToken.decimals,
+            multisigToken.decimals!,
           ).toString(),
         )
         .build(),
@@ -2806,7 +2806,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             'value',
             parseUnits(
               faker.number.bigInt({ min: 1, max: echoLimit }).toString(),
-              multisigToken.decimals,
+              multisigToken.decimals!,
             ).toString(),
           )
           .with('executionDate', imitationExecutionDate)
@@ -3587,7 +3587,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             'value',
             parseUnits(
               faker.number.bigInt({ min: echoLimit }).toString(),
-              multisigToken.decimals,
+              multisigToken.decimals!,
             ).toString(),
           )
           .with('executionDate', aboveLimitExecutionDate)
