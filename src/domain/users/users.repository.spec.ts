@@ -87,7 +87,7 @@ describe('UsersRepository', () => {
 
       const result = await usersRepository.addWalletToUser({
         authPayload,
-        newSignerAddress: newSignerAddressMock as `0x${string}`,
+        newSignerAddress: newSignerAddressMock,
       });
 
       expect(mockWalletRepository.insert).toHaveBeenCalledWith({
