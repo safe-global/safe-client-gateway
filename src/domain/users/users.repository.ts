@@ -5,10 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { IUsersRepository } from '@/domain/users/users.repository.interface';
-import { User, UserStatus } from '@/domain/users/entities/user.entity';
+import { UserStatus } from '@/domain/users/entities/user.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { User as DbUser } from '@/datasources/users/entities/users.entity.db';
+import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
 import { EntityManager, QueryFailedError } from 'typeorm';
 
@@ -24,7 +24,7 @@ export class UsersRepository implements IUsersRepository {
   }): Promise<Pick<User, 'id'>> {
     return this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
-        const userRepository = entityManager.getRepository(DbUser);
+        const userRepository = entityManager.getRepository(User);
         const walletRepository = entityManager.getRepository(Wallet);
 
         const existingWallet = await walletRepository.findOne({

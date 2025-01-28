@@ -6,14 +6,13 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { z } from 'zod';
 import { getAddress } from 'viem';
 import { User } from '@/datasources/users/entities/users.entity.db';
-import { WalletSchema } from '@/domain/users/entities/wallet.entity';
+import type { Wallet as DomainWallet } from '@/domain/users/entities/wallet.entity';
 
 @Entity('wallets')
 @Unique('UQ_wallet_address', ['address'])
-export class Wallet implements z.infer<typeof WalletSchema> {
+export class Wallet implements DomainWallet {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_wallet_id' })
   id!: number;
 
