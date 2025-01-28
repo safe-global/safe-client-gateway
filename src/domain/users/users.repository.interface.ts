@@ -8,4 +8,9 @@ export interface IUsersRepository {
     status: UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>>;
+
+  removeWalletFromUser(args: {
+    addressToRemove: `0x${string}`;
+    authPayload: AuthPayload;
+  }): Promise<void>;
 }

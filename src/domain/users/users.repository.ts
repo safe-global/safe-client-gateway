@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { User, UserStatus } from '@/domain/users/entities/user.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
@@ -43,6 +48,43 @@ export class UsersRepository implements IUsersRepository {
         });
 
         return { id: userInsertResult.identifiers[0].id };
+      },
+    );
+  }
+
+  async removeWalletFromUser(args: {
+    addressToRemove: `0x${string}`;
+    authPayload: AuthPayload;
+  }): Promise<void> {
+    if (!args.authPayload.signer_address) {
+      throw new UnauthorizedException();
+    }
+    if (args.authPayload.signer_address === args.addressToRemove) {
+      throw new ConflictException('Cannot remove the current wallet');
+    }
+    await this.postgresDatabaseService.transaction(
+      async (entityManager: EntityManager) => {
+        const walletRepository = entityManager.getRepository(Wallet);
+
+        const authenticatedWallet = await walletRepository.findOne({
+          where: { address: args.authPayload.signer_address },
+          relations: { user: true },
+        });
+
+        if (!authenticatedWallet?.user) {
+          throw new NotFoundException('User not found');
+        }
+
+        const deleteResult = await walletRepository.delete({
+          address: args.addressToRemove,
+          user: authenticatedWallet.user,
+        });
+
+        if (!deleteResult.affected) {
+          throw new NotFoundException(
+            `A wallet with address ${args.addressToRemove} does not exist for the current user`,
+          );
+        }
       },
     );
   }
