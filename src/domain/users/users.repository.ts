@@ -11,6 +11,7 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
 import { EntityManager, QueryFailedError } from 'typeorm';
+import { PostgresErrorCode } from '@/datasources/db/v2/postgres-error-codes';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -81,8 +82,7 @@ export class UsersRepository implements IUsersRepository {
         } catch (error) {
           if (
             error instanceof QueryFailedError &&
-            // Unique constraint violation
-            error.driverError.code === '23505'
+            error.driverError.code === PostgresErrorCode.UniqueViolation
           ) {
             throw new ConflictException(
               `A wallet with the same address already exists`,
