@@ -1,4 +1,4 @@
-import { DataDecodedSchema } from '@/domain/data-decoder/entities/schemas/data-decoded.schema';
+import { DataDecodedSchema } from '@/domain/data-decoder/v1/entities/schemas/data-decoded.schema';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';

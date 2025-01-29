@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import type {
   DataDecoded,
   DataDecodedParameter,
-} from '@/domain/data-decoder/entities/data-decoded.entity';
+} from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 
 describe('DataDecoded param helper (Unit)', () => {

@@ -1,6 +1,6 @@
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
-import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { DataDecodedRepositoryModule } from '@/domain/data-decoder/v1/data-decoded.repository.interface';
 import { HumanDescriptionRepositoryModule } from '@/domain/human-description/human-description.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
