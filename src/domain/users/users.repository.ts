@@ -81,6 +81,7 @@ export class UsersRepository implements IUsersRepository {
         } catch (error) {
           if (
             error instanceof QueryFailedError &&
+            // Unique constraint violation
             error.driverError.code === '23505'
           ) {
             throw new ConflictException(
