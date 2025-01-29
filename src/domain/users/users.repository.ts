@@ -111,7 +111,15 @@ export class UsersRepository implements IUsersRepository {
         }
 
         // TODO: Check that it also deletes all wallets of that user
-        await userRepository.delete(authenticatedWallet.user);
+        const deleteResult = await userRepository.delete(
+          authenticatedWallet.user.id,
+        );
+
+        if (!deleteResult.affected) {
+          throw new NotFoundException(
+            `A user with id ${authenticatedWallet.user.id} does not exist.`,
+          );
+        }
       },
     );
   }
@@ -145,7 +153,7 @@ export class UsersRepository implements IUsersRepository {
           where: { user: authenticatedWallet.user },
         });
 
-        if (userWalletCount <= 1) {
+        if (userWalletCount === 1) {
           throw new BadRequestException(
             'Cannot delete the last wallet of a user',
           );
