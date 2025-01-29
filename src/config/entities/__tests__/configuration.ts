@@ -243,6 +243,9 @@ export default (): ReturnType<typeof configuration> => ({
       maxSequentialPages: faker.number.int(),
     },
   },
+  safeDataDecoder: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   safeTransaction: {
     useVpcUrl: false,
   },
