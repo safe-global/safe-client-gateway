@@ -187,10 +187,7 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
 
-      const mockUser = userBuilder()
-        .with('id', 1)
-        .with('status', UserStatus.ACTIVE)
-        .build();
+      const mockUser = userBuilder().with('id', 1).build();
 
       const mockAuthenticatedWallet = walletBuilder()
         .with('user', mockUser)
@@ -202,7 +199,6 @@ describe('UsersRepository', () => {
         .with('address', getAddress(faker.finance.ethereumAddress()))
         .build();
 
-      // Mock repository responses
       mockWalletRepository.findOne.mockResolvedValueOnce(
         mockAuthenticatedWallet,
       );
@@ -211,7 +207,6 @@ describe('UsersRepository', () => {
         mockAdditionalWallet,
       ]);
 
-      // Execute test
       const result = await usersRepository.getUser(authPayload);
 
       expect(mockWalletRepository.findOne).toHaveBeenCalledWith({
@@ -254,6 +249,54 @@ describe('UsersRepository', () => {
       await expect(usersRepository.getUser(authPayload)).rejects.toThrow(
         new NotFoundException('User not found'),
       );
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should successfully delete a user', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', walletAddress)
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      mockUserRepository.delete.mockResolvedValueOnce({ affected: 1, raw: {} });
+
+      await usersRepository.deleteUser(authPayload);
+
+      expect(mockUserRepository.delete).toHaveBeenCalledWith({
+        wallets: { address: walletAddress },
+      });
+    });
+
+    it('should throw a NotFoundException if the user is not found', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', walletAddress)
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      mockUserRepository.delete.mockResolvedValueOnce({ affected: 0, raw: {} });
+
+      await expect(usersRepository.deleteUser(authPayload)).rejects.toThrow(
+        new NotFoundException(
+          `A user for wallet ${walletAddress} does not exist.`,
+        ),
+      );
+
+      expect(mockUserRepository.delete).toHaveBeenCalledWith({
+        wallets: { address: walletAddress },
+      });
+    });
+
+    it('should throw an UnauthorizedException if no authenticated wallet is defined', async () => {
+      const authPayload = new AuthPayload();
+
+      await expect(usersRepository.deleteUser(authPayload)).rejects.toThrow(
+        UnauthorizedException,
+      );
+
+      expect(mockUserRepository.delete).not.toHaveBeenCalled();
     });
   });
 });
