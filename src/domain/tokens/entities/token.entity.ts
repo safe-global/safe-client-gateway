@@ -2,7 +2,15 @@ import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-const DEFAULT_ERC20_DECIMALS = 18;
+/**
+ * ERC-20 decimals are optional
+ * @see https://eips.ethereum.org/EIPS/eip-20#decimals
+ */
+const DEFAULT_ERC20_DECIMALS = 0;
+/**
+ * ERC-721 decimals should return uint8(0) or be optional
+ * @see https://eips.ethereum.org/EIPS/eip-721#backwards-compatibility
+ */
 const DEFAULT_ERC721_DECIMALS = 0;
 
 const BaseTokenSchema = z.object({
