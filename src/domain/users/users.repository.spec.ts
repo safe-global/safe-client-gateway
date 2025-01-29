@@ -109,20 +109,6 @@ describe('UsersRepository', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should throw an ConflictException if the user tries to remove the currently authenticated wallet', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
-
-      await expect(
-        usersRepository.deleteWalletFromUser({
-          authPayload,
-          walletAddress: authPayload.signer_address!,
-        }),
-      ).rejects.toThrow(
-        new ConflictException('Cannot remove the current wallet'),
-      );
-    });
-
     it('should throw a BadRequestException if there is only one wallet', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -140,6 +126,20 @@ describe('UsersRepository', () => {
           walletAddress: addressToRemove,
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw an ConflictException if the user tries to remove the currently authenticated wallet', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      await expect(
+        usersRepository.deleteWalletFromUser({
+          authPayload,
+          walletAddress: authPayload.signer_address as `0x${string}`,
+        }),
+      ).rejects.toThrow(
+        new ConflictException('Cannot remove the current wallet'),
+      );
     });
 
     it('should throw a NotFoundException if the user is not found', async () => {
@@ -180,6 +180,81 @@ describe('UsersRepository', () => {
         new NotFoundException(
           `A wallet with address ${addressToRemove} does not exist for the current user`,
         ),
+      );
+    });
+  });
+
+  describe('getUser', () => {
+    it('should return user information and associated wallets', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      const mockUser = userBuilder()
+        .with('id', 1)
+        .with('status', UserStatus.ACTIVE)
+        .build();
+
+      const mockAuthenticatedWallet = walletBuilder()
+        .with('user', mockUser)
+        .with('address', authPayload.signer_address!)
+        .build();
+
+      const mockAdditionalWallet = walletBuilder()
+        .with('user', mockUser)
+        .with('address', getAddress(faker.finance.ethereumAddress()))
+        .build();
+
+      // Mock repository responses
+      mockWalletRepository.findOne.mockResolvedValueOnce(
+        mockAuthenticatedWallet,
+      );
+      mockWalletRepository.findBy.mockResolvedValueOnce([
+        mockAuthenticatedWallet,
+        mockAdditionalWallet,
+      ]);
+
+      // Execute test
+      const result = await usersRepository.getUser(authPayload);
+
+      expect(mockWalletRepository.findOne).toHaveBeenCalledWith({
+        where: { address: authPayload.signer_address },
+        relations: { user: true },
+      });
+      expect(mockWalletRepository.findBy).toHaveBeenCalledWith({
+        user: mockAuthenticatedWallet.user,
+      });
+      expect(result).toEqual({
+        id: mockUser.id,
+        status: mockUser.status,
+        wallets: [
+          {
+            id: mockAuthenticatedWallet.id,
+            address: mockAuthenticatedWallet.address,
+          },
+          {
+            id: mockAdditionalWallet.id,
+            address: mockAdditionalWallet.address,
+          },
+        ],
+      });
+    });
+
+    it('should throw an UnauthorizedException if no authenticated wallet is defined', async () => {
+      const authPayload = new AuthPayload();
+
+      await expect(usersRepository.getUser(authPayload)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw a NotFoundException if the user is not found', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      mockWalletRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(usersRepository.getUser(authPayload)).rejects.toThrow(
+        new NotFoundException('User not found'),
       );
     });
   });
