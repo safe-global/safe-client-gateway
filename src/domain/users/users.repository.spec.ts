@@ -80,10 +80,9 @@ describe('UsersRepository', () => {
 
       const addressToRemove = getAddress(faker.finance.ethereumAddress());
 
-      const mockAuthenticatedWallet = walletBuilder().build();
-      mockWalletRepository.findOne.mockResolvedValueOnce(
-        mockAuthenticatedWallet,
-      );
+      const mockWallets = [walletBuilder().build(), walletBuilder().build()];
+      const mockUser = userBuilder().with('wallets', mockWallets).build();
+      mockUserRepository.findOne.mockResolvedValueOnce(mockUser);
       mockWalletRepository.delete.mockResolvedValue({ affected: 1, raw: {} });
 
       await usersRepository.deleteWalletFromUser({
@@ -92,7 +91,7 @@ describe('UsersRepository', () => {
       });
 
       expect(mockWalletRepository.delete).toHaveBeenCalledWith({
-        user: mockAuthenticatedWallet.user,
+        user: { id: mockUser.id },
         address: addressToRemove,
       });
     });
@@ -110,13 +109,16 @@ describe('UsersRepository', () => {
     });
 
     it('should throw an ConflictException if the user tries to remove the currently authenticated wallet', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', walletAddress)
+        .build();
       const authPayload = new AuthPayload(authPayloadDto);
 
       await expect(
         usersRepository.deleteWalletFromUser({
           authPayload,
-          walletAddress: authPayload.signer_address!,
+          walletAddress,
         }),
       ).rejects.toThrow(
         new ConflictException('Cannot remove the current wallet'),
@@ -128,11 +130,9 @@ describe('UsersRepository', () => {
       const authPayload = new AuthPayload(authPayloadDto);
       const addressToRemove = getAddress(faker.finance.ethereumAddress());
 
-      const mockAuthenticatedWallet = walletBuilder().build();
-      mockWalletRepository.findOne.mockResolvedValueOnce(
-        mockAuthenticatedWallet,
-      );
-      mockWalletRepository.count.mockResolvedValue(1);
+      const mockWallets = [walletBuilder().build()];
+      const mockUser = userBuilder().with('wallets', mockWallets).build();
+      mockUserRepository.findOne.mockResolvedValueOnce(mockUser);
 
       await expect(
         usersRepository.deleteWalletFromUser({
@@ -164,12 +164,10 @@ describe('UsersRepository', () => {
 
       const addressToRemove = getAddress(faker.finance.ethereumAddress());
 
-      const mockAuthenticatedWallet = walletBuilder().build();
-      mockWalletRepository.findOne.mockResolvedValueOnce(
-        mockAuthenticatedWallet,
-      );
+      const mockWallets = [walletBuilder().build(), walletBuilder().build()];
+      const mockUser = userBuilder().with('wallets', mockWallets).build();
+      mockUserRepository.findOne.mockResolvedValueOnce(mockUser);
       mockWalletRepository.delete.mockResolvedValue({ affected: 0, raw: {} });
-      mockWalletRepository.count.mockResolvedValue(2);
 
       await expect(
         usersRepository.deleteWalletFromUser({

@@ -98,26 +98,15 @@ export class UsersRepository implements IUsersRepository {
 
     await this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
-        const walletRepository = entityManager.getRepository(Wallet);
         const userRepository = entityManager.getRepository(DbUser);
 
-        const authenticatedWallet = await walletRepository.findOne({
-          where: { address: authPayload.signer_address },
-          relations: { user: true },
+        const deleteResult = await userRepository.delete({
+          wallets: { address: authPayload.signer_address },
         });
-
-        if (!authenticatedWallet?.user) {
-          throw new NotFoundException('User not found');
-        }
-
-        // TODO: Check that it also deletes all wallets of that user
-        const deleteResult = await userRepository.delete(
-          authenticatedWallet.user.id,
-        );
 
         if (!deleteResult.affected) {
           throw new NotFoundException(
-            `A user with id ${authenticatedWallet.user.id} does not exist.`,
+            `A user for wallet ${authPayload.signer_address} does not exist.`,
           );
         }
       },
@@ -138,22 +127,19 @@ export class UsersRepository implements IUsersRepository {
 
     await this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
+        const userRepository = entityManager.getRepository(DbUser);
         const walletRepository = entityManager.getRepository(Wallet);
 
-        const authenticatedWallet = await walletRepository.findOne({
-          where: { address: args.authPayload.signer_address },
-          relations: { user: true },
+        const user = await userRepository.findOne({
+          where: { wallets: { address: args.authPayload.signer_address } },
+          relations: { wallets: true },
         });
 
-        if (!authenticatedWallet?.user) {
+        if (!user) {
           throw new NotFoundException('User not found');
         }
 
-        const userWalletCount = await walletRepository.count({
-          where: { user: authenticatedWallet.user },
-        });
-
-        if (userWalletCount === 1) {
+        if (user.wallets.length === 1) {
           throw new BadRequestException(
             'Cannot delete the last wallet of a user',
           );
@@ -161,7 +147,7 @@ export class UsersRepository implements IUsersRepository {
 
         const deleteResult = await walletRepository.delete({
           address: args.walletAddress,
-          user: authenticatedWallet.user,
+          user: { id: user.id },
         });
 
         if (!deleteResult.affected) {
