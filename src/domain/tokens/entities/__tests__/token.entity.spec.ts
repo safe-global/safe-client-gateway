@@ -70,14 +70,14 @@ describe('Token', () => {
     ]);
   });
 
-  it('should default ERC-20 decimals to 18', () => {
+  it('should default ERC-20 decimals to 0', () => {
     const token = erc20TokenBuilder().build();
     // @ts-expect-error - inferred type does not allow undefined decimals
     delete token.decimals;
 
     const result = TokenSchema.safeParse(token);
 
-    expect(result.success && result.data.decimals).toBe(18);
+    expect(result.success && result.data.decimals).toBe(0);
   });
 
   it('should default ERC-721 decimals to 0', () => {
