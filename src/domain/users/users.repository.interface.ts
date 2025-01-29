@@ -18,13 +18,8 @@ export interface IUsersRepository {
 
   deleteUser(authPayload: AuthPayload): Promise<void>;
 
-  deleteWallet(args: {
+  deleteWalletFromUser(args: {
     walletAddress: `0x${string}`;
-    authPayload: AuthPayload;
-  }): Promise<void>;
-
-  removeWalletFromUser(args: {
-    addressToRemove: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void>;
 }

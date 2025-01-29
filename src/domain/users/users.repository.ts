@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -115,27 +116,18 @@ export class UsersRepository implements IUsersRepository {
     );
   }
 
-  async deleteWallet(args: {
+  async deleteWalletFromUser(args: {
     walletAddress: `0x${string}`;
-    authPayload: AuthPayload;
-  }): Promise<void> {
-    const walletRepository =
-      await this.postgresDatabaseService.getRepository(Wallet);
-
-    // TODO: Make sure this doesn't delete the user with remaining wallets or create orphans
-    await walletRepository.delete({ address: args.walletAddress });
-  }
-
-  async removeWalletFromUser(args: {
-    addressToRemove: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void> {
     if (!args.authPayload.signer_address) {
       throw new UnauthorizedException();
     }
-    if (args.authPayload.signer_address === args.addressToRemove) {
+
+    if (args.authPayload.signer_address === args.walletAddress) {
       throw new ConflictException('Cannot remove the current wallet');
     }
+
     await this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
         const walletRepository = entityManager.getRepository(Wallet);
@@ -149,14 +141,24 @@ export class UsersRepository implements IUsersRepository {
           throw new NotFoundException('User not found');
         }
 
+        const userWalletCount = await walletRepository.count({
+          where: { user: authenticatedWallet.user },
+        });
+
+        if (userWalletCount <= 1) {
+          throw new BadRequestException(
+            'Cannot delete the last wallet of a user',
+          );
+        }
+
         const deleteResult = await walletRepository.delete({
-          address: args.addressToRemove,
+          address: args.walletAddress,
           user: authenticatedWallet.user,
         });
 
         if (!deleteResult.affected) {
           throw new NotFoundException(
-            `A wallet with address ${args.addressToRemove} does not exist for the current user`,
+            `A wallet with address ${args.walletAddress} does not exist for the current user`,
           );
         }
       },

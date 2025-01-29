@@ -11,6 +11,7 @@ import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
 import { userBuilder } from '@/datasources/users/entities/__tests__/users.entity.db.builder';
 import { faker } from '@faker-js/faker/.';
 import {
+  BadRequestException,
   ConflictException,
   NotFoundException,
   UnauthorizedException,
@@ -72,7 +73,7 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('removeWalletFromUser', () => {
+  describe('deleteWalletFromUser', () => {
     it('should remove a wallet from a user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -85,9 +86,9 @@ describe('UsersRepository', () => {
       );
       mockWalletRepository.delete.mockResolvedValue({ affected: 1, raw: {} });
 
-      await usersRepository.removeWalletFromUser({
+      await usersRepository.deleteWalletFromUser({
         authPayload,
-        addressToRemove: addressToRemove,
+        walletAddress: addressToRemove,
       });
 
       expect(mockWalletRepository.delete).toHaveBeenCalledWith({
@@ -101,11 +102,30 @@ describe('UsersRepository', () => {
       const addressToRemove = getAddress(faker.finance.ethereumAddress());
 
       await expect(
-        usersRepository.removeWalletFromUser({
+        usersRepository.deleteWalletFromUser({
           authPayload,
-          addressToRemove: addressToRemove,
+          walletAddress: addressToRemove,
         }),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw a BadRequestException if there is only one wallet', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const addressToRemove = getAddress(faker.finance.ethereumAddress());
+
+      const mockAuthenticatedWallet = walletBuilder().build();
+      mockWalletRepository.findOne.mockResolvedValueOnce(
+        mockAuthenticatedWallet,
+      );
+      mockWalletRepository.count.mockResolvedValue(1);
+
+      await expect(
+        usersRepository.deleteWalletFromUser({
+          authPayload,
+          walletAddress: addressToRemove,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw an ConflictException if the user tries to remove the currently authenticated wallet', async () => {
@@ -113,9 +133,9 @@ describe('UsersRepository', () => {
       const authPayload = new AuthPayload(authPayloadDto);
 
       await expect(
-        usersRepository.removeWalletFromUser({
+        usersRepository.deleteWalletFromUser({
           authPayload,
-          addressToRemove: authPayload.signer_address as `0x${string}`,
+          walletAddress: authPayload.signer_address as `0x${string}`,
         }),
       ).rejects.toThrow(
         new ConflictException('Cannot remove the current wallet'),
@@ -131,9 +151,9 @@ describe('UsersRepository', () => {
       mockWalletRepository.findOne.mockResolvedValueOnce(null);
 
       await expect(
-        usersRepository.removeWalletFromUser({
+        usersRepository.deleteWalletFromUser({
           authPayload,
-          addressToRemove: addressToRemove,
+          walletAddress: addressToRemove,
         }),
       ).rejects.toThrow(new NotFoundException('User not found'));
     });
@@ -149,11 +169,12 @@ describe('UsersRepository', () => {
         mockAuthenticatedWallet,
       );
       mockWalletRepository.delete.mockResolvedValue({ affected: 0, raw: {} });
+      mockWalletRepository.count.mockResolvedValue(2);
 
       await expect(
-        usersRepository.removeWalletFromUser({
+        usersRepository.deleteWalletFromUser({
           authPayload,
-          addressToRemove: addressToRemove,
+          walletAddress: addressToRemove,
         }),
       ).rejects.toThrow(
         new NotFoundException(
