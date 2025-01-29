@@ -109,6 +109,20 @@ describe('UsersRepository', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
+    it('should throw an ConflictException if the user tries to remove the currently authenticated wallet', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+
+      await expect(
+        usersRepository.deleteWalletFromUser({
+          authPayload,
+          walletAddress: authPayload.signer_address!,
+        }),
+      ).rejects.toThrow(
+        new ConflictException('Cannot remove the current wallet'),
+      );
+    });
+
     it('should throw a BadRequestException if there is only one wallet', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -126,20 +140,6 @@ describe('UsersRepository', () => {
           walletAddress: addressToRemove,
         }),
       ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw an ConflictException if the user tries to remove the currently authenticated wallet', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
-
-      await expect(
-        usersRepository.deleteWalletFromUser({
-          authPayload,
-          walletAddress: authPayload.signer_address as `0x${string}`,
-        }),
-      ).rejects.toThrow(
-        new ConflictException('Cannot remove the current wallet'),
-      );
     });
 
     it('should throw a NotFoundException if the user is not found', async () => {
