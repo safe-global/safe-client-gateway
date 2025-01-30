@@ -23,6 +23,8 @@ export class UsersRepository implements IUsersRepository {
     status: UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>> {
+    this.assertSignerAddress(args.authPayload);
+
     return this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
         const userRepository = entityManager.getRepository(DbUser);
