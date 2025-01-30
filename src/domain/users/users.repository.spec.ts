@@ -35,6 +35,12 @@ describe('UsersRepository', () => {
     jest.clearAllMocks();
 
     usersRepository = new UsersRepository(mockPostgresDatabaseService);
+    mockPostgresDatabaseService.getRepository.mockImplementation((entity) => {
+      if (entity === User) return Promise.resolve(mockUserRepository);
+      if (entity === Wallet) return Promise.resolve(mockWalletRepository);
+
+      return Promise.reject(new Error('Invalid entity'));
+    });
     mockPostgresDatabaseService.transaction.mockImplementation((fn) =>
       fn(mockEntityManager),
     );
@@ -175,8 +181,8 @@ describe('UsersRepository', () => {
           walletAddress: addressToRemove,
         }),
       ).rejects.toThrow(
-        new NotFoundException(
-          `A wallet with address ${addressToRemove} does not exist for the current user`,
+        new ConflictException(
+          `User could not be removed from wallet. Wallet=${addressToRemove}`,
         ),
       );
     });
@@ -186,9 +192,9 @@ describe('UsersRepository', () => {
     it('should throw an UnauthorizedException if the auth payload is empty', async () => {
       const authPayload = new AuthPayload();
 
-      await expect(usersRepository.getUser(authPayload)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        usersRepository.getUserWithWallets(authPayload),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should return user information and associated wallets', async () => {
@@ -213,19 +219,26 @@ describe('UsersRepository', () => {
       mockWalletRepository.findOne.mockResolvedValueOnce(
         mockAuthenticatedWallet,
       );
-      mockWalletRepository.findBy.mockResolvedValueOnce([
-        mockAuthenticatedWallet,
-        mockAdditionalWallet,
+      mockWalletRepository.find.mockResolvedValueOnce([
+        {
+          id: mockAuthenticatedWallet.id,
+          address: mockAuthenticatedWallet.address,
+        },
+        {
+          id: mockAdditionalWallet.id,
+          address: mockAdditionalWallet.address,
+        },
       ]);
 
-      const result = await usersRepository.getUser(authPayload);
+      const result = await usersRepository.getUserWithWallets(authPayload);
 
       expect(mockWalletRepository.findOne).toHaveBeenCalledWith({
         where: { address: authPayload.signer_address },
         relations: { user: true },
       });
-      expect(mockWalletRepository.findBy).toHaveBeenCalledWith({
-        user: mockAuthenticatedWallet.user,
+      expect(mockWalletRepository.find).toHaveBeenCalledWith({
+        select: ['id', 'address'],
+        where: { user: mockAuthenticatedWallet.user },
       });
       expect(result).toEqual({
         id: mockUser.id,
@@ -246,9 +259,9 @@ describe('UsersRepository', () => {
     it('should throw an UnauthorizedException if no authenticated wallet is defined', async () => {
       const authPayload = new AuthPayload();
 
-      await expect(usersRepository.getUser(authPayload)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        usersRepository.getUserWithWallets(authPayload),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw a NotFoundException if the user is not found', async () => {
@@ -257,9 +270,9 @@ describe('UsersRepository', () => {
 
       mockWalletRepository.findOne.mockResolvedValueOnce(null);
 
-      await expect(usersRepository.getUser(authPayload)).rejects.toThrow(
-        new NotFoundException('User not found'),
-      );
+      await expect(
+        usersRepository.getUserWithWallets(authPayload),
+      ).rejects.toThrow(new NotFoundException('User not found'));
     });
   });
 
@@ -298,9 +311,7 @@ describe('UsersRepository', () => {
       mockUserRepository.delete.mockResolvedValueOnce({ affected: 0, raw: {} });
 
       await expect(usersRepository.deleteUser(authPayload)).rejects.toThrow(
-        new NotFoundException(
-          `A user for wallet ${walletAddress} does not exist.`,
-        ),
+        new NotFoundException(`Could not delete user. Wallet=${walletAddress}`),
       );
 
       expect(mockUserRepository.delete).toHaveBeenCalledWith({

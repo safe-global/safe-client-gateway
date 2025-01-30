@@ -10,10 +10,10 @@ export interface IUsersRepository {
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>>;
 
-  getUser(authPayload: AuthPayload): Promise<{
+  getUserWithWallets(authPayload: AuthPayload): Promise<{
     id: User['id'];
     status: User['status'];
-    wallets: Array<{ address: Wallet['address']; id: Wallet['id'] }>;
+    wallets: Array<Pick<Wallet, 'address' | 'id'>>;
   }>;
 
   deleteUser(authPayload: AuthPayload): Promise<void>;

@@ -2,7 +2,6 @@ import {
   Column,
   Entity,
   Index,
-  JoinColumn,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -23,12 +22,8 @@ export class User implements DomainUser {
   })
   status!: UserStatus;
 
-  @OneToMany(() => Wallet, (wallet) => wallet.id, {
+  @OneToMany(() => Wallet, (wallet: Wallet) => wallet.id, {
     onDelete: 'CASCADE',
-  })
-  @JoinColumn({
-    name: 'wallet_id',
-    foreignKeyConstraintName: 'FK_user_id_wallets',
   })
   wallets!: Array<Wallet>;
 
