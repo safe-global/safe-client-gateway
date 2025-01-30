@@ -1,23 +1,23 @@
-import { User } from '@/domain/users/entities/user.entity';
+import { User, UserStatus } from '@/domain/users/entities/user.entity';
 import { Wallet } from '@/domain/users/entities/wallet.entity';
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 
 class UserWallet implements Pick<Wallet, 'id' | 'address'> {
   @ApiProperty()
-  id!: Wallet['id'];
+  id!: number;
 
   @ApiProperty()
-  address!: Wallet['address'];
+  address!: `0x${string}`;
 }
 
 @ApiExtraModels(UserWallet)
-export class UserWithWallets {
+export class UserWithWallets implements Pick<User, 'id' | 'status'> {
   @ApiProperty()
-  id!: User['id'];
+  id!: number;
 
-  @ApiProperty()
-  status!: User['status'];
+  @ApiProperty({ enum: UserStatus })
+  status!: UserStatus;
 
-  @ApiProperty({ isArray: true })
+  @ApiProperty({ isArray: true, type: UserWallet })
   wallets!: Array<UserWallet>;
 }

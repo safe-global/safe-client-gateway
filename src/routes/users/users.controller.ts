@@ -1,10 +1,14 @@
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   Controller,
   Delete,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   Post,
   UseGuards,
@@ -15,8 +19,8 @@ import { UsersService } from '@/routes/users/users.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { UserWithWallets } from '@/routes/users/entities/user-with-wallets.entity';
-import type { CreatedUserWithWallet } from '@/routes/users/entities/created-user-with-wallet.entity';
+import { UserWithWallets } from '@/routes/users/entities/user-with-wallets.entity';
+import { CreatedUserWithWallet } from '@/routes/users/entities/created-user-with-wallet.entity';
 
 // TODO: Specify error responses for Swagger
 
@@ -25,7 +29,8 @@ import type { CreatedUserWithWallet } from '@/routes/users/entities/created-user
 export class UsersController {
   public constructor(private readonly usersService: UsersService) {}
 
-  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: UserWithWallets })
+  @ApiNotFoundResponse({ description: 'User not found' })
   @Get()
   @UseGuards(AuthGuard)
   public async getUseWithWallets(
@@ -34,14 +39,17 @@ export class UsersController {
     return await this.usersService.getUserWithWallets(authPayload);
   }
 
-  @HttpCode(HttpStatus.OK)
+  @ApiConflictResponse({ description: 'Could not delete user' })
   @Delete()
   @UseGuards(AuthGuard)
   public async deleteUser(@Auth() authPayload: AuthPayload): Promise<void> {
     return await this.usersService.deleteUser(authPayload);
   }
 
-  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: CreatedUserWithWallet })
+  @ApiConflictResponse({
+    description: 'A wallet with the same address already exists',
+  })
   @Post('/wallet')
   @UseGuards(AuthGuard)
   public async createUserWithWallet(
@@ -50,7 +58,15 @@ export class UsersController {
     return await this.usersService.createUserWithWallet(authPayload);
   }
 
-  @HttpCode(HttpStatus.CREATED)
+  @ApiConflictResponse({
+    description:
+      'Cannot remove the current wallet OR User could not be remove from wallet',
+  })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiBadRequestResponse({
+    description: 'Cannot delete the last wallet of a user',
+  })
+  @ApiOkResponse({ description: 'Wallet removed from user and deleted' })
   @Delete('/wallet/:walletAddress')
   @UseGuards(AuthGuard)
   public async deleteWalletFromUser(
