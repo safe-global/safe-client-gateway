@@ -58,9 +58,7 @@ export class UsersRepository implements IUsersRepository {
     status: User['status'];
     wallets: Array<{ address: Wallet['address']; id: Wallet['id'] }>;
   }> {
-    if (!authPayload.signer_address) {
-      throw new UnauthorizedException();
-    }
+    this.assertSignerAddress(authPayload);
 
     return await this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
@@ -92,9 +90,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   async deleteUser(authPayload: AuthPayload): Promise<void> {
-    if (!authPayload.signer_address) {
-      throw new UnauthorizedException();
-    }
+    this.assertSignerAddress(authPayload);
 
     await this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
@@ -117,9 +113,7 @@ export class UsersRepository implements IUsersRepository {
     walletAddress: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void> {
-    if (!args.authPayload.signer_address) {
-      throw new UnauthorizedException();
-    }
+    this.assertSignerAddress(args.authPayload);
 
     if (args.authPayload.signer_address === args.walletAddress) {
       throw new ConflictException('Cannot remove the current wallet');
@@ -157,5 +151,13 @@ export class UsersRepository implements IUsersRepository {
         }
       },
     );
+  }
+
+  private assertSignerAddress(
+    authPayload: AuthPayload,
+  ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
+    if (!authPayload.signer_address) {
+      throw new UnauthorizedException();
+    }
   }
 }
