@@ -19,7 +19,7 @@ export class UsersRepository implements IUsersRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
 
-  createUserWithWallet(args: {
+  public async createUserWithWallet(args: {
     status: UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>> {
@@ -53,7 +53,7 @@ export class UsersRepository implements IUsersRepository {
     );
   }
 
-  async getUserWithWallets(authPayload: AuthPayload): Promise<{
+  public async getUserWithWallets(authPayload: AuthPayload): Promise<{
     id: User['id'];
     status: User['status'];
     wallets: Array<Pick<Wallet, 'id' | 'address'>>;
@@ -86,7 +86,7 @@ export class UsersRepository implements IUsersRepository {
     };
   }
 
-  async deleteUser(authPayload: AuthPayload): Promise<void> {
+  public async deleteUser(authPayload: AuthPayload): Promise<void> {
     this.assertSignerAddress(authPayload);
 
     const userRepository =
@@ -103,7 +103,7 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  async deleteWalletFromUser(args: {
+  public async deleteWalletFromUser(args: {
     walletAddress: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void> {
