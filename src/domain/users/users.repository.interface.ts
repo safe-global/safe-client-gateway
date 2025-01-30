@@ -1,7 +1,7 @@
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { UserStatus } from '@/domain/users/entities/user.entity';
-import type { Wallet } from '@/datasources/users/entities/wallets.entity.db';
-import type { User } from '@/datasources/users/entities/users.entity.db';
+import type { Wallet } from '@/domain/users/entities/wallet.entity';
+import type { User } from '@/domain/users/entities/user.entity';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 
