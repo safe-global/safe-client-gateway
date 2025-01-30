@@ -183,15 +183,26 @@ describe('UsersRepository', () => {
   });
 
   describe('getUser', () => {
+    it('should throw an UnauthorizedException if the auth payload is empty', async () => {
+      const authPayload = new AuthPayload();
+
+      await expect(usersRepository.getUser(authPayload)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
     it('should return user information and associated wallets', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build();
       const authPayload = new AuthPayload(authPayloadDto);
 
       const mockUser = userBuilder().with('id', 1).build();
 
       const mockAuthenticatedWallet = walletBuilder()
         .with('user', mockUser)
-        .with('address', authPayload.signer_address!)
+        .with('address', signerAddress)
         .build();
 
       const mockAdditionalWallet = walletBuilder()
@@ -253,6 +264,14 @@ describe('UsersRepository', () => {
   });
 
   describe('deleteUser', () => {
+    it('should throw an UnauthorizedException if the auth payload is empty', async () => {
+      const authPayload = new AuthPayload();
+
+      await expect(usersRepository.deleteUser(authPayload)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
     it('should successfully delete a user', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder()
