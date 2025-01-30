@@ -70,7 +70,7 @@ export class AppModule implements NestModule {
     const {
       auth: isAuthFeatureEnabled,
       accounts: isAccountsFeatureEnabled,
-      users: isUsersFeatureEnabled = true,
+      users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       delegatesV2: isDelegatesV2Enabled,
       pushNotifications: isPushNotificationsEnabled,

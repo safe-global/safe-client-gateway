@@ -232,12 +232,12 @@ export default () => ({
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
-    auth: true,
+    auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     delegatesV2: process.env.FF_DELEGATES_V2?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
-    accounts: false,
-    users: true,
+    accounts: process.env.FF_ACCOUNTS?.toLowerCase() === 'true',
+    users: process.env.FF_USERS?.toLowerCase() === 'true',
     // TODO: When enabled, we must add `db` as a requirement alongside `redis`
     pushNotifications:
       process.env.FF_PUSH_NOTIFICATIONS?.toLowerCase() === 'true',
