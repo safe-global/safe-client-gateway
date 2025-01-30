@@ -1,4 +1,3 @@
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import {
   Column,
   Entity,
@@ -9,14 +8,8 @@ import {
 } from 'typeorm';
 import { z } from 'zod';
 import { getAddress } from 'viem';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { User } from '@/datasources/users/entities/users.entity.db';
-import { UserSchema } from '@/domain/users/entities/user.entity';
-
-export const WalletSchema = RowSchema.extend({
-  address: AddressSchema,
-  user: UserSchema,
-});
+import { WalletSchema } from '@/domain/users/entities/wallet.entity';
 
 @Entity('wallets')
 @Unique('UQ_wallet_address', ['address'])
@@ -24,7 +17,7 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_wallet_id' })
   id!: number;
 
-  @ManyToOne(() => User, (user) => user.id, {
+  @ManyToOne(() => User, (user: User) => user.id, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({
