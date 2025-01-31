@@ -1,5 +1,4 @@
 import {
-  ApiBadRequestResponse,
   ApiConflictResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -37,6 +36,7 @@ export class UsersController {
     return await this.usersService.getUserWithWallets(authPayload);
   }
 
+  @ApiNotFoundResponse({ description: 'User not found' })
   @ApiConflictResponse({ description: 'Could not delete user' })
   @Delete()
   @UseGuards(AuthGuard)
@@ -61,9 +61,6 @@ export class UsersController {
       'Cannot remove the current wallet OR User could not be remove from wallet',
   })
   @ApiNotFoundResponse({ description: 'User not found' })
-  @ApiBadRequestResponse({
-    description: 'Cannot delete the last wallet of a user',
-  })
   @ApiOkResponse({ description: 'Wallet removed from user and deleted' })
   @Delete('/wallet/:walletAddress')
   @UseGuards(AuthGuard)

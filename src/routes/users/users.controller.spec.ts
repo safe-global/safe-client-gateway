@@ -18,13 +18,11 @@ import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.mo
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
-import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
@@ -34,13 +32,10 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
 
 describe('UsersController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let usersRepository: IUsersRepository;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -81,8 +76,6 @@ describe('UsersController', () => {
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
-    networkService = moduleFixture.get(NetworkService);
-    usersRepository = moduleFixture.get(IUsersRepository);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -115,16 +108,18 @@ describe('UsersController', () => {
         .get('/v1/users')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
-        .expect({
-          id: 1,
-          status: 1,
-          wallets: [
-            {
-              id: 1,
-              address: authPayloadDto.signer_address,
-            },
-          ],
-        });
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+            status: 1,
+            wallets: [
+              {
+                id: expect.any(Number),
+                address: authPayloadDto.signer_address,
+              },
+            ],
+          }),
+        );
     });
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
@@ -168,13 +163,11 @@ describe('UsersController', () => {
   });
 
   describe('DELETE /v1/users', () => {
+    // TODO: Check wallet/user entities are removed in integration test (and other tests don't)
     it('should delete the user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
-      // TODO: Throws 500 because:
-      // - Cannot query across one-to-many for property wallets
-      // - Cannot query across one-to-many for property wallets
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -183,11 +176,8 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .delete('/v1/users')
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect({
-          statusCode: 200,
-        });
-
-      // TODO: Check that wallet/user entities are removed from the database
+        .expect(200)
+        .expect({});
     });
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
@@ -215,21 +205,22 @@ describe('UsersController', () => {
         });
     });
 
-    it('should return a 409 if no user is affected', async () => {
+    it('should return a 404 if the user is not found', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
-      // TODO: Throws 500 because:
-      // - Cannot query across one-to-many for property wallets
       await request(app.getHttpServer())
-        .post('/v1/users/wallet')
+        .delete('/v1/users')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
-          statusCode: 409,
-          message: `Could not delete user. Wallet=${authPayloadDto.signer_address}`,
-          error: 'Conflict',
+          statusCode: 404,
+          message: 'User not found',
+          error: 'Not Found',
         });
     });
+
+    // In the current implementation, this won't occur due to no foreign key constraints
+    it.todo('should return a 409 if no user is affected');
   });
 
   describe('POST /v1/users/wallet', () => {
@@ -241,9 +232,11 @@ describe('UsersController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201)
-        .expect({
-          id: 1,
-        });
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+          }),
+        );
     });
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
@@ -292,8 +285,21 @@ describe('UsersController', () => {
   });
 
   describe('DELETE /v1/users/wallet/:walletAddress', () => {
-    // TODO: Check that the wallet was removed from the user and deleted from the database
-    it.todo('should delete a wallet from a user');
+    // TODO: Check wallet was deleted in integration test (and other tests don't)
+    it.skip('should delete a wallet from a user', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', walletAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // TODO: We need a new endpoint to add a wallet to a user to test this
+    });
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
     it('should return a 403 if not authenticated', async () => {
@@ -325,7 +331,7 @@ describe('UsersController', () => {
         });
     });
 
-    it('should return a 409 if the authenticated one', async () => {
+    it('should return a 409 if it is the authenticated one', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', walletAddress)
@@ -352,8 +358,6 @@ describe('UsersController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
-      // TODO: Throws 500 because:
-      // - Cannot read properties of undefined (reading 'joinColumns')
       await request(app.getHttpServer())
         .delete(`/v1/users/wallet/${walletAddress}`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -364,8 +368,24 @@ describe('UsersController', () => {
         });
     });
 
-    it.todo('should return a 400 if the wallet is the last one');
+    it('should return a 409 if the wallet could not be removed', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
-    it.todo('should return a 409 if the wallet could not be removed');
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/users/wallet/${walletAddress}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 409,
+          message: `User could not be removed from wallet. Wallet=${walletAddress}`,
+          error: 'Conflict',
+        });
+    });
   });
 });

@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -98,11 +97,29 @@ export class UsersRepository implements IUsersRepository {
 
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
+    // TODO: Revert to using singular delete when solving join
+    const walletRepository =
+      await this.postgresDatabaseService.getRepository(Wallet);
 
-    const deleteResult = await userRepository.delete({
-      wallets: { address: authPayload.signer_address },
+    const wallet = await walletRepository.findOne({
+      where: { address: authPayload.signer_address },
+      relations: { user: true },
+      select: {
+        user: {
+          id: true,
+        },
+      },
     });
 
+    if (!wallet?.user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const deleteResult = await userRepository.delete({
+      id: wallet.user.id,
+    });
+
+    // TODO: Check if possible - a todo test case remains for this
     if (!deleteResult.affected) {
       throw new ConflictException(
         `Could not delete user. Wallet=${authPayload.signer_address}`,
@@ -120,27 +137,31 @@ export class UsersRepository implements IUsersRepository {
       throw new ConflictException('Cannot remove the current wallet');
     }
 
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
+    // TODO: Revert to finding user by wallet when solving join
     const walletRepository =
       await this.postgresDatabaseService.getRepository(Wallet);
 
-    const user = await userRepository.findOne({
-      where: { wallets: { address: args.authPayload.signer_address } },
-      relations: { wallets: true },
+    const wallet = await walletRepository.findOne({
+      where: { address: args.authPayload.signer_address },
+      relations: { user: true },
+      select: {
+        user: {
+          id: true,
+          wallets: true,
+        },
+      },
     });
 
-    if (!user) {
+    if (!wallet) {
+      // TODO: If we remain with finding wallet with users, update this message and Swagger
       throw new NotFoundException('User not found');
     }
 
-    if (user.wallets.length === 1) {
-      throw new BadRequestException('Cannot delete the last wallet of a user');
-    }
+    // We don't need to check if the wallet is the last one, as we can't delete the current wallet
 
     const deleteResult = await walletRepository.delete({
       address: args.walletAddress,
-      user: { id: user.id },
+      user: { id: wallet.user.id },
     });
 
     if (!deleteResult.affected) {
