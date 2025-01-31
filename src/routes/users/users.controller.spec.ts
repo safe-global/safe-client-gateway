@@ -117,6 +117,13 @@ describe('UsersController', () => {
         .expect(200)
         .expect({
           id: 1,
+          status: 1,
+          wallets: [
+            {
+              id: 1,
+              address: authPayloadDto.signer_address,
+            },
+          ],
         });
     });
 

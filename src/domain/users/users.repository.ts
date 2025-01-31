@@ -44,13 +44,16 @@ export class UsersRepository implements IUsersRepository {
         });
 
         const userInsertResult = await userRepository.insert(user);
+        const userId = userInsertResult.identifiers[0].id;
 
         await walletRepository.insert({
-          user: user,
+          user: {
+            id: userId,
+          },
           address: args.authPayload.signer_address,
         });
 
-        return { id: userInsertResult.identifiers[0].id };
+        return { id: userId };
       },
     );
   }
@@ -77,7 +80,9 @@ export class UsersRepository implements IUsersRepository {
     const wallets = await walletRepository.find({
       select: ['id', 'address'],
       where: {
-        user: authenticatedWallet.user,
+        user: {
+          id: authenticatedWallet.user.id,
+        },
       },
     });
 
