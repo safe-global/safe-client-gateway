@@ -122,7 +122,7 @@ describe('UsersController', () => {
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
     it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer()).get('/v1/users/wallet').expect({
+      await request(app.getHttpServer()).get('/v1/users').expect({
         statusCode: 403,
         message: 'Forbidden resource',
         error: 'Forbidden',
@@ -136,11 +136,12 @@ describe('UsersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .get('/v1/users/wallet')
+        .get('/v1/users')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
           statusCode: 403,
-          message: 'TODO',
+          message: 'Forbidden resource',
+          error: 'Forbidden',
         });
     });
 
@@ -182,7 +183,8 @@ describe('UsersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
           statusCode: 403,
-          message: 'TODO',
+          message: 'Forbidden resource',
+          error: 'Forbidden',
         });
     });
 
@@ -223,7 +225,8 @@ describe('UsersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
           statusCode: 403,
-          message: 'TODO',
+          message: 'Forbidden resource',
+          error: 'Forbidden',
         });
     });
 
@@ -238,7 +241,7 @@ describe('UsersController', () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
-        .delete(`/v1/users/${walletAddress}`)
+        .delete(`/v1/users/wallet/${walletAddress}`)
         .expect({
           statusCode: 403,
           message: 'Forbidden resource',
@@ -254,11 +257,12 @@ describe('UsersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .delete(`/v1/users/${walletAddress}`)
+        .delete(`/v1/users/wallet/${walletAddress}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
           statusCode: 403,
-          message: 'TODO',
+          message: 'Forbidden resource',
+          error: 'Forbidden',
         });
     });
 
