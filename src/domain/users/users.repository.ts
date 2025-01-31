@@ -34,6 +34,8 @@ export class UsersRepository implements IUsersRepository {
           where: { address: args.authPayload.signer_address },
         });
 
+        console.log('==> existingWallet', existingWallet);
+
         if (existingWallet)
           throw new ConflictException(
             'A wallet with the same address already exists',
@@ -45,10 +47,14 @@ export class UsersRepository implements IUsersRepository {
 
         const userInsertResult = await userRepository.insert(user);
 
-        await walletRepository.insert({
+        console.log('==> userInsertResult', userInsertResult);
+
+        const x = await walletRepository.insert({
           user: user,
           address: args.authPayload.signer_address,
         });
+
+        console.log('==> x', x);
 
         return { id: userInsertResult.identifiers[0].id };
       },

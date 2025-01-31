@@ -1,3 +1,5 @@
+import { Inject } from '@nestjs/common';
+import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { UsersRepository } from '@/domain/users/users.repository';
@@ -5,7 +7,10 @@ import type { UserWithWallets } from '@/routes/users/entities/user-with-wallets.
 import type { CreatedUserWithWallet } from '@/routes/users/entities/created-user-with-wallet.entity';
 
 export class UsersService {
-  public constructor(private readonly usersRepository: UsersRepository) {}
+  public constructor(
+    @Inject(IUsersRepository)
+    private readonly usersRepository: UsersRepository,
+  ) {}
 
   public async getUserWithWallets(
     authPayload: AuthPayload,
