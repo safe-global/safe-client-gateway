@@ -30,6 +30,8 @@ import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
+import { getAddress } from 'viem';
+import { faker } from '@faker-js/faker/.';
 
 describe('UsersController', () => {
   let app: INestApplication<Server>;
@@ -88,8 +90,7 @@ describe('UsersController', () => {
   });
 
   describe('GET /v1/users', () => {
-    // Creating and/or linking the wallet is not working
-    it.skip('should return the user with wallets', async () => {
+    it('should return the user with wallets', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -108,9 +109,27 @@ describe('UsersController', () => {
     });
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
-    it.todo('should return a 401 if not authenticated');
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer()).get('/v1/users/wallet').expect({
+        statusCode: 403,
+        message: 'TODO',
+      });
+    });
 
-    it.todo('should return a 401 is the AuthPayload is empty');
+    it('should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 403,
+          message: 'TODO',
+        });
+    });
 
     it('should return a 404 if the user is not found', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
@@ -131,20 +150,67 @@ describe('UsersController', () => {
     it.todo('should delete the user');
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
-    it.todo('should return a 401 if not authenticated');
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer()).delete('/v1/users').expect({
+        statusCode: 403,
+        message: 'TODO',
+      });
+    });
 
-    it.todo('should return a 401 is the AuthPayload is empty');
+    it('should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
-    it.todo('should return a 404 if the user is not found');
+      await request(app.getHttpServer())
+        .delete('/v1/users')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 403,
+          message: 'TODO',
+        });
+    });
+
+    it.todo('should return a 409 if no user is affected');
   });
 
   describe('POST /v1/users/wallet', () => {
-    it.todo('should create a user with a wallet');
+    it('should create a user with a wallet', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201)
+        .expect({
+          id: 1,
+        });
+    });
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
-    it.todo('should return a 401 if not authenticated');
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer()).post('/v1/users/wallet').expect({
+        statusCode: 403,
+        message: 'TODO',
+      });
+    });
 
-    it.todo('should return a 401 is the AuthPayload is empty');
+    it('should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 403,
+          message: 'TODO',
+        });
+    });
 
     it.todo('should return a 409 if the wallet already exists');
   });
@@ -153,9 +219,32 @@ describe('UsersController', () => {
     it.todo('should delete a wallet from a user');
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
-    it.todo('should return a 401 if not authenticated');
+    it('should return a 403 if not authenticated', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
 
-    it.todo('should return a 401 is the AuthPayload is empty');
+      await request(app.getHttpServer())
+        .delete(`/v1/users/${walletAddress}`)
+        .expect({
+          statusCode: 403,
+          message: 'TODO',
+        });
+    });
+
+    it('should return a 403 is the AuthPayload is empty', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/users/${walletAddress}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 403,
+          message: 'TODO',
+        });
+    });
 
     it.todo('should return a 409 if the authenticated one');
 
