@@ -168,7 +168,27 @@ describe('UsersController', () => {
   });
 
   describe('DELETE /v1/users', () => {
-    it.todo('should delete the user');
+    it('should delete the user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      // TODO: Throws 500 because:
+      // - Cannot query across one-to-many for property wallets
+      // - Cannot query across one-to-many for property wallets
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .delete('/v1/users')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 200,
+        });
+
+      // TODO: Check that wallet/user entities are removed from the database
+    });
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
     it('should return a 403 if not authenticated', async () => {
@@ -195,7 +215,21 @@ describe('UsersController', () => {
         });
     });
 
-    it.todo('should return a 409 if no user is affected');
+    it('should return a 409 if no user is affected', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      // TODO: Throws 500 because:
+      // - Cannot query across one-to-many for property wallets
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 409,
+          message: `Could not delete user. Wallet=${authPayloadDto.signer_address}`,
+          error: 'Conflict',
+        });
+    });
   });
 
   describe('POST /v1/users/wallet', () => {
@@ -237,10 +271,28 @@ describe('UsersController', () => {
         });
     });
 
-    it.todo('should return a 409 if the wallet already exists');
+    it('should return a 409 if the wallet already exists', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 409,
+          message: 'A wallet with the same address already exists',
+          error: 'Conflict',
+        });
+    });
   });
 
   describe('DELETE /v1/users/wallet/:walletAddress', () => {
+    // TODO: Check that the wallet was removed from the user and deleted from the database
     it.todo('should delete a wallet from a user');
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
@@ -273,9 +325,44 @@ describe('UsersController', () => {
         });
     });
 
-    it.todo('should return a 409 if the authenticated one');
+    it('should return a 409 if the authenticated one', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', walletAddress)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
 
-    it.todo('should return a 404 if the user is not found');
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/users/wallet/${walletAddress}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 409,
+          message: 'Cannot remove the current wallet',
+          error: 'Conflict',
+        });
+    });
+
+    it('should return a 404 if the user is not found', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      // TODO: Throws 500 because:
+      // - Cannot read properties of undefined (reading 'joinColumns')
+      await request(app.getHttpServer())
+        .delete(`/v1/users/wallet/${walletAddress}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect({
+          statusCode: 404,
+          message: 'User not found',
+          error: 'Not Found',
+        });
+    });
 
     it.todo('should return a 400 if the wallet is the last one');
 
