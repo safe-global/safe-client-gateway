@@ -1,3 +1,5 @@
+import { getAddress } from 'viem';
+import { faker } from '@faker-js/faker';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
@@ -26,12 +28,13 @@ import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
+import { UsersController } from '@/routes/users/users.controller';
+import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
+import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
-import { getAddress } from 'viem';
-import { faker } from '@faker-js/faker/.';
 
 describe('UsersController', () => {
   let app: INestApplication<Server>;
@@ -89,6 +92,15 @@ describe('UsersController', () => {
     await app.close();
   });
 
+  it('should require authentication for every endpoint', () => {
+    const endpoints = Object.values(
+      UsersController.prototype,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    ) as Array<Function>;
+
+    endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
+  });
+
   describe('GET /v1/users', () => {
     it('should return the user with wallets', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
@@ -112,7 +124,8 @@ describe('UsersController', () => {
     it('should return a 403 if not authenticated', async () => {
       await request(app.getHttpServer()).get('/v1/users/wallet').expect({
         statusCode: 403,
-        message: 'TODO',
+        message: 'Forbidden resource',
+        error: 'Forbidden',
       });
     });
 
@@ -153,7 +166,8 @@ describe('UsersController', () => {
     it('should return a 403 if not authenticated', async () => {
       await request(app.getHttpServer()).delete('/v1/users').expect({
         statusCode: 403,
-        message: 'TODO',
+        message: 'Forbidden resource',
+        error: 'Forbidden',
       });
     });
 
@@ -193,7 +207,8 @@ describe('UsersController', () => {
     it('should return a 403 if not authenticated', async () => {
       await request(app.getHttpServer()).post('/v1/users/wallet').expect({
         statusCode: 403,
-        message: 'TODO',
+        message: 'Forbidden resource',
+        error: 'Forbidden',
       });
     });
 
@@ -226,7 +241,8 @@ describe('UsersController', () => {
         .delete(`/v1/users/${walletAddress}`)
         .expect({
           statusCode: 403,
-          message: 'TODO',
+          message: 'Forbidden resource',
+          error: 'Forbidden',
         });
     });
 
