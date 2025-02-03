@@ -132,7 +132,9 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     this.assertWalletIsNotSigner(args);
 
-    const user = await this.findByWalletAddress(args.authPayload.signer_address);
+    const user = await this.findByWalletAddress(
+      args.authPayload.signer_address,
+    );
 
     const wallet = await this.walletsRepository.findOneOrFail({
       address: args.walletAddress,
