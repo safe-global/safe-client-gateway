@@ -1,14 +1,14 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class UpdateOrganisationsTimestampTrigger1737988602722
+export class UpdateOrganizationsTimestampTrigger1737988602722
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-                    CREATE TRIGGER update_organisations_updated_at
+                    CREATE TRIGGER update_organizations_updated_at
                         BEFORE UPDATE
                         ON
-                            organisations
+                            organizations
                         FOR EACH ROW
                     EXECUTE PROCEDURE update_updated_at();
             `);
@@ -16,7 +16,7 @@ export class UpdateOrganisationsTimestampTrigger1737988602722
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `DROP TRIGGER IF EXISTS update_organisations_updated_at ON organisations;`,
+      `DROP TRIGGER IF EXISTS update_organizations_updated_at ON organizations;`,
     );
   }
 }
