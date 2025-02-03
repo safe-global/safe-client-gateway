@@ -90,7 +90,9 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     await this.assertWalletDoesNotExist(args.walletAddress);
 
-    const user = await this.findUserByAddress(args.authPayload.signer_address);
+    const user = await this.findByWalletAddress(
+      args.authPayload.signer_address,
+    );
 
     // @todo: We should improve the transaction handling here
     return this.postgresDatabaseService.transaction(
@@ -130,7 +132,7 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     this.assertWalletIsNotSigner(args);
 
-    const user = await this.findUserByAddress(args.authPayload.signer_address);
+    const user = await this.findByWalletAddress(args.authPayload.signer_address);
 
     const wallet = await this.walletsRepository.findOneOrFail({
       address: args.walletAddress,
@@ -140,10 +142,10 @@ export class UsersRepository implements IUsersRepository {
     await this.walletsRepository.deleteByAddress(wallet.address);
   }
 
-  private async findUserByAddress(address: `0x${string}`): Promise<User> {
+  private async findByWalletAddress(address: `0x${string}`): Promise<User> {
     try {
-      const { user } = await this.walletsRepository.findOneOrFail(
-        { address },
+      const { user } = await this.walletsRepository.findOneByAddressOrFail(
+        address,
         { user: true },
       );
       return user;
