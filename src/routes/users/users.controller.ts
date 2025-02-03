@@ -64,6 +64,7 @@ export class UsersController {
   @ApiConflictResponse({ description: 'Wallet already exists' })
   @ApiNotFoundResponse({ description: 'User not found' })
   @Post('/wallet/:walletAddress')
+  @UseGuards(AuthGuard)
   public async addWalletToUser(
     @Param('walletAddress', new ValidationPipe(AddressSchema))
     walletAddress: `0x${string}`,

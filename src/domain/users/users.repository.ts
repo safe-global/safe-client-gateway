@@ -68,6 +68,7 @@ export class UsersRepository implements IUsersRepository {
 
     const wallet = await this.walletsRepository.findOneByAddressOrFail(
       authPayload.signer_address,
+      { user: true },
     );
 
     const wallets = await this.walletsRepository.findByUser(wallet.user.id, {
@@ -87,7 +88,7 @@ export class UsersRepository implements IUsersRepository {
     authPayload: AuthPayload;
   }): Promise<Pick<Wallet, 'id'>> {
     this.assertSignerAddress(args.authPayload);
-    await this.assertWalletDoesNotExist(args.authPayload.signer_address);
+    await this.assertWalletDoesNotExist(args.walletAddress);
 
     let user: User;
     try {

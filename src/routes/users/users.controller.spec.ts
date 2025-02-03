@@ -124,7 +124,7 @@ describe('UsersController', () => {
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
     it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer()).get('/v1/users').expect({
+      await request(app.getHttpServer()).get('/v1/users').expect(403).expect({
         statusCode: 403,
         message: 'Forbidden resource',
         error: 'Forbidden',
@@ -140,6 +140,7 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .get('/v1/users')
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
         .expect({
           statusCode: 403,
           message: 'Forbidden resource',
@@ -154,6 +155,7 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .get('/v1/users')
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
         .expect({
           statusCode: 404,
           message: 'Wallet not found. Address=' + authPayloadDto.signer_address,
@@ -182,11 +184,14 @@ describe('UsersController', () => {
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
     it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer()).delete('/v1/users').expect({
-        statusCode: 403,
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-      });
+      await request(app.getHttpServer())
+        .delete('/v1/users')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
     });
 
     it('should return a 403 is the AuthPayload is empty', async () => {
@@ -198,6 +203,7 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .delete('/v1/users')
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
         .expect({
           statusCode: 403,
           message: 'Forbidden resource',
@@ -212,6 +218,7 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .delete('/v1/users')
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
         .expect({
           statusCode: 404,
           message: 'Wallet not found. Address=' + authPayloadDto.signer_address,
@@ -238,11 +245,14 @@ describe('UsersController', () => {
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
     it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer()).post('/v1/users/wallet').expect({
-        statusCode: 403,
-        message: 'Forbidden resource',
-        error: 'Forbidden',
-      });
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
     });
 
     it('should return a 403 is the AuthPayload is empty', async () => {
@@ -254,6 +264,7 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
         .expect({
           statusCode: 403,
           message: 'Forbidden resource',
@@ -273,12 +284,111 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(409)
         .expect({
           statusCode: 409,
           message:
             'A wallet with the same address already exists. Wallet=' +
             authPayloadDto.signer_address,
           error: 'Conflict',
+        });
+    });
+  });
+
+  describe('POST /v1/users/wallet/:walletAddress', () => {
+    it('should add a wallet to a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const extraWallet = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/v1/users/wallet/${extraWallet}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+          }),
+        );
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      const extraWallet = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .post(`/v1/users/wallet/${extraWallet}`)
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const extraWallet = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .post(`/v1/users/wallet/${extraWallet}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('should return a 409 if the wallet already exists', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const extraWallet = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/v1/users/wallet/${extraWallet}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/v1/users/wallet/${extraWallet}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(409)
+        .expect({
+          statusCode: 409,
+          message:
+            'A wallet with the same address already exists. Wallet=' +
+            extraWallet,
+          error: 'Conflict',
+        });
+    });
+
+    it('should return a 404 if the user does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const extraWallet = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .post(`/v1/users/wallet/${extraWallet}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'User not found.',
+          error: 'Not Found',
         });
     });
   });
@@ -290,6 +400,7 @@ describe('UsersController', () => {
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', walletAddress)
         .build();
+      const extraWallet = getAddress(faker.finance.ethereumAddress());
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -297,7 +408,16 @@ describe('UsersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // TODO: We need a new endpoint to add a wallet to a user to test this
+      await request(app.getHttpServer())
+        .post(`/v1/users/wallet/${extraWallet}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/users/wallet/${extraWallet}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect({});
     });
 
     // Note: we could extensively test JWT validity but it is covered in the AuthGuard tests
@@ -306,6 +426,7 @@ describe('UsersController', () => {
 
       await request(app.getHttpServer())
         .delete(`/v1/users/wallet/${walletAddress}`)
+        .expect(403)
         .expect({
           statusCode: 403,
           message: 'Forbidden resource',
@@ -323,6 +444,7 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/users/wallet/${walletAddress}`)
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
         .expect({
           statusCode: 403,
           message: 'Forbidden resource',
@@ -345,6 +467,7 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/users/wallet/${walletAddress}`)
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(409)
         .expect({
           statusCode: 409,
           message: 'Cannot remove the current wallet',
@@ -352,7 +475,7 @@ describe('UsersController', () => {
         });
     });
 
-    it('should return a 404 if the user is not found', async () => {
+    it('should return a 404 if the user wallet is not found', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -360,9 +483,10 @@ describe('UsersController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/users/wallet/${walletAddress}`)
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Wallet not found. Address=' + walletAddress,
+          message: 'Wallet not found. Address=' + authPayloadDto.signer_address,
           error: 'Not Found',
         });
     });
