@@ -80,7 +80,7 @@ export class UsersController {
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   @ApiConflictResponse({ description: 'Cannot remove the current wallet' })
   @ApiNotFoundResponse({
-    description: 'Signer wallet OR provided wallet not found',
+    description: 'User OR provided wallet not found',
   })
   @Delete('/wallet/:walletAddress')
   @UseGuards(AuthGuard)

@@ -90,19 +90,7 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     await this.assertWalletDoesNotExist(args.walletAddress);
 
-    let user: User;
-    try {
-      const wallet = await this.walletsRepository.findOneOrFail(
-        { address: args.authPayload.signer_address },
-        { user: true },
-      );
-      user = wallet.user;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException('User not found.');
-      }
-      throw error;
-    }
+    const user = await this.findUserByAddress(args.authPayload.signer_address);
 
     // @todo: We should improve the transaction handling here
     return this.postgresDatabaseService.transaction(
@@ -142,19 +130,29 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     this.assertWalletIsNotSigner(args);
 
-    const signerWallet = await this.walletsRepository.findOneByAddressOrFail(
-      args.authPayload.signer_address,
-      {
-        user: true,
-      },
-    );
+    const user = await this.findUserByAddress(args.authPayload.signer_address);
 
     const wallet = await this.walletsRepository.findOneOrFail({
       address: args.walletAddress,
-      user: { id: signerWallet.user.id },
+      user: { id: user.id },
     });
 
     await this.walletsRepository.deleteByAddress(wallet.address);
+  }
+
+  private async findUserByAddress(address: `0x${string}`): Promise<User> {
+    try {
+      const { user } = await this.walletsRepository.findOneOrFail(
+        { address },
+        { user: true },
+      );
+      return user;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException('User not found.');
+      }
+      throw error;
+    }
   }
 
   private assertSignerAddress(

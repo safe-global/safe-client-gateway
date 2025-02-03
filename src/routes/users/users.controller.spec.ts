@@ -475,7 +475,7 @@ describe('UsersController', () => {
         });
     });
 
-    it('should return a 404 if the user wallet is not found', async () => {
+    it('should return a 404 if the user is not found', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -486,7 +486,7 @@ describe('UsersController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Wallet not found. Address=' + authPayloadDto.signer_address,
+          message: 'User not found.',
           error: 'Not Found',
         });
     });
