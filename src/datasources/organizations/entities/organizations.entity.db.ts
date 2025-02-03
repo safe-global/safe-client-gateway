@@ -1,11 +1,11 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import {
-  OrganisationStatus,
-  Organisation as DomainOrganisation,
-} from '@/domain/organisations/entities/organisation.entity';
+  OrganizationStatus,
+  Organization as DomainOrganization,
+} from '@/domain/organizations/entities/organization.entity';
 
-@Entity('organisations')
-export class Organisations implements DomainOrganisation {
+@Entity('organizations')
+export class Organizations implements DomainOrganization {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_org_id' })
   id!: number;
 
@@ -16,7 +16,7 @@ export class Organisations implements DomainOrganisation {
   @Column({
     type: 'integer',
   })
-  status!: OrganisationStatus;
+  status!: OrganizationStatus;
 
   @Column({
     type: 'timestamp with time zone',
