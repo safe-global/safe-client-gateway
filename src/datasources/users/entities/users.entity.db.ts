@@ -9,7 +9,7 @@ import {
   UserStatus,
   User as DomainUser,
 } from '@/domain/users/entities/user.entity';
-import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
+import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 
 @Entity('users')
 export class User implements DomainUser {
