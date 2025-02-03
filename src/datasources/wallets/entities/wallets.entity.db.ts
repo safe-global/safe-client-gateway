@@ -9,7 +9,7 @@ import {
 import { z } from 'zod';
 import { getAddress } from 'viem';
 import { User } from '@/datasources/users/entities/users.entity.db';
-import { WalletSchema } from '@/domain/users/entities/wallet.entity';
+import { WalletSchema } from '@/domain/wallets/entities/wallet.entity';
 
 @Entity('wallets')
 @Unique('UQ_wallet_address', ['address'])

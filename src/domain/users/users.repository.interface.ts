@@ -16,6 +16,11 @@ export interface IUsersRepository {
     wallets: Array<Pick<Wallet, 'address' | 'id'>>;
   }>;
 
+  addWalletToUser(args: {
+    walletAddress: `0x${string}`;
+    authPayload: AuthPayload;
+  }): Promise<Pick<Wallet, 'id'>>;
+
   delete(authPayload: AuthPayload): Promise<void>;
 
   deleteWalletFromUser(args: {

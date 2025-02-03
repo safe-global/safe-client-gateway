@@ -5,22 +5,13 @@ import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { UsersRepository } from '@/domain/users/users.repository';
 import type { UserWithWallets } from '@/routes/users/entities/user-with-wallets.entity';
 import type { CreatedUserWithWallet } from '@/routes/users/entities/created-user-with-wallet.entity';
+import type { WalletAddedToUser } from '@/routes/users/entities/wallet-added-to-user.entity';
 
 export class UsersService {
   public constructor(
     @Inject(IUsersRepository)
     private readonly usersRepository: UsersRepository,
   ) {}
-
-  public async getWithWallets(
-    authPayload: AuthPayload,
-  ): Promise<UserWithWallets> {
-    return await this.usersRepository.getWithWallets(authPayload);
-  }
-
-  public async delete(authPayload: AuthPayload): Promise<void> {
-    return await this.usersRepository.delete(authPayload);
-  }
 
   public async createWithWallet(
     authPayload: AuthPayload,
@@ -29,6 +20,23 @@ export class UsersService {
       status: UserStatus.ACTIVE,
       authPayload,
     });
+  }
+
+  public async getWithWallets(
+    authPayload: AuthPayload,
+  ): Promise<UserWithWallets> {
+    return await this.usersRepository.getWithWallets(authPayload);
+  }
+
+  public async addWalletToUser(args: {
+    authPayload: AuthPayload;
+    walletAddress: `0x${string}`;
+  }): Promise<WalletAddedToUser> {
+    return await this.usersRepository.addWalletToUser(args);
+  }
+
+  public async delete(authPayload: AuthPayload): Promise<void> {
+    return await this.usersRepository.delete(authPayload);
   }
 
   public async deleteWalletFromUser(args: {

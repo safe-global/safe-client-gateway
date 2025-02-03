@@ -2,6 +2,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { IUsersRepository } from '@/domain/users/users.repository.interface';
@@ -88,10 +89,19 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     await this.assertWalletDoesNotExist(args.authPayload.signer_address);
 
-    const { user } = await this.walletsRepository.findOneOrFail(
-      { address: args.authPayload.signer_address },
-      { user: true },
-    );
+    let user: User;
+    try {
+      const wallet = await this.walletsRepository.findOneOrFail(
+        { address: args.authPayload.signer_address },
+        { user: true },
+      );
+      user = wallet.user;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException('User not found.');
+      }
+      throw error;
+    }
 
     // @todo: We should improve the transaction handling here
     return this.postgresDatabaseService.transaction(
