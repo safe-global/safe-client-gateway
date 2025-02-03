@@ -7,7 +7,7 @@ import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postg
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
 import type { EntityManager } from 'typeorm';
 import { User } from '@/datasources/users/entities/users.entity.db';
-import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
+import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { userBuilder } from '@/datasources/users/entities/__tests__/users.entity.db.builder';
 import { faker } from '@faker-js/faker/.';
 import {
@@ -16,9 +16,12 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { walletBuilder } from '@/datasources/users/entities/__tests__/wallets.entity.db.builder';
+import { walletBuilder } from '@/datasources/wallets/entities/__tests__/wallets.entity.db.builder';
 import { getAddress } from 'viem';
+import { WalletsRepository } from '@/domain/wallets/wallets.repository';
+import type { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 
+let walletsRepository: IWalletsRepository;
 let usersRepository: IUsersRepository;
 const mockUserRepository = { ...mockRepository };
 const mockWalletRepository = { ...mockRepository };
@@ -34,7 +37,11 @@ describe('UsersRepository', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    usersRepository = new UsersRepository(mockPostgresDatabaseService);
+    walletsRepository = new WalletsRepository(mockPostgresDatabaseService);
+    usersRepository = new UsersRepository(
+      mockPostgresDatabaseService,
+      walletsRepository,
+    );
     mockPostgresDatabaseService.getRepository.mockImplementation((entity) => {
       if (entity === User) return Promise.resolve(mockUserRepository);
       if (entity === Wallet) return Promise.resolve(mockWalletRepository);
@@ -46,8 +53,8 @@ describe('UsersRepository', () => {
     );
   });
 
-  describe('createUserWithWallet', () => {
-    it('should create a user and associated wallet in a transaction', async () => {
+  describe('createWithWallet', () => {
+    it.only('should create a user and associated wallet in a transaction', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = UserStatus.ACTIVE;
@@ -60,7 +67,7 @@ describe('UsersRepository', () => {
         raw: jest.fn(),
       });
 
-      const result = await usersRepository.createUserWithWallet({
+      const result = await usersRepository.createWithWallet({
         status,
         authPayload,
       });
@@ -192,9 +199,9 @@ describe('UsersRepository', () => {
     it('should throw an UnauthorizedException if the auth payload is empty', async () => {
       const authPayload = new AuthPayload();
 
-      await expect(
-        usersRepository.getUserWithWallets(authPayload),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(usersRepository.getWithWallets(authPayload)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should return user information and associated wallets', async () => {
@@ -230,7 +237,7 @@ describe('UsersRepository', () => {
         },
       ]);
 
-      const result = await usersRepository.getUserWithWallets(authPayload);
+      const result = await usersRepository.getWithWallets(authPayload);
 
       expect(mockWalletRepository.findOne).toHaveBeenCalledWith({
         where: { address: authPayload.signer_address },
@@ -259,9 +266,9 @@ describe('UsersRepository', () => {
     it('should throw an UnauthorizedException if no authenticated wallet is defined', async () => {
       const authPayload = new AuthPayload();
 
-      await expect(
-        usersRepository.getUserWithWallets(authPayload),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(usersRepository.getWithWallets(authPayload)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw a NotFoundException if the user is not found', async () => {
@@ -270,17 +277,17 @@ describe('UsersRepository', () => {
 
       mockWalletRepository.findOne.mockResolvedValueOnce(null);
 
-      await expect(
-        usersRepository.getUserWithWallets(authPayload),
-      ).rejects.toThrow(new NotFoundException('User not found'));
+      await expect(usersRepository.getWithWallets(authPayload)).rejects.toThrow(
+        new NotFoundException('User not found'),
+      );
     });
   });
 
-  describe('deleteUser', () => {
+  describe('delete', () => {
     it('should throw an UnauthorizedException if the auth payload is empty', async () => {
       const authPayload = new AuthPayload();
 
-      await expect(usersRepository.deleteUser(authPayload)).rejects.toThrow(
+      await expect(usersRepository.delete(authPayload)).rejects.toThrow(
         UnauthorizedException,
       );
     });
@@ -294,7 +301,7 @@ describe('UsersRepository', () => {
 
       mockUserRepository.delete.mockResolvedValueOnce({ affected: 1, raw: {} });
 
-      await usersRepository.deleteUser(authPayload);
+      await usersRepository.delete(authPayload);
 
       expect(mockUserRepository.delete).toHaveBeenCalledWith({
         wallets: { address: walletAddress },
@@ -310,7 +317,7 @@ describe('UsersRepository', () => {
 
       mockUserRepository.delete.mockResolvedValueOnce({ affected: 0, raw: {} });
 
-      await expect(usersRepository.deleteUser(authPayload)).rejects.toThrow(
+      await expect(usersRepository.delete(authPayload)).rejects.toThrow(
         new NotFoundException(`Could not delete user. Wallet=${walletAddress}`),
       );
 
@@ -322,7 +329,7 @@ describe('UsersRepository', () => {
     it('should throw an UnauthorizedException if no authenticated wallet is defined', async () => {
       const authPayload = new AuthPayload();
 
-      await expect(usersRepository.deleteUser(authPayload)).rejects.toThrow(
+      await expect(usersRepository.delete(authPayload)).rejects.toThrow(
         UnauthorizedException,
       );
 

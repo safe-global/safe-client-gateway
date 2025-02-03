@@ -33,15 +33,15 @@ export class UsersController {
   public async getUseWithWallets(
     @Auth() authPayload: AuthPayload,
   ): Promise<UserWithWallets> {
-    return await this.usersService.getUserWithWallets(authPayload);
+    return await this.usersService.getWithWallets(authPayload);
   }
 
   @ApiNotFoundResponse({ description: 'User not found' })
   @ApiConflictResponse({ description: 'Could not delete user' })
   @Delete()
   @UseGuards(AuthGuard)
-  public async deleteUser(@Auth() authPayload: AuthPayload): Promise<void> {
-    return await this.usersService.deleteUser(authPayload);
+  public async delete(@Auth() authPayload: AuthPayload): Promise<void> {
+    return await this.usersService.delete(authPayload);
   }
 
   @ApiOkResponse({ type: CreatedUserWithWallet })
@@ -50,10 +50,10 @@ export class UsersController {
   })
   @Post('/wallet')
   @UseGuards(AuthGuard)
-  public async createUserWithWallet(
+  public async createWithWallet(
     @Auth() authPayload: AuthPayload,
   ): Promise<CreatedUserWithWallet> {
-    return await this.usersService.createUserWithWallet(authPayload);
+    return await this.usersService.createWithWallet(authPayload);
   }
 
   @ApiConflictResponse({

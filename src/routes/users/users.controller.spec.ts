@@ -147,7 +147,7 @@ describe('UsersController', () => {
         });
     });
 
-    it('should return a 404 if the user is not found', async () => {
+    it('should return a 404 if the wallet is not found', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
 
@@ -156,7 +156,7 @@ describe('UsersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
           statusCode: 404,
-          message: 'User not found',
+          message: 'Wallet not found. Address=' + authPayloadDto.signer_address,
           error: 'Not Found',
         });
     });
@@ -214,13 +214,10 @@ describe('UsersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
           statusCode: 404,
-          message: 'User not found',
+          message: 'Wallet not found. Address=' + authPayloadDto.signer_address,
           error: 'Not Found',
         });
     });
-
-    // In the current implementation, this won't occur due to no foreign key constraints
-    it.todo('should return a 409 if no user is affected');
   });
 
   describe('POST /v1/users/wallet', () => {
@@ -278,7 +275,9 @@ describe('UsersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
           statusCode: 409,
-          message: 'A wallet with the same address already exists',
+          message:
+            'A wallet with the same address already exists. Wallet=' +
+            authPayloadDto.signer_address,
           error: 'Conflict',
         });
     });
@@ -286,7 +285,7 @@ describe('UsersController', () => {
 
   describe('DELETE /v1/users/wallet/:walletAddress', () => {
     // TODO: Check wallet was deleted in integration test (and other tests don't)
-    it.skip('should delete a wallet from a user', async () => {
+    it('should delete a wallet from a user', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', walletAddress)
@@ -363,28 +362,8 @@ describe('UsersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect({
           statusCode: 404,
-          message: 'User not found',
+          message: 'Wallet not found. Address=' + walletAddress,
           error: 'Not Found',
-        });
-    });
-
-    it('should return a 409 if the wallet could not be removed', async () => {
-      const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .delete(`/v1/users/wallet/${walletAddress}`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect({
-          statusCode: 409,
-          message: `User could not be removed from wallet. Wallet=${walletAddress}`,
-          error: 'Conflict',
         });
     });
   });

@@ -1,7 +1,7 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { IUsersRepository } from '@/domain/users/users.repository.interface';
@@ -9,122 +9,119 @@ import { User, UserStatus } from '@/domain/users/entities/user.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { User as DbUser } from '@/datasources/users/entities/users.entity.db';
-import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
+import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
+import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
   constructor(
     private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(IWalletsRepository)
+    private readonly walletsRepository: IWalletsRepository,
   ) {}
 
-  public async createUserWithWallet(args: {
+  public async createWithWallet(args: {
     status: UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>> {
     this.assertSignerAddress(args.authPayload);
+    await this.assertWalletDoesNotExist(args.authPayload.signer_address);
+
+    const walletAddress = args.authPayload.signer_address;
 
     return this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager) => {
-        const userRepository = entityManager.getRepository(DbUser);
-        const walletRepository = entityManager.getRepository(Wallet);
+        const userId = await this.create(args.status, entityManager);
 
-        const existingWallet = await walletRepository.findOne({
-          where: { address: args.authPayload.signer_address },
-        });
-
-        if (existingWallet)
-          throw new ConflictException(
-            'A wallet with the same address already exists',
-          );
-
-        const user = userRepository.create({
-          status: args.status,
-        });
-
-        const userInsertResult = await userRepository.insert(user);
-        const userId = userInsertResult.identifiers[0].id;
-
-        await walletRepository.insert({
-          user: {
-            id: userId,
+        await this.walletsRepository.create(
+          {
+            userId,
+            walletAddress,
           },
-          address: args.authPayload.signer_address,
-        });
+          entityManager,
+        );
 
         return { id: userId };
       },
     );
   }
 
-  public async getUserWithWallets(authPayload: AuthPayload): Promise<{
+  public async create(
+    status: UserStatus,
+    entityManager: EntityManager,
+  ): Promise<User['id']> {
+    const userInsertResult = await entityManager.insert(DbUser, {
+      status,
+    });
+
+    return userInsertResult.identifiers[0].id;
+  }
+
+  public async getWithWallets(authPayload: AuthPayload): Promise<{
     id: User['id'];
     status: User['status'];
     wallets: Array<Pick<Wallet, 'id' | 'address'>>;
   }> {
     this.assertSignerAddress(authPayload);
 
-    const walletRepository =
-      await this.postgresDatabaseService.getRepository(Wallet);
+    const wallet = await this.walletsRepository.findOneByAddressOrFail(
+      authPayload.signer_address,
+    );
 
-    const authenticatedWallet = await walletRepository.findOne({
-      where: { address: authPayload.signer_address },
-      relations: { user: true },
-    });
-
-    if (!authenticatedWallet?.user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const wallets = await walletRepository.find({
-      select: ['id', 'address'],
-      where: {
-        user: {
-          id: authenticatedWallet.user.id,
-        },
-      },
+    const wallets = await this.walletsRepository.findByUser(wallet.user.id, {
+      address: true,
+      id: true,
     });
 
     return {
-      id: authenticatedWallet.user.id,
-      status: authenticatedWallet.user.status,
+      id: wallet.user.id,
+      status: wallet.user.status,
       wallets,
     };
   }
 
-  public async deleteUser(authPayload: AuthPayload): Promise<void> {
+  async addWalletToUser(args: {
+    walletAddress: `0x${string}`;
+    authPayload: AuthPayload;
+  }): Promise<Pick<Wallet, 'id'>> {
+    this.assertSignerAddress(args.authPayload);
+    await this.assertWalletDoesNotExist(args.authPayload.signer_address);
+
+    const { user } = await this.walletsRepository.findOneOrFail(
+      { address: args.authPayload.signer_address },
+      { user: true },
+    );
+
+    // @todo: We should improve the transaction handling here
+    return this.postgresDatabaseService.transaction(
+      async (entityManager: EntityManager) => {
+        const walletInsertResult = await this.walletsRepository.create(
+          {
+            userId: user.id,
+            walletAddress: args.walletAddress,
+          },
+          entityManager,
+        );
+        return { id: walletInsertResult.identifiers[0].id };
+      },
+    );
+  }
+
+  public async delete(authPayload: AuthPayload): Promise<void> {
     this.assertSignerAddress(authPayload);
 
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    // TODO: Revert to using singular delete when solving join
-    const walletRepository =
-      await this.postgresDatabaseService.getRepository(Wallet);
 
-    const wallet = await walletRepository.findOne({
-      where: { address: authPayload.signer_address },
-      relations: { user: true },
-      select: {
-        user: {
-          id: true,
-        },
-      },
-    });
+    const wallet = await this.walletsRepository.findOneByAddressOrFail(
+      authPayload.signer_address,
+      { user: true },
+    );
 
-    if (!wallet?.user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const deleteResult = await userRepository.delete({
+    await userRepository.delete({
       id: wallet.user.id,
     });
-
-    // TODO: Check if possible - a todo test case remains for this
-    if (!deleteResult.affected) {
-      throw new ConflictException(
-        `Could not delete user. Wallet=${authPayload.signer_address}`,
-      );
-    }
   }
 
   public async deleteWalletFromUser(args: {
@@ -132,50 +129,50 @@ export class UsersRepository implements IUsersRepository {
     authPayload: AuthPayload;
   }): Promise<void> {
     this.assertSignerAddress(args.authPayload);
+    this.assertWalletIsNotSigner(args);
 
-    if (args.authPayload.isForSigner(args.walletAddress)) {
-      throw new ConflictException('Cannot remove the current wallet');
-    }
-
-    // TODO: Revert to finding user by wallet when solving join
-    const walletRepository =
-      await this.postgresDatabaseService.getRepository(Wallet);
-
-    const wallet = await walletRepository.findOne({
-      where: { address: args.authPayload.signer_address },
-      relations: { user: true },
-      select: {
-        user: {
-          id: true,
-          wallets: true,
-        },
+    const signerWallet = await this.walletsRepository.findOneByAddressOrFail(
+      args.authPayload.signer_address,
+      {
+        user: true,
       },
-    });
+    );
 
-    if (!wallet) {
-      // TODO: If we remain with finding wallet with users, update this message and Swagger
-      throw new NotFoundException('User not found');
-    }
-
-    // We don't need to check if the wallet is the last one, as we can't delete the current wallet
-
-    const deleteResult = await walletRepository.delete({
+    const wallet = await this.walletsRepository.findOneOrFail({
       address: args.walletAddress,
-      user: { id: wallet.user.id },
+      user: { id: signerWallet.user.id },
     });
 
-    if (!deleteResult.affected) {
-      throw new ConflictException(
-        `User could not be removed from wallet. Wallet=${args.walletAddress}`,
-      );
-    }
+    await this.walletsRepository.deleteByAddress(wallet.address);
   }
 
   private assertSignerAddress(
     authPayload: AuthPayload,
   ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
     if (!authPayload.signer_address) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Signer address not provided');
+    }
+  }
+
+  private assertWalletIsNotSigner(args: {
+    authPayload: AuthPayload;
+    walletAddress: `0x${string}`;
+  }): void {
+    if (args.authPayload.isForSigner(args.walletAddress)) {
+      throw new ConflictException('Cannot remove the current wallet');
+    }
+  }
+
+  private async assertWalletDoesNotExist(
+    walletAddress: `0x${string}`,
+  ): Promise<void> {
+    const wallet = await this.walletsRepository.findOneByAddress(walletAddress);
+
+    if (wallet) {
+      throw new ConflictException(
+        'A wallet with the same address already exists. Wallet=' +
+          walletAddress,
+      );
     }
   }
 }

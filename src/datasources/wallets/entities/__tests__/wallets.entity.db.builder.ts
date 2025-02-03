@@ -1,7 +1,7 @@
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { faker } from '@faker-js/faker/.';
-import type { Wallet } from '@/datasources/users/entities/wallets.entity.db';
+import type { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { userBuilder } from '@/datasources/users/entities/__tests__/users.entity.db.builder';
 import { getAddress } from 'viem';
 

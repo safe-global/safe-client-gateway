@@ -12,20 +12,20 @@ export class UsersService {
     private readonly usersRepository: UsersRepository,
   ) {}
 
-  public async getUserWithWallets(
+  public async getWithWallets(
     authPayload: AuthPayload,
   ): Promise<UserWithWallets> {
-    return await this.usersRepository.getUserWithWallets(authPayload);
+    return await this.usersRepository.getWithWallets(authPayload);
   }
 
-  public async deleteUser(authPayload: AuthPayload): Promise<void> {
-    return await this.usersRepository.deleteUser(authPayload);
+  public async delete(authPayload: AuthPayload): Promise<void> {
+    return await this.usersRepository.delete(authPayload);
   }
 
-  public async createUserWithWallet(
+  public async createWithWallet(
     authPayload: AuthPayload,
   ): Promise<CreatedUserWithWallet> {
-    return await this.usersRepository.createUserWithWallet({
+    return await this.usersRepository.createWithWallet({
       status: UserStatus.ACTIVE,
       authPayload,
     });
