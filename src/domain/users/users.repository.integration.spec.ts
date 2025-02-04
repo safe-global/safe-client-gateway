@@ -344,17 +344,6 @@ describe('UsersRepository', () => {
       );
     });
 
-    it('should throw if no user is found', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
-      const walletRepository = dataSource.getRepository(Wallet);
-      await walletRepository.insert({ address: authPayload.signer_address });
-
-      await expect(usersRepository.getWithWallets(authPayload)).rejects.toThrow(
-        'User not found.',
-      );
-    });
-
     it('should find by non-checksummed address', async () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
@@ -449,8 +438,19 @@ describe('UsersRepository', () => {
     it('should throw if the user wallet already exists', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const walletRepository = dataSource.getRepository(Wallet);
-      await walletRepository.insert({ address: authPayloadDto.signer_address });
+      const status = faker.helpers.enumValue(UserStatus);
+      await postgresDatabaseService.transaction(async (entityManager) => {
+        const userInsertResult = await entityManager.insert(User, {
+          status,
+        });
+
+        await entityManager.insert(Wallet, {
+          user: {
+            id: userInsertResult.identifiers[0].id,
+          },
+          address: authPayloadDto.signer_address,
+        });
+      });
 
       await expect(
         usersRepository.addWalletToUser({
@@ -564,17 +564,6 @@ describe('UsersRepository', () => {
         `Wallet not found. Address=${authPayload.signer_address}`,
       );
     });
-
-    it('should throw if no user is found', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
-      const walletRepository = dataSource.getRepository(Wallet);
-      await walletRepository.insert({ address: authPayloadDto.signer_address });
-
-      await expect(usersRepository.delete(authPayload)).rejects.toThrow(
-        'User not found.',
-      );
-    });
   });
 
   describe('deleteWalletFromUser', () => {
@@ -626,21 +615,6 @@ describe('UsersRepository', () => {
           }),
         },
       ]);
-    });
-
-    it('should throw if no user is found', async () => {
-      const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
-      const walletRepository = dataSource.getRepository(Wallet);
-      await walletRepository.insert({ address: walletAddress });
-
-      await expect(
-        usersRepository.deleteWalletFromUser({
-          walletAddress,
-          authPayload,
-        }),
-      ).rejects.toThrow('User not found.');
     });
 
     it('should throw if no wallet is found', async () => {
