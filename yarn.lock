@@ -2602,19 +2602,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/node-http-handler@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "@smithy/node-http-handler@npm:4.0.1"
-  dependencies:
-    "@smithy/abort-controller": "npm:^4.0.1"
-    "@smithy/protocol-http": "npm:^5.0.1"
-    "@smithy/querystring-builder": "npm:^4.0.1"
-    "@smithy/types": "npm:^4.1.0"
-    tslib: "npm:^2.6.2"
-  checksum: 10/d09f0e0d37ce3a1c39a23b7e714f163e71fb352f20b6c732d35658840e353d31fd4db51e3d067dffd2596c730a0d7e06205c9b5c438b4ee45c7048e44ecebcbd
-  languageName: node
-  linkType: hard
-
 "@smithy/node-http-handler@npm:^4.0.2":
   version: 4.0.2
   resolution: "@smithy/node-http-handler@npm:4.0.2"
@@ -2872,22 +2859,6 @@ __metadata:
     "@smithy/types": "npm:^4.1.0"
     tslib: "npm:^2.6.2"
   checksum: 10/eeef33a7a8078d99fee2a4efa0def32907ec7c76ffee99dcdb4c83ce06f532acd1faaddf3b4d679786e93e5ea1fd22806b3af20f923cd5d02a91115ae6b1ccde
-  languageName: node
-  linkType: hard
-
-"@smithy/util-stream@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "@smithy/util-stream@npm:4.0.1"
-  dependencies:
-    "@smithy/fetch-http-handler": "npm:^5.0.1"
-    "@smithy/node-http-handler": "npm:^4.0.1"
-    "@smithy/types": "npm:^4.1.0"
-    "@smithy/util-base64": "npm:^4.0.0"
-    "@smithy/util-buffer-from": "npm:^4.0.0"
-    "@smithy/util-hex-encoding": "npm:^4.0.0"
-    "@smithy/util-utf8": "npm:^4.0.0"
-    tslib: "npm:^2.6.2"
-  checksum: 10/ac7a754d0ac5c69f0772fffebab4b9dc4896dba9139968413532aba1508a6acb960d17bfc58e8f0a7f1aa1f250be7a93ac5b64e535a1a473ea13559839744859
   languageName: node
   linkType: hard
 
@@ -8571,7 +8542,7 @@ __metadata:
     "@nestjs/testing": "npm:^11.0.6"
     "@nestjs/typeorm": "npm:^11.0.0"
     "@safe-global/safe-deployments": "npm:^1.37.22"
-    "@smithy/util-stream": "npm:^4.0.1"
+    "@smithy/util-stream": "npm:^4.0.2"
     "@types/amqplib": "npm:^0"
     "@types/cookie-parser": "npm:^1.4.8"
     "@types/express": "npm:^5.0.0"
