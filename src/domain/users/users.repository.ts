@@ -71,6 +71,10 @@ export class UsersRepository implements IUsersRepository {
       { user: true },
     );
 
+    if (!wallet.user) {
+      throw new NotFoundException('User not found.');
+    }
+
     const wallets = await this.walletsRepository.findByUser(wallet.user.id, {
       address: true,
       id: true,
@@ -119,6 +123,10 @@ export class UsersRepository implements IUsersRepository {
       authPayload.signer_address,
       { user: true },
     );
+
+    if (!wallet.user) {
+      throw new NotFoundException('User not found.');
+    }
 
     await userRepository.delete({
       id: wallet.user.id,
