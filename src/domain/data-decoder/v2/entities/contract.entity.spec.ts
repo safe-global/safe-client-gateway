@@ -21,9 +21,9 @@ describe('Contract', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should require a valid URL for logo_file', () => {
+    it('should require a valid URL for logoFile', () => {
       const project = projectBuilder()
-        .with('logo_file', faker.string.numeric())
+        .with('logoFile', faker.string.numeric())
         .build();
 
       const result = ProjectSchema.safeParse(project);
@@ -32,7 +32,7 @@ describe('Contract', () => {
         {
           code: 'invalid_string',
           message: 'Invalid url',
-          path: ['logo_file'],
+          path: ['logoFile'],
           validation: 'url',
         },
       ]);
@@ -55,7 +55,7 @@ describe('Contract', () => {
           code: 'invalid_type',
           expected: 'string',
           message: 'Required',
-          path: ['logo_file'],
+          path: ['logoFile'],
           received: 'undefined',
         },
       ]);
@@ -71,9 +71,9 @@ describe('Contract', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should expect an array of objects for abi_json', () => {
+    it('should expect an array of objects for abiJson', () => {
       const abi = abiBuilder()
-        .with('abi_json', [
+        .with('abiJson', [
           faker.string.numeric() as unknown as Record<string, unknown>,
         ])
         .build();
@@ -85,15 +85,15 @@ describe('Contract', () => {
           code: 'invalid_type',
           expected: 'object',
           message: 'Expected object, received string',
-          path: ['abi_json', 0],
+          path: ['abiJson', 0],
           received: 'string',
         },
       ]);
     });
 
-    it('should require a valid hex string for abi_hash', () => {
+    it('should require a valid hex string for abiHash', () => {
       const abi = abiBuilder()
-        .with('abi_hash', faker.string.numeric() as `0x${string}`)
+        .with('abiHash', faker.string.numeric() as `0x${string}`)
         .build();
 
       const result = AbiSchema.safeParse(abi);
@@ -102,7 +102,7 @@ describe('Contract', () => {
         {
           code: 'custom',
           message: 'Invalid "0x" notated hex string',
-          path: ['abi_hash'],
+          path: ['abiHash'],
         },
       ]);
     });
@@ -128,14 +128,14 @@ describe('Contract', () => {
           code: 'invalid_type',
           expected: 'array',
           message: 'Required',
-          path: ['abi_json'],
+          path: ['abiJson'],
           received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'string',
           message: 'Required',
-          path: ['abi_hash'],
+          path: ['abiHash'],
           received: 'undefined',
         },
         {
@@ -171,15 +171,15 @@ describe('Contract', () => {
       );
     });
 
-    it('should expect a numeric chain_id, coercing it to a string', () => {
+    it('should expect a numeric chainId, coercing it to a string', () => {
       const chainId = faker.number.int();
       const contract = contractBuilder()
-        .with('chain_id', chainId as unknown as `${number}`)
+        .with('chainId', chainId as unknown as `${number}`)
         .build();
 
       const result = ContractSchema.safeParse(contract);
 
-      expect(result.success && result.data.chain_id).toBe(`${chainId}`);
+      expect(result.success && result.data.chainId).toBe(`${chainId}`);
     });
 
     it('should coerce modified to date', () => {
@@ -217,14 +217,14 @@ describe('Contract', () => {
           code: 'invalid_type',
           expected: 'string',
           message: 'Required',
-          path: ['display_name'],
+          path: ['displayName'],
           received: 'undefined',
         },
         {
           code: 'invalid_type',
           expected: 'number',
           message: 'Required',
-          path: ['chain_id'],
+          path: ['chainId'],
           received: 'undefined',
         },
         {

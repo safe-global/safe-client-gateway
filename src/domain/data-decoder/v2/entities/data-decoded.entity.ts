@@ -11,7 +11,7 @@ const HexSchema = _HexSchema as z.ZodType<`0x${string}`>;
 export const MultisendSchema = z.object({
   operation: z.nativeEnum(Operation),
   value: NumericStringSchema,
-  data_decoded: z.lazy(() => BaseDataDecodedSchema.nullable()),
+  dataDecoded: z.lazy(() => BaseDataDecodedSchema.nullable()),
   to: AddressSchema,
   data: HexSchema.nullable(),
 });
@@ -25,7 +25,7 @@ export const ParameterSchema = z.object({
   name: z.string(),
   type: z.string(),
   value: HexSchema,
-  value_decoded: ValueDecodedSchema.nullable(),
+  valueDecoded: ValueDecodedSchema.nullable(),
 });
 
 export const BaseDataDecodedSchemaShape = {

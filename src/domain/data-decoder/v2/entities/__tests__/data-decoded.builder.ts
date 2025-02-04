@@ -15,7 +15,7 @@ export function multisendBuilder(): IBuilder<z.infer<typeof MultisendSchema>> {
       .with('operation', faker.helpers.arrayElement([0, 1]))
       .with('value', faker.string.numeric())
       // No nested data to prevent call stack exceeded
-      .with('data_decoded', null)
+      .with('dataDecoded', null)
       .with('to', getAddress(faker.finance.ethereumAddress()))
       .with('data', faker.string.hexadecimal() as `0x${string}`)
   );
@@ -33,7 +33,7 @@ export function parameterBuilder(): IBuilder<
     .with('name', faker.word.noun())
     .with('type', faker.word.noun())
     .with('value', faker.string.hexadecimal() as `0x${string}`)
-    .with('value_decoded', valueDecoded);
+    .with('valueDecoded', valueDecoded);
 }
 
 export function baseDataDecodedBuilder(): IBuilder<

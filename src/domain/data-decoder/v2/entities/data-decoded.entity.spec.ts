@@ -116,7 +116,7 @@ describe('DataDecoded', () => {
           code: 'invalid_type',
           expected: 'object',
           message: 'Required',
-          path: ['data_decoded'],
+          path: ['dataDecoded'],
           received: 'undefined',
         },
         {
@@ -251,14 +251,14 @@ describe('DataDecoded', () => {
         {
           code: 'invalid_union',
           message: 'Invalid input',
-          path: ['value_decoded'],
+          path: ['valueDecoded'],
           unionErrors: [
             new ZodError([
               {
                 code: 'invalid_type',
                 expected: 'array',
                 received: 'undefined',
-                path: ['value_decoded'],
+                path: ['valueDecoded'],
                 message: 'Required',
               },
             ]),
@@ -267,7 +267,7 @@ describe('DataDecoded', () => {
                 code: 'invalid_type',
                 expected: 'object',
                 received: 'undefined',
-                path: ['value_decoded'],
+                path: ['valueDecoded'],
                 message: 'Required',
               },
             ]),
