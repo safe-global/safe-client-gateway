@@ -108,6 +108,51 @@ describe('UsersRepository', () => {
     await postgresDatabaseService.destroyDatabaseConnection();
   });
 
+  // As the triggers are set on the database level, Jest's fake timers are not accurate
+  describe('created_at/updated_at', () => {
+    it('should set created_at and updated_at when creating a User', async () => {
+      const userRepository = dataSource.getRepository(User);
+
+      const before = new Date().getTime();
+      const user = await userRepository.insert({
+        status: faker.helpers.enumValue(UserStatus),
+      });
+
+      const after = new Date().getTime();
+
+      const createdAt = (user.generatedMaps[0].created_at as Date).getTime();
+      const updatedAt = (user.generatedMaps[0].updated_at as Date).getTime();
+
+      expect(createdAt).toEqual(updatedAt);
+
+      expect(createdAt).toBeGreaterThanOrEqual(before);
+      expect(createdAt).toBeLessThanOrEqual(after);
+
+      expect(updatedAt).toBeGreaterThanOrEqual(before);
+      expect(updatedAt).toBeLessThanOrEqual(after);
+    });
+
+    it('should update updated_at when updating a User', async () => {
+      const userRepository = dataSource.getRepository(User);
+
+      const user = await userRepository.insert({
+        status: UserStatus.PENDING,
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      await userRepository.update(userId, {
+        status: UserStatus.ACTIVE,
+      });
+      const updatedUser = await userRepository.findOneOrFail({
+        where: { id: userId },
+      });
+
+      const createdAt = updatedUser.created_at.getTime();
+      const updatedAt = updatedUser.updated_at.getTime();
+
+      expect(createdAt).toBeLessThan(updatedAt);
+    });
+  });
+
   describe('createWithWallet', () => {
     it('should insert a new user and a linked wallet', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();

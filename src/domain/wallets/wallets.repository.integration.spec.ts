@@ -102,6 +102,51 @@ describe('WalletsRepository', () => {
     await postgresDatabaseService.destroyDatabaseConnection();
   });
 
+  // As the triggers are set on the database level, Jest's fake timers are not accurate
+  describe('created_at/updated_at', () => {
+    it('should set created_at and updated_at when creating a Wallet', async () => {
+      const walletRepository = dataSource.getRepository(Wallet);
+
+      const before = new Date().getTime();
+      const wallet = await walletRepository.insert({
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      const after = new Date().getTime();
+
+      const createdAt = (wallet.generatedMaps[0].created_at as Date).getTime();
+      const updatedAt = (wallet.generatedMaps[0].updated_at as Date).getTime();
+
+      expect(createdAt).toEqual(updatedAt);
+
+      expect(createdAt).toBeGreaterThanOrEqual(before);
+      expect(createdAt).toBeLessThanOrEqual(after);
+
+      expect(updatedAt).toBeGreaterThanOrEqual(before);
+      expect(updatedAt).toBeLessThanOrEqual(after);
+    });
+
+    it('should update updated_at when updating a Wallet', async () => {
+      const walletRepository = dataSource.getRepository(Wallet);
+
+      const wallet = await walletRepository.insert({
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const walletId = wallet.identifiers[0].id as Wallet['id'];
+      await walletRepository.update(walletId, {
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const updatedWallet = await walletRepository.findOneOrFail({
+        where: { id: walletId },
+      });
+
+      const createdAt = updatedWallet.created_at.getTime();
+      const updatedAt = updatedWallet.updated_at.getTime();
+
+      expect(createdAt).toBeLessThan(updatedAt);
+    });
+  });
+
   describe('findOneOrFail', () => {
     it('should find a wallet', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
