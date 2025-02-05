@@ -41,6 +41,8 @@ describe('UsersRepository', () => {
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
     entities: [User, Wallet],
   });
+  const walletRepository = dataSource.getRepository(Wallet);
+  const userRepository = dataSource.getRepository(User);
 
   beforeAll(async () => {
     // Create database
@@ -95,10 +97,6 @@ describe('UsersRepository', () => {
   afterEach(async () => {
     jest.resetAllMocks();
 
-    // Truncate tables
-    const walletRepository = dataSource.getRepository(Wallet);
-    const userRepository = dataSource.getRepository(User);
-
     await walletRepository.createQueryBuilder().delete().where('1=1').execute();
     await userRepository.createQueryBuilder().delete().where('1=1').execute();
   });
@@ -111,8 +109,6 @@ describe('UsersRepository', () => {
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('created_at/updated_at', () => {
     it('should set created_at and updated_at when creating a User', async () => {
-      const userRepository = dataSource.getRepository(User);
-
       const before = new Date().getTime();
       const user = await userRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
@@ -133,12 +129,10 @@ describe('UsersRepository', () => {
     });
 
     it('should update updated_at when updating a User', async () => {
-      const userRepository = dataSource.getRepository(User);
-
-      const user = await userRepository.insert({
+      const prevUser = await userRepository.insert({
         status: UserStatus.PENDING,
       });
-      const userId = user.identifiers[0].id as User['id'];
+      const userId = prevUser.identifiers[0].id as User['id'];
       await userRepository.update(userId, {
         status: UserStatus.ACTIVE,
       });
@@ -146,10 +140,14 @@ describe('UsersRepository', () => {
         where: { id: userId },
       });
 
+      const prevUpdatedAt = (
+        prevUser.generatedMaps[0].updated_at as Date
+      ).getTime();
       const createdAt = updatedUser.created_at.getTime();
       const updatedAt = updatedUser.updated_at.getTime();
 
       expect(createdAt).toBeLessThan(updatedAt);
+      expect(prevUpdatedAt).toBeLessThanOrEqual(updatedAt);
     });
   });
 
@@ -161,14 +159,9 @@ describe('UsersRepository', () => {
 
       await usersRepository.createWithWallet({ status, authPayload });
 
-      const walletRepository = dataSource.getRepository(Wallet);
-      const userRepository = dataSource.getRepository(User);
       const wallet = await walletRepository.findOneOrFail({
         where: { address: authPayload.signer_address },
         relations: { user: true },
-      });
-      const user = await userRepository.findOneOrFail({
-        where: { id: wallet.user.id },
       });
 
       expect(wallet).toStrictEqual(
@@ -179,18 +172,10 @@ describe('UsersRepository', () => {
           updated_at: expect.any(Date),
           user: expect.objectContaining({
             created_at: expect.any(Date),
-            id: user.id,
+            id: wallet.user.id,
             status,
             updated_at: expect.any(Date),
           }),
-        }),
-      );
-      expect(user).toStrictEqual(
-        expect.objectContaining({
-          created_at: expect.any(Date),
-          id: user.id,
-          status,
-          updated_at: expect.any(Date),
         }),
       );
     });
@@ -246,7 +231,6 @@ describe('UsersRepository', () => {
 
       await usersRepository.createWithWallet({ status, authPayload });
 
-      const walletRepository = dataSource.getRepository(Wallet);
       const wallet = await walletRepository.findOneOrFail({
         where: { address: authPayload.signer_address },
       });
@@ -267,7 +251,6 @@ describe('UsersRepository', () => {
         await usersRepository.create(status, entityManager);
       });
 
-      const userRepository = dataSource.getRepository(User);
       const users = await userRepository.find();
 
       expect(users).toStrictEqual([
@@ -296,32 +279,24 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        const userInsertResult = await entityManager.insert(User, {
-          status,
-        });
-
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userInsertResult.identifiers[0].id,
-          },
-          address: authPayloadDto.signer_address,
-        });
+      const userInsertResult = await userRepository.insert({
+        status,
       });
-      const walletRepository = dataSource.getRepository(Wallet);
-      const userRepository = dataSource.getRepository(User);
+      await walletRepository.insert({
+        user: {
+          id: userInsertResult.identifiers[0].id,
+        },
+        address: authPayloadDto.signer_address,
+      });
       const wallet = await walletRepository.findOneOrFail({
         where: { address: authPayload.signer_address },
         relations: { user: true },
-      });
-      const user = await userRepository.findOneOrFail({
-        where: { id: wallet.user.id },
       });
 
       await expect(
         usersRepository.getWithWallets(authPayload),
       ).resolves.toEqual({
-        id: user.id,
+        id: wallet.user.id,
         status,
         wallets: [
           {
@@ -336,7 +311,6 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      const userRepository = dataSource.getRepository(User);
       await userRepository.insert({ status });
 
       await expect(usersRepository.getWithWallets(authPayload)).rejects.toThrow(
@@ -353,32 +327,24 @@ describe('UsersRepository', () => {
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        const userInsertResult = await entityManager.insert(User, {
-          status,
-        });
-
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userInsertResult.identifiers[0].id,
-          },
-          address: authPayloadDto.signer_address,
-        });
+      const userInsertResult = await userRepository.insert({
+        status,
       });
-      const walletRepository = dataSource.getRepository(Wallet);
-      const userRepository = dataSource.getRepository(User);
+      await walletRepository.insert({
+        user: {
+          id: userInsertResult.identifiers[0].id,
+        },
+        address: authPayloadDto.signer_address,
+      });
       const wallet = await walletRepository.findOneOrFail({
         where: { address: getAddress(nonChecksummedAddress) },
         relations: { user: true },
-      });
-      const user = await userRepository.findOneOrFail({
-        where: { id: wallet.user.id },
       });
 
       await expect(
         usersRepository.getWithWallets(authPayload),
       ).resolves.toEqual({
-        id: user.id,
+        id: wallet.user.id,
         status,
         wallets: [
           {
@@ -396,17 +362,14 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        const userInsertResult = await entityManager.insert(User, {
-          status,
-        });
-
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userInsertResult.identifiers[0].id,
-          },
-          address: authPayloadDto.signer_address,
-        });
+      const userInsertResult = await userRepository.insert({
+        status,
+      });
+      await walletRepository.insert({
+        user: {
+          id: userInsertResult.identifiers[0].id,
+        },
+        address: authPayloadDto.signer_address,
       });
 
       await usersRepository.addWalletToUser({
@@ -414,7 +377,6 @@ describe('UsersRepository', () => {
         walletAddress,
       });
 
-      const walletRepository = dataSource.getRepository(Wallet);
       const wallet = await walletRepository.findOneOrFail({
         where: { address: walletAddress },
         relations: { user: true },
@@ -439,17 +401,15 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        const userInsertResult = await entityManager.insert(User, {
-          status,
-        });
+      const userInsertResult = await userRepository.insert({
+        status,
+      });
 
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userInsertResult.identifiers[0].id,
-          },
-          address: authPayloadDto.signer_address,
-        });
+      await walletRepository.insert({
+        user: {
+          id: userInsertResult.identifiers[0].id,
+        },
+        address: authPayloadDto.signer_address,
       });
 
       await expect(
@@ -469,7 +429,6 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      const userRepository = dataSource.getRepository(User);
       await userRepository.insert({ status });
 
       await expect(
@@ -487,17 +446,14 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        const userInsertResult = await entityManager.insert(User, {
-          status,
-        });
-
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userInsertResult.identifiers[0].id,
-          },
-          address: authPayloadDto.signer_address,
-        });
+      const userInsertResult = await userRepository.insert({
+        status,
+      });
+      await walletRepository.insert({
+        user: {
+          id: userInsertResult.identifiers[0].id,
+        },
+        address: authPayloadDto.signer_address,
       });
 
       await usersRepository.addWalletToUser({
@@ -505,7 +461,6 @@ describe('UsersRepository', () => {
         walletAddress: nonChecksummedAddress as `0x${string}`,
       });
 
-      const walletRepository = dataSource.getRepository(Wallet);
       const wallet = await walletRepository.findOneOrFail({
         where: { address: getAddress(nonChecksummedAddress) },
         relations: { user: true },
@@ -524,40 +479,35 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        const userInsertResult = await entityManager.insert(User, {
-          status,
-        });
-        const userId = userInsertResult.identifiers[0].id;
-
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userId,
-          },
-          address: authPayloadDto.signer_address,
-        });
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userId,
-          },
-          address: walletAddress,
-        });
+      const userInsertResult = await userRepository.insert({
+        status,
       });
+      const userId = userInsertResult.identifiers[0].id;
+      await walletRepository.insert({
+        user: {
+          id: userId,
+        },
+        address: authPayloadDto.signer_address,
+      });
+      await walletRepository.insert({
+        user: {
+          id: userId,
+        },
+        address: walletAddress,
+      });
+      await expect(walletRepository.find()).resolves.toHaveLength(2);
 
       await usersRepository.delete(authPayload);
 
-      await expect(dataSource.getRepository(User).find()).resolves.toEqual([]);
+      await expect(userRepository.find()).resolves.toEqual([]);
       // By cascade
-      await expect(dataSource.getRepository(Wallet).find()).resolves.toEqual(
-        [],
-      );
+      await expect(walletRepository.find()).resolves.toEqual([]);
     });
 
     it('should throw if no user wallet is found', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      const userRepository = dataSource.getRepository(User);
       await userRepository.insert({ status });
 
       await expect(usersRepository.delete(authPayload)).rejects.toThrow(
@@ -572,32 +522,29 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        const userInsertResult = await entityManager.insert(User, {
-          status,
-        });
-        const userId = userInsertResult.identifiers[0].id;
-
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userId,
-          },
-          address: authPayloadDto.signer_address,
-        });
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userId,
-          },
-          address: walletAddress,
-        });
+      const userInsertResult = await userRepository.insert({
+        status,
       });
+      const userId = userInsertResult.identifiers[0].id;
+      await walletRepository.insert({
+        user: {
+          id: userId,
+        },
+        address: authPayloadDto.signer_address,
+      });
+      await walletRepository.insert({
+        user: {
+          id: userId,
+        },
+        address: walletAddress,
+      });
+      await expect(walletRepository.find()).resolves.toHaveLength(2);
 
       await usersRepository.deleteWalletFromUser({
         walletAddress,
         authPayload,
       });
 
-      const walletRepository = dataSource.getRepository(Wallet);
       const wallets = await walletRepository.find({
         relations: { user: true },
       });
@@ -622,17 +569,14 @@ describe('UsersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.enumValue(UserStatus);
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        const userInsertResult = await entityManager.insert(User, {
-          status,
-        });
-
-        await entityManager.insert(Wallet, {
-          user: {
-            id: userInsertResult.identifiers[0].id,
-          },
-          address: authPayloadDto.signer_address,
-        });
+      const userInsertResult = await userRepository.insert({
+        status,
+      });
+      await walletRepository.insert({
+        user: {
+          id: userInsertResult.identifiers[0].id,
+        },
+        address: authPayloadDto.signer_address,
       });
 
       await expect(

@@ -133,13 +133,13 @@ describe('WalletsRepository', () => {
       const user = await userRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      const wallet = await walletRepository.insert({
+      const prevWallet = await walletRepository.insert({
         address: getAddress(faker.finance.ethereumAddress()),
         user: {
           id: user.identifiers[0].id as User['id'],
         },
       });
-      const walletId = wallet.identifiers[0].id as Wallet['id'];
+      const walletId = prevWallet.identifiers[0].id as Wallet['id'];
       await walletRepository.update(walletId, {
         address: getAddress(faker.finance.ethereumAddress()),
       });
@@ -147,10 +147,14 @@ describe('WalletsRepository', () => {
         where: { id: walletId },
       });
 
+      const prevUpdatedAt = (
+        prevWallet.generatedMaps[0].updated_at as Date
+      ).getTime();
       const createdAt = updatedWallet.created_at.getTime();
       const updatedAt = updatedWallet.updated_at.getTime();
 
       expect(createdAt).toBeLessThan(updatedAt);
+      expect(prevUpdatedAt).toBeLessThanOrEqual(updatedAt);
     });
   });
 
@@ -637,6 +641,7 @@ describe('WalletsRepository', () => {
           id: user.identifiers[0].id as User['id'],
         },
       });
+      await expect(walletRepository.find()).resolves.toHaveLength(1);
 
       await walletsRepository.deleteByAddress(address);
 
