@@ -45,5 +45,5 @@ export class User implements DomainUser {
     () => UserOrganization,
     (userOrganization: UserOrganization) => userOrganization.user,
   )
-  userOrganizations!: Array<UserOrganization>;
+  user_organizations!: Array<UserOrganization>;
 }
