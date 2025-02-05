@@ -48,6 +48,7 @@ export class UsersController {
     return await this.usersService.delete(authPayload);
   }
 
+  // @todo move wallet methods to Wallet controller
   @ApiOkResponse({ type: CreatedUserWithWallet })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   @ApiConflictResponse({ description: 'Wallet already exists' })
