@@ -23,6 +23,14 @@ export class Organization implements DomainOrganization {
   @Index('idx_org_status')
   @Column({
     type: 'integer',
+    transformer: {
+      from(value: number): keyof typeof OrganizationStatus {
+        return OrganizationStatus[value] as keyof typeof OrganizationStatus;
+      },
+      to(value: keyof typeof OrganizationStatus): number {
+        return OrganizationStatus[value];
+      },
+    },
   })
   status!: OrganizationStatus;
 

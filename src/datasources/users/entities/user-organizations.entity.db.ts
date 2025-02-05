@@ -1,6 +1,7 @@
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import {
+  UserOrganization as DomainUserOrganization,
   UserOrganizationRole,
   UserOrganizationStatus,
 } from '@/domain/users/entities/user-organization.entity';
@@ -18,7 +19,7 @@ import {
 @Unique('UQ_user_organizations', ['user', 'organization'])
 @Index('idx_UO_name', ['name'])
 @Index('idx_UO_role_status', ['role', 'status'])
-export class UserOrganization {
+export class UserOrganization implements DomainUserOrganization {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_UO_id',
   })
@@ -52,12 +53,30 @@ export class UserOrganization {
   // Postgres enums are string therefore we use integer
   @Column({
     type: 'integer',
+    transformer: {
+      from(value: number): keyof typeof UserOrganizationRole {
+        return UserOrganizationRole[value] as keyof typeof UserOrganizationRole;
+      },
+      to(value: keyof typeof UserOrganizationRole): number {
+        return UserOrganizationRole[value];
+      },
+    },
   })
   role!: UserOrganizationRole;
 
   // Postgres enums are string therefore we use integer
   @Column({
     type: 'integer',
+    transformer: {
+      from(value: number): keyof typeof UserOrganizationStatus {
+        return UserOrganizationStatus[
+          value
+        ] as keyof typeof UserOrganizationStatus;
+      },
+      to(value: keyof typeof UserOrganizationStatus): number {
+        return UserOrganizationStatus[value];
+      },
+    },
   })
   status!: UserOrganizationStatus;
 

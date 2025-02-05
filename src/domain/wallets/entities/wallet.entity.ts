@@ -6,6 +6,7 @@ import { UserSchema } from '@/domain/users/entities/user.entity';
 export type Wallet = z.infer<typeof WalletSchema>;
 
 export const WalletSchema = RowSchema.extend({
-  address: AddressSchema,
+  // ZodEffects cannot be recursively inferred and need be casted
+  address: AddressSchema as z.ZodType<`0x${string}`>,
   user: UserSchema,
 });
