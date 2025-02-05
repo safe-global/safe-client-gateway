@@ -2,38 +2,16 @@ import type {
   DeleteResult,
   FindOptionsRelations,
   FindOptionsSelect,
-  FindOptionsWhere,
   InsertResult,
 } from 'typeorm';
 import { type Repository, type EntityManager } from 'typeorm';
 import type { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import type { User } from '@/domain/users/entities/user.entity';
+import type { EntityRepository } from '@/domain/common/entity.repository';
 
 export const IWalletsRepository = Symbol('IWalletsRepository');
 
-export interface IWalletsRepository {
-  findOneOrFail(
-    where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>,
-    relations?: FindOptionsRelations<Wallet>,
-  ): Promise<Wallet>;
-
-  findOne(
-    where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>,
-    relations?: FindOptionsRelations<Wallet>,
-  ): Promise<Wallet | null>;
-
-  findOrFail(args: {
-    where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>;
-    select?: FindOptionsSelect<Wallet>;
-    relations?: FindOptionsRelations<Wallet>;
-  }): Promise<Array<Wallet>>;
-
-  find(args: {
-    where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>;
-    select?: FindOptionsSelect<Wallet>;
-    relations?: FindOptionsRelations<Wallet>;
-  }): Promise<Array<Wallet>>;
-
+export interface IWalletsRepository extends EntityRepository<Wallet> {
   findOneByAddressOrFail(
     address: `0x${string}`,
     relations?: FindOptionsRelations<Wallet>,

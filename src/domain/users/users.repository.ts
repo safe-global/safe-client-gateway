@@ -13,14 +13,20 @@ import { User as DbUser } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
 import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
+import { EntityRepository } from '@/domain/common/entity.repository';
 
 @Injectable()
-export class UsersRepository implements IUsersRepository {
+export class UsersRepository
+  extends EntityRepository<DbUser>
+  implements IUsersRepository
+{
   constructor(
-    private readonly postgresDatabaseService: PostgresDatabaseService,
+    readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
-  ) {}
+  ) {
+    super(postgresDatabaseService, DbUser);
+  }
 
   public async createWithWallet(args: {
     status: UserStatus;
@@ -52,7 +58,7 @@ export class UsersRepository implements IUsersRepository {
     status: UserStatus,
     entityManager: EntityManager,
   ): Promise<User['id']> {
-    const userInsertResult = await entityManager.insert(DbUser, {
+    const userInsertResult = await entityManager.insert(this.entity, {
       status,
     });
 
@@ -112,8 +118,7 @@ export class UsersRepository implements IUsersRepository {
   public async delete(authPayload: AuthPayload): Promise<void> {
     this.assertSignerAddress(authPayload);
 
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
+    const userRepository = await this.getRepository();
 
     const wallet = await this.walletsRepository.findOneByAddressOrFail(
       authPayload.signer_address,
@@ -137,8 +142,10 @@ export class UsersRepository implements IUsersRepository {
     );
 
     const wallet = await this.walletsRepository.findOneOrFail({
-      address: args.walletAddress,
-      user: { id: user.id },
+      where: {
+        address: args.walletAddress,
+        user: { id: user.id },
+      },
     });
 
     await this.walletsRepository.deleteByAddress(wallet.address);

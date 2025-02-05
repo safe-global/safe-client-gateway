@@ -5,69 +5,23 @@ import type {
   DeleteResult,
   FindOptionsRelations,
   FindOptionsSelect,
-  FindOptionsWhere,
   InsertResult,
 } from 'typeorm';
 import type { User } from '@/domain/users/entities/user.entity';
 import type { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { EntityRepository } from '@/domain/common/entity.repository';
 
 @Injectable()
-export class WalletsRepository implements IWalletsRepository {
-  public constructor(
+export class WalletsRepository
+  extends EntityRepository<Wallet>
+  implements IWalletsRepository
+{
+  constructor(
     @Inject(PostgresDatabaseService)
-    private readonly postgresDatabaseService: PostgresDatabaseService,
-  ) {}
-
-  public async findOneOrFail(
-    where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>,
-    relations?: FindOptionsRelations<Wallet>,
-  ): Promise<Wallet> {
-    const wallet = await this.findOne(where, relations);
-
-    if (!wallet) {
-      throw new NotFoundException('Wallet not found.');
-    }
-
-    return wallet;
-  }
-
-  public async findOne(
-    where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>,
-    relations?: FindOptionsRelations<Wallet>,
-  ): Promise<Wallet | null> {
-    const walletRepository =
-      await this.postgresDatabaseService.getRepository(Wallet);
-
-    return await walletRepository.findOne({
-      where,
-      relations,
-    });
-  }
-
-  public async findOrFail(args: {
-    where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>;
-    select?: FindOptionsSelect<Wallet>;
-    relations?: FindOptionsRelations<Wallet>;
-  }): Promise<Array<Wallet>> {
-    const wallets = await this.find(args);
-
-    if (wallets.length === 0) {
-      throw new NotFoundException('Wallets not found.');
-    }
-
-    return wallets;
-  }
-
-  public async find(args: {
-    where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>;
-    select?: FindOptionsSelect<Wallet>;
-    relations?: FindOptionsRelations<Wallet>;
-  }): Promise<Array<Wallet>> {
-    const walletRepository =
-      await this.postgresDatabaseService.getRepository(Wallet);
-
-    return await walletRepository.find(args);
+    readonly postgresDatabaseService: PostgresDatabaseService,
+  ) {
+    super(postgresDatabaseService, Wallet);
   }
 
   public async findOneByAddressOrFail(
@@ -87,7 +41,10 @@ export class WalletsRepository implements IWalletsRepository {
     address: `0x${string}`,
     relations?: FindOptionsRelations<Wallet>,
   ): Promise<Wallet | null> {
-    return await this.findOne({ address }, relations);
+    return await this.findOne({
+      where: { address },
+      relations,
+    });
   }
 
   public async findByUser(
@@ -111,7 +68,7 @@ export class WalletsRepository implements IWalletsRepository {
     },
     entityManager: EntityManager,
   ): Promise<InsertResult> {
-    return await entityManager.insert(Wallet, {
+    return await entityManager.insert(this.entity, {
       user: {
         id: args.userId,
       },
@@ -120,8 +77,7 @@ export class WalletsRepository implements IWalletsRepository {
   }
 
   public async deleteByAddress(address: `0x${string}`): Promise<DeleteResult> {
-    const walletRepository =
-      await this.postgresDatabaseService.getRepository(Wallet);
+    const walletRepository = await this.getRepository();
 
     return await walletRepository.delete({
       address,
