@@ -19,6 +19,7 @@ export class Wallet implements z.infer<typeof WalletSchema> {
 
   @ManyToOne(() => User, (user: User) => user.id, {
     onDelete: 'CASCADE',
+    nullable: false,
   })
   @JoinColumn({
     name: 'user_id',

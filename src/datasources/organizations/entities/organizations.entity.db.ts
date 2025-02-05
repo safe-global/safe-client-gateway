@@ -1,11 +1,19 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import {
   OrganizationStatus,
   Organization as DomainOrganization,
 } from '@/domain/organizations/entities/organization.entity';
+import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 
+// @todo make organizations singular, The database table name should remain plural
 @Entity('organizations')
-export class Organizations implements DomainOrganization {
+export class Organization implements DomainOrganization {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_org_id' })
   id!: number;
 
@@ -29,4 +37,10 @@ export class Organizations implements DomainOrganization {
     default: () => 'CURRENT_TIMESTAMP',
   })
   updated_at!: Date;
+
+  @OneToMany(
+    () => UserOrganization,
+    (userOrganization: UserOrganization) => userOrganization.organization,
+  )
+  userOrganizations!: Array<UserOrganization>;
 }
