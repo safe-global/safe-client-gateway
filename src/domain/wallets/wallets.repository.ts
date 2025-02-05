@@ -11,11 +11,12 @@ import type { User } from '@/domain/users/entities/user.entity';
 import type { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { EntityRepository } from '@/domain/common/entity.repository';
+import type { IEntityRepository } from '@/domain/common/entity.repository.inferface';
 
 @Injectable()
 export class WalletsRepository
   extends EntityRepository<Wallet>
-  implements IWalletsRepository
+  implements IWalletsRepository, IEntityRepository<Wallet>
 {
   constructor(
     @Inject(PostgresDatabaseService)

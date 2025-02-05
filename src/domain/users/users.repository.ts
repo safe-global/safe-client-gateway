@@ -14,11 +14,12 @@ import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { EntityManager } from 'typeorm';
 import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import { EntityRepository } from '@/domain/common/entity.repository';
+import { IEntityRepository } from '@/domain/common/entity.repository.inferface';
 
 @Injectable()
 export class UsersRepository
   extends EntityRepository<DbUser>
-  implements IUsersRepository
+  implements IUsersRepository, IEntityRepository<DbUser>
 {
   constructor(
     readonly postgresDatabaseService: PostgresDatabaseService,

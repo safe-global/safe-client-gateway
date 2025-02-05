@@ -6,8 +6,11 @@ import type {
   Repository,
 } from 'typeorm';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { IEntityRepository } from '@/domain/common/entity.repository.inferface';
 
-export class EntityRepository<T extends ObjectLiteral> {
+export class EntityRepository<T extends ObjectLiteral>
+  implements IEntityRepository<T>
+{
   readonly entity: new () => T;
 
   protected constructor(

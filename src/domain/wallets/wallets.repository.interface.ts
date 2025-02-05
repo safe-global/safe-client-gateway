@@ -7,11 +7,11 @@ import type {
 import { type Repository, type EntityManager } from 'typeorm';
 import type { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import type { User } from '@/domain/users/entities/user.entity';
-import type { EntityRepository } from '@/domain/common/entity.repository';
+import type { IEntityRepository } from '@/domain/common/entity.repository.inferface';
 
 export const IWalletsRepository = Symbol('IWalletsRepository');
 
-export interface IWalletsRepository extends EntityRepository<Wallet> {
+export interface IWalletsRepository extends IEntityRepository<Wallet> {
   findOneByAddressOrFail(
     address: `0x${string}`,
     relations?: FindOptionsRelations<Wallet>,
