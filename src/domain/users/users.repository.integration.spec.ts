@@ -120,8 +120,8 @@ describe('UsersRepository', () => {
 
       const after = new Date().getTime();
 
-      const createdAt = user.generatedMaps[0].created_at;
-      const updatedAt = user.generatedMaps[0].updated_at;
+      const createdAt = (user.generatedMaps[0].created_at as Date).getTime();
+      const updatedAt = (user.generatedMaps[0].updated_at as Date).getTime();
 
       expect(createdAt).toEqual(updatedAt);
 
