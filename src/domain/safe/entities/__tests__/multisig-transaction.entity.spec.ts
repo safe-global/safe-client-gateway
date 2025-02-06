@@ -9,6 +9,7 @@ import {
 } from '@/domain/safe/entities/multisig-transaction.entity';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
+import { ZodError } from 'zod';
 
 describe('MultisigTransaction', () => {
   describe('ConfirmationSchema', () => {
@@ -251,11 +252,29 @@ describe('MultisigTransaction', () => {
           received: 'undefined',
         },
         {
-          code: 'invalid_type',
-          expected: 'number',
-          message: 'Required',
+          code: 'invalid_union',
+          message: 'Invalid input',
           path: ['nonce'],
-          received: 'undefined',
+          unionErrors: [
+            new ZodError([
+              {
+                code: 'invalid_type',
+                expected: 'number',
+                received: 'undefined',
+                path: ['nonce'],
+                message: 'Required',
+              },
+            ]),
+            new ZodError([
+              {
+                code: 'invalid_type',
+                expected: 'string',
+                received: 'undefined',
+                path: ['nonce'],
+                message: 'Required',
+              },
+            ]),
+          ],
         },
         {
           code: 'invalid_date',
@@ -347,11 +366,29 @@ describe('MultisigTransaction', () => {
           received: 'undefined',
         },
         {
-          code: 'invalid_type',
-          expected: 'number',
-          message: 'Required',
+          code: 'invalid_union',
+          message: 'Invalid input',
           path: ['nonce'],
-          received: 'undefined',
+          unionErrors: [
+            new ZodError([
+              {
+                code: 'invalid_type',
+                expected: 'number',
+                received: 'undefined',
+                path: ['nonce'],
+                message: 'Required',
+              },
+            ]),
+            new ZodError([
+              {
+                code: 'invalid_type',
+                expected: 'string',
+                received: 'undefined',
+                path: ['nonce'],
+                message: 'Required',
+              },
+            ]),
+          ],
         },
         {
           code: 'invalid_date',
