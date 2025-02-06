@@ -120,16 +120,23 @@ describe('UsersRepository', () => {
 
       const after = new Date().getTime();
 
-      const createdAt = (user.generatedMaps[0].created_at as Date).getTime();
-      const updatedAt = (user.generatedMaps[0].updated_at as Date).getTime();
+      const createdAt = user.generatedMaps[0].created_at;
+      const updatedAt = user.generatedMaps[0].updated_at;
+
+      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+        throw new Error('createdAt and/or updatedAt is not a Date');
+      }
 
       expect(createdAt).toEqual(updatedAt);
 
-      expect(createdAt).toBeGreaterThanOrEqual(before);
-      expect(createdAt).toBeLessThanOrEqual(after);
+      const createdAtTime = createdAt.getTime();
+      const updatedAtTime = updatedAt.getTime();
 
-      expect(updatedAt).toBeGreaterThanOrEqual(before);
-      expect(updatedAt).toBeLessThanOrEqual(after);
+      expect(createdAtTime).toBeGreaterThanOrEqual(before);
+      expect(createdAtTime).toBeLessThanOrEqual(after);
+
+      expect(updatedAtTime).toBeGreaterThanOrEqual(before);
+      expect(updatedAtTime).toBeLessThanOrEqual(after);
     });
 
     it('should update updated_at when updating a User', async () => {
@@ -144,14 +151,16 @@ describe('UsersRepository', () => {
         where: { id: userId },
       });
 
-      const prevUpdatedAt = (
-        prevUser.generatedMaps[0].updated_at as Date
-      ).getTime();
-      const createdAt = updatedUser.created_at.getTime();
-      const updatedAt = updatedUser.updated_at.getTime();
+      const prevUpdatedAt = prevUser.generatedMaps[0].updated_at;
 
-      expect(createdAt).toBeLessThan(updatedAt);
-      expect(prevUpdatedAt).toBeLessThanOrEqual(updatedAt);
+      if (!(prevUpdatedAt instanceof Date)) {
+        throw new Error('prevUpdatedAt is not a Date');
+      }
+
+      const updatedAtTime = updatedUser.updated_at.getTime();
+
+      expect(updatedUser.created_at.getTime()).toBeLessThan(updatedAtTime);
+      expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(updatedAtTime);
     });
   });
 

@@ -121,16 +121,27 @@ describe('WalletsRepository', () => {
 
       const after = new Date().getTime();
 
-      const createdAt = (wallet.generatedMaps[0].created_at as Date).getTime();
-      const updatedAt = (wallet.generatedMaps[0].updated_at as Date).getTime();
+      const createdAt = wallet.generatedMaps[0].created_at;
+      const updatedAt = wallet.generatedMaps[0].updated_at;
+
+      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+        throw new Error('created_at and/or updated_at is not a Date');
+      }
 
       expect(createdAt).toEqual(updatedAt);
 
-      expect(createdAt).toBeGreaterThanOrEqual(before);
-      expect(createdAt).toBeLessThanOrEqual(after);
+      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+        throw new Error('createdAt and/or updatedAt is not a Date');
+      }
 
-      expect(updatedAt).toBeGreaterThanOrEqual(before);
-      expect(updatedAt).toBeLessThanOrEqual(after);
+      const createdAtTime = createdAt.getTime();
+      const updatedAtTime = updatedAt.getTime();
+
+      expect(createdAtTime).toBeGreaterThanOrEqual(before);
+      expect(createdAtTime).toBeLessThanOrEqual(after);
+
+      expect(updatedAtTime).toBeGreaterThanOrEqual(before);
+      expect(updatedAtTime).toBeLessThanOrEqual(after);
     });
 
     it('should update updated_at when updating a Wallet', async () => {
@@ -151,14 +162,16 @@ describe('WalletsRepository', () => {
         where: { id: walletId },
       });
 
-      const prevUpdatedAt = (
-        prevWallet.generatedMaps[0].updated_at as Date
-      ).getTime();
-      const createdAt = updatedWallet.created_at.getTime();
-      const updatedAt = updatedWallet.updated_at.getTime();
+      const prevUpdatedAt = prevWallet.generatedMaps[0].updated_at;
 
-      expect(createdAt).toBeLessThan(updatedAt);
-      expect(prevUpdatedAt).toBeLessThanOrEqual(updatedAt);
+      if (!(prevUpdatedAt instanceof Date)) {
+        throw new Error('prevUpdatedAt is not a Date');
+      }
+
+      const updatedAtTime = updatedWallet.updated_at.getTime();
+
+      expect(updatedWallet.created_at.getTime()).toBeLessThan(updatedAtTime);
+      expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(updatedAtTime);
     });
   });
 
