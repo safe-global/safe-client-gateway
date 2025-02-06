@@ -38,8 +38,8 @@ describe('WalletsRepository', () => {
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
     entities: [User, Wallet],
   });
-  const walletRepository = dataSource.getRepository(Wallet);
-  const userRepository = dataSource.getRepository(User);
+  const dbWalletRepository = dataSource.getRepository(Wallet);
+  const dbWserRepository = dataSource.getRepository(User);
 
   beforeAll(async () => {
     // Create database
@@ -92,8 +92,12 @@ describe('WalletsRepository', () => {
     jest.resetAllMocks();
 
     // Truncate tables
-    await walletRepository.createQueryBuilder().delete().where('1=1').execute();
-    await userRepository.createQueryBuilder().delete().where('1=1').execute();
+    await dbWalletRepository
+      .createQueryBuilder()
+      .delete()
+      .where('1=1')
+      .execute();
+    await dbWserRepository.createQueryBuilder().delete().where('1=1').execute();
   });
 
   afterAll(async () => {
@@ -105,10 +109,10 @@ describe('WalletsRepository', () => {
   describe('created_at/updated_at', () => {
     it('should set created_at and updated_at when creating a Wallet', async () => {
       const before = new Date().getTime();
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      const wallet = await walletRepository.insert({
+      const wallet = await dbWalletRepository.insert({
         address: getAddress(faker.finance.ethereumAddress()),
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -130,20 +134,20 @@ describe('WalletsRepository', () => {
     });
 
     it('should update updated_at when updating a Wallet', async () => {
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      const prevWallet = await walletRepository.insert({
+      const prevWallet = await dbWalletRepository.insert({
         address: getAddress(faker.finance.ethereumAddress()),
         user: {
           id: user.identifiers[0].id as User['id'],
         },
       });
       const walletId = prevWallet.identifiers[0].id as Wallet['id'];
-      await walletRepository.update(walletId, {
+      await dbWalletRepository.update(walletId, {
         address: getAddress(faker.finance.ethereumAddress()),
       });
-      const updatedWallet = await walletRepository.findOneOrFail({
+      const updatedWallet = await dbWalletRepository.findOneOrFail({
         where: { id: walletId },
       });
 
@@ -161,10 +165,10 @@ describe('WalletsRepository', () => {
   describe('findOneOrFail', () => {
     it('should find a wallet', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address,
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -195,10 +199,10 @@ describe('WalletsRepository', () => {
   describe('findOne', () => {
     it('should find a wallet', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address,
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -233,17 +237,17 @@ describe('WalletsRepository', () => {
     it('should find wallets', async () => {
       const address1 = getAddress(faker.finance.ethereumAddress());
       const address2 = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
       const userId = user.identifiers[0].id as User['id'];
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: address1,
         user: {
           id: userId,
         },
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: address2,
         user: {
           id: userId,
@@ -281,15 +285,15 @@ describe('WalletsRepository', () => {
     it('should find wallets', async () => {
       const address1 = getAddress(faker.finance.ethereumAddress());
       const address2 = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
       const userId = user.identifiers[0].id as User['id'];
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: address1,
         user: { id: userId },
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: address2,
         user: { id: userId },
       });
@@ -322,10 +326,10 @@ describe('WalletsRepository', () => {
   describe('findOneByAddressOrFail', () => {
     it('should find a wallet by address', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address,
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -348,10 +352,10 @@ describe('WalletsRepository', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: getAddress(nonChecksummedAddress),
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -384,10 +388,10 @@ describe('WalletsRepository', () => {
   describe('findOneByAddress', () => {
     it('should find a wallet by address', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address,
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -410,10 +414,10 @@ describe('WalletsRepository', () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: getAddress(nonChecksummedAddress),
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -449,13 +453,13 @@ describe('WalletsRepository', () => {
 
       const address1 = getAddress(faker.finance.ethereumAddress());
       const address2 = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({ status });
+      const user = await dbWserRepository.insert({ status });
       const userId = user.identifiers[0].id as User['id'];
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: address1,
         user: { id: userId },
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: address2,
         user: { id: userId },
       });
@@ -519,7 +523,7 @@ describe('WalletsRepository', () => {
         );
       });
 
-      await expect(walletRepository.find()).resolves.toEqual([
+      await expect(dbWalletRepository.find()).resolves.toEqual([
         expect.objectContaining({
           address: walletAddress,
           created_at: expect.any(Date),
@@ -547,7 +551,7 @@ describe('WalletsRepository', () => {
         );
       });
 
-      await expect(walletRepository.find()).resolves.toEqual([
+      await expect(dbWalletRepository.find()).resolves.toEqual([
         expect.objectContaining({
           address: getAddress(nonChecksummedAddress),
           created_at: expect.any(Date),
@@ -559,10 +563,10 @@ describe('WalletsRepository', () => {
 
     it('should throw an error if wallet with the same address already exists', async () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: walletAddress,
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -632,30 +636,30 @@ describe('WalletsRepository', () => {
   describe('deleteByAddress', () => {
     it('should delete a wallet by address', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address,
         user: {
           id: user.identifiers[0].id as User['id'],
         },
       });
-      await expect(walletRepository.find()).resolves.toHaveLength(1);
+      await expect(dbWalletRepository.find()).resolves.toHaveLength(1);
 
       await walletsRepository.deleteByAddress(address);
 
-      await expect(walletRepository.find()).resolves.toEqual([]);
+      await expect(dbWalletRepository.find()).resolves.toEqual([]);
     });
 
     it('should delete by non-checksummed address', async () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const user = await userRepository.insert({
+      const user = await dbWserRepository.insert({
         status: faker.helpers.enumValue(UserStatus),
       });
-      await walletRepository.insert({
+      await dbWalletRepository.insert({
         address: getAddress(nonChecksummedAddress),
         user: {
           id: user.identifiers[0].id as User['id'],
@@ -666,7 +670,7 @@ describe('WalletsRepository', () => {
         nonChecksummedAddress as `0x${string}`,
       );
 
-      await expect(walletRepository.find()).resolves.toEqual([]);
+      await expect(dbWalletRepository.find()).resolves.toEqual([]);
     });
 
     it('should throw if providing invalid wallet address', async () => {
