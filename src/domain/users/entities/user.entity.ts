@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 
 export enum UserStatus {
-  PENDING = 0,
   ACTIVE = 1,
 }
 

@@ -56,7 +56,6 @@ export interface IOrganizationsRepository {
   update(args: {
     id: Organization['id'];
     updatePayload: Partial<Pick<Organization, 'name' | 'status'>>;
-    authPayload: AuthPayload;
   }): Promise<Pick<Organization, 'id'>>;
 
   delete(args: { id: number; authPayload: AuthPayload }): Promise<void>;

@@ -32,12 +32,14 @@ export class User implements DomainUser {
   @Column({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
+    update: false,
   })
   created_at!: Date;
 
   @Column({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
+    update: false,
   })
   updated_at!: Date;
 

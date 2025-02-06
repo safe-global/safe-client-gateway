@@ -83,32 +83,6 @@ export class UsersRepository implements IUsersRepository {
     };
   }
 
-  public async findOrFail(
-    authPayload: Parameters<UsersRepository['find']>[0],
-  ): Promise<ReturnType<UsersRepository['find']>> {
-    const user = await this.find(authPayload);
-
-    if (!user) {
-      throw new NotFoundException(
-        'User not found. SignerAddress=' + authPayload.signer_address,
-      );
-    }
-
-    return user;
-  }
-
-  public async find(authPayload: AuthPayload): Promise<User> {
-    // @todo Assertion should happen in the service layer
-    this.assertSignerAddress(authPayload);
-
-    const wallet = await this.walletsRepository.findOneByAddressOrFail(
-      authPayload.signer_address,
-      { user: true },
-    );
-
-    return wallet.user;
-  }
-
   async addWalletToUser(args: {
     walletAddress: `0x${string}`;
     authPayload: AuthPayload;

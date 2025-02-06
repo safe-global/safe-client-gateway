@@ -12,6 +12,7 @@ import {
   FindOptionsSelect,
   FindOptionsRelations,
 } from 'typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 @Injectable()
 export class OrganizationsRepository implements IOrganizationsRepository {
@@ -128,8 +129,7 @@ export class OrganizationsRepository implements IOrganizationsRepository {
 
   public async update(args: {
     id: Organization['id'];
-    updatePayload: Partial<Pick<Organization, 'name' | 'status'>>;
-    authPayload: AuthPayload;
+    updatePayload: QueryDeepPartialEntity<Organization>;
   }): Promise<Pick<Organization, 'id'>> {
     const organizationRepository =
       await this.postgresDatabaseService.getRepository(Organization);
