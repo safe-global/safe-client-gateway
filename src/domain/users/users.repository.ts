@@ -83,6 +83,32 @@ export class UsersRepository implements IUsersRepository {
     };
   }
 
+  public async findOrFail(
+    authPayload: Parameters<UsersRepository['find']>[0],
+  ): Promise<ReturnType<UsersRepository['find']>> {
+    const user = await this.find(authPayload);
+
+    if (!user) {
+      throw new NotFoundException(
+        'User not found. SignerAddress=' + authPayload.signer_address,
+      );
+    }
+
+    return user;
+  }
+
+  public async find(authPayload: AuthPayload): Promise<User> {
+    // @todo Assertion should happen in the service layer
+    this.assertSignerAddress(authPayload);
+
+    const wallet = await this.walletsRepository.findOneByAddressOrFail(
+      authPayload.signer_address,
+      { user: true },
+    );
+
+    return wallet.user;
+  }
+
   async addWalletToUser(args: {
     walletAddress: `0x${string}`;
     authPayload: AuthPayload;
@@ -90,7 +116,7 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     await this.assertWalletDoesNotExist(args.walletAddress);
 
-    const user = await this.findByWalletAddress(
+    const user = await this.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
 
@@ -132,7 +158,7 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     this.assertWalletIsNotSigner(args);
 
-    const user = await this.findByWalletAddress(
+    const user = await this.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
 
@@ -144,7 +170,9 @@ export class UsersRepository implements IUsersRepository {
     await this.walletsRepository.deleteByAddress(wallet.address);
   }
 
-  private async findByWalletAddress(address: `0x${string}`): Promise<User> {
+  public async findByWalletAddressOrFail(
+    address: `0x${string}`,
+  ): Promise<User> {
     try {
       const { user } = await this.walletsRepository.findOneByAddressOrFail(
         address,

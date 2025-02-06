@@ -42,5 +42,5 @@ export class Organization implements DomainOrganization {
     () => UserOrganization,
     (userOrganization: UserOrganization) => userOrganization.organization,
   )
-  userOrganizations!: Array<UserOrganization>;
+  user_organizations!: Array<UserOrganization>;
 }

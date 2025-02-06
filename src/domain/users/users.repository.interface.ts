@@ -27,4 +27,6 @@ export interface IUsersRepository {
     walletAddress: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void>;
+
+  findByWalletAddressOrFail(address: `0x${string}`): Promise<User>;
 }
