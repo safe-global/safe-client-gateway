@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
+import { getAddress } from 'viem';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -11,9 +12,9 @@ import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-pay
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
+import type { Repository } from 'typeorm';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { getAddress } from 'viem';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -41,8 +42,8 @@ describe('UsersRepository', () => {
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
     entities: [User, Wallet],
   });
-  const dbWalletRepository = dataSource.getRepository(Wallet);
-  const dbUserRepository = dataSource.getRepository(User);
+  let dbWalletRepository: Repository<Wallet>;
+  let dbUserRepository: Repository<User>;
 
   beforeAll(async () => {
     // Create database
@@ -87,6 +88,9 @@ describe('UsersRepository', () => {
       mockConfigService,
     );
     await migrator.migrate();
+
+    dbWalletRepository = dataSource.getRepository(Wallet);
+    dbUserRepository = dataSource.getRepository(User);
 
     usersRepository = new UsersRepository(
       postgresDatabaseService,
