@@ -4,6 +4,7 @@ import type {
   FindOptionsWhere,
   FindOptionsSelect,
   FindOptionsRelations,
+  InsertResult,
 } from 'typeorm';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
@@ -17,7 +18,7 @@ export interface IOrganizationsRepository {
     name: string;
     authPayload: AuthPayload;
     status: OrganizationStatus;
-  }): Promise<Organization>;
+  }): Promise<Pick<Organization, 'id' | 'name'>>;
 
   findOneOrFail(
     args: Parameters<OrganizationsRepository['findOne']>[0],
@@ -52,6 +53,16 @@ export interface IOrganizationsRepository {
     select?: FindOptionsSelect<Organization>;
     relations?: FindOptionsRelations<Organization>;
   }): Promise<Array<Organization>>;
+
+  findOneByUserIdOrFail(
+    args: Parameters<OrganizationsRepository['findByUserId']>[0],
+  ): Promise<Organization>;
+
+  findOneByUserId(args: {
+    userId: User['id'];
+    select?: FindOptionsSelect<Organization>;
+    relations?: FindOptionsRelations<Organization>;
+  }): Promise<Organization | null>;
 
   update(args: {
     id: Organization['id'];
