@@ -60,6 +60,7 @@ import {
 } from '@/logging/logging.interface';
 import { UsersModule } from '@/routes/users/users.module';
 import { OrganizationsModule } from '@/routes/organizations/organizations.module';
+import { UserOrganizationsModule } from '@/routes/organizations/user-organizations.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -101,7 +102,9 @@ export class AppModule implements NestModule {
           : [HooksModule]),
         MessagesModule,
         NotificationsModule,
-        ...(isUsersFeatureEnabled ? [OrganizationsModule] : []),
+        ...(isUsersFeatureEnabled
+          ? [UsersModule, OrganizationsModule, UserOrganizationsModule]
+          : []),
         OwnersModule,
         RelayControllerModule,
         RootModule,
@@ -109,7 +112,6 @@ export class AppModule implements NestModule {
         SafesModule,
         TargetedMessagingModule,
         TransactionsModule,
-        ...(isUsersFeatureEnabled ? [UsersModule] : []),
         // common
         CacheModule,
         // Module for storing and reading from the async local storage
