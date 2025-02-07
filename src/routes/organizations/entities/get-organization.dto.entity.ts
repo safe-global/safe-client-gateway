@@ -1,44 +1,51 @@
+import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
+import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
+import { User } from '@/datasources/users/entities/users.entity.db';
+import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
+import {
+  UserOrganizationRole,
+  UserOrganizationStatus,
+} from '@/domain/users/entities/user-organization.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-// @todo read from user
 class UserDto {
-  @ApiProperty()
-  public id!: number;
+  @ApiProperty({ type: Number })
+  public id!: User['id'];
 
-  @ApiProperty()
-  public status!: UserStatus;
+  @ApiProperty({ enum: UserStatus, type: Number })
+  public status!: User['status'];
 }
 
 class UserOrganizationsDto {
-  @ApiProperty()
-  public id!: number;
+  @ApiProperty({ type: Number })
+  public id!: UserOrganization['id'];
 
-  @ApiProperty()
-  public role!: number;
+  @ApiProperty({ type: Number, enum: UserOrganizationRole })
+  public role!: UserOrganization['role'];
 
-  @ApiProperty()
-  public status!: number;
+  @ApiProperty({ type: Number, enum: UserOrganizationStatus })
+  public status!: UserOrganization['status'];
 
-  @ApiProperty()
-  public created_at!: Date;
+  @ApiProperty({ type: Date })
+  public created_at!: UserOrganization['created_at'];
 
-  @ApiProperty()
-  public updated_at!: Date;
+  @ApiProperty({ type: Date })
+  public updated_at!: UserOrganization['updated_at'];
 
-  @ApiProperty()
+  @ApiProperty({ type: UserDto })
   public user!: UserDto;
 }
 
 export class GetOrganizationResponse {
-  @ApiProperty()
-  public id!: number;
+  @ApiProperty({ type: Number })
+  public id!: Organization['id'];
 
-  @ApiProperty()
-  public name!: string;
+  @ApiProperty({ type: String })
+  public name!: Organization['name'];
 
-  @ApiProperty()
-  public status!: number;
+  @ApiProperty({ type: Number, enum: OrganizationStatus })
+  public status!: Organization['status'];
 
   @ApiProperty()
   public user_organizations!: Array<UserOrganizationsDto>;

@@ -44,20 +44,20 @@ export class OrganizationsService {
     return await this.organizationsRepository.findByUserId({
       userId,
       select: {
-        // id: true,
-        // name: true,
-        // status: true,
-        // user_organizations: {
-        //   id: true,
-        //   role: true,
-        //   status: true,
-        //   created_at: true,
-        //   updated_at: true,
-        //   user: {
-        //     id: true,
-        //     status: true,
-        //   },
-        // },
+        id: true,
+        name: true,
+        status: true,
+        user_organizations: {
+          id: true,
+          role: true,
+          status: true,
+          created_at: true,
+          updated_at: true,
+          user: {
+            id: true,
+            status: true,
+          },
+        },
       },
       relations: {
         user_organizations: {
@@ -83,20 +83,20 @@ export class OrganizationsService {
         user_organizations: { user: { id: userId } },
       },
       select: {
-        // id: true,
-        // name: true,
-        // status: true,
-        // user_organizations: {
-        //   id: true,
-        //   role: true,
-        //   status: true,
-        //   created_at: true,
-        //   updated_at: true,
-        //   user: {
-        //     id: true,
-        //     status: true,
-        //   },
-        // },
+        id: true,
+        name: true,
+        status: true,
+        user_organizations: {
+          id: true,
+          role: true,
+          status: true,
+          created_at: true,
+          updated_at: true,
+          user: {
+            id: true,
+            status: true,
+          },
+        },
       },
       relations: {
         user_organizations: {
@@ -162,7 +162,7 @@ export class OrganizationsService {
 
     if (!organization) {
       throw new UnauthorizedException(
-        'User is unauthorized. SignerAddress= ' + organizationId,
+        'User is unauthorized. SignerAddress= ' + signerAddress,
       );
     }
   }
