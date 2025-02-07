@@ -43,6 +43,7 @@ export class Organization implements DomainOrganization {
   @OneToMany(
     () => UserOrganization,
     (userOrganization: UserOrganization) => userOrganization.organization,
+    { cascade: ['update', 'insert'] },
   )
   user_organizations!: Array<UserOrganization>;
 }

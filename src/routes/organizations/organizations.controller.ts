@@ -1,11 +1,18 @@
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import {
   Body,
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
@@ -16,16 +23,19 @@ import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
 import { CreateOrganizationResponse } from '@/routes/organizations/entities/create-organizations.dto.entity';
-import { CreateOrganizationDto } from '@/routes/organizations/entities/create-organization.dto.entity';
+import {
+  CreateOrganizationDto,
+  CreateOrganizationSchema,
+} from '@/routes/organizations/entities/create-organization.dto.entity';
 import { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
 import {
   UpdateOrganizationDto,
   UpdateOrganizationResponse,
 } from '@/routes/organizations/entities/update-organization.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { z } from 'zod';
-
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 @ApiTags('organizations')
+@UseGuards(AuthGuard)
 @Controller({ path: 'organizations', version: '1' })
 export class OrganizationsController {
   public constructor(
@@ -35,9 +45,15 @@ export class OrganizationsController {
   }
 
   @Post()
-  @UseGuards(AuthGuard)
+  @ApiOkResponse({
+    description: 'Organizations created',
+  })
+  @ApiNotFoundResponse({ description: 'User not found.' })
+  @ApiForbiddenResponse({ description: 'Forbidden resource' })
+  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   public async create(
-    @Body() body: CreateOrganizationDto,
+    @Body(new ValidationPipe(CreateOrganizationSchema))
+    body: CreateOrganizationDto,
     @Auth() authPayload: AuthPayload,
   ): Promise<CreateOrganizationResponse> {
     return await this.organizationsService.create({
@@ -48,7 +64,12 @@ export class OrganizationsController {
   }
 
   @Get()
-  @UseGuards(AuthGuard)
+  @ApiOkResponse({
+    description: 'Organizations found',
+  })
+  @ApiNotFoundResponse({ description: 'User not found.' })
+  @ApiForbiddenResponse({ description: 'Forbidden resource' })
+  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   public async get(
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<GetOrganizationResponse>> {
@@ -56,19 +77,32 @@ export class OrganizationsController {
   }
 
   @Get('/:id')
-  @UseGuards(AuthGuard)
+  @ApiOkResponse({
+    description: 'Organization found',
+  })
+  @ApiNotFoundResponse({
+    description: 'Organization not found. OR User not found.',
+  })
+  @ApiForbiddenResponse({ description: 'Forbidden resource' })
+  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   public async getOne(
-    @Param('id', new ValidationPipe(z.number())) id: number,
+    @Param('id', new ValidationPipe(RowSchema.shape.id)) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetOrganizationResponse> {
     return await this.organizationsService.getOne(id, authPayload);
   }
 
   @Patch('/:id')
-  @UseGuards(AuthGuard)
+  @ApiOkResponse({
+    description: 'Organization updated',
+  })
+  @ApiForbiddenResponse({ description: 'Forbidden resource' })
+  @ApiUnauthorizedResponse({
+    description: 'Signer address not provided OR User is unauthorized',
+  })
   public async update(
     @Body() payload: UpdateOrganizationDto,
-    @Param('id', new ValidationPipe(z.number())) id: number,
+    @Param('id', new ValidationPipe(RowSchema.shape.id)) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<UpdateOrganizationResponse> {
     return await this.organizationsService.update({
@@ -79,9 +113,16 @@ export class OrganizationsController {
   }
 
   @Delete('/:id')
-  @UseGuards(AuthGuard)
+  @ApiResponse({
+    description: 'Organization deleted',
+    status: HttpStatus.NO_CONTENT,
+  })
+  @ApiForbiddenResponse({ description: 'Forbidden resource' })
+  @ApiUnauthorizedResponse({
+    description: 'Signer address not provided OR User is unauthorized',
+  })
   public async delete(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', new ValidationPipe(RowSchema.shape.id)) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.organizationsService.delete({ id, authPayload });
