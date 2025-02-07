@@ -4,7 +4,6 @@ import type {
   FindOptionsWhere,
   FindOptionsSelect,
   FindOptionsRelations,
-  InsertResult,
 } from 'typeorm';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';

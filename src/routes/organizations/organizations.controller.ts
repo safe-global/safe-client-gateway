@@ -11,8 +11,10 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
@@ -86,7 +88,8 @@ export class OrganizationsController {
   @ApiForbiddenResponse({ description: 'Forbidden resource' })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   public async getOne(
-    @Param('id', new ValidationPipe(RowSchema.shape.id)) id: number,
+    @Param('id', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetOrganizationResponse> {
     return await this.organizationsService.getOne(id, authPayload);
@@ -102,7 +105,8 @@ export class OrganizationsController {
   })
   public async update(
     @Body() payload: UpdateOrganizationDto,
-    @Param('id', new ValidationPipe(RowSchema.shape.id)) id: number,
+    @Param('id', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<UpdateOrganizationResponse> {
     return await this.organizationsService.update({
@@ -121,8 +125,10 @@ export class OrganizationsController {
   @ApiUnauthorizedResponse({
     description: 'Signer address not provided OR User is unauthorized',
   })
+  @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(
-    @Param('id', new ValidationPipe(RowSchema.shape.id)) id: number,
+    @Param('id', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.organizationsService.delete({ id, authPayload });
