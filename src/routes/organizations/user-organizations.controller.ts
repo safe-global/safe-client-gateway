@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { OrganizationsService } from '@/routes/organizations/organizations.service';
+import type { UserOrganizationsService } from '@/routes/organizations/user-organizations.service';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -27,8 +27,8 @@ import type { Members } from '@/routes/organizations/entities/members.entity';
 
 @ApiTags('organizations')
 @Controller({ path: 'organizations', version: '1' })
-export class OrganizationsController {
-  constructor(private readonly organizationsService: OrganizationsService) {}
+export class UserOrganizationsController {
+  constructor(private readonly userOrgService: UserOrganizationsService) {}
 
   @Post('/:orgId/members')
   @UseGuards(AuthGuard)
@@ -39,7 +39,7 @@ export class OrganizationsController {
     @Body(new ValidationPipe(InviteUserDtoSchema))
     inviteUserDto: InviteUserDto,
   ): Promise<Invite> {
-    return await this.organizationsService.inviteUser({
+    return await this.userOrgService.inviteUser({
       authPayload,
       orgId,
       inviteUserDto,
@@ -55,7 +55,7 @@ export class OrganizationsController {
     @Param('userOrgId', new ValidationPipe(RowSchema.shape.id))
     userOrgId: UserOrganization['id'],
   ): Promise<void> {
-    return await this.organizationsService.acceptInvite({
+    return await this.userOrgService.acceptInvite({
       authPayload,
       orgId,
       userOrgId,
@@ -71,7 +71,7 @@ export class OrganizationsController {
     @Param('userOrgId', new ValidationPipe(RowSchema.shape.id))
     userOrgId: UserOrganization['id'],
   ): Promise<void> {
-    return await this.organizationsService.declineInvite({
+    return await this.userOrgService.declineInvite({
       authPayload,
       orgId,
       userOrgId,
@@ -85,7 +85,7 @@ export class OrganizationsController {
     @Param('orgId', new ValidationPipe(RowSchema.shape.id))
     orgId: Organization['id'],
   ): Promise<Members> {
-    return await this.organizationsService.get({
+    return await this.userOrgService.get({
       authPayload,
       orgId,
     });
@@ -102,7 +102,7 @@ export class OrganizationsController {
     @Body(new ValidationPipe(UpdateRoleDtoSchema))
     updateRoleDto: UpdateRoleDto,
   ): Promise<void> {
-    return await this.organizationsService.updateRole({
+    return await this.userOrgService.updateRole({
       authPayload,
       orgId,
       userOrgId,
@@ -119,7 +119,7 @@ export class OrganizationsController {
     @Param('userOrgId', new ValidationPipe(RowSchema.shape.id))
     userOrgId: UserOrganization['id'],
   ): Promise<void> {
-    return await this.organizationsService.removeUser({
+    return await this.userOrgService.removeUser({
       authPayload,
       orgId,
       userOrgId,

@@ -1,168 +1,106 @@
-import type { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
+import { UserOrganizationStatus } from '@/domain/users/entities/user-organization.entity';
+import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
-import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
-import type { IUsersRepository } from '@/domain/users/users.repository.interface';
-import type { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
-import type {
-  UpdateOrganizationDto,
-  UpdateOrganizationResponse,
-} from '@/routes/organizations/entities/update-organization.dto.entity';
-import { UnauthorizedException } from '@nestjs/common';
+import type { Organization } from '@/domain/organizations/entities/organization.entity';
+import type { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
+import type { InviteUserDto } from '@/routes/organizations/entities/invite-user.dto.entity';
+import type { Invite } from '@/routes/organizations/entities/invite.entity';
+import type { Members } from '@/routes/organizations/entities/members.entity';
+import type { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
 
 export class UserOrganizationsService {
   public constructor(
-    private readonly userRepository: IUsersRepository,
-    private readonly organizationsRepository: IOrganizationsRepository,
+    private readonly usersOrgRepository: IUsersOrganizationsRepository,
   ) {}
 
-  public async create(args: {
-    name: Organization['name'];
-    status: Organization['status'];
+  public async inviteUser(args: {
     authPayload: AuthPayload;
-  }): ReturnType<IOrganizationsRepository['create']> {
-    this.assertSignerAddress(args.authPayload);
-    const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
-
-    return await this.organizationsRepository.create({ userId, ...args });
-  }
-
-  public async get(
-    authPayload: AuthPayload,
-  ): Promise<Array<GetOrganizationResponse>> {
-    this.assertSignerAddress(authPayload);
-
-    const { id: userId } =
-      await this.userRepository.getWithWallets(authPayload);
-
-    return await this.organizationsRepository.findByUserIdOrFail({
-      userId,
-      select: {
-        // id: true,
-        // name: true,
-        // status: true,
-        // user_organizations: {
-        //   id: true,
-        //   role: true,
-        //   status: true,
-        //   created_at: true,
-        //   updated_at: true,
-        //   user: {
-        //     id: true,
-        //     status: true,
-        //   },
-        // },
-      },
-      relations: {
-        user_organizations: {
-          user: true,
-        },
-      },
+    orgId: Organization['id'];
+    inviteUserDto: InviteUserDto;
+  }): Promise<Invite> {
+    return await this.usersOrgRepository.inviteUser({
+      authPayload: args.authPayload,
+      orgId: args.orgId,
+      role: args.inviteUserDto.role,
+      walletAddress: args.inviteUserDto.walletAddress,
     });
   }
 
-  public async getOne(
-    id: number,
-    authPayload: AuthPayload,
-  ): Promise<GetOrganizationResponse> {
-    this.assertSignerAddress(authPayload);
+  public async acceptInvite(args: {
+    authPayload: AuthPayload;
+    orgId: Organization['id'];
+    userOrgId: UserOrganization['id'];
+  }): Promise<void> {
+    return await this.usersOrgRepository.updateStatus({
+      authPayload: args.authPayload,
+      userOrgId: args.userOrgId,
+      _orgId: args.orgId,
+      status: UserOrganizationStatus.ACTIVE,
+    });
+  }
 
-    const { id: userId } =
-      await this.userRepository.getWithWallets(authPayload);
+  public async declineInvite(args: {
+    authPayload: AuthPayload;
+    orgId: Organization['id'];
+    userOrgId: UserOrganization['id'];
+  }): Promise<void> {
+    return await this.usersOrgRepository.updateStatus({
+      authPayload: args.authPayload,
+      userOrgId: args.userOrgId,
+      _orgId: args.orgId,
+      status: UserOrganizationStatus.DECLINED,
+    });
+  }
 
-    return await this.organizationsRepository.findOneOrFail({
-      where: {
-        id,
-        user_organizations: {
+  public async get(args: {
+    authPayload: AuthPayload;
+    orgId: Organization['id'];
+  }): Promise<Members> {
+    const userOrgs = await this.usersOrgRepository.get({
+      authPayload: args.authPayload,
+      orgId: args.orgId,
+    });
+
+    return {
+      members: userOrgs.map((userOrg) => {
+        return {
+          id: userOrg.id,
+          role: userOrg.role,
+          status: userOrg.status,
+          createdAt: userOrg.created_at.toISOString(),
+          updatedAt: userOrg.updated_at.toISOString(),
           user: {
-            id: userId,
+            id: userOrg.user.id,
+            status: userOrg.user.status,
           },
-        },
-      },
-      select: {
-        // id: true,
-        // name: true,
-        // status: true,
-        // user_organizations: {
-        //   id: true,
-        //   role: true,
-        //   status: true,
-        //   created_at: true,
-        //   updated_at: true,
-        //   user: {
-        //     id: true,
-        //     status: true,
-        //   },
-        // },
-      },
-      relations: {
-        user_organizations: {
-          user: true,
-        },
-      },
+        };
+      }),
+    };
+  }
+
+  public async updateRole(args: {
+    authPayload: AuthPayload;
+    orgId: Organization['id'];
+    userOrgId: UserOrganization['id'];
+    updateRoleDto: UpdateRoleDto;
+  }): Promise<void> {
+    return await this.usersOrgRepository.updateRole({
+      authPayload: args.authPayload,
+      _orgId: args.orgId,
+      userOrgId: args.userOrgId,
+      role: args.updateRoleDto.role,
     });
   }
 
-  public async update(args: {
-    id: Organization['id'];
-    updatePayload: UpdateOrganizationDto;
+  public async removeUser(args: {
     authPayload: AuthPayload;
-  }): Promise<UpdateOrganizationResponse> {
-    this.assertSignerAddress(args.authPayload);
-    await this.assertOrganizationAdmin(
-      args.id,
-      args.authPayload.signer_address,
-    );
-
-    return await this.organizationsRepository.update(args);
-  }
-
-  public async delete(args: {
-    id: Organization['id'];
-    authPayload: AuthPayload;
-  }): ReturnType<IOrganizationsRepository['delete']> {
-    this.assertSignerAddress(args.authPayload);
-    await this.assertOrganizationAdmin(
-      args.id,
-      args.authPayload.signer_address,
-    );
-
-    return await this.organizationsRepository.delete(args);
-  }
-
-  private assertSignerAddress(
-    authPayload: AuthPayload,
-  ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
-    if (!authPayload.signer_address) {
-      throw new UnauthorizedException('Signer address not provided');
-    }
-  }
-
-  public async assertOrganizationAdmin(
-    organizationId: Organization['id'],
-    signerAddress: `0x${string}`,
-  ): Promise<void> {
-    const { id: userId } =
-      await this.userRepository.findByWalletAddressOrFail(signerAddress);
-
-    const organization = await this.organizationsRepository.findOne({
-      where: {
-        id: organizationId,
-        user_organizations: {
-          role: UserOrganizationRole.ADMIN,
-          user: {
-            id: userId,
-          },
-        },
-      },
+    orgId: Organization['id'];
+    userOrgId: UserOrganization['id'];
+  }): Promise<void> {
+    return await this.usersOrgRepository.removeUser({
+      authPayload: args.authPayload,
+      orgId: args.orgId,
+      userOrgId: args.userOrgId,
     });
-
-    if (!organization) {
-      throw new UnauthorizedException(
-        'User is unauthorized. SignerAddress= ' + organizationId,
-      );
-    }
   }
 }
