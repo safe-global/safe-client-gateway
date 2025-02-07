@@ -90,7 +90,7 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     await this.assertWalletDoesNotExist(args.walletAddress);
 
-    const user = await this.findByWalletAddress(
+    const user = await this.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
 
@@ -132,7 +132,7 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     this.assertWalletIsNotSigner(args);
 
-    const user = await this.findByWalletAddress(
+    const user = await this.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
 
@@ -144,7 +144,9 @@ export class UsersRepository implements IUsersRepository {
     await this.walletsRepository.deleteByAddress(wallet.address);
   }
 
-  private async findByWalletAddress(address: `0x${string}`): Promise<User> {
+  public async findByWalletAddressOrFail(
+    address: `0x${string}`,
+  ): Promise<User> {
     try {
       const { user } = await this.walletsRepository.findOneByAddressOrFail(
         address,

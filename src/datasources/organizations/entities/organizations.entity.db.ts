@@ -29,12 +29,14 @@ export class Organization implements DomainOrganization {
   @Column({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
+    update: false,
   })
   created_at!: Date;
 
   @Column({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
+    update: false,
   })
   updated_at!: Date;
 
@@ -42,5 +44,5 @@ export class Organization implements DomainOrganization {
     () => UserOrganization,
     (userOrganization: UserOrganization) => userOrganization.organization,
   )
-  userOrganizations!: Array<UserOrganization>;
+  user_organizations!: Array<UserOrganization>;
 }
