@@ -1,18 +1,21 @@
 import type { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
+import { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
 import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
-import type { IUsersRepository } from '@/domain/users/users.repository.interface';
+import { IUsersRepository } from '@/domain/users/users.repository.interface';
+import { CreateOrganizationResponse } from '@/routes/organizations/entities/create-organizations.dto.entity';
 import type { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
 import type {
   UpdateOrganizationDto,
   UpdateOrganizationResponse,
 } from '@/routes/organizations/entities/update-organization.dto.entity';
-import { UnauthorizedException } from '@nestjs/common';
+import { Inject, UnauthorizedException } from '@nestjs/common';
 
 export class OrganizationsService {
   public constructor(
+    @Inject(IUsersRepository)
     private readonly userRepository: IUsersRepository,
+    @Inject(IOrganizationsRepository)
     private readonly organizationsRepository: IOrganizationsRepository,
   ) {}
 
@@ -20,7 +23,7 @@ export class OrganizationsService {
     name: Organization['name'];
     status: Organization['status'];
     authPayload: AuthPayload;
-  }): ReturnType<IOrganizationsRepository['create']> {
+  }): Promise<CreateOrganizationResponse> {
     this.assertSignerAddress(args.authPayload);
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       args.authPayload.signer_address,
@@ -34,10 +37,11 @@ export class OrganizationsService {
   ): Promise<Array<GetOrganizationResponse>> {
     this.assertSignerAddress(authPayload);
 
-    const { id: userId } =
-      await this.userRepository.getWithWallets(authPayload);
+    const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
+      authPayload.signer_address,
+    );
 
-    return await this.organizationsRepository.findByUserIdOrFail({
+    return await this.organizationsRepository.findByUserId({
       userId,
       select: {
         // id: true,
@@ -69,17 +73,14 @@ export class OrganizationsService {
   ): Promise<GetOrganizationResponse> {
     this.assertSignerAddress(authPayload);
 
-    const { id: userId } =
-      await this.userRepository.getWithWallets(authPayload);
+    const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
+      authPayload.signer_address,
+    );
 
     return await this.organizationsRepository.findOneOrFail({
       where: {
         id,
-        user_organizations: {
-          user: {
-            id: userId,
-          },
-        },
+        user_organizations: { user: { id: userId } },
       },
       select: {
         // id: true,
