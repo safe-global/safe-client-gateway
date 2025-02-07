@@ -76,10 +76,10 @@ export class UsersOrganizationsRepository
   > {
     this.assertSignerAddress(args.authPayload);
 
-    const organization = await this.organizationsRepository.findOneOrFail(
-      { id: args.orgId },
-      { user_organizations: true },
-    );
+    const organization = await this.organizationsRepository.findOneOrFail({
+      where: { id: args.orgId },
+      relations: { user_organizations: true },
+    });
 
     const userOrganization = organization.user_organizations.find(
       ({ user }) => {
@@ -98,7 +98,7 @@ export class UsersOrganizationsRepository
       userOrganization,
     });
 
-    const user = await this.usersRepository.findByWalletAddress(
+    const user = await this.usersRepository.findByWalletAddressOrFail(
       args.walletAddress,
     );
 
@@ -158,10 +158,10 @@ export class UsersOrganizationsRepository
   }): Promise<Array<UserOrganization>> {
     this.assertSignerAddress(args.authPayload);
 
-    const organization = await this.organizationsRepository.findOneOrFail(
-      { id: args.orgId },
-      { user_organizations: true },
-    );
+    const organization = await this.organizationsRepository.findOneOrFail({
+      where: { id: args.orgId },
+      relations: { user_organizations: true },
+    });
 
     const isMember = organization.user_organizations.some(
       (userOrganization) => {
