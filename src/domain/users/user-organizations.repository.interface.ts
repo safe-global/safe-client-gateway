@@ -10,7 +10,6 @@ export const IUsersOrganizationsRepository = Symbol(
 );
 
 export interface IUsersOrganizationsRepository {
-  // TODO: Create factory for base "finders"
   findOneOrFail(
     where:
       | Array<FindOptionsWhere<UserOrganization>>

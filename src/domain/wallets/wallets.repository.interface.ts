@@ -12,7 +12,6 @@ import type { User } from '@/domain/users/entities/user.entity';
 export const IWalletsRepository = Symbol('IWalletsRepository');
 
 export interface IWalletsRepository {
-  // TODO: Create factory for base "finders"
   findOneOrFail(
     where: Array<FindOptionsWhere<Wallet>> | FindOptionsWhere<Wallet>,
     relations?: FindOptionsRelations<Wallet>,
