@@ -30,6 +30,7 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 
@@ -266,12 +267,13 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it.skip('should throw a 404 if the organization does not exist', async () => {
+    it('should throw a 404 if the organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgId = faker.number.int({
         // Ensure no collision with previous tests
         min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
       });
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -532,7 +534,34 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it.todo('should throw a 404 if the organization does not exist');
+    it('should throw a 404 if the organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Don't create Organization or UserOrganization
+
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          message: 'Organization not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
 
     it('should throw a 404 if the user organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
@@ -760,7 +789,34 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it.todo('should throw a 404 if the organization does not exist');
+    it('should throw a 404 if the organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Don't create Organization or UserOrganization
+
+      // Decline invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/decline`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          message: 'Organization not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
 
     it('should throw a 404 if the user organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
@@ -1034,12 +1090,13 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it.skip('should throw a 404 if the organization does not exist', async () => {
+    it('should throw a 404 if the organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgId = faker.number.int({
         // Ensure no collision with previous tests
         min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
       });
 
       // Create Wallet/User
@@ -1271,6 +1328,7 @@ describe('UserOrganizationsController', () => {
       const userId = faker.number.int({
         // Ensure no collision with previous tests
         min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
       });
 
       // Create Wallet/User
@@ -1410,9 +1468,48 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it.todo(
-      'should throw a 404 if the user-to-update user organization does not exist',
-    );
+    it('should throw a 404 if the user-to-update user organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create non-user org Wallet/User
+      const userId = await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create UserOrganization or accept invite
+
+      // Update role
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ role: 'ADMIN' })
+        .expect(404)
+        .expect({
+          message: 'Member not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
   });
 
   describe('DELETE /v1/organizations/:orgId/members/:userId', () => {
@@ -1473,6 +1570,7 @@ describe('UserOrganizationsController', () => {
       const userId = faker.number.int({
         // Ensure no collision with previous tests
         min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
       });
 
       // Create Wallet/User
@@ -1503,7 +1601,35 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it.todo('should throw a 404 if the organization does not exist');
+    it('should throw a 404 if the organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      // Create Wallet/User
+      const userId = await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create Organization or UserOrganization
+
+      // Remove user
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          message: 'Organization not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
 
     it('should throw a 404 if the signer user organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
@@ -1512,6 +1638,7 @@ describe('UserOrganizationsController', () => {
       const userId = faker.number.int({
         // Ensure no collision with previous tests
         min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
       });
 
       // Create Wallet/User
@@ -1654,6 +1781,7 @@ describe('UserOrganizationsController', () => {
       const userId = faker.number.int({
         // Ensure no collision with previous tests
         min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
       });
 
       // Create Wallet/User
