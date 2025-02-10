@@ -24,8 +24,6 @@ import type { Organization } from '@/domain/organizations/entities/organization.
 import type { User } from '@/domain/users/entities/user.entity';
 import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
 
-// TODO: Refactor
-
 @Injectable()
 export class UsersOrganizationsRepository
   implements IUsersOrganizationsRepository
@@ -85,28 +83,9 @@ export class UsersOrganizationsRepository
       status: keyof typeof UserOrganizationStatus;
     }>
   > {
-    this.assertSignerAddress(args.authPayload);
+    const signer = await this.getOrgAndSignerOrFail(args);
 
-    const signerUser = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
-
-    const org = await this.organizationsRepository.findOneOrFail({
-      where: { id: args.orgId },
-      relations: { user_organizations: { user: true } },
-    });
-
-    const userOrg = org.user_organizations.find((userOrg) => {
-      return userOrg.user.id === signerUser.id;
-    });
-
-    if (!userOrg) {
-      throw new NotFoundException('Signer is not a member.');
-    }
-
-    if (userOrg.status !== UserOrganizationStatus.ACTIVE) {
-      throw new ConflictException('Signer is not an active member.');
-    }
+    this.assertUserOrgIsActive(signer.userOrg);
 
     const invitations: Array<{
       userId: User['id'];
@@ -141,14 +120,14 @@ export class UsersOrganizationsRepository
 
         await entityManager.insert(DbUserOrganization, {
           user: { id: invitedUserId },
-          organization: org,
+          organization: signer.org,
           role: userToInvite.role,
           status: UserOrganizationStatus.INVITED,
         });
 
         invitations.push({
           userId: invitedUserId,
-          orgId: org.id,
+          orgId: signer.org.id,
           role: getEnumKey(UserOrganizationRole, userToInvite.role),
           status: getEnumKey(
             UserOrganizationStatus,
@@ -166,40 +145,21 @@ export class UsersOrganizationsRepository
     orgId: Organization['id'];
     status: UserOrganization['status'];
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
+    const signer = await this.getOrgAndSignerOrFail(args);
 
-    const signerUser = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
-
-    const org = await this.organizationsRepository.findOneOrFail({
-      where: { id: args.orgId },
-      relations: { user_organizations: { user: true } },
-    });
-
-    const userOrg = org.user_organizations.find((userOrg) => {
-      return userOrg.user.id === signerUser.id;
-    });
-
-    if (!userOrg) {
-      throw new UnauthorizedException('Signer is not a member.');
-    }
-
-    if (userOrg.status !== UserOrganizationStatus.INVITED) {
+    if (signer.userOrg.status !== UserOrganizationStatus.INVITED) {
       throw new ConflictException('Invite is not pending.');
     }
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await entityManager.update(DbUserOrganization, userOrg.id, {
+      await entityManager.update(DbUserOrganization, signer.userOrg.id, {
         status: args.status,
       });
 
-      // TODO: Separate into own method?
-      if (
-        args.status === UserOrganizationStatus.ACTIVE &&
-        signerUser.status !== UserStatus.ACTIVE
-      ) {
-        await entityManager.update(DbUser, signerUser.id, {
+      const isActivatingUserOrg = args.status === UserOrganizationStatus.ACTIVE;
+      const isUserPending = signer.user.status === UserStatus.PENDING;
+      if (isActivatingUserOrg && isUserPending) {
+        await entityManager.update(DbUser, signer.user.id, {
           status: UserStatus.ACTIVE,
         });
       }
@@ -210,26 +170,8 @@ export class UsersOrganizationsRepository
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<Array<UserOrganization>> {
-    this.assertSignerAddress(args.authPayload);
-
-    const signerUser = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
-
-    const org = await this.organizationsRepository.findOneOrFail({
-      where: { id: args.orgId },
-      relations: { user_organizations: { user: true } },
-    });
-
-    const userOrg = org.user_organizations.find((userOrg) => {
-      return userOrg.user.id === signerUser.id;
-    });
-
-    if (!userOrg) {
-      throw new UnauthorizedException('Signer is not a member.');
-    }
-
-    return org.user_organizations;
+    const signer = await this.getOrgAndSignerOrFail(args);
+    return signer.org.user_organizations;
   }
 
   public async updateRole(args: {
@@ -238,44 +180,18 @@ export class UsersOrganizationsRepository
     userId: User['id'];
     role: UserOrganization['role'];
   }): Promise<void> {
-    this.assertSignerAddress(args.authPayload);
+    const signer = await this.getOrgAndSignerOrFail(args);
 
-    const signerUser = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
+    this.assertUserOrgIsActive(signer.userOrg);
+    this.assertUserOrgAdmin(signer.userOrg);
 
-    const org = await this.organizationsRepository.findOneOrFail({
-      where: { id: args.orgId },
-      relations: { user_organizations: { user: true } },
+    const updateUserOrg = this.findUserOrg({
+      userOrgs: signer.org.user_organizations,
+      userId: args.userId,
     });
-
-    const signerUserOrg = org.user_organizations.find((userOrg) => {
-      return userOrg.user.id === signerUser.id;
-    });
-
-    if (!signerUserOrg) {
-      throw new UnauthorizedException('Signer is not a member.');
-    }
-
-    if (signerUserOrg.status !== UserOrganizationStatus.ACTIVE) {
-      throw new UnauthorizedException('Signer is not an active member.');
-    }
-
-    if (signerUserOrg.role !== UserOrganizationRole.ADMIN) {
-      throw new UnauthorizedException('Signer is not an admin.');
-    }
-
-    const updateUserOrg = org.user_organizations.find((userOrg) => {
-      return userOrg.user.id === args.userId;
-    });
-
-    if (!updateUserOrg) {
-      throw new NotFoundException('Member not found.');
-    }
 
     const userOrganizationRepository =
       await this.postgresDatabaseService.getRepository(DbUserOrganization);
-
     await userOrganizationRepository.update(
       { id: updateUserOrg.id },
       { role: args.role },
@@ -287,47 +203,59 @@ export class UsersOrganizationsRepository
     userId: User['id'];
     orgId: Organization['id'];
   }): Promise<void> {
+    const signer = await this.getOrgAndSignerOrFail(args);
+
+    this.assertUserOrgIsActive(signer.userOrg);
+    this.assertUserOrgAdmin(signer.userOrg);
+
+    // TODO: Add check to prevent removing last _active_ admin, with test
+
+    const updateUserOrg = this.findUserOrg({
+      userOrgs: signer.org.user_organizations,
+      userId: args.userId,
+    });
+
+    const userOrganizationRepository =
+      await this.postgresDatabaseService.getRepository(DbUserOrganization);
+    await userOrganizationRepository.delete(updateUserOrg.id);
+  }
+
+  private async getOrgAndSignerOrFail(args: {
+    authPayload: AuthPayload;
+    orgId: Organization['id'];
+  }): Promise<{
+    org: Organization;
+    user: User;
+    userOrg: UserOrganization;
+  }> {
     this.assertSignerAddress(args.authPayload);
 
-    const signerUser = await this.usersRepository.findByWalletAddressOrFail(
+    const user = await this.usersRepository.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
-
     const org = await this.organizationsRepository.findOneOrFail({
       where: { id: args.orgId },
       relations: { user_organizations: { user: true } },
     });
-
-    const signerUserOrg = org.user_organizations.find((userOrg) => {
-      return userOrg.user.id === signerUser.id;
+    const userOrg = this.findUserOrg({
+      userOrgs: org.user_organizations,
+      userId: user.id,
     });
 
-    if (!signerUserOrg) {
-      throw new UnauthorizedException('Signer is not a member.');
-    }
+    return { org, user, userOrg };
+  }
 
-    if (signerUserOrg.status !== UserOrganizationStatus.ACTIVE) {
-      throw new UnauthorizedException('Signer is not an active member.');
-    }
-
-    if (signerUserOrg.role !== UserOrganizationRole.ADMIN) {
-      throw new UnauthorizedException('Signer is not an admin.');
-    }
-
-    const updateUserOrg = org.user_organizations.find((userOrg) => {
+  private findUserOrg(args: {
+    userOrgs: Array<UserOrganization>;
+    userId: User['id'];
+  }): UserOrganization {
+    const userOrg = args.userOrgs.find((userOrg) => {
       return userOrg.user.id === args.userId;
     });
-
-    if (!updateUserOrg) {
+    if (!userOrg) {
       throw new NotFoundException('Member not found.');
     }
-
-    // TODO: Should we remove the org when removing the last user?
-
-    const userOrganizationRepository =
-      await this.postgresDatabaseService.getRepository(DbUserOrganization);
-
-    await userOrganizationRepository.delete(updateUserOrg.id);
+    return userOrg;
   }
 
   private assertSignerAddress(
@@ -335,6 +263,26 @@ export class UsersOrganizationsRepository
   ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
     if (!authPayload.signer_address) {
       throw new UnauthorizedException('Signer address not provided');
+    }
+  }
+
+  private assertUserOrgIsActive(
+    userOrg: UserOrganization,
+  ): asserts userOrg is UserOrganization & {
+    status: UserOrganizationStatus.ACTIVE;
+  } {
+    if (userOrg.status !== UserOrganizationStatus.ACTIVE) {
+      throw new UnauthorizedException('Member is not active.');
+    }
+  }
+
+  private assertUserOrgAdmin(
+    userOrg: UserOrganization,
+  ): asserts userOrg is UserOrganization & {
+    role: UserOrganizationRole.ADMIN;
+  } {
+    if (userOrg.role !== UserOrganizationRole.ADMIN) {
+      throw new UnauthorizedException('Member is not an admin.');
     }
   }
 }
