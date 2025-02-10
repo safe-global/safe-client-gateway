@@ -95,7 +95,7 @@ describe('UserOrganizationsController', () => {
     endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
   });
 
-  describe('POST /v1/organizations/:orgId/members', () => {
+  describe('POST /v1/organizations/:orgId/members/invite', () => {
     it('should invite users', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -110,16 +110,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -164,16 +164,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         // No auth cookie
         .send([
           {
@@ -205,16 +205,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         // No addresses
         .send([])
@@ -237,16 +237,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         // Non-user auth
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .send([
@@ -288,7 +288,7 @@ describe('UserOrganizationsController', () => {
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -330,16 +330,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         // Non-user org auth
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
         .send([
@@ -375,16 +375,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization(s) with INVITED status
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -396,7 +396,7 @@ describe('UserOrganizationsController', () => {
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send([
           {
@@ -428,16 +428,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -468,16 +468,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -513,12 +513,12 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Don't create UserOrganization
 
@@ -584,16 +584,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -629,16 +629,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -683,16 +683,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -723,16 +723,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -768,12 +768,12 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Don't create UserOrganization
 
@@ -839,16 +839,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -884,16 +884,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -938,16 +938,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1021,16 +1021,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization(s)
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1069,12 +1069,12 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Don't create UserOrganization(s)
 
@@ -1139,12 +1139,12 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Don't create UserOrganization(s)
 
@@ -1176,16 +1176,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
-      const userId = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1193,8 +1193,8 @@ describe('UserOrganizationsController', () => {
             address: inviteeAuthPayloadDto.signer_address,
           },
         ])
-        .expect(201)
-        .then((res) => res.body[0].userId);
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
 
       // Accept invite
       await request(app.getHttpServer())
@@ -1225,16 +1225,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
-      const userId = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1242,8 +1242,8 @@ describe('UserOrganizationsController', () => {
             address: inviteeAuthPayloadDto.signer_address,
           },
         ])
-        .expect(201)
-        .then((res) => res.body[0].userId);
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
 
       // Accept invite
       await request(app.getHttpServer())
@@ -1280,16 +1280,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
-      const userId = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1297,8 +1297,8 @@ describe('UserOrganizationsController', () => {
             address: inviteeAuthPayloadDto.signer_address,
           },
         ])
-        .expect(201)
-        .then((res) => res.body[0].userId);
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
 
       // Accept invite
       await request(app.getHttpServer())
@@ -1344,12 +1344,12 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Don't create UserOrganization(s) or accept invite
 
@@ -1380,16 +1380,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
-      const userId = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1397,8 +1397,8 @@ describe('UserOrganizationsController', () => {
             address: inviteeAuthPayloadDto.signer_address,
           },
         ])
-        .expect(201)
-        .then((res) => res.body[0].userId);
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
 
       // Don't accept invite
 
@@ -1429,16 +1429,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
-      const userId = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1446,8 +1446,8 @@ describe('UserOrganizationsController', () => {
             address: inviteeAuthPayloadDto.signer_address,
           },
         ])
-        .expect(201)
-        .then((res) => res.body[0].userId);
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
 
       // Accept invite
       await request(app.getHttpServer())
@@ -1468,6 +1468,39 @@ describe('UserOrganizationsController', () => {
         });
     });
 
+    it('should throw a 409 if downgrading the last ACTIVE ADMIN', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      const createUserResponse = await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+      const userId = createUserResponse.body.id;
+
+      // Create Organization
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
+
+      // Update role
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ role: 'MEMBER' })
+        .expect(409)
+        .expect({
+          message: 'Cannot remove last admin.',
+          error: 'Conflict',
+          statusCode: 409,
+        });
+    });
+
     it('should throw a 404 if the user-to-update user organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -1482,19 +1515,19 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create non-user org Wallet/User
-      const userId = await request(app.getHttpServer())
+      const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const userId = createUserResponse.body.id;
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Don't create UserOrganization or accept invite
 
@@ -1527,25 +1560,25 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
-      const userId = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
-            role: 'MEMBER',
+            role: 'ADMIN',
             address: inviteeAuthPayloadDto.signer_address,
           },
         ])
-        .expect(201)
-        .then((res) => res.body[0].userId);
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
 
       // Accept invite
       await request(app.getHttpServer())
@@ -1580,12 +1613,12 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // No need to create UserOrganization or accept invite
 
@@ -1611,11 +1644,11 @@ describe('UserOrganizationsController', () => {
       });
 
       // Create Wallet/User
-      const userId = await request(app.getHttpServer())
+      const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const userId = createUserResponse.body.id;
 
       // Don't create Organization or UserOrganization
 
@@ -1648,12 +1681,12 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Don't create UserOrganization or accept invite
 
@@ -1684,16 +1717,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
-      const memberUserId = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1705,8 +1738,8 @@ describe('UserOrganizationsController', () => {
             address: member,
           },
         ])
-        .expect(201)
-        .then((res) => res.body[1].userId);
+        .expect(201);
+      const memberUserId = inviteUsersResponse.body[1].userId;
 
       // Don't accept invite
 
@@ -1736,16 +1769,16 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Create UserOrganization
-      const memberUserId = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members`)
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send([
           {
@@ -1753,8 +1786,8 @@ describe('UserOrganizationsController', () => {
             address: inviteeAuthPayloadDto.signer_address,
           },
         ])
-        .expect(201)
-        .then((res) => res.body[0].userId);
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
 
       // Accept invite
       await request(app.getHttpServer())
@@ -1764,13 +1797,45 @@ describe('UserOrganizationsController', () => {
 
       // Remove user
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${memberUserId}`)
+        .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(401)
         .expect({
           message: 'Member is not an admin.',
           error: 'Unauthorized',
           statusCode: 401,
+        });
+    });
+
+    it('should throw a 409 if removing the last ACTIVE ADMIN', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      const createUserResponse = await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+      const userId = createUserResponse.body.id;
+
+      // Create Organization
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
+
+      // Remove user
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(409)
+        .expect({
+          message: 'Cannot remove last admin.',
+          error: 'Conflict',
+          statusCode: 409,
         });
     });
 
@@ -1791,12 +1856,12 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       // Create Organization
-      const orgId = await request(app.getHttpServer())
+      const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: orgName })
-        .expect(201)
-        .then((res) => res.body.id);
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
 
       // Don't create UserOrganization or accept invite
 

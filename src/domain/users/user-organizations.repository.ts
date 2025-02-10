@@ -184,6 +184,9 @@ export class UsersOrganizationsRepository
 
     this.assertUserOrgIsActive(signer.userOrg);
     this.assertUserOrgAdmin(signer.userOrg);
+    if (args.role !== UserOrganizationRole.ADMIN) {
+      this.assertNotLastActiveAdmin(signer.org.user_organizations, args.userId);
+    }
 
     const updateUserOrg = this.findUserOrg({
       userOrgs: signer.org.user_organizations,
@@ -207,8 +210,7 @@ export class UsersOrganizationsRepository
 
     this.assertUserOrgIsActive(signer.userOrg);
     this.assertUserOrgAdmin(signer.userOrg);
-
-    // TODO: Add check to prevent removing last _active_ admin, with test
+    this.assertNotLastActiveAdmin(signer.org.user_organizations, args.userId);
 
     const updateUserOrg = this.findUserOrg({
       userOrgs: signer.org.user_organizations,
@@ -283,6 +285,21 @@ export class UsersOrganizationsRepository
   } {
     if (userOrg.role !== UserOrganizationRole.ADMIN) {
       throw new UnauthorizedException('Member is not an admin.');
+    }
+  }
+
+  private assertNotLastActiveAdmin(
+    userOrgs: Array<UserOrganization>,
+    userId: User['id'],
+  ): void {
+    const activeAdmins = userOrgs.filter(
+      (userOrg) =>
+        userOrg.status === UserOrganizationStatus.ACTIVE &&
+        userOrg.role === UserOrganizationRole.ADMIN,
+    );
+
+    if (activeAdmins.length === 1 && activeAdmins[0].user.id === userId) {
+      throw new ConflictException('Cannot remove last admin.');
     }
   }
 }

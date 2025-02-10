@@ -50,7 +50,7 @@ export class UserOrganizationsController {
     description: 'User, organization or membership not found',
   })
   @ApiUnauthorizedResponse({ description: 'User not admin' })
-  @Post('/:orgId/members')
+  @Post('/:orgId/members/invite')
   @UseGuards(AuthGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
