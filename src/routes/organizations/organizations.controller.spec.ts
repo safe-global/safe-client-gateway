@@ -1,35 +1,46 @@
+import { type Server } from 'http';
 import { Test } from '@nestjs/testing';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { TestAccountsDataSourceModule } from '@/datasources/accounts/__tests__/test.accounts.datasource.module';
-import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
-import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address-books/__tests__/test.address-books.datasource.module';
-import { AddressBooksDatasourceModule } from '@/datasources/accounts/address-books/address-books.datasource.module';
-import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
-import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import request from 'supertest';
+import type { INestApplication } from '@nestjs/common';
 import { CacheModule } from '@/datasources/cache/cache.module';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { NetworkModule } from '@/datasources/network/network.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import configuration from '@/config/entities/__tests__/configuration';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { NetworkModule } from '@/datasources/network/network.module';
 import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
-import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
+import { TestAccountsDataSourceModule } from '@/datasources/accounts/__tests__/test.accounts.datasource.module';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { AddressBooksDatasourceModule } from '@/datasources/accounts/address-books/address-books.datasource.module';
+import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address-books/__tests__/test.address-books.datasource.module';
+import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
+import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
+import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
 import { OrganizationsController } from '@/routes/organizations/organizations.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
+import { faker } from '@faker-js/faker/.';
+import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
+import {
+  UserOrganizationRole,
+  UserOrganizationStatus,
+} from '@/domain/users/entities/user-organization.entity';
+import { UserStatus } from '@/domain/users/entities/user.entity';
 
-describe('OrganizationsController', () => {
+describe('OrganizationController', () => {
   let app: INestApplication<Server>;
+  let jwtService: IJwtService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -69,6 +80,8 @@ describe('OrganizationsController', () => {
       .useModule(TestNotificationsRepositoryV2Module)
       .compile();
 
+    jwtService = moduleFixture.get<IJwtService>(IJwtService);
+
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
@@ -86,87 +99,448 @@ describe('OrganizationsController', () => {
     endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
   });
 
-  describe('POST /v1/organizations/:orgId/members', () => {
-    it.todo('should invite a user');
+  describe('POST /v1/organizations', () => {
+    it('Should create an organization', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationName = faker.company.name();
 
-    it.todo('should return 401 if not authenticated');
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
 
-    it.todo('should return 401 is AuthPayload is empty');
+      await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: organizationName })
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+            name: organizationName,
+          }),
+        );
+    });
 
-    it.todo('should return 404 if no organization is found');
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
 
-    it.todo('should return 401 if signer is not an admin');
+    it('Should return a 403 if the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('Should return a 404 if user is not found', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: organizationName })
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'User not found.',
+          error: 'Not Found',
+        });
+    });
+
+    it('Should return a 422 if no name is provided', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send()
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'object',
+          received: 'undefined',
+          path: [],
+          message: 'Required',
+        });
+    });
+  });
+
+  describe('GET /organizations', () => {
+    it('Should return a list of organizations', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const firstOrganizationName = faker.company.name();
+      const secondOrganizationName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: firstOrganizationName })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: secondOrganizationName })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual([
+            {
+              id: expect.any(Number),
+              name: firstOrganizationName,
+              status: OrganizationStatus.ACTIVE,
+              user_organizations: [
+                {
+                  id: expect.any(Number),
+                  role: UserOrganizationRole.ADMIN,
+                  status: UserOrganizationStatus.ACTIVE,
+                  created_at: expect.any(String),
+                  updated_at: expect.any(String),
+                  user: {
+                    id: expect.any(Number),
+                    status: UserStatus.ACTIVE,
+                  },
+                },
+              ],
+            },
+            {
+              id: expect.any(Number),
+              name: secondOrganizationName,
+              status: OrganizationStatus.ACTIVE,
+              user_organizations: [
+                {
+                  id: expect.any(Number),
+                  role: UserOrganizationRole.ADMIN,
+                  status: UserOrganizationStatus.ACTIVE,
+                  created_at: expect.any(String),
+                  updated_at: expect.any(String),
+                  user: {
+                    id: expect.any(Number),
+                    status: UserStatus.ACTIVE,
+                  },
+                },
+              ],
+            },
+          ]);
+        });
+    });
+
+    it('Should return a 404 if the user does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/organizations')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('Should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+  });
+
+  describe('GET /organizations/:id', () => {
+    it('Should return an organization by its id', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationName = faker.company.name();
+
+      const createUserResponse = await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+      const userId = createUserResponse.body.id;
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: organizationName })
+        .expect(201);
+      const organizationId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            id: organizationId,
+            name: organizationName,
+            status: OrganizationStatus.ACTIVE,
+            user_organizations: [
+              {
+                id: expect.any(Number),
+                status: UserOrganizationStatus.ACTIVE,
+                role: UserOrganizationRole.ADMIN,
+                created_at: expect.any(String),
+                updated_at: expect.any(String),
+                user: {
+                  id: userId,
+                  status: UserStatus.ACTIVE,
+                },
+              },
+            ],
+          });
+        });
+    });
+
+    it('Should return a 404 if an organization id does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationId = faker.number.int({ min: 10000, max: 20000 });
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'Organization not found.',
+          error: 'Not Found',
+        });
+    });
+
+    it('Should return a 404 if the user does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationId = faker.number.int({ min: 10000, max: 20000 });
+
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'User not found.',
+          error: 'Not Found',
+        });
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/organizations')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('Should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .get('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+  });
+
+  describe('PATCH /organizations/:id', () => {
+    it('Should update an organization', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const previousOrganizationName = faker.company.name();
+      const newOrganizationName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: previousOrganizationName });
+
+      const organizationId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: newOrganizationName, status: OrganizationStatus.ACTIVE })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: organizationId,
+          }),
+        );
+    });
+
+    it('Should throw a 401 if user can not update an organization because organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationName = faker.company.name();
+      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: organizationName, status: OrganizationStatus.ACTIVE })
+        .expect(401)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            statusCode: 401,
+            error: 'Unauthorized',
+            message:
+              'User is unauthorized. SignerAddress= ' +
+              authPayloadDto.signer_address,
+          }),
+        );
+    });
 
     it.todo(
-      'should return 401 if walletAddress is not a member of the organization',
-    );
+      'Should throw a 401 if user does not have access to update an organization',
+    ); // @todo Needs membership logic
   });
 
-  describe('POST /v1/organizations/:orgId/members/:userOrgId/accept', () => {
-    it.todo('should accept an invite for a user with a specific userOrgId');
+  describe('DELETE /organizations/:id', () => {
+    it('Should delete an organization', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationName = faker.company.name();
 
-    it.todo('should return 401 if not authenticated');
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
 
-    it.todo('should return 401 is AuthPayload is empty');
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: organizationName });
 
-    it.todo('should return 404 if no organization is found');
+      const organizationId = createOrganizationResponse.body.id;
 
-    it.todo('should return 409 if invite is not pending');
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(204);
+    });
 
-    it.todo('should return 401 if signer is not an member');
-  });
+    it('Should throw a 401 if user can not update an organization because organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationName = faker.company.name();
+      const organizationId = faker.number.int({ min: 900000, max: 990000 });
 
-  describe('POST /v1/organizations/:orgId/members/:userOrgId/decline', () => {
-    it.todo('should decline an invite for a user with a specific userOrgId');
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
 
-    it.todo('should return 401 if not authenticated');
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: organizationName, status: OrganizationStatus.ACTIVE })
+        .expect(401)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            statusCode: 401,
+            error: 'Unauthorized',
+            message:
+              'User is unauthorized. SignerAddress= ' +
+              authPayloadDto.signer_address,
+          }),
+        );
+    });
 
-    it.todo('should return 401 is AuthPayload is empty');
+    it.todo(
+      'Should throw a 401 if user does not have access to update an organization',
+    ); // @todo Needs membership logic
 
-    it.todo('should return 404 if no organization is found');
+    it('Should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationId = faker.number.int({ min: 1 });
 
-    it.todo('should return 409 if invite is not pending');
-
-    it.todo('should return 401 if signer is not an member');
-  });
-
-  describe('GET /v1/organizations/:orgId/members', () => {
-    it.todo('should return a list of members of an organization');
-
-    it.todo('should return 401 if not authenticated');
-
-    it.todo('should return 401 is AuthPayload is empty');
-
-    it.todo('should return 404 if no organization is found');
-
-    it.todo('should return 401 if signer is not an member');
-  });
-
-  describe('POST /v1/organizations/:orgId/members/:userOrgId/role', () => {
-    it.todo('should update a role');
-
-    it.todo('should return 401 if not authenticated');
-
-    it.todo('should return 401 is AuthPayload is empty');
-
-    it.todo('should return 404 if no organization is found');
-
-    it.todo('should return 401 if signer is not an member');
-
-    it.todo('should return 401 if signer is not an ADMIN');
-  });
-
-  describe('DELETE /v1/organizations/:orgId/members/:userOrgId', () => {
-    it.todo('should remove a user');
-
-    it.todo('should return 401 if not authenticated');
-
-    it.todo('should return 401 is AuthPayload is empty');
-
-    it.todo('should return 404 if no organization is found');
-
-    it.todo('should return 401 if signer is not an member');
-
-    it.todo('should return 401 if signer is not an ADMIN');
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
   });
 });

@@ -135,6 +135,8 @@ export class OrganizationsRepository implements IOrganizationsRepository {
       where: {
         user_organizations: { user: { id: args.userId } },
       },
+      select: args.select,
+      relations: args.relations,
     });
   }
 
@@ -161,6 +163,8 @@ export class OrganizationsRepository implements IOrganizationsRepository {
       where: {
         user_organizations: { user: { id: args.userId } },
       },
+      select: args.select,
+      relations: args.relations,
     });
   }
 
@@ -171,12 +175,9 @@ export class OrganizationsRepository implements IOrganizationsRepository {
     const organizationRepository =
       await this.postgresDatabaseService.getRepository(Organization);
 
-    const updateResult = await organizationRepository.update(
-      args.id,
-      args.updatePayload,
-    );
+    await organizationRepository.update(args.id, args.updatePayload);
 
-    return updateResult.generatedMaps[0].id;
+    return { id: args.id };
   }
 
   // @todo Add a soft delete method
