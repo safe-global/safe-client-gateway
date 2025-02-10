@@ -6,6 +6,7 @@ import type { Wallet } from '@/domain/wallets/entities/wallet.entity';
 import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
 
 export enum UserStatus {
+  PENDING = 0,
   ACTIVE = 1,
 }
 

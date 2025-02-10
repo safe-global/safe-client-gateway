@@ -1,7 +1,11 @@
 import type { UserOrganization as DbUserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
-import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
+import type {
+  UserOrganization,
+  UserOrganizationRole,
+  UserOrganizationStatus,
+} from '@/domain/users/entities/user-organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import type { FindOptionsWhere, FindOptionsRelations } from 'typeorm';
 
@@ -24,22 +28,25 @@ export interface IUsersOrganizationsRepository {
     relations?: FindOptionsRelations<UserOrganization>,
   ): Promise<DbUserOrganization | null>;
 
-  inviteUser(args: {
+  inviteUsers(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    walletAddress: `0x${string}`;
-    role: UserOrganization['role'];
+    users: Array<{
+      address: `0x${string}`;
+      role: UserOrganizationRole;
+    }>;
   }): Promise<
-    Pick<UserOrganization, 'role' | 'status'> & {
+    Array<{
       userId: User['id'];
       orgId: Organization['id'];
-    }
+      role: keyof typeof UserOrganizationRole;
+      status: keyof typeof UserOrganizationStatus;
+    }>
   >;
 
   updateStatus(args: {
     authPayload: AuthPayload;
-    _orgId: Organization['id'];
-    userOrgId: UserOrganization['id'];
+    orgId: Organization['id'];
     status: UserOrganization['status'];
   }): Promise<void>;
 
@@ -50,14 +57,14 @@ export interface IUsersOrganizationsRepository {
 
   updateRole(args: {
     authPayload: AuthPayload;
-    _orgId: Organization['id'];
-    userOrgId: UserOrganization['id'];
+    orgId: Organization['id'];
+    userId: User['id'];
     role: UserOrganization['role'];
   }): Promise<void>;
 
   removeUser(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    userOrgId: UserOrganization['id'];
+    userId: User['id'];
   }): Promise<void>;
 }

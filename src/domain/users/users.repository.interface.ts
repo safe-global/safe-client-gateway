@@ -1,6 +1,7 @@
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { User, UserStatus } from '@/domain/users/entities/user.entity';
 import type { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
+import type { EntityManager } from 'typeorm';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 
@@ -9,6 +10,8 @@ export interface IUsersRepository {
     status: UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>>;
+
+  create(status: UserStatus, entityManager: EntityManager): Promise<User['id']>;
 
   getWithWallets(authPayload: AuthPayload): Promise<{
     id: User['id'];

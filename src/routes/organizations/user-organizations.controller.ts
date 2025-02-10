@@ -4,77 +4,76 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
+  ParseIntPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
-import type { UserOrganizationsService } from '@/routes/organizations/user-organizations.service';
+import { UserOrganizationsService } from '@/routes/organizations/user-organizations.service';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { InviteUserDtoSchema } from '@/routes/organizations/entities/invite-user.dto.entity';
+import { InviteUsersDtoSchema } from '@/routes/organizations/entities/invite-users.dto.entity';
 import { UpdateRoleDtoSchema } from '@/routes/organizations/entities/update-role.dto.entity';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
-import type { InviteUserDto } from '@/routes/organizations/entities/invite-user.dto.entity';
+import type { InviteUsersDto } from '@/routes/organizations/entities/invite-users.dto.entity';
 import type { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
-import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
-import type { Invite } from '@/routes/organizations/entities/invite.entity';
+import type { Invitation } from '@/routes/organizations/entities/invitation.entity';
 import type { Members } from '@/routes/organizations/entities/members.entity';
+import type { User } from '@/domain/users/entities/user.entity';
 
 // TODO: Add Swagger definitions
 
 @ApiTags('organizations')
 @Controller({ path: 'organizations', version: '1' })
 export class UserOrganizationsController {
-  constructor(private readonly userOrgService: UserOrganizationsService) {}
+  constructor(
+    @Inject(UserOrganizationsService)
+    private readonly userOrgService: UserOrganizationsService,
+  ) {}
 
   @Post('/:orgId/members')
   @UseGuards(AuthGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', new ValidationPipe(RowSchema.shape.id))
+    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     orgId: Organization['id'],
-    @Body(new ValidationPipe(InviteUserDtoSchema))
-    inviteUserDto: InviteUserDto,
-  ): Promise<Invite> {
+    @Body(new ValidationPipe(InviteUsersDtoSchema))
+    inviteUsersDto: InviteUsersDto,
+  ): Promise<Array<Invitation>> {
     return await this.userOrgService.inviteUser({
       authPayload,
       orgId,
-      inviteUserDto,
+      inviteUsersDto,
     });
   }
 
-  @Post('/:orgId/members/:userOrgId/accept')
+  @Post('/:orgId/members/accept')
   @UseGuards(AuthGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', new ValidationPipe(RowSchema.shape.id))
+    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     orgId: Organization['id'],
-    @Param('userOrgId', new ValidationPipe(RowSchema.shape.id))
-    userOrgId: UserOrganization['id'],
   ): Promise<void> {
     return await this.userOrgService.acceptInvite({
       authPayload,
       orgId,
-      userOrgId,
     });
   }
 
-  @Post('/:orgId/members/:userOrgId/decline')
+  @Post('/:orgId/members/decline')
   @UseGuards(AuthGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', new ValidationPipe(RowSchema.shape.id))
+    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     orgId: Organization['id'],
-    @Param('userOrgId', new ValidationPipe(RowSchema.shape.id))
-    userOrgId: UserOrganization['id'],
   ): Promise<void> {
     return await this.userOrgService.declineInvite({
       authPayload,
       orgId,
-      userOrgId,
     });
   }
 
@@ -82,7 +81,7 @@ export class UserOrganizationsController {
   @UseGuards(AuthGuard)
   public async getUsers(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', new ValidationPipe(RowSchema.shape.id))
+    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     orgId: Organization['id'],
   ): Promise<Members> {
     return await this.userOrgService.get({
@@ -91,38 +90,38 @@ export class UserOrganizationsController {
     });
   }
 
-  @Post('/:orgId/members/:userOrgId/role')
+  @Post('/:orgId/members/:userId/role')
   @UseGuards(AuthGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', new ValidationPipe(RowSchema.shape.id))
+    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     orgId: Organization['id'],
-    @Param('userOrgId', new ValidationPipe(RowSchema.shape.id))
-    userOrgId: UserOrganization['id'],
+    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    userId: User['id'],
     @Body(new ValidationPipe(UpdateRoleDtoSchema))
     updateRoleDto: UpdateRoleDto,
   ): Promise<void> {
     return await this.userOrgService.updateRole({
       authPayload,
       orgId,
-      userOrgId,
+      userId,
       updateRoleDto,
     });
   }
 
-  @Delete('/:orgId/members/:userOrgId')
+  @Delete('/:orgId/members/:userId')
   @UseGuards(AuthGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', new ValidationPipe(RowSchema.shape.id))
+    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     orgId: Organization['id'],
-    @Param('userOrgId', new ValidationPipe(RowSchema.shape.id))
-    userOrgId: UserOrganization['id'],
+    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    userId: User['id'],
   ): Promise<void> {
     return await this.userOrgService.removeUser({
       authPayload,
       orgId,
-      userOrgId,
+      userId,
     });
   }
 }

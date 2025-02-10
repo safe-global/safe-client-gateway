@@ -1,40 +1,44 @@
-import { UserOrganizationStatus } from '@/domain/users/entities/user-organization.entity';
-import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
+import { Inject } from '@nestjs/common';
+import { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
+import {
+  UserOrganizationRole,
+  UserOrganizationStatus,
+} from '@/domain/users/entities/user-organization.entity';
+import { UserStatus } from '@/domain/users/entities/user.entity';
+import { User } from '@/domain/users/entities/user.entity';
+import { getEnumKey } from '@/domain/common/utils/enums';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
-import type { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
-import type { InviteUserDto } from '@/routes/organizations/entities/invite-user.dto.entity';
-import type { Invite } from '@/routes/organizations/entities/invite.entity';
+import type { InviteUsersDto } from '@/routes/organizations/entities/invite-users.dto.entity';
+import type { Invitation } from '@/routes/organizations/entities/invitation.entity';
 import type { Members } from '@/routes/organizations/entities/members.entity';
 import type { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
 
 export class UserOrganizationsService {
   public constructor(
+    @Inject(IUsersOrganizationsRepository)
     private readonly usersOrgRepository: IUsersOrganizationsRepository,
   ) {}
 
   public async inviteUser(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    inviteUserDto: InviteUserDto;
-  }): Promise<Invite> {
-    return await this.usersOrgRepository.inviteUser({
+    inviteUsersDto: InviteUsersDto;
+  }): Promise<Array<Invitation>> {
+    return await this.usersOrgRepository.inviteUsers({
       authPayload: args.authPayload,
       orgId: args.orgId,
-      role: args.inviteUserDto.role,
-      walletAddress: args.inviteUserDto.walletAddress,
+      users: args.inviteUsersDto,
     });
   }
 
   public async acceptInvite(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    userOrgId: UserOrganization['id'];
   }): Promise<void> {
     return await this.usersOrgRepository.updateStatus({
       authPayload: args.authPayload,
-      userOrgId: args.userOrgId,
-      _orgId: args.orgId,
+      orgId: args.orgId,
       status: UserOrganizationStatus.ACTIVE,
     });
   }
@@ -42,12 +46,10 @@ export class UserOrganizationsService {
   public async declineInvite(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    userOrgId: UserOrganization['id'];
   }): Promise<void> {
     return await this.usersOrgRepository.updateStatus({
       authPayload: args.authPayload,
-      userOrgId: args.userOrgId,
-      _orgId: args.orgId,
+      orgId: args.orgId,
       status: UserOrganizationStatus.DECLINED,
     });
   }
@@ -65,13 +67,13 @@ export class UserOrganizationsService {
       members: userOrgs.map((userOrg) => {
         return {
           id: userOrg.id,
-          role: userOrg.role,
-          status: userOrg.status,
+          role: getEnumKey(UserOrganizationRole, userOrg.role),
+          status: getEnumKey(UserOrganizationStatus, userOrg.status),
           createdAt: userOrg.created_at.toISOString(),
           updatedAt: userOrg.updated_at.toISOString(),
           user: {
             id: userOrg.user.id,
-            status: userOrg.user.status,
+            status: getEnumKey(UserStatus, userOrg.user.status),
           },
         };
       }),
@@ -81,13 +83,13 @@ export class UserOrganizationsService {
   public async updateRole(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    userOrgId: UserOrganization['id'];
+    userId: User['id'];
     updateRoleDto: UpdateRoleDto;
   }): Promise<void> {
     return await this.usersOrgRepository.updateRole({
       authPayload: args.authPayload,
-      _orgId: args.orgId,
-      userOrgId: args.userOrgId,
+      orgId: args.orgId,
+      userId: args.userId,
       role: args.updateRoleDto.role,
     });
   }
@@ -95,12 +97,12 @@ export class UserOrganizationsService {
   public async removeUser(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    userOrgId: UserOrganization['id'];
+    userId: User['id'];
   }): Promise<void> {
     return await this.usersOrgRepository.removeUser({
       authPayload: args.authPayload,
+      userId: args.userId,
       orgId: args.orgId,
-      userOrgId: args.userOrgId,
     });
   }
 }

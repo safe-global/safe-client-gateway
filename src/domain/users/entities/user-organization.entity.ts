@@ -11,7 +11,7 @@ export enum UserOrganizationRole {
 }
 
 export enum UserOrganizationStatus {
-  PENDING = 0,
+  INVITED = 0,
   ACTIVE = 1,
   DECLINED = 2,
 }

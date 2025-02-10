@@ -53,30 +53,12 @@ export class UserOrganization implements DomainUserOrganization {
   // Postgres enums are string therefore we use integer
   @Column({
     type: 'integer',
-    transformer: {
-      from(value: number): keyof typeof UserOrganizationRole {
-        return UserOrganizationRole[value] as keyof typeof UserOrganizationRole;
-      },
-      to(value: keyof typeof UserOrganizationRole): number {
-        return UserOrganizationRole[value];
-      },
-    },
   })
   role!: UserOrganizationRole;
 
   // Postgres enums are string therefore we use integer
   @Column({
     type: 'integer',
-    transformer: {
-      from(value: number): keyof typeof UserOrganizationStatus {
-        return UserOrganizationStatus[
-          value
-        ] as keyof typeof UserOrganizationStatus;
-      },
-      to(value: keyof typeof UserOrganizationStatus): number {
-        return UserOrganizationStatus[value];
-      },
-    },
   })
   status!: UserOrganizationStatus;
 

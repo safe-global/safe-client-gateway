@@ -1,4 +1,7 @@
+import { faker } from '@faker-js/faker';
 import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { AppModule } from '@/app.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -25,11 +28,14 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { UserOrganizationsController } from '@/routes/organizations/user-organizations.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 
 describe('UserOrganizationsController', () => {
   let app: INestApplication<Server>;
+  let jwtService: IJwtService;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -69,6 +75,8 @@ describe('UserOrganizationsController', () => {
       .useModule(TestNotificationsRepositoryV2Module)
       .compile();
 
+    jwtService = moduleFixture.get<IJwtService>(IJwtService);
+
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   });
@@ -87,86 +95,1592 @@ describe('UserOrganizationsController', () => {
   });
 
   describe('POST /v1/organizations/:orgId/members', () => {
-    it.todo('should invite a user');
+    it('should invite users', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+      const user1 = getAddress(faker.finance.ethereumAddress());
+      const user2 = getAddress(faker.finance.ethereumAddress());
 
-    it.todo('should return 401 if not authenticated');
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
 
-    it.todo('should return 401 is AuthPayload is empty');
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
 
-    it.todo('should return 404 if no organization is found');
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'ADMIN',
+            address: user1,
+          },
+          {
+            role: 'MEMBER',
+            address: user2,
+          },
+        ])
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual([
+            {
+              userId: expect.any(Number),
+              orgId,
+              role: 'ADMIN',
+              status: 'INVITED',
+            },
+            {
+              userId: expect.any(Number),
+              orgId,
+              role: 'MEMBER',
+              status: 'INVITED',
+            },
+          ]),
+        );
+    });
 
-    it.todo('should return 401 if signer is not an admin');
+    it('should throw a 403 if the user is not authenticated', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+      const user1 = getAddress(faker.finance.ethereumAddress());
+      const user2 = getAddress(faker.finance.ethereumAddress());
 
-    it.todo(
-      'should return 401 if walletAddress is not a member of the organization',
-    );
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        // No auth cookie
+        .send([
+          {
+            role: 'ADMIN',
+            address: user1,
+          },
+          {
+            role: 'MEMBER',
+            address: user2,
+          },
+        ])
+        .expect(403)
+        .expect({
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
+    it('should throw a 422 if no addresses are provided', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        // No addresses
+        .send([])
+        .expect(422);
+    });
+
+    it('should throw a 404 if the signer_address does not have a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const user1 = getAddress(faker.finance.ethereumAddress());
+      const user2 = getAddress(faker.finance.ethereumAddress());
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        // Non-user auth
+        .set('Cookie', [`access_token=${nonUserAccessToken}`])
+        .send([
+          {
+            role: 'ADMIN',
+            address: user1,
+          },
+          {
+            role: 'MEMBER',
+            address: user2,
+          },
+        ])
+        .expect(404)
+        .expect({
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it.skip('should throw a 404 if the organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+      });
+      const user1 = getAddress(faker.finance.ethereumAddress());
+      const user2 = getAddress(faker.finance.ethereumAddress());
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Don't create Organization
+
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'ADMIN',
+            address: user1,
+          },
+          {
+            role: 'MEMBER',
+            address: user2,
+          },
+        ])
+        .expect(404)
+        .expect({
+          message: 'Organization not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should throw a 404 if the user organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const user1 = getAddress(faker.finance.ethereumAddress());
+      const user2 = getAddress(faker.finance.ethereumAddress());
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create non-user org Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        // Non-user org auth
+        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
+        .send([
+          {
+            role: 'ADMIN',
+            address: user1,
+          },
+          {
+            role: 'MEMBER',
+            address: user2,
+          },
+        ])
+        .expect(404)
+        .expect({
+          message: 'Signer is not a member.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should throw a 409 if the status of the user organization is not ACTIVE', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const user = getAddress(faker.finance.ethereumAddress());
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization(s) with INVITED status
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
+
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: user,
+          },
+        ])
+        .expect(409)
+        .expect({
+          message: 'Signer is not an active member.',
+          error: 'Conflict',
+          statusCode: 409,
+        });
+    });
   });
 
-  describe('POST /v1/organizations/:orgId/members/:userOrgId/accept', () => {
-    it.todo('should accept an invite for a user with a specific userOrgId');
+  describe('POST /v1/organizations/:orgId/members/accept', () => {
+    it('should accept an invite for a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
 
-    it.todo('should return 401 if not authenticated');
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
 
-    it.todo('should return 401 is AuthPayload is empty');
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
 
-    it.todo('should return 404 if no organization is found');
+      // Create UserOrganization
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
 
-    it.todo('should return 409 if invite is not pending');
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201)
+        .expect({});
+    });
 
-    it.todo('should return 401 if signer is not an member');
+    it('should throw a 403 if the user is not authenticated', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
+
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        // No auth cookie
+        .expect(403)
+        .expect({
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
+    it('should throw a 404 if the signer_address does not have a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create UserOrganization
+
+      // Accept invite as non-user
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${nonUserAccessToken}`])
+        .expect(404)
+        .expect({
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it.todo('should throw a 404 if the organization does not exist');
+
+    it('should throw a 401 if the user organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const user = getAddress(faker.finance.ethereumAddress());
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create non-user org Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: user,
+          },
+        ])
+        .expect(201);
+
+      // Accept invite as non-user org. user
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .expect(401)
+        .expect({
+          message: 'Signer is not a member.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it('should throw a 409 if the status of the user organization is not INVITED', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
+
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201)
+        .expect({});
+
+      // Accept invite again
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(409)
+        .expect({
+          message: 'Invite is not pending.',
+          error: 'Conflict',
+          statusCode: 409,
+        });
+    });
   });
 
-  describe('POST /v1/organizations/:orgId/members/:userOrgId/decline', () => {
-    it.todo('should decline an invite for a user with a specific userOrgId');
+  describe('POST /v1/organizations/:orgId/members/decline', () => {
+    it('should decline an invite for a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
 
-    it.todo('should return 401 if not authenticated');
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
 
-    it.todo('should return 401 is AuthPayload is empty');
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
 
-    it.todo('should return 404 if no organization is found');
+      // Create UserOrganization
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
 
-    it.todo('should return 409 if invite is not pending');
+      // Decline invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/decline`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201)
+        .expect({});
+    });
 
-    it.todo('should return 401 if signer is not an member');
+    it('should throw a 403 if the user is not authenticated', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
+
+      // Decline invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/decline`)
+        // No auth cookie
+        .expect(403)
+        .expect({
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
+    it('should throw a 404 if the signer_address does not have a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create UserOrganization
+
+      // Decline invite as non-user
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/decline`)
+        .set('Cookie', [`access_token=${nonUserAccessToken}`])
+        .expect(404)
+        .expect({
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it.todo('should throw a 404 if the organization does not exist');
+
+    it('should throw a 401 if the user organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const user = getAddress(faker.finance.ethereumAddress());
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create non-user org Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: user,
+          },
+        ])
+        .expect(201);
+
+      // Decline invite as non-user org. user
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/decline`)
+        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .expect(401)
+        .expect({
+          message: 'Signer is not a member.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it('should throw a 409 if the status of the user organization is not INVITED', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
+
+      // Decline invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/decline`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201)
+        .expect({});
+
+      // Decline invite again
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/decline`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(409)
+        .expect({
+          message: 'Invite is not pending.',
+          error: 'Conflict',
+          statusCode: 409,
+        });
+    });
   });
 
   describe('GET /v1/organizations/:orgId/members', () => {
-    it.todo('should return a list of members of an organization');
+    it('should return a list of members of an organization', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+      const user1 = getAddress(faker.finance.ethereumAddress());
+      const user2 = getAddress(faker.finance.ethereumAddress());
 
-    it.todo('should return 401 if not authenticated');
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
 
-    it.todo('should return 401 is AuthPayload is empty');
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
 
-    it.todo('should return 404 if no organization is found');
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'ADMIN',
+            address: user1,
+          },
+          {
+            role: 'MEMBER',
+            address: user2,
+          },
+        ])
+        .expect(201);
 
-    it.todo('should return 401 if signer is not an member');
+      // Get UserOrganization(s)
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            members: [
+              {
+                id: expect.any(Number),
+                role: 'ADMIN',
+                status: 'ACTIVE',
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+                user: {
+                  id: expect.any(Number),
+                  status: 'ACTIVE',
+                },
+              },
+              {
+                id: expect.any(Number),
+                role: 'ADMIN',
+                status: 'INVITED',
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+                user: {
+                  id: expect.any(Number),
+                  status: 'PENDING',
+                },
+              },
+              {
+                id: expect.any(Number),
+                role: 'MEMBER',
+                status: 'INVITED',
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+                user: {
+                  id: expect.any(Number),
+                  status: 'PENDING',
+                },
+              },
+            ],
+          });
+        });
+    });
+
+    it('should throw a 403 if the user is not authenticated', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+      const user1 = getAddress(faker.finance.ethereumAddress());
+      const user2 = getAddress(faker.finance.ethereumAddress());
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization(s)
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'ADMIN',
+            address: user1,
+          },
+          {
+            role: 'MEMBER',
+            address: user2,
+          },
+        ])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${orgId}/members`)
+        // No auth cookie
+        .expect(403)
+        .expect({
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
+    it('should throw a 404 if the signer_address does not have a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create UserOrganization(s)
+
+      // Get UserOrganization(s)
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${nonUserAccessToken}`])
+        .expect(404)
+        .expect({
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it.skip('should throw a 404 if the organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+      });
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Don't create Organization or UserOrganization(s)
+
+      // Get UserOrganization(s)
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          message: 'Organization not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should throw a 401 if the user organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create non-user org Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create UserOrganization(s)
+
+      // Get UserOrganization(s)
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
+        .expect(401)
+        .expect({
+          message: 'Signer is not a member.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
   });
 
-  describe('POST /v1/organizations/:orgId/members/:userOrgId/role', () => {
-    it.todo('should update a role');
+  describe('POST /v1/organizations/:orgId/members/:userId/role', () => {
+    it('should update the role of userId', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
 
-    it.todo('should return 401 if not authenticated');
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
 
-    it.todo('should return 401 is AuthPayload is empty');
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
 
-    it.todo('should return 404 if no organization is found');
+      // Create UserOrganization
+      const userId = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201)
+        .then((res) => res.body[0].userId);
 
-    it.todo('should return 401 if signer is not an member');
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201);
 
-    it.todo('should return 401 if signer is not an ADMIN');
+      // Update role
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ role: 'ADMIN' })
+        .expect(201)
+        .expect({});
+    });
+
+    it('should throw a 403 if the user is not authenticated', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      const userId = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201)
+        .then((res) => res.body[0].userId);
+
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201);
+
+      // Update role
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        // No auth cookie
+        .send({ role: 'ADMIN' })
+        .expect(403)
+        .expect({
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
+    it('should throw a 404 if the signer_address does not have a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      const userId = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201)
+        .then((res) => res.body[0].userId);
+
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201);
+
+      // Update role
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .set('Cookie', [`access_token=${nonUserAccessToken}`])
+        .send({ role: 'ADMIN' })
+        .expect(404)
+        .expect({
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should throw a 401 if the signer user organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const userId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+      });
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create non-user org Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create UserOrganization(s) or accept invite
+
+      // Update role
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
+        .send({ role: 'ADMIN' })
+        .expect({
+          message: 'Signer is not a member.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it('should throw a 401 if the status of the signer user organization is not ACTIVE', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      const userId = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201)
+        .then((res) => res.body[0].userId);
+
+      // Don't accept invite
+
+      // Update role
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({ role: 'ADMIN' })
+        .expect(401)
+        .expect({
+          message: 'Signer is not an active member.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it('should throw a 401 if the signer user organization is not of ADMIN role', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      const userId = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201)
+        .then((res) => res.body[0].userId);
+
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201);
+
+      // Update role
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({ role: 'ADMIN' })
+        .expect(401)
+        .expect({
+          message: 'Signer is not an admin.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it.todo(
+      'should throw a 404 if the user-to-update user organization does not exist',
+    );
   });
 
-  describe('DELETE /v1/organizations/:orgId/members/:userOrgId', () => {
-    it.todo('should remove a user');
+  describe('DELETE /v1/organizations/:orgId/members/:userId', () => {
+    it('should remove a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
 
-    it.todo('should return 401 if not authenticated');
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
 
-    it.todo('should return 401 is AuthPayload is empty');
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
 
-    it.todo('should return 404 if no organization is found');
+      // Create UserOrganization
+      const userId = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201)
+        .then((res) => res.body[0].userId);
 
-    it.todo('should return 401 if signer is not an member');
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201);
 
-    it.todo('should return 401 if signer is not an ADMIN');
+      // Remove user
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect({});
+    });
+
+    it('should throw a 404 if the signer_address does not have a user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const userId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+      });
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // No need to create UserOrganization or accept invite
+
+      // Remove user
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .set('Cookie', [`access_token=${nonUserAccessToken}`])
+        .expect(404)
+        .expect({
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it.todo('should throw a 404 if the organization does not exist');
+
+    it('should throw a 404 if the signer user organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+      const userId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+      });
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create UserOrganization or accept invite
+
+      // Remove user
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          message: 'Member not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should throw a 401 if the status of the signer user organization is not ACTIVE', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const member = getAddress(faker.finance.ethereumAddress());
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      const memberUserId = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'ADMIN',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+          {
+            role: 'MEMBER',
+            address: member,
+          },
+        ])
+        .expect(201)
+        .then((res) => res.body[1].userId);
+
+      // Don't accept invite
+
+      // Remove user
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/members/${memberUserId}`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(401)
+        .expect({
+          message: 'Signer is not an active member.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it('should throw a 401 if the signer user organization is not of ADMIN status', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Create UserOrganization
+      const memberUserId = await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: inviteeAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201)
+        .then((res) => res.body[0].userId);
+
+      // Accept invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201);
+
+      // Remove user
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/members/${memberUserId}`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(401)
+        .expect({
+          message: 'Signer is not an admin.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it('should throw a 404 if the user-to-remove user organization does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.word.noun();
+      const userId = faker.number.int({
+        // Ensure no collision with previous tests
+        min: 69420,
+      });
+
+      // Create Wallet/User
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      // Create Organization
+      const orgId = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201)
+        .then((res) => res.body.id);
+
+      // Don't create UserOrganization or accept invite
+
+      // Remove user
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          message: 'Member not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
   });
 });

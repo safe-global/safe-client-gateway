@@ -3,11 +3,10 @@ import {
   UserOrganizationRole,
   UserOrganizationStatus,
 } from '@/domain/users/entities/user-organization.entity';
-import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 
-export class Invite {
+export class Invitation {
   @ApiProperty()
   userId!: User['id'];
 
@@ -15,8 +14,8 @@ export class Invite {
   orgId!: Organization['id'];
 
   @ApiProperty({ enum: Object.keys(UserOrganizationRole) })
-  role!: UserOrganization['role'];
+  role!: keyof typeof UserOrganizationRole;
 
   @ApiProperty({ enum: Object.keys(UserOrganizationStatus) })
-  status!: UserOrganization['status'];
+  status!: keyof typeof UserOrganizationStatus;
 }
