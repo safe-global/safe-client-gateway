@@ -11,6 +11,7 @@ import {
 } from '@/domain/users/entities/user.entity';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
+import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 
 @Entity('users')
 export class User implements DomainUser {
@@ -21,8 +22,9 @@ export class User implements DomainUser {
   @Index('idx_user_status')
   @Column({
     type: 'integer',
+    transformer: databaseEnumTransformer(UserStatus),
   })
-  status!: UserStatus;
+  status!: keyof typeof UserStatus;
 
   @OneToMany(() => Wallet, (wallet: Wallet) => wallet.id, {
     onDelete: 'CASCADE',

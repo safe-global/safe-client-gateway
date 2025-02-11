@@ -10,6 +10,7 @@ import {
   Organization as DomainOrganization,
 } from '@/domain/organizations/entities/organization.entity';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
+import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 
 // @todo make organizations singular, The database table name should remain plural
 @Entity('organizations')
@@ -23,8 +24,9 @@ export class Organization implements DomainOrganization {
   @Index('idx_org_status')
   @Column({
     type: 'integer',
+    transformer: databaseEnumTransformer(OrganizationStatus),
   })
-  status!: OrganizationStatus;
+  status!: keyof typeof OrganizationStatus;
 
   @Column({
     name: 'created_at',

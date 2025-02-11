@@ -16,6 +16,7 @@ import {
   FindOptionsRelations,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import { getEnumKey } from '@/domain/common/utils/enum';
 
 @Injectable()
 export class OrganizationsRepository implements IOrganizationsRepository {
@@ -28,7 +29,7 @@ export class OrganizationsRepository implements IOrganizationsRepository {
     userId: number;
     name: string;
     authPayload: AuthPayload;
-    status: OrganizationStatus;
+    status: keyof typeof OrganizationStatus;
   }): Promise<Pick<Organization, 'id' | 'name'>> {
     const organizationRepository =
       await this.postgresDatabaseService.getRepository(Organization);
@@ -44,8 +45,14 @@ export class OrganizationsRepository implements IOrganizationsRepository {
     const userOrganization = new UserOrganization();
     // @todo We should remove name
     userOrganization.name = args.name;
-    userOrganization.role = UserOrganizationRole.ADMIN;
-    userOrganization.status = UserOrganizationStatus.ACTIVE;
+    userOrganization.role = getEnumKey(
+      UserOrganizationRole,
+      UserOrganizationRole.ADMIN,
+    );
+    userOrganization.status = getEnumKey(
+      UserOrganizationStatus,
+      UserOrganizationStatus.ACTIVE,
+    );
     userOrganization.user = user;
     userOrganization.organization = organization;
 

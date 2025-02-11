@@ -1,5 +1,6 @@
 import type { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { getEnumKey } from '@/domain/common/utils/enum';
 import { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
 import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
@@ -152,7 +153,7 @@ export class OrganizationsService {
       where: {
         id: organizationId,
         userOrganizations: {
-          role: UserOrganizationRole.ADMIN,
+          role: getEnumKey(UserOrganizationRole, UserOrganizationRole.ADMIN),
           user: {
             id: userId,
           },

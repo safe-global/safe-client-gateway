@@ -17,7 +17,7 @@ export class UserWithWallets implements Pick<User, 'id' | 'status'> {
   id!: number;
 
   @ApiProperty({ enum: UserStatus })
-  status!: UserStatus;
+  status!: keyof typeof UserStatus;
 
   @ApiProperty({ isArray: true, type: UserWallet })
   wallets!: Array<UserWallet>;
