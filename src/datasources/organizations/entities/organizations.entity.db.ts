@@ -27,23 +27,25 @@ export class Organization implements DomainOrganization {
   status!: OrganizationStatus;
 
   @Column({
+    name: 'created_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     update: false,
   })
-  created_at!: Date;
+  createdAt!: Date;
 
   @Column({
+    name: 'updated_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     update: false,
   })
-  updated_at!: Date;
+  updatedAt!: Date;
 
   @OneToMany(
     () => UserOrganization,
     (userOrganization: UserOrganization) => userOrganization.organization,
     { cascade: ['update', 'insert'] },
   )
-  user_organizations!: Array<UserOrganization>;
+  userOrganizations!: Array<UserOrganization>;
 }
