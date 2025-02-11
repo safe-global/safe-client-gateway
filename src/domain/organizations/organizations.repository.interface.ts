@@ -16,7 +16,7 @@ export interface IOrganizationsRepository {
     userId: User['id'];
     name: string;
     authPayload: AuthPayload;
-    status: OrganizationStatus;
+    status: keyof typeof OrganizationStatus;
   }): Promise<Pick<Organization, 'id' | 'name'>>;
 
   findOneOrFail(

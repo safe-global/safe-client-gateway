@@ -1,12 +1,6 @@
 import { Inject } from '@nestjs/common';
 import { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
-import {
-  UserOrganizationRole,
-  UserOrganizationStatus,
-} from '@/domain/users/entities/user-organization.entity';
-import { UserStatus } from '@/domain/users/entities/user.entity';
 import { User } from '@/domain/users/entities/user.entity';
-import { getEnumKey } from '@/domain/common/utils/enums';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { InviteUsersDto } from '@/routes/organizations/entities/invite-users.dto.entity';
@@ -39,7 +33,7 @@ export class UserOrganizationsService {
     return await this.usersOrgRepository.updateStatus({
       authPayload: args.authPayload,
       orgId: args.orgId,
-      status: UserOrganizationStatus.ACTIVE,
+      status: 'ACTIVE',
     });
   }
 
@@ -50,7 +44,7 @@ export class UserOrganizationsService {
     return await this.usersOrgRepository.updateStatus({
       authPayload: args.authPayload,
       orgId: args.orgId,
-      status: UserOrganizationStatus.DECLINED,
+      status: 'DECLINED',
     });
   }
 
@@ -67,13 +61,13 @@ export class UserOrganizationsService {
       members: userOrgs.map((userOrg) => {
         return {
           id: userOrg.id,
-          role: getEnumKey(UserOrganizationRole, userOrg.role),
-          status: getEnumKey(UserOrganizationStatus, userOrg.status),
-          createdAt: userOrg.created_at.toISOString(),
-          updatedAt: userOrg.updated_at.toISOString(),
+          role: userOrg.role,
+          status: userOrg.status,
+          createdAt: userOrg.createdAt.toISOString(),
+          updatedAt: userOrg.updatedAt.toISOString(),
           user: {
             id: userOrg.user.id,
-            status: getEnumKey(UserStatus, userOrg.user.status),
+            status: userOrg.user.status,
           },
         };
       }),

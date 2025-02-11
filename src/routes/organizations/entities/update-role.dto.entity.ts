@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { UserOrganizationRoleSchema } from '@/routes/organizations/entities/user-organization-role.entity';
+import { UserOrganizationRoleKeys } from '@/domain/users/entities/user-organization.entity';
 
 export const UpdateRoleDtoSchema = z.object({
-  role: UserOrganizationRoleSchema,
+  role: z.enum(UserOrganizationRoleKeys),
 });
 
 export type UpdateRoleDto = z.infer<typeof UpdateRoleDtoSchema>;

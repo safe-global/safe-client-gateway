@@ -12,14 +12,12 @@ import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { UserOrganization as DbUserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import { User as DbUser } from '@/datasources/users/entities/users.entity.db';
-import { UserStatus } from '@/domain/users/entities/user.entity';
 import type { FindOptionsWhere, FindOptionsRelations } from 'typeorm';
 import type { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
 import {
   UserOrganizationRole,
   UserOrganizationStatus,
 } from '@/domain/users/entities/user-organization.entity';
-import { getEnumKey } from '@/domain/common/utils/enums';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
@@ -73,7 +71,7 @@ export class UsersOrganizationsRepository
     orgId: Organization['id'];
     users: Array<{
       address: `0x${string}`;
-      role: UserOrganizationRole;
+      role: keyof typeof UserOrganizationRole;
     }>;
   }): Promise<
     Array<{
@@ -105,7 +103,7 @@ export class UsersOrganizationsRepository
 
         if (!invitedUserId) {
           invitedUserId = await this.usersRepository.create(
-            UserStatus.PENDING,
+            'PENDING',
             entityManager,
           );
 
@@ -122,17 +120,14 @@ export class UsersOrganizationsRepository
           user: { id: invitedUserId },
           organization: signer.org,
           role: userToInvite.role,
-          status: UserOrganizationStatus.INVITED,
+          status: 'INVITED',
         });
 
         invitations.push({
           userId: invitedUserId,
           orgId: signer.org.id,
-          role: getEnumKey(UserOrganizationRole, userToInvite.role),
-          status: getEnumKey(
-            UserOrganizationStatus,
-            UserOrganizationStatus.INVITED,
-          ),
+          role: userToInvite.role,
+          status: 'INVITED',
         });
       }
     });
@@ -147,7 +142,7 @@ export class UsersOrganizationsRepository
   }): Promise<void> {
     const signer = await this.getOrgAndSignerOrFail(args);
 
-    if (signer.userOrg.status !== UserOrganizationStatus.INVITED) {
+    if (signer.userOrg.status !== 'INVITED') {
       throw new ConflictException('Invite is not pending.');
     }
 
@@ -156,11 +151,11 @@ export class UsersOrganizationsRepository
         status: args.status,
       });
 
-      const isActivatingUserOrg = args.status === UserOrganizationStatus.ACTIVE;
-      const isUserPending = signer.user.status === UserStatus.PENDING;
+      const isActivatingUserOrg = args.status === 'ACTIVE';
+      const isUserPending = signer.user.status === 'PENDING';
       if (isActivatingUserOrg && isUserPending) {
         await entityManager.update(DbUser, signer.user.id, {
-          status: UserStatus.ACTIVE,
+          status: 'ACTIVE',
         });
       }
     });
@@ -171,7 +166,7 @@ export class UsersOrganizationsRepository
     orgId: Organization['id'];
   }): Promise<Array<UserOrganization>> {
     const signer = await this.getOrgAndSignerOrFail(args);
-    return signer.org.user_organizations;
+    return signer.org.userOrganizations;
   }
 
   public async updateRole(args: {
@@ -184,12 +179,12 @@ export class UsersOrganizationsRepository
 
     this.assertUserOrgIsActive(signer.userOrg);
     this.assertUserOrgAdmin(signer.userOrg);
-    if (args.role !== UserOrganizationRole.ADMIN) {
-      this.assertNotLastActiveAdmin(signer.org.user_organizations, args.userId);
+    if (args.role !== 'ADMIN') {
+      this.assertNotLastActiveAdmin(signer.org.userOrganizations, args.userId);
     }
 
     const updateUserOrg = this.findUserOrg({
-      userOrgs: signer.org.user_organizations,
+      userOrgs: signer.org.userOrganizations,
       userId: args.userId,
     });
 
@@ -210,10 +205,10 @@ export class UsersOrganizationsRepository
 
     this.assertUserOrgIsActive(signer.userOrg);
     this.assertUserOrgAdmin(signer.userOrg);
-    this.assertNotLastActiveAdmin(signer.org.user_organizations, args.userId);
+    this.assertNotLastActiveAdmin(signer.org.userOrganizations, args.userId);
 
     const updateUserOrg = this.findUserOrg({
-      userOrgs: signer.org.user_organizations,
+      userOrgs: signer.org.userOrganizations,
       userId: args.userId,
     });
 
@@ -237,10 +232,10 @@ export class UsersOrganizationsRepository
     );
     const org = await this.organizationsRepository.findOneOrFail({
       where: { id: args.orgId },
-      relations: { user_organizations: { user: true } },
+      relations: { userOrganizations: { user: true } },
     });
     const userOrg = this.findUserOrg({
-      userOrgs: org.user_organizations,
+      userOrgs: org.userOrganizations,
       userId: user.id,
     });
 
@@ -271,9 +266,9 @@ export class UsersOrganizationsRepository
   private assertUserOrgIsActive(
     userOrg: UserOrganization,
   ): asserts userOrg is UserOrganization & {
-    status: UserOrganizationStatus.ACTIVE;
+    status: 'ACTIVE';
   } {
-    if (userOrg.status !== UserOrganizationStatus.ACTIVE) {
+    if (userOrg.status !== 'ACTIVE') {
       throw new UnauthorizedException('Member is not active.');
     }
   }
@@ -283,7 +278,7 @@ export class UsersOrganizationsRepository
   ): asserts userOrg is UserOrganization & {
     role: UserOrganizationRole.ADMIN;
   } {
-    if (userOrg.role !== UserOrganizationRole.ADMIN) {
+    if (userOrg.role !== 'ADMIN') {
       throw new UnauthorizedException('Member is not an admin.');
     }
   }
@@ -293,9 +288,7 @@ export class UsersOrganizationsRepository
     userId: User['id'],
   ): void {
     const activeAdmins = userOrgs.filter(
-      (userOrg) =>
-        userOrg.status === UserOrganizationStatus.ACTIVE &&
-        userOrg.role === UserOrganizationRole.ADMIN,
+      (userOrg) => userOrg.status === 'ACTIVE' && userOrg.role === 'ADMIN',
     );
 
     if (activeAdmins.length === 1 && activeAdmins[0].user.id === userId) {

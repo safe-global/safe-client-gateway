@@ -1,5 +1,6 @@
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import { User } from '@/datasources/users/entities/users.entity.db';
+import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import {
   UserOrganization as DomainUserOrganization,
   UserOrganizationRole,
@@ -53,26 +54,30 @@ export class UserOrganization implements DomainUserOrganization {
   // Postgres enums are string therefore we use integer
   @Column({
     type: 'integer',
+    transformer: databaseEnumTransformer(UserOrganizationRole),
   })
-  role!: UserOrganizationRole;
+  role!: keyof typeof UserOrganizationRole;
 
   // Postgres enums are string therefore we use integer
   @Column({
     type: 'integer',
+    transformer: databaseEnumTransformer(UserOrganizationStatus),
   })
-  status!: UserOrganizationStatus;
+  status!: keyof typeof UserOrganizationStatus;
 
   @Column({
+    name: 'created_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     update: false,
   })
-  created_at!: Date;
+  createdAt!: Date;
 
   @Column({
+    name: 'updated_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     update: false,
   })
-  updated_at!: Date;
+  updatedAt!: Date;
 }

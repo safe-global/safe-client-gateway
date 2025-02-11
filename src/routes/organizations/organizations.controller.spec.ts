@@ -37,6 +37,7 @@ import {
   UserOrganizationStatus,
 } from '@/domain/users/entities/user-organization.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
+import { getEnumKey } from '@/domain/common/utils/enum';
 
 describe('OrganizationController', () => {
   let app: INestApplication<Server>;
@@ -219,17 +220,23 @@ describe('OrganizationController', () => {
             {
               id: expect.any(Number),
               name: firstOrganizationName,
-              status: OrganizationStatus.ACTIVE,
-              user_organizations: [
+              status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+              userOrganizations: [
                 {
                   id: expect.any(Number),
-                  role: UserOrganizationRole.ADMIN,
-                  status: UserOrganizationStatus.ACTIVE,
-                  created_at: expect.any(String),
-                  updated_at: expect.any(String),
+                  role: getEnumKey(
+                    UserOrganizationRole,
+                    UserOrganizationRole.ADMIN,
+                  ),
+                  status: getEnumKey(
+                    OrganizationStatus,
+                    OrganizationStatus.ACTIVE,
+                  ),
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                   user: {
                     id: expect.any(Number),
-                    status: UserStatus.ACTIVE,
+                    status: getEnumKey(UserStatus, UserStatus.ACTIVE),
                   },
                 },
               ],
@@ -237,17 +244,23 @@ describe('OrganizationController', () => {
             {
               id: expect.any(Number),
               name: secondOrganizationName,
-              status: OrganizationStatus.ACTIVE,
-              user_organizations: [
+              status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+              userOrganizations: [
                 {
                   id: expect.any(Number),
-                  role: UserOrganizationRole.ADMIN,
-                  status: UserOrganizationStatus.ACTIVE,
-                  created_at: expect.any(String),
-                  updated_at: expect.any(String),
+                  role: getEnumKey(
+                    UserOrganizationRole,
+                    UserOrganizationRole.ADMIN,
+                  ),
+                  status: getEnumKey(
+                    UserOrganizationStatus,
+                    UserOrganizationStatus.ACTIVE,
+                  ),
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                   user: {
                     id: expect.any(Number),
-                    status: UserStatus.ACTIVE,
+                    status: getEnumKey(UserStatus, UserStatus.ACTIVE),
                   },
                 },
               ],
@@ -327,17 +340,23 @@ describe('OrganizationController', () => {
           expect(body).toEqual({
             id: organizationId,
             name: organizationName,
-            status: OrganizationStatus.ACTIVE,
-            user_organizations: [
+            status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+            userOrganizations: [
               {
                 id: expect.any(Number),
-                status: UserOrganizationStatus.ACTIVE,
-                role: UserOrganizationRole.ADMIN,
-                created_at: expect.any(String),
-                updated_at: expect.any(String),
+                status: getEnumKey(
+                  UserOrganizationStatus,
+                  UserOrganizationStatus.ACTIVE,
+                ),
+                role: getEnumKey(
+                  UserOrganizationRole,
+                  UserOrganizationRole.ADMIN,
+                ),
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
                 user: {
                   id: userId,
-                  status: UserStatus.ACTIVE,
+                  status: getEnumKey(UserStatus, UserStatus.ACTIVE),
                 },
               },
             ],
@@ -432,13 +451,47 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${organizationId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: newOrganizationName, status: OrganizationStatus.ACTIVE })
+        .send({
+          name: newOrganizationName,
+          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+        })
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
             id: organizationId,
           }),
         );
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('Should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationId = faker.number.int({ min: 1 });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
     });
 
     it('Should throw a 401 if user can not update an organization because organization does not exist', async () => {
@@ -454,7 +507,10 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${organizationId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName, status: OrganizationStatus.ACTIVE })
+        .send({
+          name: organizationName,
+          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+        })
         .expect(401)
         .expect(({ body }) =>
           expect(body).toEqual({
@@ -508,7 +564,10 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${organizationId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName, status: OrganizationStatus.ACTIVE })
+        .send({
+          name: organizationName,
+          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+        })
         .expect(401)
         .expect(({ body }) =>
           expect(body).toEqual({
@@ -535,6 +594,19 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${organizationId}`)
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${organizationId}`)
         .expect(403)
         .expect({
           statusCode: 403,

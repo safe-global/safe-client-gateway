@@ -7,11 +7,14 @@ export const IUsersRepository = Symbol('IUsersRepository');
 
 export interface IUsersRepository {
   createWithWallet(args: {
-    status: UserStatus;
+    status: keyof typeof UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>>;
 
-  create(status: UserStatus, entityManager: EntityManager): Promise<User['id']>;
+  create(
+    status: keyof typeof UserStatus,
+    entityManager: EntityManager,
+  ): Promise<User['id']>;
 
   getWithWallets(authPayload: AuthPayload): Promise<{
     id: User['id'];

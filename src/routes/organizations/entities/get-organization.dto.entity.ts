@@ -9,11 +9,11 @@ import {
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-class UserDto {
+class UserDto extends User {
   @ApiProperty({ type: Number })
   public id!: User['id'];
 
-  @ApiProperty({ enum: UserStatus, type: Number })
+  @ApiProperty({ type: String, enum: UserStatus })
   public status!: User['status'];
 }
 
@@ -21,17 +21,17 @@ class UserOrganizationsDto {
   @ApiProperty({ type: Number })
   public id!: UserOrganization['id'];
 
-  @ApiProperty({ type: Number, enum: UserOrganizationRole })
+  @ApiProperty({ type: String, enum: UserOrganizationRole })
   public role!: UserOrganization['role'];
 
-  @ApiProperty({ type: Number, enum: UserOrganizationStatus })
+  @ApiProperty({ type: String, enum: UserOrganizationStatus })
   public status!: UserOrganization['status'];
 
   @ApiProperty({ type: Date })
-  public created_at!: UserOrganization['created_at'];
+  public createdAt!: UserOrganization['createdAt'];
 
   @ApiProperty({ type: Date })
-  public updated_at!: UserOrganization['updated_at'];
+  public updatedAt!: UserOrganization['updatedAt'];
 
   @ApiProperty({ type: UserDto })
   public user!: UserDto;
@@ -44,9 +44,9 @@ export class GetOrganizationResponse {
   @ApiProperty({ type: String })
   public name!: Organization['name'];
 
-  @ApiProperty({ type: Number, enum: OrganizationStatus })
-  public status!: Organization['status'];
+  @ApiProperty({ type: String, enum: OrganizationStatus })
+  public status!: keyof typeof OrganizationStatus;
 
   @ApiProperty()
-  public user_organizations!: Array<UserOrganizationsDto>;
+  public userOrganizations!: Array<UserOrganizationsDto>;
 }

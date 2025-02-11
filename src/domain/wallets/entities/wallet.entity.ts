@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
+import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { UserSchema } from '@/domain/users/entities/user.entity';
 

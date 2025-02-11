@@ -33,7 +33,7 @@ export interface IUsersOrganizationsRepository {
     orgId: Organization['id'];
     users: Array<{
       address: `0x${string}`;
-      role: UserOrganizationRole;
+      role: keyof typeof UserOrganizationRole;
     }>;
   }): Promise<
     Array<{
