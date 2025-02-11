@@ -161,6 +161,13 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
+  public async update(args: {
+    user: Partial<DbUser> & { id: User['id'] };
+    entityManager: EntityManager;
+  }): Promise<void> {
+    await args.entityManager.update(DbUser, args.user.id, args.user);
+  }
+
   private assertSignerAddress(
     authPayload: AuthPayload,
   ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {

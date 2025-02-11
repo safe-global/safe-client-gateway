@@ -661,7 +661,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(409)
         .expect({
-          message: 'Invite is not pending.',
+          message: 'Member is not invited.',
           error: 'Conflict',
           statusCode: 409,
         });
@@ -916,7 +916,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(409)
         .expect({
-          message: 'Invite is not pending.',
+          message: 'Member is not invited.',
           error: 'Conflict',
           statusCode: 409,
         });

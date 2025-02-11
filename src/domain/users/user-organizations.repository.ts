@@ -5,13 +5,14 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { UserOrganization as DbUserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
-import { User as DbUser } from '@/datasources/users/entities/users.entity.db';
+import { In } from 'typeorm';
 import type { FindOptionsWhere, FindOptionsRelations } from 'typeorm';
 import type { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
 import {
@@ -85,6 +86,15 @@ export class UsersOrganizationsRepository
 
     this.assertUserOrgIsActive(signer.userOrg);
 
+    const invitedUsers = await this.walletsRepository.find({
+      where: {
+        address: In(args.users.map((user) => user.address)),
+      },
+      relations: {
+        user: true,
+      },
+    });
+
     const invitations: Array<{
       userId: User['id'];
       orgId: Organization['id'];
@@ -94,12 +104,12 @@ export class UsersOrganizationsRepository
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
-        const invitedUser = await this.walletsRepository.findOneByAddress(
-          userToInvite.address,
-          { user: true },
-        );
-
-        let invitedUserId = invitedUser?.id;
+        const invitedUser = invitedUsers.find(({ user }) => {
+          return user.wallets.some((wallet) => {
+            return isAddressEqual(wallet.address, userToInvite.address);
+          });
+        });
+        let invitedUserId = invitedUser?.user.id;
 
         if (!invitedUserId) {
           invitedUserId = await this.usersRepository.create(
@@ -135,29 +145,41 @@ export class UsersOrganizationsRepository
     return invitations;
   }
 
-  public async updateStatus(args: {
+  public async acceptInvite(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    status: UserOrganization['status'];
   }): Promise<void> {
     const signer = await this.getOrgAndSignerOrFail(args);
 
-    if (signer.userOrg.status !== 'INVITED') {
-      throw new ConflictException('Invite is not pending.');
-    }
+    this.assertUserOrgIsInvited(signer.userOrg);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbUserOrganization, signer.userOrg.id, {
-        status: args.status,
+        status: 'ACTIVE',
       });
 
-      const isActivatingUserOrg = args.status === 'ACTIVE';
-      const isUserPending = signer.user.status === 'PENDING';
-      if (isActivatingUserOrg && isUserPending) {
-        await entityManager.update(DbUser, signer.user.id, {
+      await this.usersRepository.update({
+        user: {
+          id: signer.user.id,
           status: 'ACTIVE',
-        });
-      }
+        },
+        entityManager,
+      });
+    });
+  }
+
+  public async declineInvite(args: {
+    authPayload: AuthPayload;
+    orgId: Organization['id'];
+  }): Promise<void> {
+    const signer = await this.getOrgAndSignerOrFail(args);
+
+    this.assertUserOrgIsInvited(signer.userOrg);
+
+    const userOrganizationRepository =
+      await this.postgresDatabaseService.getRepository(DbUserOrganization);
+    await userOrganizationRepository.update(signer.userOrg.id, {
+      status: 'DECLINED',
     });
   }
 
@@ -183,7 +205,7 @@ export class UsersOrganizationsRepository
       this.assertNotLastActiveAdmin(signer.org.userOrganizations, args.userId);
     }
 
-    const updateUserOrg = this.findUserOrg({
+    const updateUserOrg = this.extractUserOrg({
       userOrgs: signer.org.userOrganizations,
       userId: args.userId,
     });
@@ -207,7 +229,7 @@ export class UsersOrganizationsRepository
     this.assertUserOrgAdmin(signer.userOrg);
     this.assertNotLastActiveAdmin(signer.org.userOrganizations, args.userId);
 
-    const updateUserOrg = this.findUserOrg({
+    const updateUserOrg = this.extractUserOrg({
       userOrgs: signer.org.userOrganizations,
       userId: args.userId,
     });
@@ -234,7 +256,7 @@ export class UsersOrganizationsRepository
       where: { id: args.orgId },
       relations: { userOrganizations: { user: true } },
     });
-    const userOrg = this.findUserOrg({
+    const userOrg = this.extractUserOrg({
       userOrgs: org.userOrganizations,
       userId: user.id,
     });
@@ -242,7 +264,7 @@ export class UsersOrganizationsRepository
     return { org, user, userOrg };
   }
 
-  private findUserOrg(args: {
+  private extractUserOrg(args: {
     userOrgs: Array<UserOrganization>;
     userId: User['id'];
   }): UserOrganization {
@@ -260,6 +282,16 @@ export class UsersOrganizationsRepository
   ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
     if (!authPayload.signer_address) {
       throw new UnauthorizedException('Signer address not provided');
+    }
+  }
+
+  private assertUserOrgIsInvited(
+    userOrg: UserOrganization,
+  ): asserts userOrg is UserOrganization & {
+    status: 'INVITED';
+  } {
+    if (userOrg.status !== 'INVITED') {
+      throw new ConflictException('Member is not invited.');
     }
   }
 

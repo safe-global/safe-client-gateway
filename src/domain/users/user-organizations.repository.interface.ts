@@ -44,10 +44,14 @@ export interface IUsersOrganizationsRepository {
     }>
   >;
 
-  updateStatus(args: {
+  acceptInvite(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-    status: UserOrganization['status'];
+  }): Promise<void>;
+
+  declineInvite(args: {
+    authPayload: AuthPayload;
+    orgId: Organization['id'];
   }): Promise<void>;
 
   get(args: {

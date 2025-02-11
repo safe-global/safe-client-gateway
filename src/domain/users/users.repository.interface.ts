@@ -35,4 +35,9 @@ export interface IUsersRepository {
   }): Promise<void>;
 
   findByWalletAddressOrFail(address: `0x${string}`): Promise<User>;
+
+  update(args: {
+    user: Partial<User> & { id: User['id'] };
+    entityManager: EntityManager;
+  }): Promise<void>;
 }

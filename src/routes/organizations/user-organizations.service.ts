@@ -30,22 +30,14 @@ export class UserOrganizationsService {
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<void> {
-    return await this.usersOrgRepository.updateStatus({
-      authPayload: args.authPayload,
-      orgId: args.orgId,
-      status: 'ACTIVE',
-    });
+    return await this.usersOrgRepository.acceptInvite(args);
   }
 
   public async declineInvite(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<void> {
-    return await this.usersOrgRepository.updateStatus({
-      authPayload: args.authPayload,
-      orgId: args.orgId,
-      status: 'DECLINED',
-    });
+    return await this.usersOrgRepository.declineInvite(args);
   }
 
   public async get(args: {
