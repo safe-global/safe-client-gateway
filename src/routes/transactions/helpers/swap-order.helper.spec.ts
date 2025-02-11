@@ -101,7 +101,6 @@ describe('Swap Order Helper tests', () => {
         executedFeeAmount: order.executedFeeAmount,
         executedSellAmount: order.executedSellAmount,
         executedSellAmountBeforeFees: order.executedSellAmountBeforeFees,
-        executedSurplusFee: order.executedSurplusFee,
         executedFee: order.executedFee,
         executedFeeToken: order.executedFeeToken,
         feeAmount: order.feeAmount,
