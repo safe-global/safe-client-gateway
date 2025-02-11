@@ -1,5 +1,6 @@
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import { ApiProperty } from '@nestjs/swagger';
+
 import { z } from 'zod';
 
 export const CreateOrganizationSchema = z.object({
@@ -11,4 +12,12 @@ export class CreateOrganizationDto
 {
   @ApiProperty({ type: String })
   public readonly name!: Organization['name'];
+}
+
+export class CreateOrganizationResponse {
+  @ApiProperty({ type: String })
+  public readonly name!: Organization['name'];
+
+  @ApiProperty({ type: Number })
+  public readonly id!: Organization['id'];
 }

@@ -3,7 +3,7 @@ import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
 import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
-import { CreateOrganizationResponse } from '@/routes/organizations/entities/create-organizations.dto.entity';
+import { CreateOrganizationResponse } from '@/routes/organizations/entities/create-organization.dto.entity';
 import type { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
 import type {
   UpdateOrganizationDto,
