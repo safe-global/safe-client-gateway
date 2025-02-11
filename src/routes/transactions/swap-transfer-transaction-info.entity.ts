@@ -105,13 +105,6 @@ export class SwapTransferTransactionInfo
   @ApiProperty({
     type: String,
     description: 'The amount of fees paid for this order.',
-    deprecated: true,
-  })
-  executedSurplusFee: string;
-
-  @ApiProperty({
-    type: String,
-    description: 'The amount of fees paid for this order.',
   })
   executedFee: string;
 
@@ -160,7 +153,6 @@ export class SwapTransferTransactionInfo
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     explorerUrl: string;
-    executedSurplusFee: string;
     executedFee: string;
     executedFeeToken: TokenInfo;
     receiver: string | null;
@@ -186,7 +178,6 @@ export class SwapTransferTransactionInfo
     this.sellToken = args.sellToken;
     this.buyToken = args.buyToken;
     this.explorerUrl = args.explorerUrl;
-    this.executedSurplusFee = args.executedSurplusFee;
     this.executedFee = args.executedFee;
     this.executedFeeToken = args.executedFeeToken;
     this.receiver = args.receiver;

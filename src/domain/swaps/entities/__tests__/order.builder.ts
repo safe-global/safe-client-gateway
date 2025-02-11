@@ -121,7 +121,6 @@ export function orderBuilder(): IBuilder<Order> {
             }
           : null,
       )
-      .with('executedSurplusFee', executedFee)
       .with('executedFee', executedFee)
       // TODO: still tbd by CoW but this will be expressed in SURPLUS tokens
       // (BUY tokens for SELL orders and SELL tokens for BUY orders)

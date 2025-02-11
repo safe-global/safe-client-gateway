@@ -28,7 +28,6 @@ const orderIds = {
         executedFeeAmount: BigInt('0'),
         executedSellAmount: BigInt('20000000000000000000000'),
         executedSellAmountBeforeFees: BigInt('20000000000000000000000'),
-        executedSurplusFee: BigInt('344394908543621220441'),
         executedFee: BigInt('344394908543621220441'),
         executedFeeToken: '0x710287D1D39DCf62094A83EBB3e736e79400068a',
         feeAmount: BigInt('0'),
