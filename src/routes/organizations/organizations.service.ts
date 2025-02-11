@@ -47,12 +47,12 @@ export class OrganizationsService {
         id: true,
         name: true,
         status: true,
-        user_organizations: {
+        userOrganizations: {
           id: true,
           role: true,
           status: true,
-          created_at: true,
-          updated_at: true,
+          createdAt: true,
+          updatedAt: true,
           user: {
             id: true,
             status: true,
@@ -60,7 +60,7 @@ export class OrganizationsService {
         },
       },
       relations: {
-        user_organizations: {
+        userOrganizations: {
           user: true,
         },
       },
@@ -80,18 +80,18 @@ export class OrganizationsService {
     return await this.organizationsRepository.findOneOrFail({
       where: {
         id,
-        user_organizations: { user: { id: userId } },
+        userOrganizations: { user: { id: userId } },
       },
       select: {
         id: true,
         name: true,
         status: true,
-        user_organizations: {
+        userOrganizations: {
           id: true,
           role: true,
           status: true,
-          created_at: true,
-          updated_at: true,
+          createdAt: true,
+          updatedAt: true,
           user: {
             id: true,
             status: true,
@@ -99,7 +99,7 @@ export class OrganizationsService {
         },
       },
       relations: {
-        user_organizations: {
+        userOrganizations: {
           user: true,
         },
       },
@@ -151,7 +151,7 @@ export class OrganizationsService {
     const organization = await this.organizationsRepository.findOne({
       where: {
         id: organizationId,
-        user_organizations: {
+        userOrganizations: {
           role: UserOrganizationRole.ADMIN,
           user: {
             id: userId,

@@ -9,7 +9,7 @@ import {
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-class UserDto {
+class UserDto extends User {
   @ApiProperty({ type: Number })
   public id!: User['id'];
 
@@ -28,10 +28,10 @@ class UserOrganizationsDto {
   public status!: UserOrganization['status'];
 
   @ApiProperty({ type: Date })
-  public created_at!: UserOrganization['created_at'];
+  public createdAt!: UserOrganization['createdAt'];
 
   @ApiProperty({ type: Date })
-  public updated_at!: UserOrganization['updated_at'];
+  public updatedAt!: UserOrganization['updatedAt'];
 
   @ApiProperty({ type: UserDto })
   public user!: UserDto;
@@ -48,5 +48,5 @@ export class GetOrganizationResponse {
   public status!: Organization['status'];
 
   @ApiProperty()
-  public user_organizations!: Array<UserOrganizationsDto>;
+  public userOrganizations!: Array<UserOrganizationsDto>;
 }

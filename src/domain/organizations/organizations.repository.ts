@@ -49,7 +49,7 @@ export class OrganizationsRepository implements IOrganizationsRepository {
     userOrganization.user = user;
     userOrganization.organization = organization;
 
-    organization.user_organizations = [userOrganization];
+    organization.userOrganizations = [userOrganization];
 
     const insertResult = await organizationRepository.save(organization);
 
@@ -133,7 +133,7 @@ export class OrganizationsRepository implements IOrganizationsRepository {
 
     return await organizationRepository.find({
       where: {
-        user_organizations: { user: { id: args.userId } },
+        userOrganizations: { user: { id: args.userId } },
       },
       select: args.select,
       relations: args.relations,
@@ -161,7 +161,7 @@ export class OrganizationsRepository implements IOrganizationsRepository {
   }): Promise<Organization | null> {
     return await this.findOne({
       where: {
-        user_organizations: { user: { id: args.userId } },
+        userOrganizations: { user: { id: args.userId } },
       },
       select: args.select,
       relations: args.relations,

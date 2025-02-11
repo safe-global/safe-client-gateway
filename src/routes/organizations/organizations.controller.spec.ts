@@ -220,13 +220,13 @@ describe('OrganizationController', () => {
               id: expect.any(Number),
               name: firstOrganizationName,
               status: OrganizationStatus.ACTIVE,
-              user_organizations: [
+              userOrganizations: [
                 {
                   id: expect.any(Number),
                   role: UserOrganizationRole.ADMIN,
                   status: UserOrganizationStatus.ACTIVE,
-                  created_at: expect.any(String),
-                  updated_at: expect.any(String),
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                   user: {
                     id: expect.any(Number),
                     status: UserStatus.ACTIVE,
@@ -238,13 +238,13 @@ describe('OrganizationController', () => {
               id: expect.any(Number),
               name: secondOrganizationName,
               status: OrganizationStatus.ACTIVE,
-              user_organizations: [
+              userOrganizations: [
                 {
                   id: expect.any(Number),
                   role: UserOrganizationRole.ADMIN,
                   status: UserOrganizationStatus.ACTIVE,
-                  created_at: expect.any(String),
-                  updated_at: expect.any(String),
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                   user: {
                     id: expect.any(Number),
                     status: UserStatus.ACTIVE,
@@ -328,13 +328,13 @@ describe('OrganizationController', () => {
             id: organizationId,
             name: organizationName,
             status: OrganizationStatus.ACTIVE,
-            user_organizations: [
+            userOrganizations: [
               {
                 id: expect.any(Number),
                 status: UserOrganizationStatus.ACTIVE,
                 role: UserOrganizationRole.ADMIN,
-                created_at: expect.any(String),
-                updated_at: expect.any(String),
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
                 user: {
                   id: userId,
                   status: UserStatus.ACTIVE,
