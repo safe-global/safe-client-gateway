@@ -37,6 +37,7 @@ import {
 } from '@/routes/organizations/entities/update-organization.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
+import { getEnumKey } from '@/domain/common/utils/enum';
 
 @ApiTags('organizations')
 @UseGuards(AuthGuard)
@@ -64,7 +65,7 @@ export class OrganizationsController {
     return await this.organizationsService.create({
       authPayload,
       name: body.name,
-      status: OrganizationStatus.ACTIVE,
+      status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
     });
   }
 

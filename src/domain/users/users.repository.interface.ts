@@ -6,7 +6,7 @@ export const IUsersRepository = Symbol('IUsersRepository');
 
 export interface IUsersRepository {
   createWithWallet(args: {
-    status: UserStatus;
+    status: keyof typeof UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>>;
 

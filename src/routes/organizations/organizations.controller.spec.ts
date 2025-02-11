@@ -37,6 +37,7 @@ import {
   UserOrganizationStatus,
 } from '@/domain/users/entities/user-organization.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
+import { getEnumKey } from '@/domain/common/utils/enum';
 
 describe('OrganizationController', () => {
   let app: INestApplication<Server>;
@@ -219,17 +220,23 @@ describe('OrganizationController', () => {
             {
               id: expect.any(Number),
               name: firstOrganizationName,
-              status: OrganizationStatus.ACTIVE,
+              status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
               userOrganizations: [
                 {
                   id: expect.any(Number),
-                  role: UserOrganizationRole.ADMIN,
-                  status: UserOrganizationStatus.ACTIVE,
+                  role: getEnumKey(
+                    UserOrganizationRole,
+                    UserOrganizationRole.ADMIN,
+                  ),
+                  status: getEnumKey(
+                    OrganizationStatus,
+                    OrganizationStatus.ACTIVE,
+                  ),
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                   user: {
                     id: expect.any(Number),
-                    status: UserStatus.ACTIVE,
+                    status: getEnumKey(UserStatus, UserStatus.ACTIVE),
                   },
                 },
               ],
@@ -237,17 +244,23 @@ describe('OrganizationController', () => {
             {
               id: expect.any(Number),
               name: secondOrganizationName,
-              status: OrganizationStatus.ACTIVE,
+              status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
               userOrganizations: [
                 {
                   id: expect.any(Number),
-                  role: UserOrganizationRole.ADMIN,
-                  status: UserOrganizationStatus.ACTIVE,
+                  role: getEnumKey(
+                    UserOrganizationRole,
+                    UserOrganizationRole.ADMIN,
+                  ),
+                  status: getEnumKey(
+                    UserOrganizationStatus,
+                    UserOrganizationStatus.ACTIVE,
+                  ),
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                   user: {
                     id: expect.any(Number),
-                    status: UserStatus.ACTIVE,
+                    status: getEnumKey(UserStatus, UserStatus.ACTIVE),
                   },
                 },
               ],
@@ -327,17 +340,23 @@ describe('OrganizationController', () => {
           expect(body).toEqual({
             id: organizationId,
             name: organizationName,
-            status: OrganizationStatus.ACTIVE,
+            status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
             userOrganizations: [
               {
                 id: expect.any(Number),
-                status: UserOrganizationStatus.ACTIVE,
-                role: UserOrganizationRole.ADMIN,
+                status: getEnumKey(
+                  UserOrganizationStatus,
+                  UserOrganizationStatus.ACTIVE,
+                ),
+                role: getEnumKey(
+                  UserOrganizationRole,
+                  UserOrganizationRole.ADMIN,
+                ),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
                   id: userId,
-                  status: UserStatus.ACTIVE,
+                  status: getEnumKey(UserStatus, UserStatus.ACTIVE),
                 },
               },
             ],
@@ -432,7 +451,10 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${organizationId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: newOrganizationName, status: OrganizationStatus.ACTIVE })
+        .send({
+          name: newOrganizationName,
+          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+        })
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
@@ -485,7 +507,10 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${organizationId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName, status: OrganizationStatus.ACTIVE })
+        .send({
+          name: organizationName,
+          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+        })
         .expect(401)
         .expect(({ body }) =>
           expect(body).toEqual({
@@ -539,7 +564,10 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${organizationId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName, status: OrganizationStatus.ACTIVE })
+        .send({
+          name: organizationName,
+          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+        })
         .expect(401)
         .expect(({ body }) =>
           expect(body).toEqual({

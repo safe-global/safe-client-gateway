@@ -32,6 +32,8 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
+import { getEnumKey } from '@/domain/common/utils/enum';
+import { UserStatus } from '@/domain/users/entities/user.entity';
 
 describe('UsersController', () => {
   let app: INestApplication<Server>;
@@ -111,7 +113,7 @@ describe('UsersController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             id: expect.any(Number),
-            status: 1,
+            status: getEnumKey(UserStatus, UserStatus.ACTIVE),
             wallets: [
               {
                 id: expect.any(Number),
