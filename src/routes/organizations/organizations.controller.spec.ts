@@ -441,6 +441,37 @@ describe('OrganizationController', () => {
         );
     });
 
+    it('should return a 403 if not authenticated', async () => {
+      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('Should return a 403 is the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationId = faker.number.int({ min: 1 });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
     it('Should throw a 401 if user can not update an organization because organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -535,6 +566,19 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${organizationId}`)
         .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${organizationId}`)
         .expect(403)
         .expect({
           statusCode: 403,
