@@ -170,7 +170,6 @@ export class TwapOrderMapper {
       buyAmount: twapOrderData.buyAmount,
       executedSellAmount,
       executedBuyAmount,
-      executedSurplusFee: executedFee,
       executedFee,
       // TODO: still tbd by CoW but this will be expressed in SURPLUS tokens
       // (BUY tokens for SELL orders and SELL tokens for BUY orders)
