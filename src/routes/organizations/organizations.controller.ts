@@ -86,7 +86,7 @@ export class OrganizationsController {
       authPayload,
       name: body.name,
       status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
-      userStatuus: getEnumKey(UserStatus, UserStatus.ACTIVE),
+      userStatus: getEnumKey(UserStatus, UserStatus.ACTIVE),
     });
   }
 
