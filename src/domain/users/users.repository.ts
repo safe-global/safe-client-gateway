@@ -23,7 +23,7 @@ export class UsersRepository implements IUsersRepository {
   ) {}
 
   public async createWithWallet(args: {
-    status: UserStatus;
+    status: keyof typeof UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>> {
     this.assertSignerAddress(args.authPayload);
@@ -49,7 +49,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   public async create(
-    status: UserStatus,
+    status: keyof typeof UserStatus,
     entityManager: EntityManager,
   ): Promise<User['id']> {
     const userInsertResult = await entityManager.insert(DbUser, {

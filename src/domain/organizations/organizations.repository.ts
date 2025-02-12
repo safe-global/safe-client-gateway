@@ -3,7 +3,10 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
-import { UserOrganizationStatus } from '@/domain/users/entities/user-organization.entity';
+import {
+  UserOrganizationRole,
+  UserOrganizationStatus,
+} from '@/domain/users/entities/user-organization.entity';
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
@@ -13,6 +16,7 @@ import {
   FindOptionsRelations,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import { getEnumKey } from '@/domain/common/utils/enum';
 
 @Injectable()
 export class OrganizationsRepository implements IOrganizationsRepository {
@@ -25,8 +29,8 @@ export class OrganizationsRepository implements IOrganizationsRepository {
     userId: number;
     name: string;
     authPayload: AuthPayload;
-    status: OrganizationStatus;
-  }): Promise<Organization> {
+    status: keyof typeof OrganizationStatus;
+  }): Promise<Pick<Organization, 'id' | 'name'>> {
     const organizationRepository =
       await this.postgresDatabaseService.getRepository(Organization);
 
@@ -35,17 +39,31 @@ export class OrganizationsRepository implements IOrganizationsRepository {
 
     const organization = new Organization();
     organization.status = args.status;
+    organization.name = args.name;
 
-    // Many to many relationship with custom fields
+    // @todo Move to UserOrganizationsRepository
     const userOrganization = new UserOrganization();
+    // @todo We should remove name
     userOrganization.name = args.name;
-    userOrganization.status = UserOrganizationStatus.ACTIVE;
+    userOrganization.role = getEnumKey(
+      UserOrganizationRole,
+      UserOrganizationRole.ADMIN,
+    );
+    userOrganization.status = getEnumKey(
+      UserOrganizationStatus,
+      UserOrganizationStatus.ACTIVE,
+    );
     userOrganization.user = user;
     userOrganization.organization = organization;
 
-    organization.user_organizations = [userOrganization];
+    organization.userOrganizations = [userOrganization];
 
-    return await organizationRepository.save(organization);
+    const insertResult = await organizationRepository.save(organization);
+
+    return {
+      id: insertResult.id,
+      name: insertResult.name,
+    };
   }
 
   public async findOneOrFail(
@@ -122,8 +140,38 @@ export class OrganizationsRepository implements IOrganizationsRepository {
 
     return await organizationRepository.find({
       where: {
-        user_organizations: { user: { id: args.userId } },
+        userOrganizations: { user: { id: args.userId } },
       },
+      select: args.select,
+      relations: args.relations,
+    });
+  }
+
+  public async findOneByUserIdOrFail(
+    args: Parameters<OrganizationsRepository['findByUserId']>[0],
+  ): Promise<Organization> {
+    const organization = await this.findOneByUserId(args);
+
+    if (!organization) {
+      throw new NotFoundException(
+        'Organization not found. UserId = ' + args.userId,
+      );
+    }
+
+    return organization;
+  }
+
+  public async findOneByUserId(args: {
+    userId: number;
+    select?: FindOptionsSelect<Organization>;
+    relations?: FindOptionsRelations<Organization>;
+  }): Promise<Organization | null> {
+    return await this.findOne({
+      where: {
+        userOrganizations: { user: { id: args.userId } },
+      },
+      select: args.select,
+      relations: args.relations,
     });
   }
 
@@ -134,12 +182,9 @@ export class OrganizationsRepository implements IOrganizationsRepository {
     const organizationRepository =
       await this.postgresDatabaseService.getRepository(Organization);
 
-    const updateResult = await organizationRepository.update(
-      args.id,
-      args.updatePayload,
-    );
+    await organizationRepository.update(args.id, args.updatePayload);
 
-    return updateResult.generatedMaps[0].id;
+    return { id: args.id };
   }
 
   // @todo Add a soft delete method

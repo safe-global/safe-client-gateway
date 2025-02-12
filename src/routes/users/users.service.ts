@@ -6,6 +6,7 @@ import type { UsersRepository } from '@/domain/users/users.repository';
 import type { UserWithWallets } from '@/routes/users/entities/user-with-wallets.entity';
 import type { CreatedUserWithWallet } from '@/routes/users/entities/created-user-with-wallet.entity';
 import type { WalletAddedToUser } from '@/routes/users/entities/wallet-added-to-user.entity';
+import { getEnumKey } from '@/domain/common/utils/enum';
 
 export class UsersService {
   public constructor(
@@ -17,7 +18,7 @@ export class UsersService {
     authPayload: AuthPayload,
   ): Promise<CreatedUserWithWallet> {
     return await this.usersRepository.createWithWallet({
-      status: UserStatus.ACTIVE,
+      status: getEnumKey(UserStatus, UserStatus.ACTIVE),
       authPayload,
     });
   }

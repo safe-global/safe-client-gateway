@@ -16,8 +16,8 @@ export interface IOrganizationsRepository {
     userId: User['id'];
     name: string;
     authPayload: AuthPayload;
-    status: OrganizationStatus;
-  }): Promise<Organization>;
+    status: keyof typeof OrganizationStatus;
+  }): Promise<Pick<Organization, 'id' | 'name'>>;
 
   findOneOrFail(
     args: Parameters<OrganizationsRepository['findOne']>[0],
@@ -52,6 +52,16 @@ export interface IOrganizationsRepository {
     select?: FindOptionsSelect<Organization>;
     relations?: FindOptionsRelations<Organization>;
   }): Promise<Array<Organization>>;
+
+  findOneByUserIdOrFail(
+    args: Parameters<OrganizationsRepository['findByUserId']>[0],
+  ): Promise<Organization>;
+
+  findOneByUserId(args: {
+    userId: User['id'];
+    select?: FindOptionsSelect<Organization>;
+    relations?: FindOptionsRelations<Organization>;
+  }): Promise<Organization | null>;
 
   update(args: {
     id: Organization['id'];
