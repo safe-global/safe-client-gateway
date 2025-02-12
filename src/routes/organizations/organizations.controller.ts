@@ -38,6 +38,7 @@ import {
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
+import { UserStatus } from '@/domain/users/entities/user.entity';
 
 @ApiTags('organizations')
 @UseGuards(AuthGuard)
@@ -66,6 +67,26 @@ export class OrganizationsController {
       authPayload,
       name: body.name,
       status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+    });
+  }
+
+  @Post('/create-with-user')
+  @ApiOkResponse({
+    description: 'Organizations created',
+    type: CreateOrganizationResponse,
+  })
+  @ApiForbiddenResponse({ description: 'Forbidden resource' })
+  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
+  public async createWithUser(
+    @Body(new ValidationPipe(CreateOrganizationSchema))
+    body: CreateOrganizationDto,
+    @Auth() authPayload: AuthPayload,
+  ): Promise<CreateOrganizationResponse> {
+    return await this.organizationsService.createWithUser({
+      authPayload,
+      name: body.name,
+      status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+      userStatuus: getEnumKey(UserStatus, UserStatus.ACTIVE),
     });
   }
 
