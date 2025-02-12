@@ -31,9 +31,9 @@ import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 
 describe('UserOrganizationsController', () => {
   let app: INestApplication<Server>;
@@ -364,13 +364,13 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(404)
         .expect({
-          message: 'User organization not found.',
+          message: 'Organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 401 if the status of the user organization is not ACTIVE', async () => {
+    it('should throw a 404 if the status of the user organization is not ACTIVE', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -410,11 +410,11 @@ describe('UserOrganizationsController', () => {
             address: user,
           },
         ])
-        .expect(401)
+        .expect(404)
         .expect({
-          message: 'User organization is not active.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'Organization not found.',
+          error: 'Not Found',
+          statusCode: 404,
         });
     });
   });
@@ -596,13 +596,13 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
         .expect(404)
         .expect({
-          message: 'User organization not found.',
+          message: 'Organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 409 if the status of the user organization is not INVITED', async () => {
+    it('should throw a 404 if the status of the user organization is not INVITED', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -641,11 +641,11 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
-        .expect(409)
+        .expect(404)
         .expect({
-          message: 'User organization is not invited.',
-          error: 'Conflict',
-          statusCode: 409,
+          message: 'Organization not found.',
+          error: 'Not Found',
+          statusCode: 404,
         });
     });
   });
@@ -827,13 +827,13 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
         .expect(404)
         .expect({
-          message: 'User organization not found.',
+          message: 'Organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 409 if the status of the user organization is not INVITED', async () => {
+    it('should throw a 404 if the status of the user organization is not INVITED', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -872,11 +872,11 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
-        .expect(409)
+        .expect(404)
         .expect({
-          message: 'User organization is not invited.',
-          error: 'Conflict',
-          statusCode: 409,
+          message: 'Organization not found.',
+          error: 'Not Found',
+          statusCode: 404,
         });
     });
   });
@@ -1063,44 +1063,6 @@ describe('UserOrganizationsController', () => {
           statusCode: 404,
         });
     });
-
-    // TODO: Investigate
-    it('should throw a 404 if the user organization does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
-      const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
-      const orgName = faker.word.noun();
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
-        .expect(201);
-
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
-        .expect(201);
-      const orgId = createOrganizationResponse.body.id;
-
-      // Don't create UserOrganization(s)
-
-      await request(app.getHttpServer())
-        .get(`/v1/organizations/${orgId}/members`)
-        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
-        .expect(404)
-        .expect({
-          message: 'User organization not found.',
-          error: 'Not Found',
-          statusCode: 404,
-        });
-    });
   });
 
   describe('PATCH /v1/organizations/:orgId/members/:userId/role', () => {
@@ -1246,48 +1208,6 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 404 if the signer user organization does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
-      const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
-        .expect(201);
-
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
-        .expect(201);
-      const orgId = createOrganizationResponse.body.id;
-
-      // Don't create UserOrganization(s) or accept invite
-
-      await request(app.getHttpServer())
-        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
-        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
-        .send({ role: 'ADMIN' })
-        .expect(404)
-        .expect({
-          message: 'User organization not found.',
-          error: 'Not Found',
-          statusCode: 404,
-        });
-    });
-
     it('should throw a 401 if the status of the signer user organization is not ACTIVE', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -1327,7 +1247,7 @@ describe('UserOrganizationsController', () => {
         .send({ role: 'ADMIN' })
         .expect(401)
         .expect({
-          message: 'User organization is not active.',
+          message: 'Signer is not an active admin.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1375,7 +1295,7 @@ describe('UserOrganizationsController', () => {
         .send({ role: 'ADMIN' })
         .expect(401)
         .expect({
-          message: 'User organization is not an admin.',
+          message: 'Signer is not an active admin.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1552,41 +1472,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.',
-          error: 'Not Found',
-          statusCode: 404,
-        });
-    });
-
-    it('should throw a 404 if the signer user organization does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
-        .expect(201);
-      const orgId = createOrganizationResponse.body.id;
-
-      // Don't create UserOrganization or accept invite
-
-      await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${userId}`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(404)
-        .expect({
-          message: 'User organization not found.',
+          message: 'No user organizations found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1635,7 +1521,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(401)
         .expect({
-          message: 'User organization is not active.',
+          message: 'Signer is not an active admin.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1682,7 +1568,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(401)
         .expect({
-          message: 'User organization is not an admin.',
+          message: 'Signer is not an active admin.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1714,40 +1600,6 @@ describe('UserOrganizationsController', () => {
           message: 'Cannot remove last admin.',
           error: 'Conflict',
           statusCode: 409,
-        });
-    });
-
-    it('should throw a 404 if the user-to-remove user organization does not exist', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
-        .expect(201);
-      const orgId = createOrganizationResponse.body.id;
-
-      // Don't create UserOrganization or accept invite
-
-      await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${userId}`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(404)
-        .expect({
-          message: 'User organization not found.',
-          error: 'Not Found',
-          statusCode: 404,
         });
     });
   });

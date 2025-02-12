@@ -4,7 +4,11 @@ import type { Organization } from '@/domain/organizations/entities/organization.
 import type { Invitation } from '@/domain/users/entities/invitation.entity';
 import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
-import type { FindOptionsWhere, FindOptionsRelations } from 'typeorm';
+import type {
+  FindOptionsWhere,
+  FindOptionsRelations,
+  FindManyOptions,
+} from 'typeorm';
 
 export const IUsersOrganizationsRepository = Symbol(
   'IUsersOrganizationsRepository',
@@ -24,6 +28,14 @@ export interface IUsersOrganizationsRepository {
       | FindOptionsWhere<UserOrganization>,
     relations?: FindOptionsRelations<UserOrganization>,
   ): Promise<DbUserOrganization | null>;
+
+  findOrFail(
+    args?: FindManyOptions<DbUserOrganization>,
+  ): Promise<[DbUserOrganization, ...Array<DbUserOrganization>]>;
+
+  find(
+    args?: FindManyOptions<DbUserOrganization>,
+  ): Promise<Array<DbUserOrganization>>;
 
   inviteUsers(args: {
     authPayload: AuthPayload;

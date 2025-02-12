@@ -113,7 +113,7 @@ export class UserOrganizationsController {
   })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer, organization or membership not found',
+    description: 'Signer or organization not found',
   })
   @Get('/:orgId/members')
   @UseGuards(AuthGuard)
@@ -158,8 +158,7 @@ export class UserOrganizationsController {
   @ApiOkResponse({ description: 'Membership deleted' })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
-    description:
-      'Signer, organization or signer/user-to-delete membership not found',
+    description: 'Signer or organization not found',
   })
   @ApiUnauthorizedResponse({ description: 'Signer not active or admin' })
   @ApiConflictResponse({ description: 'Cannot remove last admin' })
