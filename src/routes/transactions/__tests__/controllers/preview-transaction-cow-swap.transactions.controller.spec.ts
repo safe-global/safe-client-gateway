@@ -182,7 +182,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             executedSellAmount: order.executedSellAmount.toString(),
             executedBuyAmount: order.executedBuyAmount.toString(),
             explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
-            executedSurplusFee: order.executedSurplusFee.toString(),
             executedFee: order.executedFee.toString(),
             executedFeeToken: {
               address: sellToken.address,
@@ -329,7 +328,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             executedSellAmount: order.executedSellAmount.toString(),
             executedBuyAmount: order.executedBuyAmount.toString(),
             explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
-            executedSurplusFee: order.executedSurplusFee.toString(),
             executedFee: order.executedFee.toString(),
             executedFeeToken: {
               address: sellToken.address,
@@ -754,7 +752,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             buyAmount: '1222579021996502268',
             executedSellAmount: '0',
             executedBuyAmount: '0',
-            executedSurplusFee: '0',
             executedFee: '0',
             executedFeeToken: {
               address: sellToken.address,
@@ -899,7 +896,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             buyAmount: '1222579021996502268',
             executedSellAmount: '0',
             executedBuyAmount: '0',
-            executedSurplusFee: '0',
             executedFee: '0',
             executedFeeToken: {
               address: sellToken.address,
