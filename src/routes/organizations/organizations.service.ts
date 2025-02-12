@@ -3,6 +3,7 @@ import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
 import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
+import { User } from '@/domain/users/entities/user.entity';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { CreateOrganizationResponse } from '@/routes/organizations/entities/create-organization.dto.entity';
 import type { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
@@ -31,6 +32,36 @@ export class OrganizationsService {
     );
 
     return await this.organizationsRepository.create({ userId, ...args });
+  }
+
+  public async createWithUser(args: {
+    name: Organization['name'];
+    status: Organization['status'];
+    userStatus: User['status'];
+    authPayload: AuthPayload;
+  }): Promise<CreateOrganizationResponse> {
+    this.assertSignerAddress(args.authPayload);
+    const user = await this.userRepository.findByWalletAddress(
+      args.authPayload.signer_address,
+    );
+
+    let userId: number;
+
+    if (user) {
+      userId = user.id;
+    } else {
+      const user = await this.userRepository.createWithWallet({
+        status: args.userStatus,
+        authPayload: args.authPayload,
+      });
+
+      userId = user.id;
+    }
+
+    return await this.organizationsRepository.create({
+      userId,
+      ...args,
+    });
   }
 
   public async get(

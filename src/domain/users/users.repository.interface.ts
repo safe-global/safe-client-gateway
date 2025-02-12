@@ -29,4 +29,6 @@ export interface IUsersRepository {
   }): Promise<void>;
 
   findByWalletAddressOrFail(address: `0x${string}`): Promise<User>;
+
+  findByWalletAddress(address: `0x${string}`): Promise<User | undefined>;
 }
