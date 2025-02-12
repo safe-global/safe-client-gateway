@@ -3,6 +3,7 @@ import { SubmissionNotFoundError } from '@/domain/targeted-messaging/errors/subm
 import { ITargetedMessagingRepository } from '@/domain/targeted-messaging/targeted-messaging.repository.interface';
 import { CreateSubmissionDto } from '@/routes/targeted-messaging/entities/create-submission.dto.entity';
 import { Submission } from '@/routes/targeted-messaging/entities/submission.entity';
+import { TargetedSafe as RouteTargetedSafe } from '@/routes/targeted-messaging/entities/targeted-safe.entity';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -11,6 +12,18 @@ export class TargetedMessagingService {
     @Inject(ITargetedMessagingRepository)
     private readonly repository: ITargetedMessagingRepository,
   ) {}
+
+  async getTargetedSafe(args: {
+    outreachId: number;
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<RouteTargetedSafe> {
+    const targetedSafe = await this.repository.getTargetedSafe(args);
+    return new RouteTargetedSafe({
+      outreachId: targetedSafe.outreachId,
+      address: targetedSafe.address,
+    });
+  }
 
   async getSubmission(args: {
     outreachId: number;
