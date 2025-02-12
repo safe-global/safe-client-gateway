@@ -14,15 +14,15 @@ export class TargetedMessagingService {
   ) {}
 
   async getTargetedSafe(args: {
-    outreachId: number;
+    outreachId: TargetedSafe['outreachId'];
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<RouteTargetedSafe> {
     const targetedSafe = await this.repository.getTargetedSafe(args);
-    return new RouteTargetedSafe({
+    return {
       outreachId: targetedSafe.outreachId,
       address: targetedSafe.address,
-    });
+    };
   }
 
   async getSubmission(args: {

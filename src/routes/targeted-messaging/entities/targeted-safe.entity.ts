@@ -4,17 +4,9 @@ import type { TargetedSafe as DomainTargetedSafe } from '@/domain/targeted-messa
 export class TargetedSafe
   implements Pick<DomainTargetedSafe, 'outreachId' | 'address'>
 {
-  @ApiProperty()
-  outreachId: number;
+  @ApiProperty({ type: Number })
+  outreachId!: DomainTargetedSafe['outreachId'];
 
-  @ApiProperty()
-  address: `0x${string}`;
-
-  constructor({
-    outreachId,
-    address,
-  }: Pick<DomainTargetedSafe, 'outreachId' | 'address'>) {
-    this.outreachId = outreachId;
-    this.address = address;
-  }
+  @ApiProperty({ type: String })
+  address!: DomainTargetedSafe['address'];
 }

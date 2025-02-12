@@ -1,4 +1,7 @@
-import { TargetedSafeSchema } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
+import {
+  TargetedSafe as DomainTargetedSafe,
+  TargetedSafeSchema,
+} from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
 import {
   CreateSubmissionDto,
@@ -21,7 +24,12 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Response } from 'express';
 
 @ApiTags('targeted-messaging')
@@ -33,6 +41,7 @@ export class TargetedMessagingController {
   constructor(private readonly service: TargetedMessagingService) {}
 
   @ApiOkResponse({ type: TargetedSafe })
+  @ApiNotFoundResponse({ description: 'Safe not targeted.' })
   @Get(':outreachId/chains/:chainId/safes/:safeAddress')
   async getTargetedSafe(
     @Param(
@@ -40,7 +49,7 @@ export class TargetedMessagingController {
       ParseIntPipe,
       new ValidationPipe(TargetedSafeSchema.shape.outreachId),
     )
-    outreachId: number,
+    outreachId: DomainTargetedSafe['outreachId'],
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
