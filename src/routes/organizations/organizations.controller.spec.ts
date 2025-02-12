@@ -188,6 +188,95 @@ describe('OrganizationController', () => {
     });
   });
 
+  describe('POST /v1/organizations/create-with-user', () => {
+    it('Should create an organization when user exists', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations/create-with-user')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: organizationName })
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+            name: organizationName,
+          }),
+        );
+    });
+
+    it('Should create an organization with user does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const organizationName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations/create-with-user')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: organizationName })
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+            name: organizationName,
+          }),
+        );
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/organizations/create-with-user')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('Should return a 403 if the AuthPayload is empty', async () => {
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', undefined as unknown as `0x${string}`)
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations/create-with-user')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('Should return a 422 if no name is provided', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/organizations/create-with-user')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send()
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'object',
+          received: 'undefined',
+          path: [],
+          message: 'Required',
+        });
+    });
+  });
+
   describe('GET /organizations', () => {
     it('Should return a list of organizations', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();

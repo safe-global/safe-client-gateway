@@ -147,18 +147,23 @@ export class UsersRepository implements IUsersRepository {
   public async findByWalletAddressOrFail(
     address: `0x${string}`,
   ): Promise<User> {
-    try {
-      const { user } = await this.walletsRepository.findOneByAddressOrFail(
-        address,
-        { user: true },
-      );
-      return user;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException('User not found.');
-      }
-      throw error;
+    const user = await this.findByWalletAddress(address);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
     }
+
+    return user;
+  }
+
+  public async findByWalletAddress(
+    address: `0x${string}`,
+  ): Promise<User | undefined> {
+    const wallet = await this.walletsRepository.findOneByAddress(address, {
+      user: true,
+    });
+
+    return wallet?.user;
   }
 
   public async update(args: {
