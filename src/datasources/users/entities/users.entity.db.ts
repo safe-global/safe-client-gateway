@@ -2,7 +2,6 @@ import {
   Column,
   Entity,
   Index,
-  JoinColumn,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -52,6 +51,5 @@ export class User implements DomainUser {
     () => UserOrganization,
     (userOrganization: UserOrganization) => userOrganization.user,
   )
-  @JoinColumn({ name: 'user_organizations' })
   userOrganizations!: Array<UserOrganization>;
 }

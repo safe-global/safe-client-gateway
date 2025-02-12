@@ -15,13 +15,11 @@ import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interfac
 import { In } from 'typeorm';
 import type { FindOptionsWhere, FindOptionsRelations } from 'typeorm';
 import type { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
-import {
-  UserOrganizationRole,
-  UserOrganizationStatus,
-} from '@/domain/users/entities/user-organization.entity';
+import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
+import type { Invitation } from '@/domain/users/entities/invitation.entity';
 
 @Injectable()
 export class UsersOrganizationsRepository
@@ -72,35 +70,24 @@ export class UsersOrganizationsRepository
     orgId: Organization['id'];
     users: Array<{
       address: `0x${string}`;
-      role: keyof typeof UserOrganizationRole;
+      role: UserOrganization['role'];
     }>;
-  }): Promise<
-    Array<{
-      userId: User['id'];
-      orgId: Organization['id'];
-      role: keyof typeof UserOrganizationRole;
-      status: keyof typeof UserOrganizationStatus;
-    }>
-  > {
+  }): Promise<Array<Invitation>> {
     const signer = await this.getOrgAndSignerOrFail(args);
 
     this.assertUserOrgIsActive(signer.userOrg);
 
+    const invitedAddresses = args.users.map((user) => user.address);
     const invitedUsers = await this.walletsRepository.find({
       where: {
-        address: In(args.users.map((user) => user.address)),
+        address: In(invitedAddresses),
       },
       relations: {
         user: true,
       },
     });
 
-    const invitations: Array<{
-      userId: User['id'];
-      orgId: Organization['id'];
-      role: keyof typeof UserOrganizationRole;
-      status: keyof typeof UserOrganizationStatus;
-    }> = [];
+    const invitations: Array<Invitation> = [];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
@@ -159,8 +146,8 @@ export class UsersOrganizationsRepository
       });
 
       await this.usersRepository.update({
+        userId: signer.user.id,
         user: {
-          id: signer.user.id,
           status: 'ACTIVE',
         },
         entityManager,
@@ -272,7 +259,7 @@ export class UsersOrganizationsRepository
       return userOrg.user.id === args.userId;
     });
     if (!userOrg) {
-      throw new NotFoundException('Member not found.');
+      throw new NotFoundException('User organization not found.');
     }
     return userOrg;
   }
@@ -281,7 +268,7 @@ export class UsersOrganizationsRepository
     authPayload: AuthPayload,
   ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {
     if (!authPayload.signer_address) {
-      throw new UnauthorizedException('Signer address not provided');
+      throw new UnauthorizedException('Signer address not provided.');
     }
   }
 
@@ -291,7 +278,7 @@ export class UsersOrganizationsRepository
     status: 'INVITED';
   } {
     if (userOrg.status !== 'INVITED') {
-      throw new ConflictException('Member is not invited.');
+      throw new ConflictException('User organization is not invited.');
     }
   }
 
@@ -301,7 +288,7 @@ export class UsersOrganizationsRepository
     status: 'ACTIVE';
   } {
     if (userOrg.status !== 'ACTIVE') {
-      throw new UnauthorizedException('Member is not active.');
+      throw new UnauthorizedException('User organization is not active.');
     }
   }
 
@@ -311,7 +298,7 @@ export class UsersOrganizationsRepository
     role: UserOrganizationRole.ADMIN;
   } {
     if (userOrg.role !== 'ADMIN') {
-      throw new UnauthorizedException('Member is not an admin.');
+      throw new UnauthorizedException('User organization is not an admin.');
     }
   }
 

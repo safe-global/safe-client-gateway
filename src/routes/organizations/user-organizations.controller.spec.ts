@@ -354,7 +354,7 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'User organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -406,7 +406,7 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(401)
         .expect({
-          message: 'Member is not active.',
+          message: 'User organization is not active.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -609,7 +609,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'User organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -661,7 +661,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(409)
         .expect({
-          message: 'Member is not invited.',
+          message: 'User organization is not invited.',
           error: 'Conflict',
           statusCode: 409,
         });
@@ -864,7 +864,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'User organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -916,7 +916,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(409)
         .expect({
-          message: 'Member is not invited.',
+          message: 'User organization is not invited.',
           error: 'Conflict',
           statusCode: 409,
         });
@@ -1154,14 +1154,14 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'User organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
     });
   });
 
-  describe('POST /v1/organizations/:orgId/members/:userId/role', () => {
+  describe('PATCH /v1/organizations/:orgId/members/:userId/role', () => {
     it('should update the role of userId', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -1204,7 +1204,7 @@ describe('UserOrganizationsController', () => {
 
       // Update role
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ role: 'ADMIN' })
         .expect(201)
@@ -1253,7 +1253,7 @@ describe('UserOrganizationsController', () => {
 
       // Update role
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         // No auth cookie
         .send({ role: 'ADMIN' })
         .expect(403)
@@ -1308,7 +1308,7 @@ describe('UserOrganizationsController', () => {
 
       // Update role
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .send({ role: 'ADMIN' })
         .expect(404)
@@ -1355,12 +1355,12 @@ describe('UserOrganizationsController', () => {
 
       // Update role
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
         .send({ role: 'ADMIN' })
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'User organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1404,12 +1404,12 @@ describe('UserOrganizationsController', () => {
 
       // Update role
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({ role: 'ADMIN' })
         .expect(401)
         .expect({
-          message: 'Member is not active.',
+          message: 'User organization is not active.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1457,12 +1457,12 @@ describe('UserOrganizationsController', () => {
 
       // Update role
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({ role: 'ADMIN' })
         .expect(401)
         .expect({
-          message: 'Member is not an admin.',
+          message: 'User organization is not an admin.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1490,7 +1490,7 @@ describe('UserOrganizationsController', () => {
 
       // Update role
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ role: 'MEMBER' })
         .expect(409)
@@ -1533,12 +1533,12 @@ describe('UserOrganizationsController', () => {
 
       // Update role
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ role: 'ADMIN' })
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'User organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1696,7 +1696,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'User organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1749,7 +1749,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(401)
         .expect({
-          message: 'Member is not active.',
+          message: 'User organization is not active.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1801,7 +1801,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(401)
         .expect({
-          message: 'Member is not an admin.',
+          message: 'User organization is not an admin.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1871,7 +1871,7 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'User organization not found.',
           error: 'Not Found',
           statusCode: 404,
         });

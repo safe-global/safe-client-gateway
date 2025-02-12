@@ -1,22 +1,22 @@
 import {
   UserOrganizationRole,
   UserOrganizationStatus,
-  type UserOrganization,
+  type UserOrganization as DomainUserOrganization,
 } from '@/domain/users/entities/user-organization.entity';
 import { UserStatus, type User } from '@/domain/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-class MemberUser implements Pick<User, 'id'> {
-  @ApiProperty()
+class UserOrganizationUser implements Pick<User, 'id'> {
+  @ApiProperty({ type: Number })
   id!: User['id'];
 
   @ApiProperty({ enum: Object.keys(UserStatus) })
   status!: keyof typeof UserStatus;
 }
 
-class Member {
-  @ApiProperty()
-  id!: UserOrganization['id'];
+class UserOrganization {
+  @ApiProperty({ type: Number })
+  id!: DomainUserOrganization['id'];
 
   @ApiProperty({ enum: Object.keys(UserOrganizationRole) })
   role!: keyof typeof UserOrganizationRole;
@@ -30,11 +30,11 @@ class Member {
   @ApiProperty()
   updatedAt!: string;
 
-  @ApiProperty({ type: MemberUser })
-  user!: MemberUser;
+  @ApiProperty({ type: UserOrganizationUser })
+  user!: UserOrganizationUser;
 }
 
 export class Members {
-  @ApiProperty({ type: Member, isArray: true })
-  members!: Array<Member>;
+  @ApiProperty({ type: UserOrganization, isArray: true })
+  members!: Array<UserOrganization>;
 }

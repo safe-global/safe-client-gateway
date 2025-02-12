@@ -14,6 +14,7 @@ import {
   Inject,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -24,7 +25,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { InviteUsersDtoSchema } from '@/routes/organizations/entities/invite-users.dto.entity';
 import { UpdateRoleDtoSchema } from '@/routes/organizations/entities/update-role.dto.entity';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { Members } from '@/routes/organizations/entities/members.entity';
+import { Members } from '@/routes/organizations/entities/user-organization';
 import { Invitation } from '@/routes/organizations/entities/invitation.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
@@ -47,7 +48,8 @@ export class UserOrganizationsController {
   })
   @ApiForbiddenResponse({ description: 'User not authorized' })
   @ApiNotFoundResponse({
-    description: 'User, organization or membership not found',
+    description:
+      'User not admin OR signer address not provided OR member is not active',
   })
   @ApiUnauthorizedResponse({ description: 'User not admin' })
   @Post('/:orgId/members/invite')
@@ -132,7 +134,8 @@ export class UserOrganizationsController {
       'Signer, organization or signer/user-to-update membership not found',
   })
   @ApiUnauthorizedResponse({ description: 'Signer not active or admin' })
-  @Post('/:orgId/members/:userId/role')
+  @ApiConflictResponse({ description: 'Cannot remove last admin' })
+  @Patch('/:orgId/members/:userId/role')
   @UseGuards(AuthGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
@@ -158,6 +161,7 @@ export class UserOrganizationsController {
       'Signer, organization or signer/user-to-delete membership not found',
   })
   @ApiUnauthorizedResponse({ description: 'Signer not active or admin' })
+  @ApiConflictResponse({ description: 'Cannot remove last admin' })
   @Delete('/:orgId/members/:userId')
   @UseGuards(AuthGuard)
   public async removeUser(

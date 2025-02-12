@@ -7,10 +7,10 @@ import type { Organization } from '@/domain/organizations/entities/organization.
 import type { User } from '@/domain/users/entities/user.entity';
 
 export class Invitation {
-  @ApiProperty()
+  @ApiProperty({ type: Number })
   userId!: User['id'];
 
-  @ApiProperty()
+  @ApiProperty({ type: Number })
   orgId!: Organization['id'];
 
   @ApiProperty({ enum: Object.keys(UserOrganizationRole) })

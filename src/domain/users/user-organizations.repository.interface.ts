@@ -1,11 +1,8 @@
 import type { UserOrganization as DbUserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
-import type {
-  UserOrganization,
-  UserOrganizationRole,
-  UserOrganizationStatus,
-} from '@/domain/users/entities/user-organization.entity';
+import type { Invitation } from '@/domain/users/entities/invitation.entity';
+import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import type { FindOptionsWhere, FindOptionsRelations } from 'typeorm';
 
@@ -33,16 +30,9 @@ export interface IUsersOrganizationsRepository {
     orgId: Organization['id'];
     users: Array<{
       address: `0x${string}`;
-      role: keyof typeof UserOrganizationRole;
+      role: UserOrganization['role'];
     }>;
-  }): Promise<
-    Array<{
-      userId: User['id'];
-      orgId: Organization['id'];
-      role: keyof typeof UserOrganizationRole;
-      status: keyof typeof UserOrganizationStatus;
-    }>
-  >;
+  }): Promise<Array<Invitation>>;
 
   acceptInvite(args: {
     authPayload: AuthPayload;

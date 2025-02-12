@@ -2,7 +2,6 @@ import {
   Column,
   Entity,
   Index,
-  JoinColumn,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -50,6 +49,5 @@ export class Organization implements DomainOrganization {
     (userOrganization: UserOrganization) => userOrganization.organization,
     { cascade: ['update', 'insert'] },
   )
-  @JoinColumn({ name: 'user_organizations' })
   userOrganizations!: Array<UserOrganization>;
 }
