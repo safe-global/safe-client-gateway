@@ -13,18 +13,25 @@ import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { UserOrganization as DbUserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import { In } from 'typeorm';
-import type { FindOptionsWhere, FindOptionsRelations } from 'typeorm';
+import type {
+  FindOptionsWhere,
+  FindOptionsRelations,
+  EntityManager,
+} from 'typeorm';
 import type { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
 import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import type { UserOrganization } from '@/domain/users/entities/user-organization.entity';
 import type { Invitation } from '@/domain/users/entities/invitation.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class UsersOrganizationsRepository
   implements IUsersOrganizationsRepository
 {
+  private readonly maxInvites: number;
+
   constructor(
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IUsersRepository)
@@ -33,7 +40,12 @@ export class UsersOrganizationsRepository
     private readonly organizationsRepository: IOrganizationsRepository,
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxInvites =
+      this.configurationService.getOrThrow<number>('users.maxInvites');
+  }
 
   public async findOneOrFail(
     where:
@@ -73,7 +85,11 @@ export class UsersOrganizationsRepository
       role: UserOrganization['role'];
     }>;
   }): Promise<Array<Invitation>> {
-    const signer = await this.getOrgAndSignerOrFail(args);
+    if (args.users.length > this.maxInvites) {
+      throw new ConflictException('Too many invites.');
+    }
+
+    const signer = await this.findSignerAndOrgOrFail(args);
 
     this.assertUserOrgIsActive(signer.userOrg);
 
@@ -91,6 +107,7 @@ export class UsersOrganizationsRepository
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
+        // Find existing User via Wallet
         const invitedUser = invitedUsers.find(({ user }) => {
           return user.wallets.some((wallet) => {
             return isAddressEqual(wallet.address, userToInvite.address);
@@ -98,6 +115,7 @@ export class UsersOrganizationsRepository
         });
         let invitedUserId = invitedUser?.user.id;
 
+        // Otherwise create User and Wallet
         if (!invitedUserId) {
           invitedUserId = await this.usersRepository.create(
             'PENDING',
@@ -136,20 +154,20 @@ export class UsersOrganizationsRepository
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<void> {
-    const signer = await this.getOrgAndSignerOrFail(args);
+    const signer = await this.findSignerAndOrgOrFail(args);
 
     this.assertUserOrgIsInvited(signer.userOrg);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await entityManager.update(DbUserOrganization, signer.userOrg.id, {
+      await this.updateStatus({
+        userOrgId: signer.userOrg.id,
         status: 'ACTIVE',
+        entityManager,
       });
 
-      await this.usersRepository.update({
+      await this.usersRepository.updateStatus({
         userId: signer.user.id,
-        user: {
-          status: 'ACTIVE',
-        },
+        status: 'ACTIVE',
         entityManager,
       });
     });
@@ -159,22 +177,34 @@ export class UsersOrganizationsRepository
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<void> {
-    const signer = await this.getOrgAndSignerOrFail(args);
+    const signer = await this.findSignerAndOrgOrFail(args);
 
     this.assertUserOrgIsInvited(signer.userOrg);
 
-    const userOrganizationRepository =
-      await this.postgresDatabaseService.getRepository(DbUserOrganization);
-    await userOrganizationRepository.update(signer.userOrg.id, {
-      status: 'DECLINED',
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await this.updateStatus({
+        userOrgId: signer.userOrg.id,
+        status: 'DECLINED',
+        entityManager,
+      });
     });
   }
 
-  public async get(args: {
+  private async updateStatus(args: {
+    userOrgId: UserOrganization['id'];
+    status: UserOrganization['status'];
+    entityManager: EntityManager;
+  }): Promise<void> {
+    await args.entityManager.update(DbUserOrganization, args.userOrgId, {
+      status: args.status,
+    });
+  }
+
+  public async findAuthorizedUserOrgs(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<Array<UserOrganization>> {
-    const signer = await this.getOrgAndSignerOrFail(args);
+    const signer = await this.findSignerAndOrgOrFail(args);
     return signer.org.userOrganizations;
   }
 
@@ -184,7 +214,7 @@ export class UsersOrganizationsRepository
     userId: User['id'];
     role: UserOrganization['role'];
   }): Promise<void> {
-    const signer = await this.getOrgAndSignerOrFail(args);
+    const signer = await this.findSignerAndOrgOrFail(args);
 
     this.assertUserOrgIsActive(signer.userOrg);
     this.assertUserOrgAdmin(signer.userOrg);
@@ -210,7 +240,7 @@ export class UsersOrganizationsRepository
     userId: User['id'];
     orgId: Organization['id'];
   }): Promise<void> {
-    const signer = await this.getOrgAndSignerOrFail(args);
+    const signer = await this.findSignerAndOrgOrFail(args);
 
     this.assertUserOrgIsActive(signer.userOrg);
     this.assertUserOrgAdmin(signer.userOrg);
@@ -226,7 +256,11 @@ export class UsersOrganizationsRepository
     await userOrganizationRepository.delete(updateUserOrg.id);
   }
 
-  private async getOrgAndSignerOrFail(args: {
+  // The following helper is used across every above method but they don't
+  // necessarily require all orgs, e.g. some only invited, others active
+  // TODO: Revisit implementation, maybe splitting into method-specific ones
+  // that use WHERE clauses instead of assertions
+  private async findSignerAndOrgOrFail(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<{

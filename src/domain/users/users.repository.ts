@@ -167,10 +167,26 @@ export class UsersRepository implements IUsersRepository {
   }
 
   public async update(args: {
-    user: Partial<DbUser> & { id: User['id'] };
+    userId: User['id'];
+    user: Partial<User>;
     entityManager: EntityManager;
   }): Promise<void> {
     await args.entityManager.update(DbUser, args.user.id, args.user);
+  }
+
+  public async updateStatus(args: {
+    userId: User['id'];
+    status: User['status'];
+    entityManager: EntityManager;
+  }): Promise<void> {
+    await this.update({
+      userId: args.userId,
+      user: {
+        id: args.userId,
+        status: args.status,
+      },
+      entityManager: args.entityManager,
+    });
   }
 
   private assertSignerAddress(

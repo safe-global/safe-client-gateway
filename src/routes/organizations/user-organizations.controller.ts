@@ -46,6 +46,7 @@ export class UserOrganizationsController {
     type: Invitation,
     isArray: true,
   })
+  @ApiConflictResponse({ description: 'Too many invites' })
   @ApiForbiddenResponse({ description: 'User not authorized' })
   @ApiNotFoundResponse({
     description:

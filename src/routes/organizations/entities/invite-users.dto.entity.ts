@@ -3,8 +3,6 @@ import { UserOrganizationRole } from '@/domain/users/entities/user-organization.
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 
-const MAX_INVITE_USERS = 50;
-
 export const InviteUsersDtoSchema = z
   .array(
     z.object({
@@ -12,7 +10,6 @@ export const InviteUsersDtoSchema = z
       role: z.enum(getStringEnumKeys(UserOrganizationRole)),
     }),
   )
-  .min(1)
-  .max(MAX_INVITE_USERS);
+  .min(1);
 
 export type InviteUsersDto = z.infer<typeof InviteUsersDtoSchema>;

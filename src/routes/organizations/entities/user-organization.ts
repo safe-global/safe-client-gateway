@@ -25,10 +25,10 @@ class UserOrganization {
   status!: keyof typeof UserOrganizationStatus;
 
   @ApiProperty()
-  createdAt!: string;
+  createdAt!: Date;
 
   @ApiProperty()
-  updatedAt!: string;
+  updatedAt!: Date;
 
   @ApiProperty({ type: UserOrganizationUser })
   user!: UserOrganizationUser;

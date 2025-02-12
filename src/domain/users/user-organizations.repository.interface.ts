@@ -44,7 +44,7 @@ export interface IUsersOrganizationsRepository {
     orgId: Organization['id'];
   }): Promise<void>;
 
-  get(args: {
+  findAuthorizedUserOrgs(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<Array<UserOrganization>>;

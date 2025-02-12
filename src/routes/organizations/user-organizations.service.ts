@@ -44,7 +44,7 @@ export class UserOrganizationsService {
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<Members> {
-    const userOrgs = await this.usersOrgRepository.get({
+    const userOrgs = await this.usersOrgRepository.findAuthorizedUserOrgs({
       authPayload: args.authPayload,
       orgId: args.orgId,
     });
@@ -55,8 +55,8 @@ export class UserOrganizationsService {
           id: userOrg.id,
           role: userOrg.role,
           status: userOrg.status,
-          createdAt: userOrg.createdAt.toISOString(),
-          updatedAt: userOrg.updatedAt.toISOString(),
+          createdAt: userOrg.createdAt,
+          updatedAt: userOrg.updatedAt,
           user: {
             id: userOrg.user.id,
             status: userOrg.user.status,

@@ -284,4 +284,7 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  users: {
+    maxInvites: faker.number.int({ min: 5, max: 10 }),
+  },
 });

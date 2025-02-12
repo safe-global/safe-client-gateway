@@ -33,10 +33,12 @@ import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-pay
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 describe('UserOrganizationsController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
+  let maxInvites: number;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -77,6 +79,10 @@ describe('UserOrganizationsController', () => {
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
+    const configService = moduleFixture.get<IConfigurationService>(
+      IConfigurationService,
+    );
+    maxInvites = configService.getOrThrow('users.maxInvites');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -145,6 +151,29 @@ describe('UserOrganizationsController', () => {
             },
           ]),
         );
+    });
+
+    it('should throw a 409 if there are too many invites', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgId = faker.number.int();
+      const invites = Array.from({ length: maxInvites + 1 }).map(() => {
+        return {
+          role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+          address: getAddress(faker.finance.ethereumAddress()),
+        };
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(invites)
+        .expect(409)
+        .expect({
+          message: 'Too many invites.',
+          error: 'Conflict',
+          statusCode: 409,
+        });
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
@@ -1035,6 +1064,7 @@ describe('UserOrganizationsController', () => {
         });
     });
 
+    // TODO: Investigate
     it('should throw a 404 if the user organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -1114,7 +1144,7 @@ describe('UserOrganizationsController', () => {
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ role: 'ADMIN' })
-        .expect(201)
+        .expect(200)
         .expect({});
     });
 
