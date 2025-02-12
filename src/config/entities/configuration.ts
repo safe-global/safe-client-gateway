@@ -384,11 +384,26 @@ export default () => ({
   },
   swaps: {
     api: {
-      1: 'https://api.cow.fi/mainnet',
-      100: 'https://api.cow.fi/xdai',
-      8453: 'https://api.cow.fi/base',
-      42161: 'https://api.cow.fi/arbitrum_one',
-      11155111: 'https://api.cow.fi/sepolia',
+      1:
+        process.env.CGW_ENV !== 'production'
+          ? 'https://barn.api.cow.fi/mainnet'
+          : 'https://api.cow.fi/mainnet',
+      100:
+        process.env.CGW_ENV !== 'production'
+          ? 'https://barn.api.cow.fi/xdai'
+          : 'https://api.cow.fi/xdai',
+      8453:
+        process.env.CGW_ENV !== 'production'
+          ? 'https://barn.api.cow.fi/base'
+          : 'https://api.cow.fi/base',
+      42161:
+        process.env.CGW_ENV !== 'production'
+          ? 'https://barn.api.cow.fi/arbitrum_one'
+          : 'https://api.cow.fi/arbitrum_one',
+      11155111:
+        process.env.CGW_ENV !== 'production'
+          ? 'https://barn.api.cow.fi/sepolia'
+          : 'https://api.cow.fi/sepolia',
     },
     explorerBaseUri:
       process.env.SWAPS_EXPLORER_URI || 'https://explorer.cow.fi/',
