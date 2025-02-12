@@ -103,13 +103,11 @@ describe('UserOrganizationsController', () => {
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user2 = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -117,7 +115,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -157,13 +154,11 @@ describe('UserOrganizationsController', () => {
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user2 = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -171,7 +166,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         // No auth cookie
@@ -198,13 +192,11 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -212,7 +204,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -230,13 +221,11 @@ describe('UserOrganizationsController', () => {
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user2 = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -244,7 +233,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         // Non-user auth
@@ -271,14 +259,12 @@ describe('UserOrganizationsController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user2 = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -286,7 +272,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create Organization
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -317,19 +302,16 @@ describe('UserOrganizationsController', () => {
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user2 = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create non-user org Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -337,7 +319,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         // Non-user org auth
@@ -368,13 +349,11 @@ describe('UserOrganizationsController', () => {
       const orgName = faker.word.noun();
       const user = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -382,7 +361,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization(s) with INVITED status
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -394,7 +372,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -421,13 +398,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -435,7 +410,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -447,7 +421,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -461,13 +434,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -475,7 +446,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -487,7 +457,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         // No auth cookie
@@ -506,13 +475,11 @@ describe('UserOrganizationsController', () => {
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -522,7 +489,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create UserOrganization
 
-      // Accept invite as non-user
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -538,12 +504,10 @@ describe('UserOrganizationsController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -551,7 +515,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create Organization or UserOrganization
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -571,19 +534,16 @@ describe('UserOrganizationsController', () => {
       const orgName = faker.word.noun();
       const user = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create non-user org Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -591,7 +551,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -603,7 +562,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Accept invite as non-user org. user
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
@@ -622,13 +580,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -636,7 +592,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -648,14 +603,12 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201)
         .expect({});
 
-      // Accept invite again
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -676,13 +629,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -690,7 +641,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -702,7 +652,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Decline invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -716,13 +665,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -730,7 +677,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -742,7 +688,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Decline invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         // No auth cookie
@@ -761,13 +706,11 @@ describe('UserOrganizationsController', () => {
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -777,7 +720,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create UserOrganization
 
-      // Decline invite as non-user
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -793,12 +735,10 @@ describe('UserOrganizationsController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -806,7 +746,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create Organization or UserOrganization
 
-      // Decline invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -826,19 +765,16 @@ describe('UserOrganizationsController', () => {
       const orgName = faker.word.noun();
       const user = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create non-user org Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -846,7 +782,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -858,7 +793,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Decline invite as non-user org. user
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
@@ -877,13 +811,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -891,7 +823,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -903,14 +834,12 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Decline invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201)
         .expect({});
 
-      // Decline invite again
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -931,13 +860,11 @@ describe('UserOrganizationsController', () => {
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user2 = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -945,7 +872,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -961,7 +887,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
 
-      // Get UserOrganization(s)
       await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1014,13 +939,11 @@ describe('UserOrganizationsController', () => {
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user2 = getAddress(faker.finance.ethereumAddress());
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1028,7 +951,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization(s)
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1062,13 +984,11 @@ describe('UserOrganizationsController', () => {
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1078,7 +998,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create UserOrganization(s)
 
-      // Get UserOrganization(s)
       await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/members`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -1094,12 +1013,10 @@ describe('UserOrganizationsController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1107,7 +1024,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create Organization or UserOrganization(s)
 
-      // Get UserOrganization(s)
       await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1126,19 +1042,16 @@ describe('UserOrganizationsController', () => {
       const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create non-user org Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1148,7 +1061,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create UserOrganization(s)
 
-      // Get UserOrganization(s)
       await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/members`)
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
@@ -1169,13 +1081,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1183,7 +1093,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1196,13 +1105,11 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201);
 
-      // Update role
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1218,13 +1125,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1232,7 +1137,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1245,13 +1149,11 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201);
 
-      // Update role
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         // No auth cookie
@@ -1273,13 +1175,11 @@ describe('UserOrganizationsController', () => {
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1287,7 +1187,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1300,13 +1199,11 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201);
 
-      // Update role
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -1326,24 +1223,20 @@ describe('UserOrganizationsController', () => {
       const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
       const orgName = faker.word.noun();
       const userId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create non-user org Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1353,7 +1246,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create UserOrganization(s) or accept invite
 
-      // Update role
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
@@ -1373,13 +1265,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1387,7 +1277,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1402,7 +1291,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't accept invite
 
-      // Update role
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -1422,13 +1310,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1436,7 +1322,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1449,13 +1334,11 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201);
 
-      // Update role
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -1473,14 +1356,12 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
       const userId = createUserResponse.body.id;
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1488,7 +1369,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Update role
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1508,20 +1388,17 @@ describe('UserOrganizationsController', () => {
       const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create non-user org Wallet/User
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
         .expect(201);
       const userId = createUserResponse.body.id;
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1531,7 +1408,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create UserOrganization or accept invite
 
-      // Update role
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1553,13 +1429,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1567,7 +1441,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1580,13 +1453,11 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201);
 
-      // Remove user
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1601,18 +1472,15 @@ describe('UserOrganizationsController', () => {
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const orgName = faker.word.noun();
       const userId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1622,7 +1490,6 @@ describe('UserOrganizationsController', () => {
 
       // No need to create UserOrganization or accept invite
 
-      // Remove user
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -1638,12 +1505,10 @@ describe('UserOrganizationsController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      // Create Wallet/User
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1652,7 +1517,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create Organization or UserOrganization
 
-      // Remove user
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1669,18 +1533,15 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
       const userId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1690,7 +1551,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create UserOrganization or accept invite
 
-      // Remove user
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1710,13 +1570,11 @@ describe('UserOrganizationsController', () => {
       const member = getAddress(faker.finance.ethereumAddress());
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1724,7 +1582,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1743,7 +1600,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't accept invite
 
-      // Remove user
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${memberUserId}`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -1762,13 +1618,11 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1776,7 +1630,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Create UserOrganization
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1789,13 +1642,11 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
-      // Accept invite
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201);
 
-      // Remove user
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -1812,14 +1663,12 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
 
-      // Create Wallet/User
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
       const userId = createUserResponse.body.id;
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1827,7 +1676,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Remove user
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1844,18 +1692,15 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
       const userId = faker.number.int({
-        // Ensure no collision with previous tests
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      // Create Wallet/User
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      // Create Organization
       const createOrganizationResponse = await request(app.getHttpServer())
         .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1865,7 +1710,6 @@ describe('UserOrganizationsController', () => {
 
       // Don't create UserOrganization or accept invite
 
-      // Remove user
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${accessToken}`])
