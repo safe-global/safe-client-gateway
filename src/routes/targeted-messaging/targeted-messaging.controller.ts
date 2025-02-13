@@ -1,7 +1,4 @@
-import {
-  TargetedSafe as DomainTargetedSafe,
-  TargetedSafeSchema,
-} from '@/domain/targeted-messaging/entities/targeted-safe.entity';
+import { TargetedSafeSchema } from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
 import {
   CreateSubmissionDto,
@@ -49,7 +46,7 @@ export class TargetedMessagingController {
       ParseIntPipe,
       new ValidationPipe(TargetedSafeSchema.shape.outreachId),
     )
-    outreachId: DomainTargetedSafe['outreachId'],
+    outreachId: number,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
