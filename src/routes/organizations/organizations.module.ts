@@ -4,6 +4,8 @@ import { OrganizationsController } from '@/routes/organizations/organizations.co
 import { OrganizationsService } from '@/routes/organizations/organizations.service';
 import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
 import { UserRepositoryModule } from '@/domain/users/users.repository.module';
+import { OrganizatinoSafesController } from '@/routes/organizations/organization-safes.controller';
+import { OrganizationSafesService } from '@/routes/organizations/organization-safes.service';
 
 @Module({
   imports: [
@@ -11,7 +13,7 @@ import { UserRepositoryModule } from '@/domain/users/users.repository.module';
     AuthRepositoryModule,
     UserRepositoryModule,
   ],
-  controllers: [OrganizationsController],
-  providers: [OrganizationsService],
+  controllers: [OrganizationsController, OrganizatinoSafesController],
+  providers: [OrganizationsService, OrganizationSafesService],
 })
 export class OrganizationsModule {}

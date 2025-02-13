@@ -40,7 +40,7 @@ describe('UserOrganizationsController', () => {
   let jwtService: IJwtService;
   let maxInvites: number;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     jest.resetAllMocks();
 
     const defaultConfiguration = configuration();

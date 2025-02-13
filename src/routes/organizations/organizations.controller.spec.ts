@@ -43,7 +43,7 @@ describe('OrganizationController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     jest.resetAllMocks();
 
     const defaultConfiguration = configuration();
