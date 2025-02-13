@@ -34,10 +34,19 @@ import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { UserStatus } from '@/domain/users/entities/user.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { createSiweMessage, generateSiweNonce } from 'viem/siwe';
+import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
+import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 
 describe('UsersController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
+  let cacheService: FakeCacheService;
+  let maxValidityPeriodInMs: number;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -78,6 +87,12 @@ describe('UsersController', () => {
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
+    cacheService = moduleFixture.get(CacheService);
+    const configService: IConfigurationService = moduleFixture.get(
+      IConfigurationService,
+    );
+    maxValidityPeriodInMs =
+      configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -297,11 +312,29 @@ describe('UsersController', () => {
     });
   });
 
-  describe('POST /v1/users/wallet/:walletAddress', () => {
-    it('should add a wallet to a user', async () => {
+  describe('POST /v1/users/wallet/add', () => {
+    it('should add a wallet to a user and clear the nonce', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const expirationTime = new Date(Date.now() + maxValidityPeriodInMs);
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const extraWallet = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -309,21 +342,24 @@ describe('UsersController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/users/wallet/${extraWallet}`)
+        .post('/v1/users/wallet/add')
         .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
             id: expect.any(Number),
           }),
         );
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeUndefined();
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const extraWallet = getAddress(faker.finance.ethereumAddress());
-
       await request(app.getHttpServer())
-        .post(`/v1/users/wallet/${extraWallet}`)
+        .post('/v1/users/wallet/add')
         .expect(403)
         .expect({
           statusCode: 403,
@@ -337,10 +373,9 @@ describe('UsersController', () => {
         .with('signer_address', undefined as unknown as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const extraWallet = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
-        .post(`/v1/users/wallet/${extraWallet}`)
+        .post('/v1/users/wallet/add')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -350,10 +385,15 @@ describe('UsersController', () => {
         });
     });
 
-    it('should return a 409 if the wallet already exists', async () => {
+    it('should return a 422 if payload is invalid and not clear the nonce', async () => {
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const extraWallet = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -361,31 +401,439 @@ describe('UsersController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/users/wallet/${extraWallet}`)
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({})
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['message'],
+          message: 'Required',
+        });
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
+    });
+
+    it('should return a 401 if message is missing an issued-at and not clear the nonce', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const expirationTime = new Date(Date.now() + maxValidityPeriodInMs);
+      const messageObj = siweMessageBuilder()
+        .with('address', signer.address)
+        .with('nonce', nonce)
+        .with('issuedAt', undefined)
+        .with('expirationTime', expirationTime)
+        .build();
+      // We cannot use createSiweMessage here because it assigns a default issuedAt value
+      const message = `${messageObj.scheme}://${messageObj.domain} wants you to sign in with your Ethereum account:
+${messageObj.address}
+
+${messageObj.statement}
+
+URI: ${messageObj.uri}
+Version: ${messageObj.version}
+Chain ID: ${messageObj.chainId}
+Nonce: ${messageObj.nonce}
+Issued At: ${messageObj.issuedAt?.toISOString()}
+Expiration Time: ${messageObj.expirationTime?.toISOString()}
+Not Before: ${messageObj.notBefore?.toISOString()}
+Request ID: ${messageObj.requestId}
+${messageObj.resources?.reduce((acc, cur) => `${acc}\n- ${cur}`, 'Resources:')}`;
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/users/wallet/${extraWallet}`)
+        .post('/v1/users/wallet/add')
         .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          message: 'Invalid message',
+          error: 'Unauthorized',
+        });
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
+    });
+
+    it('should return a 401 if message is yet issued and not clear the nonce', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const issuedAt = faker.date.future();
+      const expirationTime = new Date(
+        issuedAt.getTime() + maxValidityPeriodInMs,
+      );
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('issuedAt', issuedAt)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          message: 'Invalid message',
+          error: 'Unauthorized',
+        });
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
+    });
+
+    it('should return a 401 if message has expired and not clear the nonce', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const issuedAt = new Date();
+      const expirationTime = faker.date.past();
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('issuedAt', issuedAt)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          message: 'Invalid message',
+          error: 'Unauthorized',
+        });
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
+    });
+
+    it('should return a 401 if message is not yet valid and not clear the nonce', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const issuedAt = new Date();
+      const notBefore = faker.date.future();
+      const expirationTime = new Date(
+        faker.date.future().getTime() + maxValidityPeriodInMs,
+      );
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('issuedAt', issuedAt)
+          .with('expirationTime', expirationTime)
+          .with('notBefore', notBefore)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          message: 'Invalid message',
+          error: 'Unauthorized',
+        });
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
+    });
+
+    it('should return a 401 if message is invalid and not clear the nonce', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const message = faker.string.hexadecimal();
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          message: 'Invalid message',
+          error: 'Unauthorized',
+        });
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
+    });
+
+    it('should return a 401 if nonce is not cached', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonce = generateSiweNonce();
+      const expirationTime = new Date(Date.now() + maxValidityPeriodInMs);
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          message: 'Invalid nonce',
+          error: 'Unauthorized',
+        });
+    });
+
+    it('should return a 401 if the signature is invalid and clear the nonce', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
+      const expirationTime = new Date(Date.now() + maxValidityPeriodInMs);
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message: faker.lorem.sentence(),
+      });
+
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          message: 'Invalid signature',
+          error: 'Unauthorized',
+        });
+      await expect(cacheService.hGet(cacheDir)).resolves.toBeUndefined();
+    });
+
+    it('should return a 409 if the wallet already exists', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse1 = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce1: string = nonceResponse1.body.nonce;
+      const expirationTime = new Date(Date.now() + maxValidityPeriodInMs);
+      const message1 = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce1)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature1 = await signer.signMessage({
+        message: message1,
+      });
+      const nonceResponse2 = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce2: string = nonceResponse2.body.nonce;
+      const message2 = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce2)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature2 = await signer.signMessage({
+        message: message2,
+      });
+
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message: message1,
+          signature: signature1,
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet/add')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message: message2,
+          signature: signature2,
+        })
         .expect(409)
         .expect({
           statusCode: 409,
           message:
             'A wallet with the same address already exists. Wallet=' +
-            extraWallet,
+            signer.address,
           error: 'Conflict',
         });
     });
 
     it('should return a 404 if the user does not exist', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const expirationTime = new Date(Date.now() + maxValidityPeriodInMs);
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const extraWallet = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
-        .post(`/v1/users/wallet/${extraWallet}`)
+        .post('/v1/users/wallet/add')
         .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
         .expect(404)
         .expect({
           statusCode: 404,
@@ -398,11 +846,27 @@ describe('UsersController', () => {
   describe('DELETE /v1/users/wallet/:walletAddress', () => {
     // TODO: Check wallet was deleted in integration test (and other tests don't)
     it('should delete a wallet from a user', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const expirationTime = new Date(Date.now() + maxValidityPeriodInMs);
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', walletAddress)
         .build();
-      const extraWallet = getAddress(faker.finance.ethereumAddress());
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
@@ -411,12 +875,16 @@ describe('UsersController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/users/wallet/${extraWallet}`)
+        .post('/v1/users/wallet/add')
         .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          message,
+          signature,
+        })
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/v1/users/wallet/${extraWallet}`)
+        .delete(`/v1/users/wallet/${signer.address}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({});
