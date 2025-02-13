@@ -16,6 +16,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
+import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -43,7 +44,7 @@ describe('UsersRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [UserOrganization, User, Wallet],
+    entities: [UserOrganization, Organization, User, Wallet],
   });
 
   beforeAll(async () => {
@@ -221,7 +222,9 @@ describe('UsersRepository', () => {
 
       await expect(
         usersRepository.createWithWallet({ status, authPayload }),
-      ).rejects.toThrow(`invalid input syntax for type integer: "${status}"`);
+      ).rejects.toThrow(
+        'null value in column "status" of relation "users" violates not-null constraint',
+      );
     });
 
     it('should throw if an invalid wallet address is provided', async () => {
@@ -292,7 +295,9 @@ describe('UsersRepository', () => {
         postgresDatabaseService.transaction(async (entityManager) => {
           await usersRepository.create(status, entityManager);
         }),
-      ).rejects.toThrow(`invalid input syntax for type integer: "${status}"`);
+      ).rejects.toThrow(
+        'null value in column "status" of relation "users" violates not-null constraint',
+      );
     });
   });
 
@@ -647,8 +652,10 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.findByWalletAddressOrFail(address),
       ).resolves.toEqual({
+        createdAt: expect.any(Date),
         id: userInsertResult.identifiers[0].id,
         status,
+        updatedAt: expect.any(Date),
       });
     });
 
@@ -680,8 +687,10 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.findByWalletAddressOrFail(address),
       ).resolves.toEqual({
+        createdAt: expect.any(Date),
         id: userInsertResult.identifiers[0].id,
         status,
+        updatedAt: expect.any(Date),
       });
     });
 
@@ -705,7 +714,7 @@ describe('UsersRepository', () => {
       await postgresDatabaseService.transaction(async (entityManager) => {
         await usersRepository.update({
           userId,
-          user: { status: 'ACTIVE' },
+          user: { id: userId, status: 'ACTIVE' },
           entityManager,
         });
       });
