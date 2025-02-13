@@ -42,16 +42,18 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   address!: `0x${string}`;
 
   @Column({
+    name: 'created_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     update: false,
   })
-  created_at!: Date;
+  createdAt!: Date;
 
   @Column({
+    name: 'updated_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     update: false,
   })
-  updated_at!: Date;
+  updatedAt!: Date;
 }

@@ -431,4 +431,7 @@ export default () => ({
       },
     },
   },
+  users: {
+    maxInvites: 50,
+  },
 });

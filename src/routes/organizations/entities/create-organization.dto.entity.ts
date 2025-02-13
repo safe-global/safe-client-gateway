@@ -1,6 +1,5 @@
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import { ApiProperty } from '@nestjs/swagger';
-
 import { z } from 'zod';
 
 export const CreateOrganizationSchema = z.object({

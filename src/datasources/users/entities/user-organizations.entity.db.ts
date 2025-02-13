@@ -2,6 +2,7 @@ import { Organization } from '@/datasources/organizations/entities/organizations
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import {
+  UserOrganization as DomainUserOrganization,
   UserOrganizationRole,
   UserOrganizationStatus,
 } from '@/domain/users/entities/user-organization.entity';
@@ -19,7 +20,7 @@ import {
 @Unique('UQ_user_organizations', ['user', 'organization'])
 @Index('idx_UO_name', ['name'])
 @Index('idx_UO_role_status', ['role', 'status'])
-export class UserOrganization {
+export class UserOrganization implements DomainUserOrganization {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_UO_id',
   })
