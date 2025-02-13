@@ -1,9 +1,14 @@
+import {
+  TargetedSafe as DomainTargetedSafe,
+  TargetedSafeSchema,
+} from '@/domain/targeted-messaging/entities/targeted-safe.entity';
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
 import {
   CreateSubmissionDto,
   CreateSubmissionDtoSchema,
 } from '@/routes/targeted-messaging/entities/create-submission.dto.entity';
 import { Submission } from '@/routes/targeted-messaging/entities/submission.entity';
+import { TargetedSafe } from '@/routes/targeted-messaging/entities/targeted-safe.entity';
 import { TargetedMessagingService } from '@/routes/targeted-messaging/targeted-messaging.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
@@ -19,7 +24,12 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Response } from 'express';
 
 @ApiTags('targeted-messaging')
@@ -29,6 +39,23 @@ import { Response } from 'express';
 })
 export class TargetedMessagingController {
   constructor(private readonly service: TargetedMessagingService) {}
+
+  @ApiOkResponse({ type: TargetedSafe })
+  @ApiNotFoundResponse({ description: 'Safe not targeted.' })
+  @Get(':outreachId/chains/:chainId/safes/:safeAddress')
+  async getTargetedSafe(
+    @Param(
+      'outreachId',
+      ParseIntPipe,
+      new ValidationPipe(TargetedSafeSchema.shape.outreachId),
+    )
+    outreachId: DomainTargetedSafe['outreachId'],
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
+  ): Promise<TargetedSafe> {
+    return this.service.getTargetedSafe({ outreachId, chainId, safeAddress });
+  }
 
   @ApiOkResponse({ type: Submission })
   @Get(

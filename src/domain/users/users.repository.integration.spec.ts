@@ -10,10 +10,12 @@ import { UsersRepository } from '@/domain/users/users.repository';
 import { WalletsRepository } from '@/domain/wallets/wallets.repository';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { UserStatus } from '@/domain/users/entities/user.entity';
+import { UserStatus } from '@/domain/users/entities/user.entity';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -22,8 +24,7 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
-// TODO: User enum keys once user orgs is merged
-const UserStatusKeys = ['ACTIVE', 'PENDING'] as const;
+const UserStatusKeys = getStringEnumKeys(UserStatus);
 
 describe('UsersRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
@@ -42,7 +43,7 @@ describe('UsersRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [User, Wallet],
+    entities: [UserOrganization, User, Wallet],
   });
 
   beforeAll(async () => {
@@ -114,8 +115,8 @@ describe('UsersRepository', () => {
   });
 
   // As the triggers are set on the database level, Jest's fake timers are not accurate
-  describe('created_at/updated_at', () => {
-    it('should set created_at and updated_at when creating a User', async () => {
+  describe('createdAt/updatedAt', () => {
+    it('should set createdAt and updatedAt when creating a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const before = new Date().getTime();
       const user = await dbUserRepository.insert({
@@ -124,8 +125,8 @@ describe('UsersRepository', () => {
 
       const after = new Date().getTime();
 
-      const createdAt = user.generatedMaps[0].created_at;
-      const updatedAt = user.generatedMaps[0].updated_at;
+      const createdAt = user.generatedMaps[0].createdAt;
+      const updatedAt = user.generatedMaps[0].updatedAt;
 
       if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
         throw new Error('createdAt and/or updatedAt is not a Date');
@@ -143,7 +144,7 @@ describe('UsersRepository', () => {
       expect(updatedAtTime).toBeLessThanOrEqual(after);
     });
 
-    it('should update updated_at when updating a User', async () => {
+    it('should update updatedAt when updating a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const prevUser = await dbUserRepository.insert({
         status: 'PENDING',
@@ -156,15 +157,15 @@ describe('UsersRepository', () => {
         where: { id: userId },
       });
 
-      const prevUpdatedAt = prevUser.generatedMaps[0].updated_at;
+      const prevUpdatedAt = prevUser.generatedMaps[0].updatedAt;
 
       if (!(prevUpdatedAt instanceof Date)) {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
-      const updatedAtTime = updatedUser.updated_at.getTime();
+      const updatedAtTime = updatedUser.updatedAt.getTime();
 
-      expect(updatedUser.created_at.getTime()).toBeLessThan(updatedAtTime);
+      expect(updatedUser.createdAt.getTime()).toBeLessThan(updatedAtTime);
       expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(updatedAtTime);
     });
   });
@@ -186,14 +187,14 @@ describe('UsersRepository', () => {
       expect(wallet).toStrictEqual(
         expect.objectContaining({
           address: authPayload.signer_address,
-          created_at: expect.any(Date),
+          createdAt: expect.any(Date),
           id: wallet.id,
-          updated_at: expect.any(Date),
+          updatedAt: expect.any(Date),
           user: expect.objectContaining({
-            created_at: expect.any(Date),
+            createdAt: expect.any(Date),
             id: wallet.user.id,
             status,
-            updated_at: expect.any(Date),
+            updatedAt: expect.any(Date),
           }),
         }),
       );
@@ -276,10 +277,10 @@ describe('UsersRepository', () => {
 
       expect(users).toStrictEqual([
         expect.objectContaining({
-          created_at: expect.any(Date),
+          createdAt: expect.any(Date),
           id: users[0].id,
           status,
-          updated_at: expect.any(Date),
+          updatedAt: expect.any(Date),
         }),
       ]);
     });
@@ -412,14 +413,14 @@ describe('UsersRepository', () => {
       expect(wallet).toStrictEqual(
         expect.objectContaining({
           address: walletAddress,
-          created_at: expect.any(Date),
+          createdAt: expect.any(Date),
           id: wallet.id,
-          updated_at: expect.any(Date),
+          updatedAt: expect.any(Date),
           user: expect.objectContaining({
-            created_at: expect.any(Date),
+            createdAt: expect.any(Date),
             id: wallet.user.id,
             status,
-            updated_at: expect.any(Date),
+            updatedAt: expect.any(Date),
           }),
         }),
       );
@@ -588,14 +589,14 @@ describe('UsersRepository', () => {
       expect(wallets).toEqual([
         {
           address: authPayload.signer_address,
-          created_at: expect.any(Date),
+          createdAt: expect.any(Date),
           id: wallets[0].id,
-          updated_at: expect.any(Date),
+          updatedAt: expect.any(Date),
           user: expect.objectContaining({
-            created_at: expect.any(Date),
+            createdAt: expect.any(Date),
             id: wallets[0].user.id,
             status,
-            updated_at: expect.any(Date),
+            updatedAt: expect.any(Date),
           }),
         },
       ]);
@@ -690,6 +691,68 @@ describe('UsersRepository', () => {
       await expect(
         usersRepository.findByWalletAddress(address),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('update', () => {
+    it('should update a User', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'PENDING',
+      });
+      const userId = userInsertResult.identifiers[0].id;
+
+      await postgresDatabaseService.transaction(async (entityManager) => {
+        await usersRepository.update({
+          userId,
+          user: { status: 'ACTIVE' },
+          entityManager,
+        });
+      });
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+
+      expect(user).toStrictEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: userId,
+          status: 'ACTIVE',
+          updatedAt: expect.any(Date),
+        }),
+      );
+    });
+  });
+
+  describe('update status', () => {
+    it('should only update a User status', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'PENDING',
+      });
+      const userId = userInsertResult.identifiers[0].id;
+
+      await postgresDatabaseService.transaction(async (entityManager) => {
+        await usersRepository.updateStatus({
+          userId,
+          status: 'ACTIVE',
+          entityManager,
+        });
+      });
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+
+      expect(user).toStrictEqual(
+        expect.objectContaining({
+          createdAt: expect.any(Date),
+          id: userId,
+          status: 'ACTIVE',
+          updatedAt: expect.any(Date),
+        }),
+      );
     });
   });
 });
