@@ -1,24 +1,35 @@
-import { Inject } from '@nestjs/common';
+import { ConflictException, Inject } from '@nestjs/common';
 import { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
 import { User } from '@/domain/users/entities/user.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { InviteUsersDto } from '@/routes/organizations/entities/invite-users.dto.entity';
 import type { Invitation } from '@/routes/organizations/entities/invitation.entity';
-import type { Members } from '@/routes/organizations/entities/user-organization';
+import type { UserOrganizationsDto } from '@/routes/organizations/entities/user-organizations.dto.entity';
 import type { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
 
 export class UserOrganizationsService {
+  private readonly maxInvites: number;
   public constructor(
     @Inject(IUsersOrganizationsRepository)
     private readonly usersOrgRepository: IUsersOrganizationsRepository,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxInvites =
+      this.configurationService.getOrThrow<number>('users.maxInvites');
+  }
 
   public async inviteUser(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
     inviteUsersDto: InviteUsersDto;
   }): Promise<Array<Invitation>> {
+    if (args.inviteUsersDto.length > this.maxInvites) {
+      throw new ConflictException('Too many invites.');
+    }
+
     return await this.usersOrgRepository.inviteUsers({
       authPayload: args.authPayload,
       orgId: args.orgId,
@@ -43,11 +54,13 @@ export class UserOrganizationsService {
   public async get(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
-  }): Promise<Members> {
-    const userOrgs = await this.usersOrgRepository.findAuthorizedUserOrgs({
-      authPayload: args.authPayload,
-      orgId: args.orgId,
-    });
+  }): Promise<UserOrganizationsDto> {
+    const userOrgs = await this.usersOrgRepository.findAuthorizedUserOrgsOrFail(
+      {
+        authPayload: args.authPayload,
+        orgId: args.orgId,
+      },
+    );
 
     return {
       members: userOrgs.map((userOrg) => {

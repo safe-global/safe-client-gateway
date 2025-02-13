@@ -34,7 +34,7 @@ class UserOrganization {
   user!: UserOrganizationUser;
 }
 
-export class Members {
+export class UserOrganizationsDto {
   @ApiProperty({ type: UserOrganization, isArray: true })
   members!: Array<UserOrganization>;
 }

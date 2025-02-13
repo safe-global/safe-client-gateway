@@ -25,7 +25,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { InviteUsersDtoSchema } from '@/routes/organizations/entities/invite-users.dto.entity';
 import { UpdateRoleDtoSchema } from '@/routes/organizations/entities/update-role.dto.entity';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { Members } from '@/routes/organizations/entities/user-organization';
+import { UserOrganizationsDto } from '@/routes/organizations/entities/user-organizations.dto.entity';
 import { Invitation } from '@/routes/organizations/entities/invitation.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
@@ -48,11 +48,10 @@ export class UserOrganizationsController {
   })
   @ApiConflictResponse({ description: 'Too many invites' })
   @ApiForbiddenResponse({ description: 'User not authorized' })
-  @ApiNotFoundResponse({
+  @ApiUnauthorizedResponse({
     description:
       'User not admin OR signer address not provided OR member is not active',
   })
-  @ApiUnauthorizedResponse({ description: 'User not admin' })
   @Post('/:orgId/members/invite')
   @UseGuards(AuthGuard)
   public async inviteUser(
@@ -109,7 +108,7 @@ export class UserOrganizationsController {
 
   @ApiOkResponse({
     description: 'Organization and members list',
-    type: Members,
+    type: UserOrganizationsDto,
   })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
@@ -121,7 +120,7 @@ export class UserOrganizationsController {
     @Auth() authPayload: AuthPayload,
     @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     orgId: Organization['id'],
-  ): Promise<Members> {
+  ): Promise<UserOrganizationsDto> {
     return await this.userOrgService.get({
       authPayload,
       orgId,

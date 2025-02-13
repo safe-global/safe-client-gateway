@@ -197,7 +197,6 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
-        // No auth cookie
         .send([
           {
             role: 'ADMIN',
@@ -236,7 +235,6 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        // No addresses
         .send([])
         .expect(422);
     });
@@ -264,7 +262,6 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
-        // Non-user auth
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .send([
           {
@@ -298,8 +295,6 @@ describe('UserOrganizationsController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
-
-      // Don't create Organization
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
@@ -350,7 +345,6 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
-        // Non-user org auth
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
         .send([
           {
@@ -488,7 +482,6 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
-        // No auth cookie
         .expect(403)
         .expect({
           message: 'Forbidden resource',
@@ -516,8 +509,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Don't create UserOrganization
-
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -541,8 +532,6 @@ describe('UserOrganizationsController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
-
-      // Don't create Organization or UserOrganization
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
@@ -719,7 +708,6 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
-        // No auth cookie
         .expect(403)
         .expect({
           message: 'Forbidden resource',
@@ -747,8 +735,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Don't create UserOrganization
-
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -772,8 +758,6 @@ describe('UserOrganizationsController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
-
-      // Don't create Organization or UserOrganization
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/decline`)
@@ -997,7 +981,6 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/members`)
-        // No auth cookie
         .expect(403)
         .expect({
           message: 'Forbidden resource',
@@ -1025,8 +1008,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Don't create UserOrganization(s)
-
       await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/members`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -1050,8 +1031,6 @@ describe('UserOrganizationsController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
-
-      // Don't create Organization or UserOrganization(s)
 
       await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/members`)
@@ -1148,7 +1127,6 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
-        // No auth cookie
         .send({ role: 'ADMIN' })
         .expect(403)
         .expect({
@@ -1238,8 +1216,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
-
-      // Don't accept invite
 
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
@@ -1356,8 +1332,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // Don't create UserOrganization or accept invite
-
       await request(app.getHttpServer())
         .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1438,8 +1412,6 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const orgId = createOrganizationResponse.body.id;
 
-      // No need to create UserOrganization or accept invite
-
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
@@ -1464,8 +1436,6 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
       const userId = createUserResponse.body.id;
-
-      // Don't create Organization or UserOrganization
 
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${userId}`)
@@ -1513,8 +1483,6 @@ describe('UserOrganizationsController', () => {
         ])
         .expect(201);
       const memberUserId = inviteUsersResponse.body[1].userId;
-
-      // Don't accept invite
 
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/members/${memberUserId}`)

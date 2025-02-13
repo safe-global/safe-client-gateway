@@ -11,7 +11,6 @@ import { IOrganizationsRepository } from '@/domain/organizations/organizations.r
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { UserOrganization as DbUserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import { In } from 'typeorm';
 import type {
@@ -30,8 +29,6 @@ import { type UserOrganization } from '@/domain/users/entities/user-organization
 export class UsersOrganizationsRepository
   implements IUsersOrganizationsRepository
 {
-  private readonly maxInvites: number;
-
   constructor(
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IUsersRepository)
@@ -40,12 +37,7 @@ export class UsersOrganizationsRepository
     private readonly organizationsRepository: IOrganizationsRepository,
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
-  ) {
-    this.maxInvites =
-      this.configurationService.getOrThrow<number>('users.maxInvites');
-  }
+  ) {}
 
   public async findOneOrFail(
     where:
@@ -106,10 +98,6 @@ export class UsersOrganizationsRepository
       role: UserOrganization['role'];
     }>;
   }): Promise<Array<Invitation>> {
-    if (args.users.length > this.maxInvites) {
-      throw new ConflictException('Too many invites.');
-    }
-
     this.assertSignerAddress(args.authPayload);
 
     const user = await this.usersRepository.findByWalletAddressOrFail(
@@ -250,7 +238,7 @@ export class UsersOrganizationsRepository
     });
   }
 
-  public async findAuthorizedUserOrgs(args: {
+  public async findAuthorizedUserOrgsOrFail(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
   }): Promise<Array<UserOrganization>> {
