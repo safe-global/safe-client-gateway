@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -19,6 +19,9 @@ import {
   UserOrganizationRole,
   UserOrganizationStatus,
 } from '@/domain/users/entities/user-organization.entity';
+import { UserStatus } from '@/domain/users/entities/user.entity';
+import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -27,7 +30,9 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
-const UserRoleKeys = getStringEnumKeys(UserOrganizationRole);
+const UserStatusKeys = getStringEnumKeys(UserStatus);
+const OrgStatusKeys = getStringEnumKeys(OrganizationStatus);
+const UserOrgRoleKeys = getStringEnumKeys(UserOrganizationRole);
 const UserOrgStatusKeys = getStringEnumKeys(UserOrganizationStatus);
 
 describe('UserOrganizationsRepository', () => {
@@ -49,6 +54,10 @@ describe('UserOrganizationsRepository', () => {
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
     entities: [UserOrganization, Organization, User, Wallet],
   });
+
+  const dbUserRepo = dataSource.getRepository(User);
+  const dbUserOrgRepo = dataSource.getRepository(UserOrganization);
+  const dbOrgRepo = dataSource.getRepository(Organization);
 
   beforeAll(async () => {
     // Create database
@@ -142,7 +151,7 @@ describe('UserOrganizationsRepository', () => {
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
         status: faker.helpers.arrayElement(UserOrgStatusKeys),
-        role: faker.helpers.arrayElement(UserRoleKeys),
+        role: faker.helpers.arrayElement(UserOrgRoleKeys),
       });
 
       const after = new Date().getTime();
@@ -181,7 +190,7 @@ describe('UserOrganizationsRepository', () => {
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
         status: 'ACTIVE',
-        role: faker.helpers.arrayElement(UserRoleKeys),
+        role: faker.helpers.arrayElement(UserOrgRoleKeys),
       });
 
       const userOrgId = prevUserOrg.identifiers[0].id as User['id'];
@@ -206,27 +215,241 @@ describe('UserOrganizationsRepository', () => {
   });
 
   describe('findOneOrFail', () => {
-    it.todo('should find a user organization');
+    it('should find a user organization', async () => {
+      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const orgName = faker.word.noun();
+      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const userOrgName = faker.word.noun();
+      const userOrgStatus = faker.helpers.arrayElement(UserOrgStatusKeys);
+      const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const user = await dbUserRepo.insert({
+        status: userStatus,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: orgStatus,
+      });
+      const userOrg = await dbUserOrgRepo.insert({
+        user: user.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName,
+        status: userOrgStatus,
+        role: userOrgRole,
+      });
+      const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
 
-    it.todo('should throw an error if the user organization does not exist');
+      await expect(
+        userOrgRepo.findOneOrFail({ id: userOrgId }),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: userOrgId,
+        name: userOrgName,
+        role: userOrgRole,
+        status: userOrgStatus,
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    it('should throw an error if the user organization does not exist', async () => {
+      const userOrgId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await expect(
+        userOrgRepo.findOneOrFail({ id: userOrgId }),
+      ).rejects.toThrow('User organization not found.');
+    });
   });
 
   describe('findOne', () => {
-    it.todo('should find a user organization');
+    it('should find a user organization', async () => {
+      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const orgName = faker.word.noun();
+      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const userOrgName = faker.word.noun();
+      const userOrgStatus = faker.helpers.arrayElement(UserOrgStatusKeys);
+      const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const user = await dbUserRepo.insert({
+        status: userStatus,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: orgStatus,
+      });
+      const userOrg = await dbUserOrgRepo.insert({
+        user: user.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName,
+        status: userOrgStatus,
+        role: userOrgRole,
+      });
+      const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
 
-    it.todo('should return null if the user organization does not exist');
+      await expect(userOrgRepo.findOne({ id: userOrgId })).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: userOrgId,
+        name: userOrgName,
+        role: userOrgRole,
+        status: userOrgStatus,
+        updatedAt: expect.any(Date),
+      });
+    });
+
+    it('should return null if the user organization does not exist', async () => {
+      const userOrgId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await expect(userOrgRepo.findOne({ id: userOrgId })).resolves.toBeNull();
+    });
   });
 
   describe('findOrFail', () => {
-    it.todo('should find user organizations');
+    it('should find user organizations', async () => {
+      const userStatus1 = faker.helpers.arrayElement(UserStatusKeys);
+      const userStatus2 = faker.helpers.arrayElement(UserStatusKeys);
+      const orgName = faker.word.noun();
+      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const userOrgName1 = faker.word.noun();
+      const userOrgName2 = faker.word.noun();
+      const userOrgStatus1 = faker.helpers.arrayElement(UserOrgStatusKeys);
+      const userOrgStatus2 = faker.helpers.arrayElement(UserOrgStatusKeys);
+      const userOrgRole1 = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const userOrgRole2 = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const user1 = await dbUserRepo.insert({
+        status: userStatus1,
+      });
+      const user2 = await dbUserRepo.insert({
+        status: userStatus2,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: orgStatus,
+      });
+      const userOrg1 = await dbUserOrgRepo.insert({
+        user: user1.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName1,
+        status: userOrgStatus1,
+        role: userOrgRole1,
+      });
+      const userOrgId1 = userOrg1.identifiers[0].id as UserOrganization['id'];
+      const userOrg2 = await dbUserOrgRepo.insert({
+        user: user2.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName2,
+        status: userOrgStatus2,
+        role: userOrgRole2,
+      });
+      const userOrgId2 = userOrg2.identifiers[0].id as UserOrganization['id'];
 
-    it.todo('should throw an error if user organizations do not exist');
+      await expect(
+        userOrgRepo.findOrFail({ where: { id: In([userOrgId1, userOrgId2]) } }),
+      ).resolves.toEqual([
+        {
+          createdAt: expect.any(Date),
+          id: userOrgId1,
+          name: userOrgName1,
+          role: userOrgRole1,
+          status: userOrgStatus1,
+          updatedAt: expect.any(Date),
+        },
+        {
+          createdAt: expect.any(Date),
+          id: userOrgId2,
+          name: userOrgName2,
+          role: userOrgRole2,
+          status: userOrgStatus2,
+          updatedAt: expect.any(Date),
+        },
+      ]);
+    });
+
+    it('should throw an error if user organizations do not exist', async () => {
+      const userOrgId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await expect(
+        userOrgRepo.findOrFail({ where: { id: userOrgId } }),
+      ).rejects.toThrow('No user organizations found.');
+    });
   });
 
   describe('find', () => {
-    it.todo('should find user organizations');
+    it('should find user organizations', async () => {
+      const userStatus1 = faker.helpers.arrayElement(UserStatusKeys);
+      const userStatus2 = faker.helpers.arrayElement(UserStatusKeys);
+      const orgName = faker.word.noun();
+      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const userOrgName1 = faker.word.noun();
+      const userOrgName2 = faker.word.noun();
+      const userOrgStatus1 = faker.helpers.arrayElement(UserOrgStatusKeys);
+      const userOrgStatus2 = faker.helpers.arrayElement(UserOrgStatusKeys);
+      const userOrgRole1 = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const userOrgRole2 = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const user1 = await dbUserRepo.insert({
+        status: userStatus1,
+      });
+      const user2 = await dbUserRepo.insert({
+        status: userStatus2,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: orgStatus,
+      });
+      const userOrg1 = await dbUserOrgRepo.insert({
+        user: user1.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName1,
+        status: userOrgStatus1,
+        role: userOrgRole1,
+      });
+      const userOrgId1 = userOrg1.identifiers[0].id as UserOrganization['id'];
+      const userOrg2 = await dbUserOrgRepo.insert({
+        user: user2.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName2,
+        status: userOrgStatus2,
+        role: userOrgRole2,
+      });
+      const userOrgId2 = userOrg2.identifiers[0].id as UserOrganization['id'];
 
-    it.todo('should return an empty array if user organizations do not exist');
+      await expect(
+        userOrgRepo.find({ where: { id: In([userOrgId1, userOrgId2]) } }),
+      ).resolves.toEqual([
+        {
+          createdAt: expect.any(Date),
+          id: userOrgId1,
+          name: userOrgName1,
+          role: userOrgRole1,
+          status: userOrgStatus1,
+          updatedAt: expect.any(Date),
+        },
+        {
+          createdAt: expect.any(Date),
+          id: userOrgId2,
+          name: userOrgName2,
+          role: userOrgRole2,
+          status: userOrgStatus2,
+          updatedAt: expect.any(Date),
+        },
+      ]);
+    });
+
+    it('should return an empty array if user organizations do not exist', async () => {
+      const userOrgId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await expect(
+        userOrgRepo.find({ where: { id: userOrgId } }),
+      ).resolves.toEqual([]);
+    });
   });
 
   describe('inviteUsers', () => {
