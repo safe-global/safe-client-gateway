@@ -15,7 +15,6 @@ export interface IOrganizationsRepository {
   create(args: {
     userId: User['id'];
     name: string;
-    authPayload: AuthPayload;
     status: keyof typeof OrganizationStatus;
   }): Promise<Pick<Organization, 'id' | 'name'>>;
 

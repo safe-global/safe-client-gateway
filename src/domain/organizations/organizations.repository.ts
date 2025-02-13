@@ -28,7 +28,6 @@ export class OrganizationsRepository implements IOrganizationsRepository {
   public async create(args: {
     userId: number;
     name: string;
-    authPayload: AuthPayload;
     status: keyof typeof OrganizationStatus;
   }): Promise<Pick<Organization, 'id' | 'name'>> {
     const organizationRepository =
