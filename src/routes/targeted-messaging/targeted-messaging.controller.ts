@@ -49,7 +49,7 @@ export class TargetedMessagingController {
       ParseIntPipe,
       new ValidationPipe(TargetedSafeSchema.shape.outreachId),
     )
-    outreachId: DomainTargetedSafe['outreachId'],
+    outreachId: TargetedSafe['outreachId'],
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
