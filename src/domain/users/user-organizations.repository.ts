@@ -112,7 +112,7 @@ export class UsersOrganizationsRepository
     });
 
     const invitedAddresses = args.users.map((user) => user.address);
-    const invitedUsers = await this.walletsRepository.find({
+    const invitedWallets = await this.walletsRepository.find({
       where: {
         address: In(invitedAddresses),
       },
@@ -126,12 +126,10 @@ export class UsersOrganizationsRepository
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
         // Find existing User via Wallet
-        const invitedUser = invitedUsers.find(({ user }) => {
-          return user.wallets.some((wallet) => {
-            return isAddressEqual(wallet.address, userToInvite.address);
-          });
+        const invitedWallet = invitedWallets.find((wallet) => {
+          return isAddressEqual(wallet.address, userToInvite.address);
         });
-        let invitedUserId = invitedUser?.user.id;
+        let invitedUserId = invitedWallet?.user.id;
 
         // Otherwise create User and Wallet
         if (!invitedUserId) {
@@ -280,7 +278,8 @@ export class UsersOrganizationsRepository
     const activeAdmins = await this.findActiveAdminsOrFail(args.orgId);
 
     this.assertIsActiveAdmin({ userOrgs: activeAdmins, userId: user.id });
-    if (args.role !== 'ADMIN') {
+    const isSelf = user.id === args.userId;
+    if (isSelf && args.role !== 'ADMIN') {
       this.assertIsNotLastAdmin({ userOrgs: activeAdmins, userId: user.id });
     }
 
@@ -310,7 +309,10 @@ export class UsersOrganizationsRepository
     const activeAdmins = await this.findActiveAdminsOrFail(args.orgId);
 
     this.assertIsActiveAdmin({ userOrgs: activeAdmins, userId: user.id });
-    this.assertIsNotLastAdmin({ userOrgs: activeAdmins, userId: user.id });
+    const isSelf = user.id === args.userId;
+    if (isSelf) {
+      this.assertIsNotLastAdmin({ userOrgs: activeAdmins, userId: user.id });
+    }
 
     const userOrganizationRepository =
       await this.postgresDatabaseService.getRepository(DbUserOrganization);
