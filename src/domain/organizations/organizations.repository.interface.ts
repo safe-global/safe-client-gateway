@@ -5,7 +5,6 @@ import type {
   FindOptionsSelect,
   FindOptionsRelations,
 } from 'typeorm';
-import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 
@@ -67,5 +66,5 @@ export interface IOrganizationsRepository {
     updatePayload: Partial<Pick<Organization, 'name' | 'status'>>;
   }): Promise<Pick<Organization, 'id'>>;
 
-  delete(args: { id: number; authPayload: AuthPayload }): Promise<void>;
+  delete(id: number): Promise<void>;
 }

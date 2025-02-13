@@ -1,6 +1,5 @@
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
 import {
@@ -118,15 +117,15 @@ export class OrganizationsRepository implements IOrganizationsRepository {
   public async findByUserIdOrFail(
     args: Parameters<OrganizationsRepository['findByUserId']>[0],
   ): Promise<Array<Organization>> {
-    const organization = await this.findByUserId(args);
+    const organizations = await this.findByUserId(args);
 
-    if (!organization) {
+    if (organizations.length === 0) {
       throw new NotFoundException(
-        'Organization not found. UserId = ' + args.userId,
+        'Organizations not found. UserId = ' + args.userId,
       );
     }
 
-    return organization;
+    return organizations;
   }
 
   public async findByUserId(args: {
@@ -187,15 +186,12 @@ export class OrganizationsRepository implements IOrganizationsRepository {
   }
 
   // @todo Add a soft delete method
-  public async delete(args: {
-    id: number;
-    authPayload: AuthPayload;
-  }): Promise<void> {
+  public async delete(id: number): Promise<void> {
     const organizationRepository =
       await this.postgresDatabaseService.getRepository(Organization);
 
     const organization = await this.findOneOrFail({
-      where: { id: args.id },
+      where: { id },
     });
 
     await organizationRepository.delete(organization.id);
