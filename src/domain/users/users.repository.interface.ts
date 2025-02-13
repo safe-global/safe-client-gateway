@@ -6,7 +6,7 @@ export const IUsersRepository = Symbol('IUsersRepository');
 
 export interface IUsersRepository {
   createWithWallet(args: {
-    status: UserStatus;
+    status: keyof typeof UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>>;
 
@@ -27,4 +27,8 @@ export interface IUsersRepository {
     walletAddress: `0x${string}`;
     authPayload: AuthPayload;
   }): Promise<void>;
+
+  findByWalletAddressOrFail(address: `0x${string}`): Promise<User>;
+
+  findByWalletAddress(address: `0x${string}`): Promise<User | undefined>;
 }

@@ -6,6 +6,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
+import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 
 export type Confirmation = z.infer<typeof ConfirmationSchema>;
 
@@ -27,13 +28,13 @@ export const MultisigTransactionSchema = z.object({
   dataDecoded: DataDecodedSchema.nullish().default(null),
   operation: z.nativeEnum(Operation),
   gasToken: AddressSchema.nullish().default(null),
-  safeTxGas: z.number().nullish().default(null),
-  baseGas: z.number().nullish().default(null),
+  safeTxGas: CoercedNumberSchema.nullish().default(null),
+  baseGas: CoercedNumberSchema.nullish().default(null),
   gasPrice: NumericStringSchema.nullish().default(null),
   proposer: AddressSchema.nullish().default(null),
   proposedByDelegate: AddressSchema.nullish().default(null),
   refundReceiver: AddressSchema.nullish().default(null),
-  nonce: z.number(),
+  nonce: CoercedNumberSchema,
   executionDate: z.coerce.date().nullish().default(null),
   submissionDate: z.coerce.date(),
   modified: z.coerce.date().nullish().default(null),

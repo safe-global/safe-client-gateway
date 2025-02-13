@@ -63,9 +63,6 @@ import { OrganizationsModule } from '@/routes/organizations/organizations.module
 
 @Module({})
 export class AppModule implements NestModule {
-  // Important: values read via the config factory do not take the .env file
-  // into account. The .env file loading is done by the ConfigurationModule
-  // which is not available at this stage.
   static register(configFactory = configuration): DynamicModule {
     const {
       auth: isAuthFeatureEnabled,

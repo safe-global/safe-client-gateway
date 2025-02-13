@@ -10,7 +10,7 @@ import { UsersRepository } from '@/domain/users/users.repository';
 import { WalletsRepository } from '@/domain/wallets/wallets.repository';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { UserStatus } from '@/domain/users/entities/user.entity';
+import type { UserStatus } from '@/domain/users/entities/user.entity';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -21,6 +21,9 @@ const mockLoggingService = {
   info: jest.fn(),
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
+
+// TODO: User enum keys once user orgs is merged
+const UserStatusKeys = ['ACTIVE', 'PENDING'] as const;
 
 describe('UsersRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
@@ -116,7 +119,7 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const before = new Date().getTime();
       const user = await dbUserRepository.insert({
-        status: faker.helpers.enumValue(UserStatus),
+        status: faker.helpers.arrayElement(UserStatusKeys),
       });
 
       const after = new Date().getTime();
@@ -143,11 +146,11 @@ describe('UsersRepository', () => {
     it('should update updated_at when updating a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const prevUser = await dbUserRepository.insert({
-        status: UserStatus.PENDING,
+        status: 'PENDING',
       });
       const userId = prevUser.identifiers[0].id as User['id'];
       await dbUserRepository.update(userId, {
-        status: UserStatus.ACTIVE,
+        status: 'ACTIVE',
       });
       const updatedUser = await dbUserRepository.findOneOrFail({
         where: { id: userId },
@@ -171,7 +174,7 @@ describe('UsersRepository', () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
 
       await usersRepository.createWithWallet({ status, authPayload });
 
@@ -199,7 +202,7 @@ describe('UsersRepository', () => {
     it('should throw an error if the wallet already exists', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
 
       await usersRepository.createWithWallet({ status, authPayload });
 
@@ -213,7 +216,7 @@ describe('UsersRepository', () => {
     it('should throw if an incorrect UserStatus is provided', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.string.alpha() as unknown as UserStatus;
+      const status = faker.string.alpha() as unknown as keyof typeof UserStatus;
 
       await expect(
         usersRepository.createWithWallet({ status, authPayload }),
@@ -228,7 +231,7 @@ describe('UsersRepository', () => {
         .with('signer_address', signerAddress as `0x${string}`)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
 
       await expect(
         usersRepository.createWithWallet({ status, authPayload }),
@@ -244,7 +247,7 @@ describe('UsersRepository', () => {
         .with('signer_address', nonChecksummedAddress as `0x${string}`)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
 
       await usersRepository.createWithWallet({ status, authPayload });
 
@@ -263,7 +266,7 @@ describe('UsersRepository', () => {
   describe('create', () => {
     it('should insert a new user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
 
       await postgresDatabaseService.transaction(async (entityManager) => {
         await usersRepository.create(status, entityManager);
@@ -282,7 +285,7 @@ describe('UsersRepository', () => {
     });
 
     it('should throw if an incorrect UserStatus is provided', async () => {
-      const status = faker.string.alpha() as unknown as UserStatus;
+      const status = faker.string.alpha() as unknown as keyof typeof UserStatus;
 
       await expect(
         postgresDatabaseService.transaction(async (entityManager) => {
@@ -298,7 +301,7 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
@@ -331,7 +334,7 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
 
       await expect(usersRepository.getWithWallets(authPayload)).rejects.toThrow(
@@ -349,7 +352,7 @@ describe('UsersRepository', () => {
         .with('signer_address', nonChecksummedAddress as `0x${string}`)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
@@ -386,7 +389,7 @@ describe('UsersRepository', () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
@@ -427,7 +430,7 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
@@ -456,7 +459,7 @@ describe('UsersRepository', () => {
       });
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
 
       await expect(
@@ -475,7 +478,7 @@ describe('UsersRepository', () => {
         .toLowerCase();
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
@@ -510,7 +513,7 @@ describe('UsersRepository', () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
@@ -539,7 +542,7 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       await dbUserRepository.insert({ status });
 
       await expect(usersRepository.delete(authPayload)).rejects.toThrow(
@@ -555,7 +558,7 @@ describe('UsersRepository', () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
@@ -604,7 +607,7 @@ describe('UsersRepository', () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
-      const status = faker.helpers.enumValue(UserStatus);
+      const status = faker.helpers.arrayElement(UserStatusKeys);
       const userInsertResult = await dbUserRepository.insert({
         status,
       });
@@ -621,6 +624,72 @@ describe('UsersRepository', () => {
           authPayload,
         }),
       ).rejects.toThrow('Wallet not found.');
+    });
+  });
+
+  describe('findByWalletAddressOrFail', () => {
+    it('should find a user by wallet address', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const userInsertResult = await dbUserRepository.insert({
+        status,
+      });
+      await dbWalletRepository.insert({
+        user: {
+          id: userInsertResult.identifiers[0].id,
+        },
+        address,
+      });
+
+      await expect(
+        usersRepository.findByWalletAddressOrFail(address),
+      ).resolves.toEqual({
+        id: userInsertResult.identifiers[0].id,
+        status,
+      });
+    });
+
+    it('should throw if no user is found', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await expect(
+        usersRepository.findByWalletAddressOrFail(address),
+      ).rejects.toThrow('User not found.');
+    });
+  });
+
+  describe('findByWalletAddress', () => {
+    it('should find a user by wallet address', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const status = faker.helpers.arrayElement(UserStatusKeys);
+      const userInsertResult = await dbUserRepository.insert({
+        status,
+      });
+      await dbWalletRepository.insert({
+        user: {
+          id: userInsertResult.identifiers[0].id,
+        },
+        address,
+      });
+
+      await expect(
+        usersRepository.findByWalletAddressOrFail(address),
+      ).resolves.toEqual({
+        id: userInsertResult.identifiers[0].id,
+        status,
+      });
+    });
+
+    it('should return undefined if no user is found', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await expect(
+        usersRepository.findByWalletAddress(address),
+      ).resolves.toBeUndefined();
     });
   });
 });

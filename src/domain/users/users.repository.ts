@@ -23,7 +23,7 @@ export class UsersRepository implements IUsersRepository {
   ) {}
 
   public async createWithWallet(args: {
-    status: UserStatus;
+    status: keyof typeof UserStatus;
     authPayload: AuthPayload;
   }): Promise<Pick<User, 'id'>> {
     this.assertSignerAddress(args.authPayload);
@@ -49,7 +49,7 @@ export class UsersRepository implements IUsersRepository {
   }
 
   public async create(
-    status: UserStatus,
+    status: keyof typeof UserStatus,
     entityManager: EntityManager,
   ): Promise<User['id']> {
     const userInsertResult = await entityManager.insert(DbUser, {
@@ -90,7 +90,7 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     await this.assertWalletDoesNotExist(args.walletAddress);
 
-    const user = await this.findByWalletAddress(
+    const user = await this.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
 
@@ -132,7 +132,7 @@ export class UsersRepository implements IUsersRepository {
     this.assertSignerAddress(args.authPayload);
     this.assertWalletIsNotSigner(args);
 
-    const user = await this.findByWalletAddress(
+    const user = await this.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
 
@@ -144,19 +144,26 @@ export class UsersRepository implements IUsersRepository {
     await this.walletsRepository.deleteByAddress(wallet.address);
   }
 
-  private async findByWalletAddress(address: `0x${string}`): Promise<User> {
-    try {
-      const { user } = await this.walletsRepository.findOneByAddressOrFail(
-        address,
-        { user: true },
-      );
-      return user;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException('User not found.');
-      }
-      throw error;
+  public async findByWalletAddressOrFail(
+    address: `0x${string}`,
+  ): Promise<User> {
+    const user = await this.findByWalletAddress(address);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
     }
+
+    return user;
+  }
+
+  public async findByWalletAddress(
+    address: `0x${string}`,
+  ): Promise<User | undefined> {
+    const wallet = await this.walletsRepository.findOneByAddress(address, {
+      user: true,
+    });
+
+    return wallet?.user;
   }
 
   private assertSignerAddress(

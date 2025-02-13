@@ -44,12 +44,14 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   @Column({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
+    update: false,
   })
   created_at!: Date;
 
   @Column({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
+    update: false,
   })
   updated_at!: Date;
 }
