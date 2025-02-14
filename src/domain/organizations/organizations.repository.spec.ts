@@ -138,14 +138,11 @@ describe('OrganizationsRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      const createdAtTime = createdAt.getTime();
-      const updatedAtTime = updatedAt.getTime();
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
 
-      expect(createdAtTime).toBeGreaterThanOrEqual(before);
-      expect(createdAtTime).toBeLessThanOrEqual(after);
-
-      expect(updatedAtTime).toBeGreaterThanOrEqual(before);
-      expect(updatedAtTime).toBeLessThanOrEqual(after);
+      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
     it('should update updatedAt when updating a User', async () => {
@@ -167,10 +164,12 @@ describe('OrganizationsRepository', () => {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
-      const updatedAtTime = updatedOrg.updatedAt.getTime();
-
-      expect(updatedOrg.createdAt.getTime()).toBeLessThan(updatedAtTime);
-      expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(updatedAtTime);
+      expect(updatedOrg.createdAt.getTime()).toBeLessThan(
+        updatedOrg.updatedAt.getTime(),
+      );
+      expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
+        updatedOrg.updatedAt.getTime(),
+      );
     });
   });
 
