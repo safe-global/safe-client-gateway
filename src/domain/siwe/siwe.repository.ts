@@ -67,7 +67,7 @@ export class SiweRepository implements ISiweRepository {
       message: args.message,
       signature: args.signature,
       address: result.data.address,
-    });
+    }).catch(() => false);
 
     if (!isValidSignature) {
       throw new UnauthorizedException('Invalid signature');
