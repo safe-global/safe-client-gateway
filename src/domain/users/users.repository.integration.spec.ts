@@ -269,11 +269,13 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const status = faker.helpers.arrayElement(UserStatusKeys);
 
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        await usersRepository.create(status, entityManager);
-      });
+      const userId = await postgresDatabaseService.transaction(
+        async (entityManager) => {
+          return await usersRepository.create(status, entityManager);
+        },
+      );
 
-      const users = await dbUserRepository.find();
+      const users = await dbUserRepository.find({ where: { id: userId } });
 
       expect(users).toEqual([
         {
