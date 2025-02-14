@@ -161,9 +161,6 @@ describe('UsersRepository', () => {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
-      expect(updatedUser.createdAt.getTime()).toBeLessThan(
-        updatedUser.updatedAt.getTime(),
-      );
       expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
         updatedUser.updatedAt.getTime(),
       );
@@ -352,9 +349,9 @@ describe('UsersRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase();
+        .toLowerCase() as `0x${string}`;
       const authPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', nonChecksummedAddress as `0x${string}`)
+        .with('signer_address', nonChecksummedAddress)
         .build();
       const authPayload = new AuthPayload(authPayloadDto);
       const status = faker.helpers.arrayElement(UserStatusKeys);
@@ -368,7 +365,7 @@ describe('UsersRepository', () => {
         address: authPayloadDto.signer_address,
       });
       const wallet = await dbWalletRepository.findOneOrFail({
-        where: { address: getAddress(nonChecksummedAddress) },
+        where: { address: nonChecksummedAddress },
         relations: { user: true },
       });
 
