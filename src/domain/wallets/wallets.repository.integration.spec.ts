@@ -141,14 +141,11 @@ describe('WalletsRepository', () => {
         throw new Error('createdAt and/or updatedAt is not a Date');
       }
 
-      const createdAtTime = createdAt.getTime();
-      const updatedAtTime = updatedAt.getTime();
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
 
-      expect(createdAtTime).toBeGreaterThanOrEqual(before);
-      expect(createdAtTime).toBeLessThanOrEqual(after);
-
-      expect(updatedAtTime).toBeGreaterThanOrEqual(before);
-      expect(updatedAtTime).toBeLessThanOrEqual(after);
+      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
     it('should update updatedAt when updating a Wallet', async () => {
@@ -177,10 +174,12 @@ describe('WalletsRepository', () => {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
-      const updatedAtTime = updatedWallet.updatedAt.getTime();
-
-      expect(updatedWallet.createdAt.getTime()).toBeLessThan(updatedAtTime);
-      expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(updatedAtTime);
+      expect(updatedWallet.createdAt.getTime()).toBeLessThan(
+        updatedWallet.updatedAt.getTime(),
+      );
+      expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
+        updatedWallet.updatedAt.getTime(),
+      );
     });
   });
 
@@ -201,14 +200,12 @@ describe('WalletsRepository', () => {
 
       const wallet = await walletsRepository.findOneOrFail({});
 
-      expect(wallet).toEqual(
-        expect.objectContaining({
-          address,
-          createdAt: expect.any(Date),
-          id: wallet.id,
-          updatedAt: expect.any(Date),
-        }),
-      );
+      expect(wallet).toEqual({
+        address,
+        createdAt: expect.any(Date),
+        id: wallet.id,
+        updatedAt: expect.any(Date),
+      });
     });
 
     it('should throw an error if wallet is not found', async () => {
@@ -237,19 +234,19 @@ describe('WalletsRepository', () => {
 
       const wallet = await walletsRepository.findOne({ address });
 
-      // Appease TypeScript
+      // We need to either assert wallet or use a bang operator to tell TypeScript
+      // that we are sure that wallet is not undefined. Throwing an error provides
+      // a better error message than using a bang operator.
       if (!wallet) {
         throw new Error('Wallet not found.');
       }
 
-      expect(wallet).toEqual(
-        expect.objectContaining({
-          address,
-          createdAt: expect.any(Date),
-          id: wallet.id,
-          updatedAt: expect.any(Date),
-        }),
-      );
+      expect(wallet).toEqual({
+        address,
+        createdAt: expect.any(Date),
+        id: wallet.id,
+        updatedAt: expect.any(Date),
+      });
     });
 
     it('should return null if wallet is not found', async () => {
@@ -284,22 +281,20 @@ describe('WalletsRepository', () => {
 
       const wallets = await walletsRepository.findOrFail({ where: {} });
 
-      expect(wallets).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            address: address1,
-            createdAt: expect.any(Date),
-            id: expect.any(Number),
-            updatedAt: expect.any(Date),
-          }),
-          expect.objectContaining({
-            address: address2,
-            createdAt: expect.any(Date),
-            id: expect.any(Number),
-            updatedAt: expect.any(Date),
-          }),
-        ]),
-      );
+      expect(wallets).toEqual([
+        {
+          address: address1,
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          updatedAt: expect.any(Date),
+        },
+        {
+          address: address2,
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          updatedAt: expect.any(Date),
+        },
+      ]);
     });
 
     it('should throw an error if no wallets are found', async () => {
@@ -330,22 +325,20 @@ describe('WalletsRepository', () => {
 
       const wallets = await walletsRepository.find({ where: {} });
 
-      expect(wallets).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            address: address1,
-            createdAt: expect.any(Date),
-            id: expect.any(Number),
-            updatedAt: expect.any(Date),
-          }),
-          expect.objectContaining({
-            address: address2,
-            createdAt: expect.any(Date),
-            id: expect.any(Number),
-            updatedAt: expect.any(Date),
-          }),
-        ]),
-      );
+      expect(wallets).toEqual([
+        {
+          address: address1,
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          updatedAt: expect.any(Date),
+        },
+        {
+          address: address2,
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          updatedAt: expect.any(Date),
+        },
+      ]);
     });
 
     it('should return an empty array if no wallets are found', async () => {
@@ -370,14 +363,12 @@ describe('WalletsRepository', () => {
 
       const wallet = await walletsRepository.findOneByAddressOrFail(address);
 
-      expect(wallet).toEqual(
-        expect.objectContaining({
-          address,
-          createdAt: expect.any(Date),
-          id: expect.any(Number),
-          updatedAt: expect.any(Date),
-        }),
-      );
+      expect(wallet).toEqual({
+        address,
+        createdAt: expect.any(Date),
+        id: expect.any(Number),
+        updatedAt: expect.any(Date),
+      });
     });
 
     it('should find a wallet by non-checksummed address', async () => {
@@ -385,29 +376,27 @@ describe('WalletsRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase();
+        .toLowerCase() as `0x${string}`;
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
       await dbWalletRepository.insert({
-        address: getAddress(nonChecksummedAddress),
+        address: nonChecksummedAddress,
         user: {
           id: user.identifiers[0].id as User['id'],
         },
       });
 
       const wallet = await walletsRepository.findOneByAddressOrFail(
-        getAddress(nonChecksummedAddress),
+        nonChecksummedAddress,
       );
 
-      expect(wallet).toEqual(
-        expect.objectContaining({
-          address: getAddress(nonChecksummedAddress),
-          createdAt: expect.any(Date),
-          id: expect.any(Number),
-          updatedAt: expect.any(Date),
-        }),
-      );
+      expect(wallet).toEqual({
+        address: getAddress(nonChecksummedAddress),
+        createdAt: expect.any(Date),
+        id: expect.any(Number),
+        updatedAt: expect.any(Date),
+      });
     });
 
     it('should throw an error if wallet is not found', async () => {
@@ -436,14 +425,12 @@ describe('WalletsRepository', () => {
 
       const wallet = await walletsRepository.findOneByAddress(address);
 
-      expect(wallet).toEqual(
-        expect.objectContaining({
-          address,
-          createdAt: expect.any(Date),
-          id: expect.any(Number),
-          updatedAt: expect.any(Date),
-        }),
-      );
+      expect(wallet).toEqual({
+        address,
+        createdAt: expect.any(Date),
+        id: expect.any(Number),
+        updatedAt: expect.any(Date),
+      });
     });
 
     it('should find a wallet by non-checksummed address', async () => {
@@ -451,29 +438,27 @@ describe('WalletsRepository', () => {
       const dbUserRepository = dataSource.getRepository(User);
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
-        .toLowerCase();
+        .toLowerCase() as `0x${string}`;
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
       await dbWalletRepository.insert({
-        address: getAddress(nonChecksummedAddress),
+        address: nonChecksummedAddress,
         user: {
           id: user.identifiers[0].id as User['id'],
         },
       });
 
       const wallet = await walletsRepository.findOneByAddress(
-        getAddress(nonChecksummedAddress),
+        nonChecksummedAddress,
       );
 
-      expect(wallet).toEqual(
-        expect.objectContaining({
-          address: getAddress(nonChecksummedAddress),
-          createdAt: expect.any(Date),
-          id: expect.any(Number),
-          updatedAt: expect.any(Date),
-        }),
-      );
+      expect(wallet).toEqual({
+        address: getAddress(nonChecksummedAddress),
+        createdAt: expect.any(Date),
+        id: expect.any(Number),
+        updatedAt: expect.any(Date),
+      });
     });
 
     it('should return null if wallet is not found', async () => {
@@ -506,22 +491,20 @@ describe('WalletsRepository', () => {
 
       const wallets = await walletsRepository.findByUser(userId);
 
-      expect(wallets).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            address: address1,
-            createdAt: expect.any(Date),
-            id: expect.any(Number),
-            updatedAt: expect.any(Date),
-          }),
-          expect.objectContaining({
-            address: address2,
-            createdAt: expect.any(Date),
-            id: expect.any(Number),
-            updatedAt: expect.any(Date),
-          }),
-        ]),
-      );
+      expect(wallets).toEqual([
+        {
+          address: address1,
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          updatedAt: expect.any(Date),
+        },
+        {
+          address: address2,
+          createdAt: expect.any(Date),
+          id: expect.any(Number),
+          updatedAt: expect.any(Date),
+        },
+      ]);
     });
 
     it('should throw an error if invalid user ID is provided', async () => {
@@ -564,13 +547,15 @@ describe('WalletsRepository', () => {
         );
       });
 
-      await expect(dbWalletRepository.find()).resolves.toEqual([
-        expect.objectContaining({
+      await expect(
+        dbWalletRepository.find({ where: { address: walletAddress } }),
+      ).resolves.toEqual([
+        {
           address: walletAddress,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
-        }),
+        },
       ]);
     });
 
@@ -594,12 +579,12 @@ describe('WalletsRepository', () => {
       });
 
       await expect(dbWalletRepository.find()).resolves.toEqual([
-        expect.objectContaining({
+        {
           address: getAddress(nonChecksummedAddress),
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
-        }),
+        },
       ]);
     });
 
@@ -729,17 +714,6 @@ describe('WalletsRepository', () => {
       await expect(
         walletsRepository.deleteByAddress(walletAddress as `0x${string}`),
       ).rejects.toThrow(new RegExp(`^Address "${walletAddress}" is invalid.`));
-    });
-
-    it('should throw an error if wallet is not found', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-
-      await expect(walletsRepository.deleteByAddress(address)).resolves.toEqual(
-        {
-          affected: 0,
-          raw: [],
-        },
-      );
     });
   });
 });

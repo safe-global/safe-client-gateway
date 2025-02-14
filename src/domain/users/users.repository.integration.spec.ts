@@ -135,14 +135,11 @@ describe('UsersRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      const createdAtTime = createdAt.getTime();
-      const updatedAtTime = updatedAt.getTime();
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
 
-      expect(createdAtTime).toBeGreaterThanOrEqual(before);
-      expect(createdAtTime).toBeLessThanOrEqual(after);
-
-      expect(updatedAtTime).toBeGreaterThanOrEqual(before);
-      expect(updatedAtTime).toBeLessThanOrEqual(after);
+      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
     it('should update updatedAt when updating a User', async () => {
@@ -164,10 +161,12 @@ describe('UsersRepository', () => {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
-      const updatedAtTime = updatedUser.updatedAt.getTime();
-
-      expect(updatedUser.createdAt.getTime()).toBeLessThan(updatedAtTime);
-      expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(updatedAtTime);
+      expect(updatedUser.createdAt.getTime()).toBeLessThan(
+        updatedUser.updatedAt.getTime(),
+      );
+      expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
+        updatedUser.updatedAt.getTime(),
+      );
     });
   });
 
@@ -185,20 +184,18 @@ describe('UsersRepository', () => {
         relations: { user: true },
       });
 
-      expect(wallet).toStrictEqual(
-        expect.objectContaining({
-          address: authPayload.signer_address,
+      expect(wallet).toEqual({
+        address: authPayload.signer_address,
+        createdAt: expect.any(Date),
+        id: wallet.id,
+        updatedAt: expect.any(Date),
+        user: {
           createdAt: expect.any(Date),
-          id: wallet.id,
+          id: wallet.user.id,
+          status,
           updatedAt: expect.any(Date),
-          user: expect.objectContaining({
-            createdAt: expect.any(Date),
-            id: wallet.user.id,
-            status,
-            updatedAt: expect.any(Date),
-          }),
-        }),
-      );
+        },
+      });
     });
 
     it('should throw an error if the wallet already exists', async () => {
@@ -278,13 +275,13 @@ describe('UsersRepository', () => {
 
       const users = await dbUserRepository.find();
 
-      expect(users).toStrictEqual([
-        expect.objectContaining({
+      expect(users).toEqual([
+        {
           createdAt: expect.any(Date),
           id: users[0].id,
           status,
           updatedAt: expect.any(Date),
-        }),
+        },
       ]);
     });
 
@@ -415,20 +412,18 @@ describe('UsersRepository', () => {
         where: { address: walletAddress },
         relations: { user: true },
       });
-      expect(wallet).toStrictEqual(
-        expect.objectContaining({
-          address: walletAddress,
+      expect(wallet).toEqual({
+        address: walletAddress,
+        createdAt: expect.any(Date),
+        id: wallet.id,
+        updatedAt: expect.any(Date),
+        user: {
           createdAt: expect.any(Date),
-          id: wallet.id,
+          id: wallet.user.id,
+          status,
           updatedAt: expect.any(Date),
-          user: expect.objectContaining({
-            createdAt: expect.any(Date),
-            id: wallet.user.id,
-            status,
-            updatedAt: expect.any(Date),
-          }),
-        }),
-      );
+        },
+      });
     });
 
     it('should throw if the user wallet already exists', async () => {
@@ -597,12 +592,12 @@ describe('UsersRepository', () => {
           createdAt: expect.any(Date),
           id: wallets[0].id,
           updatedAt: expect.any(Date),
-          user: expect.objectContaining({
+          user: {
             createdAt: expect.any(Date),
             id: wallets[0].user.id,
             status,
             updatedAt: expect.any(Date),
-          }),
+          },
         },
       ]);
     });
@@ -685,7 +680,7 @@ describe('UsersRepository', () => {
       });
 
       await expect(
-        usersRepository.findByWalletAddressOrFail(address),
+        usersRepository.findByWalletAddress(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         id: userInsertResult.identifiers[0].id,
@@ -723,29 +718,28 @@ describe('UsersRepository', () => {
         where: { id: userId },
       });
 
-      expect(user).toStrictEqual(
-        expect.objectContaining({
-          createdAt: expect.any(Date),
-          id: userId,
-          status: 'ACTIVE',
-          updatedAt: expect.any(Date),
-        }),
-      );
+      expect(user).toEqual({
+        createdAt: expect.any(Date),
+        id: userId,
+        status: 'ACTIVE',
+        updatedAt: expect.any(Date),
+      });
     });
   });
 
   describe('update status', () => {
-    it('should only update a User status', async () => {
+    it('should update a User status', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const userInsertResult = await dbUserRepository.insert({
         status: 'PENDING',
       });
       const userId = userInsertResult.identifiers[0].id;
+      const status = 'ACTIVE';
 
       await postgresDatabaseService.transaction(async (entityManager) => {
         await usersRepository.updateStatus({
           userId,
-          status: 'ACTIVE',
+          status,
           entityManager,
         });
       });
@@ -754,14 +748,12 @@ describe('UsersRepository', () => {
         where: { id: userId },
       });
 
-      expect(user).toStrictEqual(
-        expect.objectContaining({
-          createdAt: expect.any(Date),
-          id: userId,
-          status: 'ACTIVE',
-          updatedAt: expect.any(Date),
-        }),
-      );
+      expect(user).toEqual({
+        createdAt: expect.any(Date),
+        id: userId,
+        status,
+        updatedAt: expect.any(Date),
+      });
     });
   });
 });
