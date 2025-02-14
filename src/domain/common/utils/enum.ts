@@ -24,8 +24,24 @@ export const databaseEnumTransformer = <T extends NumericEnum>(
   enumObj: T,
 ): ValueTransformer => {
   return {
-    to: (value: keyof typeof enumObj) => enumObj[value],
-    from: (value: number): keyof T => getEnumKey(enumObj, value),
+    to: <K extends keyof T>(key: K): T[K] => {
+      const value = enumObj[key];
+
+      if (value === undefined) {
+        throw new Error(`Invalid enum key: ${String(key)}`);
+      }
+
+      return value;
+    },
+    from: (value: number): keyof T => {
+      const key = getEnumKey(enumObj, value);
+
+      if (key === undefined) {
+        throw new Error(`Invalid enum value: ${value}`);
+      }
+
+      return key;
+    },
   };
 };
 
