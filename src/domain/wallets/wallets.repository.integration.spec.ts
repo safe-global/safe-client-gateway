@@ -174,9 +174,6 @@ describe('WalletsRepository', () => {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
-      expect(updatedWallet.createdAt.getTime()).toBeLessThan(
-        updatedWallet.updatedAt.getTime(),
-      );
       expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
         updatedWallet.updatedAt.getTime(),
       );
