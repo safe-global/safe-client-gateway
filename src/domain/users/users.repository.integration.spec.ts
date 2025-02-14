@@ -216,9 +216,7 @@ describe('UsersRepository', () => {
 
       await expect(
         usersRepository.createWithWallet({ status, authPayload }),
-      ).rejects.toThrow(
-        'null value in column "status" of relation "users" violates not-null constraint',
-      );
+      ).rejects.toThrow(`Invalid enum key: ${status}`);
     });
 
     it('should throw if an invalid wallet address is provided', async () => {
@@ -291,9 +289,7 @@ describe('UsersRepository', () => {
         postgresDatabaseService.transaction(async (entityManager) => {
           await usersRepository.create(status, entityManager);
         }),
-      ).rejects.toThrow(
-        'null value in column "status" of relation "users" violates not-null constraint',
-      );
+      ).rejects.toThrow(`Invalid enum key: ${status}`);
     });
   });
 
