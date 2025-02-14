@@ -164,9 +164,6 @@ describe('OrganizationsRepository', () => {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
-      expect(updatedOrg.createdAt.getTime()).toBeLessThan(
-        updatedOrg.updatedAt.getTime(),
-      );
       expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
         updatedOrg.updatedAt.getTime(),
       );

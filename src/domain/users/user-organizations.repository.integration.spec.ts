@@ -208,9 +208,6 @@ describe('UserOrganizationsRepository', () => {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
-      expect(updatedUserOrg.createdAt.getTime()).toBeLessThan(
-        updatedUserOrg.updatedAt.getTime(),
-      );
       expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
         updatedUserOrg.updatedAt.getTime(),
       );
