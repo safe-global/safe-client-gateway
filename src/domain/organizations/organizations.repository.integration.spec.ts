@@ -236,9 +236,7 @@ describe('OrganizationsRepository', () => {
           name: orgName,
           status: orgStatus,
         }),
-      ).rejects.toThrow(
-        'null value in column "status" of relation "users" violates not-null constraint',
-      );
+      ).rejects.toThrow('Invalid enum key: undefined');
     });
 
     it('should not create any entries when an error occurs', async () => {
