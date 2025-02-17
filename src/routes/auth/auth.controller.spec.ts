@@ -25,12 +25,6 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { FakeBlockchainApiManager } from '@/datasources/blockchain/__tests__/fake.blockchain-api.manager';
-import {
-  BlockchainApiManagerModule,
-  IBlockchainApiManager,
-} from '@/domain/interfaces/blockchain-api.manager.interface';
-import { TestBlockchainApiManagerModule } from '@/datasources/blockchain/__tests__/test.blockchain-api.manager';
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
@@ -38,12 +32,9 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 
-const verifySiweMessageMock = jest.fn();
-
 describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
-  let blockchainApiManager: FakeBlockchainApiManager;
   let maxValidityPeriodInMs: number;
 
   async function initApp(config: typeof configuration): Promise<void> {
@@ -52,8 +43,6 @@ describe('AuthController', () => {
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
-      .overrideModule(BlockchainApiManagerModule)
-      .useModule(TestBlockchainApiManagerModule)
       .overrideModule(TargetedMessagingDatasourceModule)
       .useModule(TestTargetedMessagingDatasourceModule)
       .overrideModule(CacheModule)
@@ -71,16 +60,11 @@ describe('AuthController', () => {
       .compile();
 
     cacheService = moduleFixture.get(CacheService);
-    blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
     const configService: IConfigurationService = moduleFixture.get(
       IConfigurationService,
     );
     maxValidityPeriodInMs =
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
-
-    blockchainApiManager.getApi.mockImplementation(() => ({
-      verifySiweMessage: verifySiweMessageMock,
-    }));
 
     app = await new TestAppProvider().provide(moduleFixture);
 
@@ -178,56 +162,6 @@ describe('AuthController', () => {
           expect(setCookie).toHaveLength(1);
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
-      // Verified off-chain as EOA
-      expect(verifySiweMessageMock).not.toHaveBeenCalled();
-      // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
-    });
-
-    it('should verify a smart contract signer', async () => {
-      // Fix "now" as it is otherwise to precisely expect expiration/maxAge
-      jest.setSystemTime(0);
-
-      const nonceResponse = await request(app.getHttpServer()).get(
-        '/v1/auth/nonce',
-      );
-      const nonce: string = nonceResponse.body.nonce;
-      const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
-      const expirationTime = faker.date.between({
-        from: new Date(),
-        to: new Date(Date.now() + maxValidityPeriodInMs),
-      });
-      const message = createSiweMessage(
-        siweMessageBuilder()
-          .with('nonce', nonce)
-          .with('expirationTime', expirationTime)
-          .build(),
-      );
-      const signature = faker.string.hexadecimal({ length: 132 });
-      verifySiweMessageMock.mockResolvedValue(true);
-      const maxAge = getSecondsUntil(expirationTime);
-
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(
-        nonceResponse.body.nonce,
-      );
-      await request(app.getHttpServer())
-        .post('/v1/auth/verify')
-        .send({
-          message,
-          signature,
-        })
-        .expect(200)
-        .expect(({ headers }) => {
-          const setCookie = headers['set-cookie'];
-          const setCookieRegExp = new RegExp(
-            `access_token=([^;]*); Max-Age=${maxAge}; Path=/; Expires=${expirationTime.toUTCString()}; HttpOnly; Secure; SameSite=Lax`,
-          );
-
-          expect(setCookie).toHaveLength(1);
-          expect(setCookie[0]).toMatch(setCookieRegExp);
-        });
-      // Verified on-chain as could not verify EOA
-      expect(verifySiweMessageMock).toHaveBeenCalledTimes(1);
       // Nonce deleted
       await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
@@ -294,13 +228,11 @@ describe('AuthController', () => {
           expect(setCookie).toHaveLength(1);
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
-      // Verified off-chain as EOA
-      expect(verifySiweMessageMock).not.toHaveBeenCalled();
       // Nonce deleted
       await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
-    it('should not verify a signer if expirationTime is too high', async () => {
+    it('should not issue an access token if expirationTime is too high', async () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const nonceResponse = await request(app.getHttpServer()).get(
@@ -329,13 +261,14 @@ describe('AuthController', () => {
           message,
           signature,
         })
-        .expect(401)
+        .expect(403)
         .expect(({ headers, body }) => {
           expect(headers['set-cookie']).toBe(undefined);
 
           expect(body).toStrictEqual({
-            message: 'Unauthorized',
-            statusCode: 401,
+            error: 'Forbidden',
+            message: `Cannot issue token for longer than ${maxValidityPeriodInMs / 1_000} seconds`,
+            statusCode: 403,
           });
         });
       // Nonce deleted
@@ -371,7 +304,8 @@ describe('AuthController', () => {
           expect(headers['set-cookie']).toBe(undefined);
 
           expect(body).toStrictEqual({
-            message: 'Unauthorized',
+            error: 'Unauthorized',
+            message: 'Invalid nonce',
             statusCode: 401,
           });
         });
@@ -420,7 +354,8 @@ describe('AuthController', () => {
           expect(headers['set-cookie']).toBe(undefined);
 
           expect(body).toStrictEqual({
-            message: 'Unauthorized',
+            error: 'Unauthorized',
+            message: 'Invalid nonce',
             statusCode: 401,
           });
         });
@@ -428,7 +363,7 @@ describe('AuthController', () => {
       await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
 
-    it('should not verify a (smart contract) signer if the signature is invalid', async () => {
+    it('should not verify a signer if the signature is invalid', async () => {
       const nonceResponse = await request(app.getHttpServer()).get(
         '/v1/auth/nonce',
       );
@@ -445,7 +380,6 @@ describe('AuthController', () => {
       );
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
       const signature = faker.string.hexadecimal({ length: 132 });
-      verifySiweMessageMock.mockResolvedValue(false);
 
       await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
       await request(app.getHttpServer())
@@ -459,12 +393,11 @@ describe('AuthController', () => {
           expect(headers['set-cookie']).toBe(undefined);
 
           expect(body).toStrictEqual({
-            message: 'Unauthorized',
+            error: 'Unauthorized',
+            message: 'Invalid signature',
             statusCode: 401,
           });
         });
-      // Tried to verify off-/on-chain but failed
-      expect(verifySiweMessageMock).toHaveBeenCalledTimes(1);
       // Nonce deleted
       await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
@@ -501,12 +434,13 @@ describe('AuthController', () => {
           expect(headers['set-cookie']).toBe(undefined);
 
           expect(body).toStrictEqual({
-            message: 'Unauthorized',
+            error: 'Unauthorized',
+            message: 'Invalid message',
             statusCode: 401,
           });
         });
-      // Nonce deleted
-      await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
+      // Nonce remains as SiWe message is expired, not the nonce
+      await expect(cacheService.hGet(cacheDir)).resolves.toBe(nonce);
     });
 
     it('should get the max expirationTime if not specified on the SiWE message', async () => {
@@ -554,8 +488,6 @@ describe('AuthController', () => {
           expect(setCookie).toHaveLength(1);
           expect(setCookie[0]).toMatch(setCookieRegExp);
         });
-      // Verified off-chain as EOA
-      expect(verifySiweMessageMock).not.toHaveBeenCalled();
       // Nonce deleted
       await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
