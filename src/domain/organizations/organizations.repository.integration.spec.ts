@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { DataSource, In } from 'typeorm';
+import { DataSource, EntityNotFoundError, In } from 'typeorm';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -119,7 +119,7 @@ describe('OrganizationsRepository', () => {
 
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
-    it('should set createdAt and updatedAt when creating a User', async () => {
+    it('should set createdAt and updatedAt when creating an Organization', async () => {
       const before = new Date().getTime();
 
       const org = await dbOrgRepo.insert({
@@ -145,7 +145,7 @@ describe('OrganizationsRepository', () => {
       expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
-    it('should update updatedAt when updating a User', async () => {
+    it('should update updatedAt when updating an Organization', async () => {
       const prevOrg = await dbOrgRepo.insert({
         name: faker.word.noun(),
         status: 'ACTIVE',
@@ -191,29 +191,14 @@ describe('OrganizationsRepository', () => {
         name,
       });
 
-      const dbUser = await dbUserRepo.findOneOrFail({
-        where: { id: userId },
-      });
-      const dbOrg = await dbOrgRepo.findOneOrFail({
-        where: { id: org.id },
-      });
       const dbUserOrg = await dbUserOrgRepo.findOneOrFail({
         where: { user: { id: userId } },
+        relations: {
+          user: true,
+          organization: true,
+        },
       });
 
-      expect(dbUser).toEqual({
-        id: userId,
-        status: userStatus,
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date),
-      });
-      expect(dbOrg).toEqual({
-        id: expect.any(Number),
-        name,
-        status: orgStatus,
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date),
-      });
       expect(dbUserOrg).toEqual({
         id: expect.any(Number),
         role: 'ADMIN',
@@ -221,6 +206,19 @@ describe('OrganizationsRepository', () => {
         name,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
+        user: {
+          id: userId,
+          status: userStatus,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
+        organization: {
+          id: expect.any(Number),
+          name,
+          status: orgStatus,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
       });
     });
 
@@ -241,6 +239,23 @@ describe('OrganizationsRepository', () => {
       ).rejects.toThrow(
         'null value in column "status" of relation "users" violates not-null constraint',
       );
+    });
+
+    it('should not create any entries when an error occurs', async () => {
+      const orgName = faker.word.noun();
+      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const userId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await orgRepo
+        .create({
+          userId,
+          name: orgName,
+          status: orgStatus,
+        })
+        .catch(() => {});
 
       await expect(dbUserRepo.find()).resolves.toEqual([]);
       await expect(dbUserOrgRepo.find()).resolves.toEqual([]);
@@ -659,8 +674,8 @@ describe('OrganizationsRepository', () => {
       await orgRepo.delete(org.id);
 
       await expect(
-        dbOrgRepo.findOne({ where: { id: org.id } }),
-      ).resolves.toBeNull();
+        dbOrgRepo.findOneOrFail({ where: { id: org.id } }),
+      ).rejects.toBeInstanceOf(EntityNotFoundError);
     });
   });
 });
