@@ -612,6 +612,52 @@ describe('OrganizationController', () => {
         );
     });
 
+    it('Should throw a 401 if a member of the organization does not have access to update an organization', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const previousOrganizationName = faker.company.name();
+      const newOrganizationName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: previousOrganizationName });
+      const organizationId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${organizationId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: memberAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({
+          name: newOrganizationName,
+          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. SignerAddress= ' +
+            memberAuthPayloadDto.signer_address,
+        });
+    });
+
     it('Should throw a 401 if user does not have access to update an organization', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
@@ -703,7 +749,48 @@ describe('OrganizationController', () => {
         );
     });
 
-    it('Should throw a 401 if user does not have access to update an organization', async () => {
+    it('Should throw a 401 if a member of the organization does not have access to delete an organization', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const organizationName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: organizationName });
+      const organizationId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${organizationId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send([
+          {
+            role: 'MEMBER',
+            address: memberAuthPayloadDto.signer_address,
+          },
+        ])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. SignerAddress= ' +
+            memberAuthPayloadDto.signer_address,
+        });
+    });
+
+    it('Should throw a 401 if user does not have access to delete an organization', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -725,8 +812,15 @@ describe('OrganizationController', () => {
 
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${organizationId}`)
-        .set('Cookie', [`access_token=${adminAccessToken}`])
-        .expect(204);
+        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. SignerAddress= ' +
+            nonMemberAuthPayloadDto.signer_address,
+        });
     });
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
