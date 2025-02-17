@@ -741,7 +741,44 @@ describe('UserOrganizationsRepository', () => {
       });
     });
 
-    it.todo('should not accept the invite if the user was not invited');
+    it('should not accept the invite if the user was not invited', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const nonMember = await dbUserRepo.insert({
+        status: 'PENDING',
+      });
+      await dbWalletRepo.insert({
+        user: nonMember.generatedMaps[0],
+        address: memberAuthPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: admin.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: userOrgRole,
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        userOrgRepo.acceptInvite({
+          authPayload: new AuthPayload(memberAuthPayloadDto),
+          orgId,
+        }),
+      ).rejects.toThrow('Organization not found.');
+    });
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
@@ -797,9 +834,50 @@ describe('UserOrganizationsRepository', () => {
       ).rejects.toThrow('Organization not found.');
     });
 
-    it.todo(
-      'should throw an error if the user is already a member of the organization',
-    );
+    it('should throw an error if the user is already a member of the organization', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const member = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: member.generatedMaps[0],
+        address: memberAuthPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: admin.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await dbUserOrgRepo.insert({
+        user: member.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: userOrgRole,
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        userOrgRepo.acceptInvite({
+          authPayload: new AuthPayload(memberAuthPayloadDto),
+          orgId,
+        }),
+      ).rejects.toThrow('Organization not found.');
+    });
 
     it('should throw an error if the user is not INVITED to the organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
@@ -888,7 +966,44 @@ describe('UserOrganizationsRepository', () => {
       });
     });
 
-    it.todo('should not decline the invite if the user was not invited');
+    it('should not decline the invite if the user was not invited', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const nonMember = await dbUserRepo.insert({
+        status: 'PENDING',
+      });
+      await dbWalletRepo.insert({
+        user: nonMember.generatedMaps[0],
+        address: memberAuthPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: admin.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: userOrgRole,
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        userOrgRepo.declineInvite({
+          authPayload: new AuthPayload(memberAuthPayloadDto),
+          orgId,
+        }),
+      ).rejects.toThrow('Organization not found.');
+    });
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
@@ -944,9 +1059,50 @@ describe('UserOrganizationsRepository', () => {
       ).rejects.toThrow('Organization not found.');
     });
 
-    it.todo(
-      'should throw an error if the user is already a member of the organization',
-    );
+    it('should throw an error if the user is already a member of the organization', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const member = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: member.generatedMaps[0],
+        address: memberAuthPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: admin.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await dbUserOrgRepo.insert({
+        user: member.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: userOrgRole,
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        userOrgRepo.declineInvite({
+          authPayload: new AuthPayload(memberAuthPayloadDto),
+          orgId,
+        }),
+      ).rejects.toThrow('Organization not found.');
+    });
 
     it('should throw an error if the user is not INVITED to the organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
@@ -1133,7 +1289,52 @@ describe('UserOrganizationsRepository', () => {
       ).resolves.not.toThrow();
     });
 
-    it.todo('should not allow updating the role if the user is not an ADMIN');
+    it('should not allow updating the role if the user is not an ADMIN', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const adminUserId = admin.generatedMaps[0].id;
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const member = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: member.generatedMaps[0],
+        address: memberAuthPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: admin.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await dbUserOrgRepo.insert({
+        user: member.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: 'MEMBER',
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        userOrgRepo.updateRole({
+          authPayload: new AuthPayload(memberAuthPayloadDto),
+          orgId,
+          role: 'ADMIN',
+          userId: adminUserId,
+        }),
+      ).rejects.toThrow('Signer is not an active admin.');
+    });
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
@@ -1311,7 +1512,51 @@ describe('UserOrganizationsRepository', () => {
       ).resolves.toBeNull();
     });
 
-    it.todo('should not allow removing a user if the user is not an ADMIN');
+    it('should not allow removing a user if the user is not an ADMIN', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const adminUserId = admin.generatedMaps[0].id;
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const member = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: member.generatedMaps[0],
+        address: memberAuthPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: admin.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await dbUserOrgRepo.insert({
+        user: member.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        role: 'MEMBER',
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        userOrgRepo.removeUser({
+          authPayload: new AuthPayload(memberAuthPayloadDto),
+          orgId,
+          userId: adminUserId,
+        }),
+      ).rejects.toThrow('Signer is not an active admin.');
+    });
 
     it('should throw an error if the signer_address does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder()
