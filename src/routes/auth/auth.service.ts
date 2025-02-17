@@ -32,7 +32,7 @@ export class AuthService {
   async getAccessToken(args: SiweDto): Promise<{
     accessToken: string;
   }> {
-    const { chainId, address, notBefore, expirationTime } =
+    const { chainId, address, notBefore, issuedAt, expirationTime } =
       await this.siweRepository.getValidatedSiweMessage(args);
 
     const maxExpirationTime = this.getMaxExpirationTime();
@@ -55,6 +55,7 @@ export class AuthService {
         exp: expirationTime
           ? new Date(expirationTime)
           : new Date(maxExpirationTime),
+        iat: issuedAt ? new Date(issuedAt) : new Date(),
       },
     );
 
