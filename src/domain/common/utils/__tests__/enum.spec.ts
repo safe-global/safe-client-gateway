@@ -38,7 +38,6 @@ describe('enum utils', () => {
     });
 
     it('should return the key of a string enum', () => {
-      // Function is inherently typed for number enums
       const result = getEnumKey(StringEnum, 'B' as unknown as number);
 
       expect(result).toEqual('B');
@@ -66,7 +65,6 @@ describe('enum utils', () => {
       });
 
       it('should return the value of a string enum', () => {
-        // Function is inherently typed for number enums
         const result = databaseEnumTransformer(StringEnum).to(
           'B' as unknown as keyof typeof StringEnum,
         );
@@ -95,7 +93,6 @@ describe('enum utils', () => {
       });
 
       it('should return the key of a string enum', () => {
-        // Function is inherently typed for number enums
         const result = databaseEnumTransformer(StringEnum).from(
           'B' as unknown as number,
         );
