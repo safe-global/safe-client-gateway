@@ -47,6 +47,6 @@ export class GetOrganizationResponse {
   @ApiProperty({ type: String, enum: OrganizationStatus })
   public status!: keyof typeof OrganizationStatus;
 
-  @ApiProperty()
+  @ApiProperty({ type: UserOrganizationsDto, isArray: true })
   public userOrganizations!: Array<UserOrganizationsDto>;
 }
