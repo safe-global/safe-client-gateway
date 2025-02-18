@@ -1,3 +1,4 @@
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import {
   UserOrganizationRole,
   UserOrganizationStatus,
@@ -10,7 +11,7 @@ class UserOrganizationUser implements Pick<User, 'id'> {
   @ApiProperty({ type: Number })
   id!: User['id'];
 
-  @ApiProperty({ enum: Object.keys(UserStatus) })
+  @ApiProperty({ enum: getStringEnumKeys(UserStatus) })
   status!: keyof typeof UserStatus;
 }
 
@@ -18,10 +19,10 @@ class UserOrganization {
   @ApiProperty({ type: Number })
   id!: DomainUserOrganization['id'];
 
-  @ApiProperty({ enum: Object.keys(UserOrganizationRole) })
+  @ApiProperty({ enum: getStringEnumKeys(UserOrganizationRole) })
   role!: keyof typeof UserOrganizationRole;
 
-  @ApiProperty({ enum: Object.keys(UserOrganizationStatus) })
+  @ApiProperty({ enum: getStringEnumKeys(UserOrganizationStatus) })
   status!: keyof typeof UserOrganizationStatus;
 
   @ApiProperty()

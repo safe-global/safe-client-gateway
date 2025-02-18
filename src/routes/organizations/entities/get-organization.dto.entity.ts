@@ -1,6 +1,7 @@
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import { User } from '@/datasources/users/entities/users.entity.db';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
 import {
   UserOrganizationRole,
@@ -13,7 +14,7 @@ class UserDto extends User {
   @ApiProperty({ type: Number })
   public id!: User['id'];
 
-  @ApiProperty({ type: String, enum: UserStatus })
+  @ApiProperty({ type: String, enum: getStringEnumKeys(UserStatus) })
   public status!: User['status'];
 }
 
@@ -21,10 +22,13 @@ class UserOrganizationsDto {
   @ApiProperty({ type: Number })
   public id!: UserOrganization['id'];
 
-  @ApiProperty({ type: String, enum: UserOrganizationRole })
+  @ApiProperty({ type: String, enum: getStringEnumKeys(UserOrganizationRole) })
   public role!: UserOrganization['role'];
 
-  @ApiProperty({ type: String, enum: UserOrganizationStatus })
+  @ApiProperty({
+    type: String,
+    enum: getStringEnumKeys(UserOrganizationStatus),
+  })
   public status!: UserOrganization['status'];
 
   @ApiProperty({ type: Date })
@@ -44,7 +48,7 @@ export class GetOrganizationResponse {
   @ApiProperty({ type: String })
   public name!: Organization['name'];
 
-  @ApiProperty({ type: String, enum: OrganizationStatus })
+  @ApiProperty({ type: String, enum: getStringEnumKeys(OrganizationStatus) })
   public status!: keyof typeof OrganizationStatus;
 
   @ApiProperty({ type: UserOrganizationsDto, isArray: true })
