@@ -42,7 +42,7 @@ import {
   version: '1',
 })
 @UseGuards(AuthGuard)
-export class OrganizatinoSafesController {
+export class OrganizationSafesController {
   public constructor(
     @Inject(OrganizationSafesService)
     private readonly organizationSafesService: OrganizationSafesService,
@@ -52,7 +52,7 @@ export class OrganizatinoSafesController {
   @ApiCreatedResponse({ description: 'Safes created successfully' })
   @ApiBody({ type: CreateOrganizationSafeDto, isArray: true })
   @ApiUnauthorizedResponse({
-    description: 'User unauthorized. OR Signer address not provided',
+    description: 'User unauthorize OR signer address not provided',
   })
   @ApiNotFoundResponse({ description: 'User not found.' })
   public async create(
@@ -79,7 +79,7 @@ export class OrganizatinoSafesController {
     type: GetOrganizationSafeResponse,
   })
   @ApiUnauthorizedResponse({
-    description: 'User unauthorized. OR Signer address not provided',
+    description: 'User unauthorized OR signer address not provided',
   })
   @ApiNotFoundResponse({
     description: 'User not found.',
@@ -100,10 +100,10 @@ export class OrganizatinoSafesController {
   @HttpCode(204)
   @ApiNoContentResponse({ description: 'Safes deleted successfully' })
   @ApiUnauthorizedResponse({
-    description: 'User unauthorized. OR Signer address not provided',
+    description: 'User unauthorized OR signer address not provided',
   })
   @ApiNotFoundResponse({
-    description: 'Organization has no Safes. OR User not found.',
+    description: 'Organization has no Safes OR user not found.',
   })
   public async delete(
     @Body(new ValidationPipe(DeleteOrganizationSafesSchema))

@@ -606,7 +606,7 @@ describe('OrganizationController', () => {
             statusCode: 401,
             error: 'Unauthorized',
             message:
-              'User is unauthorized. SignerAddress= ' +
+              'User is unauthorized. signer_address= ' +
               authPayloadDto.signer_address,
           }),
         );
@@ -653,7 +653,7 @@ describe('OrganizationController', () => {
           statusCode: 401,
           error: 'Unauthorized',
           message:
-            'User is unauthorized. SignerAddress= ' +
+            'User is unauthorized. signer_address= ' +
             memberAuthPayloadDto.signer_address,
         });
     });
@@ -691,7 +691,7 @@ describe('OrganizationController', () => {
           statusCode: 401,
           error: 'Unauthorized',
           message:
-            'User is unauthorized. SignerAddress= ' +
+            'User is unauthorized. signer_address= ' +
             nonMemberAuthPayloadDto.signer_address,
         });
     });
@@ -743,7 +743,7 @@ describe('OrganizationController', () => {
             statusCode: 401,
             error: 'Unauthorized',
             message:
-              'User is unauthorized. SignerAddress= ' +
+              'User is unauthorized. signer_address= ' +
               authPayloadDto.signer_address,
           }),
         );
@@ -785,7 +785,7 @@ describe('OrganizationController', () => {
           statusCode: 401,
           error: 'Unauthorized',
           message:
-            'User is unauthorized. SignerAddress= ' +
+            'User is unauthorized. signer_address= ' +
             memberAuthPayloadDto.signer_address,
         });
     });
@@ -818,7 +818,7 @@ describe('OrganizationController', () => {
           statusCode: 401,
           error: 'Unauthorized',
           message:
-            'User is unauthorized. SignerAddress= ' +
+            'User is unauthorized. signer_address= ' +
             nonMemberAuthPayloadDto.signer_address,
         });
     });

@@ -26,7 +26,7 @@ import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
-import { OrganizatinoSafesController } from '@/routes/organizations/organization-safes.controller';
+import { OrganizationSafesController } from '@/routes/organizations/organization-safes.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
@@ -88,7 +88,7 @@ describe('OrganizationSafeController', () => {
 
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(
-      OrganizatinoSafesController.prototype,
+      OrganizationSafesController.prototype,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     ) as Array<Function>;
 
@@ -194,14 +194,64 @@ describe('OrganizationSafeController', () => {
           },
         ])
         .expect(401)
-        .expect(({ body }) => {
-          expect(body).toEqual({
-            error: 'Unauthorized',
-            message:
-              'User is unauthorized. SignerAddress= ' +
-              userAuthPayloadDto.signer_address,
-            statusCode: 401,
-          });
+        .expect({
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. signer_address= ' +
+            userAuthPayloadDto.signer_address,
+          statusCode: 401,
+        });
+    });
+
+    it('Should return a 401 for a MEMBER of an organization', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const orgName = faker.company.name();
+      const chain = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send([
+          {
+            address: getAddress(memberAuthPayloadDto.signer_address),
+            role: 'MEMBER',
+          },
+        ]);
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send();
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/safes`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send([
+          {
+            chainId: chain.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ])
+        .expect(401)
+        .expect({
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. signer_address= ' +
+            memberAuthPayloadDto.signer_address,
+          statusCode: 401,
         });
     });
 
@@ -367,12 +417,8 @@ describe('OrganizationSafeController', () => {
         .expect(422)
         .expect({
           statusCode: 422,
-          code: 'too_big',
-          maximum: 78,
-          type: 'string',
-          inclusive: true,
-          exact: false,
-          message: 'String must contain at most 78 character(s)',
+          code: 'custom',
+          message: 'Value must be less than or euqal to 78',
           path: [0, 'chainId'],
         });
     });
@@ -411,8 +457,12 @@ describe('OrganizationSafeController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.company.name();
-      const chain1 = chainBuilder().build();
-      const chain2 = chainBuilder().build();
+      const chain1 = chainBuilder()
+        .with('chainId', faker.string.numeric({ length: { min: 1, max: 2 } }))
+        .build();
+      const chain2 = chainBuilder()
+        .with('chainId', faker.string.numeric({ length: { min: 3, max: 4 } }))
+        .build();
       const createOrgSafePayload = [
         {
           chainId: chain1.chainId,
@@ -444,26 +494,17 @@ describe('OrganizationSafeController', () => {
         .send(createOrgSafePayload);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/safes`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send(createOrgSafePayload);
-
-      await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
-        .expect(({ body }) => {
-          expect(body).toStrictEqual({
-            safes: {
-              [chain1.chainId]: expect.arrayContaining([
-                createOrgSafePayload[0].address,
-              ]),
-              [chain2.chainId]: expect.arrayContaining([
-                createOrgSafePayload[1].address,
-                createOrgSafePayload[2].address,
-              ]),
-            },
-          });
+        .expect({
+          safes: {
+            [chain1.chainId]: [createOrgSafePayload[0].address],
+            [chain2.chainId]: [
+              createOrgSafePayload[1].address,
+              createOrgSafePayload[2].address,
+            ],
+          },
         });
     });
 
@@ -492,14 +533,12 @@ describe('OrganizationSafeController', () => {
         .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${userAccessToken}`])
         .expect(401)
-        .expect(({ body }) => {
-          expect(body).toEqual({
-            error: 'Unauthorized',
-            message:
-              'User is unauthorized. SignerAddress= ' +
-              userAuthPayloadDto.signer_address,
-            statusCode: 401,
-          });
+        .expect({
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. signer_address= ' +
+            userAuthPayloadDto.signer_address,
+          statusCode: 401,
         });
     });
 
@@ -693,14 +732,12 @@ describe('OrganizationSafeController', () => {
         .set('Cookie', [`access_token=${userAccessToken}`])
         .send(orgSafes)
         .expect(401)
-        .expect(({ body }) => {
-          expect(body).toEqual({
-            error: 'Unauthorized',
-            message:
-              'User is unauthorized. SignerAddress= ' +
-              userAuthPayloadDto.signer_address,
-            statusCode: 401,
-          });
+        .expect({
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. signer_address= ' +
+            userAuthPayloadDto.signer_address,
+          statusCode: 401,
         });
     });
 
@@ -866,12 +903,8 @@ describe('OrganizationSafeController', () => {
         .expect(422)
         .expect({
           statusCode: 422,
-          code: 'too_big',
-          maximum: 78,
-          type: 'string',
-          inclusive: true,
-          exact: false,
-          message: 'String must contain at most 78 character(s)',
+          code: 'custom',
+          message: 'Value must be less than or euqal to 78',
           path: [0, 'chainId'],
         });
     });

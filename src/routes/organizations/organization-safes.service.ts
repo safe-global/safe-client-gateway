@@ -109,7 +109,7 @@ export class OrganizationSafesService {
 
     if (!organization) {
       throw new UnauthorizedException(
-        'User is unauthorized. SignerAddress= ' + signerAddress,
+        'User is unauthorized. signer_address= ' + signerAddress,
       );
     }
   }
