@@ -49,7 +49,7 @@
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "nestjs-cls": "^4.5.0",
-    "pg": "^8.13.1",
+    "pg": "^8.13.3",
     "postgres": "^3.4.5",
     "redis": "^4.7.0",
     "reflect-metadata": "^0.2.2",
