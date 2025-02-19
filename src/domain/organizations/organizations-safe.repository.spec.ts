@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { DataSource } from 'typeorm';
-import { getAddress } from 'viem';
+import { getAddress, maxUint256 } from 'viem';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -124,7 +124,7 @@ describe('OrganizationSafesRepository', () => {
 
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
-    it('should set createdAt and updatedAt when creating a User', async () => {
+    it('should set createdAt and updatedAt when creating a OrganizationSafe', async () => {
       const before = new Date().getTime();
       const org = await dbOrgRepo.insert({
         status: faker.helpers.arrayElement(OrganizationStatusKeys),
@@ -154,7 +154,7 @@ describe('OrganizationSafesRepository', () => {
       expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
-    it('should update updatedAt when updating a User', async () => {
+    it('should update updatedAt when updating a OrganizationSafe', async () => {
       const org = await dbOrgRepo.insert({
         status: faker.helpers.arrayElement(
           getStringEnumKeys(OrganizationStatus),
@@ -166,7 +166,7 @@ describe('OrganizationSafesRepository', () => {
         address: getAddress(faker.finance.ethereumAddress()),
         organization: org.identifiers[0].id,
       });
-      const orgSafeId = prevOrgSafe.identifiers[0].id as User['id'];
+      const orgSafeId = prevOrgSafe.identifiers[0].id as OrganizationSafe['id'];
       await dbOrgSafeRepo.update(orgSafeId, {
         address: getAddress(faker.finance.ethereumAddress()),
       });
@@ -187,13 +187,82 @@ describe('OrganizationSafesRepository', () => {
   });
 
   describe('chain_id', () => {
-    it.todo('should not allow a chain_id to be longer than uint256');
+    it('should not allow a chain_id to be longer than uint256 (78 chars)', async () => {
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      await expect(
+        dbOrgSafeRepo.insert({
+          chainId: (maxUint256 * BigInt(10)).toString(), // 79 chars
+          address: getAddress(faker.finance.ethereumAddress()),
+          organization: org.identifiers[0].id,
+        }),
+      ).rejects.toThrow('value too long');
+    });
   });
 
   describe('address', () => {
-    it.todo('should store non-checksummed addresses, checksummed');
+    it('should store non-checksummed addresses, checksummed', async () => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase();
+      const checksummedAddress = getAddress(nonChecksummedAddress);
 
-    it.todo('should retrieve non-checksummed addresses, checksummed');
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const insertOrgSafeResult = await dbOrgSafeRepo.insert({
+        chainId: faker.string.numeric(),
+        address: nonChecksummedAddress as OrganizationSafe['address'],
+        organization: org.identifiers[0].id,
+      });
+      const orgSafe = await dbOrgSafeRepo.findOneOrFail({
+        where: {
+          id: insertOrgSafeResult.identifiers[0].id as OrganizationSafe['id'],
+        },
+      });
+
+      expect(orgSafe.address).toEqual(checksummedAddress);
+    });
+
+    it('should retrieve non-checksummed addresses, checksummed', async () => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase();
+      const checksummedAddress = getAddress(nonChecksummedAddress);
+
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const insertOrgSafeResult = await dbOrgSafeRepo.insert({
+        chainId: faker.string.numeric(),
+        address: checksummedAddress,
+        organization: org.identifiers[0].id,
+      });
+      const insertedOrgSafeId = insertOrgSafeResult.identifiers[0]
+        .id as OrganizationSafe['id'];
+
+      await dbOrgSafeRepo.update(insertedOrgSafeId, {
+        address: nonChecksummedAddress as OrganizationSafe['address'],
+      });
+
+      const orgSafe = await dbOrgSafeRepo.findOneOrFail({
+        where: {
+          id: insertedOrgSafeId,
+        },
+      });
+
+      expect(orgSafe.address).toEqual(checksummedAddress);
+    });
   });
 
   describe('create', () => {
