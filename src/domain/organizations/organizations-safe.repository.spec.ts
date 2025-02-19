@@ -365,7 +365,7 @@ describe('OrganizationSafesRepository', () => {
   });
 
   describe('findByOrganizationId', () => {
-    it('should return found organizations', async () => {
+    it('should return found organization Safes', async () => {
       const orgSafes = faker.helpers.multiple(
         () => ({
           chainId: faker.string.numeric(),
@@ -390,7 +390,7 @@ describe('OrganizationSafesRepository', () => {
       );
     });
 
-    it('should return empty array if no organizations found', async () => {
+    it('should return empty array if no organization Safes found', async () => {
       await expect(
         orgSafesRepo.findByOrganizationId(
           faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
@@ -455,9 +455,58 @@ describe('OrganizationSafesRepository', () => {
   });
 
   describe('find', () => {
-    it.todo('should return found organizations');
+    it('should return found organization Safes', async () => {
+      const orgSafes = faker.helpers.multiple(
+        () => ({
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+        { count: { min: 2, max: 5 } },
+      );
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      await orgSafesRepo.create({
+        organizationId: orgId,
+        payload: orgSafes,
+      });
 
-    it.todo('should return empty array if no organizations found');
+      await expect(
+        orgSafesRepo.find({
+          where: { organization: { id: orgId } },
+        }),
+      ).resolves.toEqual(
+        expect.arrayContaining(
+          orgSafes.map(({ chainId, address }) => ({
+            id: expect.any(Number),
+            chainId,
+            address,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          })),
+        ),
+      );
+    });
+
+    it('should return empty array if no organization Safes found', async () => {
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+
+      expect(
+        await orgSafesRepo.find({
+          where: { organization: { id: orgId } },
+        }),
+      ).toEqual([]);
+    });
   });
 
   describe('delete', () => {
