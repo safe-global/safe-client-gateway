@@ -50,7 +50,7 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   signers: Array<AddressInfo>;
   @ApiProperty()
   confirmationsRequired: number;
-  @ApiProperty()
+  @ApiProperty({ type: MultisigConfirmationDetails, isArray: true })
   confirmations: Array<MultisigConfirmationDetails>;
   @ApiProperty({ type: AddressInfo, isArray: true })
   rejectors: Array<AddressInfo>;
