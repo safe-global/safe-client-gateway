@@ -16,6 +16,7 @@ import { OrganizationStatus } from '@/domain/organizations/entities/organization
 import type { Repository } from 'typeorm';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -364,15 +365,93 @@ describe('OrganizationSafesRepository', () => {
   });
 
   describe('findByOrganizationId', () => {
-    it.todo('should return found organizations');
+    it('should return found organizations', async () => {
+      const orgSafes = faker.helpers.multiple(
+        () => ({
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+        { count: { min: 2, max: 5 } },
+      );
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      await orgSafesRepo.create({
+        organizationId: orgId,
+        payload: orgSafes,
+      });
 
-    it.todo('should return empty array if no organizations found');
+      await expect(orgSafesRepo.findByOrganizationId(orgId)).resolves.toEqual(
+        orgSafes,
+      );
+    });
+
+    it('should return empty array if no organizations found', async () => {
+      await expect(
+        orgSafesRepo.findByOrganizationId(
+          faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        ),
+      ).resolves.toEqual([]);
+    });
   });
 
   describe('findOrFail', () => {
-    it.todo('should return found organizations');
+    it('should return found organizations Safes', async () => {
+      const orgSafes = faker.helpers.multiple(
+        () => ({
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+        { count: { min: 2, max: 5 } },
+      );
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      await orgSafesRepo.create({
+        organizationId: orgId,
+        payload: orgSafes,
+      });
 
-    it.todo('should throw NotFoundException if no organizations found');
+      await expect(
+        orgSafesRepo.findOrFail({
+          where: { organization: { id: orgId } },
+        }),
+      ).resolves.toEqual(
+        expect.arrayContaining(
+          orgSafes.map(({ chainId, address }) => ({
+            id: expect.any(Number),
+            chainId,
+            address,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          })),
+        ),
+      );
+    });
+
+    it('should throw NotFoundException if no organizations Safes found', async () => {
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+
+      await expect(
+        orgSafesRepo.findOrFail({
+          where: { organization: { id: orgId } },
+        }),
+      ).rejects.toThrow('Organization has no Safes.');
+    });
   });
 
   describe('find', () => {
