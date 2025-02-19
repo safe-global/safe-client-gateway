@@ -162,7 +162,7 @@ export class OrganizationsService {
       args.authPayload.signer_address,
     );
 
-    return await this.organizationsRepository.delete(args);
+    return await this.organizationsRepository.delete(args.id);
   }
 
   private assertSignerAddress(
