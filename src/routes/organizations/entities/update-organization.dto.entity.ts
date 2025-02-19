@@ -16,7 +16,7 @@ export class UpdateOrganizationDto
   public readonly name?: Organization['name'];
 
   @ApiPropertyOptional({
-    enum: OrganizationStatus,
+    enum: getStringEnumKeys(OrganizationStatus),
   })
   public readonly status?: keyof typeof OrganizationStatus;
 }
