@@ -609,7 +609,7 @@ describe('UserOrganizationsRepository', () => {
       ).rejects.toThrow('User not found.');
     });
 
-    it('not allow inviting users if the user is not an ADMIN', async () => {
+    it('should not allow inviting users if the user is not an ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
       const owner = await dbUserRepo.insert({
