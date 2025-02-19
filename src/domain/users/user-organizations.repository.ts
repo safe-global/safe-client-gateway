@@ -106,7 +106,11 @@ export class UsersOrganizationsRepository
     const org = await this.organizationsRepository.findOneOrFail({
       where: {
         id: args.orgId,
-        userOrganizations: { user: { id: user.id }, status: 'ACTIVE' },
+        userOrganizations: {
+          user: { id: user.id },
+          status: 'ACTIVE',
+          role: 'ADMIN',
+        },
       },
       relations: { userOrganizations: { user: true } },
     });
