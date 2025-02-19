@@ -510,16 +510,170 @@ describe('OrganizationSafesRepository', () => {
   });
 
   describe('delete', () => {
-    it.todo('should delete an OrganizationSafe');
+    it('should delete an OrganizationSafe', async () => {
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.helpers.arrayElement([
+          faker.word.noun(),
+          faker.word.noun(),
+        ]),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      const orgSafe = await dbOrgSafeRepo.insert({
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+        organization: {
+          id: orgId,
+        },
+      });
+      const orgSafeId = orgSafe.identifiers[0].id as OrganizationSafe['id'];
 
-    it.todo('should delete multiple OrganizationSafes');
+      const orgSafeBefore = await orgSafesRepo.findOrFail({
+        where: { id: orgSafeId },
+      });
+      expect(orgSafeBefore).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: orgSafeId,
+          }),
+        ]),
+      );
 
-    it.todo(
-      'should throw NotFoundException if provided OrganizationSafe is not found',
-    );
+      await orgSafesRepo.delete({
+        organizationId: orgId,
+        payload: [
+          {
+            chainId: orgSafeBefore[0].chainId,
+            address: orgSafeBefore[0].address,
+          },
+        ],
+      });
 
-    it.todo(
-      'should throw NotFoundException if one of the provided OrganizationSafes is not found',
-    );
+      await expect(
+        orgSafesRepo.findOrFail({
+          where: { organization: { id: orgId } },
+        }),
+      ).rejects.toThrow('Organization has no Safes.');
+    });
+
+    it('should delete multiple OrganizationSafes', async () => {
+      const orgSafes = faker.helpers.multiple(
+        () => ({
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+        { count: { min: 2, max: 5 } },
+      );
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      await orgSafesRepo.create({
+        organizationId: orgId,
+        payload: orgSafes,
+      });
+      const orgSafeBefore = await orgSafesRepo.findByOrganizationId(orgId);
+      expect(orgSafeBefore).toHaveLength(orgSafes.length);
+
+      await orgSafesRepo.delete({
+        organizationId: orgId,
+        payload: orgSafes,
+      });
+
+      await expect(
+        orgSafesRepo.findOrFail({
+          where: { organization: { id: orgId } },
+        }),
+      ).rejects.toThrow('Organization has no Safes.');
+    });
+
+    it('should throw NotFoundException if provided OrganizationSafe is not found', async () => {
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      const chainId = faker.string.numeric();
+      await dbOrgSafeRepo.insert({
+        chainId,
+        address: getAddress(faker.finance.ethereumAddress()),
+        organization: {
+          id: orgId,
+        },
+      });
+
+      await expect(
+        orgSafesRepo.delete({
+          organizationId: orgId,
+          payload: [
+            {
+              chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        }),
+      ).rejects.toThrow('Organization has no Safes.');
+    });
+
+    it('should throw NotFoundException if none of the provided OrganizationSafes is found', async () => {
+      const orgSafes = faker.helpers.multiple(
+        () => ({
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+        { count: { min: 2, max: 5 } },
+      );
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      await orgSafesRepo.create({
+        organizationId: orgId,
+        payload: orgSafes,
+      });
+
+      const orgSafeBefore = await orgSafesRepo.findByOrganizationId(orgId);
+      expect(orgSafeBefore).toHaveLength(orgSafes.length);
+
+      // None is found
+      await expect(
+        orgSafesRepo.delete({
+          organizationId: orgId,
+          payload: [
+            {
+              chainId: faker.string.numeric(),
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        }),
+      ).rejects.toThrow('Organization has no Safes.');
+
+      // Some are found
+      await expect(
+        orgSafesRepo.delete({
+          organizationId: orgId,
+          payload: [
+            {
+              chainId: orgSafes[0].chainId,
+              address: orgSafes[0].address,
+            },
+            {
+              chainId: faker.string.numeric(),
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        }),
+      ).resolves.toBeUndefined();
+    });
   });
 });
