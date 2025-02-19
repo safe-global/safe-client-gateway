@@ -25,6 +25,7 @@ import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { getAddress } from 'viem';
+import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -55,7 +56,7 @@ describe('UserOrganizationsRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [UserOrganization, Organization, User, Wallet],
+    entities: [UserOrganization, Organization, OrganizationSafe, User, Wallet],
   });
 
   const dbWalletRepo = dataSource.getRepository(Wallet);

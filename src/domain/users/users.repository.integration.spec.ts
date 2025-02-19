@@ -17,6 +17,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
+import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -44,7 +45,7 @@ describe('UsersRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [UserOrganization, Organization, User, Wallet],
+    entities: [UserOrganization, Organization, OrganizationSafe, User, Wallet],
   });
 
   beforeAll(async () => {

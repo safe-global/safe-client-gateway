@@ -11,8 +11,8 @@ import {
 } from '@/domain/organizations/entities/organization.entity';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
+import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 
-// @todo make organizations singular, The database table name should remain plural
 @Entity('organizations')
 export class Organization implements DomainOrganization {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_org_id' })
@@ -50,4 +50,13 @@ export class Organization implements DomainOrganization {
     { cascade: ['update', 'insert'] },
   )
   userOrganizations!: Array<UserOrganization>;
+
+  @OneToMany(
+    () => OrganizationSafe,
+    (safeList: OrganizationSafe) => safeList.organization,
+    {
+      cascade: ['update', 'insert'],
+    },
+  )
+  safes?: Array<OrganizationSafe>;
 }

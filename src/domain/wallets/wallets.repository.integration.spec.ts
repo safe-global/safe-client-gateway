@@ -14,6 +14,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
+import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -41,7 +42,7 @@ describe('WalletsRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [UserOrganization, Organization, User, Wallet],
+    entities: [UserOrganization, Organization, OrganizationSafe, User, Wallet],
   });
 
   beforeAll(async () => {
