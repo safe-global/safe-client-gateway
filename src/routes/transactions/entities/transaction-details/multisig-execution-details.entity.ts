@@ -9,7 +9,7 @@ import {
 export class MultisigConfirmationDetails {
   @ApiProperty()
   signer: AddressInfo;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   signature: string | null;
   @ApiProperty()
   submittedAt: number;
