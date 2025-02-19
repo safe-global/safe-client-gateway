@@ -28,7 +28,6 @@ import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { UserOrganizationsDto } from '@/routes/organizations/entities/user-organizations.dto.entity';
 import { Invitation } from '@/routes/organizations/entities/invitation.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { InviteUsersDto } from '@/routes/organizations/entities/invite-users.dto.entity';
 import type { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
 
