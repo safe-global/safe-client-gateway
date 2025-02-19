@@ -15,6 +15,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -43,7 +44,7 @@ describe('OrganizationsRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [UserOrganization, Organization, User, Wallet],
+    entities: [UserOrganization, Organization, OrganizationSafe, User, Wallet],
   });
 
   const dbUserRepo = dataSource.getRepository(User);
