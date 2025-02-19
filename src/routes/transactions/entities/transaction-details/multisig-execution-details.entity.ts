@@ -9,7 +9,7 @@ import {
 export class MultisigConfirmationDetails {
   @ApiProperty()
   signer: AddressInfo;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   signature: string | null;
   @ApiProperty()
   submittedAt: number;
@@ -46,7 +46,7 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   safeTxHash: string;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   executor: AddressInfo | null;
-  @ApiProperty()
+  @ApiProperty({ type: AddressInfo, isArray: true })
   signers: Array<AddressInfo>;
   @ApiProperty()
   confirmationsRequired: number;
