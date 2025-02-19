@@ -46,7 +46,7 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   safeTxHash: string;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   executor: AddressInfo | null;
-  @ApiProperty()
+  @ApiProperty({ type: AddressInfo, isArray: true })
   signers: Array<AddressInfo>;
   @ApiProperty()
   confirmationsRequired: number;
