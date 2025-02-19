@@ -1,6 +1,5 @@
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { Organization } from '@/domain/organizations/entities/organization.entity';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import {
@@ -63,7 +62,7 @@ export class OrganizationSafesController {
       ParseIntPipe,
       new ValidationPipe(RowSchema.shape.id),
     )
-    organizationId: Organization['id'],
+    organizationId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.organizationSafesService.create({
@@ -90,7 +89,7 @@ export class OrganizationSafesController {
       ParseIntPipe,
       new ValidationPipe(RowSchema.shape.id),
     )
-    organizationId: Organization['id'],
+    organizationId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetOrganizationSafeResponse> {
     return await this.organizationSafesService.get(organizationId, authPayload);
@@ -113,7 +112,7 @@ export class OrganizationSafesController {
       ParseIntPipe,
       new ValidationPipe(RowSchema.shape.id),
     )
-    organizationId: Organization['id'],
+    organizationId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.organizationSafesService.delete({

@@ -1,6 +1,7 @@
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import { OrganizationSafe as DomainOrganizationSafe } from '@/domain/organizations/entities/organization-safe.entity';
+import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 import {
   Column,
   Entity,
@@ -19,7 +20,7 @@ export class OrganizationSafe implements DomainOrganizationSafe {
   @Column({
     name: 'chain_id',
     type: 'varchar',
-    length: 78,
+    length: CHAIN_ID_MAXLENGTH,
   })
   public readonly chainId!: string;
 

@@ -1,18 +1,12 @@
 import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
-import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+import { ChainIdSchema } from '@/domain/chains/entities/schemas/chain-id.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ApiProperty } from '@nestjs/swagger';
 
 import { z } from 'zod';
 
 export const CreateOrganizationSafeSchema = z.object({
-  chainId: NumericStringSchema.refine(
-    (val) => val.length <= CHAIN_ID_MAXLENGTH,
-    {
-      message: `Value must be less than or euqal to ${CHAIN_ID_MAXLENGTH}`,
-    },
-  ),
+  chainId: ChainIdSchema,
   address: AddressSchema,
 });
 
