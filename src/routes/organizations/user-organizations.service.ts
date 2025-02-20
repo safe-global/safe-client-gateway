@@ -1,7 +1,9 @@
 import { ConflictException, Inject } from '@nestjs/common';
+import { In } from 'typeorm';
 import { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
 import { User } from '@/domain/users/entities/user.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { InviteUsersDto } from '@/routes/organizations/entities/invite-users.dto.entity';
@@ -16,6 +18,8 @@ export class UserOrganizationsService {
     private readonly usersOrgRepository: IUsersOrganizationsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IWalletsRepository)
+    private readonly walletsRepository: IWalletsRepository,
   ) {
     this.maxInvites =
       this.configurationService.getOrThrow<number>('users.maxInvites');
@@ -61,9 +65,29 @@ export class UserOrganizationsService {
         orgId: args.orgId,
       },
     );
+    const wallets = await this.walletsRepository.find({
+      where: {
+        user: {
+          id: In(userOrgs.map((userOrg) => userOrg.user.id)),
+        },
+      },
+      select: {
+        id: true,
+        address: true,
+        user: {
+          id: true,
+        },
+      },
+      relations: {
+        user: true,
+      },
+    });
 
     return {
       members: userOrgs.map((userOrg) => {
+        const userWallets = wallets.filter((wallet) => {
+          return wallet.user.id === userOrg.user.id;
+        });
         return {
           id: userOrg.id,
           role: userOrg.role,
@@ -73,6 +97,7 @@ export class UserOrganizationsService {
           user: {
             id: userOrg.user.id,
             status: userOrg.user.status,
+            wallets: userWallets.map((wallet) => wallet.address),
           },
         };
       }),

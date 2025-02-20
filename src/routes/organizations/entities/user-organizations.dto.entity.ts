@@ -13,6 +13,9 @@ class UserOrganizationUser implements Pick<User, 'id'> {
 
   @ApiProperty({ enum: getStringEnumKeys(UserStatus) })
   status!: keyof typeof UserStatus;
+
+  @ApiProperty({ type: String, isArray: true })
+  wallets!: Array<`0x${string}`>;
 }
 
 class UserOrganization {

@@ -948,6 +948,7 @@ describe('UserOrganizationsController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'ACTIVE',
+                  wallets: [authPayloadDto.signer_address],
                 },
               },
               {
@@ -959,6 +960,7 @@ describe('UserOrganizationsController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  wallets: [user1],
                 },
               },
               {
@@ -970,6 +972,7 @@ describe('UserOrganizationsController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  wallets: [user2],
                 },
               },
             ],
