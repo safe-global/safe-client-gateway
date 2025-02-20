@@ -560,4 +560,47 @@ describe('AuthController', () => {
       await expect(cacheService.hGet(cacheDir)).resolves.toBe(undefined);
     });
   });
+
+  describe('POST /v1/auth/logout', () => {
+    it('should log a signer out', async () => {
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const nonceResponse = await request(app.getHttpServer()).get(
+        '/v1/auth/nonce',
+      );
+      const nonce: string = nonceResponse.body.nonce;
+      const expirationTime = faker.date.between({
+        from: new Date(),
+        to: new Date(Date.now() + maxValidityPeriodInMs),
+      });
+      const message = createSiweMessage(
+        siweMessageBuilder()
+          .with('address', signer.address)
+          .with('nonce', nonce)
+          .with('expirationTime', expirationTime)
+          .build(),
+      );
+      const signature = await signer.signMessage({
+        message,
+      });
+
+      await request(app.getHttpServer())
+        .post('/v1/auth/verify')
+        .send({
+          message,
+          signature,
+        })
+        .expect(200);
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout')
+        .expect(200)
+        .expect(({ headers }) => {
+          const setCookie = headers['set-cookie'].toString();
+          // access_token has no value and it is set to expire
+          expect(setCookie).toBe(
+            'access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Lax',
+          );
+        });
+    });
+  });
 });
