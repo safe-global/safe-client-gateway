@@ -338,7 +338,7 @@ describe('OrganizationSafeController', () => {
           inclusive: true,
           exact: false,
           message: 'Array must contain at least 1 element(s)',
-          path: [],
+          path: ['safes'],
         });
     });
 
@@ -369,7 +369,7 @@ describe('OrganizationSafeController', () => {
           code: 'invalid_type',
           expected: 'string',
           received: 'number',
-          path: [0, 'chainId'],
+          path: ['safes', 0, 'chainId'],
           message: 'Expected string, received number',
         });
     });
@@ -401,7 +401,7 @@ describe('OrganizationSafeController', () => {
           statusCode: 422,
           code: 'custom',
           message: 'Invalid address',
-          path: [0, 'address'],
+          path: ['safes', 0, 'address'],
         });
     });
 
@@ -437,7 +437,7 @@ describe('OrganizationSafeController', () => {
           statusCode: 422,
           code: 'custom',
           message: 'Value must be less than or euqal to 78',
-          path: [0, 'chainId'],
+          path: ['safes', 0, 'chainId'],
         });
     });
 
@@ -483,20 +483,22 @@ describe('OrganizationSafeController', () => {
       const chain2 = chainBuilder()
         .with('chainId', faker.string.numeric({ length: { min: 3, max: 4 } }))
         .build();
-      const createOrgSafePayload = [
-        {
-          chainId: chain1.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-        {
-          chainId: chain2.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-        {
-          chainId: chain2.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-      ];
+      const createOrgSafePayload = {
+        safes: [
+          {
+            chainId: chain1.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+          {
+            chainId: chain2.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+          {
+            chainId: chain2.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ],
+      };
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -519,10 +521,10 @@ describe('OrganizationSafeController', () => {
         .expect(200)
         .expect({
           safes: {
-            [chain1.chainId]: [createOrgSafePayload[0].address],
+            [chain1.chainId]: [createOrgSafePayload.safes[0].address],
             [chain2.chainId]: [
-              createOrgSafePayload[1].address,
-              createOrgSafePayload[2].address,
+              createOrgSafePayload.safes[1].address,
+              createOrgSafePayload.safes[2].address,
             ],
           },
         });
@@ -631,12 +633,14 @@ describe('OrganizationSafeController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.company.name();
       const chain = chainBuilder().build();
-      const orgSafes = [
-        {
-          chainId: chain.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-      ];
+      const orgSafes = {
+        safes: [
+          {
+            chainId: chain.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ],
+      };
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -656,7 +660,7 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(orgSafes)
+        .send(orgSafes.safes)
         .expect(204);
     });
 
@@ -667,20 +671,22 @@ describe('OrganizationSafeController', () => {
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
       const chain3 = chainBuilder().build();
-      const orgSafes = [
-        {
-          chainId: chain1.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-        {
-          chainId: chain2.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-        {
-          chainId: chain3.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-      ];
+      const orgSafes = {
+        safes: [
+          {
+            chainId: chain1.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+          {
+            chainId: chain2.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+          {
+            chainId: chain3.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ],
+      };
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -700,7 +706,7 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(orgSafes)
+        .send(orgSafes.safes)
         .expect(204);
     });
 
