@@ -17,7 +17,7 @@ export const InviteUsersDtoSchema = z.object({
   users: InviteUserDtoSchema,
 });
 
-class InviteUserDto {
+export class InviteUserDto {
   @ApiProperty()
   public readonly address!: `0x${string}`;
 
