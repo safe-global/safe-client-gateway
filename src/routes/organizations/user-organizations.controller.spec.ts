@@ -144,12 +144,14 @@ describe('UserOrganizationsController', () => {
               orgId,
               role: 'ADMIN',
               status: 'INVITED',
+              invitedBy: authPayloadDto.signer_address,
             },
             {
               userId: expect.any(Number),
               orgId,
               role: 'MEMBER',
               status: 'INVITED',
+              invitedBy: authPayloadDto.signer_address,
             },
           ]),
         );
