@@ -26,14 +26,14 @@ export class UserOrganizationsService {
     orgId: Organization['id'];
     inviteUsersDto: InviteUsersDto;
   }): Promise<Array<Invitation>> {
-    if (args.inviteUsersDto.length > this.maxInvites) {
+    if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
 
     return await this.usersOrgRepository.inviteUsers({
       authPayload: args.authPayload,
       orgId: args.orgId,
-      users: args.inviteUsersDto,
+      users: args.inviteUsersDto.users,
     });
   }
 

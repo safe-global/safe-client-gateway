@@ -124,16 +124,18 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'ADMIN',
-            address: user1,
-          },
-          {
-            role: 'MEMBER',
-            address: user2,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: user1,
+            },
+            {
+              role: 'MEMBER',
+              address: user2,
+            },
+          ],
+        })
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual([
@@ -167,7 +169,7 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(invites)
+        .send({ users: invites })
         .expect(409)
         .expect({
           message: 'Too many invites.',
@@ -197,16 +199,18 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
-        .send([
-          {
-            role: 'ADMIN',
-            address: user1,
-          },
-          {
-            role: 'MEMBER',
-            address: user2,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: user1,
+            },
+            {
+              role: 'MEMBER',
+              address: user2,
+            },
+          ],
+        })
         .expect(403)
         .expect({
           message: 'Forbidden resource',
@@ -235,7 +239,7 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([])
+        .send({ users: [] })
         .expect(422);
     });
 
@@ -263,16 +267,18 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
-        .send([
-          {
-            role: 'ADMIN',
-            address: user1,
-          },
-          {
-            role: 'MEMBER',
-            address: user2,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: user1,
+            },
+            {
+              role: 'MEMBER',
+              address: user2,
+            },
+          ],
+        })
         .expect(404)
         .expect({
           message: 'User not found.',
@@ -299,16 +305,18 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'ADMIN',
-            address: user1,
-          },
-          {
-            role: 'MEMBER',
-            address: user2,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: user1,
+            },
+            {
+              role: 'MEMBER',
+              address: user2,
+            },
+          ],
+        })
         .expect(404)
         .expect({
           message: 'Organization not found.',
@@ -346,16 +354,18 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
-        .send([
-          {
-            role: 'ADMIN',
-            address: user1,
-          },
-          {
-            role: 'MEMBER',
-            address: user2,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: user1,
+            },
+            {
+              role: 'MEMBER',
+              address: user2,
+            },
+          ],
+        })
         .expect(404)
         .expect({
           message: 'Organization not found.',
@@ -387,23 +397,27 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: user,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: user,
+            },
+          ],
+        })
         .expect(404)
         .expect({
           message: 'Organization not found.',
@@ -436,12 +450,14 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -472,12 +488,14 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -572,12 +590,14 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: user,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: user,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -613,12 +633,14 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -662,12 +684,14 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -698,12 +722,14 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -798,12 +824,14 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: user,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: user,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -839,12 +867,14 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -888,16 +918,18 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'ADMIN',
-            address: user1,
-          },
-          {
-            role: 'MEMBER',
-            address: user2,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: user1,
+            },
+            {
+              role: 'MEMBER',
+              address: user2,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -967,16 +999,18 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'ADMIN',
-            address: user1,
-          },
-          {
-            role: 'MEMBER',
-            address: user2,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: user1,
+            },
+            {
+              role: 'MEMBER',
+              address: user2,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -1067,12 +1101,14 @@ describe('UserOrganizationsController', () => {
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
@@ -1111,12 +1147,14 @@ describe('UserOrganizationsController', () => {
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
@@ -1160,12 +1198,14 @@ describe('UserOrganizationsController', () => {
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
@@ -1208,12 +1248,14 @@ describe('UserOrganizationsController', () => {
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
@@ -1251,12 +1293,14 @@ describe('UserOrganizationsController', () => {
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
@@ -1368,12 +1412,14 @@ describe('UserOrganizationsController', () => {
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'ADMIN',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
@@ -1471,16 +1517,18 @@ describe('UserOrganizationsController', () => {
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'ADMIN',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-          {
-            role: 'MEMBER',
-            address: member,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+            {
+              role: 'MEMBER',
+              address: member,
+            },
+          ],
+        })
         .expect(201);
       const memberUserId = inviteUsersResponse.body[1].userId;
 
@@ -1517,12 +1565,14 @@ describe('UserOrganizationsController', () => {
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: inviteeAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 

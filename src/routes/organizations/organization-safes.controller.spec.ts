@@ -224,12 +224,14 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send([
-          {
-            address: getAddress(memberAuthPayloadDto.signer_address),
-            role: 'MEMBER',
-          },
-        ]);
+        .send({
+          users: [
+            {
+              address: getAddress(memberAuthPayloadDto.signer_address),
+              role: 'MEMBER',
+            },
+          ],
+        });
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
