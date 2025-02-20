@@ -10,12 +10,15 @@ import {
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-class UserDto extends User {
+class UserDto implements Pick<User, 'id' | 'status'> {
   @ApiProperty({ type: Number })
   public id!: User['id'];
 
   @ApiProperty({ type: String, enum: getStringEnumKeys(UserStatus) })
   public status!: User['status'];
+
+  @ApiProperty({ type: String, isArray: true })
+  public wallets!: Array<`0x${string}`>;
 }
 
 class UserOrganizationsDto {

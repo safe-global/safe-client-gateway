@@ -5,6 +5,7 @@ import { IOrganizationsRepository } from '@/domain/organizations/organizations.r
 import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
 import { User } from '@/domain/users/entities/user.entity';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
+import { IWalletsRepository } from '@/domain/wallets/wallets.repository.interface';
 import { CreateOrganizationResponse } from '@/routes/organizations/entities/create-organization.dto.entity';
 import type { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
 import type {
@@ -19,6 +20,8 @@ export class OrganizationsService {
     private readonly userRepository: IUsersRepository,
     @Inject(IOrganizationsRepository)
     private readonly organizationsRepository: IOrganizationsRepository,
+    @Inject(IWalletsRepository)
+    private readonly walletsRepository: IWalletsRepository,
   ) {}
 
   public async create(args: {
@@ -73,29 +76,41 @@ export class OrganizationsService {
       authPayload.signer_address,
     );
 
-    return await this.organizationsRepository.findByUserId({
-      userId,
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        userOrganizations: {
+    const [wallets, orgs] = await Promise.all([
+      this.walletsRepository.findByUser(userId, {
+        address: true,
+      }),
+      this.organizationsRepository.findByUserId({
+        userId,
+        select: {
           id: true,
-          role: true,
+          name: true,
           status: true,
-          createdAt: true,
-          updatedAt: true,
-          user: {
+          userOrganizations: {
             id: true,
+            role: true,
             status: true,
+            createdAt: true,
+            updatedAt: true,
+            user: {
+              id: true,
+              status: true,
+            },
           },
         },
-      },
-      relations: {
-        userOrganizations: {
-          user: true,
+        relations: {
+          userOrganizations: {
+            user: true,
+          },
         },
-      },
+      }),
+    ]);
+
+    return orgs.map((org) => {
+      return this.mapWalletsToOrg({
+        org,
+        wallets: wallets.map((wallet) => wallet.address),
+      });
     });
   }
 
@@ -109,33 +124,61 @@ export class OrganizationsService {
       authPayload.signer_address,
     );
 
-    return await this.organizationsRepository.findOneOrFail({
-      where: {
-        id,
-        userOrganizations: { user: { id: userId } },
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        userOrganizations: {
+    const [wallets, org] = await Promise.all([
+      this.walletsRepository.findByUser(userId, {
+        address: true,
+      }),
+      this.organizationsRepository.findOneOrFail({
+        where: {
+          id,
+          userOrganizations: { user: { id: userId } },
+        },
+        select: {
           id: true,
-          role: true,
+          name: true,
           status: true,
-          createdAt: true,
-          updatedAt: true,
-          user: {
+          userOrganizations: {
             id: true,
+            role: true,
             status: true,
+            createdAt: true,
+            updatedAt: true,
+            user: {
+              id: true,
+              status: true,
+            },
           },
         },
-      },
-      relations: {
-        userOrganizations: {
-          user: true,
+        relations: {
+          userOrganizations: {
+            user: true,
+          },
         },
-      },
+      }),
+    ]);
+
+    return this.mapWalletsToOrg({
+      org,
+      wallets: wallets.map((wallet) => wallet.address),
     });
+  }
+
+  private mapWalletsToOrg(args: {
+    org: Organization;
+    wallets: Array<`0x${string}`>;
+  }): GetOrganizationResponse {
+    return {
+      ...args.org,
+      userOrganizations: args.org.userOrganizations.map((userOrg) => {
+        return {
+          ...userOrg,
+          user: {
+            ...userOrg.user,
+            wallets: args.wallets,
+          },
+        };
+      }),
+    };
   }
 
   public async update(args: {

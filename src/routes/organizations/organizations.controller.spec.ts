@@ -326,6 +326,7 @@ describe('OrganizationController', () => {
                   user: {
                     id: expect.any(Number),
                     status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                    wallets: [authPayloadDto.signer_address],
                   },
                 },
               ],
@@ -350,6 +351,7 @@ describe('OrganizationController', () => {
                   user: {
                     id: expect.any(Number),
                     status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                    wallets: [authPayloadDto.signer_address],
                   },
                 },
               ],
@@ -446,6 +448,7 @@ describe('OrganizationController', () => {
                 user: {
                   id: userId,
                   status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                  wallets: [authPayloadDto.signer_address],
                 },
               },
             ],
