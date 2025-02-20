@@ -633,12 +633,14 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${organizationId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: memberAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: memberAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -769,12 +771,14 @@ describe('OrganizationController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${organizationId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send([
-          {
-            role: 'MEMBER',
-            address: memberAuthPayloadDto.signer_address,
-          },
-        ])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: memberAuthPayloadDto.signer_address,
+            },
+          ],
+        })
         .expect(201);
 
       await request(app.getHttpServer())
