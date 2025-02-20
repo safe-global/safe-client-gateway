@@ -380,13 +380,18 @@ describe('OrganizationSafesRepository', () => {
         name: faker.word.noun(),
       });
       const orgId = org.identifiers[0].id as Organization['id'];
-      await orgSafesRepo.create({
-        organizationId: orgId,
-        payload: orgSafes,
-      });
+      await Promise.all(
+        orgSafes.map(({ chainId, address }) => {
+          return dbOrgSafeRepo.insert({
+            chainId,
+            address,
+            organization: { id: orgId },
+          });
+        }),
+      );
 
       await expect(orgSafesRepo.findByOrganizationId(orgId)).resolves.toEqual(
-        orgSafes,
+        expect.arrayContaining(orgSafes),
       );
     });
 
@@ -415,10 +420,15 @@ describe('OrganizationSafesRepository', () => {
         name: faker.word.noun(),
       });
       const orgId = org.identifiers[0].id as Organization['id'];
-      await orgSafesRepo.create({
-        organizationId: orgId,
-        payload: orgSafes,
-      });
+      await Promise.all(
+        orgSafes.map(({ chainId, address }) => {
+          return dbOrgSafeRepo.insert({
+            chainId,
+            address,
+            organization: { id: orgId },
+          });
+        }),
+      );
 
       await expect(
         orgSafesRepo.findOrFail({
