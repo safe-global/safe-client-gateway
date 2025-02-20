@@ -32,5 +32,5 @@ export class InviteUsersDto implements z.infer<typeof InviteUsersDtoSchema> {
     type: InviteUserDto,
     isArray: true,
   })
-  users!: Array<InviteUserDto>;
+  public readonly users!: Array<InviteUserDto>;
 }
