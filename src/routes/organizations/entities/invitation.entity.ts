@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   UserOrganizationRole,
   UserOrganizationStatus,
@@ -19,4 +19,7 @@ export class Invitation {
 
   @ApiProperty({ enum: getStringEnumKeys(UserOrganizationStatus) })
   status!: keyof typeof UserOrganizationStatus;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  invitedBy!: `0x${string}` | null;
 }

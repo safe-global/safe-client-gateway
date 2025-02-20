@@ -5,7 +5,7 @@ import {
   type UserOrganization as DomainUserOrganization,
 } from '@/domain/users/entities/user-organization.entity';
 import { UserStatus, type User } from '@/domain/users/entities/user.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 class UserOrganizationUser implements Pick<User, 'id'> {
   @ApiProperty({ type: Number })
@@ -24,6 +24,9 @@ class UserOrganization {
 
   @ApiProperty({ enum: getStringEnumKeys(UserOrganizationStatus) })
   status!: keyof typeof UserOrganizationStatus;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  invitedBy!: `0x${string}` | null;
 
   @ApiProperty()
   createdAt!: Date;
