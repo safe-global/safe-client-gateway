@@ -3,7 +3,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import {
-  CreateOrganizationSafeDto,
+  CreateOrganizationSafesDto,
   CreateOrganizationSafesSchema,
 } from '@/routes/organizations/entities/create-organization-safe.dto.entity';
 import {
@@ -49,14 +49,14 @@ export class OrganizationSafesController {
 
   @Post()
   @ApiCreatedResponse({ description: 'Safes created successfully' })
-  @ApiBody({ type: CreateOrganizationSafeDto, isArray: true })
+  @ApiBody({ type: CreateOrganizationSafesDto })
   @ApiUnauthorizedResponse({
     description: 'User unauthorize OR signer address not provided',
   })
   @ApiNotFoundResponse({ description: 'User not found.' })
   public async create(
     @Body(new ValidationPipe(CreateOrganizationSafesSchema))
-    body: Array<CreateOrganizationSafeDto>,
+    body: CreateOrganizationSafesDto,
     @Param(
       'organizationId',
       ParseIntPipe,
@@ -68,7 +68,7 @@ export class OrganizationSafesController {
     return await this.organizationSafesService.create({
       organizationId,
       authPayload,
-      payload: body,
+      payload: body.safes,
     });
   }
 
