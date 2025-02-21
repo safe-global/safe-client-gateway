@@ -4,7 +4,11 @@ import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-tra
 import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import {
+  erc20TokenBuilder,
+  erc721TokenBuilder,
+  tokenBuilder,
+} from '@/domain/tokens/__tests__/token.builder';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
@@ -54,7 +58,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc20TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenBuilder()
+    const token = erc20TokenBuilder()
       .with('address', getAddress(transfer.tokenAddress))
       .build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
@@ -90,7 +94,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc721TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenBuilder()
+    const token = erc721TokenBuilder()
       .with('address', getAddress(transfer.tokenAddress))
       .build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);

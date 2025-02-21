@@ -6,7 +6,7 @@ import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import {
   TokenPageSchema,
   TokenSchema,
-} from '@/domain/tokens/entities/schemas/token.schema';
+} from '@/domain/tokens/entities/token.entity';
 
 @Injectable()
 export class TokenRepository implements ITokenRepository {

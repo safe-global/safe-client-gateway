@@ -4,7 +4,6 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { TokenType } from '@/domain/tokens/entities/token.entity';
 import { DataDecodedParameter } from '@/routes/data-decode/entities/data-decoded-parameter.entity';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
@@ -175,14 +174,14 @@ export class MultisigTransactionInfoMapper {
         .catch(() => null);
 
       switch (token?.type) {
-        case TokenType.Erc20:
+        case 'ERC20':
           return this.erc20TransferMapper.mapErc20Transfer(
             token,
             chainId,
             transaction,
             humanDescription,
           );
-        case TokenType.Erc721:
+        case 'ERC721':
           return this.erc721TransferMapper.mapErc721Transfer(
             token,
             chainId,
