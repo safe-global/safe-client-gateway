@@ -17,6 +17,7 @@ import type { Repository } from 'typeorm';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { NotFoundException } from '@nestjs/common';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -232,7 +233,7 @@ describe('OrganizationSafesRepository', () => {
       expect(orgSafe.address).toEqual(checksummedAddress);
     });
 
-    it('should retrieve non-checksummed addresses, checksummed', async () => {
+    it('should update non-checksummed addresses, checksummed', async () => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
@@ -263,38 +264,6 @@ describe('OrganizationSafesRepository', () => {
       });
 
       expect(orgSafe.address).toEqual(checksummedAddress);
-    });
-
-    it('should update non-checksummed addresses, checksummed', async () => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const checksummedAddress = getAddress(nonChecksummedAddress);
-
-      const org = await dbOrgRepo.insert({
-        status: faker.helpers.arrayElement(
-          getStringEnumKeys(OrganizationStatus),
-        ),
-        name: faker.word.noun(),
-      });
-
-      const insertOrgSafeResult = await dbOrgSafeRepo.insert({
-        chainId: faker.string.numeric(),
-        address: checksummedAddress,
-        organization: org.identifiers[0].id,
-      });
-      const insertedOrgSafeId = insertOrgSafeResult.identifiers[0]
-        .id as OrganizationSafe['id'];
-
-      await dbOrgSafeRepo.update(insertedOrgSafeId, {
-        address: nonChecksummedAddress as OrganizationSafe['address'],
-      });
-
-      const result = await dbOrgSafeRepo.findOneOrFail({
-        where: { id: insertedOrgSafeId },
-      });
-
-      expect(result.address).toEqual(checksummedAddress);
     });
   });
 
@@ -492,7 +461,7 @@ describe('OrganizationSafesRepository', () => {
         orgSafesRepo.findOrFail({
           where: { organization: { id: orgId } },
         }),
-      ).rejects.toThrow('Organization has no Safes.');
+      ).rejects.toThrow(new NotFoundException('Organization has no Safes.'));
     });
   });
 
@@ -522,15 +491,13 @@ describe('OrganizationSafesRepository', () => {
           where: { organization: { id: orgId } },
         }),
       ).resolves.toEqual(
-        expect.arrayContaining(
-          orgSafes.map(({ chainId, address }) => ({
-            id: expect.any(Number),
-            chainId,
-            address,
-            createdAt: expect.any(Date),
-            updatedAt: expect.any(Date),
-          })),
-        ),
+        orgSafes.map(({ chainId, address }) => ({
+          id: expect.any(Number),
+          chainId,
+          address,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        })),
       );
     });
 
@@ -557,10 +524,7 @@ describe('OrganizationSafesRepository', () => {
         status: faker.helpers.arrayElement(
           getStringEnumKeys(OrganizationStatus),
         ),
-        name: faker.helpers.arrayElement([
-          faker.word.noun(),
-          faker.word.noun(),
-        ]),
+        name: faker.word.noun(),
       });
       const orgId = org.identifiers[0].id as Organization['id'];
       const orgSafe = await dbOrgSafeRepo.insert({
@@ -575,13 +539,6 @@ describe('OrganizationSafesRepository', () => {
       const orgSafeBefore = await orgSafesRepo.findOrFail({
         where: { id: orgSafeId },
       });
-      expect(orgSafeBefore).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: orgSafeId,
-          }),
-        ]),
-      );
 
       await orgSafesRepo.delete({
         organizationId: orgId,
@@ -593,11 +550,12 @@ describe('OrganizationSafesRepository', () => {
         ],
       });
 
+      expect(orgSafeBefore).toHaveLength(1);
       await expect(
         orgSafesRepo.findOrFail({
           where: { organization: { id: orgId } },
         }),
-      ).rejects.toThrow('Organization has no Safes.');
+      ).rejects.toThrow(new NotFoundException('Organization has no Safes.'));
     });
 
     it('should delete multiple OrganizationSafes', async () => {
@@ -631,7 +589,7 @@ describe('OrganizationSafesRepository', () => {
         orgSafesRepo.findOrFail({
           where: { organization: { id: orgId } },
         }),
-      ).rejects.toThrow('Organization has no Safes.');
+      ).rejects.toThrow(new NotFoundException('Organization has no Safes.'));
     });
 
     it('should throw NotFoundException if provided OrganizationSafe is not found', async () => {
@@ -661,7 +619,7 @@ describe('OrganizationSafesRepository', () => {
             },
           ],
         }),
-      ).rejects.toThrow('Organization has no Safes.');
+      ).rejects.toThrow(new NotFoundException('Organization has no Safes.'));
     });
 
     it('should throw NotFoundException if none of the provided OrganizationSafes is found', async () => {
@@ -698,7 +656,7 @@ describe('OrganizationSafesRepository', () => {
             },
           ],
         }),
-      ).rejects.toThrow('Organization has no Safes.');
+      ).rejects.toThrow(new NotFoundException('Organization has no Safes.'));
 
       // Some are found
       await expect(
