@@ -657,6 +657,27 @@ describe('OrganizationSafesRepository', () => {
           ],
         }),
       ).rejects.toThrow(new NotFoundException('Organization has no Safes.'));
+    });
+
+    it('should delete found OrganizationSafes and ignore not found', async () => {
+      const orgSafes = faker.helpers.multiple(
+        () => ({
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+        { count: { min: 2, max: 5 } },
+      );
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      await orgSafesRepo.create({
+        organizationId: orgId,
+        payload: orgSafes,
+      });
 
       // Some are found
       await expect(
