@@ -1,5 +1,6 @@
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import { User } from '@/datasources/users/entities/users.entity.db';
+import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import {
   UserOrganization as DomainUserOrganization,
@@ -64,6 +65,15 @@ export class UserOrganization implements DomainUserOrganization {
     transformer: databaseEnumTransformer(UserOrganizationStatus),
   })
   status!: keyof typeof UserOrganizationStatus;
+
+  @Column({
+    name: 'invited_by',
+    type: 'varchar',
+    length: 42,
+    nullable: true,
+    transformer: nullableDatabaseAddressTransformer,
+  })
+  invitedBy!: `0x${string}` | null;
 
   @Column({
     name: 'created_at',
