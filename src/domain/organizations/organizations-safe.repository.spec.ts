@@ -264,6 +264,38 @@ describe('OrganizationSafesRepository', () => {
 
       expect(orgSafe.address).toEqual(checksummedAddress);
     });
+
+    it('should update non-checksummed addresses, checksummed', async () => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase();
+      const checksummedAddress = getAddress(nonChecksummedAddress);
+
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+
+      const insertOrgSafeResult = await dbOrgSafeRepo.insert({
+        chainId: faker.string.numeric(),
+        address: checksummedAddress,
+        organization: org.identifiers[0].id,
+      });
+      const insertedOrgSafeId = insertOrgSafeResult.identifiers[0]
+        .id as OrganizationSafe['id'];
+
+      await dbOrgSafeRepo.update(insertedOrgSafeId, {
+        address: nonChecksummedAddress as OrganizationSafe['address'],
+      });
+
+      const result = await dbOrgSafeRepo.findOneOrFail({
+        where: { id: insertedOrgSafeId },
+      });
+
+      expect(result.address).toEqual(checksummedAddress);
+    });
   });
 
   describe('create', () => {
