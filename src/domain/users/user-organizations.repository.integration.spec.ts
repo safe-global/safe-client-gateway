@@ -155,6 +155,7 @@ describe('UserOrganizationsRepository', () => {
       const userOrg = await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: faker.person.firstName(),
         status: faker.helpers.arrayElement(UserOrgStatusKeys),
         role: faker.helpers.arrayElement(UserOrgRoleKeys),
       });
@@ -191,6 +192,7 @@ describe('UserOrganizationsRepository', () => {
       const prevUserOrg = await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: faker.person.firstName(),
         status: 'ACTIVE',
         role: faker.helpers.arrayElement(UserOrgRoleKeys),
       });
@@ -457,6 +459,7 @@ describe('UserOrganizationsRepository', () => {
     it('should invite users to an organization and return the user organizations', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminOrgName = faker.person.firstName();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -472,6 +475,7 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: owner.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminOrgName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
@@ -480,6 +484,7 @@ describe('UserOrganizationsRepository', () => {
           return {
             address: getAddress(faker.finance.ethereumAddress()),
             role: faker.helpers.arrayElement(UserOrgRoleKeys),
+            name: faker.person.firstName(),
           };
         },
         { count: { min: 2, max: 5 } },
@@ -496,6 +501,7 @@ describe('UserOrganizationsRepository', () => {
           return {
             userId: expect.any(Number),
             orgId,
+            name: user.name,
             role: user.role,
             status: 'INVITED',
           };
@@ -506,6 +512,7 @@ describe('UserOrganizationsRepository', () => {
     it('should not create PENDING users for existing ones', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminOrgName = faker.person.firstName();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -521,6 +528,7 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: owner.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminOrgName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
@@ -533,6 +541,7 @@ describe('UserOrganizationsRepository', () => {
         address: memberWallet,
       });
       const memberRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const memberName = faker.person.firstName();
 
       await userOrgRepo.inviteUsers({
         authPayload: new AuthPayload(authPayloadDto),
@@ -541,6 +550,7 @@ describe('UserOrganizationsRepository', () => {
           {
             address: memberWallet,
             role: memberRole,
+            name: memberName,
           },
         ],
       });
@@ -579,6 +589,7 @@ describe('UserOrganizationsRepository', () => {
       const users: Array<{
         address: `0x${string}`;
         role: keyof typeof UserOrganizationRole;
+        name: string;
       }> = [];
 
       await expect(
@@ -599,6 +610,7 @@ describe('UserOrganizationsRepository', () => {
       const users: Array<{
         address: `0x${string}`;
         role: keyof typeof UserOrganizationRole;
+        name: string;
       }> = [];
 
       await expect(
@@ -613,6 +625,7 @@ describe('UserOrganizationsRepository', () => {
     it('should not allow inviting users if the user is not an ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -628,6 +641,7 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: owner.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
@@ -636,6 +650,7 @@ describe('UserOrganizationsRepository', () => {
           return {
             address: getAddress(faker.finance.ethereumAddress()),
             role: faker.helpers.arrayElement(UserOrgRoleKeys),
+            name: faker.person.firstName(),
           };
         },
         { count: { min: 2, max: 5 } },
@@ -666,6 +681,7 @@ describe('UserOrganizationsRepository', () => {
       const users: Array<{
         address: `0x${string}`;
         role: keyof typeof UserOrganizationRole;
+        name: string;
       }> = [];
 
       await expect(
@@ -681,6 +697,7 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const pendingAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -703,18 +720,21 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: invitedAdmin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'INVITED',
       });
       const users: Array<{
         address: `0x${string}`;
         role: keyof typeof UserOrganizationRole;
+        name: string;
       }> = [];
 
       await expect(
@@ -731,6 +751,8 @@ describe('UserOrganizationsRepository', () => {
     it('should accept an invite to an organization, setting the user organization and user to ACTIVE', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -755,12 +777,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       const userOrg = await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: userOrgRole,
         status: 'INVITED',
       });
@@ -769,6 +793,9 @@ describe('UserOrganizationsRepository', () => {
       await userOrgRepo.acceptInvite({
         authPayload: new AuthPayload(authPayloadDto),
         orgId,
+        payload: {
+          name: userOrgName,
+        },
       });
 
       await expect(
@@ -778,7 +805,7 @@ describe('UserOrganizationsRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         id: userOrgId,
-        name: null,
+        name: userOrgName,
         role: userOrgRole,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -799,6 +826,7 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -822,6 +850,7 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: userOrgRole,
         status: 'ACTIVE',
       });
@@ -830,6 +859,9 @@ describe('UserOrganizationsRepository', () => {
         userOrgRepo.acceptInvite({
           authPayload: new AuthPayload(memberAuthPayloadDto),
           orgId,
+          payload: {
+            name: adminName,
+          },
         }),
       ).rejects.toThrow('Organization not found.');
     });
@@ -842,11 +874,15 @@ describe('UserOrganizationsRepository', () => {
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
+      const userOrgName = faker.person.firstName();
 
       await expect(
         userOrgRepo.acceptInvite({
           authPayload: new AuthPayload(authPayloadDto),
           orgId,
+          payload: {
+            name: userOrgName,
+          },
         }),
       ).rejects.toThrow('Signer address not provided.');
     });
@@ -857,17 +893,22 @@ describe('UserOrganizationsRepository', () => {
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
+      const userOrgName = faker.person.firstName();
 
       await expect(
         userOrgRepo.acceptInvite({
           authPayload: new AuthPayload(authPayloadDto),
           orgId,
+          payload: {
+            name: userOrgName,
+          },
         }),
       ).rejects.toThrow('User not found.');
     });
 
     it('should throw an error if the organization does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
+      const userOrgName = faker.person.firstName();
       const user = await dbUserRepo.insert({
         status: 'PENDING',
       });
@@ -884,6 +925,9 @@ describe('UserOrganizationsRepository', () => {
         userOrgRepo.acceptInvite({
           authPayload: new AuthPayload(authPayloadDto),
           orgId,
+          payload: {
+            name: userOrgName,
+          },
         }),
       ).rejects.toThrow('Organization not found.');
     });
@@ -892,6 +936,8 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -915,12 +961,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: userOrgRole,
         status: 'ACTIVE',
       });
@@ -929,6 +977,7 @@ describe('UserOrganizationsRepository', () => {
         userOrgRepo.acceptInvite({
           authPayload: new AuthPayload(memberAuthPayloadDto),
           orgId,
+          payload: { name: userOrgName },
         }),
       ).rejects.toThrow('Organization not found.');
     });
@@ -936,6 +985,8 @@ describe('UserOrganizationsRepository', () => {
     it('should throw an error if the user is not INVITED to the organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -959,12 +1010,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: userOrgRole,
         status: 'ACTIVE',
       });
@@ -973,6 +1026,9 @@ describe('UserOrganizationsRepository', () => {
         userOrgRepo.acceptInvite({
           authPayload: new AuthPayload(authPayloadDto),
           orgId,
+          payload: {
+            name: userOrgName,
+          },
         }),
       ).rejects.toThrow('Organization not found.');
     });
@@ -982,6 +1038,8 @@ describe('UserOrganizationsRepository', () => {
     it('should accept an invite to an organization, setting the user organization to DECLINED', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1006,12 +1064,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       const userOrg = await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: userOrgRole,
         status: 'INVITED',
       });
@@ -1029,7 +1089,7 @@ describe('UserOrganizationsRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         id: userOrgId,
-        name: null,
+        name: userOrgName,
         role: userOrgRole,
         status: 'DECLINED',
         updatedAt: expect.any(Date),
@@ -1050,6 +1110,7 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1073,6 +1134,7 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: userOrgRole,
         status: 'ACTIVE',
       });
@@ -1143,6 +1205,8 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1166,12 +1230,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: userOrgRole,
         status: 'ACTIVE',
       });
@@ -1187,6 +1253,8 @@ describe('UserOrganizationsRepository', () => {
     it('should throw an error if the user is not INVITED to the organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1210,12 +1278,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: userOrgRole,
         status: 'ACTIVE',
       });
@@ -1233,6 +1303,7 @@ describe('UserOrganizationsRepository', () => {
     it('should find user organizations by organization id', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
@@ -1251,6 +1322,7 @@ describe('UserOrganizationsRepository', () => {
       const userOrg = await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: userOrgRole,
         status: userOrgStatus,
       });
@@ -1265,7 +1337,7 @@ describe('UserOrganizationsRepository', () => {
         {
           createdAt: expect.any(Date),
           id: userOrgId,
-          name: null,
+          name: userOrgName,
           role: userOrgRole,
           status: userOrgStatus,
           updatedAt: expect.any(Date),
@@ -1339,6 +1411,8 @@ describe('UserOrganizationsRepository', () => {
     it('should update the role of a user organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1362,12 +1436,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: owner.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
@@ -1386,6 +1462,8 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
+      const memberName = faker.person.firstName();
       const userToUpdate = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1409,12 +1487,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: userToUpdate.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
@@ -1433,6 +1513,8 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
+      const memberName = faker.person.firstName();
       const userToUpdate = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1456,12 +1538,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: userToUpdate.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
@@ -1523,6 +1607,8 @@ describe('UserOrganizationsRepository', () => {
     it('should throw an error if user does not have access to upgrade to ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
+      const memberName = faker.person.firstName();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1546,12 +1632,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: owner.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
@@ -1569,6 +1657,7 @@ describe('UserOrganizationsRepository', () => {
     it('should throw an error if downgrading the last ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1585,6 +1674,7 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
@@ -1604,6 +1694,8 @@ describe('UserOrganizationsRepository', () => {
     it('should remove the user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
+      const memberName = faker.person.firstName();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1627,12 +1719,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: owner.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       const memberUserOrg = await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
@@ -1656,6 +1750,8 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
+      const memberName = faker.person.firstName();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1679,12 +1775,14 @@ describe('UserOrganizationsRepository', () => {
       await dbUserOrgRepo.insert({
         user: admin.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: userOrgName,
         role: 'ADMIN',
         status: 'ACTIVE',
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
+        name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
       });
@@ -1743,6 +1841,7 @@ describe('UserOrganizationsRepository', () => {
     it('should throw an error if removing the last ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1758,6 +1857,7 @@ describe('UserOrganizationsRepository', () => {
       const orgId = org.generatedMaps[0].id;
       await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
+        name: userOrgName,
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
