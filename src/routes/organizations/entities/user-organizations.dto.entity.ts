@@ -26,7 +26,7 @@ class UserOrganization {
   status!: keyof typeof UserOrganizationStatus;
 
   @ApiPropertyOptional({ type: String, nullable: true })
-  invitedBy!: `0x${string}` | null;
+  invitedBy!: DomainUserOrganization['invitedBy'];
 
   @ApiProperty()
   createdAt!: Date;
