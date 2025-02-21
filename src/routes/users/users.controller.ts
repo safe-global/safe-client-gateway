@@ -6,6 +6,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -21,6 +22,8 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { UserWithWallets } from '@/routes/users/entities/user-with-wallets.entity';
 import { CreatedUserWithWallet } from '@/routes/users/entities/created-user-with-wallet.entity';
 import { WalletAddedToUser } from '@/routes/users/entities/wallet-added-to-user.entity';
+import { SiweDtoSchema } from '@/routes/auth/entities/siwe.dto.entity';
+import type { SiweDto } from '@/routes/auth/entities/siwe.dto.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 @ApiTags('users')
@@ -61,19 +64,21 @@ export class UsersController {
   }
 
   @ApiOkResponse({ type: WalletAddedToUser })
-  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
+  @ApiUnauthorizedResponse({
+    description: 'Signer address not provided OR invalid message/signature',
+  })
   @ApiConflictResponse({ description: 'Wallet already exists' })
   @ApiNotFoundResponse({ description: 'User not found' })
-  @Post('/wallet/:walletAddress')
+  @Post('/wallet/add')
   @UseGuards(AuthGuard)
   public async addWalletToUser(
-    @Param('walletAddress', new ValidationPipe(AddressSchema))
-    walletAddress: `0x${string}`,
     @Auth() authPayload: AuthPayload,
+    @Body(new ValidationPipe(SiweDtoSchema))
+    siweDto: SiweDto,
   ): Promise<WalletAddedToUser> {
     return await this.usersService.addWalletToUser({
       authPayload,
-      walletAddress,
+      siweDto,
     });
   }
 
