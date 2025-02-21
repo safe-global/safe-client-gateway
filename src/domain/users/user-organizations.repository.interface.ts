@@ -43,12 +43,14 @@ export interface IUsersOrganizationsRepository {
     users: Array<{
       address: `0x${string}`;
       role: UserOrganization['role'];
+      name: UserOrganization['name'];
     }>;
   }): Promise<Array<Invitation>>;
 
   acceptInvite(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
+    payload: Pick<UserOrganization, 'name'>;
   }): Promise<void>;
 
   declineInvite(args: {

@@ -313,6 +313,7 @@ describe('OrganizationController', () => {
               userOrganizations: [
                 {
                   id: expect.any(Number),
+                  name: expect.any(String),
                   role: getEnumKey(
                     UserOrganizationRole,
                     UserOrganizationRole.ADMIN,
@@ -337,6 +338,7 @@ describe('OrganizationController', () => {
               userOrganizations: [
                 {
                   id: expect.any(Number),
+                  name: expect.any(String),
                   role: getEnumKey(
                     UserOrganizationRole,
                     UserOrganizationRole.ADMIN,
@@ -433,6 +435,7 @@ describe('OrganizationController', () => {
             userOrganizations: [
               {
                 id: expect.any(Number),
+                name: expect.any(String),
                 status: getEnumKey(
                   UserOrganizationStatus,
                   UserOrganizationStatus.ACTIVE,
@@ -619,6 +622,7 @@ describe('OrganizationController', () => {
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
       const previousOrganizationName = faker.company.name();
       const newOrganizationName = faker.company.name();
+      const organizationMemberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -637,6 +641,7 @@ describe('OrganizationController', () => {
           users: [
             {
               role: 'MEMBER',
+              name: organizationMemberName,
               address: memberAuthPayloadDto.signer_address,
             },
           ],
@@ -757,6 +762,7 @@ describe('OrganizationController', () => {
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
       const organizationName = faker.company.name();
+      const organizationMemberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -776,6 +782,7 @@ describe('OrganizationController', () => {
             {
               role: 'MEMBER',
               address: memberAuthPayloadDto.signer_address,
+              name: organizationMemberName,
             },
           ],
         })
