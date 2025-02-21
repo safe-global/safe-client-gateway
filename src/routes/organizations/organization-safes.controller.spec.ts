@@ -660,7 +660,7 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(orgSafes.safes)
+        .send(orgSafes)
         .expect(204);
     });
 
@@ -706,7 +706,7 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(orgSafes.safes)
+        .send(orgSafes)
         .expect(204);
     });
 
@@ -719,20 +719,22 @@ describe('OrganizationSafeController', () => {
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
       const chain3 = chainBuilder().build();
-      const orgSafes = [
-        {
-          chainId: chain1.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-        {
-          chainId: chain2.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-        {
-          chainId: chain3.chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        },
-      ];
+      const orgSafes = {
+        safes: [
+          {
+            chainId: chain1.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+          {
+            chainId: chain2.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+          {
+            chainId: chain3.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ],
+      };
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -806,12 +808,14 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            chainId: chain.chainId,
-            address: getAddress(faker.finance.ethereumAddress()),
-          },
-        ])
+        .send({
+          safes: [
+            {
+              chainId: chain.chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        })
         .expect(404)
         .expect({
           statusCode: 404,
@@ -828,7 +832,7 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([])
+        .send({ safes: [] })
         .expect(422)
         .expect({
           statusCode: 422,
@@ -838,7 +842,7 @@ describe('OrganizationSafeController', () => {
           inclusive: true,
           exact: false,
           message: 'Array must contain at least 1 element(s)',
-          path: [],
+          path: ['safes'],
         });
     });
 
@@ -851,23 +855,25 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            chainId: 111,
-            address: getAddress(faker.finance.ethereumAddress()),
-          },
-          {
-            chainId: chain2.chainId,
-            address: getAddress(faker.finance.ethereumAddress()),
-          },
-        ])
+        .send({
+          safes: [
+            {
+              chainId: 111,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+            {
+              chainId: chain2.chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        })
         .expect(422)
         .expect({
           statusCode: 422,
           code: 'invalid_type',
           expected: 'string',
           received: 'number',
-          path: [0, 'chainId'],
+          path: ['safes', 0, 'chainId'],
           message: 'Expected string, received number',
         });
     });
@@ -882,22 +888,24 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            chainId: chain1.chainId,
-            address: 'invalid-address',
-          },
-          {
-            chainId: chain2.chainId,
-            address: getAddress(faker.finance.ethereumAddress()),
-          },
-        ])
+        .send({
+          safes: [
+            {
+              chainId: chain1.chainId,
+              address: 'invalid-address',
+            },
+            {
+              chainId: chain2.chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        })
         .expect(422)
         .expect({
           statusCode: 422,
           code: 'custom',
           message: 'Invalid address',
-          path: [0, 'address'],
+          path: ['safes', 0, 'address'],
         });
     });
 
@@ -916,22 +924,24 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            chainId: chain1.chainId,
-            address: getAddress(faker.finance.ethereumAddress()),
-          },
-          {
-            chainId: chain2.chainId,
-            address: getAddress(faker.finance.ethereumAddress()),
-          },
-        ])
+        .send({
+          safes: [
+            {
+              chainId: chain1.chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+            {
+              chainId: chain2.chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        })
         .expect(422)
         .expect({
           statusCode: 422,
           code: 'custom',
           message: 'Value must be less than or euqal to 78',
-          path: [0, 'chainId'],
+          path: ['safes', 0, 'chainId'],
         });
     });
 
@@ -945,16 +955,18 @@ describe('OrganizationSafeController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send([
-          {
-            chainId: chain1.chainId,
-            address: getAddress(faker.finance.ethereumAddress()),
-          },
-          {
-            chainId: chain2.chainId,
-            address: getAddress(faker.finance.ethereumAddress()),
-          },
-        ])
+        .send({
+          safes: [
+            {
+              chainId: chain1.chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+            {
+              chainId: chain2.chainId,
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        })
         .expect(400)
         .expect({
           message: 'Validation failed (numeric string is expected)',
