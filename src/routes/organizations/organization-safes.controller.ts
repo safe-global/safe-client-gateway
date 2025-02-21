@@ -7,7 +7,7 @@ import {
   CreateOrganizationSafesSchema,
 } from '@/routes/organizations/entities/create-organization-safe.dto.entity';
 import {
-  DeleteOrganizationSafeDto,
+  DeleteOrganizationSafesDto,
   DeleteOrganizationSafesSchema,
 } from '@/routes/organizations/entities/delete-organization-safe.dto.entity';
 import { GetOrganizationSafeResponse } from '@/routes/organizations/entities/get-organization-safe.dto.entity';
@@ -106,7 +106,7 @@ export class OrganizationSafesController {
   })
   public async delete(
     @Body(new ValidationPipe(DeleteOrganizationSafesSchema))
-    body: Array<DeleteOrganizationSafeDto>,
+    body: DeleteOrganizationSafesDto,
     @Param(
       'organizationId',
       ParseIntPipe,
@@ -117,7 +117,7 @@ export class OrganizationSafesController {
   ): Promise<void> {
     return await this.organizationSafesService.delete({
       authPayload,
-      payload: body,
+      payload: body.safes,
       organizationId,
     });
   }
