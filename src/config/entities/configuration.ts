@@ -364,6 +364,11 @@ export default () => ({
       ),
     },
   },
+  safeDataDecoder: {
+    baseUri:
+      process.env.SAFE_DATA_DECODER_BASE_URI ||
+      'https://safe-decoder.safe.global',
+  },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
   },
