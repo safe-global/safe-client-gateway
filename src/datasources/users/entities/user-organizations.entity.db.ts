@@ -48,8 +48,8 @@ export class UserOrganization implements DomainUserOrganization {
   })
   organization!: Organization;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  name!: string | null;
+  @Column({ type: 'varchar', length: 255 })
+  name!: string;
 
   // Postgres enums are string therefore we use integer
   @Column({

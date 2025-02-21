@@ -82,6 +82,7 @@ export class OrganizationsService {
         userOrganizations: {
           id: true,
           role: true,
+          name: true,
           status: true,
           createdAt: true,
           updatedAt: true,
@@ -121,6 +122,7 @@ export class OrganizationsService {
         userOrganizations: {
           id: true,
           role: true,
+          name: true,
           status: true,
           createdAt: true,
           updatedAt: true,
