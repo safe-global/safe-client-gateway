@@ -578,13 +578,13 @@ describe('OrganizationSafesRepository', () => {
         payload: orgSafes,
       });
       const orgSafeBefore = await orgSafesRepo.findByOrganizationId(orgId);
-      expect(orgSafeBefore).toHaveLength(orgSafes.length);
 
       await orgSafesRepo.delete({
         organizationId: orgId,
         payload: orgSafes,
       });
 
+      expect(orgSafeBefore).toHaveLength(orgSafes.length);
       await expect(
         orgSafesRepo.findOrFail({
           where: { organization: { id: orgId } },
