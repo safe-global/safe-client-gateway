@@ -4,14 +4,14 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 
-export const DeleteOrganizationSafeSchema = z.object({
+const DeleteOrganizationSafeSchema = z.object({
   chainId: ChainIdSchema,
   address: AddressSchema,
 });
 
-export const DeleteOrganizationSafesSchema = z
-  .array(DeleteOrganizationSafeSchema)
-  .nonempty();
+export const DeleteOrganizationSafesSchema = z.object({
+  safes: z.array(DeleteOrganizationSafeSchema).nonempty(),
+});
 
 export class DeleteOrganizationSafeDto
   implements z.infer<typeof DeleteOrganizationSafeSchema>
@@ -21,4 +21,14 @@ export class DeleteOrganizationSafeDto
 
   @ApiProperty({ type: String })
   public readonly address!: OrganizationSafe['address'];
+}
+
+export class DeleteOrganizationSafesDto
+  implements z.infer<typeof DeleteOrganizationSafesSchema>
+{
+  @ApiProperty({ type: DeleteOrganizationSafeDto, isArray: true })
+  public readonly safes!: [
+    DeleteOrganizationSafeDto,
+    ...Array<DeleteOrganizationSafeDto>,
+  ];
 }
