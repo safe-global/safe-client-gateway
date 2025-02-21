@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  UserOrganization,
   UserOrganizationRole,
   UserOrganizationStatus,
 } from '@/domain/users/entities/user-organization.entity';
@@ -21,5 +22,5 @@ export class Invitation {
   status!: keyof typeof UserOrganizationStatus;
 
   @ApiPropertyOptional({ type: String, nullable: true })
-  invitedBy!: `0x${string}` | null;
+  invitedBy!: UserOrganization['invitedBy'];
 }
