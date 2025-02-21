@@ -1,5 +1,4 @@
 import { SiweApiModule } from '@/datasources/siwe-api/siwe-api.module';
-import { BlockchainApiManagerModule } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { SiweRepository } from '@/domain/siwe/siwe.repository';
 import { Module } from '@nestjs/common';
 import type { SiweMessage } from 'viem/siwe';
@@ -13,17 +12,10 @@ export interface ISiweRepository {
     message: string;
     signature: `0x${string}`;
   }): Promise<SiweMessage>;
-
-  getMaxValidityDate(): Date;
-
-  isValidMessage(args: {
-    message: string;
-    signature: `0x${string}`;
-  }): Promise<boolean>;
 }
 
 @Module({
-  imports: [SiweApiModule, BlockchainApiManagerModule],
+  imports: [SiweApiModule],
   providers: [
     {
       provide: ISiweRepository,

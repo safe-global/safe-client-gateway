@@ -12,6 +12,7 @@ export interface IAuthRepository {
     options?: {
       exp?: Date;
       nbf?: Date;
+      iat?: Date;
     },
   ): string;
 
