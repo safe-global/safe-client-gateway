@@ -1,14 +1,12 @@
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
-import {
-  OrganizationStatus,
-  OrganizationStatusKeys,
-} from '@/domain/organizations/entities/organization.entity';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
 
 export const UpdateOrganizationSchema = z.object({
   name: z.string().optional(),
-  status: z.enum(OrganizationStatusKeys).optional(),
+  status: z.enum(getStringEnumKeys(OrganizationStatus)).optional(),
 });
 
 export class UpdateOrganizationDto
@@ -18,7 +16,7 @@ export class UpdateOrganizationDto
   public readonly name?: Organization['name'];
 
   @ApiPropertyOptional({
-    enum: OrganizationStatus,
+    enum: getStringEnumKeys(OrganizationStatus),
   })
   public readonly status?: keyof typeof OrganizationStatus;
 }

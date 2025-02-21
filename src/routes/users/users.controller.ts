@@ -33,7 +33,7 @@ export class UsersController {
 
   @ApiOkResponse({ type: UserWithWallets })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
-  @ApiNotFoundResponse({ description: 'Wallet not found' })
+  @ApiNotFoundResponse({ description: 'User (wallet) not found' })
   @Get()
   @UseGuards(AuthGuard)
   public async getWithWallets(
@@ -44,7 +44,7 @@ export class UsersController {
 
   @ApiOkResponse({ description: 'User deleted' })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
-  @ApiNotFoundResponse({ description: 'Wallet not found' })
+  @ApiNotFoundResponse({ description: 'User (wallet) not found' })
   @Delete()
   @UseGuards(AuthGuard)
   public async delete(@Auth() authPayload: AuthPayload): Promise<void> {

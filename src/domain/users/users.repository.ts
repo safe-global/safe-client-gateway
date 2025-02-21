@@ -166,6 +166,29 @@ export class UsersRepository implements IUsersRepository {
     return wallet?.user;
   }
 
+  public async update(args: {
+    userId: User['id'];
+    user: Partial<User>;
+    entityManager: EntityManager;
+  }): Promise<void> {
+    await args.entityManager.update(DbUser, args.user.id, args.user);
+  }
+
+  public async updateStatus(args: {
+    userId: User['id'];
+    status: User['status'];
+    entityManager: EntityManager;
+  }): Promise<void> {
+    await this.update({
+      userId: args.userId,
+      user: {
+        id: args.userId,
+        status: args.status,
+      },
+      entityManager: args.entityManager,
+    });
+  }
+
   private assertSignerAddress(
     authPayload: AuthPayload,
   ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {

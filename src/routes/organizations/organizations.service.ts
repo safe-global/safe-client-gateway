@@ -162,7 +162,7 @@ export class OrganizationsService {
       args.authPayload.signer_address,
     );
 
-    return await this.organizationsRepository.delete(args);
+    return await this.organizationsRepository.delete(args.id);
   }
 
   private assertSignerAddress(
@@ -194,7 +194,7 @@ export class OrganizationsService {
 
     if (!organization) {
       throw new UnauthorizedException(
-        'User is unauthorized. SignerAddress= ' + signerAddress,
+        'User is unauthorized. signer_address= ' + signerAddress,
       );
     }
   }

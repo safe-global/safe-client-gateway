@@ -12,6 +12,13 @@ export interface ISiweRepository {
     message: string;
     signature: `0x${string}`;
   }): Promise<SiweMessage>;
+
+  getMaxValidityDate(): Date;
+
+  isValidMessage(args: {
+    message: string;
+    signature: `0x${string}`;
+  }): Promise<SiweMessage>;
 }
 
 @Module({

@@ -7,9 +7,9 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { z } from 'zod';
-import { getAddress } from 'viem';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { WalletSchema } from '@/domain/wallets/entities/wallet.entity';
+import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 
 @Entity('wallets')
 @Unique('UQ_wallet_address', ['address'])
@@ -30,28 +30,23 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   @Column({
     type: 'varchar',
     length: 42,
-    transformer: {
-      from(value: string): `0x${string}` {
-        return getAddress(value);
-      },
-      to(value: string): `0x${string}` {
-        return getAddress(value);
-      },
-    },
+    transformer: databaseAddressTransformer,
   })
   address!: `0x${string}`;
 
   @Column({
+    name: 'created_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     update: false,
   })
-  created_at!: Date;
+  createdAt!: Date;
 
   @Column({
+    name: 'updated_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     update: false,
   })
-  updated_at!: Date;
+  updatedAt!: Date;
 }

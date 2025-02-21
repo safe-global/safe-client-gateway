@@ -5,18 +5,29 @@ import { Organization } from '@/datasources/organizations/entities/organizations
 import { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
 import { OrganizationsRepository } from '@/domain/organizations/organizations.repository';
 import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
+import { IOrganizationSafesRepository } from '@/domain/organizations/organizations-safe.repository.interface';
+import { OrganizationSafesRepository } from '@/domain/organizations/organizations-safe.repository';
+import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 
 @Module({
   imports: [
     PostgresDatabaseModuleV2,
-    TypeOrmModule.forFeature([Organization, UserOrganization]),
+    TypeOrmModule.forFeature([
+      Organization,
+      OrganizationSafe,
+      UserOrganization,
+    ]),
   ],
   providers: [
     {
       provide: IOrganizationsRepository,
       useClass: OrganizationsRepository,
     },
+    {
+      provide: IOrganizationSafesRepository,
+      useClass: OrganizationSafesRepository,
+    },
   ],
-  exports: [IOrganizationsRepository],
+  exports: [IOrganizationsRepository, IOrganizationSafesRepository],
 })
 export class OrganizationsRepositoryModule {}
