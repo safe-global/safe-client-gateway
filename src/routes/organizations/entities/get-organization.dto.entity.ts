@@ -18,7 +18,7 @@ class UserDto extends User {
   public status!: User['status'];
 }
 
-class UserOrganizationsDto {
+class UserOrganizationDto {
   @ApiProperty({ type: Number })
   public id!: UserOrganization['id'];
 
@@ -51,6 +51,6 @@ export class GetOrganizationResponse {
   @ApiProperty({ type: String, enum: getStringEnumKeys(OrganizationStatus) })
   public status!: keyof typeof OrganizationStatus;
 
-  @ApiProperty({ type: UserOrganizationsDto, isArray: true })
-  public userOrganizations!: Array<UserOrganizationsDto>;
+  @ApiProperty({ type: UserOrganizationDto, isArray: true })
+  public userOrganizations!: Array<UserOrganizationDto>;
 }
