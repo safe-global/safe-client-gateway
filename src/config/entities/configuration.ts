@@ -245,6 +245,10 @@ export default () => ({
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
+    transactionConfirmation:
+      process.env.FF_TRANSACTION_CONFIRMATION?.toLowerCase() === 'true',
+    transactionProposal:
+      process.env.FF_TRANSACTION_PROPOSAL?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

@@ -159,6 +159,8 @@ export default (): ReturnType<typeof configuration> => ({
     pushNotifications: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
+    transactionConfirmation: false,
+    transactionProposal: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {

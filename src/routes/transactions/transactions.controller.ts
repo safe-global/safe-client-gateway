@@ -3,8 +3,10 @@ import {
   Controller,
   DefaultValuePipe,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
+  Inject,
   Param,
   ParseBoolPipe,
   ParseIntPipe,
@@ -41,6 +43,7 @@ import { DeleteTransactionDtoSchema } from '@/routes/transactions/entities/schem
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { CreationTransaction } from '@/routes/transactions/entities/creation-transaction.entity';
 import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @ApiTags('transactions')
 @Controller({
@@ -48,7 +51,21 @@ import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
   version: '1',
 })
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) {}
+  private isProposalEnabled: boolean;
+  private isConfirmationEnabled: boolean;
+
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isProposalEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.transactionProposal',
+    );
+    this.isConfirmationEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.transactionConfirmation',
+    );
+  }
 
   @ApiOkResponse({ type: TransactionDetails })
   @Get(`chains/:chainId/transactions/:id`)
@@ -150,6 +167,10 @@ export class TransactionsController {
     @Body(new ValidationPipe(AddConfirmationDtoSchema))
     addConfirmationDto: AddConfirmationDto,
   ): Promise<TransactionDetails> {
+    if (!this.isConfirmationEnabled) {
+      throw new ForbiddenException('Transaction confirmation is disabled');
+    }
+
     return this.transactionsService.addConfirmation({
       chainId,
       safeTxHash,
@@ -284,6 +305,10 @@ export class TransactionsController {
     @Body(new ValidationPipe(ProposeTransactionDtoSchema))
     proposeTransactionDto: ProposeTransactionDto,
   ): Promise<TransactionDetails> {
+    if (!this.isProposalEnabled) {
+      throw new ForbiddenException('Transaction proposal is disabled');
+    }
+
     return this.transactionsService.proposeTransaction({
       chainId,
       safeAddress,

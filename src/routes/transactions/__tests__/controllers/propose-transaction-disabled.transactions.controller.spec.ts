@@ -38,7 +38,7 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 
-describe('Propose transaction - FF Enabled - Transactions Controller (Unit)', () => {
+describe('Propose transaction - FF Disabled - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
@@ -52,7 +52,7 @@ describe('Propose transaction - FF Enabled - Transactions Controller (Unit)', ()
       ...defaultConfiguration,
       features: {
         ...defaultConfiguration.features,
-        transactionProposal: true,
+        transactionProposal: false,
       },
     });
 
@@ -107,7 +107,7 @@ describe('Propose transaction - FF Enabled - Transactions Controller (Unit)', ()
       });
   });
 
-  it('should propose a transaction', async () => {
+  it('should throw a Forbidden error', async () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder().build();
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -166,23 +166,11 @@ describe('Propose transaction - FF Enabled - Transactions Controller (Unit)', ()
     await request(app.getHttpServer())
       .post(`/v1/chains/${chainId}/transactions/${safeAddress}/propose`)
       .send(proposeTransactionDto)
-      .expect(200)
-      .expect(({ body }) =>
-        expect(body).toEqual(
-          expect.objectContaining({
-            txId: `multisig_${safeAddress}_${transaction.safeTxHash}`,
-            executedAt: transaction.executionDate?.getTime(),
-            txStatus: expect.any(String),
-            txInfo: expect.any(Object),
-            detailedExecutionInfo: expect.objectContaining({
-              type: 'MULTISIG',
-              nonce: transaction.nonce,
-            }),
-            safeAppInfo: expect.any(Object),
-            safeAddress,
-            txHash: transaction.transactionHash,
-          }),
-        ),
-      );
+      .expect(403)
+      .expect({
+        message: 'Transaction proposal is disabled',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
   });
 });
