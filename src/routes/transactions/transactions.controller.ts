@@ -3,6 +3,7 @@ import {
   Controller,
   DefaultValuePipe,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Param,
@@ -16,7 +17,6 @@ import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { Page } from '@/routes/common/entities/page.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { AddConfirmationDto } from '@/routes/transactions/entities/add-confirmation.dto';
 import { IncomingTransferPage } from '@/routes/transactions/entities/incoming-transfer-page.entity';
 import { IncomingTransfer } from '@/routes/transactions/entities/incoming-transfer.entity';
 import { ModuleTransactionPage } from '@/routes/transactions/entities/module-transaction-page.entity';
@@ -24,16 +24,12 @@ import { ModuleTransaction } from '@/routes/transactions/entities/module-transac
 import { MultisigTransactionPage } from '@/routes/transactions/entities/multisig-transaction-page.entity';
 import { MultisigTransaction } from '@/routes/transactions/entities/multisig-transaction.entity';
 import { PreviewTransactionDto } from '@/routes/transactions/entities/preview-transaction.dto.entity';
-import { ProposeTransactionDto } from '@/routes/transactions/entities/propose-transaction.dto.entity';
 import { QueuedItemPage } from '@/routes/transactions/entities/queued-item-page.entity';
 import { QueuedItem } from '@/routes/transactions/entities/queued-item.entity';
 import { TransactionDetails } from '@/routes/transactions/entities/transaction-details/transaction-details.entity';
 import { TransactionItemPage } from '@/routes/transactions/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/routes/transactions/entities/transaction-preview.entity';
-import { Transaction } from '@/routes/transactions/entities/transaction.entity';
-import { AddConfirmationDtoSchema } from '@/routes/transactions/entities/schemas/add-confirmation.dto.schema';
 import { PreviewTransactionDtoSchema } from '@/routes/transactions/entities/schemas/preview-transaction.dto.schema';
-import { ProposeTransactionDtoSchema } from '@/routes/transactions/entities/schemas/propose-transaction.dto.schema';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { DeleteTransactionDto } from '@/routes/transactions/entities/delete-transaction.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -141,20 +137,10 @@ export class TransactionsController {
     });
   }
 
-  @HttpCode(200)
-  @ApiOkResponse({ type: Transaction })
+  @HttpCode(403)
   @Post('chains/:chainId/transactions/:safeTxHash/confirmations')
-  async addConfirmation(
-    @Param('chainId') chainId: string,
-    @Param('safeTxHash') safeTxHash: string,
-    @Body(new ValidationPipe(AddConfirmationDtoSchema))
-    addConfirmationDto: AddConfirmationDto,
-  ): Promise<TransactionDetails> {
-    return this.transactionsService.addConfirmation({
-      chainId,
-      safeTxHash,
-      addConfirmationDto,
-    });
+  addConfirmation(): void {
+    throw new ForbiddenException('This endpoint is disabled');
   }
 
   @ApiOkResponse({ type: IncomingTransferPage })
@@ -274,21 +260,10 @@ export class TransactionsController {
     });
   }
 
-  @HttpCode(200)
-  @ApiOkResponse({ type: Transaction })
+  @HttpCode(403)
   @Post('chains/:chainId/transactions/:safeAddress/propose')
-  async proposeTransaction(
-    @Param('chainId') chainId: string,
-    @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: `0x${string}`,
-    @Body(new ValidationPipe(ProposeTransactionDtoSchema))
-    proposeTransactionDto: ProposeTransactionDto,
-  ): Promise<TransactionDetails> {
-    return this.transactionsService.proposeTransaction({
-      chainId,
-      safeAddress,
-      proposeTransactionDto,
-    });
+  proposeTransaction(): void {
+    throw new ForbiddenException('This endpoint is disabled');
   }
 
   @HttpCode(200)

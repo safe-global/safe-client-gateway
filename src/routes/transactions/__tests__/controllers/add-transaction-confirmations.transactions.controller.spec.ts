@@ -63,15 +63,21 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     await app.close();
   });
 
-  it('should throw a validation error', async () => {
+  it('should prevent validation from occurring', async () => {
     await request(app.getHttpServer())
       .post(
         `/v1/chains/${faker.string.numeric()}/transactions/${faker.string.hexadecimal()}/confirmations`,
       )
-      .send({ signedSafeTxHash: 1 });
+      .send({ signedSafeTxHash: 1 })
+      .expect(403)
+      .expect({
+        message: 'This endpoint is disabled',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
   });
 
-  it('should create a confirmation and return the updated transaction', async () => {
+  it('should not allow confirming a transaction', async () => {
     const chain = chainBuilder().build();
     const safeTxHash = faker.string.hexadecimal({ length: 32 });
     const addConfirmationDto = addConfirmationDtoBuilder().build();
@@ -136,19 +142,11 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         `/v1/chains/${chain.chainId}/transactions/${safeTxHash}/confirmations`,
       )
       .send(addConfirmationDto)
-      .expect(200)
-      .expect(({ body }) =>
-        expect(body).toMatchObject({
-          safeAddress: safe.address,
-          txId: `multisig_${transaction.safe}_${transaction.safeTxHash}`,
-          executedAt: expect.any(Number),
-          txStatus: expect.any(String),
-          txInfo: expect.any(Object),
-          txData: expect.any(Object),
-          txHash: transaction.transactionHash,
-          detailedExecutionInfo: expect.any(Object),
-          safeAppInfo: expect.any(Object),
-        }),
-      );
+      .expect(403)
+      .expect({
+        message: 'This endpoint is disabled',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
   });
 });

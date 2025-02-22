@@ -79,25 +79,22 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     await app.close();
   });
 
-  it('should throw a validation error', async () => {
+  it('should prevent validation from occurring', async () => {
     const safeAddress = faker.string.numeric();
     const proposeTransactionDto = proposeTransactionDtoBuilder().build();
     const { safeTxHash } = proposeTransactionDto;
     await request(app.getHttpServer())
       .post(`/v1/chains/${safeAddress}/transactions/${safeTxHash}/propose`)
       .send({ ...proposeTransactionDto, value: 1 })
-      .expect(422)
+      .expect(403)
       .expect({
-        statusCode: 422,
-        code: 'invalid_type',
-        expected: 'string',
-        received: 'number',
-        path: ['value'],
-        message: 'Expected string, received number',
+        message: 'This endpoint is disabled',
+        error: 'Forbidden',
+        statusCode: 403,
       });
   });
 
-  it('should propose a transaction', async () => {
+  it('should not allow proposal of a transaction', async () => {
     const proposeTransactionDto = proposeTransactionDtoBuilder().build();
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -156,23 +153,11 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     await request(app.getHttpServer())
       .post(`/v1/chains/${chainId}/transactions/${safeAddress}/propose`)
       .send(proposeTransactionDto)
-      .expect(200)
-      .expect(({ body }) =>
-        expect(body).toEqual(
-          expect.objectContaining({
-            txId: `multisig_${safeAddress}_${transaction.safeTxHash}`,
-            executedAt: transaction.executionDate?.getTime(),
-            txStatus: expect.any(String),
-            txInfo: expect.any(Object),
-            detailedExecutionInfo: expect.objectContaining({
-              type: 'MULTISIG',
-              nonce: transaction.nonce,
-            }),
-            safeAppInfo: expect.any(Object),
-            safeAddress,
-            txHash: transaction.transactionHash,
-          }),
-        ),
-      );
+      .expect(403)
+      .expect({
+        message: 'This endpoint is disabled',
+        error: 'Forbidden',
+        statusCode: 403,
+      });
   });
 });
