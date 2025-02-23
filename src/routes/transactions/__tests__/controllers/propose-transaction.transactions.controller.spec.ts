@@ -114,6 +114,12 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     const contract = contractBuilder().build();
     const transaction = (await multisigTransactionBuilder())
       .with('safe', safeAddress)
+      .with(
+        'origin',
+        `{"url": "${faker.internet.url({
+          appendSlash: false,
+        })}", "name": "${faker.word.words()}", "note": "<script>document.write('<img src=s onerror=alert(Hello World)>')</script>"}`,
+      )
       .build();
     transaction.safeTxHash = getSafeTxHash({ safe, transaction, chainId });
     const signature = await signer.sign({
@@ -203,6 +209,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
             safeAppInfo: expect.any(Object),
             safeAddress,
             txHash: transaction.transactionHash,
+            note: '',
           }),
         ),
       );
