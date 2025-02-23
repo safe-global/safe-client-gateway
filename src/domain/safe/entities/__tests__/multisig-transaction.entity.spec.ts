@@ -12,10 +12,11 @@ import {
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
   _MultisigTransactionTypeSchema,
+  _refineMultisigConfirmations,
 } from '@/domain/safe/entities/multisig-transaction.entity';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
@@ -61,14 +62,58 @@ describe('MultisigTransaction', () => {
     });
   });
 
-  describe('MultisigTransactionSchema', () => {
-    it('should validate a MultisigTransaction', async () => {
+  describe('refineMultisigConfirmations', () => {
+    const mockCtx = jest.mocked({
+      addIssue: jest.fn(),
+    } as jest.MockedObjectDeep<z.RefinementCtx>);
+
+    beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    it('should return early if disabled', async () => {
+      const originalFeatureFlag = process.env.FF_REFINE_MULTISIG_CONFIRMATIONS;
+      process.env.FF_REFINE_MULTISIG_CONFIRMATIONS = 'false';
+
       const multisigTransaction = (await multisigTransactionBuilder()).build();
 
-      const result =
-        await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+      const result = await _refineMultisigConfirmations(
+        multisigTransaction,
+        mockCtx,
+      );
 
-      expect(result.success).toBe(true);
+      expect(result).toBe(undefined);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+
+      process.env.FF_REFINE_MULTISIG_CONFIRMATIONS = originalFeatureFlag;
+    });
+
+    it('should return early if there are no confirmations', async () => {
+      const multisigTransaction = (await multisigTransactionBuilder())
+        .with('confirmations', null)
+        .build();
+
+      const result = await _refineMultisigConfirmations(
+        multisigTransaction,
+        mockCtx,
+      );
+
+      expect(result).toBe(undefined);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
+    });
+
+    it('should return early if confirmations are empty', async () => {
+      const multisigTransaction = (await multisigTransactionBuilder())
+        .with('confirmations', [])
+        .build();
+
+      const result = await _refineMultisigConfirmations(
+        multisigTransaction,
+        mockCtx,
+      );
+
+      expect(result).toBe(undefined);
+      expect(mockCtx.addIssue).not.toHaveBeenCalled();
     });
 
     it('should not validate duplicate signatures', async () => {
@@ -85,16 +130,17 @@ describe('MultisigTransaction', () => {
         ])
         .build();
 
-      const result =
-        await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+      const result = await _refineMultisigConfirmations(
+        multisigTransaction,
+        mockCtx,
+      );
 
-      expect(!result.success && result.error.issues).toEqual([
-        {
-          code: 'custom',
-          message: 'Duplicate signatures',
-          path: [],
-        },
-      ]);
+      expect(result).toBe(z.NEVER);
+      expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+      expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+        code: 'custom',
+        message: 'Duplicate signatures',
+      });
     });
 
     it('should not validate duplicate confirmation owners', async () => {
@@ -117,30 +163,36 @@ describe('MultisigTransaction', () => {
         ])
         .build();
 
-      const result =
-        await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+      const result = await _refineMultisigConfirmations(
+        multisigTransaction,
+        mockCtx,
+      );
 
-      expect(!result.success && result.error.issues).toEqual([
-        {
-          code: 'custom',
-          message: 'Duplicate owners',
-          path: [],
-        },
-      ]);
+      expect(result).toBe(z.NEVER);
+      expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+      expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+        code: 'custom',
+        message: 'Duplicate owners',
+      });
     });
 
-    describe('confirmations', () => {
+    describe('approved hash confirmations', () => {
       it(`should validate ${SignatureType.ApprovedHash} confirmations`, async () => {
         const multisigTransaction = (await multisigTransactionBuilder())
           .with('confirmations', [approvedHashConfirmationBuilder().build()])
           .build();
 
-        const result =
-          await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
 
-        expect(result.success).toBe(true);
+        expect(result).toBe(undefined);
+        expect(mockCtx.addIssue).not.toHaveBeenCalled();
       });
+    });
 
+    describe('contract signature confirmations', () => {
       it(`should validate ${SignatureType.ContractSignature} confirmations`, async () => {
         const multisigTransaction = (await multisigTransactionBuilder())
           .with('confirmations', [
@@ -148,248 +200,273 @@ describe('MultisigTransaction', () => {
           ])
           .build();
 
-        const result =
-          await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
 
-        expect(result.success).toBe(true);
+        expect(result).toBe(undefined);
+        expect(mockCtx.addIssue).not.toHaveBeenCalled();
       });
+    });
 
-      describe(`should validate EOA confirmations`, () => {
-        it('should validate a valid EOA confirmation', async () => {
-          const safeTxHash = faker.string.hexadecimal({
-            length: 64,
-          }) as `0x${string}`;
-          const multisigTransaction = (await multisigTransactionBuilder())
-            .with('safeTxHash', safeTxHash)
-            .with('confirmations', [
-              (await eoaConfirmationBuilder(safeTxHash)).build(),
-            ])
-            .build();
-
-          const result =
-            await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
-
-          expect(result.success).toBe(true);
-        });
-
-        it('should throw if the v value is not 27 or 28', async () => {
-          const privateKey = generatePrivateKey();
-          const signer = privateKeyToAccount(privateKey);
-          const safeTxHash = faker.string.hexadecimal({
-            length: 64,
-          }) as `0x${string}`;
-          const signature = await signer.signMessage({
-            message: { raw: safeTxHash },
-          });
-
-          const rAndS = signature.slice(0, 130);
-          const v = parseInt(signature.slice(-2), 16);
-
-          // Adjust v for eth_sign
-          // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
-          const adjustedV = v + 4;
-          const adjustedSignature = (rAndS +
-            adjustedV.toString(16)) as `0x${string}`;
-
-          const multisigTransaction = (await multisigTransactionBuilder())
-            .with('safeTxHash', safeTxHash)
-            .with('confirmations', [
-              (await eoaConfirmationBuilder(safeTxHash))
-                .with('owner', signer.address)
-                .with('signature', adjustedSignature)
-                .build(),
-            ])
-            .build();
-
-          const result =
-            await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
-
-          expect(!result.success && result.error.issues).toStrictEqual([
-            {
-              code: 'custom',
-              message: 'EOA signature must have v equal to 27 or 28',
-              path: [],
-            },
-          ]);
-        });
-
-        it('should throw if the recovered address does not match the confirmation owner', async () => {
-          const safeTxHash = faker.string.hexadecimal({
-            length: 64,
-          }) as `0x${string}`;
-          const nonSigner = getAddress(faker.finance.ethereumAddress());
-          const multisigTransaction = (await multisigTransactionBuilder())
-            .with('safeTxHash', safeTxHash)
-            .with('confirmations', [
-              (await eoaConfirmationBuilder(safeTxHash))
-                .with('owner', nonSigner)
-                .build(),
-            ])
-            .build();
-
-          const result =
-            await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
-
-          expect(!result.success && result.error.issues).toStrictEqual([
-            {
-              code: 'custom',
-              message: 'Invalid EOA signature',
-              path: [],
-            },
-          ]);
-        });
-
-        it('should throw if the address cannot be recovered', async () => {
-          const safeTxHash = faker.string.hexadecimal({
-            length: 64,
-          }) as `0x${string}`;
-          const invalidSignature = faker.string.hexadecimal() as `0x${string}`;
-          const multisigTransaction = (await multisigTransactionBuilder())
-            .with('safeTxHash', safeTxHash)
-            .with('confirmations', [
-              (await eoaConfirmationBuilder(safeTxHash))
-                .with('signature', invalidSignature)
-                .build(),
-            ])
-            .build();
-
-          const result =
-            await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
-
-          expect(!result.success && result.error.issues).toStrictEqual([
-            {
-              code: 'custom',
-              message: 'EOA signature must have v equal to 27 or 28',
-              path: [],
-            },
-          ]);
-        });
-      });
-
-      describe(`should validate ETH_SIGN confirmations`, () => {
-        it('should validate a valid ETH_SIGN confirmation', async () => {
-          const safeTxHash = faker.string.hexadecimal({
-            length: 64,
-          }) as `0x${string}`;
-          const multisigTransaction = (await multisigTransactionBuilder())
-            .with('safeTxHash', safeTxHash)
-            .with('confirmations', [
-              (await ethSignConfirmationBuilder(safeTxHash)).build(),
-            ])
-            .build();
-
-          const result =
-            await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
-
-          expect(result.success).toBe(true);
-        });
-
-        it('should throw if the v value is not 31 or 32', async () => {
-          const privateKey = generatePrivateKey();
-          const signer = privateKeyToAccount(privateKey);
-          const safeTxHash = faker.string.hexadecimal({
-            length: 64,
-          }) as `0x${string}`;
-          const signature = await signer.signMessage({
-            message: { raw: safeTxHash },
-          });
-          const multisigTransaction = (await multisigTransactionBuilder())
-            .with('safeTxHash', safeTxHash)
-            .with('confirmations', [
-              (await ethSignConfirmationBuilder(safeTxHash))
-                .with('owner', signer.address)
-                .with('signature', signature)
-                .build(),
-            ])
-            .build();
-
-          const result =
-            await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
-
-          expect(!result.success && result.error.issues).toStrictEqual([
-            {
-              code: 'custom',
-              message: 'ETH_SIGN signature must have v equal to 31 or 32',
-              path: [],
-            },
-          ]);
-        });
-
-        it('should throw if the recovered address does not match the confirmation owner', async () => {
-          const safeTxHash = faker.string.hexadecimal({
-            length: 64,
-          }) as `0x${string}`;
-          const nonSigner = getAddress(faker.finance.ethereumAddress());
-          const multisigTransaction = (await multisigTransactionBuilder())
-            .with('safeTxHash', safeTxHash)
-            .with('confirmations', [
-              (await ethSignConfirmationBuilder(safeTxHash))
-                .with('owner', nonSigner)
-                .build(),
-            ])
-            .build();
-
-          const result =
-            await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
-
-          expect(!result.success && result.error.issues).toStrictEqual([
-            {
-              code: 'custom',
-              message: 'Invalid ETH_SIGN signature',
-              path: [],
-            },
-          ]);
-        });
-
-        it('should throw if the address cannot be recovered', async () => {
-          const safeTxHash = faker.string.hexadecimal({
-            length: 64,
-          }) as `0x${string}`;
-          const invalidSignature = faker.string.hexadecimal() as `0x${string}`;
-          const multisigTransaction = (await multisigTransactionBuilder())
-            .with('safeTxHash', safeTxHash)
-            .with('confirmations', [
-              (await ethSignConfirmationBuilder(safeTxHash))
-                .with('signature', invalidSignature)
-                .build(),
-            ])
-            .build();
-
-          const result =
-            await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
-
-          expect(!result.success && result.error.issues).toStrictEqual([
-            expect.objectContaining({
-              code: 'custom',
-              message: expect.stringMatching(
-                /ETH_SIGN signature must have v equal to 31 or 32|Could not recover ETH_SIGN address/,
-              ),
-              path: [],
-            }),
-          ]);
-        });
-      });
-
-      it('should throw if the signature type is invalid', async () => {
+    describe(`EOA confirmations`, () => {
+      it('should validate a valid EOA confirmation', async () => {
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
         const multisigTransaction = (await multisigTransactionBuilder())
+          .with('safeTxHash', safeTxHash)
           .with('confirmations', [
-            (await confirmationBuilder())
-              .with('signatureType', 'unknown' as SignatureType)
+            (await eoaConfirmationBuilder(safeTxHash)).build(),
+          ])
+          .build();
+
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
+
+        expect(result).toBe(undefined);
+        expect(mockCtx.addIssue).not.toHaveBeenCalled();
+      });
+
+      it('should throw if the v value is not 27 or 28', async () => {
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+        const signature = await signer.signMessage({
+          message: { raw: safeTxHash },
+        });
+
+        const rAndS = signature.slice(0, 130);
+        const v = parseInt(signature.slice(-2), 16);
+
+        // Adjust v for eth_sign
+        // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
+        const adjustedV = v + 4;
+        const adjustedSignature = (rAndS +
+          adjustedV.toString(16)) as `0x${string}`;
+
+        const multisigTransaction = (await multisigTransactionBuilder())
+          .with('safeTxHash', safeTxHash)
+          .with('confirmations', [
+            (await eoaConfirmationBuilder(safeTxHash))
+              .with('owner', signer.address)
+              .with('signature', adjustedSignature)
               .build(),
           ])
           .build();
 
-        const result =
-          await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
 
-        expect(!result.success && result.error.issues).toStrictEqual([
-          {
-            code: 'custom',
-            message: 'Invalid signature type',
-            path: [],
-          },
-        ]);
+        expect(result).toBe(z.NEVER);
+        expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+        expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+          code: 'custom',
+          message: 'EOA signature must have v equal to 27 or 28',
+        });
       });
+
+      it('should throw if the recovered address does not match the confirmation owner', async () => {
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+        const nonSigner = getAddress(faker.finance.ethereumAddress());
+        const multisigTransaction = (await multisigTransactionBuilder())
+          .with('safeTxHash', safeTxHash)
+          .with('confirmations', [
+            (await eoaConfirmationBuilder(safeTxHash))
+              .with('owner', nonSigner)
+              .build(),
+          ])
+          .build();
+
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
+
+        expect(result).toBe(undefined);
+        expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+        expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+          code: 'custom',
+          message: 'Invalid EOA signature',
+        });
+      });
+
+      it('should throw if the address cannot be recovered', async () => {
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+        const invalidSignature = `0x${faker.helpers.arrayElement([27, 28]).toString(16)}`;
+        const multisigTransaction = (await multisigTransactionBuilder())
+          .with('safeTxHash', safeTxHash)
+          .with('confirmations', [
+            (await eoaConfirmationBuilder(safeTxHash))
+              .with('signature', invalidSignature as `0x${string}`)
+              .build(),
+          ])
+          .build();
+
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
+
+        expect(result).toBe(z.NEVER);
+        expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+        expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+          code: 'custom',
+          message: 'Could not recover EOA address',
+        });
+      });
+    });
+
+    describe(`eth_sign confirmations`, () => {
+      it('should validate a valid eth_sign confirmation', async () => {
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+        const multisigTransaction = (await multisigTransactionBuilder())
+          .with('safeTxHash', safeTxHash)
+          .with('confirmations', [
+            (await ethSignConfirmationBuilder(safeTxHash)).build(),
+          ])
+          .build();
+
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
+
+        expect(result).toBe(undefined);
+        expect(mockCtx.addIssue).not.toHaveBeenCalled();
+      });
+
+      it('should throw if the v value is not 31 or 32', async () => {
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+        const signature = await signer.signMessage({
+          message: { raw: safeTxHash },
+        });
+        const multisigTransaction = (await multisigTransactionBuilder())
+          .with('safeTxHash', safeTxHash)
+          .with('confirmations', [
+            (await ethSignConfirmationBuilder(safeTxHash))
+              .with('owner', signer.address)
+              .with('signature', signature)
+              .build(),
+          ])
+          .build();
+
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
+
+        expect(result).toBe(z.NEVER);
+        expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+        expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+          code: 'custom',
+          message: 'ETH_SIGN signature must have v equal to 31 or 32',
+        });
+      });
+
+      it('should throw if the recovered address does not match the confirmation owner', async () => {
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+        const nonSigner = getAddress(faker.finance.ethereumAddress());
+        const multisigTransaction = (await multisigTransactionBuilder())
+          .with('safeTxHash', safeTxHash)
+          .with('confirmations', [
+            (await ethSignConfirmationBuilder(safeTxHash))
+              .with('owner', nonSigner)
+              .build(),
+          ])
+          .build();
+
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
+
+        expect(result).toBe(undefined);
+        expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+        expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+          code: 'custom',
+          message: 'Invalid ETH_SIGN signature',
+        });
+      });
+
+      it('should throw if the address cannot be recovered', async () => {
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+        const invalidSignature = `0x${faker.helpers.arrayElement([31, 32]).toString(16)}`;
+        const multisigTransaction = (await multisigTransactionBuilder())
+          .with('safeTxHash', safeTxHash)
+          .with('confirmations', [
+            (await ethSignConfirmationBuilder(safeTxHash))
+              .with('signature', invalidSignature as `0x${string}`)
+              .build(),
+          ])
+          .build();
+
+        const result = await _refineMultisigConfirmations(
+          multisigTransaction,
+          mockCtx,
+        );
+
+        expect(result).toBe(z.NEVER);
+        expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+        expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+          code: 'custom',
+          message: 'Could not recover ETH_SIGN address',
+        });
+      });
+    });
+
+    it('should throw if the signature type is invalid', async () => {
+      const multisigTransaction = (await multisigTransactionBuilder())
+        .with('confirmations', [
+          (await confirmationBuilder())
+            .with('signatureType', 'unknown' as SignatureType)
+            .build(),
+        ])
+        .build();
+
+      const result = await _refineMultisigConfirmations(
+        multisigTransaction,
+        mockCtx,
+      );
+
+      expect(result).toBe(z.NEVER);
+      expect(mockCtx.addIssue).toHaveBeenCalledTimes(1);
+      expect(mockCtx.addIssue).toHaveBeenNthCalledWith(1, {
+        code: 'custom',
+        message: 'Invalid signature type',
+      });
+    });
+  });
+
+  describe('MultisigTransactionSchema', () => {
+    it('should validate a MultisigTransaction', async () => {
+      const multisigTransaction = (await multisigTransactionBuilder()).build();
+
+      const result =
+        await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+
+      expect(result.success).toBe(true);
     });
 
     it.each([
