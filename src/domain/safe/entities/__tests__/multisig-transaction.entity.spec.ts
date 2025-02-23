@@ -20,6 +20,10 @@ import { z, ZodError } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
+const mockCtx = jest.mocked({
+  addIssue: jest.fn(),
+} as jest.MockedObjectDeep<z.RefinementCtx>);
+
 describe('MultisigTransaction', () => {
   describe('ConfirmationSchema', () => {
     it('should validate a Confirmation', async () => {
@@ -63,10 +67,6 @@ describe('MultisigTransaction', () => {
   });
 
   describe('refineMultisigConfirmations', () => {
-    const mockCtx = jest.mocked({
-      addIssue: jest.fn(),
-    } as jest.MockedObjectDeep<z.RefinementCtx>);
-
     beforeEach(() => {
       jest.resetAllMocks();
     });

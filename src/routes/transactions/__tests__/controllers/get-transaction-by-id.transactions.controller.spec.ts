@@ -15,7 +15,11 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/domain/safe/entities/__tests__/module-transaction.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import {
+  confirmationBuilder,
+  eoaConfirmationBuilder,
+  ethSignConfirmationBuilder,
+} from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigToJson,
@@ -953,5 +957,219 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           },
         });
       });
+  });
+
+  it('should return a 502 if there are duplicate owners in a confirmation', async () => {
+    jest.spyOn(console, 'error');
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const safe = safeBuilder()
+      .with('owners', [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+      ])
+      .build();
+    const confirmation = (await confirmationBuilder()).build();
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .with('confirmations', [confirmation, confirmation])
+      .build();
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(multisigTransaction)),
+            status: 200,
+          });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+      )
+      .expect(502);
+
+    // TODO: When improving error handling, this should be returned
+    expect(console.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.stringMatching('Duplicate owners'),
+      }),
+    );
+  });
+
+  it('should return a 502 if there are duplicate signatures in a confirmation', async () => {
+    jest.spyOn(console, 'error');
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const safe = safeBuilder()
+      .with('owners', [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+      ])
+      .build();
+    const confirmation = (await confirmationBuilder()).build();
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .with('confirmations', [
+        confirmation,
+        {
+          ...confirmation,
+          owner: safe.owners[0],
+        },
+      ])
+      .build();
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(multisigTransaction)),
+            status: 200,
+          });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+      )
+      .expect(502);
+
+    // TODO: When improving error handling, this should be returned
+    expect(console.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.stringMatching('Duplicate signatures'),
+      }),
+    );
+  });
+
+  it('should return a 502 if there are invalid EOA confirmations', async () => {
+    jest.spyOn(console, 'error');
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const safe = safeBuilder()
+      .with('owners', [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+      ])
+      .build();
+    const safeTxHash = faker.string.hexadecimal({
+      length: 64,
+    }) as `0x${string}`;
+    const confirmation = (await eoaConfirmationBuilder(safeTxHash))
+      .with('owner', getAddress(faker.finance.ethereumAddress()))
+      .build();
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .with('confirmations', [confirmation])
+      .with('safeTxHash', safeTxHash)
+      .build();
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(multisigTransaction)),
+            status: 200,
+          });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+      )
+      .expect(502);
+
+    // TODO: When improving error handling, this should be returned
+    expect(console.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.stringMatching('Invalid EOA signature'),
+      }),
+    );
+  });
+
+  it('should return a 502 if there are invalid ETH_SIGN confirmations', async () => {
+    jest.spyOn(console, 'error');
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const safe = safeBuilder()
+      .with('owners', [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+      ])
+      .build();
+    const safeTxHash = faker.string.hexadecimal({
+      length: 64,
+    }) as `0x${string}`;
+    const confirmation = (await ethSignConfirmationBuilder(safeTxHash))
+      .with('owner', getAddress(faker.finance.ethereumAddress()))
+      .build();
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .with('confirmations', [confirmation])
+      .with('safeTxHash', safeTxHash)
+      .build();
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(multisigTransaction)),
+            status: 200,
+          });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+      )
+      .expect(502);
+
+    // TODO: When improving error handling, this should be returned
+    expect(console.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detail: expect.stringMatching('Invalid ETH_SIGN signature'),
+      }),
+    );
   });
 });
