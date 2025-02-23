@@ -107,6 +107,12 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     const contract = contractBuilder().build();
     const transaction = multisigTransactionBuilder()
       .with('safe', safeAddress)
+      .with(
+        'origin',
+        `{"url": "${faker.internet.url({
+          appendSlash: false,
+        })}", "name": "${faker.word.words()}", "note": "<script>document.write('<img src=s onerror=alert(Hello World)>')</script>"}`,
+      )
       .build();
     const transactions = pageBuilder().build();
     const token = tokenBuilder().build();
@@ -171,6 +177,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
             safeAppInfo: expect.any(Object),
             safeAddress,
             txHash: transaction.transactionHash,
+            note: '',
           }),
         ),
       );
