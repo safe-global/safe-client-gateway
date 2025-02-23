@@ -56,6 +56,7 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
   let app: INestApplication<Server>;
@@ -178,9 +179,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           .build(),
         tokenInfo: multisigToken,
       } as ERC20Transfer;
-      const multisigSafeTxHash = faker.string.hexadecimal({
-        length: 64,
-      }) as `0x${string}`;
       multisigTransaction = {
         ...(multisigTransactionToJson(
           (await multisigTransactionBuilder())
@@ -218,22 +216,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 .build(),
             )
             .with('confirmationsRequired', 1)
-            .with('confirmations', [
-              (await eoaConfirmationBuilder(multisigSafeTxHash))
-                .with('owner', safe.owners[0])
-                .with(
-                  'signature',
-                  await signer.sign({ hash: multisigSafeTxHash }),
-                )
-                .build(),
-            ])
-            .with('safeTxHash', multisigSafeTxHash)
             .with('trusted', true)
             .build(),
         ) as MultisigTransaction),
         // TODO: Update type to include transfers
         transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
       } as MultisigTransaction;
+      multisigTransaction.safeTxHash = getSafeTxHash({
+        safe,
+        chainId: chain.chainId,
+        transaction: multisigTransaction,
+      });
+      multisigTransaction.confirmations = [
+        (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+          .with('owner', safe.owners[0])
+          .with(
+            'signature',
+            await signer.sign({ hash: multisigTransaction.safeTxHash }),
+          )
+          .build(),
+      ];
 
       notImitatedMultisigToken = tokenBuilder()
         .with('type', TokenType.Erc20)
@@ -247,9 +249,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           .build(),
         tokenInfo: multisigToken,
       } as ERC20Transfer;
-      const notImitatedMultisigTransferSafeTxHash = faker.string.hexadecimal({
-        length: 64,
-      }) as `0x${string}`;
       notImitatedMultisigTransaction = {
         ...(multisigTransactionToJson(
           (await multisigTransactionBuilder())
@@ -287,22 +286,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 .build(),
             )
             .with('confirmationsRequired', 1)
-            .with('confirmations', [
-              (
-                await eoaConfirmationBuilder(
-                  notImitatedMultisigTransferSafeTxHash,
-                )
-              )
-                .with('owner', safe.owners[0])
-                .with(
-                  'signature',
-                  await signer.sign({
-                    hash: notImitatedMultisigTransferSafeTxHash,
-                  }),
-                )
-                .build(),
-            ])
-            .with('safeTxHash', notImitatedMultisigTransferSafeTxHash)
+
             .with('trusted', true)
             .build(),
         ) as MultisigTransaction),
@@ -311,6 +295,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           erc20TransferToJson(notImitatedMultisigTransfer) as Transfer,
         ],
       } as MultisigTransaction;
+      notImitatedMultisigTransaction.safeTxHash = getSafeTxHash({
+        safe,
+        chainId: chain.chainId,
+        transaction: notImitatedMultisigTransaction,
+      });
+      notImitatedMultisigTransaction.confirmations = [
+        (
+          await eoaConfirmationBuilder(
+            notImitatedMultisigTransaction.safeTxHash,
+          )
+        )
+          .with('owner', safe.owners[0])
+          .with(
+            'signature',
+            await signer.sign({
+              hash: notImitatedMultisigTransaction.safeTxHash,
+            }),
+          )
+          .build(),
+      ];
 
       imitationAddress = getImitationAddress(multisigTransfer.to);
       const imitationExecutionDate = new Date('2024-03-20T09:42:58Z');
@@ -2754,9 +2758,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           .build(),
         tokenInfo: multisigToken,
       } as ERC20Transfer;
-      const multisigTransactionSafeTxHash = faker.string.hexadecimal({
-        length: 64,
-      }) as `0x${string}`;
       multisigTransaction = {
         ...(multisigTransactionToJson(
           (await multisigTransactionBuilder())
@@ -2794,22 +2795,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 .build(),
             )
             .with('confirmationsRequired', 1)
-            .with('confirmations', [
-              (await eoaConfirmationBuilder(multisigTransactionSafeTxHash))
-                .with('owner', safe.owners[0])
-                .with(
-                  'signature',
-                  await signer.sign({ hash: multisigTransactionSafeTxHash }),
-                )
-                .build(),
-            ])
-            .with('safeTxHash', multisigTransactionSafeTxHash)
             .with('trusted', true)
             .build(),
         ) as MultisigTransaction),
         // TODO: Update type to include transfers
         transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
       } as MultisigTransaction;
+      multisigTransaction.safeTxHash = getSafeTxHash({
+        chainId: chain.chainId,
+        safe,
+        transaction: multisigTransaction,
+      });
+      multisigTransaction.confirmations = [
+        (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+          .with('owner', safe.owners[0])
+          .with(
+            'signature',
+            await signer.sign({ hash: multisigTransaction.safeTxHash }),
+          )
+          .build(),
+      ];
 
       notImitatedMultisigToken = tokenBuilder()
         .with('type', TokenType.Erc20)
@@ -2824,9 +2829,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           .build(),
         tokenInfo: multisigToken,
       } as ERC20Transfer;
-      const notImitatedMultisigTransferSafeTxHash = faker.string.hexadecimal({
-        length: 64,
-      }) as `0x${string}`;
       notImitatedMultisigTransaction = {
         ...(multisigTransactionToJson(
           (await multisigTransactionBuilder())
@@ -2864,22 +2866,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
                 .build(),
             )
             .with('confirmationsRequired', 1)
-            .with('confirmations', [
-              (
-                await eoaConfirmationBuilder(
-                  notImitatedMultisigTransferSafeTxHash,
-                )
-              )
-                .with('owner', safe.owners[0])
-                .with(
-                  'signature',
-                  await signer.sign({
-                    hash: notImitatedMultisigTransferSafeTxHash,
-                  }),
-                )
-                .build(),
-            ])
-            .with('safeTxHash', notImitatedMultisigTransferSafeTxHash)
             .with('trusted', true)
             .build(),
         ) as MultisigTransaction),
@@ -2888,6 +2874,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           erc20TransferToJson(notImitatedMultisigTransfer) as Transfer,
         ],
       } as MultisigTransaction;
+      notImitatedMultisigTransaction.safeTxHash = getSafeTxHash({
+        chainId: chain.chainId,
+        safe,
+        transaction: notImitatedMultisigTransaction,
+      });
+      notImitatedMultisigTransaction.confirmations = [
+        (
+          await eoaConfirmationBuilder(
+            notImitatedMultisigTransaction.safeTxHash,
+          )
+        )
+          .with('owner', safe.owners[0])
+          .with(
+            'signature',
+            await signer.sign({
+              hash: notImitatedMultisigTransaction.safeTxHash,
+            }),
+          )
+          .build(),
+      ];
       imitationAddress = getImitationAddress(multisigTransfer.to);
 
       getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;

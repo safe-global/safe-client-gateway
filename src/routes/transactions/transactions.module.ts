@@ -48,6 +48,7 @@ import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer
 import { TransactionsController } from '@/routes/transactions/transactions.controller';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { Module } from '@nestjs/common';
+import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 
 @Module({
   controllers: [TransactionsController],
@@ -101,6 +102,7 @@ import { Module } from '@nestjs/common';
     TransferDetailsMapper,
     TransferInfoMapper,
     TransferImitationMapper,
+    TransactionVerifierHelper,
     HumanDescriptionMapper,
   ],
 })

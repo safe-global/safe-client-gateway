@@ -19,6 +19,7 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
@@ -133,55 +134,34 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .build(),
     ];
     const contractResponse = contractBuilder().build();
+    const getTransaction = async (
+      nonce: number,
+    ): Promise<MultisigTransaction> => {
+      const transaction = (await multisigTransactionBuilder())
+        .with('safe', safeAddress)
+        .with('isExecuted', false)
+        .with('nonce', nonce)
+        .with('dataDecoded', null)
+        .build();
+      transaction.safeTxHash = getSafeTxHash({
+        transaction,
+        safe: safeResponse,
+        chainId,
+      });
+      transaction.confirmations = [];
+      return transaction;
+    };
+    const nonce1 = await getTransaction(1);
+    const nonce2 = await getTransaction(2);
+    const nonce3 = await getTransaction(3);
+    const nonce4 = await getTransaction(4);
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('nonce', 2)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('nonce', 2)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('nonce', 3)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('nonce', 4)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
+      multisigToJson(nonce3) as MultisigTransaction,
+      multisigToJson(nonce4) as MultisigTransaction,
     ];
 
     networkService.get.mockImplementation(({ url }) => {
@@ -304,71 +284,35 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .with('name', faker.word.words())
         .build(),
     ];
+    const getTransaction = async (
+      nonce: number,
+    ): Promise<MultisigTransaction> => {
+      const transaction = (await multisigTransactionBuilder())
+        .with('safe', safeAddress)
+        .with('isExecuted', false)
+        .with('nonce', nonce)
+        .with('dataDecoded', null)
+        .build();
+      transaction.safeTxHash = getSafeTxHash({
+        transaction,
+        safe: safeResponse,
+        chainId,
+      });
+      transaction.confirmations = [];
+      return transaction;
+    };
+    const nonce1 = await getTransaction(1);
+    const nonce2 = await getTransaction(2);
+    const nonce3 = await getTransaction(3);
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('nonce', 2)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('nonce', 2)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('nonce', 3)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('nonce', 3)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
+      multisigToJson(nonce3) as MultisigTransaction,
+      multisigToJson(nonce3) as MultisigTransaction,
     ];
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
@@ -493,23 +437,28 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .with('nonce', 1)
       .build();
     const safeAppsResponse = [safeAppBuilder().build()];
+    const getTransaction = async (
+      nonce: number,
+    ): Promise<MultisigTransaction> => {
+      const transaction = (await multisigTransactionBuilder())
+        .with('safe', safeAddress)
+        .with('isExecuted', false)
+        .with('nonce', nonce)
+        .with('dataDecoded', null)
+        .build();
+      transaction.safeTxHash = getSafeTxHash({
+        transaction,
+        safe: safeResponse,
+        chainId,
+      });
+      transaction.confirmations = [];
+      return transaction;
+    };
+    const nonce1 = await getTransaction(1);
+    const nonce2 = await getTransaction(2);
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 2)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
     ];
     networkService.get.mockImplementation(({ url, networkRequest }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
@@ -586,237 +535,405 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       });
   });
 
-  it('should return a 502 if confirmations contain duplicate owners', async () => {
-    jest.spyOn(console, 'error');
+  it('should return a 502 if there is a safeTxHash mismatch', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const confirmation = (await confirmationBuilder()).build();
+    const getTransaction = async (
+      nonce: number,
+    ): Promise<MultisigTransaction> => {
+      const transaction = (await multisigTransactionBuilder())
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', nonce)
+        .with('dataDecoded', null)
+        .build();
+      transaction.safeTxHash = getSafeTxHash({
+        transaction,
+        safe,
+        chainId: chain.chainId,
+      });
+      transaction.confirmations = [];
+      return transaction;
+    };
+    const nonce1 = await getTransaction(1);
+    const nonce2 = await getTransaction(2);
+    nonce2.safeTxHash = faker.string.hexadecimal({
+      length: 64,
+    }) as `0x${string}`;
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('confirmations', [confirmation, confirmation])
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
     ];
+    const contract = contractBuilder().build();
 
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+    const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
     networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case getChainUrl:
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        case getMultisigTransactionsUrl:
-          return Promise.resolve({
-            data: rawify(pageBuilder().with('results', transactions).build()),
-            status: 200,
-          });
-        case getSafeUrl:
-          return Promise.resolve({ data: rawify(safe), status: 200 });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', transactions).build()),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getSafeAppsUrl) {
+        return Promise.resolve({ data: rawify([]), status: 200 });
+      }
+      if (url.startsWith(getContractUrlPattern)) {
+        return Promise.resolve({
+          data: rawify(contract),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
 
     await request(app.getHttpServer())
       .get(
         `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`,
       )
-      .expect(502);
+      .expect(502)
+      .expect({
+        message: 'Invalid safeTxHash',
+        error: 'Bad Gateway',
+        statusCode: 502,
+      });
+  });
 
-    // TODO: When improving error handling, this should be returned
-    expect(console.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        detail: expect.stringMatching('Duplicate owners'),
-      }),
-    );
+  it('should return a 502 if confirmations contain duplicate owners', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      transaction: multisigTransaction,
+      safe,
+      chainId: chain.chainId,
+    });
+    multisigTransaction.confirmations = [
+      (await confirmationBuilder(multisigTransaction.safeTxHash)).build(),
+    ];
+    const duplicateOwnersMultisigTransaction = (
+      await multisigTransactionBuilder()
+    )
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .build();
+    duplicateOwnersMultisigTransaction.safeTxHash = getSafeTxHash({
+      transaction: duplicateOwnersMultisigTransaction,
+      safe,
+      chainId: chain.chainId,
+    });
+    const duplicateOwnersConfirmation = (
+      await confirmationBuilder(duplicateOwnersMultisigTransaction.safeTxHash)
+    ).build();
+    duplicateOwnersMultisigTransaction.confirmations = [
+      duplicateOwnersConfirmation,
+      duplicateOwnersConfirmation,
+    ];
+    const transactions: Array<MultisigTransaction> = [
+      multisigToJson(multisigTransaction) as MultisigTransaction,
+      multisigToJson(duplicateOwnersMultisigTransaction) as MultisigTransaction,
+    ];
+    const contract = contractBuilder().build();
+
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+    const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', transactions).build()),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getSafeAppsUrl) {
+        return Promise.resolve({ data: rawify([]), status: 200 });
+      }
+      if (url.startsWith(getContractUrlPattern)) {
+        return Promise.resolve({
+          data: rawify(contract),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`,
+      )
+      .expect(502)
+      .expect({
+        message: 'Duplicate owners',
+        error: 'Bad Gateway',
+        statusCode: 502,
+      });
   });
 
   it('should return a 502 if confirmations contain duplicate signers', async () => {
-    jest.spyOn(console, 'error');
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const confirmation = (await confirmationBuilder()).build();
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      transaction: multisigTransaction,
+      safe,
+      chainId: chain.chainId,
+    });
+    multisigTransaction.confirmations = [
+      (await confirmationBuilder(multisigTransaction.safeTxHash)).build(),
+    ];
+    const duplicateSignaturesMultisigTransaction = (
+      await multisigTransactionBuilder()
+    )
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .build();
+    duplicateSignaturesMultisigTransaction.safeTxHash = getSafeTxHash({
+      transaction: duplicateSignaturesMultisigTransaction,
+      safe,
+      chainId: chain.chainId,
+    });
+    const confirmation = (
+      await confirmationBuilder(
+        duplicateSignaturesMultisigTransaction.safeTxHash,
+      )
+    ).build();
+    duplicateSignaturesMultisigTransaction.confirmations = [
+      confirmation,
+      {
+        ...confirmation,
+        owner: safe.owners[0],
+      },
+    ];
     const transactions: Array<MultisigTransaction> = [
+      multisigToJson(multisigTransaction) as MultisigTransaction,
       multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('confirmations', [
-            confirmation,
-            {
-              ...confirmation,
-              owner: safe.owners[0],
-            },
-          ])
-          .build(),
+        duplicateSignaturesMultisigTransaction,
       ) as MultisigTransaction,
     ];
+    const contract = contractBuilder().build();
 
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+    const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
     networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case getChainUrl:
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        case getMultisigTransactionsUrl:
-          return Promise.resolve({
-            data: rawify(pageBuilder().with('results', transactions).build()),
-            status: 200,
-          });
-        case getSafeUrl:
-          return Promise.resolve({ data: rawify(safe), status: 200 });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', transactions).build()),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getSafeAppsUrl) {
+        return Promise.resolve({ data: rawify([]), status: 200 });
+      }
+      if (url.startsWith(getContractUrlPattern)) {
+        return Promise.resolve({
+          data: rawify(contract),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
 
     await request(app.getHttpServer())
       .get(
         `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`,
       )
-      .expect(502);
-
-    // TODO: When improving error handling, this should be returned
-    expect(console.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        detail: expect.stringMatching('Duplicate signatures'),
-      }),
-    );
+      .expect(502)
+      .expect({
+        message: 'Duplicate signatures',
+        error: 'Bad Gateway',
+        statusCode: 502,
+      });
   });
 
   it('should return a 502 if confirmations contain an invalid invalid EOA confirmation', async () => {
-    jest.spyOn(console, 'error');
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const safeTxHash = faker.string.hexadecimal({
-      length: 64,
-    }) as `0x${string}`;
-    const confirmation = (await eoaConfirmationBuilder(safeTxHash))
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      transaction: multisigTransaction,
+      safe,
+      chainId: chain.chainId,
+    });
+    multisigTransaction.confirmations = [
+      (await confirmationBuilder(multisigTransaction.safeTxHash)).build(),
+    ];
+    const invalidEoaMultisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .build();
+    invalidEoaMultisigTransaction.safeTxHash = getSafeTxHash({
+      transaction: invalidEoaMultisigTransaction,
+      safe,
+      chainId: chain.chainId,
+    });
+    const confirmation = (
+      await eoaConfirmationBuilder(invalidEoaMultisigTransaction.safeTxHash)
+    )
       .with('owner', getAddress(faker.finance.ethereumAddress()))
       .build();
+    invalidEoaMultisigTransaction.confirmations = [confirmation];
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('confirmations', [confirmation])
-          .with('safeTxHash', safeTxHash)
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(multisigTransaction) as MultisigTransaction,
+      multisigToJson(invalidEoaMultisigTransaction) as MultisigTransaction,
     ];
+    const contract = contractBuilder().build();
 
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+    const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
     networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case getChainUrl:
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        case getMultisigTransactionsUrl:
-          return Promise.resolve({
-            data: rawify(pageBuilder().with('results', transactions).build()),
-            status: 200,
-          });
-        case getSafeUrl:
-          return Promise.resolve({ data: rawify(safe), status: 200 });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', transactions).build()),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getSafeAppsUrl) {
+        return Promise.resolve({ data: rawify([]), status: 200 });
+      }
+      if (url.startsWith(getContractUrlPattern)) {
+        return Promise.resolve({
+          data: rawify(contract),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
 
     await request(app.getHttpServer())
       .get(
         `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`,
       )
-      .expect(502);
-
-    // TODO: When improving error handling, this should be returned
-    expect(console.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        detail: expect.stringMatching('Invalid EOA signature'),
-      }),
-    );
+      .expect(502)
+      .expect({
+        message: 'Invalid EOA signature',
+        error: 'Bad Gateway',
+        statusCode: 502,
+      });
   });
 
   it('should return a 502 if confirmations contain an invalid invalid EOA confirmation', async () => {
-    jest.spyOn(console, 'error');
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const safeTxHash = faker.string.hexadecimal({
-      length: 64,
-    }) as `0x${string}`;
-    const confirmation = (await ethSignConfirmationBuilder(safeTxHash))
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      transaction: multisigTransaction,
+      safe,
+      chainId: chain.chainId,
+    });
+    multisigTransaction.confirmations = [
+      (await confirmationBuilder(multisigTransaction.safeTxHash)).build(),
+    ];
+    const invalidEthSignMultisigTransaction = (
+      await multisigTransactionBuilder()
+    )
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .build();
+    invalidEthSignMultisigTransaction.safeTxHash = getSafeTxHash({
+      transaction: invalidEthSignMultisigTransaction,
+      safe,
+      chainId: chain.chainId,
+    });
+    const confirmation = (
+      await ethSignConfirmationBuilder(
+        invalidEthSignMultisigTransaction.safeTxHash,
+      )
+    )
       .with('owner', getAddress(faker.finance.ethereumAddress()))
       .build();
+    invalidEthSignMultisigTransaction.confirmations = [confirmation];
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        (await multisigTransactionBuilder())
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('confirmations', [confirmation])
-          .with('safeTxHash', safeTxHash)
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(multisigTransaction) as MultisigTransaction,
+      multisigToJson(invalidEthSignMultisigTransaction) as MultisigTransaction,
     ];
+    const contract = contractBuilder().build();
 
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+    const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
     networkService.get.mockImplementation(({ url }) => {
-      switch (url) {
-        case getChainUrl:
-          return Promise.resolve({ data: rawify(chain), status: 200 });
-        case getMultisigTransactionsUrl:
-          return Promise.resolve({
-            data: rawify(pageBuilder().with('results', transactions).build()),
-            status: 200,
-          });
-        case getSafeUrl:
-          return Promise.resolve({ data: rawify(safe), status: 200 });
-        default:
-          return Promise.reject(new Error(`Could not match ${url}`));
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', transactions).build()),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getSafeAppsUrl) {
+        return Promise.resolve({ data: rawify([]), status: 200 });
+      }
+      if (url.startsWith(getContractUrlPattern)) {
+        return Promise.resolve({
+          data: rawify(contract),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
     });
 
     await request(app.getHttpServer())
       .get(
         `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`,
       )
-      .expect(502);
-
-    // TODO: When improving error handling, this should be returned
-    expect(console.error).toHaveBeenCalledWith(
-      expect.objectContaining({
-        detail: expect.stringMatching('Invalid ETH_SIGN signature'),
-      }),
-    );
+      .expect(502)
+      .expect({
+        message: 'Invalid ETH_SIGN signature',
+        error: 'Bad Gateway',
+        statusCode: 502,
+      });
   });
 });

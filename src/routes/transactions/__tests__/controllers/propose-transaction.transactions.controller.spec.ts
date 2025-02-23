@@ -37,6 +37,8 @@ import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.post
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -108,6 +110,10 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     const transaction = (await multisigTransactionBuilder())
       .with('safe', safeAddress)
       .build();
+    transaction.safeTxHash = getSafeTxHash({ safe, transaction, chainId });
+    transaction.confirmations = [
+      (await confirmationBuilder(transaction.safeTxHash)).build(),
+    ];
     const transactions = pageBuilder().build();
     const token = tokenBuilder().build();
     const gasToken = tokenBuilder().build();

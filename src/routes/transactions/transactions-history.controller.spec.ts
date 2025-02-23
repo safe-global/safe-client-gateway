@@ -67,6 +67,7 @@ import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.post
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -301,13 +302,19 @@ describe('Transactions History Controller (Unit)', () => {
         .with('executionDate', new Date('2022-12-06T23:00:00Z'))
         .build(),
     );
-    const multisigTransaction = multisigTransactionToJson(
-      (await multisigTransactionBuilder())
-        .with('dataDecoded', null)
-        .with('origin', null)
-        .with('executionDate', new Date('2022-12-25T00:00:00Z'))
-        .build(),
-    );
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('dataDecoded', null)
+      .with('origin', null)
+      .with('executionDate', new Date('2022-12-25T00:00:00Z'))
+      .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      safe,
+      chainId: chain.chainId,
+      transaction: multisigTransaction,
+    });
+    multisigTransaction.confirmations = [
+      (await confirmationBuilder(multisigTransaction.safeTxHash)).build(),
+    ];
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-12-31T00:00:00Z'))
       .build();
@@ -323,7 +330,11 @@ describe('Transactions History Controller (Unit)', () => {
       count: 40,
       next: `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
       previous: null,
-      results: [moduleTransaction, multisigTransaction, incomingTransaction],
+      results: [
+        moduleTransaction,
+        multisigTransactionToJson(multisigTransaction),
+        incomingTransaction,
+      ],
     };
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -556,16 +567,6 @@ describe('Transactions History Controller (Unit)', () => {
       .build();
     const multisigTransactionToAddress = faker.finance.ethereumAddress();
     const multisigTransactionValue = faker.string.numeric();
-    const multisigTransactionSafeTxHash = faker.string.hexadecimal({
-      length: 64,
-    }) as `0x${string}`;
-    const multisigTransactionConfirmations = await Promise.all(
-      Array.from({ length: 2 }, async () => {
-        return (
-          await confirmationBuilder(multisigTransactionSafeTxHash)
-        ).build();
-      }),
-    );
     const multisigTransaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('value', '0')
@@ -573,7 +574,6 @@ describe('Transactions History Controller (Unit)', () => {
       .with('safeTxGas', 0)
       .with('executionDate', new Date('2022-11-16T07:31:11Z'))
       .with('submissionDate', new Date('2022-11-16T07:29:56.401601Z'))
-      .with('safeTxHash', multisigTransactionSafeTxHash)
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
@@ -596,8 +596,19 @@ describe('Transactions History Controller (Unit)', () => {
           .build(),
       )
       .with('confirmationsRequired', 2)
-      .with('confirmations', multisigTransactionConfirmations)
       .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      safe,
+      chainId: chain.chainId,
+      transaction: multisigTransaction,
+    });
+    multisigTransaction.confirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (
+          await confirmationBuilder(multisigTransaction.safeTxHash)
+        ).build();
+      }),
+    );
 
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
@@ -688,7 +699,7 @@ describe('Transactions History Controller (Unit)', () => {
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_${multisigTransactionSafeTxHash}`,
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: 1668583871000,
                 txStatus: 'SUCCESS',
