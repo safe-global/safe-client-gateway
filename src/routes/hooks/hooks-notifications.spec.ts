@@ -64,6 +64,8 @@ import {
   updatedDelegateEventBuilder,
 } from '@/routes/hooks/entities/__tests__/delegate-events.builder';
 import type { ConsumeMessage } from 'amqplib';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 function getSubscriptionCallback(
   queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,
@@ -366,7 +368,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
     it("should enqueue PENDING_MULTISIG_TRANSACTION event notifications if the Safe has a threshold > 1 and the owner hasn't yet signed", async () => {
       const event = pendingTransactionEventBuilder().build();
       const chain = chainBuilder().with('chainId', event.chainId).build();
-      const multisigTransaction = multisigTransactionBuilder()
+      const multisigTransaction = (await multisigTransactionBuilder())
         .with('safe', event.address)
         .build();
       const subscribers = faker.helpers.multiple(
@@ -524,14 +526,16 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
-      const multisigTransaction = multisigTransactionBuilder()
+      const multisigTransaction = (await multisigTransactionBuilder())
         .with(
           'confirmations',
-          subscribers.map((subscriber) => {
-            return confirmationBuilder()
-              .with('owner', subscriber.subscriber)
-              .build();
-          }),
+          await Promise.all(
+            subscribers.map(async (subscriber) => {
+              return (await confirmationBuilder())
+                .with('owner', subscriber.subscriber)
+                .build();
+            }),
+          ),
         )
         .build();
 
@@ -594,11 +598,13 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
-      const confirmations = faker.helpers
-        .arrayElements(owners, { min: 1, max: owners.length - 1 })
-        .map((owner) => {
-          return confirmationBuilder().with('owner', owner).build();
-        });
+      const confirmations = await Promise.all(
+        faker.helpers
+          .arrayElements(owners, { min: 1, max: owners.length - 1 })
+          .map(async (owner) => {
+            return (await confirmationBuilder()).with('owner', owner).build();
+          }),
+      );
 
       const delegates = owners
         .filter((owner) => {
@@ -613,7 +619,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
             .with('safe', event.address)
             .build();
         });
-      const multisigTransaction = multisigTransactionBuilder()
+      const multisigTransaction = (await multisigTransactionBuilder())
         .with('safe', event.address)
         .with('confirmations', confirmations)
         .build();
@@ -1012,7 +1018,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
         .with('address', event.address)
         .with('threshold', faker.number.int({ min: 2 }))
         .build();
-      const multisigTransaction = multisigTransactionBuilder()
+      const multisigTransaction = (await multisigTransactionBuilder())
         .with('safe', event.address)
         .build();
       const subscribers = faker.helpers.multiple(
@@ -1172,15 +1178,15 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
           .with('safe', event.address)
           .build();
       });
-      const multisigTransaction = multisigTransactionBuilder()
-        .with(
-          'confirmations',
-          subscribers.map((subscriber) => {
-            return confirmationBuilder()
-              .with('owner', subscriber.subscriber)
-              .build();
-          }),
-        )
+      const confirmations = await Promise.all(
+        subscribers.map(async (subscriber) => {
+          return (await confirmationBuilder())
+            .with('owner', subscriber.subscriber)
+            .build();
+        }),
+      );
+      const multisigTransaction = (await multisigTransactionBuilder())
+        .with('confirmations', confirmations)
         .build();
 
       networkService.get.mockImplementation(({ url }) => {
@@ -1247,11 +1253,13 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
       notificationsRepository.getSubscribersBySafe.mockResolvedValue(
         subscribers,
       );
-      const confirmations = faker.helpers
-        .arrayElements(owners, { min: 1, max: owners.length - 1 })
-        .map((owner) => {
-          return confirmationBuilder().with('owner', owner).build();
-        });
+      const confirmations = await Promise.all(
+        faker.helpers
+          .arrayElements(owners, { min: 1, max: owners.length - 1 })
+          .map(async (owner) => {
+            return (await confirmationBuilder()).with('owner', owner).build();
+          }),
+      );
       const delegates = owners
         .filter((owner) => {
           return confirmations.every(
@@ -1265,7 +1273,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
             .with('safe', event.address)
             .build();
         });
-      const multisigTransaction = multisigTransactionBuilder()
+      const multisigTransaction = (await multisigTransactionBuilder())
         .with('safe', event.address)
         .with('confirmations', confirmations)
         .build();
@@ -1664,7 +1672,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
         .with('address', event.address)
         .with('threshold', faker.number.int({ min: 2 }))
         .build();
-      const multisigTransaction = multisigTransactionBuilder()
+      const multisigTransaction = (await multisigTransactionBuilder())
         .with('safe', event.address)
         .build();
       const subscribers = faker.helpers.multiple(
@@ -1797,8 +1805,10 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
   it('should enqueue CONFIRMATION_REQUEST event notifications accordingly for a mixture of subscribers: owners, delegates and non-owner/delegates', async () => {
     const event = pendingTransactionEventBuilder().build();
     const chain = chainBuilder().with('chainId', event.chainId).build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
     const safeOwners = [
-      getAddress(faker.finance.ethereumAddress()),
+      signer.address,
       getAddress(faker.finance.ethereumAddress()),
       getAddress(faker.finance.ethereumAddress()),
       getAddress(faker.finance.ethereumAddress()),
@@ -1851,11 +1861,18 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
         safeOwners.map((owners) => owners),
       )
       .build();
-    const multisigTransaction = multisigTransactionBuilder()
+    const safeTxHash = faker.string.hexadecimal({
+      length: 64,
+    }) as `0x${string}`;
+    const confirmation = (await confirmationBuilder(safeTxHash))
+      .with('owner', safeOwners[0])
+      .with('signature', await signer.sign({ hash: safeTxHash }))
+      .with('signatureType', SignatureType.Eoa)
+      .build();
+    const multisigTransaction = (await multisigTransactionBuilder())
       .with('safe', event.address)
-      .with('confirmations', [
-        confirmationBuilder().with('owner', safeOwners[0]).build(),
-      ])
+      .with('confirmations', [confirmation])
+      .with('safeTxHash', safeTxHash)
       .build();
     notificationsRepository.getSubscribersBySafe.mockResolvedValue([
       ...ownerSubscriptions,
@@ -2117,7 +2134,7 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
       .with('chainId', chain.chainId)
       .with('messageHash', message.messageHash)
       .build();
-    const multisigTransaction = multisigTransactionBuilder()
+    const multisigTransaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .build();
     const pendingTransactionEvent = pendingTransactionEventBuilder()

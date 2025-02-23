@@ -5,9 +5,9 @@ import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/mul
 const mapper = new MultisigTransactionNoteMapper();
 
 describe('Multisig Transaction note mapper (Unit)', () => {
-  it('should parse transaction `origin` and return a note', () => {
+  it('should parse transaction `origin` and return a note', async () => {
     const noteText = faker.lorem.sentence();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', JSON.stringify({ note: noteText }))
       .build();
 
@@ -16,8 +16,8 @@ describe('Multisig Transaction note mapper (Unit)', () => {
     expect(note).toBe(noteText);
   });
 
-  it('should return undefined if `origin` is not a valid JSON', () => {
-    const transaction = multisigTransactionBuilder()
+  it('should return undefined if `origin` is not a valid JSON', async () => {
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', 'invalid-json')
       .build();
 
@@ -26,8 +26,8 @@ describe('Multisig Transaction note mapper (Unit)', () => {
     expect(note).toBeNull();
   });
 
-  it('should return undefined if `origin` does not contain a note', () => {
-    const transaction = multisigTransactionBuilder()
+  it('should return undefined if `origin` does not contain a note', async () => {
+    const transaction = (await multisigTransactionBuilder())
       .with(
         'origin',
         JSON.stringify({ name: faker.word.noun(), url: faker.internet.url() }),
@@ -39,8 +39,8 @@ describe('Multisig Transaction note mapper (Unit)', () => {
     expect(note).toBeNull();
   });
 
-  it('should return undefined if `origin` is null', () => {
-    const transaction = multisigTransactionBuilder()
+  it('should return undefined if `origin` is null', async () => {
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', null)
       .build();
 

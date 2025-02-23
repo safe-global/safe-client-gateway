@@ -28,7 +28,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const dataSize = faker.number.int();
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('dataDecoded', dataDecodedBuilder().build())
       .build();
 
@@ -55,7 +55,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const dataSize = faker.number.int();
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('value', '1000000000000000000000000') // 1e+24
       .with('dataDecoded', dataDecodedBuilder().build())
       .build();
@@ -84,7 +84,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const method = 'multiSend';
     const dataSize = faker.number.int();
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('dataDecoded', dataDecodedBuilder().with('method', method).build())
       .build();
 
@@ -112,7 +112,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const method = 'multiSend';
     const dataSize = faker.number.int();
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -156,7 +156,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const value = '0';
     const dataSize = 0;
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('to', getAddress(toAddress.value))
       .with('safe', getAddress(toAddress.value))
       .with('value', value)
@@ -192,7 +192,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(toAddress);
     const dataSize = 0;
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder().build();
+    const transaction = (await multisigTransactionBuilder()).build();
     const humanDescription = 'Send 10 ETH to vitalik.eth';
 
     const customTransaction = await mapper.mapCustomTransaction(

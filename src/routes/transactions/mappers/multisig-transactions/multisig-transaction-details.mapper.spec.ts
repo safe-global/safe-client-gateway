@@ -62,7 +62,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
   it('should return a TransactionDetails object with null addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .build();
     const txStatus = faker.helpers.objectValue(TransactionStatus);
@@ -106,7 +106,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
   it('should return a TransactionDetails object with non-null addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .build();
     const txStatus = faker.helpers.objectValue(TransactionStatus);

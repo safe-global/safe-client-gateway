@@ -172,7 +172,7 @@ describe('Transactions History Controller (Unit)', () => {
   it('Failure: data page validation fails', async () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
-    const multisigTransaction = multisigTransactionBuilder().build();
+    const multisigTransaction = (await multisigTransactionBuilder()).build();
     // @ts-expect-error - Safe must be defined
     multisigTransaction.safe = null;
     const page = pageBuilder().with('results', [multisigTransaction]).build();
@@ -302,7 +302,7 @@ describe('Transactions History Controller (Unit)', () => {
         .build(),
     );
     const multisigTransaction = multisigTransactionToJson(
-      multisigTransactionBuilder()
+      (await multisigTransactionBuilder())
         .with('dataDecoded', null)
         .with('origin', null)
         .with('executionDate', new Date('2022-12-25T00:00:00Z'))
@@ -556,14 +556,24 @@ describe('Transactions History Controller (Unit)', () => {
       .build();
     const multisigTransactionToAddress = faker.finance.ethereumAddress();
     const multisigTransactionValue = faker.string.numeric();
-    const multisigTransaction = multisigTransactionBuilder()
+    const multisigTransactionSafeTxHash = faker.string.hexadecimal({
+      length: 64,
+    }) as `0x${string}`;
+    const multisigTransactionConfirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (
+          await confirmationBuilder(multisigTransactionSafeTxHash)
+        ).build();
+      }),
+    );
+    const multisigTransaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('value', '0')
       .with('operation', 0)
       .with('safeTxGas', 0)
       .with('executionDate', new Date('2022-11-16T07:31:11Z'))
       .with('submissionDate', new Date('2022-11-16T07:29:56.401601Z'))
-      .with('safeTxHash', '0x31d44c67')
+      .with('safeTxHash', multisigTransactionSafeTxHash)
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
@@ -586,10 +596,7 @@ describe('Transactions History Controller (Unit)', () => {
           .build(),
       )
       .with('confirmationsRequired', 2)
-      .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-      ])
+      .with('confirmations', multisigTransactionConfirmations)
       .build();
 
     const nativeTokenTransfer = nativeTokenTransferBuilder()
@@ -681,7 +688,7 @@ describe('Transactions History Controller (Unit)', () => {
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_0x31d44c67`,
+                id: `multisig_${safe.address}_${multisigTransactionSafeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: 1668583871000,
                 txStatus: 'SUCCESS',

@@ -105,7 +105,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     const safe = safeBuilder().with('address', safeAddress).build();
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safeAddress)
       .build();
     const transactions = pageBuilder().build();

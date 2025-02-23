@@ -72,7 +72,7 @@ describe('Safes Controller Nonces (Unit)', () => {
     const chain = chainBuilder().build();
     const safeInfo = safeBuilder().with('nonce', 5).build();
     const multisigTransactions = [
-      multisigTransactionBuilder().with('nonce', 6).build(),
+      (await multisigTransactionBuilder()).with('nonce', 6).build(),
     ];
     const multisigTransactionsPage = pageBuilder()
       .with(
@@ -109,7 +109,7 @@ describe('Safes Controller Nonces (Unit)', () => {
     const chain = chainBuilder().build();
     const safeInfo = safeBuilder().with('nonce', 10).build();
     const multisigTransactions = [
-      multisigTransactionBuilder().with('nonce', 6).build(),
+      (await multisigTransactionBuilder()).with('nonce', 6).build(),
     ];
     const multisigTransactionsPage = pageBuilder()
       .with(

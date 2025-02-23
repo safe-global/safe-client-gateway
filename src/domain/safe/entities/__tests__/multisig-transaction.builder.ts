@@ -12,17 +12,24 @@ import { getAddress } from 'viem';
 
 const HASH_LENGTH = 10;
 
-export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
+export async function multisigTransactionBuilder(): Promise<
+  IBuilder<MultisigTransaction>
+> {
+  const safeTxHash = faker.string.hexadecimal({
+    length: 64,
+  }) as `0x${string}`;
+
+  const confirmations = await Promise.all(
+    Array.from({ length: faker.number.int({ min: 0, max: 5 }) }, async () => {
+      return (await confirmationBuilder(safeTxHash)).build();
+    }),
+  );
+
   return (
     new Builder<MultisigTransaction>()
       .with('baseGas', faker.number.int())
       .with('blockNumber', faker.number.int())
-      .with(
-        'confirmations',
-        faker.helpers.multiple(() => confirmationBuilder().build(), {
-          count: { min: 0, max: 5 },
-        }),
-      )
+      .with('confirmations', confirmations)
       .with('confirmationsRequired', faker.number.int())
       .with('data', faker.string.hexadecimal() as `0x${string}`)
       .with('dataDecoded', dataDecodedBuilder().build())
@@ -50,10 +57,7 @@ export function multisigTransactionBuilder(): IBuilder<MultisigTransaction> {
       .with('refundReceiver', getAddress(faker.finance.ethereumAddress()))
       .with('safe', getAddress(faker.finance.ethereumAddress()))
       .with('safeTxGas', faker.number.int())
-      .with(
-        'safeTxHash',
-        faker.string.hexadecimal({ length: HASH_LENGTH }) as `0x${string}`,
-      )
+      .with('safeTxHash', safeTxHash)
       .with('signatures', faker.string.hexadecimal() as `0x${string}`)
       .with('submissionDate', faker.date.recent())
       .with('to', getAddress(faker.finance.ethereumAddress()))

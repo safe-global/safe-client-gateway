@@ -194,12 +194,16 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   it('Should get a ERC20 transfer mapped to the expected format', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const multisigTransaction = multisigTransactionBuilder()
+    const confirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (await confirmationBuilder()).build();
+      }),
+    );
+    const multisigTransaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('value', '0')
       .with('operation', 0)
       .with('executionDate', new Date('2022-11-16T07:31:11Z'))
-      .with('safeTxHash', '0x31d44c6')
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
@@ -222,10 +226,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .build(),
       )
       .with('confirmationsRequired', 2)
-      .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-      ])
+      .with('confirmations', confirmations)
       .build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
@@ -273,7 +274,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_0x31d44c6`,
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: multisigTransaction.executionDate?.getTime(),
                 txStatus: 'SUCCESS',
@@ -317,13 +318,17 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .with('type', TokenType.Erc721)
       .with('address', '0x7Af3460d552f832fD7E2DE973c628ACeA59B0712')
       .build();
-    const multisigTransaction = multisigTransactionBuilder()
+    const confirmations = await Promise.all(
+      Array.from({ length: 3 }, async () => {
+        return (await confirmationBuilder()).build();
+      }),
+    );
+    const multisigTransaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('to', token.address)
       .with('value', '0')
       .with('operation', 0)
       .with('executionDate', new Date('2022-06-21T23:12:32.000Z'))
-      .with('safeTxHash', '0x0f9f1b72')
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', '{}')
@@ -351,11 +356,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .build(),
       )
       .with('confirmationsRequired', 3)
-      .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-      ])
+      .with('confirmations', confirmations)
       .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -399,7 +400,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_0x0f9f1b72`,
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: 1655853152000,
                 txStatus: 'SUCCESS',
@@ -439,7 +440,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const chain = chainBuilder().build();
     const safeAppsResponse = [safeAppBuilder().build()];
     const contractResponse = contractBuilder().build();
-    const domainTransaction = multisigTransactionBuilder()
+    const domainTransaction = (await multisigTransactionBuilder())
       .with('value', '0')
       .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
       .with('isExecuted', true)

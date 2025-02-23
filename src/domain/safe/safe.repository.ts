@@ -247,7 +247,7 @@ export class SafeRepository implements ISafeRepository {
       executed: false,
       nonceGte: args.safe.nonce,
     });
-    return MultisigTransactionPageSchema.parse(page);
+    return await MultisigTransactionPageSchema.parseAsync(page);
   }
 
   async getCreationTransaction(args: {
@@ -287,7 +287,7 @@ export class SafeRepository implements ISafeRepository {
       executed: true,
       queued: false,
     });
-    return TransactionTypePageSchema.parse(page);
+    return await TransactionTypePageSchema.parseAsync(page);
   }
 
   async clearAllExecutedTransactions(args: {
@@ -324,7 +324,7 @@ export class SafeRepository implements ISafeRepository {
       args.safeTransactionHash,
     );
 
-    return MultisigTransactionSchema.parse(multiSigTransaction);
+    return MultisigTransactionSchema.parseAsync(multiSigTransaction);
   }
 
   async deleteTransaction(args: {
@@ -338,7 +338,7 @@ export class SafeRepository implements ISafeRepository {
     const transaction = await transactionService.getMultisigTransaction(
       args.safeTxHash,
     );
-    const { safe } = MultisigTransactionSchema.parse(transaction);
+    const { safe } = await MultisigTransactionSchema.parseAsync(transaction);
     await transactionService.deleteTransaction(args);
 
     // Ensure transaction is removed from cache in case event is not received
@@ -383,7 +383,7 @@ export class SafeRepository implements ISafeRepository {
       ordering: '-nonce',
       trusted: true,
     });
-    return MultisigTransactionPageSchema.parse(page);
+    return await MultisigTransactionPageSchema.parseAsync(page);
   }
 
   async getTransfer(args: {
@@ -500,11 +500,9 @@ export class SafeRepository implements ISafeRepository {
       trusted: true,
       limit: 1,
     });
-    const { results } = MultisigTransactionPageSchema.parse(page);
+    const { results } = await MultisigTransactionPageSchema.parseAsync(page);
 
-    return isEmpty(results)
-      ? null
-      : MultisigTransactionSchema.parse(results[0]);
+    return isEmpty(results) ? null : results[0];
   }
 
   async proposeTransaction(args: {

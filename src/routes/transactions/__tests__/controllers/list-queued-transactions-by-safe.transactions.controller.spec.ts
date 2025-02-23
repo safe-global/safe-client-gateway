@@ -130,55 +130,49 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const contractResponse = contractBuilder().build();
     const transactions: Array<MultisigTransaction> = [
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('nonce', 1)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('nonce', 1)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('nonce', 2)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('isExecuted', false)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('nonce', 2)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('isExecuted', false)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('nonce', 3)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('isExecuted', false)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('nonce', 4)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('isExecuted', false)
           .with('dataDecoded', null)
           .build(),
@@ -307,73 +301,65 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     ];
     const transactions: Array<MultisigTransaction> = [
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('nonce', 1)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('nonce', 1)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('nonce', 1)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('nonce', 1)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('nonce', 2)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('isExecuted', false)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('nonce', 2)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('isExecuted', false)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('nonce', 3)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('isExecuted', false)
           .with('dataDecoded', null)
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('nonce', 3)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
           .with('isExecuted', false)
           .with('dataDecoded', null)
           .build(),
@@ -504,7 +490,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const safeAppsResponse = [safeAppBuilder().build()];
     const transactions: Array<MultisigTransaction> = [
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', 1)
@@ -512,7 +498,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .build(),
       ) as MultisigTransaction,
       multisigToJson(
-        multisigTransactionBuilder()
+        (await multisigTransactionBuilder())
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', 2)

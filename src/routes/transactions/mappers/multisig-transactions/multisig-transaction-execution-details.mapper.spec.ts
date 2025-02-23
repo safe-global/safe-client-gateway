@@ -48,7 +48,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
   it('should return a MultisigExecutionDetails object with gasToken, empty confirmations and empty rejections', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('confirmations', [])
       .build();
@@ -92,20 +92,22 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   it('should return a MultisigExecutionDetails object with NULL_ADDRESS gasToken, confirmations and rejections', async () => {
     const chainId = faker.string.numeric();
-    const transactionConfirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
-    ];
+    const transactionConfirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (await confirmationBuilder()).build();
+      }),
+    );
+
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('gasToken', NULL_ADDRESS)
       .with('confirmations', transactionConfirmations)
       .build();
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    const rejectionTxConfirmation = confirmationBuilder().build();
-    const rejectionTx = multisigTransactionBuilder()
+    const rejectionTxConfirmation = (await confirmationBuilder()).build();
+    const rejectionTx = (await multisigTransactionBuilder())
       .with('confirmations', [rejectionTxConfirmation])
       .build();
     safeRepository.getMultisigTransactions.mockResolvedValue(
@@ -157,20 +159,21 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   it('should return a MultisigExecutionDetails object with rejectors from rejection transaction only', async () => {
     const chainId = faker.string.numeric();
-    const transactionConfirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
-    ];
+    const transactionConfirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (await confirmationBuilder()).build();
+      }),
+    );
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('gasToken', NULL_ADDRESS)
       .with('confirmations', transactionConfirmations)
       .build();
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    const rejectionTxConfirmation = confirmationBuilder().build();
-    const rejectionTx = multisigTransactionBuilder()
+    const rejectionTxConfirmation = (await confirmationBuilder()).build();
+    const rejectionTx = (await multisigTransactionBuilder())
       .with('confirmations', [rejectionTxConfirmation])
       .build();
     safeRepository.getMultisigTransactions.mockResolvedValue(
@@ -225,7 +228,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
   it('should return a MultisigExecutionDetails object with no proposer if not present', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('proposer', null)
       .build();
@@ -255,7 +258,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
     const delegate = getAddress(faker.finance.ethereumAddress());
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('proposer', delegate)
       .with('proposedByDelegate', delegate)

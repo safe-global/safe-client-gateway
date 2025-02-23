@@ -78,7 +78,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
     const transaction = multisigToJson(
-      multisigTransactionBuilder()
+      (await multisigTransactionBuilder())
         .with('safe', getAddress(faker.finance.ethereumAddress()))
         .build(),
     ) as MultisigTransaction;

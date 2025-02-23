@@ -11,8 +11,8 @@ describe('Multisig Transaction status mapper (Unit)', () => {
     mapper = new MultisigTransactionStatusMapper();
   });
 
-  it('should return a SUCCESS status', () => {
-    const transaction = multisigTransactionBuilder()
+  it('should return a SUCCESS status', async () => {
+    const transaction = (await multisigTransactionBuilder())
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .build();
@@ -23,8 +23,8 @@ describe('Multisig Transaction status mapper (Unit)', () => {
     );
   });
 
-  it('should return a FAILED status', () => {
-    const transaction = multisigTransactionBuilder()
+  it('should return a FAILED status', async () => {
+    const transaction = (await multisigTransactionBuilder())
       .with('isExecuted', true)
       .with('isSuccessful', false)
       .build();
@@ -35,8 +35,8 @@ describe('Multisig Transaction status mapper (Unit)', () => {
     );
   });
 
-  it('should return a CANCELLED status', () => {
-    const transaction = multisigTransactionBuilder()
+  it('should return a CANCELLED status', async () => {
+    const transaction = (await multisigTransactionBuilder())
       .with('isExecuted', false)
       .with('nonce', 2)
       .build();
@@ -47,13 +47,13 @@ describe('Multisig Transaction status mapper (Unit)', () => {
     );
   });
 
-  it('should return an AWAITING_CONFIRMATIONS status', () => {
-    const transaction = multisigTransactionBuilder()
+  it('should return an AWAITING_CONFIRMATIONS status', async () => {
+    const transaction = (await multisigTransactionBuilder())
       .with('isExecuted', false)
       .with('nonce', 4)
       .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
+        (await confirmationBuilder()).build(),
+        (await confirmationBuilder()).build(),
       ])
       .with('confirmationsRequired', 3)
       .build();
@@ -64,13 +64,13 @@ describe('Multisig Transaction status mapper (Unit)', () => {
     );
   });
 
-  it('should return an AWAITING_EXECUTION status', () => {
-    const transaction = multisigTransactionBuilder()
+  it('should return an AWAITING_EXECUTION status', async () => {
+    const transaction = (await multisigTransactionBuilder())
       .with('isExecuted', false)
       .with('nonce', 4)
       .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
+        (await confirmationBuilder()).build(),
+        (await confirmationBuilder()).build(),
       ])
       .with('confirmationsRequired', 1)
       .build();

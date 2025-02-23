@@ -429,11 +429,12 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const safeTxGas = faker.number.int();
     const gasPrice = faker.string.numeric();
     const baseGas = faker.number.int();
-    const confirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
-    ];
-    const tx = multisigTransactionBuilder()
+    const confirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (await confirmationBuilder()).build();
+      }),
+    );
+    const tx = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('operation', 0)
       .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
@@ -445,8 +446,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('baseGas', baseGas)
       .with('confirmations', confirmations)
       .build();
-    const rejectionTxConfirmations = [confirmationBuilder().build()];
-    const rejectionTx = multisigTransactionBuilder()
+    const rejectionTxConfirmations = [(await confirmationBuilder()).build()];
+    const rejectionTx = (await multisigTransactionBuilder())
       .with('confirmations', rejectionTxConfirmations)
       .build();
     const rejectionTxsPage = pageBuilder()
@@ -603,11 +604,15 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const safeTxGas = faker.number.int();
     const gasPrice = faker.string.numeric();
     const baseGas = faker.number.int();
-    const confirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
-    ];
-    const tx = multisigTransactionBuilder()
+    const safeTxHash = faker.string.hexadecimal({
+      length: 64,
+    }) as `0x${string}`;
+    const confirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (await confirmationBuilder(safeTxHash)).build();
+      }),
+    );
+    const tx = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('operation', 0)
       .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
@@ -618,9 +623,10 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('gasPrice', gasPrice)
       .with('baseGas', baseGas)
       .with('confirmations', confirmations)
+      .with('safeTxHash', safeTxHash)
       .build();
-    const rejectionTxConfirmations = [confirmationBuilder().build()];
-    const rejectionTx = multisigTransactionBuilder()
+    const rejectionTxConfirmations = [(await confirmationBuilder()).build()];
+    const rejectionTx = (await multisigTransactionBuilder())
       .with('confirmations', rejectionTxConfirmations)
       .build();
     const rejectionTxsPage = pageBuilder()
@@ -780,11 +786,15 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const safeTxGas = faker.number.int();
     const gasPrice = faker.string.numeric();
     const baseGas = faker.number.int();
-    const confirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
-    ];
-    const tx = multisigTransactionBuilder()
+    const safeTxHash = faker.string.hexadecimal({
+      length: 64,
+    }) as `0x${string}`;
+    const confirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (await confirmationBuilder(safeTxHash)).build();
+      }),
+    );
+    const tx = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('operation', 0)
       .with('nonce', 4)
@@ -796,12 +806,14 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('gasPrice', gasPrice)
       .with('baseGas', baseGas)
       .with('confirmations', confirmations)
+      .with('safeTxHash', safeTxHash)
       .build();
-    const rejectionTxConfirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
-    ];
-    const rejectionTx = multisigTransactionBuilder()
+    const rejectionTxConfirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (await confirmationBuilder()).build();
+      }),
+    );
+    const rejectionTx = (await multisigTransactionBuilder())
       .with('confirmations', rejectionTxConfirmations)
       .build();
     const rejectionTxsPage = pageBuilder()
