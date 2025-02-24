@@ -87,8 +87,8 @@ export class TransactionVerifierHelper {
         continue;
       }
 
-      const rAndS = confirmation.signature.slice(0, -2) as `0x${string}`;
-      const v = parseInt(confirmation.signature.slice(-2), 16);
+      const rAndS = this.getRAndS(confirmation.signature);
+      const v = this.getV(confirmation.signature);
 
       switch (confirmation.signatureType) {
         // v = 1, approved on chain
@@ -202,6 +202,30 @@ export class TransactionVerifierHelper {
     }
   }
 
+  private getSignatureType(v: number): SignatureType {
+    if (v === 1) {
+      return SignatureType.ApprovedHash;
+    }
+    if (v === 0) {
+      return SignatureType.ContractSignature;
+    }
+    if (v === 27 || v === 28) {
+      return SignatureType.Eoa;
+    }
+    if (v === 31 || v === 32) {
+      return SignatureType.EthSign;
+    }
+    throw new UnprocessableEntityException('Invalid signature type');
+  }
+
+  private getRAndS(signature: `0x${string}`): `0x${string}` {
+    return signature.slice(0, -2) as `0x${string}`;
+  }
+
+  private getV(signature: `0x${string}`): number {
+    return parseInt(signature.slice(-2), 16);
+  }
+
   private async verifyProposalSignature(args: {
     chainId: string;
     safe: Safe;
@@ -211,24 +235,9 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    const rAndS = args.proposal.signature.slice(0, -2) as `0x${string}`;
-    const v = parseInt(args.proposal.signature.slice(-2), 16);
-
-    const signatureType = ((): SignatureType => {
-      if (v === 1) {
-        return SignatureType.ApprovedHash;
-      }
-      if (v === 0) {
-        return SignatureType.ContractSignature;
-      }
-      if (v === 27 || v === 28) {
-        return SignatureType.Eoa;
-      }
-      if (v === 31 || v === 32) {
-        return SignatureType.EthSign;
-      }
-      throw new UnprocessableEntityException('Invalid signature type');
-    })();
+    const rAndS = this.getRAndS(args.proposal.signature);
+    const v = this.getV(args.proposal.signature);
+    const signatureType = this.getSignatureType(v);
 
     switch (signatureType) {
       // approved on chain
