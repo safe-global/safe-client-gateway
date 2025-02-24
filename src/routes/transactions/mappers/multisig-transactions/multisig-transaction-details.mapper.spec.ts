@@ -64,8 +64,10 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       return [
-        'features.hashVerification',
-        'features.signatureVerification',
+        'features.hashVerification.api',
+        'features.signatureVerification.api',
+        'features.hashVerification.proposal',
+        'features.signatureVerification.proposal',
       ].includes(key);
     });
     mapper = new MultisigTransactionDetailsMapper(
