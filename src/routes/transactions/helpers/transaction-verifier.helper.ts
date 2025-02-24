@@ -44,6 +44,45 @@ export class TransactionVerifierHelper {
       );
   }
 
+  private getSignatureType(v: number): SignatureType {
+    if (v === 1) {
+      return SignatureType.ApprovedHash;
+    }
+    if (v === 0) {
+      return SignatureType.ContractSignature;
+    }
+    if (v === 27 || v === 28) {
+      return SignatureType.Eoa;
+    }
+    if (v === 31 || v === 32) {
+      return SignatureType.EthSign;
+    }
+    throw new UnprocessableEntityException('Invalid signature type');
+  }
+
+  private getRAndS(signature: `0x${string}`): `0x${string}` {
+    return signature.slice(0, -2) as `0x${string}`;
+  }
+
+  private getV(signature: `0x${string}`): number {
+    return parseInt(signature.slice(-2), 16);
+  }
+
+  private splitSignatures(
+    concatenatedSignatures: `0x${string}`,
+  ): Array<`0x${string}`> {
+    const SIGNATURE_LENGTH = 130;
+    const signatures: Array<`0x${string}`> = [];
+
+    // TODO: Iterate on this to take compressed/dynamic parts into account
+    for (let i = 2; i < concatenatedSignatures.length; i += SIGNATURE_LENGTH) {
+      const signature: `0x${string}` = `0x${concatenatedSignatures.slice(i, i + SIGNATURE_LENGTH)}`;
+      signatures.push(signature);
+    }
+
+    return signatures;
+  }
+
   public async verifyApiTransaction(args: {
     chainId: string;
     safe: Safe;
@@ -187,8 +226,6 @@ export class TransactionVerifierHelper {
     }
   }
 
-  // TODO: Refactor with the above
-
   public async verifyProposal(args: {
     chainId: string;
     safe: Safe;
@@ -202,30 +239,6 @@ export class TransactionVerifierHelper {
     }
   }
 
-  private getSignatureType(v: number): SignatureType {
-    if (v === 1) {
-      return SignatureType.ApprovedHash;
-    }
-    if (v === 0) {
-      return SignatureType.ContractSignature;
-    }
-    if (v === 27 || v === 28) {
-      return SignatureType.Eoa;
-    }
-    if (v === 31 || v === 32) {
-      return SignatureType.EthSign;
-    }
-    throw new UnprocessableEntityException('Invalid signature type');
-  }
-
-  private getRAndS(signature: `0x${string}`): `0x${string}` {
-    return signature.slice(0, -2) as `0x${string}`;
-  }
-
-  private getV(signature: `0x${string}`): number {
-    return parseInt(signature.slice(-2), 16);
-  }
-
   private async verifyProposalSignature(args: {
     chainId: string;
     safe: Safe;
@@ -235,85 +248,90 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    const rAndS = this.getRAndS(args.proposal.signature);
-    const v = this.getV(args.proposal.signature);
-    const signatureType = this.getSignatureType(v);
+    // Clients may propose concatenated signatures so we need to split them
+    const signatures = this.splitSignatures(args.proposal.signature);
 
-    switch (signatureType) {
-      // approved on chain
-      case SignatureType.ApprovedHash: {
-        return;
-      }
+    for (const signature of signatures) {
+      const rAndS = this.getRAndS(args.proposal.signature);
+      const v = this.getV(args.proposal.signature);
+      const signatureType = this.getSignatureType(v);
 
-      // requires on-chain verification
-      case SignatureType.ContractSignature: {
-        return;
-      }
+      switch (signatureType) {
+        // approved on chain
+        case SignatureType.ApprovedHash: {
+          return;
+        }
 
-      case SignatureType.Eoa: {
-        let address: `0x${string}`;
-        try {
-          address = await recoverAddress({
-            hash: args.proposal.safeTxHash,
-            signature: args.proposal.signature,
+        // requires on-chain verification
+        case SignatureType.ContractSignature: {
+          return;
+        }
+
+        case SignatureType.Eoa: {
+          let address: `0x${string}`;
+          try {
+            address = await recoverAddress({
+              hash: args.proposal.safeTxHash,
+              signature,
+            });
+          } catch {
+            throw new UnprocessableEntityException(
+              `Could not recover ${SignatureType.Eoa} address`,
+            );
+          }
+
+          const isValidSigner = await this.isValidSigner({
+            chainId: args.chainId,
+            sender: args.proposal.sender,
+            safe: args.safe,
+            recoveredAddress: address,
           });
-        } catch {
-          throw new UnprocessableEntityException(
-            `Could not recover ${SignatureType.Eoa} address`,
-          );
+
+          if (!isValidSigner) {
+            throw new UnprocessableEntityException('Invalid EOA signature');
+          }
+
+          break;
         }
 
-        const isValidSigner = await this.isValidSigner({
-          chainId: args.chainId,
-          sender: args.proposal.sender,
-          safe: args.safe,
-          recoveredAddress: address,
-        });
+        case SignatureType.EthSign: {
+          // Undo v adjustment for eth_sign
+          // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
+          const signature = (rAndS + (v - 4).toString(16)) as `0x${string}`;
 
-        if (!isValidSigner) {
-          throw new UnprocessableEntityException('Invalid EOA signature');
-        }
+          let address: `0x${string}`;
+          try {
+            address = await recoverMessageAddress({
+              message: {
+                raw: args.proposal.safeTxHash,
+              },
+              signature,
+            });
+          } catch {
+            throw new UnprocessableEntityException(
+              `Could not recover ${SignatureType.EthSign} address`,
+            );
+          }
 
-        break;
-      }
-
-      case SignatureType.EthSign: {
-        // Undo v adjustment for eth_sign
-        // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
-        const signature = (rAndS + (v - 4).toString(16)) as `0x${string}`;
-
-        let address: `0x${string}`;
-        try {
-          address = await recoverMessageAddress({
-            message: {
-              raw: args.proposal.safeTxHash,
-            },
-            signature,
+          const isValidSigner = await this.isValidSigner({
+            chainId: args.chainId,
+            sender: args.proposal.sender,
+            safe: args.safe,
+            recoveredAddress: address,
           });
-        } catch {
-          throw new UnprocessableEntityException(
-            `Could not recover ${SignatureType.EthSign} address`,
-          );
+
+          if (!isValidSigner) {
+            throw new UnprocessableEntityException(
+              `Invalid ${SignatureType.EthSign} signature`,
+            );
+          }
+
+          break;
         }
 
-        const isValidSigner = await this.isValidSigner({
-          chainId: args.chainId,
-          sender: args.proposal.sender,
-          safe: args.safe,
-          recoveredAddress: address,
-        });
-
-        if (!isValidSigner) {
-          throw new UnprocessableEntityException(
-            `Invalid ${SignatureType.EthSign} signature`,
-          );
+        default: {
+          throw new UnprocessableEntityException('Invalid signature type');
         }
-
-        break;
-      }
-
-      default: {
-        throw new UnprocessableEntityException('Invalid signature type');
       }
     }
   }
