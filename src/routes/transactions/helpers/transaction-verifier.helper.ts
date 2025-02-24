@@ -289,10 +289,10 @@ export class TransactionVerifierHelper {
     );
 
     if (!recoveredAddresses.includes(args.proposal.sender)) {
-      const couldNotRecover = recoveredAddresses.some((address) => {
-        return address === null;
+      const recoveredAll = recoveredAddresses.every((address) => {
+        return address !== null;
       });
-      if (!couldNotRecover) {
+      if (recoveredAll) {
         throw new UnprocessableEntityException('Invalid signature');
       }
     }
