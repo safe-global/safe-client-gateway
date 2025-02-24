@@ -117,6 +117,7 @@ export class TransactionVerifierHelper {
             );
           }
 
+          // We don't check against Safe owners as ownership may have since changed
           if (!isAddressEqual(address, confirmation.owner)) {
             throw new BadGatewayException('Invalid EOA signature');
           }
@@ -149,6 +150,7 @@ export class TransactionVerifierHelper {
             );
           }
 
+          // We don't check against Safe owners as ownership may have since changed
           if (!isAddressEqual(address, confirmation.owner)) {
             throw new BadGatewayException(
               `Invalid ${SignatureType.EthSign} signature`,
@@ -189,10 +191,10 @@ export class TransactionVerifierHelper {
     safe: Safe;
     proposal: ProposeTransactionDto;
   }): Promise<void> {
-    if (this.isApiHashVerificationEnabled) {
+    if (this.isProposalHashVerificationEnabled) {
       this.verifyProposalSafeTxHash(args);
     }
-    if (this.isApiSignatureVerificationEnabled) {
+    if (this.isProposalSignatureVerificationEnabled) {
       await this.verifyProposalSignature(args);
     }
   }
@@ -249,7 +251,11 @@ export class TransactionVerifierHelper {
           );
         }
 
-        if (address !== args.proposal.sender) {
+        // We can compare proposals against current owners as only they can propose
+        if (
+          address !== args.proposal.sender ||
+          !args.safe.owners.includes(address)
+        ) {
           throw new UnprocessableEntityException('Invalid EOA signature');
         }
 
@@ -275,7 +281,11 @@ export class TransactionVerifierHelper {
           );
         }
 
-        if (address !== args.proposal.sender) {
+        // We can compare proposals against current owners as only they can propose
+        if (
+          address !== args.proposal.sender ||
+          !args.safe.owners.includes(address)
+        ) {
           throw new UnprocessableEntityException(
             `Invalid ${SignatureType.EthSign} signature`,
           );

@@ -52,6 +52,7 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Get by id - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -602,10 +603,11 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   it('Get an Multisig Transaction by safeTxHash', async () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
-    const safeOwners = [
-      getAddress(faker.finance.ethereumAddress()),
-      getAddress(faker.finance.ethereumAddress()),
-    ];
+    const privateKey1 = generatePrivateKey();
+    const signer1 = privateKeyToAccount(privateKey1);
+    const privateKey2 = generatePrivateKey();
+    const signer2 = privateKeyToAccount(privateKey2);
+    const safeOwners = [signer1.address, signer2.address];
     const safe = safeBuilder().with('owners', safeOwners).build();
     const contract = contractBuilder().build();
     const executionDate = faker.date.recent();
@@ -624,11 +626,18 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('baseGas', baseGas)
       .build();
     tx.safeTxHash = getSafeTxHash({ transaction: tx, safe, chainId });
-    tx.confirmations = await Promise.all(
-      Array.from({ length: 2 }, async () => {
-        return (await confirmationBuilder(tx.safeTxHash)).build();
-      }),
-    );
+    const signature1 = await signer1.sign({ hash: tx.safeTxHash });
+    const signature2 = await signer2.sign({ hash: tx.safeTxHash });
+    tx.confirmations = [
+      (await eoaConfirmationBuilder(tx.safeTxHash))
+        .with('owner', signer1.address)
+        .with('signature', signature1)
+        .build(),
+      (await eoaConfirmationBuilder(tx.safeTxHash))
+        .with('owner', signer2.address)
+        .with('signature', signature2)
+        .build(),
+    ];
     const rejectionTx = (await multisigTransactionBuilder()).build();
     rejectionTx.safeTxHash = getSafeTxHash({
       transaction: rejectionTx,
@@ -782,10 +791,11 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   it('Get a CANCELLED Multisig Transaction by ID', async () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
-    const safeOwners = [
-      getAddress(faker.finance.ethereumAddress()),
-      getAddress(faker.finance.ethereumAddress()),
-    ];
+    const privateKey1 = generatePrivateKey();
+    const signer1 = privateKeyToAccount(privateKey1);
+    const privateKey2 = generatePrivateKey();
+    const signer2 = privateKeyToAccount(privateKey2);
+    const safeOwners = [signer1.address, signer2.address];
     const safe = safeBuilder()
       .with('owners', safeOwners)
       .with('nonce', 5)
@@ -808,11 +818,18 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('baseGas', baseGas)
       .build();
     tx.safeTxHash = getSafeTxHash({ transaction: tx, safe, chainId });
-    tx.confirmations = await Promise.all(
-      Array.from({ length: 2 }, async () => {
-        return (await confirmationBuilder(tx.safeTxHash)).build();
-      }),
-    );
+    const signature1 = await signer1.sign({ hash: tx.safeTxHash });
+    const signature2 = await signer2.sign({ hash: tx.safeTxHash });
+    tx.confirmations = [
+      (await eoaConfirmationBuilder(tx.safeTxHash))
+        .with('owner', signer1.address)
+        .with('signature', signature1)
+        .build(),
+      (await eoaConfirmationBuilder(tx.safeTxHash))
+        .with('owner', signer2.address)
+        .with('signature', signature2)
+        .build(),
+    ];
     const rejectionTx = (await multisigTransactionBuilder()).build();
     rejectionTx.safeTxHash = getSafeTxHash({
       transaction: rejectionTx,

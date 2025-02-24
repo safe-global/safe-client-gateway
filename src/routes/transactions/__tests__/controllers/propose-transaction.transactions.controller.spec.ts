@@ -38,7 +38,8 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { eoaConfirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -103,15 +104,26 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chain = chainBuilder().with('chainId', chainId).build();
-    const safe = safeBuilder().with('address', safeAddress).build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder()
+      .with('address', safeAddress)
+      .with('owners', [signer.address])
+      .build();
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
     const transaction = (await multisigTransactionBuilder())
       .with('safe', safeAddress)
       .build();
     transaction.safeTxHash = getSafeTxHash({ safe, transaction, chainId });
+    const signature = await signer.sign({
+      hash: transaction.safeTxHash,
+    });
     transaction.confirmations = [
-      (await confirmationBuilder(transaction.safeTxHash)).build(),
+      (await eoaConfirmationBuilder(transaction.safeTxHash))
+        .with('owner', signer.address)
+        .with('signature', signature)
+        .build(),
     ];
     const proposeTransactionDto = proposeTransactionDtoBuilder()
       .with('to', transaction.to)

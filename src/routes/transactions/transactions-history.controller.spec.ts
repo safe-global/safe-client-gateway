@@ -26,7 +26,7 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/domain/safe/entities/__tests__/module-transaction.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { eoaConfirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
@@ -68,6 +68,7 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -294,7 +295,9 @@ describe('Transactions History Controller (Unit)', () => {
   });
 
   it('Should return correctly each date label', async () => {
-    const safe = safeBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
     const chain = chainBuilder().build();
     const moduleTransaction = moduleTransactionToJson(
       moduleTransactionBuilder()
@@ -312,8 +315,14 @@ describe('Transactions History Controller (Unit)', () => {
       chainId: chain.chainId,
       transaction: multisigTransaction,
     });
+    const signature = await signer.sign({
+      hash: multisigTransaction.safeTxHash,
+    });
     multisigTransaction.confirmations = [
-      (await confirmationBuilder(multisigTransaction.safeTxHash)).build(),
+      (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+        .with('owner', signer.address)
+        .with('signature', signature)
+        .build(),
     ];
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-12-31T00:00:00Z'))
@@ -555,7 +564,13 @@ describe('Transactions History Controller (Unit)', () => {
 
   it('Should return correctly each transaction', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const privateKey1 = generatePrivateKey();
+    const privateKey2 = generatePrivateKey();
+    const signer1 = privateKeyToAccount(privateKey1);
+    const signer2 = privateKeyToAccount(privateKey2);
+    const safe = safeBuilder()
+      .with('owners', [signer1.address, signer2.address])
+      .build();
     const moduleTransaction = moduleTransactionBuilder()
       .with('executionDate', new Date('2022-12-14T13:19:12Z'))
       .with('safe', getAddress(safe.address))
@@ -602,14 +617,22 @@ describe('Transactions History Controller (Unit)', () => {
       chainId: chain.chainId,
       transaction: multisigTransaction,
     });
-    multisigTransaction.confirmations = await Promise.all(
-      Array.from({ length: 2 }, async () => {
-        return (
-          await confirmationBuilder(multisigTransaction.safeTxHash)
-        ).build();
-      }),
-    );
-
+    const signature1 = await signer1.sign({
+      hash: multisigTransaction.safeTxHash,
+    });
+    const signature2 = await signer2.sign({
+      hash: multisigTransaction.safeTxHash,
+    });
+    multisigTransaction.confirmations = [
+      (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+        .with('owner', signer1.address)
+        .with('signature', signature1)
+        .build(),
+      (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+        .with('owner', signer2.address)
+        .with('signature', signature2)
+        .build(),
+    ];
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
       .with('to', safe.address)

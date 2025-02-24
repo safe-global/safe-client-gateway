@@ -44,6 +44,7 @@ import { Test } from '@nestjs/testing';
 import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -781,7 +782,13 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
   it('should return a 502 if confirmations contain an invalid invalid EOA confirmation', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const privateKey1 = generatePrivateKey();
+    const signer1 = privateKeyToAccount(privateKey1);
+    const privateKey2 = generatePrivateKey();
+    const signer2 = privateKeyToAccount(privateKey2);
+    const safe = safeBuilder()
+      .with('owners', [signer1.address, signer2.address])
+      .build();
     const multisigTransaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('isExecuted', false)
@@ -791,8 +798,14 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       safe,
       chainId: chain.chainId,
     });
+    const multisigTransactionSignature = await signer1.sign({
+      hash: multisigTransaction.safeTxHash,
+    });
     multisigTransaction.confirmations = [
-      (await confirmationBuilder(multisigTransaction.safeTxHash)).build(),
+      (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+        .with('owner', signer1.address)
+        .with('signature', multisigTransactionSignature)
+        .build(),
     ];
     const invalidEoaMultisigTransaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
@@ -803,12 +816,15 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       safe,
       chainId: chain.chainId,
     });
-    const confirmation = (
-      await eoaConfirmationBuilder(invalidEoaMultisigTransaction.safeTxHash)
-    )
-      .with('owner', getAddress(faker.finance.ethereumAddress()))
-      .build();
-    invalidEoaMultisigTransaction.confirmations = [confirmation];
+    const invalidEoaTransactionSignature = await signer1.sign({
+      hash: invalidEoaMultisigTransaction.safeTxHash,
+    });
+    invalidEoaMultisigTransaction.confirmations = [
+      (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+        .with('owner', getAddress(faker.finance.ethereumAddress()))
+        .with('signature', invalidEoaTransactionSignature)
+        .build(),
+    ];
     const transactions: Array<MultisigTransaction> = [
       multisigToJson(multisigTransaction) as MultisigTransaction,
       multisigToJson(invalidEoaMultisigTransaction) as MultisigTransaction,
@@ -858,7 +874,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       });
   });
 
-  it('should return a 502 if confirmations contain an invalid invalid EOA confirmation', async () => {
+  it('should return a 502 if confirmations contain an invalid invalid ETH_SIGN confirmation', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const multisigTransaction = (await multisigTransactionBuilder())

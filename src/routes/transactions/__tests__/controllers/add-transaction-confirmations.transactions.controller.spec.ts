@@ -28,7 +28,8 @@ import { addConfirmationDtoBuilder } from '@/routes/transactions/__tests__/entit
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { eoaConfirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -74,7 +75,9 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
 
   it('should create a confirmation and return the updated transaction', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
     const addConfirmationDto = addConfirmationDtoBuilder().build();
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
@@ -86,8 +89,12 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       safe,
       transaction,
     });
+    const signature = await signer.sign({ hash: transaction.safeTxHash });
     transaction.confirmations = [
-      (await confirmationBuilder(transaction.safeTxHash)).build(),
+      (await eoaConfirmationBuilder(transaction.safeTxHash))
+        .with('owner', signer.address)
+        .with('signature', signature)
+        .build(),
     ];
     const gasToken = tokenBuilder().build();
     const token = tokenBuilder().build();
