@@ -26,7 +26,7 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/domain/safe/entities/__tests__/module-transaction.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { eoaConfirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
@@ -67,6 +67,8 @@ import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.post
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -172,7 +174,7 @@ describe('Transactions History Controller (Unit)', () => {
   it('Failure: data page validation fails', async () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chain = chainBuilder().build();
-    const multisigTransaction = multisigTransactionBuilder().build();
+    const multisigTransaction = (await multisigTransactionBuilder()).build();
     // @ts-expect-error - Safe must be defined
     multisigTransaction.safe = null;
     const page = pageBuilder().with('results', [multisigTransaction]).build();
@@ -293,7 +295,9 @@ describe('Transactions History Controller (Unit)', () => {
   });
 
   it('Should return correctly each date label', async () => {
-    const safe = safeBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
     const chain = chainBuilder().build();
     const moduleTransaction = moduleTransactionToJson(
       moduleTransactionBuilder()
@@ -301,13 +305,25 @@ describe('Transactions History Controller (Unit)', () => {
         .with('executionDate', new Date('2022-12-06T23:00:00Z'))
         .build(),
     );
-    const multisigTransaction = multisigTransactionToJson(
-      multisigTransactionBuilder()
-        .with('dataDecoded', null)
-        .with('origin', null)
-        .with('executionDate', new Date('2022-12-25T00:00:00Z'))
+    const multisigTransaction = (await multisigTransactionBuilder())
+      .with('dataDecoded', null)
+      .with('origin', null)
+      .with('executionDate', new Date('2022-12-25T00:00:00Z'))
+      .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      safe,
+      chainId: chain.chainId,
+      transaction: multisigTransaction,
+    });
+    const signature = await signer.sign({
+      hash: multisigTransaction.safeTxHash,
+    });
+    multisigTransaction.confirmations = [
+      (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+        .with('owner', signer.address)
+        .with('signature', signature)
         .build(),
-    );
+    ];
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-12-31T00:00:00Z'))
       .build();
@@ -323,7 +339,11 @@ describe('Transactions History Controller (Unit)', () => {
       count: 40,
       next: `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
       previous: null,
-      results: [moduleTransaction, multisigTransaction, incomingTransaction],
+      results: [
+        moduleTransaction,
+        multisigTransactionToJson(multisigTransaction),
+        incomingTransaction,
+      ],
     };
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -544,7 +564,13 @@ describe('Transactions History Controller (Unit)', () => {
 
   it('Should return correctly each transaction', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const privateKey1 = generatePrivateKey();
+    const privateKey2 = generatePrivateKey();
+    const signer1 = privateKeyToAccount(privateKey1);
+    const signer2 = privateKeyToAccount(privateKey2);
+    const safe = safeBuilder()
+      .with('owners', [signer1.address, signer2.address])
+      .build();
     const moduleTransaction = moduleTransactionBuilder()
       .with('executionDate', new Date('2022-12-14T13:19:12Z'))
       .with('safe', getAddress(safe.address))
@@ -556,14 +582,13 @@ describe('Transactions History Controller (Unit)', () => {
       .build();
     const multisigTransactionToAddress = faker.finance.ethereumAddress();
     const multisigTransactionValue = faker.string.numeric();
-    const multisigTransaction = multisigTransactionBuilder()
+    const multisigTransaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .with('value', '0')
       .with('operation', 0)
       .with('safeTxGas', 0)
       .with('executionDate', new Date('2022-11-16T07:31:11Z'))
       .with('submissionDate', new Date('2022-11-16T07:29:56.401601Z'))
-      .with('safeTxHash', '0x31d44c67')
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
@@ -586,12 +611,28 @@ describe('Transactions History Controller (Unit)', () => {
           .build(),
       )
       .with('confirmationsRequired', 2)
-      .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-      ])
       .build();
-
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      safe,
+      chainId: chain.chainId,
+      transaction: multisigTransaction,
+    });
+    const signature1 = await signer1.sign({
+      hash: multisigTransaction.safeTxHash,
+    });
+    const signature2 = await signer2.sign({
+      hash: multisigTransaction.safeTxHash,
+    });
+    multisigTransaction.confirmations = [
+      (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+        .with('owner', signer1.address)
+        .with('signature', signature1)
+        .build(),
+      (await eoaConfirmationBuilder(multisigTransaction.safeTxHash))
+        .with('owner', signer2.address)
+        .with('signature', signature2)
+        .build(),
+    ];
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
       .with('to', safe.address)
@@ -681,7 +722,7 @@ describe('Transactions History Controller (Unit)', () => {
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_0x31d44c67`,
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: 1668583871000,
                 txStatus: 'SUCCESS',

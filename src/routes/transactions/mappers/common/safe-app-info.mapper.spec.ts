@@ -28,7 +28,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
 
   it('should get a null SafeAppInfo for a transaction with no origin', async () => {
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', null)
       .build();
     const safeApps = [safeAppBuilder().build(), safeAppBuilder().build()];
@@ -42,7 +42,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
 
   it('should get a null SafeAppInfo for a transaction with no url into origin', async () => {
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', `{ "${faker.word.sample()}": "${faker.word.sample()}" }`)
       .build();
     const safeApps = [safeAppBuilder().build(), safeAppBuilder().build()];
@@ -61,7 +61,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
       url: faker.internet.url({ appendSlash: false }),
       name: faker.word.words(),
     };
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', JSON.stringify(transactionOrigin))
       .build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
@@ -86,7 +86,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
       url: faker.internet.url({ appendSlash: false }),
       name: faker.word.words(),
     };
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', JSON.stringify(transactionOrigin))
       .build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);
@@ -109,7 +109,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
 
   it('should return null origin on invalid JSON', async () => {
     const chainId = faker.string.numeric();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', faker.string.sample())
       .build();
 
@@ -129,7 +129,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
       url: faker.internet.url({ appendSlash: false }),
       name: faker.word.words(),
     };
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('origin', JSON.stringify(transactionOrigin))
       .build();
     safeAppsRepositoryMock.getSafeApps.mockResolvedValue(safeApps);

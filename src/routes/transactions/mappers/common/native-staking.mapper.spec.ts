@@ -402,7 +402,7 @@ describe('NativeStakingMapper', () => {
           casing: 'lower',
         }),
       ] as Array<`0x${string}`>;
-      const transaction = multisigTransactionBuilder().build();
+      const transaction = (await multisigTransactionBuilder()).build();
       const data = requestValidatorsExitEncoder()
         .with('_publicKeys', concat(validators))
         .encode();
@@ -680,7 +680,7 @@ describe('NativeStakingMapper', () => {
         .with('product_type', 'defi')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const transaction = multisigTransactionBuilder().build();
+      const transaction = (await multisigTransactionBuilder()).build();
       const data = batchWithdrawCLFeeEncoder().encode();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
@@ -705,7 +705,7 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const data = batchWithdrawCLFeeEncoder().encode();
-      const transaction = multisigTransactionBuilder().build();
+      const transaction = (await multisigTransactionBuilder()).build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
@@ -728,7 +728,7 @@ describe('NativeStakingMapper', () => {
         .with('status', 'unknown')
         .build();
       const networkStats = networkStatsBuilder().build();
-      const transaction = multisigTransactionBuilder().build();
+      const transaction = (await multisigTransactionBuilder()).build();
       const data = batchWithdrawCLFeeEncoder().encode();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);

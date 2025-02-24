@@ -82,7 +82,7 @@ describe('Estimations Controller (Unit)', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const estimation = estimationBuilder().build();
-      const lastTransaction = multisigTransactionBuilder().build();
+      const lastTransaction = (await multisigTransactionBuilder()).build();
       networkService.get.mockImplementation(({ url }) => {
         const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -136,7 +136,7 @@ describe('Estimations Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const estimation = { invalid: 'value' };
-    const lastTransaction = multisigTransactionBuilder().build();
+    const lastTransaction = (await multisigTransactionBuilder()).build();
     networkService.get.mockImplementation(({ url }) => {
       const chainsUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -212,7 +212,7 @@ describe('Estimations Controller (Unit)', () => {
       .with('nonce', faker.number.int({ max: 50 }))
       .build();
     const estimation = estimationBuilder().build();
-    const lastTransaction = multisigTransactionBuilder()
+    const lastTransaction = (await multisigTransactionBuilder())
       .with('nonce', faker.number.int({ min: 51 }))
       .build();
     networkService.get.mockImplementation(({ url }) => {
@@ -322,7 +322,7 @@ describe('Estimations Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().with('nonce', faker.number.int()).build();
     const estimation = estimationBuilder().build();
-    const lastTransaction = multisigTransactionBuilder()
+    const lastTransaction = (await multisigTransactionBuilder())
       .with('nonce', faker.number.int({ max: safe.nonce }))
       .build();
     networkService.get.mockImplementation(({ url }) => {

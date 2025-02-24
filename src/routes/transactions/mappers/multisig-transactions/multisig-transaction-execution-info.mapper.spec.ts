@@ -15,10 +15,10 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     mapper = new MultisigTransactionExecutionInfoMapper();
   });
 
-  it('should return a MultiSigExecutionInfo with no missing signers', () => {
+  it('should return a MultiSigExecutionInfo with no missing signers', async () => {
     const safe = safeBuilder().build();
     const proposer = faker.finance.ethereumAddress();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('proposer', getAddress(proposer))
       .build();
 
@@ -38,9 +38,9 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     );
   });
 
-  it('should return a MultiSigExecutionInfo with no missing signers and zero confirmations', () => {
+  it('should return a MultiSigExecutionInfo with no missing signers and zero confirmations', async () => {
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('confirmations', null)
       .build();
 
@@ -60,9 +60,9 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     );
   });
 
-  it('should return a MultiSigExecutionInfo with empty missing signers', () => {
+  it('should return a MultiSigExecutionInfo with empty missing signers', async () => {
     const safe = safeBuilder().with('owners', []).build();
-    const transaction = multisigTransactionBuilder().build();
+    const transaction = (await multisigTransactionBuilder()).build();
 
     const executionInfo = mapper.mapExecutionInfo(
       transaction,
@@ -80,8 +80,8 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     );
   });
 
-  it('should return a MultiSigExecutionInfo with all safe owners as missing signers', () => {
-    const transaction = multisigTransactionBuilder().build();
+  it('should return a MultiSigExecutionInfo with all safe owners as missing signers', async () => {
+    const transaction = (await multisigTransactionBuilder()).build();
     const safe = safeBuilder()
       .with('owners', [
         getAddress(faker.finance.ethereumAddress()),
@@ -105,16 +105,14 @@ describe('Multisig Transaction execution info mapper (Unit)', () => {
     );
   });
 
-  it('should return a MultiSigExecutionInfo with some safe owners as missing signers', () => {
-    const confirmations = [
-      confirmationBuilder()
-        .with('owner', getAddress(faker.finance.ethereumAddress()))
-        .build(),
-      confirmationBuilder()
-        .with('owner', getAddress(faker.finance.ethereumAddress()))
-        .build(),
-    ];
-    const transaction = multisigTransactionBuilder()
+  it('should return a MultiSigExecutionInfo with some safe owners as missing signers', async () => {
+    const confirmations = await Promise.all(
+      Array.from({ length: 2 }, async () => {
+        return (await confirmationBuilder()).build();
+      }),
+    );
+
+    const transaction = (await multisigTransactionBuilder())
       .with('proposer', getAddress(confirmations[0].owner))
       .with('confirmations', confirmations)
       .build();

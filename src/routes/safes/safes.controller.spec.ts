@@ -132,7 +132,7 @@ describe('Safes Controller (Unit)', () => {
       ])
       .build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -173,7 +173,7 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2049-01-30T14:23:07Z'))
                       .build(),
                   ),
@@ -597,7 +597,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -625,17 +625,17 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-18T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-14T03:52:02Z'))
                       .build(),
                   ),
@@ -1022,7 +1022,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1050,17 +1050,17 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-18T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-14T03:52:02Z'))
                       .build(),
                   ),
@@ -1107,7 +1107,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1135,19 +1135,19 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', null)
                       .with('submissionDate', new Date('2020-09-17T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-14T03:52:02Z'))
                       .with('submissionDate', new Date('2020-09-14T03:52:02Z'))
                       .build(),
@@ -1194,7 +1194,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1232,7 +1232,7 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
                       .build(),
@@ -1278,7 +1278,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1306,7 +1306,7 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    multisigTransactionBuilder()
+                    (await multisigTransactionBuilder())
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
                       .build(),

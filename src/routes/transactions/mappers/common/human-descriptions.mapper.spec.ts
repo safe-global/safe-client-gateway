@@ -48,7 +48,7 @@ describe('Human descriptions mapper (Unit)', () => {
   let token: Token;
   let transaction: MultisigTransaction;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.resetAllMocks();
 
     toAddress = new AddressInfo(faker.finance.ethereumAddress());
@@ -64,7 +64,7 @@ describe('Human descriptions mapper (Unit)', () => {
       args: [mockAddress, mockAmount],
     });
 
-    transaction = multisigTransactionBuilder()
+    transaction = (await multisigTransactionBuilder())
       .with('to', getAddress(toAddress.value))
       .with('data', mockTransferData)
       .build();
@@ -78,7 +78,9 @@ describe('Human descriptions mapper (Unit)', () => {
   });
 
   it('should return null if there is no data', async () => {
-    const transaction = multisigTransactionBuilder().with('data', null).build();
+    const transaction = (await multisigTransactionBuilder())
+      .with('data', null)
+      .build();
 
     const humanDescription = await mapper.mapHumanDescription(
       transaction,
@@ -91,7 +93,7 @@ describe('Human descriptions mapper (Unit)', () => {
   it('should return null if data is not hex data', async () => {
     const data = 'something that is not hex';
 
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('data', data as `0x${string}`)
       .build();
 
@@ -121,7 +123,7 @@ describe('Human descriptions mapper (Unit)', () => {
 
     const corruptedData = mockTransferData.slice(0, -7);
 
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('data', corruptedData as `0x${string}`)
       .build();
 
@@ -159,7 +161,7 @@ describe('Human descriptions mapper (Unit)', () => {
       args: [mockAddress, MAX_UINT256],
     });
 
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('data', mockApprovalData)
       .build();
 

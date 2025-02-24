@@ -13,6 +13,11 @@ import type { MultisigTransactionInfoMapper } from '@/routes/transactions/mapper
 import { MultisigTransactionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-details.mapper';
 import type { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import type { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -43,11 +48,26 @@ const multisigTransactionNoteMapper = jest.mocked({
   mapTxNote: jest.fn(),
 });
 
+const mockConfigurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
+
+const mockDelegatesRepository = jest.mocked({
+  getDelegates: jest.fn(),
+} as jest.MockedObjectDeep<DelegatesV2Repository>);
+
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
   beforeEach(() => {
     jest.resetAllMocks();
+
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      return [
+        'features.hashVerification',
+        'features.signatureVerification',
+      ].includes(key);
+    });
     mapper = new MultisigTransactionDetailsMapper(
       addressInfoHelper,
       statusMapper,
@@ -56,15 +76,27 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       safeAppInfoMapper,
       multisigExecutionDetailsMapper,
       multisigTransactionNoteMapper,
+      new TransactionVerifierHelper(
+        mockConfigurationService,
+        mockDelegatesRepository,
+      ),
     );
   });
 
   it('should return a TransactionDetails object with null addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .build();
+    transaction.safeTxHash = getSafeTxHash({
+      chainId,
+      transaction,
+      safe,
+    });
+    transaction.confirmations = [
+      (await confirmationBuilder(transaction.safeTxHash)).build(),
+    ];
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
     const txInfo = transferTransactionInfoBuilder().build();
@@ -106,9 +138,13 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
   it('should return a TransactionDetails object with non-null addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
       .build();
+    transaction.safeTxHash = getSafeTxHash({ chainId, transaction, safe });
+    transaction.confirmations = [
+      (await confirmationBuilder(transaction.safeTxHash)).build(),
+    ];
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
     const txInfo = transferTransactionInfoBuilder().build();

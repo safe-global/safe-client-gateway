@@ -16,6 +16,7 @@ import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/com
 import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
+import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 
 @Injectable()
 export class MultisigTransactionDetailsMapper {
@@ -27,6 +28,7 @@ export class MultisigTransactionDetailsMapper {
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
     private readonly multisigTransactionExecutionDetailsMapper: MultisigTransactionExecutionDetailsMapper,
     private readonly noteMapper: MultisigTransactionNoteMapper,
+    private readonly transactionVerifier: TransactionVerifierHelper,
   ) {}
 
   async mapDetails(
@@ -34,6 +36,13 @@ export class MultisigTransactionDetailsMapper {
     transaction: MultisigTransaction,
     safe: Safe,
   ): Promise<TransactionDetails> {
+    // TODO: This should be located on the domain layer but only route layer exists
+    await this.transactionVerifier.verifyApiTransaction({
+      chainId,
+      safe,
+      transaction,
+    });
+
     const txStatus = this.statusMapper.mapTransactionStatus(transaction, safe);
     const note = this.noteMapper.mapTxNote(transaction);
     const [

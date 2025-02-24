@@ -102,7 +102,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
 
   it('should delete a multisig transaction', async () => {
     const chain = chainBuilder().build();
-    const tx = multisigTransactionBuilder().build();
+    const tx = (await multisigTransactionBuilder()).build();
     const deleteTransactionDto: DeleteTransactionDto = {
       signature: faker.string.hexadecimal({ length: 16 }),
     };
@@ -140,7 +140,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
 
   it('should clear the cache after deleting a multisig transaction', async () => {
     const chain = chainBuilder().build();
-    const tx = multisigTransactionBuilder().build();
+    const tx = (await multisigTransactionBuilder()).build();
     const deleteTransactionDto: DeleteTransactionDto = {
       signature: faker.string.hexadecimal({ length: 16 }),
     };
@@ -196,7 +196,7 @@ describe('Delete Transaction - Transactions Controller (Unit', () => {
       signature: faker.string.hexadecimal({ length: 16 }),
     };
 
-    const tx = multisigTransactionBuilder().build();
+    const tx = (await multisigTransactionBuilder()).build();
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
