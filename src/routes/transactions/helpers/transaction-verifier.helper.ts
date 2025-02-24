@@ -49,6 +49,9 @@ export class TransactionVerifierHelper {
     safe: Safe;
     transaction: MultisigTransaction;
   }): Promise<void> {
+    if (args.transaction.isExecuted) {
+      return;
+    }
     if (this.isApiHashVerificationEnabled) {
       this.verifyApiSafeTxHash(args);
     }
