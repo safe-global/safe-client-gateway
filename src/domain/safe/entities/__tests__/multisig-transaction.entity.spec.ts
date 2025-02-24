@@ -57,8 +57,7 @@ describe('MultisigTransaction', () => {
     it('should validate a MultisigTransaction', async () => {
       const multisigTransaction = (await multisigTransactionBuilder()).build();
 
-      const result =
-        await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+      const result = MultisigTransactionSchema.safeParse(multisigTransaction);
 
       expect(result.success).toBe(true);
     });
@@ -78,8 +77,7 @@ describe('MultisigTransaction', () => {
       const multisigTransaction = (await multisigTransactionBuilder()).build();
       delete multisigTransaction[key];
 
-      const result =
-        await MultisigTransactionSchema.safeParseAsync(multisigTransaction);
+      const result = MultisigTransactionSchema.safeParse(multisigTransaction);
 
       expect(!result.success && result.error.issues.length).toBe(1);
       expect(!result.success && result.error.issues[0].path).toStrictEqual([

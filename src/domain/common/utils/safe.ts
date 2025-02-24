@@ -30,7 +30,6 @@ export function getSafeTxHash(args: {
   const {
     to,
     value,
-    data,
     operation,
     safeTxGas,
     baseGas,
@@ -40,8 +39,10 @@ export function getSafeTxHash(args: {
     nonce,
   } = args.transaction;
 
+  // Transfer of funds has no data
+  const data = args.transaction.data || '0x';
+
   if (
-    data === null ||
     safeTxGas === null ||
     baseGas === null ||
     gasPrice === null ||

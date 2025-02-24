@@ -49,6 +49,7 @@ import { TransactionsController } from '@/routes/transactions/transactions.contr
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { Module } from '@nestjs/common';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 
 @Module({
   controllers: [TransactionsController],
@@ -57,6 +58,7 @@ import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transac
     ChainsRepositoryModule,
     ContractsRepositoryModule,
     DataDecodedRepositoryModule,
+    DelegatesV2RepositoryModule,
     HumanDescriptionRepositoryModule,
     SafeRepositoryModule,
     SafeAppsRepositoryModule,

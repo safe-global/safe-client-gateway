@@ -165,22 +165,6 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
 
-    const transaction = await this.getMultiSigTransaction({
-      chainId: args.chainId,
-      safeTransactionHash: args.safeTxHash,
-    });
-
-    const safe = await this.getSafe({
-      chainId: args.chainId,
-      address: transaction.safe,
-    });
-
-    await this.transactionVerifier.verifyApiTransaction({
-      chainId: args.chainId,
-      transaction,
-      safe,
-    });
-
     await transactionService.postConfirmation(args);
   }
 
@@ -266,7 +250,7 @@ export class SafeRepository implements ISafeRepository {
       executed: false,
       nonceGte: args.safe.nonce,
     });
-    return await MultisigTransactionPageSchema.parseAsync(page);
+    return MultisigTransactionPageSchema.parse(page);
   }
 
   async getCreationTransaction(args: {
@@ -306,7 +290,7 @@ export class SafeRepository implements ISafeRepository {
       executed: true,
       queued: false,
     });
-    return await TransactionTypePageSchema.parseAsync(page);
+    return TransactionTypePageSchema.parse(page);
   }
 
   async clearAllExecutedTransactions(args: {
@@ -343,7 +327,7 @@ export class SafeRepository implements ISafeRepository {
       args.safeTransactionHash,
     );
 
-    return MultisigTransactionSchema.parseAsync(multiSigTransaction);
+    return MultisigTransactionSchema.parse(multiSigTransaction);
   }
 
   async deleteTransaction(args: {
@@ -357,7 +341,7 @@ export class SafeRepository implements ISafeRepository {
     const transaction = await transactionService.getMultisigTransaction(
       args.safeTxHash,
     );
-    const { safe } = await MultisigTransactionSchema.parseAsync(transaction);
+    const { safe } = MultisigTransactionSchema.parse(transaction);
     await transactionService.deleteTransaction(args);
 
     // Ensure transaction is removed from cache in case event is not received
@@ -402,7 +386,7 @@ export class SafeRepository implements ISafeRepository {
       ordering: '-nonce',
       trusted: true,
     });
-    return await MultisigTransactionPageSchema.parseAsync(page);
+    return MultisigTransactionPageSchema.parse(page);
   }
 
   async getTransfer(args: {
@@ -519,7 +503,7 @@ export class SafeRepository implements ISafeRepository {
       trusted: true,
       limit: 1,
     });
-    const { results } = await MultisigTransactionPageSchema.parseAsync(page);
+    const { results } = MultisigTransactionPageSchema.parse(page);
 
     return isEmpty(results) ? null : results[0];
   }

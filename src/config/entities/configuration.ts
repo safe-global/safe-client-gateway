@@ -368,8 +368,7 @@ export default () => ({
   },
   safeConfig: {
     baseUri:
-      process.env.SAFE_CONFIG_BASE_URI ||
-      'https://safe-config.staging.5afe.dev/',
+      process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
     chains: {
       maxSequentialPages: parseInt(
         process.env.SAFE_CONFIG_CHAINS_MAX_SEQUENTIAL_PAGES ?? `${3}`,

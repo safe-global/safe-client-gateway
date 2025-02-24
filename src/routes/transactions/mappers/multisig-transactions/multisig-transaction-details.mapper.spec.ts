@@ -17,6 +17,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -51,6 +52,10 @@ const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
 
+const mockDelegatesRepository = jest.mocked({
+  getDelegates: jest.fn(),
+} as jest.MockedObjectDeep<DelegatesV2Repository>);
+
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
@@ -71,7 +76,10 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       safeAppInfoMapper,
       multisigExecutionDetailsMapper,
       multisigTransactionNoteMapper,
-      new TransactionVerifierHelper(mockConfigurationService),
+      new TransactionVerifierHelper(
+        mockConfigurationService,
+        mockDelegatesRepository,
+      ),
     );
   });
 

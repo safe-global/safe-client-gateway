@@ -11,6 +11,7 @@ import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
+import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 
 @Injectable()
 export class TransactionVerifierHelper {
@@ -23,6 +24,8 @@ export class TransactionVerifierHelper {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(IDelegatesV2Repository)
+    private readonly delegatesV2Repository: IDelegatesV2Repository,
   ) {
     this.isApiHashVerificationEnabled = this.configurationService.getOrThrow(
       'features.hashVerification.api',
@@ -251,11 +254,14 @@ export class TransactionVerifierHelper {
           );
         }
 
-        // We can compare proposals against current owners as only they can propose
-        if (
-          address !== args.proposal.sender ||
-          !args.safe.owners.includes(address)
-        ) {
+        const isValidSigner = await this.isValidSigner({
+          chainId: args.chainId,
+          sender: args.proposal.sender,
+          safe: args.safe,
+          recoveredAddress: address,
+        });
+
+        if (!isValidSigner) {
           throw new UnprocessableEntityException('Invalid EOA signature');
         }
 
@@ -281,11 +287,14 @@ export class TransactionVerifierHelper {
           );
         }
 
-        // We can compare proposals against current owners as only they can propose
-        if (
-          address !== args.proposal.sender ||
-          !args.safe.owners.includes(address)
-        ) {
+        const isValidSigner = await this.isValidSigner({
+          chainId: args.chainId,
+          sender: args.proposal.sender,
+          safe: args.safe,
+          recoveredAddress: address,
+        });
+
+        if (!isValidSigner) {
           throw new UnprocessableEntityException(
             `Invalid ${SignatureType.EthSign} signature`,
           );
@@ -298,6 +307,32 @@ export class TransactionVerifierHelper {
         throw new UnprocessableEntityException('Invalid signature type');
       }
     }
+  }
+
+  private async isValidSigner(args: {
+    chainId: string;
+    sender: `0x${string}`;
+    safe: Safe;
+    recoveredAddress: `0x${string}`;
+  }): Promise<boolean> {
+    const isSender = args.sender === args.recoveredAddress;
+    const isOwner = args.safe.owners.includes(args.recoveredAddress);
+
+    if (!isSender) {
+      return false;
+    }
+
+    if (isOwner) {
+      return true;
+    }
+
+    const delegates = await this.delegatesV2Repository.getDelegates({
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+    });
+    return delegates.results.some((d) => {
+      return d.delegate === args.recoveredAddress;
+    });
   }
 
   private verifyProposalSafeTxHash(args: {
