@@ -3226,12 +3226,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^22.13.1":
-  version: 22.13.1
-  resolution: "@types/node@npm:22.13.1"
+"@types/node@npm:^22.13.5":
+  version: 22.13.5
+  resolution: "@types/node@npm:22.13.5"
   dependencies:
     undici-types: "npm:~6.20.0"
-  checksum: 10/d8ba7068b0445643c0fa6e4917cdb7a90e8756a9daff8c8a332689cd5b2eaa01e4cd07de42e3cd7e6a6f465eeda803d5a1363d00b5ab3f6cea7950350a159497
+  checksum: 10/a69ec8dba36a58a93e3ec3709a6a362ca0cdd8443310bb5e43b0c1f560c57bcc120c96fabb301ef42c2901f46103adad5158b6923ea14e8e14a432af20a2bb24
   languageName: node
   linkType: hard
 
@@ -8682,7 +8682,7 @@ __metadata:
     "@types/jest": "npm:29.5.14"
     "@types/jsonwebtoken": "npm:^9"
     "@types/lodash": "npm:^4.17.14"
-    "@types/node": "npm:^22.13.1"
+    "@types/node": "npm:^22.13.5"
     "@types/sanitize-html": "npm:^2"
     "@types/semver": "npm:^7.5.8"
     "@types/supertest": "npm:^6.0.2"
