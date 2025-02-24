@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { recoverAddress, isAddressEqual, recoverMessageAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
@@ -63,10 +62,7 @@ export class TransactionVerifierHelper {
       return;
     }
     if (this.isApiHashVerificationEnabled) {
-      this.verifySafeTxHash({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
-      });
+      this.verifyApiSafeTxHash(args);
     }
     if (this.isApiSignatureVerificationEnabled) {
       await this.verifyApiSignatures(args);
@@ -79,7 +75,38 @@ export class TransactionVerifierHelper {
     proposal: ProposeTransactionDto;
   }): Promise<void> {
     if (this.isProposalHashVerificationEnabled) {
-      this.verifySafeTxHash({
+      this.verifyProposalSafeTxHash(args);
+    }
+    if (this.isProposalSignatureVerificationEnabled) {
+      await this.verifyProposalSignature(args);
+    }
+  }
+
+  private verifyApiSafeTxHash(args: {
+    chainId: string;
+    safe: Safe;
+    transaction: MultisigTransaction;
+  }): void {
+    let safeTxHash: `0x${string}`;
+    try {
+      safeTxHash = getSafeTxHash(args);
+    } catch {
+      throw new BadGatewayException('Could not calculate safeTxHash');
+    }
+
+    if (safeTxHash !== args.transaction.safeTxHash) {
+      throw new BadGatewayException('Invalid safeTxHash');
+    }
+  }
+
+  private verifyProposalSafeTxHash(args: {
+    chainId: string;
+    safe: Safe;
+    proposal: ProposeTransactionDto;
+  }): void {
+    let safeTxHash: `0x${string}`;
+    try {
+      safeTxHash = getSafeTxHash({
         ...args,
         transaction: {
           ...args.proposal,
@@ -87,27 +114,12 @@ export class TransactionVerifierHelper {
           safeTxGas: Number(args.proposal.safeTxGas),
           baseGas: Number(args.proposal.baseGas),
         },
-        safeTxHash: args.proposal.safeTxHash,
       });
-    }
-    if (this.isProposalSignatureVerificationEnabled) {
-      await this.verifyProposalSignature(args);
-    }
-  }
-
-  private verifySafeTxHash(
-    args: Parameters<typeof getSafeTxHash>[0] & {
-      safeTxHash: `0x${string}`;
-    },
-  ): void {
-    let safeTxHash: `0x${string}`;
-    try {
-      safeTxHash = getSafeTxHash(args);
     } catch {
       throw new UnprocessableEntityException('Could not calculate safeTxHash');
     }
 
-    if (safeTxHash !== args.safeTxHash) {
+    if (safeTxHash !== args.proposal.safeTxHash) {
       throw new UnprocessableEntityException('Invalid safeTxHash');
     }
   }
@@ -142,16 +154,21 @@ export class TransactionVerifierHelper {
         continue;
       }
 
-      const address = await this.recoverAddress({
-        safeTxHash: args.transaction.safeTxHash,
-        signature: confirmation.signature,
-      });
+      let address: `0x${string}` | null;
+      try {
+        address = await this.recoverAddress({
+          safeTxHash: args.transaction.safeTxHash,
+          signature: confirmation.signature,
+        });
+      } catch {
+        throw new BadGatewayException('Could not recover address');
+      }
 
       if (
         address &&
-        !isAddressEqual(address, confirmation.owner) &&
-        // We can be certain of no ownership changes as we only verify the queue
-        !args.safe.owners.includes(address)
+        (!isAddressEqual(address, confirmation.owner) ||
+          // We can be certain of no ownership changes as we only verify the queue
+          !args.safe.owners.includes(address))
       ) {
         throw new BadGatewayException('Invalid signature');
       }
@@ -174,10 +191,14 @@ export class TransactionVerifierHelper {
 
     const recoveredAddresses = await Promise.all(
       signatures.map((signature) => {
-        return this.recoverAddress({
-          safeTxHash: args.proposal.safeTxHash,
-          signature,
-        });
+        try {
+          return this.recoverAddress({
+            safeTxHash: args.proposal.safeTxHash,
+            signature,
+          });
+        } catch {
+          throw new UnprocessableEntityException('Could not recover address');
+        }
       }),
     ).then((maybeRecoveredAddresses) => {
       return maybeRecoveredAddresses.filter(
@@ -218,47 +239,21 @@ export class TransactionVerifierHelper {
     const { v } = splitSignature(args.signature);
 
     if (isEoaV(v)) {
-      return await this.recoverEoaAddress(args);
+      return await recoverAddress({
+        hash: args.safeTxHash,
+        signature: args.signature,
+      });
     }
     if (isEthSignV(v)) {
-      return await this.recoverEthSignAddress(args);
+      return await recoverMessageAddress({
+        message: { raw: args.safeTxHash },
+        signature: normalizeEthSignSignature(args.signature),
+      });
     }
     if (this.isUnrecoverableV(v)) {
       return null;
     }
     throw new Error('Unknown signature type');
-  }
-
-  private async recoverEoaAddress(args: {
-    safeTxHash: `0x${string}`;
-    signature: `0x${string}`;
-  }): Promise<`0x${string}`> {
-    try {
-      return await recoverAddress({
-        hash: args.safeTxHash,
-        signature: args.signature,
-      });
-    } catch {
-      throw new UnprocessableEntityException(
-        `Could not recover ${SignatureType.Eoa} address`,
-      );
-    }
-  }
-
-  private async recoverEthSignAddress(args: {
-    safeTxHash: `0x${string}`;
-    signature: `0x${string}`;
-  }): Promise<`0x${string}`> {
-    try {
-      return await recoverMessageAddress({
-        message: { raw: args.safeTxHash },
-        signature: normalizeEthSignSignature(args.signature),
-      });
-    } catch {
-      throw new UnprocessableEntityException(
-        `Could not recover ${SignatureType.EthSign} address`,
-      );
-    }
   }
 
   // We have no blockchain capabilities in order to recover these

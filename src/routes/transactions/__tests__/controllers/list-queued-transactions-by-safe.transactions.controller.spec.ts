@@ -868,7 +868,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       )
       .expect(502)
       .expect({
-        message: 'Invalid EOA signature',
+        message: 'Invalid signature',
         error: 'Bad Gateway',
         statusCode: 502,
       });
@@ -955,7 +955,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       )
       .expect(502)
       .expect({
-        message: 'Invalid ETH_SIGN signature',
+        message: 'Invalid signature',
         error: 'Bad Gateway',
         statusCode: 502,
       });
