@@ -557,7 +557,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     };
     const nonce1 = await getTransaction(1);
     const nonce2 = await getTransaction(2);
-    nonce2.safeTxHash = faker.string.hexadecimal({
+    nonce1.safeTxHash = faker.string.hexadecimal({
       length: 64,
     }) as `0x${string}`;
     const transactions: Array<MultisigTransaction> = [
@@ -644,6 +644,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const transactions: Array<MultisigTransaction> = [
       multisigToJson(multisigTransaction) as MultisigTransaction,
       multisigToJson(duplicateOwnersMultisigTransaction) as MultisigTransaction,
+      multisigToJson(multisigTransaction) as MultisigTransaction,
     ];
     const contract = contractBuilder().build();
 
@@ -732,6 +733,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       multisigToJson(
         duplicateSignaturesMultisigTransaction,
       ) as MultisigTransaction,
+      multisigToJson(multisigTransaction) as MultisigTransaction,
     ];
     const contract = contractBuilder().build();
 
@@ -810,6 +812,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const transactions: Array<MultisigTransaction> = [
       multisigToJson(multisigTransaction) as MultisigTransaction,
       multisigToJson(invalidEoaMultisigTransaction) as MultisigTransaction,
+      multisigToJson(multisigTransaction) as MultisigTransaction,
     ];
     const contract = contractBuilder().build();
 
@@ -906,7 +909,12 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
-          data: rawify(pageBuilder().with('results', transactions).build()),
+          data: rawify(
+            pageBuilder()
+              .with('next', null) // avoid slicing the results
+              .with('results', transactions)
+              .build(),
+          ),
           status: 200,
         });
       }

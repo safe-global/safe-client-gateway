@@ -43,6 +43,7 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
 
 describe('List multisig transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -228,6 +229,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .with('confirmationsRequired', 2)
       .with('confirmations', confirmations)
       .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      safe,
+      chainId: chain.chainId,
+      transaction: multisigTransaction,
+    });
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
       .with('address', getAddress(multisigTransaction.to))
@@ -358,6 +364,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .with('confirmationsRequired', 3)
       .with('confirmations', confirmations)
       .build();
+    multisigTransaction.safeTxHash = getSafeTxHash({
+      safe,
+      chainId: chain.chainId,
+      transaction: multisigTransaction,
+    });
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -438,9 +449,16 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
 
   it('Should get a Custom transaction mapped to the expected format', async () => {
     const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
     const safeAppsResponse = [safeAppBuilder().build()];
     const contractResponse = contractBuilder().build();
+    const confirmations = await Promise.all(
+      Array.from({ length: 3 }, async () => {
+        return (await confirmationBuilder()).build();
+      }),
+    );
     const domainTransaction = (await multisigTransactionBuilder())
+      .with('safe', safe.address)
       .with('value', '0')
       .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
       .with('isExecuted', true)
@@ -457,7 +475,14 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           ])
           .build(),
       )
+      .with('confirmationsRequired', 3)
+      .with('confirmations', confirmations)
       .build();
+    domainTransaction.safeTxHash = getSafeTxHash({
+      safe,
+      chainId: chain.chainId,
+      transaction: domainTransaction,
+    });
     const multisigTransactionsPage = pageBuilder()
       .with('results', [multisigTransactionToJson(domainTransaction)])
       .build();
@@ -480,10 +505,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({
-          data: rawify(safeBuilder().build()),
-          status: 200,
-        });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.resolve({ data: rawify(contractResponse), status: 200 });
