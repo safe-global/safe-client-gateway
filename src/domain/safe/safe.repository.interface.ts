@@ -12,6 +12,7 @@ import { Module } from '@nestjs/common';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -222,6 +223,7 @@ export interface ISafeRepository {
       provide: ISafeRepository,
       useClass: SafeRepository,
     },
+    TransactionVerifierHelper,
   ],
   exports: [ISafeRepository],
 })

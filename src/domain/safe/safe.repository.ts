@@ -31,6 +31,7 @@ import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creation-transaction.schema';
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import { z } from 'zod';
+import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -40,6 +41,7 @@ export class SafeRepository implements ISafeRepository {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    private readonly transactionVerifier: TransactionVerifierHelper,
   ) {}
 
   async getSafe(args: {
@@ -162,6 +164,23 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
+
+    const transaction = await this.getMultiSigTransaction({
+      chainId: args.chainId,
+      safeTransactionHash: args.safeTxHash,
+    });
+
+    const safe = await this.getSafe({
+      chainId: args.chainId,
+      address: transaction.safe,
+    });
+
+    await this.transactionVerifier.verifyApiTransaction({
+      chainId: args.chainId,
+      transaction,
+      safe,
+    });
+
     await transactionService.postConfirmation(args);
   }
 
@@ -513,6 +532,17 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
+
+    const safe = await this.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+
+    await this.transactionVerifier.verifyProposal({
+      chainId: args.chainId,
+      safe,
+      proposal: args.proposeTransactionDto,
+    });
 
     return transactionService.postMultisigTransaction({
       address: args.safeAddress,

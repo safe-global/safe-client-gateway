@@ -100,7 +100,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
   });
 
   it('should propose a transaction', async () => {
-    const proposeTransactionDto = proposeTransactionDtoBuilder().build();
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chain = chainBuilder().with('chainId', chainId).build();
@@ -114,6 +113,21 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     transaction.confirmations = [
       (await confirmationBuilder(transaction.safeTxHash)).build(),
     ];
+    const proposeTransactionDto = proposeTransactionDtoBuilder()
+      .with('to', transaction.to)
+      .with('value', transaction.value)
+      .with('data', transaction.data)
+      .with('nonce', transaction.nonce.toString())
+      .with('operation', transaction.operation)
+      .with('safeTxGas', transaction.safeTxGas!.toString())
+      .with('baseGas', transaction.baseGas!.toString())
+      .with('gasPrice', transaction.gasPrice!)
+      .with('gasToken', transaction.gasToken!)
+      .with('refundReceiver', transaction.refundReceiver)
+      .with('safeTxHash', transaction.safeTxHash)
+      .with('sender', transaction.confirmations[0].owner)
+      .with('signature', transaction.confirmations[0].signature)
+      .build();
     const transactions = pageBuilder().build();
     const token = tokenBuilder().build();
     const gasToken = tokenBuilder().build();

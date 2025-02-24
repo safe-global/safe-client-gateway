@@ -37,7 +37,7 @@ export class MultisigTransactionDetailsMapper {
     safe: Safe,
   ): Promise<TransactionDetails> {
     // TODO: This should be located on the domain layer but only route layer exists
-    await this.transactionVerifier.verifyTransaction({
+    await this.transactionVerifier.verifyApiTransaction({
       chainId,
       safe,
       transaction,

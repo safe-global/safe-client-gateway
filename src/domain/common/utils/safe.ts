@@ -9,7 +9,19 @@ const BASE_GAS_SAFETX_HASH_VERSION = '>=1.0.0';
 
 export function getSafeTxHash(args: {
   chainId: string;
-  transaction: MultisigTransaction;
+  transaction: Pick<
+    MultisigTransaction,
+    | 'to'
+    | 'value'
+    | 'data'
+    | 'operation'
+    | 'safeTxGas'
+    | 'baseGas'
+    | 'gasPrice'
+    | 'gasToken'
+    | 'refundReceiver'
+    | 'nonce'
+  >;
   safe: Safe;
 }): `0x${string}` {
   if (!args.safe.version) {

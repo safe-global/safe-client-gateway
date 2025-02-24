@@ -1,61 +1,85 @@
-import { BadGatewayException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Inject,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { recoverAddress, isAddressEqual, recoverMessageAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
+import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 
 @Injectable()
 export class TransactionVerifierHelper {
-  private readonly isHashVerificationEnabled: boolean;
-  private readonly isSignatureVerificationEnabled: boolean;
+  private readonly isApiHashVerificationEnabled: boolean;
+  private readonly isApiSignatureVerificationEnabled: boolean;
+
+  private readonly isProposalHashVerificationEnabled: boolean;
+  private readonly isProposalSignatureVerificationEnabled: boolean;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.isHashVerificationEnabled = this.configurationService.getOrThrow(
-      'features.hashVerification',
+    this.isApiHashVerificationEnabled = this.configurationService.getOrThrow(
+      'features.hashVerification.api',
     );
-    this.isSignatureVerificationEnabled = this.configurationService.getOrThrow(
-      'features.signatureVerification',
-    );
+    this.isApiSignatureVerificationEnabled =
+      this.configurationService.getOrThrow(
+        'features.signatureVerification.api',
+      );
+    this.isProposalHashVerificationEnabled =
+      this.configurationService.getOrThrow(
+        'features.hashVerification.proposal',
+      );
+    this.isProposalSignatureVerificationEnabled =
+      this.configurationService.getOrThrow(
+        'features.signatureVerification.proposal',
+      );
   }
 
-  public async verifyTransaction(args: {
+  public async verifyApiTransaction(args: {
     chainId: string;
     safe: Safe;
     transaction: MultisigTransaction;
   }): Promise<void> {
-    if (this.isHashVerificationEnabled) {
-      this.verifySafeTxHash(args);
+    if (this.isApiHashVerificationEnabled) {
+      this.verifyApiSafeTxHash(args);
     }
-    if (this.isSignatureVerificationEnabled) {
-      await this.verifySignatures(args.transaction);
+    if (this.isApiSignatureVerificationEnabled) {
+      await this.verifyApiSignatures(args);
     }
   }
 
-  private async verifySignatures(
-    transaction: MultisigTransaction,
-  ): Promise<void> {
-    if (!transaction.confirmations || transaction.confirmations.length === 0) {
+  private async verifyApiSignatures(args: {
+    safe: Safe;
+    transaction: MultisigTransaction;
+  }): Promise<void> {
+    if (
+      !args.transaction.confirmations ||
+      args.transaction.confirmations.length === 0
+    ) {
       return;
     }
 
-    const uniqueOwners = new Set(transaction.confirmations.map((c) => c.owner));
-    if (uniqueOwners.size !== transaction.confirmations.length) {
+    const uniqueOwners = new Set(
+      args.transaction.confirmations.map((c) => c.owner),
+    );
+    if (uniqueOwners.size !== args.transaction.confirmations.length) {
       throw new BadGatewayException('Duplicate owners');
     }
 
     const uniqueSignatures = new Set(
-      transaction.confirmations.map((c) => c.signature),
+      args.transaction.confirmations.map((c) => c.signature),
     );
-    if (uniqueSignatures.size !== transaction.confirmations.length) {
+    if (uniqueSignatures.size !== args.transaction.confirmations.length) {
       throw new BadGatewayException('Duplicate signatures');
     }
 
-    for (const confirmation of transaction.confirmations) {
+    for (const confirmation of args.transaction.confirmations) {
       if (!confirmation.signature) {
         continue;
       }
@@ -84,7 +108,7 @@ export class TransactionVerifierHelper {
           let address: `0x${string}`;
           try {
             address = await recoverAddress({
-              hash: transaction.safeTxHash,
+              hash: args.transaction.safeTxHash,
               signature: confirmation.signature,
             });
           } catch {
@@ -115,7 +139,7 @@ export class TransactionVerifierHelper {
           try {
             address = await recoverMessageAddress({
               message: {
-                raw: transaction.safeTxHash,
+                raw: args.transaction.safeTxHash,
               },
               signature,
             });
@@ -141,7 +165,7 @@ export class TransactionVerifierHelper {
     }
   }
 
-  private verifySafeTxHash(args: {
+  private verifyApiSafeTxHash(args: {
     chainId: string;
     transaction: MultisigTransaction;
     safe: Safe;
@@ -155,6 +179,140 @@ export class TransactionVerifierHelper {
 
     if (safeTxHash !== args.transaction.safeTxHash) {
       throw new BadGatewayException('Invalid safeTxHash');
+    }
+  }
+
+  // TODO: Refactor with the above
+
+  public async verifyProposal(args: {
+    chainId: string;
+    safe: Safe;
+    proposal: ProposeTransactionDto;
+  }): Promise<void> {
+    if (this.isApiHashVerificationEnabled) {
+      this.verifyProposalSafeTxHash(args);
+    }
+    if (this.isApiSignatureVerificationEnabled) {
+      await this.verifyProposalSignature(args);
+    }
+  }
+
+  private async verifyProposalSignature(args: {
+    chainId: string;
+    safe: Safe;
+    proposal: ProposeTransactionDto;
+  }): Promise<void> {
+    if (!args.proposal.signature) {
+      return;
+    }
+
+    const rAndS = args.proposal.signature.slice(0, -2) as `0x${string}`;
+    const v = parseInt(args.proposal.signature.slice(-2), 16);
+
+    const signatureType = ((): SignatureType => {
+      if (v === 1) {
+        return SignatureType.ApprovedHash;
+      }
+      if (v === 0) {
+        return SignatureType.ContractSignature;
+      }
+      if (v === 27 || v === 28) {
+        return SignatureType.Eoa;
+      }
+      if (v === 31 || v === 32) {
+        return SignatureType.EthSign;
+      }
+      throw new UnprocessableEntityException('Invalid signature type');
+    })();
+
+    switch (signatureType) {
+      // approved on chain
+      case SignatureType.ApprovedHash: {
+        return;
+      }
+
+      // requires on-chain verification
+      case SignatureType.ContractSignature: {
+        return;
+      }
+
+      case SignatureType.Eoa: {
+        let address: `0x${string}`;
+        try {
+          address = await recoverAddress({
+            hash: args.proposal.safeTxHash,
+            signature: args.proposal.signature,
+          });
+        } catch {
+          throw new UnprocessableEntityException(
+            `Could not recover ${SignatureType.Eoa} address`,
+          );
+        }
+
+        if (address !== args.proposal.sender) {
+          throw new UnprocessableEntityException('Invalid EOA signature');
+        }
+
+        break;
+      }
+
+      case SignatureType.EthSign: {
+        // Undo v adjustment for eth_sign
+        // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
+        const signature = (rAndS + (v - 4).toString(16)) as `0x${string}`;
+
+        let address: `0x${string}`;
+        try {
+          address = await recoverMessageAddress({
+            message: {
+              raw: args.proposal.safeTxHash,
+            },
+            signature,
+          });
+        } catch {
+          throw new UnprocessableEntityException(
+            `Could not recover ${SignatureType.EthSign} address`,
+          );
+        }
+
+        if (address !== args.proposal.sender) {
+          throw new UnprocessableEntityException(
+            `Invalid ${SignatureType.EthSign} signature`,
+          );
+        }
+
+        break;
+      }
+
+      default: {
+        throw new UnprocessableEntityException('Invalid signature type');
+      }
+    }
+  }
+
+  private verifyProposalSafeTxHash(args: {
+    chainId: string;
+    safe: Safe;
+    proposal: ProposeTransactionDto;
+  }): void {
+    let safeTxHash: `0x${string}`;
+    try {
+      safeTxHash = getSafeTxHash({
+        chainId: args.chainId,
+        transaction: {
+          ...args.proposal,
+          nonce: Number(args.proposal.nonce),
+          safeTxGas: Number(args.proposal.safeTxGas),
+          baseGas: Number(args.proposal.baseGas),
+        },
+        safe: args.safe,
+      });
+    } catch {
+      throw new UnprocessableEntityException('Could not calculate safeTxHash');
+    }
+
+    if (safeTxHash !== args.proposal.safeTxHash) {
+      throw new UnprocessableEntityException('Invalid safeTxHash');
     }
   }
 }
