@@ -15,8 +15,6 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigConfirmationDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { getAddress } from 'viem';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 
 const addressInfoHelper = jest.mocked({
@@ -35,25 +33,14 @@ const loggingService = jest.mocked({
   debug: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
-
 describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionExecutionDetailsMapper;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      return [
-        'features.hashVerification',
-        'features.signatureVerification',
-      ].includes(key);
-    });
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,
-      new TransactionVerifierHelper(mockConfigurationService),
       tokenRepository,
       safeRepository,
       loggingService,

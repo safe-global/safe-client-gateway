@@ -13,13 +13,11 @@ import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
 } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
-import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
   constructor(
     private readonly addressInfoHelper: AddressInfoHelper,
-    private readonly transactionVerifier: TransactionVerifierHelper,
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -30,13 +28,6 @@ export class MultisigTransactionExecutionDetailsMapper {
     transaction: MultisigTransaction,
     safe: Safe,
   ): Promise<MultisigExecutionDetails> {
-    // TODO: This should be located on the domain layer but only route layer exists
-    await this.transactionVerifier.verifyTransaction({
-      chainId,
-      safe,
-      transaction,
-    });
-
     const signers = safe.owners.map((owner) => new AddressInfo(owner));
     const gasToken = transaction.gasToken ?? NULL_ADDRESS;
     const confirmations = !transaction.confirmations
