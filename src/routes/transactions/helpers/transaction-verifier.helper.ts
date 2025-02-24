@@ -207,104 +207,117 @@ export class TransactionVerifierHelper {
     safe: Safe;
     proposal: ProposeTransactionDto;
   }): Promise<void> {
+    const SIGNATURE_LENGTH = 130;
+
     if (!args.proposal.signature) {
       return;
     }
 
-    const rAndS = args.proposal.signature.slice(0, -2) as `0x${string}`;
-    const v = parseInt(args.proposal.signature.slice(-2), 16);
+    // Clients may propose concatenated signatures so we need to split them
+    const signatures: Array<`0x${string}`> = [];
 
-    const signatureType = ((): SignatureType => {
-      if (v === 1) {
-        return SignatureType.ApprovedHash;
-      }
-      if (v === 0) {
-        return SignatureType.ContractSignature;
-      }
-      if (v === 27 || v === 28) {
-        return SignatureType.Eoa;
-      }
-      if (v === 31 || v === 32) {
-        return SignatureType.EthSign;
-      }
-      throw new UnprocessableEntityException('Invalid signature type');
-    })();
+    // TODO: Iterate on this to take compressed/dynamic parts into account
+    for (let i = 2; i < args.proposal.signature.length; i += SIGNATURE_LENGTH) {
+      const signature: `0x${string}` = `0x${args.proposal.signature.slice(i, i + SIGNATURE_LENGTH)}`;
+      signatures.push(signature);
+    }
 
-    switch (signatureType) {
-      // approved on chain
-      case SignatureType.ApprovedHash: {
-        return;
-      }
+    for (const signature of signatures) {
+      const rAndS = signature.slice(0, -2) as `0x${string}`;
+      const v = parseInt(signature.slice(-2), 16);
 
-      // requires on-chain verification
-      case SignatureType.ContractSignature: {
-        return;
-      }
-
-      case SignatureType.Eoa: {
-        let address: `0x${string}`;
-        try {
-          address = await recoverAddress({
-            hash: args.proposal.safeTxHash,
-            signature: args.proposal.signature,
-          });
-        } catch {
-          throw new UnprocessableEntityException(
-            `Could not recover ${SignatureType.Eoa} address`,
-          );
+      const signatureType = ((): SignatureType => {
+        if (v === 1) {
+          return SignatureType.ApprovedHash;
         }
-
-        const isValidSigner = await this.isValidSigner({
-          chainId: args.chainId,
-          sender: args.proposal.sender,
-          safe: args.safe,
-          recoveredAddress: address,
-        });
-
-        if (!isValidSigner) {
-          throw new UnprocessableEntityException('Invalid EOA signature');
+        if (v === 0) {
+          return SignatureType.ContractSignature;
         }
-
-        break;
-      }
-
-      case SignatureType.EthSign: {
-        // Undo v adjustment for eth_sign
-        // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
-        const signature = (rAndS + (v - 4).toString(16)) as `0x${string}`;
-
-        let address: `0x${string}`;
-        try {
-          address = await recoverMessageAddress({
-            message: {
-              raw: args.proposal.safeTxHash,
-            },
-            signature,
-          });
-        } catch {
-          throw new UnprocessableEntityException(
-            `Could not recover ${SignatureType.EthSign} address`,
-          );
+        if (v === 27 || v === 28) {
+          return SignatureType.Eoa;
         }
-
-        const isValidSigner = await this.isValidSigner({
-          chainId: args.chainId,
-          sender: args.proposal.sender,
-          safe: args.safe,
-          recoveredAddress: address,
-        });
-
-        if (!isValidSigner) {
-          throw new UnprocessableEntityException(
-            `Invalid ${SignatureType.EthSign} signature`,
-          );
+        if (v === 31 || v === 32) {
+          return SignatureType.EthSign;
         }
-
-        break;
-      }
-
-      default: {
         throw new UnprocessableEntityException('Invalid signature type');
+      })();
+
+      switch (signatureType) {
+        // approved on chain
+        case SignatureType.ApprovedHash: {
+          return;
+        }
+
+        // requires on-chain verification
+        case SignatureType.ContractSignature: {
+          return;
+        }
+
+        case SignatureType.Eoa: {
+          let address: `0x${string}`;
+          try {
+            address = await recoverAddress({
+              hash: args.proposal.safeTxHash,
+              signature,
+            });
+          } catch {
+            throw new UnprocessableEntityException(
+              `Could not recover ${SignatureType.Eoa} address`,
+            );
+          }
+
+          const isValidSigner = await this.isValidSigner({
+            chainId: args.chainId,
+            sender: args.proposal.sender,
+            safe: args.safe,
+            recoveredAddress: address,
+          });
+
+          if (!isValidSigner) {
+            throw new UnprocessableEntityException('Invalid EOA signature');
+          }
+
+          break;
+        }
+
+        case SignatureType.EthSign: {
+          // Undo v adjustment for eth_sign
+          // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
+          const signature = (rAndS + (v - 4).toString(16)) as `0x${string}`;
+
+          let address: `0x${string}`;
+          try {
+            address = await recoverMessageAddress({
+              message: {
+                raw: args.proposal.safeTxHash,
+              },
+              signature,
+            });
+          } catch {
+            throw new UnprocessableEntityException(
+              `Could not recover ${SignatureType.EthSign} address`,
+            );
+          }
+
+          const isValidSigner = await this.isValidSigner({
+            chainId: args.chainId,
+            sender: args.proposal.sender,
+            safe: args.safe,
+            recoveredAddress: address,
+          });
+
+          if (!isValidSigner) {
+            throw new UnprocessableEntityException(
+              `Invalid ${SignatureType.EthSign} signature`,
+            );
+          }
+
+          break;
+        }
+
+        default: {
+          throw new UnprocessableEntityException('Invalid signature type');
+        }
       }
     }
   }
