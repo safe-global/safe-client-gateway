@@ -572,7 +572,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.networkService.post({
         url,
         data: {
-          signature: args.addConfirmationDto.signedSafeTxHash,
+          signature: args.addConfirmationDto.signature,
         },
       });
     } catch (error) {

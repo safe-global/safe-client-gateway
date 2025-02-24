@@ -27,6 +27,15 @@ import {
 } from '@/domain/common/utils/signatures';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
+enum ErrorMessage {
+  MalformedHash = 'Could not calculate safeTxHash',
+  HashMismatch = 'Invalid safeTxHash',
+  DuplicateOwners = 'Duplicate owners in confirmations',
+  DuplicateSignatures = 'Duplicate signatures in confirmations',
+  UnrecoverableAddress = 'Could not recover address',
+  InvalidSignature = 'Invalid signature',
+}
+
 @Injectable()
 export class TransactionVerifierHelper {
   private static readonly TRANSACTION_TYPE = 'multisig_transaction_validity';
@@ -90,6 +99,20 @@ export class TransactionVerifierHelper {
     }
   }
 
+  public async verifyConfirmation(args: {
+    chainId: string;
+    safe: Safe;
+    transaction: MultisigTransaction;
+    signature: `0x${string}`;
+  }): Promise<void> {
+    if (this.isProposalHashVerificationEnabled) {
+      this.verifyConfirmSafeTxHash(args);
+    }
+    if (this.isProposalHashVerificationEnabled) {
+      await this.verifyConfirmationSignature(args);
+    }
+  }
+
   private verifyApiSafeTxHash(args: {
     chainId: string;
     safe: Safe;
@@ -139,7 +162,7 @@ export class TransactionVerifierHelper {
         transaction,
         safeTxHash: args.proposal.safeTxHash,
       });
-      throw new UnprocessableEntityException('Could not calculate safeTxHash');
+      throw new UnprocessableEntityException(ErrorMessage.MalformedHash);
     }
 
     if (safeTxHash !== args.proposal.safeTxHash) {
@@ -148,7 +171,33 @@ export class TransactionVerifierHelper {
         transaction,
         safeTxHash: args.proposal.safeTxHash,
       });
-      throw new UnprocessableEntityException('Invalid safeTxHash');
+      throw new UnprocessableEntityException(ErrorMessage.HashMismatch);
+    }
+  }
+
+  private verifyConfirmSafeTxHash(args: {
+    chainId: string;
+    safe: Safe;
+    transaction: MultisigTransaction;
+  }): void {
+    let safeTxHash: `0x${string}`;
+    try {
+      safeTxHash = getSafeTxHash(args);
+    } catch {
+      this.logMalformedSafeTxHash({
+        ...args,
+        transaction: args.transaction,
+        safeTxHash: args.transaction.safeTxHash,
+      });
+      throw new UnprocessableEntityException(ErrorMessage.MalformedHash);
+    }
+
+    if (safeTxHash !== args.transaction.safeTxHash) {
+      this.logMismatchSafeTxHash({
+        ...args,
+        safeTxHash: args.transaction.safeTxHash,
+      });
+      throw new BadGatewayException(ErrorMessage.HashMismatch);
     }
   }
 
@@ -174,7 +223,7 @@ export class TransactionVerifierHelper {
         confirmations: args.transaction.confirmations,
         type: 'owners',
       });
-      throw new BadGatewayException('Duplicate owners in confirmations');
+      throw new BadGatewayException(ErrorMessage.DuplicateOwners);
     }
 
     const uniqueSignatures = new Set(
@@ -187,7 +236,7 @@ export class TransactionVerifierHelper {
         confirmations: args.transaction.confirmations,
         type: 'signatures',
       });
-      throw new BadGatewayException('Duplicate signatures in confirmations');
+      throw new BadGatewayException(ErrorMessage.DuplicateSignatures);
     }
 
     for (const confirmation of args.transaction.confirmations) {
@@ -207,7 +256,7 @@ export class TransactionVerifierHelper {
           safeTxHash: args.transaction.safeTxHash,
           signature: confirmation.signature,
         });
-        throw new BadGatewayException('Could not recover address');
+        throw new BadGatewayException(ErrorMessage.UnrecoverableAddress);
       }
 
       if (
@@ -222,7 +271,7 @@ export class TransactionVerifierHelper {
           signer: confirmation.owner,
           signature: confirmation.signature,
         });
-        throw new BadGatewayException('Invalid signature');
+        throw new BadGatewayException(ErrorMessage.InvalidSignature);
       }
     }
   }
@@ -246,7 +295,7 @@ export class TransactionVerifierHelper {
         safeTxHash: args.proposal.safeTxHash,
         signature: args.proposal.signature,
       });
-      throw new UnprocessableEntityException('Could not recover address');
+      throw new UnprocessableEntityException(ErrorMessage.UnrecoverableAddress);
     }
 
     const recoveredAddresses: Array<`0x${string}`> = [];
@@ -265,7 +314,9 @@ export class TransactionVerifierHelper {
           safeTxHash: args.proposal.safeTxHash,
           signature,
         });
-        throw new UnprocessableEntityException('Could not recover address');
+        throw new UnprocessableEntityException(
+          ErrorMessage.UnrecoverableAddress,
+        );
       }
     }
 
@@ -277,7 +328,7 @@ export class TransactionVerifierHelper {
         signer: args.proposal.sender,
         signature: args.proposal.signature,
       });
-      throw new UnprocessableEntityException('Invalid signature');
+      throw new UnprocessableEntityException(ErrorMessage.InvalidSignature);
     }
 
     const isOwner = args.safe.owners.includes(args.proposal.sender);
@@ -296,8 +347,40 @@ export class TransactionVerifierHelper {
           signer: args.proposal.sender,
           signature: args.proposal.signature,
         });
-        throw new UnprocessableEntityException('Invalid signature');
+        throw new UnprocessableEntityException(ErrorMessage.InvalidSignature);
       }
+    }
+  }
+
+  private async verifyConfirmationSignature(args: {
+    chainId: string;
+    safe: Safe;
+    transaction: MultisigTransaction;
+    signature: `0x${string}`;
+  }): Promise<void> {
+    let address: `0x${string}` | null;
+    try {
+      address = await this.recoverAddress({
+        safeTxHash: args.transaction.safeTxHash,
+        signature: args.signature,
+      });
+    } catch {
+      this.logUnrecoverableAddress({
+        ...args,
+        safeTxHash: args.transaction.safeTxHash,
+        signature: args.signature,
+      });
+      throw new UnprocessableEntityException(ErrorMessage.UnrecoverableAddress);
+    }
+
+    if (address && !args.safe.owners.includes(address)) {
+      this.logInvalidSignature({
+        ...args,
+        safeTxHash: args.transaction.safeTxHash,
+        signer: address,
+        signature: args.signature,
+      });
+      throw new UnprocessableEntityException(ErrorMessage.InvalidSignature);
     }
   }
 

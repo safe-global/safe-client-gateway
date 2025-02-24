@@ -1192,7 +1192,9 @@ describe('TransactionApi', () => {
   describe('postConfirmation', () => {
     it('should post confirmation', async () => {
       const safeTxHash = faker.string.hexadecimal();
-      const signedSafeTxHash = faker.string.hexadecimal();
+      const signature = faker.string.hexadecimal({
+        length: 130,
+      }) as `0x${string}`;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       networkService.post.mockResolvedValueOnce({
         status: 200,
@@ -1201,14 +1203,14 @@ describe('TransactionApi', () => {
 
       await service.postConfirmation({
         safeTxHash,
-        addConfirmationDto: { signedSafeTxHash },
+        addConfirmationDto: { signature },
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
       expect(networkService.post).toHaveBeenCalledWith({
         url: postConfirmationUrl,
         data: {
-          signature: signedSafeTxHash,
+          signature,
         },
       });
     });
@@ -1219,7 +1221,9 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
-      const signedSafeTxHash = faker.string.hexadecimal();
+      const signature = faker.string.hexadecimal({
+        length: 130,
+      }) as `0x${string}`;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
@@ -1238,7 +1242,7 @@ describe('TransactionApi', () => {
       await expect(
         service.postConfirmation({
           safeTxHash,
-          addConfirmationDto: { signedSafeTxHash },
+          addConfirmationDto: { signature },
         }),
       ).rejects.toThrow(expected);
 
@@ -1246,7 +1250,7 @@ describe('TransactionApi', () => {
       expect(networkService.post).toHaveBeenCalledWith({
         url: postConfirmationUrl,
         data: {
-          signature: signedSafeTxHash,
+          signature,
         },
       });
     });
@@ -2191,7 +2195,9 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
-      const signedSafeTxHash = faker.string.hexadecimal();
+      const signature = faker.string.hexadecimal({
+        length: 130,
+      }) as `0x${string}`;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
@@ -2210,7 +2216,7 @@ describe('TransactionApi', () => {
       await expect(
         service.postConfirmation({
           safeTxHash,
-          addConfirmationDto: { signedSafeTxHash },
+          addConfirmationDto: { signature },
         }),
       ).rejects.toThrow(expected);
 
@@ -2218,7 +2224,7 @@ describe('TransactionApi', () => {
       expect(networkService.post).toHaveBeenCalledWith({
         url: postConfirmationUrl,
         data: {
-          signature: signedSafeTxHash,
+          signature,
         },
       });
     });

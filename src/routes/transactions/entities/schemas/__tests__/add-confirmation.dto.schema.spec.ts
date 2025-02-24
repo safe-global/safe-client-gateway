@@ -3,14 +3,16 @@ import { faker } from '@faker-js/faker';
 import { ZodError } from 'zod';
 
 describe('AddConfirmationDtoSchema', () => {
-  it('should validate a signedSafeTxHash', () => {
-    const signedSafeTxHash = faker.string.hexadecimal();
-    const result = AddConfirmationDtoSchema.safeParse({ signedSafeTxHash });
+  it('should validate a signature', () => {
+    const signature = faker.string.hexadecimal({
+      length: 130,
+    }) as `0x${string}`;
+    const result = AddConfirmationDtoSchema.safeParse({ signature });
 
     expect(result.success).toBe(true);
   });
 
-  it('should not validate a non-signedSafeTxHash', () => {
+  it('should not validate a non-signature', () => {
     const value = faker.number.int();
     const result = AddConfirmationDtoSchema.safeParse(value);
 
