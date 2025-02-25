@@ -6,11 +6,7 @@ import {
 } from '@nestjs/common';
 import { recoverAddress, isAddressEqual, recoverMessageAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  BaseMultisigTransaction,
-  getBaseMultisigTransaction,
-  getSafeTxHash,
-} from '@/domain/common/utils/safe';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
@@ -25,14 +21,12 @@ import {
   splitConcatenatedSignatures,
   splitSignature,
 } from '@/domain/common/utils/signatures';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Injectable()
 export class TransactionVerifierHelper {
-  private static readonly TRANSACTION_TYPE = 'multisig_transaction_validity';
-
   private readonly isApiHashVerificationEnabled: boolean;
   private readonly isApiSignatureVerificationEnabled: boolean;
+
   private readonly isProposalHashVerificationEnabled: boolean;
   private readonly isProposalSignatureVerificationEnabled: boolean;
 
@@ -41,8 +35,6 @@ export class TransactionVerifierHelper {
     private readonly configurationService: IConfigurationService,
     @Inject(IDelegatesV2Repository)
     private readonly delegatesV2Repository: IDelegatesV2Repository,
-    @Inject(LoggingService)
-    private readonly loggingService: ILoggingService,
   ) {
     this.isApiHashVerificationEnabled = this.configurationService.getOrThrow(
       'features.hashVerification.api',
@@ -99,18 +91,10 @@ export class TransactionVerifierHelper {
     try {
       safeTxHash = getSafeTxHash(args);
     } catch {
-      this.logMalformedSafeTxHash({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
-      });
       throw new BadGatewayException('Could not calculate safeTxHash');
     }
 
     if (safeTxHash !== args.transaction.safeTxHash) {
-      this.logMismatchSafeTxHash({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
-      });
       throw new BadGatewayException('Invalid safeTxHash');
     }
   }
@@ -120,40 +104,27 @@ export class TransactionVerifierHelper {
     safe: Safe;
     proposal: ProposeTransactionDto;
   }): void {
-    const transaction: BaseMultisigTransaction = {
-      ...args.proposal,
-      nonce: Number(args.proposal.nonce),
-      safeTxGas: Number(args.proposal.safeTxGas),
-      baseGas: Number(args.proposal.baseGas),
-    };
-
     let safeTxHash: `0x${string}`;
     try {
       safeTxHash = getSafeTxHash({
         ...args,
-        transaction,
+        transaction: {
+          ...args.proposal,
+          nonce: Number(args.proposal.nonce),
+          safeTxGas: Number(args.proposal.safeTxGas),
+          baseGas: Number(args.proposal.baseGas),
+        },
       });
     } catch {
-      this.logMalformedSafeTxHash({
-        ...args,
-        transaction,
-        safeTxHash: args.proposal.safeTxHash,
-      });
       throw new UnprocessableEntityException('Could not calculate safeTxHash');
     }
 
     if (safeTxHash !== args.proposal.safeTxHash) {
-      this.logMismatchSafeTxHash({
-        ...args,
-        transaction,
-        safeTxHash: args.proposal.safeTxHash,
-      });
       throw new UnprocessableEntityException('Invalid safeTxHash');
     }
   }
 
   private async verifyApiSignatures(args: {
-    chainId: string;
     safe: Safe;
     transaction: MultisigTransaction;
   }): Promise<void> {
@@ -168,26 +139,14 @@ export class TransactionVerifierHelper {
       args.transaction.confirmations.map((c) => c.owner),
     );
     if (uniqueOwners.size !== args.transaction.confirmations.length) {
-      this.logDuplicates({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
-        confirmations: args.transaction.confirmations,
-        type: 'owners',
-      });
-      throw new BadGatewayException('Duplicate owners in confirmations');
+      throw new BadGatewayException('Duplicate owners');
     }
 
     const uniqueSignatures = new Set(
       args.transaction.confirmations.map((c) => c.signature),
     );
     if (uniqueSignatures.size !== args.transaction.confirmations.length) {
-      this.logDuplicates({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
-        confirmations: args.transaction.confirmations,
-        type: 'signatures',
-      });
-      throw new BadGatewayException('Duplicate signatures in confirmations');
+      throw new BadGatewayException('Duplicate signatures');
     }
 
     for (const confirmation of args.transaction.confirmations) {
@@ -202,11 +161,6 @@ export class TransactionVerifierHelper {
           signature: confirmation.signature,
         });
       } catch {
-        this.logUnrecoverableAddress({
-          ...args,
-          safeTxHash: args.transaction.safeTxHash,
-          signature: confirmation.signature,
-        });
         throw new BadGatewayException('Could not recover address');
       }
 
@@ -216,12 +170,6 @@ export class TransactionVerifierHelper {
           // We can be certain of no ownership changes as we only verify the queue
           !args.safe.owners.includes(address))
       ) {
-        this.logInvalidSignature({
-          ...args,
-          safeTxHash: args.transaction.safeTxHash,
-          signer: confirmation.owner,
-          signature: confirmation.signature,
-        });
         throw new BadGatewayException('Invalid signature');
       }
     }
@@ -236,48 +184,37 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    let signatures: Array<`0x${string}`>;
-    try {
-      // Clients may propose concatenated signatures so we need to split them
-      signatures = splitConcatenatedSignatures(args.proposal.signature);
-    } catch {
-      this.logUnrecoverableAddress({
-        ...args,
-        safeTxHash: args.proposal.safeTxHash,
-        signature: args.proposal.signature,
-      });
-      throw new UnprocessableEntityException('Could not recover address');
-    }
+    // Clients may propose concatenated signatures so we need to split them
+    const signatures: Array<`0x${string}`> = splitConcatenatedSignatures(
+      args.proposal.signature,
+    );
 
-    const recoveredAddresses: Array<`0x${string}`> = [];
-    for (const signature of signatures) {
-      try {
-        const recoveredAddress = await this.recoverAddress({
-          safeTxHash: args.proposal.safeTxHash,
-          signature,
-        });
-        if (recoveredAddress) {
-          recoveredAddresses.push(recoveredAddress);
+    const recoveredAddresses = await Promise.all(
+      signatures.map((signature) => {
+        try {
+          return this.recoverAddress({
+            safeTxHash: args.proposal.safeTxHash,
+            signature,
+          });
+        } catch {
+          throw new UnprocessableEntityException('Could not recover address');
         }
-      } catch {
-        this.logUnrecoverableAddress({
-          ...args,
-          safeTxHash: args.proposal.safeTxHash,
-          signature,
-        });
-        throw new UnprocessableEntityException('Could not recover address');
-      }
-    }
+      }),
+    ).then((maybeRecoveredAddresses) => {
+      return maybeRecoveredAddresses.filter(
+        <T>(x: T): x is NonNullable<T> => x != null,
+      );
+    });
 
     const isSender = recoveredAddresses.includes(args.proposal.sender);
     if (!isSender) {
-      this.logInvalidSignature({
-        ...args,
-        safeTxHash: args.proposal.safeTxHash,
-        signer: args.proposal.sender,
-        signature: args.proposal.signature,
+      const hasUnrecoveredAddresses = signatures.some((signature) => {
+        const { v } = splitSignature(signature);
+        return this.isUnrecoverableV(v);
       });
-      throw new UnprocessableEntityException('Invalid signature');
+      if (!hasUnrecoveredAddresses) {
+        throw new UnprocessableEntityException('Invalid signature');
+      }
     }
 
     const isOwner = args.safe.owners.includes(args.proposal.sender);
@@ -290,12 +227,6 @@ export class TransactionVerifierHelper {
         return delegate === args.proposal.sender;
       });
       if (!isDelegate) {
-        this.logInvalidSignature({
-          ...args,
-          safeTxHash: args.proposal.safeTxHash,
-          signer: args.proposal.sender,
-          signature: args.proposal.signature,
-        });
         throw new UnprocessableEntityException('Invalid signature');
       }
     }
@@ -328,98 +259,5 @@ export class TransactionVerifierHelper {
   // We have no blockchain capabilities in order to recover these
   private isUnrecoverableV(v: Signature['v']): boolean {
     return isApprovedHashV(v) || isContractSignatureV(v);
-  }
-
-  private logMalformedSafeTxHash(args: {
-    chainId: string;
-    safe: Safe;
-    safeTxHash: `0x${string}`;
-    transaction: BaseMultisigTransaction;
-  }): void {
-    this.loggingService.error({
-      message: 'Could not calculate safeTxHash',
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      safeVersion: args.safe.version,
-      safeTxHash: args.safeTxHash,
-      transaction: getBaseMultisigTransaction(args.transaction),
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
-    });
-  }
-
-  private logMismatchSafeTxHash(args: {
-    chainId: string;
-    safe: Safe;
-    safeTxHash: `0x${string}`;
-    transaction: BaseMultisigTransaction;
-  }): void {
-    this.loggingService.error({
-      message: 'safeTxHash does not match',
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      safeVersion: args.safe.version,
-      safeTxHash: args.safeTxHash,
-      transaction: getBaseMultisigTransaction(args.transaction),
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
-    });
-  }
-
-  private logDuplicates(args: {
-    type: 'owners' | 'signatures';
-    chainId: string;
-    safe: Safe;
-    safeTxHash: `0x${string}`;
-    confirmations: NonNullable<MultisigTransaction['confirmations']>;
-  }): void {
-    const message =
-      args.type === 'owners'
-        ? 'Duplicate owners in confirmations'
-        : 'Duplicate signatures in confirmations';
-
-    this.loggingService.error({
-      message,
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      safeVersion: args.safe.version,
-      safeTxHash: args.safeTxHash,
-      confirmations: args.confirmations,
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
-    });
-  }
-
-  private logUnrecoverableAddress(args: {
-    chainId: string;
-    safe: Safe;
-    safeTxHash: `0x${string}`;
-    signature: `0x${string}`;
-  }): void {
-    this.loggingService.error({
-      message: 'Could not recover address',
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      safeVersion: args.safe.version,
-      safeTxHash: args.safeTxHash,
-      signature: args.signature,
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
-    });
-  }
-
-  private logInvalidSignature(args: {
-    chainId: string;
-    safe: Safe;
-    safeTxHash: `0x${string}`;
-    signer: `0x${string}`;
-    signature: `0x${string}`;
-  }): void {
-    this.loggingService.error({
-      message: 'Recovered address does not match signer',
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      safeVersion: args.safe.version,
-      safeTxHash: args.safeTxHash,
-      signer: args.signer,
-      signature: args.signature,
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
-    });
   }
 }
