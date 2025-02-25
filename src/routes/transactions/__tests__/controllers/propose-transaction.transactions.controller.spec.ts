@@ -37,8 +37,6 @@ import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.post
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { eoaConfirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
@@ -112,7 +110,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       .build();
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = await multisigTransactionBuilder()
       .with('safe', safeAddress)
       .with(
         'origin',
@@ -120,17 +118,11 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           appendSlash: false,
         })}", "name": "${faker.word.words()}", "note": "<script>document.write('<img src=s onerror=alert(Hello World)>')</script>"}`,
       )
-      .build();
-    transaction.safeTxHash = getSafeTxHash({ safe, transaction, chainId });
-    const signature = await signer.sign({
-      hash: transaction.safeTxHash,
-    });
-    transaction.confirmations = [
-      (await eoaConfirmationBuilder(transaction.safeTxHash))
-        .with('owner', signer.address)
-        .with('signature', signature)
-        .build(),
-    ];
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers: [signer],
+      });
     const proposeTransactionDto = proposeTransactionDtoBuilder()
       .with('to', transaction.to)
       .with('value', transaction.value)
@@ -143,8 +135,8 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       .with('gasToken', transaction.gasToken!)
       .with('refundReceiver', transaction.refundReceiver)
       .with('safeTxHash', transaction.safeTxHash)
-      .with('sender', transaction.confirmations[0].owner)
-      .with('signature', transaction.confirmations[0].signature)
+      .with('sender', transaction.confirmations![0].owner)
+      .with('signature', transaction.confirmations![0].signature)
       .build();
     const transactions = pageBuilder().build();
     const token = tokenBuilder().build();

@@ -13,8 +13,8 @@ import { ZodError } from 'zod';
 
 describe('MultisigTransaction', () => {
   describe('ConfirmationSchema', () => {
-    it('should validate a Confirmation', async () => {
-      const confirmation = (await confirmationBuilder()).build();
+    it('should validate a Confirmation', () => {
+      const confirmation = confirmationBuilder().build();
 
       const result = ConfirmationSchema.safeParse(confirmation);
 
@@ -54,8 +54,8 @@ describe('MultisigTransaction', () => {
   });
 
   describe('MultisigTransactionSchema', () => {
-    it('should validate a MultisigTransaction', async () => {
-      const multisigTransaction = (await multisigTransactionBuilder()).build();
+    it('should validate a MultisigTransaction', () => {
+      const multisigTransaction = multisigTransactionBuilder().build();
 
       const result = MultisigTransactionSchema.safeParse(multisigTransaction);
 
@@ -73,8 +73,8 @@ describe('MultisigTransaction', () => {
       'isExecuted' as const,
       'confirmationsRequired' as const,
       'trusted' as const,
-    ])('should require %s', async (key) => {
-      const multisigTransaction = (await multisigTransactionBuilder()).build();
+    ])('should require %s', (key) => {
+      const multisigTransaction = multisigTransactionBuilder().build();
       delete multisigTransaction[key];
 
       const result = MultisigTransactionSchema.safeParse(multisigTransaction);
@@ -93,11 +93,11 @@ describe('MultisigTransaction', () => {
       'proposedByDelegate' as const,
       'refundReceiver' as const,
       'executor' as const,
-    ])('should checksum %s', async (key) => {
+    ])('should checksum %s', (key) => {
       const nonChecksummedAddress = faker.finance
         .ethereumAddress()
         .toLowerCase();
-      const multisigTransaction = (await multisigTransactionBuilder())
+      const multisigTransaction = multisigTransactionBuilder()
         .with(key, nonChecksummedAddress as `0x${string}`)
         .build();
 
@@ -113,8 +113,8 @@ describe('MultisigTransaction', () => {
       'gasPrice' as const,
       'ethGasPrice' as const,
       'fee' as const,
-    ])('should require %s to be a numeric string', async (key) => {
-      const multisigTransaction = (await multisigTransactionBuilder())
+    ])('should require %s to be a numeric string', (key) => {
+      const multisigTransaction = multisigTransactionBuilder()
         .with(key, faker.string.alpha())
         .build();
 
@@ -133,8 +133,8 @@ describe('MultisigTransaction', () => {
       'data' as const,
       'transactionHash' as const,
       'safeTxHash' as const,
-    ])('should require %s to be a hex string', async (key) => {
-      const multisigTransaction = (await multisigTransactionBuilder())
+    ])('should require %s to be a hex string', (key) => {
+      const multisigTransaction = multisigTransactionBuilder()
         .with(key, faker.string.numeric() as `0x${string}`)
         .build();
 
@@ -171,8 +171,8 @@ describe('MultisigTransaction', () => {
       'origin' as const,
       'confirmations' as const,
       'signatures' as const,
-    ])('should default %s to null', async (key) => {
-      const multisigTransaction = (await multisigTransactionBuilder()).build();
+    ])('should default %s to null', (key) => {
+      const multisigTransaction = multisigTransactionBuilder().build();
       delete multisigTransaction[key];
 
       const result = MultisigTransactionSchema.safeParse(multisigTransaction);
@@ -180,8 +180,8 @@ describe('MultisigTransaction', () => {
       expect(result.success && result.data[key]).toBe(null);
     });
 
-    it('should require operation to be 0 or 1', async () => {
-      const multisigTransaction = (await multisigTransactionBuilder())
+    it('should require operation to be 0 or 1', () => {
+      const multisigTransaction = multisigTransactionBuilder()
         .with('operation', faker.number.int({ min: 2 }))
         .build();
 
@@ -202,9 +202,9 @@ describe('MultisigTransaction', () => {
       'executionDate' as const,
       'submissionDate' as const,
       'modified' as const,
-    ])('should coerce %s to be a Date', async (key) => {
+    ])('should coerce %s to be a Date', (key) => {
       const date = faker.date.recent();
-      const multisigTransaction = (await multisigTransactionBuilder())
+      const multisigTransaction = multisigTransactionBuilder()
         .with(key, date.toString() as unknown as Date)
         .build();
 
@@ -314,9 +314,9 @@ describe('MultisigTransaction', () => {
   });
 
   describe('MultisigTransactionTypeSchema', () => {
-    it('should validate a MultisigTransactionType', async () => {
+    it('should validate a MultisigTransactionType', () => {
       const multisigTransactionType = {
-        ...(await multisigTransactionBuilder()).build(),
+        ...multisigTransactionBuilder().build(),
         txType: 'MULTISIG_TRANSACTION',
       };
 
@@ -435,9 +435,9 @@ describe('MultisigTransaction', () => {
   });
 
   describe('MultisigTransactionPageSchema', () => {
-    it('should validate a MultisigTransactionPage', async () => {
+    it('should validate a MultisigTransactionPage', () => {
       const multisigTransactionType = {
-        ...(await multisigTransactionBuilder()).build(),
+        ...multisigTransactionBuilder().build(),
         type: 'MULTISIG_TRANSACTION',
       };
       const multisigTransactionPage = pageBuilder()

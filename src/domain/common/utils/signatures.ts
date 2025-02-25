@@ -49,6 +49,18 @@ export function splitConcatenatedSignatures(
   return signatures;
 }
 
+export function adjustEthSignSignature(
+  signature: `0x${string}`,
+): `0x${string}` {
+  const { r, s, v } = splitSignature(signature);
+
+  if (!isEoaV(v)) {
+    throw new Error(`Invalid ${SignatureType.Eoa} signature`);
+  }
+
+  return `0x${r.slice(2)}${s.slice(2)}${(v + ETH_SIGN_V_ADJUSTMENT).toString(16)}`;
+}
+
 export function normalizeEthSignSignature(
   signature: `0x${string}`,
 ): `0x${string}` {
