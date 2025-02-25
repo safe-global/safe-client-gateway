@@ -7,21 +7,40 @@ const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';
 const BASE_GAS_SAFETX_HASH_VERSION = '>=1.0.0';
 
+export type BaseMultisigTransaction = Pick<
+  MultisigTransaction,
+  | 'to'
+  | 'value'
+  | 'data'
+  | 'operation'
+  | 'safeTxGas'
+  | 'baseGas'
+  | 'gasPrice'
+  | 'gasToken'
+  | 'refundReceiver'
+  | 'nonce'
+>;
+
+export function getBaseMultisigTransaction(
+  transaction: BaseMultisigTransaction,
+): BaseMultisigTransaction {
+  return {
+    to: transaction.to,
+    value: transaction.value,
+    data: transaction.data,
+    operation: transaction.operation,
+    safeTxGas: transaction.safeTxGas,
+    baseGas: transaction.baseGas,
+    gasPrice: transaction.gasPrice,
+    gasToken: transaction.gasToken,
+    refundReceiver: transaction.refundReceiver,
+    nonce: transaction.nonce,
+  };
+}
+
 export function getSafeTxHash(args: {
   chainId: string;
-  transaction: Pick<
-    MultisigTransaction,
-    | 'to'
-    | 'value'
-    | 'data'
-    | 'operation'
-    | 'safeTxGas'
-    | 'baseGas'
-    | 'gasPrice'
-    | 'gasToken'
-    | 'refundReceiver'
-    | 'nonce'
-  >;
+  transaction: BaseMultisigTransaction;
   safe: Safe;
 }): `0x${string}` {
   if (!args.safe.version) {
