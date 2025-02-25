@@ -39,6 +39,7 @@ import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer
 import { getAddress, isAddress } from 'viem';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -436,6 +437,7 @@ export class TransactionsService {
     safeAddress: `0x${string}`;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<TransactionDetails> {
+    this.logProposeTx(args);
     args.proposeTransactionDto.origin = this.verifyOrigin(
       args.proposeTransactionDto,
     );
@@ -555,5 +557,16 @@ export class TransactionsService {
     }
 
     return null;
+  }
+
+  private logProposeTx(
+    args: Parameters<TransactionsService['proposeTransaction']>[0],
+  ): void {
+    this.loggingService.info({
+      ...args.proposeTransactionDto,
+      safeAddress: args.safeAddress,
+      chainId: args.chainId,
+      type: LogType.TransactionPropose,
+    });
   }
 }
