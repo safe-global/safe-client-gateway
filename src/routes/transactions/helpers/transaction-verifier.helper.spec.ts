@@ -173,7 +173,7 @@ describe('TransactionVerifierHelper', () => {
             refundReceiver: transaction.refundReceiver,
             nonce: transaction.nonce,
           },
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -230,7 +230,7 @@ describe('TransactionVerifierHelper', () => {
             refundReceiver: transaction.refundReceiver,
             nonce: transaction.nonce,
           },
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
     });
@@ -371,7 +371,7 @@ describe('TransactionVerifierHelper', () => {
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
           confirmations: transaction.confirmations,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -412,7 +412,7 @@ describe('TransactionVerifierHelper', () => {
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
           confirmations: transaction.confirmations,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -450,7 +450,7 @@ describe('TransactionVerifierHelper', () => {
             safeVersion: safe.version,
             safeTxHash: transaction.safeTxHash,
             signature: transaction.confirmations![0].signature,
-            type: 'multisig_transaction_validity',
+            type: 'TRANSACTION_VALIDITY',
           });
         },
       );
@@ -485,7 +485,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           signer: transaction.confirmations![0].owner,
           signature: transaction.confirmations![0].signature,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -517,7 +517,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           signer: transaction.confirmations![0].owner,
           signature: transaction.confirmations![0].signature,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
     });
@@ -637,7 +637,7 @@ describe('TransactionVerifierHelper', () => {
             refundReceiver: transaction.refundReceiver,
             nonce: transaction.nonce,
           },
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -712,7 +712,7 @@ describe('TransactionVerifierHelper', () => {
             refundReceiver: transaction.refundReceiver,
             nonce: transaction.nonce,
           },
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
     });
@@ -955,7 +955,7 @@ describe('TransactionVerifierHelper', () => {
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
           signature: confirmation.signature,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -1030,7 +1030,7 @@ describe('TransactionVerifierHelper', () => {
             safeVersion: safe.version,
             safeTxHash: transaction.safeTxHash,
             signature: confirmation.signature,
-            type: 'multisig_transaction_validity',
+            type: 'TRANSACTION_VALIDITY',
           });
         },
       );
@@ -1098,7 +1098,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           signer: proposal.sender,
           signature: proposal.signature,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -1165,7 +1165,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           signer: proposal.sender,
           signature: proposal.signature,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -1236,7 +1236,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           signer: proposal.sender,
           signature: proposal.signature,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
     });
@@ -1340,7 +1340,7 @@ describe('TransactionVerifierHelper', () => {
             refundReceiver: transaction.refundReceiver,
             nonce: transaction.nonce,
           },
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
 
@@ -1404,7 +1404,7 @@ describe('TransactionVerifierHelper', () => {
             refundReceiver: transaction.refundReceiver,
             nonce: transaction.nonce,
           },
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
     });
@@ -1499,7 +1499,7 @@ describe('TransactionVerifierHelper', () => {
             safeVersion: safe.version,
             safeTxHash: transaction.safeTxHash,
             signature: transaction.confirmations![0].signature,
-            type: 'multisig_transaction_validity',
+            type: 'TRANSACTION_VALIDITY',
           });
         },
       );
@@ -1539,7 +1539,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           signer: signer.address,
           signature: transaction.confirmations![0].signature!,
-          type: 'multisig_transaction_validity',
+          type: 'TRANSACTION_VALIDITY',
         });
       });
     });
