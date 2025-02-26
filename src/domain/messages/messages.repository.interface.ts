@@ -3,6 +3,8 @@ import { Message } from '@/domain/messages/entities/message.entity';
 import { Module } from '@nestjs/common';
 import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
+import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
 
 export const IMessagesRepository = Symbol('IMessagesRepository');
 
@@ -46,12 +48,13 @@ export interface IMessagesRepository {
 }
 
 @Module({
-  imports: [TransactionApiManagerModule],
+  imports: [TransactionApiManagerModule, SafeRepositoryModule],
   providers: [
     {
       provide: IMessagesRepository,
       useClass: MessagesRepository,
     },
+    MessageVerifierHelper,
   ],
   exports: [IMessagesRepository],
 })

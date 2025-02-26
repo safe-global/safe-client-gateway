@@ -7,17 +7,22 @@ import {
   MessagePageSchema,
   MessageSchema,
 } from '@/domain/messages/entities/message.entity';
+import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: ISafeRepository,
+    private readonly messageVerifier: MessageVerifierHelper,
   ) {}
 
   async getMessageByHash(args: {
     chainId: string;
-    messageHash: string;
+    messageHash: `0x${string}`;
   }): Promise<Message> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -52,28 +57,38 @@ export class MessagesRepository implements IMessagesRepository {
     signature: string;
     origin: string | null;
   }): Promise<unknown> {
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-
-    return transactionService.postMessage({
+    const response = await transactionService.postMessage({
       safeAddress: args.safeAddress,
       message: args.message,
       safeAppId: args.safeAppId,
       signature: args.signature,
       origin: args.origin,
     });
+    const message = MessageSchema.parse(response);
+    this.messageVerifier.verifyMessageHash({
+      chainId: args.chainId,
+      safe,
+      expectedHash: message.messageHash,
+      message: message.message,
+    });
+    return message;
   }
 
   async updateMessageSignature(args: {
     chainId: string;
-    messageHash: string;
+    messageHash: `0x${string}`;
     signature: `0x${string}`;
   }): Promise<unknown> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-
     return transactionService.postMessageSignature({
       messageHash: args.messageHash,
       signature: args.signature,

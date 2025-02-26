@@ -1,11 +1,56 @@
 import semverSatisfies from 'semver/functions/satisfies';
-import { hashTypedData } from 'viem';
+import { hashMessage, hashTypedData, type TypedDataDefinition } from 'viem';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 
 const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';
 const BASE_GAS_SAFETX_HASH_VERSION = '>=1.0.0';
+const MESSAGE_PRIMARY_TYPE = 'SafeMessage';
+
+export function getSafeMessageMessageHash(args: {
+  chainId: string;
+  safe: Safe;
+  message: string | TypedDataDefinition;
+}): `0x${string}` {
+  try {
+    return hashTypedData({
+      domain: _getSafeMessageDomain({ chainId: args.chainId, safe: args.safe }),
+      primaryType: MESSAGE_PRIMARY_TYPE,
+      types: {
+        [MESSAGE_PRIMARY_TYPE]: [
+          {
+            name: 'message',
+            type: 'bytes',
+          },
+        ],
+      },
+      message: {
+        message:
+          typeof args.message === 'string'
+            ? hashMessage(args.message)
+            : hashTypedData(args.message),
+      },
+    });
+  } catch {
+    throw new Error('Failed to hash message data');
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function _getSafeMessageDomain(args: { chainId: string; safe: Safe }) {
+  if (!args.safe.version) {
+    throw new Error('Safe version is required');
+  }
+  const includesChainId = semverSatisfies(
+    args.safe.version,
+    CHAIN_ID_DOMAIN_HASH_VERSION,
+  );
+  return {
+    ...(includesChainId && { chainId: Number(args.chainId) }),
+    verifyingContract: args.safe.address,
+  };
+}
 
 export type _BaseMultisigTransaction = Pick<
   MultisigTransaction,

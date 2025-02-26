@@ -39,6 +39,8 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
+import type { TypedDataDefinition } from 'viem';
 
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
@@ -772,26 +774,93 @@ describe('Messages controller', () => {
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
       const message = messageBuilder().build();
+      message.messageHash = getSafeMessageMessageHash({
+        chainId: chain.chainId,
+        safe,
+        message: message.message as string | TypedDataDefinition,
+      });
       networkService.get.mockImplementation(({ url }) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: rawify(chain), status: 200 })
           : Promise.reject(`No matching rule for url: ${url}`),
       );
-      networkService.post.mockImplementation(({ url }) =>
-        url ===
-        `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`
-          ? Promise.resolve({
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
-            })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({
+              data: rawify(safe),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
         .send(createMessageDtoBuilder().build())
         .expect(200)
-        .expect(JSON.stringify(messageToJson(message)));
+        .expect(({ body }) => {
+          expect(body).toEqual(messageToJson(message));
+        });
+    });
+
+    it('should fail if the messageHash returned by the Transaction Service is not the expected one', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const message = messageBuilder().build();
+      networkService.get.mockImplementation(({ url }) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: rawify(chain), status: 200 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({
+              data: rawify(messageToJson(message)),
+              status: 200,
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({
+              data: rawify(safe),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(createMessageDtoBuilder().build())
+        .expect(502)
+        .expect({
+          error: 'Bad Gateway',
+          message: 'Invalid message hash',
+          statusCode: 502,
+        });
     });
 
     it('should return an error from the Transaction Service', async () => {
@@ -814,6 +883,19 @@ describe('Messages controller', () => {
           ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({
+              data: rawify(safe),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
