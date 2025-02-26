@@ -167,6 +167,7 @@ export default (): ReturnType<typeof configuration> => ({
       api: true,
       proposal: true,
     },
+    messageVerification: true,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
