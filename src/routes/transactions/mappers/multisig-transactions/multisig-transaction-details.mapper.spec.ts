@@ -15,9 +15,10 @@ import type { MultisigTransactionExecutionDetailsMapper } from '@/routes/transac
 import type { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { eoaConfirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -64,8 +65,10 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       return [
-        'features.hashVerification',
-        'features.signatureVerification',
+        'features.hashVerification.api',
+        'features.signatureVerification.api',
+        'features.hashVerification.proposal',
+        'features.signatureVerification.proposal',
       ].includes(key);
     });
     mapper = new MultisigTransactionDetailsMapper(
@@ -85,9 +88,12 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
 
   it('should return a TransactionDetails object with null addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
-    const safe = safeBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
     const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
+      .with('isExecuted', false)
       .build();
     transaction.safeTxHash = getSafeTxHash({
       chainId,
@@ -95,7 +101,10 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       safe,
     });
     transaction.confirmations = [
-      (await confirmationBuilder(transaction.safeTxHash)).build(),
+      (await eoaConfirmationBuilder(transaction.safeTxHash))
+        .with('owner', signer.address)
+        .with('signature', await signer.sign({ hash: transaction.safeTxHash }))
+        .build(),
     ];
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
@@ -137,13 +146,19 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
 
   it('should return a TransactionDetails object with non-null addressInfoIndex', async () => {
     const chainId = faker.string.numeric();
-    const safe = safeBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
     const transaction = (await multisigTransactionBuilder())
       .with('safe', safe.address)
+      .with('isExecuted', false)
       .build();
     transaction.safeTxHash = getSafeTxHash({ chainId, transaction, safe });
     transaction.confirmations = [
-      (await confirmationBuilder(transaction.safeTxHash)).build(),
+      (await eoaConfirmationBuilder(transaction.safeTxHash))
+        .with('owner', signer.address)
+        .with('signature', await signer.sign({ hash: transaction.safeTxHash }))
+        .build(),
     ];
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);

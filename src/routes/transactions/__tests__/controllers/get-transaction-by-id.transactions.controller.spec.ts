@@ -1185,7 +1185,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       )
       .expect(502)
       .expect({
-        message: 'Invalid EOA signature',
+        message: 'Invalid signature',
         error: 'Bad Gateway',
         statusCode: 502,
       });
@@ -1240,7 +1240,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       )
       .expect(502)
       .expect({
-        message: 'Invalid ETH_SIGN signature',
+        message: 'Invalid signature',
         error: 'Bad Gateway',
         statusCode: 502,
       });
