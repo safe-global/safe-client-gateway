@@ -12,12 +12,9 @@ import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import {
-  isApprovedHashV,
-  isContractSignatureV,
   isEoaV,
   isEthSignV,
   normalizeEthSignSignature,
-  Signature,
   splitConcatenatedSignatures,
   splitSignature,
 } from '@/domain/common/utils/signatures';
@@ -189,32 +186,18 @@ export class TransactionVerifierHelper {
       args.proposal.signature,
     );
 
-    const recoveredAddresses = await Promise.all(
-      signatures.map((signature) => {
-        try {
-          return this.recoverAddress({
-            safeTxHash: args.proposal.safeTxHash,
-            signature,
-          });
-        } catch {
-          throw new UnprocessableEntityException('Could not recover address');
-        }
-      }),
-    ).then((maybeRecoveredAddresses) => {
-      return maybeRecoveredAddresses.filter(
-        <T>(x: T): x is NonNullable<T> => x != null,
-      );
-    });
+    const recoveredAddresses: Array<`0x${string}`> = [];
+    for (const signature of signatures) {
+      const recoveredAddress = await this.recoverAddress({
+        safeTxHash: args.proposal.safeTxHash,
+        signature,
+      });
+      recoveredAddresses.push(recoveredAddress);
+    }
 
     const isSender = recoveredAddresses.includes(args.proposal.sender);
     if (!isSender) {
-      const hasUnrecoveredAddresses = signatures.some((signature) => {
-        const { v } = splitSignature(signature);
-        return this.isUnrecoverableV(v);
-      });
-      if (!hasUnrecoveredAddresses) {
-        throw new UnprocessableEntityException('Invalid signature');
-      }
+      throw new UnprocessableEntityException('Invalid signature');
     }
 
     const isOwner = args.safe.owners.includes(args.proposal.sender);
@@ -235,7 +218,7 @@ export class TransactionVerifierHelper {
   private async recoverAddress(args: {
     safeTxHash: `0x${string}`;
     signature: `0x${string}`;
-  }): Promise<`0x${string}` | null> {
+  }): Promise<`0x${string}`> {
     const { v } = splitSignature(args.signature);
 
     if (isEoaV(v)) {
@@ -250,14 +233,9 @@ export class TransactionVerifierHelper {
         signature: normalizeEthSignSignature(args.signature),
       });
     }
-    if (this.isUnrecoverableV(v)) {
-      return null;
-    }
-    throw new Error('Unknown signature type');
-  }
 
-  // We have no blockchain capabilities in order to recover these
-  private isUnrecoverableV(v: Signature['v']): boolean {
-    return isApprovedHashV(v) || isContractSignatureV(v);
+    // Approved hashes are valid
+    // Contract signatures would need be verified on-chain
+    throw new Error('Cannot recover address');
   }
 }
