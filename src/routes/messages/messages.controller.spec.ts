@@ -41,6 +41,7 @@ import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messag
 import { rawify } from '@/validation/entities/raw.entity';
 import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
 import type { TypedDataDefinition } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
@@ -772,13 +773,16 @@ describe('Messages controller', () => {
   describe('Create messages', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
-      const safe = safeBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
       const message = messageBuilder().build();
       message.messageHash = getSafeMessageMessageHash({
         chainId: chain.chainId,
         safe,
         message: message.message as string | TypedDataDefinition,
       });
+      const signature = await signer.sign({ hash: message.messageHash });
       networkService.get.mockImplementation(({ url }) =>
         url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
           ? Promise.resolve({ data: rawify(chain), status: 200 })
@@ -811,7 +815,7 @@ describe('Messages controller', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(createMessageDtoBuilder().build())
+        .send(createMessageDtoBuilder().with('signature', signature).build())
         .expect(200)
         .expect(({ body }) => {
           expect(body).toEqual(messageToJson(message));
@@ -860,6 +864,62 @@ describe('Messages controller', () => {
           error: 'Bad Gateway',
           message: 'Invalid message hash',
           statusCode: 502,
+        });
+    });
+
+    it('should fail if the signer is not a Safe owner', async () => {
+      const chain = chainBuilder().build();
+      const safe = safeBuilder()
+        .with('address', '0x6D04edC44F7C88faa670683036edC2F6FC10b86e')
+        .with('version', '1.4.0')
+        .build();
+      const message = messageBuilder().build();
+      message.messageHash = getSafeMessageMessageHash({
+        chainId: chain.chainId,
+        safe,
+        message: message.message as string | TypedDataDefinition,
+      });
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const signature = await signer.sign({ hash: message.messageHash });
+      networkService.get.mockImplementation(({ url }) =>
+        url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`
+          ? Promise.resolve({ data: rawify(chain), status: 200 })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({
+              data: rawify(messageToJson(message)),
+              status: 200,
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({
+              data: rawify(safe),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(createMessageDtoBuilder().with('signature', signature).build())
+        .expect(422)
+        .expect({
+          message: 'Invalid signature',
+          error: 'Unprocessable Entity',
+          statusCode: 422,
         });
     });
 

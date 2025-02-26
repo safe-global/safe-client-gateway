@@ -1,4 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Message } from '@/domain/messages/entities/message.entity';
@@ -54,7 +58,7 @@ export class MessagesRepository implements IMessagesRepository {
     safeAddress: `0x${string}`;
     message: unknown;
     safeAppId: number | null;
-    signature: string;
+    signature: `0x${string}`;
     origin: string | null;
   }): Promise<unknown> {
     const safe = await this.safeRepository.getSafe({
@@ -78,6 +82,16 @@ export class MessagesRepository implements IMessagesRepository {
       expectedHash: message.messageHash,
       message: message.message,
     });
+    const signerAddress = await this.messageVerifier.recoverSignerAddress({
+      chainId: args.chainId,
+      safe,
+      message: message.message,
+      signature: args.signature,
+    });
+    const isOwner = safe.owners.includes(signerAddress);
+    if (!isOwner) {
+      throw new UnprocessableEntityException('Invalid signature');
+    }
     return message;
   }
 

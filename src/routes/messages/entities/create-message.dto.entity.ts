@@ -10,7 +10,7 @@ export class CreateMessageDto
   @ApiPropertyOptional({ type: Number, nullable: true, deprecated: true })
   safeAppId!: number | null;
   @ApiProperty()
-  signature!: string;
+  signature!: `0x${string}`;
   @ApiPropertyOptional({ type: String, nullable: true })
   origin!: string | null;
 }
