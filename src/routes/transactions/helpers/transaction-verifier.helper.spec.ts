@@ -417,7 +417,7 @@ describe('TransactionVerifierHelper', () => {
       });
 
       it.each([SignatureType.Eoa as const, SignatureType.EthSign as const])(
-        'should throw if an an address cannot be recovered from an %s signature',
+        'should throw if an address cannot be recovered from an %s signature',
         async (signatureType) => {
           const chainId = faker.string.numeric();
           const privateKey = generatePrivateKey();
