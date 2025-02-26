@@ -18,12 +18,13 @@ import {
   splitConcatenatedSignatures,
   splitSignature,
 } from '@/domain/common/utils/signatures';
+import { asError } from '@/logging/utils';
 
 @Injectable()
 export class TransactionVerifierHelper {
+  private readonly isEthSignEnabled: boolean;
   private readonly isApiHashVerificationEnabled: boolean;
   private readonly isApiSignatureVerificationEnabled: boolean;
-
   private readonly isProposalHashVerificationEnabled: boolean;
   private readonly isProposalSignatureVerificationEnabled: boolean;
 
@@ -33,6 +34,8 @@ export class TransactionVerifierHelper {
     @Inject(IDelegatesV2Repository)
     private readonly delegatesV2Repository: IDelegatesV2Repository,
   ) {
+    this.isEthSignEnabled =
+      this.configurationService.getOrThrow('features.ethSign');
     this.isApiHashVerificationEnabled = this.configurationService.getOrThrow(
       'features.hashVerification.api',
     );
@@ -151,14 +154,14 @@ export class TransactionVerifierHelper {
         continue;
       }
 
-      let address: `0x${string}` | null;
+      let address: `0x${string}`;
       try {
         address = await this.recoverAddress({
           safeTxHash: args.transaction.safeTxHash,
           signature: confirmation.signature,
         });
-      } catch {
-        throw new BadGatewayException('Could not recover address');
+      } catch (e) {
+        throw new BadGatewayException(asError(e).message);
       }
 
       if (
@@ -228,6 +231,9 @@ export class TransactionVerifierHelper {
       });
     }
     if (isEthSignV(v)) {
+      if (!this.isEthSignEnabled) {
+        throw new Error('eth_sign is disabled');
+      }
       return await recoverMessageAddress({
         message: { raw: args.safeTxHash },
         signature: normalizeEthSignSignature(args.signature),
