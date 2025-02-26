@@ -256,6 +256,8 @@ export default () => ({
         process.env.FF_SIGNATURE_VERIFICATION_PROPOSAL?.toLowerCase() ===
         'true',
     },
+    messageVerification:
+      process.env.FF_MESSAGE_VERIFICATION?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

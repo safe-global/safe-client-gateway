@@ -1,16 +1,32 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
 import { Safe } from '@/domain/safe/entities/safe.entity';
-import { BadGatewayException, Injectable } from '@nestjs/common';
+import { BadGatewayException, Inject, Injectable } from '@nestjs/common';
 import { recoverAddress, TypedDataDefinition } from 'viem';
 
 @Injectable()
 export class MessageVerifierHelper {
+  private readonly isMessageVerificationEnabled: boolean;
+
+  constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isMessageVerificationEnabled = this.configurationService.getOrThrow(
+      'features.messageVerification',
+    );
+  }
+
   public verifyMessageHash(args: {
     chainId: string;
     safe: Safe;
     expectedHash: `0x${string}`;
     message: string | Record<string, unknown>;
   }): void {
+    if (!this.isMessageVerificationEnabled) {
+      return;
+    }
+
     let calculatedHash;
     try {
       calculatedHash = getSafeMessageMessageHash({

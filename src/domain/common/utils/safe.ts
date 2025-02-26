@@ -14,8 +14,15 @@ export function getSafeMessageMessageHash(args: {
   message: string | TypedDataDefinition;
 }): `0x${string}` {
   try {
+    if (!args.safe.version) {
+      throw new Error('Safe version is required');
+    }
     return hashTypedData({
-      domain: _getSafeMessageDomain({ chainId: args.chainId, safe: args.safe }),
+      domain: _getSafeDomain({
+        chainId: args.chainId,
+        address: args.safe.address,
+        version: args.safe.version,
+      }),
       primaryType: MESSAGE_PRIMARY_TYPE,
       types: {
         [MESSAGE_PRIMARY_TYPE]: [
@@ -35,21 +42,6 @@ export function getSafeMessageMessageHash(args: {
   } catch {
     throw new Error('Failed to hash message data');
   }
-}
-
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function _getSafeMessageDomain(args: { chainId: string; safe: Safe }) {
-  if (!args.safe.version) {
-    throw new Error('Safe version is required');
-  }
-  const includesChainId = semverSatisfies(
-    args.safe.version,
-    CHAIN_ID_DOMAIN_HASH_VERSION,
-  );
-  return {
-    ...(includesChainId && { chainId: Number(args.chainId) }),
-    verifyingContract: args.safe.address,
-  };
 }
 
 export type _BaseMultisigTransaction = Pick<
@@ -75,7 +67,7 @@ export function getSafeTxHash(args: {
     throw new Error('Safe version is required');
   }
 
-  const domain = _getSafeTxDomain({
+  const domain = _getSafeDomain({
     address: args.safe.address,
     version: args.safe.version,
     chainId: args.chainId,
@@ -98,7 +90,7 @@ export function getSafeTxHash(args: {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function _getSafeTxDomain(args: {
+export function _getSafeDomain(args: {
   address: Safe['address'];
   version: NonNullable<Safe['version']>;
   chainId: string;
