@@ -22,9 +22,9 @@ import {
   splitConcatenatedSignatures,
   splitSignature,
 } from '@/domain/common/utils/signatures';
+import { asError } from '@/logging/utils';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { asError } from '@/logging/utils';
 
 @Injectable()
 export class TransactionVerifierHelper {
@@ -198,16 +198,12 @@ export class TransactionVerifierHelper {
       let address: `0x${string}`;
       try {
         address = await this.recoverAddress({
-          safeTxHash: args.transaction.safeTxHash,
-          signature: confirmation.signature,
-        });
-      } catch {
-        this.logUnrecoverableAddress({
           ...args,
           safeTxHash: args.transaction.safeTxHash,
           signature: confirmation.signature,
         });
-        throw new BadGatewayException('Could not recover address');
+      } catch (e) {
+        throw new BadGatewayException(asError(e).message);
       }
 
       if (
@@ -253,17 +249,13 @@ export class TransactionVerifierHelper {
     for (const signature of signatures) {
       try {
         const recoveredAddress = await this.recoverAddress({
+          ...args,
           safeTxHash: args.proposal.safeTxHash,
           signature,
         });
         recoveredAddresses.push(recoveredAddress);
-      } catch {
-        this.logUnrecoverableAddress({
-          ...args,
-          safeTxHash: args.proposal.safeTxHash,
-          signature: args.proposal.signature,
-        });
-        throw new UnprocessableEntityException('Could not recover address');
+      } catch (e) {
+        throw new UnprocessableEntityException(asError(e).message);
       }
     }
 
@@ -300,29 +292,37 @@ export class TransactionVerifierHelper {
   }
 
   private async recoverAddress(args: {
+    safe: Safe;
+    chainId: string;
     safeTxHash: `0x${string}`;
     signature: `0x${string}`;
   }): Promise<`0x${string}`> {
     const { v } = splitSignature(args.signature);
 
-    if (isEoaV(v)) {
-      return await recoverAddress({
-        hash: args.safeTxHash,
-        signature: args.signature,
-      });
+    if (isEthSignV(v) && !this.isEthSignEnabled) {
+      throw new Error('eth_sign is disabled');
     }
-    if (isEthSignV(v)) {
-      if (!this.isEthSignEnabled) {
-        throw new Error('eth_sign is disabled');
+
+    try {
+      if (isEoaV(v)) {
+        return await recoverAddress({
+          hash: args.safeTxHash,
+          signature: args.signature,
+        });
       }
-      return await recoverMessageAddress({
-        message: { raw: args.safeTxHash },
-        signature: normalizeEthSignSignature(args.signature),
-      });
+      if (isEthSignV(v)) {
+        return await recoverMessageAddress({
+          message: { raw: args.safeTxHash },
+          signature: normalizeEthSignSignature(args.signature),
+        });
+      }
+      // Approved hashes are valid
+      // Contract signatures would need be verified on-chain
+    } catch {
+      this.logUnrecoverableAddress(args);
     }
-    // Approved hashes are valid
-    // Contract signatures would need be verified on-chain
-    throw new Error('Cannot recover address');
+
+    throw new Error('Could not recover address');
   }
 
   private logMalformedSafeTxHash(args: {
