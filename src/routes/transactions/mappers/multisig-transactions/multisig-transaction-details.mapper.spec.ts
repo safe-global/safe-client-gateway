@@ -17,7 +17,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -56,9 +56,9 @@ const mockDelegatesRepository = jest.mocked({
   getDelegates: jest.fn(),
 } as jest.MockedObjectDeep<DelegatesV2Repository>);
 
-const mockLoggingRepository = jest.mocked({
+const mockLoggingService = {
   error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
@@ -85,7 +85,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       new TransactionVerifierHelper(
         mockConfigurationService,
         mockDelegatesRepository,
-        mockLoggingRepository,
+        mockLoggingService,
       ),
     );
   });
