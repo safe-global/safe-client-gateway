@@ -38,7 +38,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(handlerValue),
     );
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -60,7 +60,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a SetFallbackHandler setting with a null handler', async () => {
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -81,7 +81,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a AddOwner setting', async () => {
     const ownerValue = faker.string.numeric();
     const thresholdValue = faker.string.numeric();
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -109,7 +109,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a RemoveOwner setting', async () => {
     const ownerValue = faker.finance.ethereumAddress();
     const thresholdValue = faker.string.numeric();
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -140,7 +140,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a SwapOwner setting', async () => {
     const oldOwner = faker.string.numeric();
     const newOwner = faker.string.numeric();
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -173,7 +173,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(newMasterCopy),
     );
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -199,7 +199,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(moduleAddress),
     );
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -225,7 +225,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(moduleAddress),
     );
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -251,7 +251,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a ChangeThreshold setting', async () => {
     const thresholdValue = faker.string.numeric();
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -276,7 +276,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     const guardAddress = faker.finance.ethereumAddress();
     const guardAddressInfo = new AddressInfo(guardAddress);
     addressInfoHelper.getOrDefault.mockResolvedValue(guardAddressInfo);
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -299,7 +299,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a DeleteGuard setting', async () => {
     const guardValue = '0x0000000000000000000000000000000000000000';
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()
@@ -320,7 +320,7 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should throw an error on a unknown setting', async () => {
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = multisigTransactionBuilder()
       .with(
         'dataDecoded',
         dataDecodedBuilder()

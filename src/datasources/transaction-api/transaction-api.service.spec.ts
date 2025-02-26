@@ -1485,7 +1485,7 @@ describe('TransactionApi', () => {
 
   describe('getMultisigTransactions', () => {
     it('should return the multisig transactions retrieved', async () => {
-      const multisigTransaction = (await multisigTransactionBuilder()).build();
+      const multisigTransaction = multisigTransactionBuilder().build();
       const multisigTransactionsPage = pageBuilder()
         .with('results', [multisigTransaction])
         .build();
@@ -1549,7 +1549,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const multisigTransaction = (await multisigTransactionBuilder()).build();
+      const multisigTransaction = multisigTransactionBuilder().build();
       const ordering = faker.word.noun();
       const executedDateGte = faker.date.recent().toISOString();
       const executedDateLte = faker.date.recent().toISOString();
@@ -1632,7 +1632,7 @@ describe('TransactionApi', () => {
 
   describe('getMultisigTransaction', () => {
     it('should return the multisig transaction retrieved', async () => {
-      const multisigTransaction = (await multisigTransactionBuilder()).build();
+      const multisigTransaction = multisigTransactionBuilder().build();
       const getMultisigTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       const cacheDir = new CacheDir(
         `${chainId}_multisig_transaction_${multisigTransaction.safeTxHash}`,
@@ -1659,7 +1659,7 @@ describe('TransactionApi', () => {
       ['Transaction Service', { nonFieldErrors: [errorMessage] }],
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
-      const multisigTransaction = (await multisigTransactionBuilder()).build();
+      const multisigTransaction = multisigTransactionBuilder().build();
       const getMultisigTransactionUrl = `${baseUrl}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
@@ -1839,7 +1839,7 @@ describe('TransactionApi', () => {
       const queued = faker.datatype.boolean();
       const limit = faker.number.int();
       const offset = faker.number.int();
-      const multisigTransaction = (await multisigTransactionBuilder()).build();
+      const multisigTransaction = multisigTransactionBuilder().build();
       const creationTransaction = creationTransactionBuilder().build();
       const allTransactionsPage = pageBuilder()
         .with('results', [multisigTransaction, creationTransaction])

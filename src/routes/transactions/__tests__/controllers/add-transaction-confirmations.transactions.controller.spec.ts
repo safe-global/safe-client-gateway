@@ -25,10 +25,8 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { addConfirmationDtoBuilder } from '@/routes/transactions/__tests__/entities/add-confirmation.dto.builder';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
-import { eoaConfirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
@@ -82,20 +80,14 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
     const transaction = multisigToJson(
-      (await multisigTransactionBuilder()).with('safe', safe.address).build(),
+      await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          signers: [signer],
+          chainId: chain.chainId,
+          safe,
+        }),
     ) as MultisigTransaction;
-    transaction.safeTxHash = getSafeTxHash({
-      chainId: chain.chainId,
-      safe,
-      transaction,
-    });
-    const signature = await signer.sign({ hash: transaction.safeTxHash });
-    transaction.confirmations = [
-      (await eoaConfirmationBuilder(transaction.safeTxHash))
-        .with('owner', signer.address)
-        .with('signature', signature)
-        .build(),
-    ];
     const gasToken = tokenBuilder().build();
     const token = tokenBuilder().build();
     const rejectionTxsPage = pageBuilder().with('results', []).build();

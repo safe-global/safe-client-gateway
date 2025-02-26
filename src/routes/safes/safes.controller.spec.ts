@@ -173,7 +173,7 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2049-01-30T14:23:07Z'))
                       .build(),
                   ),
@@ -625,17 +625,17 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-18T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-14T03:52:02Z'))
                       .build(),
                   ),
@@ -1050,17 +1050,17 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-18T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-14T03:52:02Z'))
                       .build(),
                   ),
@@ -1135,19 +1135,19 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', null)
                       .with('submissionDate', new Date('2020-09-17T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
                       .build(),
                   ),
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-14T03:52:02Z'))
                       .with('submissionDate', new Date('2020-09-14T03:52:02Z'))
                       .build(),
@@ -1232,7 +1232,7 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
                       .build(),
@@ -1306,7 +1306,7 @@ describe('Safes Controller (Unit)', () => {
               pageBuilder()
                 .with('results', [
                   multisigTransactionToJson(
-                    (await multisigTransactionBuilder())
+                    multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
                       .with('submissionDate', new Date('2020-09-16T03:52:02Z'))
                       .build(),

@@ -14,8 +14,6 @@ import { MultisigTransactionDetailsMapper } from '@/routes/transactions/mappers/
 import type { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import type { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { eoaConfirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
@@ -91,21 +89,14 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
     const safe = safeBuilder().with('owners', [signer.address]).build();
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
-      .build();
-    transaction.safeTxHash = getSafeTxHash({
-      chainId,
-      transaction,
-      safe,
-    });
-    transaction.confirmations = [
-      (await eoaConfirmationBuilder(transaction.safeTxHash))
-        .with('owner', signer.address)
-        .with('signature', await signer.sign({ hash: transaction.safeTxHash }))
-        .build(),
-    ];
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers: [signer],
+      });
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
     const txInfo = transferTransactionInfoBuilder().build();
@@ -149,17 +140,14 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
     const safe = safeBuilder().with('owners', [signer.address]).build();
-    const transaction = (await multisigTransactionBuilder())
+    const transaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
-      .build();
-    transaction.safeTxHash = getSafeTxHash({ chainId, transaction, safe });
-    transaction.confirmations = [
-      (await eoaConfirmationBuilder(transaction.safeTxHash))
-        .with('owner', signer.address)
-        .with('signature', await signer.sign({ hash: transaction.safeTxHash }))
-        .build(),
-    ];
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers: [signer],
+      });
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
     const txInfo = transferTransactionInfoBuilder().build();

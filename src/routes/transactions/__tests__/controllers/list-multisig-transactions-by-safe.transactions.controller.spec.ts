@@ -16,7 +16,6 @@ import {
 } from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
@@ -43,7 +42,7 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('List multisig transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -194,13 +193,17 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
 
   it('Should get a ERC20 transfer mapped to the expected format', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
-    const confirmations = await Promise.all(
-      Array.from({ length: 2 }, async () => {
-        return (await confirmationBuilder()).build();
-      }),
-    );
-    const multisigTransaction = (await multisigTransactionBuilder())
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('value', '0')
       .with('operation', 0)
@@ -227,13 +230,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .build(),
       )
       .with('confirmationsRequired', 2)
-      .with('confirmations', confirmations)
-      .build();
-    multisigTransaction.safeTxHash = getSafeTxHash({
-      safe,
-      chainId: chain.chainId,
-      transaction: multisigTransaction,
-    });
+      .buildWithConfirmations({
+        chainId: chain.chainId,
+        safe,
+        signers,
+      });
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
       .with('address', getAddress(multisigTransaction.to))
@@ -319,17 +320,21 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
 
   it('Should get a ERC721 transfer mapped to the expected format', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const signers = Array.from({ length: 3 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc721)
       .with('address', '0x7Af3460d552f832fD7E2DE973c628ACeA59B0712')
       .build();
-    const confirmations = await Promise.all(
-      Array.from({ length: 3 }, async () => {
-        return (await confirmationBuilder()).build();
-      }),
-    );
-    const multisigTransaction = (await multisigTransactionBuilder())
+    const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('to', token.address)
       .with('value', '0')
@@ -362,13 +367,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .build(),
       )
       .with('confirmationsRequired', 3)
-      .with('confirmations', confirmations)
-      .build();
-    multisigTransaction.safeTxHash = getSafeTxHash({
-      safe,
-      chainId: chain.chainId,
-      transaction: multisigTransaction,
-    });
+      .buildWithConfirmations({
+        safe,
+        chainId: chain.chainId,
+        signers,
+      });
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -449,15 +452,19 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
 
   it('Should get a Custom transaction mapped to the expected format', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
     const safeAppsResponse = [safeAppBuilder().build()];
     const contractResponse = contractBuilder().build();
-    const confirmations = await Promise.all(
-      Array.from({ length: 3 }, async () => {
-        return (await confirmationBuilder()).build();
-      }),
-    );
-    const domainTransaction = (await multisigTransactionBuilder())
+    const signers = Array.from({ length: 3 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const domainTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('value', '0')
       .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
@@ -476,13 +483,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .build(),
       )
       .with('confirmationsRequired', 3)
-      .with('confirmations', confirmations)
-      .build();
-    domainTransaction.safeTxHash = getSafeTxHash({
-      safe,
-      chainId: chain.chainId,
-      transaction: domainTransaction,
-    });
+      .buildWithConfirmations({
+        chainId: chain.chainId,
+        safe,
+        signers,
+      });
     const multisigTransactionsPage = pageBuilder()
       .with('results', [multisigTransactionToJson(domainTransaction)])
       .build();

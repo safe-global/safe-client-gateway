@@ -134,10 +134,10 @@ describe('Safes Controller Overview (Unit)', () => {
         [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
         [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
       };
-      const confirmation = (await confirmationBuilder()).build();
+      const confirmation = confirmationBuilder().build();
       const multisigTransactions = [
         multisigTransactionToJson(
-          (await multisigTransactionBuilder())
+          multisigTransactionBuilder()
             .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Signature provided
@@ -145,7 +145,7 @@ describe('Safes Controller Overview (Unit)', () => {
             ])
             .build(),
         ),
-        multisigTransactionToJson((await multisigTransactionBuilder()).build()),
+        multisigTransactionToJson(multisigTransactionBuilder().build()),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
@@ -297,20 +297,20 @@ describe('Safes Controller Overview (Unit)', () => {
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const multisigTransactions = [
         multisigTransactionToJson(
-          (await multisigTransactionBuilder())
+          multisigTransactionBuilder()
             .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Not wallet address
-              (await confirmationBuilder()).build(),
+              confirmationBuilder().build(),
             ])
             .build(),
         ),
         multisigTransactionToJson(
-          (await multisigTransactionBuilder())
+          multisigTransactionBuilder()
             .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Not wallet address
-              (await confirmationBuilder()).build(),
+              confirmationBuilder().build(),
             ])
             .build(),
         ),
@@ -908,8 +908,8 @@ describe('Safes Controller Overview (Unit)', () => {
         [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
       };
       const multisigTransactions = [
-        multisigTransactionToJson((await multisigTransactionBuilder()).build()),
-        multisigTransactionToJson((await multisigTransactionBuilder()).build()),
+        multisigTransactionToJson(multisigTransactionBuilder().build()),
+        multisigTransactionToJson(multisigTransactionBuilder().build()),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
@@ -1059,8 +1059,8 @@ describe('Safes Controller Overview (Unit)', () => {
       };
       const walletAddress = faker.finance.ethereumAddress();
       const multisigTransactions = [
-        multisigTransactionToJson((await multisigTransactionBuilder()).build()),
-        multisigTransactionToJson((await multisigTransactionBuilder()).build()),
+        multisigTransactionToJson(multisigTransactionBuilder().build()),
+        multisigTransactionToJson(multisigTransactionBuilder().build()),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
@@ -1796,8 +1796,8 @@ describe('Safes Controller Overview (Unit)', () => {
       };
       const walletAddress = faker.finance.ethereumAddress();
       const multisigTransactions = [
-        multisigTransactionToJson((await multisigTransactionBuilder()).build()),
-        multisigTransactionToJson((await multisigTransactionBuilder()).build()),
+        multisigTransactionToJson(multisigTransactionBuilder().build()),
+        multisigTransactionToJson(multisigTransactionBuilder().build()),
       ];
       const queuedTransactions = pageBuilder()
         .with('results', multisigTransactions)
