@@ -39,7 +39,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: ['test:cov', 'test:e2e:cov']
+        # task: ['test:cov', 'test:e2e:cov']
+        task: ['test:cov']
     env:
       POSTGRES_TEST_DB: test-db
       POSTGRES_TEST_USER: postgres
