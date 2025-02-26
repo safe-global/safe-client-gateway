@@ -256,6 +256,7 @@ export default () => ({
         process.env.FF_SIGNATURE_VERIFICATION_PROPOSAL?.toLowerCase() ===
         'true',
     },
+    ethSign: process.env.FF_ETH_SIGN?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

@@ -24,9 +24,11 @@ import {
 } from '@/domain/common/utils/signatures';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { asError } from '@/logging/utils';
 
 @Injectable()
 export class TransactionVerifierHelper {
+  private readonly isEthSignEnabled: boolean;
   private readonly isApiHashVerificationEnabled: boolean;
   private readonly isApiSignatureVerificationEnabled: boolean;
   private readonly isProposalHashVerificationEnabled: boolean;
@@ -40,6 +42,8 @@ export class TransactionVerifierHelper {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
+    this.isEthSignEnabled =
+      this.configurationService.getOrThrow('features.ethSign');
     this.isApiHashVerificationEnabled = this.configurationService.getOrThrow(
       'features.hashVerification.api',
     );
@@ -191,7 +195,7 @@ export class TransactionVerifierHelper {
         continue;
       }
 
-      let address: `0x${string}` | null;
+      let address: `0x${string}`;
       try {
         address = await this.recoverAddress({
           safeTxHash: args.transaction.safeTxHash,
@@ -308,6 +312,9 @@ export class TransactionVerifierHelper {
       });
     }
     if (isEthSignV(v)) {
+      if (!this.isEthSignEnabled) {
+        throw new Error('eth_sign is disabled');
+      }
       return await recoverMessageAddress({
         message: { raw: args.safeTxHash },
         signature: normalizeEthSignSignature(args.signature),

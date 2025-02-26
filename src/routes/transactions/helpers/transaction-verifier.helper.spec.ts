@@ -32,15 +32,14 @@ const mockLoggingRepository = jest.mocked({
 describe('TransactionVerifierHelper', () => {
   let target: TransactionVerifierHelper;
 
-  beforeEach(() => {
-    jest.resetAllMocks();
-
+  function initTarget(ethSign: boolean): void {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       return [
         'features.hashVerification.api',
         'features.signatureVerification.api',
         'features.hashVerification.proposal',
         'features.signatureVerification.proposal',
+        ethSign ? 'features.ethSign' : null,
       ].includes(key);
     });
 
@@ -49,6 +48,12 @@ describe('TransactionVerifierHelper', () => {
       mockDelegatesRepository,
       mockLoggingRepository,
     );
+  }
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+
+    initTarget(true);
   });
 
   describe('verifyApiTransaction', () => {
@@ -519,6 +524,30 @@ describe('TransactionVerifierHelper', () => {
           signature: transaction.confirmations![0].signature,
           type: 'TRANSACTION_VALIDITY',
         });
+      });
+
+      it('should block eth_sign', async () => {
+        initTarget(false);
+
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: [signer],
+            safe,
+            signatureType: SignatureType.EthSign,
+          });
+
+        await expect(
+          target.verifyApiTransaction({ chainId, safe, transaction }),
+        ).rejects.toThrow(new BadGatewayException('eth_sign is disabled'));
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       });
     });
   });
@@ -1239,6 +1268,64 @@ describe('TransactionVerifierHelper', () => {
           type: 'TRANSACTION_VALIDITY',
         });
       });
+    });
+
+    it('should block eth_sign', async () => {
+      initTarget(false);
+
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType: SignatureType.EthSign,
+        });
+      if (
+        !transaction.confirmations ||
+        transaction.confirmations.length === 0
+      ) {
+        throw new Error('Transaction must have at least 1 confirmation');
+      }
+      const confirmation = faker.helpers.arrayElement(
+        transaction.confirmations,
+      );
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', confirmation.owner)
+        .with('signature', confirmation.signature)
+        .build();
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).rejects.toThrow(new BadGatewayException('eth_sign is disabled'));
     });
   });
 

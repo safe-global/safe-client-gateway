@@ -18,6 +18,7 @@ import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transac
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -63,15 +64,14 @@ const mockLoggingService = {
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
-  beforeEach(() => {
-    jest.resetAllMocks();
-
+  function initTarget(ethSign: boolean): void {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       return [
         'features.hashVerification.api',
         'features.signatureVerification.api',
         'features.hashVerification.proposal',
         'features.signatureVerification.proposal',
+        ethSign ? 'features.ethSign' : null,
       ].includes(key);
     });
     mapper = new MultisigTransactionDetailsMapper(
@@ -88,6 +88,12 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         mockLoggingService,
       ),
     );
+  }
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+
+    initTarget(true);
   });
 
   it('should return a TransactionDetails object with null addressInfoIndex', async () => {
@@ -196,5 +202,27 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       detailedExecutionInfo: multisigExecutionDetails,
       safeAppInfo,
     });
+  });
+
+  it('should block eth_sign', async () => {
+    initTarget(false);
+
+    const chainId = faker.string.numeric();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
+    const transaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('isExecuted', false)
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers: [signer],
+        signatureType: SignatureType.EthSign,
+      });
+
+    await expect(mapper.mapDetails(chainId, transaction, safe)).rejects.toThrow(
+      'eth_sign is disabled',
+    );
   });
 });
