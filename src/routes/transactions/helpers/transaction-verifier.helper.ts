@@ -23,11 +23,10 @@ import {
   splitSignature,
 } from '@/domain/common/utils/signatures';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 @Injectable()
 export class TransactionVerifierHelper {
-  private static readonly TRANSACTION_TYPE = 'multisig_transaction_validity';
-
   private readonly isApiHashVerificationEnabled: boolean;
   private readonly isApiSignatureVerificationEnabled: boolean;
   private readonly isProposalHashVerificationEnabled: boolean;
@@ -332,7 +331,7 @@ export class TransactionVerifierHelper {
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       transaction: getBaseMultisigTransaction(args.transaction),
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
+      type: LogType.TransactionValidity,
     });
   }
 
@@ -349,7 +348,7 @@ export class TransactionVerifierHelper {
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       transaction: getBaseMultisigTransaction(args.transaction),
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
+      type: LogType.TransactionValidity,
     });
   }
 
@@ -372,7 +371,7 @@ export class TransactionVerifierHelper {
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       confirmations: args.confirmations,
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
+      type: LogType.TransactionValidity,
     });
   }
 
@@ -389,7 +388,7 @@ export class TransactionVerifierHelper {
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       signature: args.signature,
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
+      type: LogType.TransactionValidity,
     });
   }
 
@@ -408,7 +407,7 @@ export class TransactionVerifierHelper {
       safeTxHash: args.safeTxHash,
       signer: args.signer,
       signature: args.signature,
-      type: TransactionVerifierHelper.TRANSACTION_TYPE,
+      type: LogType.TransactionValidity,
     });
   }
 }
