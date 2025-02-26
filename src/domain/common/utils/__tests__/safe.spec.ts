@@ -8,7 +8,7 @@ import {
   _getSafeTxTypesAndMessage,
   getSafeTxHash,
 } from '@/domain/common/utils/safe';
-import type { _BaseMultisigTransaction } from '@/domain/common/utils/safe';
+import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
 import type { IBuilder } from '@/__tests__/builder';
 
 // Audited versions only
@@ -31,8 +31,8 @@ const TYPES_WITH_BASEGAS_VERSIONS = [
   '1.4.1',
 ];
 
-function safeTxHashMultisigTransactionBuilder(): IBuilder<_BaseMultisigTransaction> {
-  return new Builder<_BaseMultisigTransaction>()
+function safeTxHashMultisigTransactionBuilder(): IBuilder<BaseMultisigTransaction> {
+  return new Builder<BaseMultisigTransaction>()
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', faker.string.numeric())
     .with('data', faker.string.hexadecimal() as `0x${string}`)
@@ -219,7 +219,7 @@ describe('Safe', () => {
       );
     });
 
-    it.each<keyof _BaseMultisigTransaction>([
+    it.each<keyof BaseMultisigTransaction>([
       'safeTxGas',
       'baseGas',
       'gasPrice',
@@ -304,7 +304,7 @@ describe('Safe', () => {
       expect(result.message.data).toEqual('0x');
     });
 
-    it.each<keyof _BaseMultisigTransaction>([
+    it.each<keyof BaseMultisigTransaction>([
       'safeTxGas',
       'baseGas',
       'gasPrice',

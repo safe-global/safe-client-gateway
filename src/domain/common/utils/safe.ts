@@ -7,7 +7,7 @@ const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';
 const BASE_GAS_SAFETX_HASH_VERSION = '>=1.0.0';
 
-export type _BaseMultisigTransaction = Pick<
+export type BaseMultisigTransaction = Pick<
   MultisigTransaction,
   | 'to'
   | 'value'
@@ -21,9 +21,26 @@ export type _BaseMultisigTransaction = Pick<
   | 'nonce'
 >;
 
+export function getBaseMultisigTransaction(
+  transaction: BaseMultisigTransaction,
+): BaseMultisigTransaction {
+  return {
+    to: transaction.to,
+    value: transaction.value,
+    data: transaction.data,
+    operation: transaction.operation,
+    safeTxGas: transaction.safeTxGas,
+    baseGas: transaction.baseGas,
+    gasPrice: transaction.gasPrice,
+    gasToken: transaction.gasToken,
+    refundReceiver: transaction.refundReceiver,
+    nonce: transaction.nonce,
+  };
+}
+
 export function getSafeTxHash(args: {
   chainId: string;
-  transaction: _BaseMultisigTransaction;
+  transaction: BaseMultisigTransaction;
   safe: Safe;
 }): `0x${string}` {
   if (!args.safe.version) {
@@ -70,7 +87,7 @@ export function _getSafeTxDomain(args: {
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function _getSafeTxTypesAndMessage(args: {
-  transaction: _BaseMultisigTransaction;
+  transaction: BaseMultisigTransaction;
   version: NonNullable<Safe['version']>;
 }) {
   const {

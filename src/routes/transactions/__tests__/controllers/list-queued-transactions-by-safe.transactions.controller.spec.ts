@@ -675,7 +675,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       )
       .expect(502)
       .expect({
-        message: 'Duplicate owners',
+        message: 'Duplicate owners in confirmations',
         error: 'Bad Gateway',
         statusCode: 502,
       });
@@ -752,7 +752,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       )
       .expect(502)
       .expect({
-        message: 'Duplicate signatures',
+        message: 'Duplicate signatures in confirmations',
         error: 'Bad Gateway',
         statusCode: 502,
       });
