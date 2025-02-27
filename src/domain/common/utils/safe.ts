@@ -1,5 +1,6 @@
 import semverSatisfies from 'semver/functions/satisfies';
 import { hashMessage, hashTypedData, type TypedDataDefinition } from 'viem';
+import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 
@@ -11,12 +12,16 @@ const MESSAGE_PRIMARY_TYPE = 'SafeMessage';
 export function getSafeMessageMessageHash(args: {
   chainId: string;
   safe: Safe;
-  message: string | TypedDataDefinition;
+  message: string | Record<string, unknown>;
 }): `0x${string}` {
+  if (!args.safe.version) {
+    throw new Error('Safe version is required');
+  }
   try {
-    if (!args.safe.version) {
-      throw new Error('Safe version is required');
-    }
+    const message = MessageSchema.shape.message.parse(args.message) as
+      | string
+      | TypedDataDefinition;
+
     return hashTypedData({
       domain: _getSafeDomain({
         chainId: args.chainId,
@@ -34,9 +39,9 @@ export function getSafeMessageMessageHash(args: {
       },
       message: {
         message:
-          typeof args.message === 'string'
-            ? hashMessage(args.message)
-            : hashTypedData(args.message),
+          typeof message === 'string'
+            ? hashMessage(message)
+            : hashTypedData(message),
       },
     });
   } catch {
