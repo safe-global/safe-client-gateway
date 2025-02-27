@@ -260,6 +260,30 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
+      it('should validate an approved hash or contract signature', async () => {
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: [signer],
+            safe,
+          });
+        transaction.confirmations![0].signatureType =
+          faker.helpers.arrayElement([
+            SignatureType.ApprovedHash,
+            SignatureType.ContractSignature,
+          ]);
+
+        await expect(
+          target.verifyApiTransaction({ chainId, safe, transaction }),
+        ).resolves.not.toThrow();
+      });
+
       it('should validate multiple confirmations', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
@@ -781,6 +805,62 @@ describe('TransactionVerifierHelper', () => {
         const confirmation = faker.helpers.arrayElement(
           transaction.confirmations,
         );
+        const proposal = proposeTransactionDtoBuilder()
+          .with('to', transaction.to)
+          .with('value', transaction.value)
+          .with('data', transaction.data)
+          .with('nonce', transaction.nonce.toString())
+          .with('operation', transaction.operation)
+          .with('safeTxGas', transaction.safeTxGas!.toString())
+          .with('baseGas', transaction.baseGas!.toString())
+          .with('gasPrice', transaction.gasPrice!)
+          .with('gasToken', transaction.gasToken!)
+          .with('refundReceiver', transaction.refundReceiver)
+          .with('safeTxHash', transaction.safeTxHash)
+          .with('sender', confirmation.owner)
+          .with('signature', confirmation.signature)
+          .build();
+
+        await expect(
+          target.verifyProposal({ chainId, safe, proposal }),
+        ).resolves.not.toThrow();
+      });
+
+      it('should validate an approved hash or contract signature', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers),
+            safe,
+          });
+        transaction.confirmations![0].signatureType =
+          faker.helpers.arrayElement([
+            SignatureType.ApprovedHash,
+            SignatureType.ContractSignature,
+          ]);
+        if (
+          !transaction.confirmations ||
+          transaction.confirmations.length === 0
+        ) {
+          throw new Error('Transaction must have at least 1 confirmation');
+        }
+        const confirmation = transaction.confirmations[0];
         const proposal = proposeTransactionDtoBuilder()
           .with('to', transaction.to)
           .with('value', transaction.value)
@@ -1330,4 +1410,8 @@ describe('TransactionVerifierHelper', () => {
   });
 
   it.todo('verifyConfirmation');
+
+  it.todo(
+    'verifyConfirmation - should validate an approved hash or contract signature',
+  );
 });
