@@ -168,6 +168,8 @@ export default (): ReturnType<typeof configuration> => ({
       proposal: true,
     },
     messageVerification: true,
+    ethSign: true,
+    trustedDelegateCall: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
