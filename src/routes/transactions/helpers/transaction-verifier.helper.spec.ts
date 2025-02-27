@@ -1213,13 +1213,10 @@ describe('TransactionVerifierHelper', () => {
 
       it('should throw it not all individual signatures, after being split, are from owners or delegates', async () => {
         const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 2, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
+        const signers = Array.from({ length: 4 }, () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        });
         const safe = safeBuilder()
           .with(
             'owners',
@@ -1230,10 +1227,7 @@ describe('TransactionVerifierHelper', () => {
           .with('safe', safe.address)
           .buildWithConfirmations({
             chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
+            signers,
             safe,
           });
         if (
@@ -1263,6 +1257,9 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', sender)
           .with('signature', signature)
           .build();
+        mockDelegatesRepository.getDelegates.mockResolvedValue(
+          pageBuilder<Delegate>().with('results', []).build(),
+        );
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
