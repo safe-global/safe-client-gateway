@@ -35,6 +35,7 @@ export class TransactionVerifierHelper {
   private readonly isApiSignatureVerificationEnabled: boolean;
   private readonly isProposalHashVerificationEnabled: boolean;
   private readonly isProposalSignatureVerificationEnabled: boolean;
+  private readonly blocklist: Array<`0x${string}`>;
 
   constructor(
     @Inject(IConfigurationService)
@@ -61,6 +62,9 @@ export class TransactionVerifierHelper {
       this.configurationService.getOrThrow(
         'features.signatureVerification.proposal',
       );
+    this.blocklist = this.configurationService.getOrThrow(
+      'blockchain.blocklist',
+    );
   }
 
   public async verifyApiTransaction(args: {
@@ -208,6 +212,11 @@ export class TransactionVerifierHelper {
         throw new BadGatewayException(asError(e).message);
       }
 
+      const isBlocked = address && this.blocklist.includes(address);
+      if (isBlocked) {
+        throw new BadGatewayException('Unauthorized address');
+      }
+
       if (
         address &&
         (!isAddressEqual(address, confirmation.owner) ||
@@ -261,6 +270,13 @@ export class TransactionVerifierHelper {
       } catch (e) {
         throw new UnprocessableEntityException(asError(e).message);
       }
+    }
+
+    const hasBlockedAddresses = recoveredAddresses.some((address) => {
+      return this.blocklist.includes(address);
+    });
+    if (hasBlockedAddresses) {
+      throw new UnprocessableEntityException('Unauthorized address');
     }
 
     const isSender = recoveredAddresses.includes(args.proposal.sender);
