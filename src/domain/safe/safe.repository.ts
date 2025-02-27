@@ -534,19 +534,22 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
 
-    if (
-      this.isTrustedDelegateCallEnabled &&
-      args.proposeTransactionDto.operation === Operation.DELEGATE
-    ) {
+    if (args.proposeTransactionDto.operation === Operation.DELEGATE) {
+      if (!this.isTrustedDelegateCallEnabled) {
+        console.log('==> disabled');
+        throw new UnprocessableEntityException('Delegate call is disabled');
+      }
       try {
         const contract = await this.contractsRepository.getContract({
           chainId: args.chainId,
           contractAddress: args.proposeTransactionDto.to,
         });
+        console.log('==>', contract.trustedForDelegateCall);
         if (!contract.trustedForDelegateCall) {
           throw new Error('Delegate call is disabled');
         }
       } catch {
+        console.log('==> no contract');
         throw new UnprocessableEntityException('Delegate call is disabled');
       }
     }
