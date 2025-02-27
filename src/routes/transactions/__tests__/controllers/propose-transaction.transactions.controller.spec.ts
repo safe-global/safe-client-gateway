@@ -40,6 +40,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -482,5 +483,215 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           }),
         ),
       );
+  });
+
+  it('should disallow untrusted delegate calls', async () => {
+    const baseConfiguration = configuration();
+    const testConfiguration = (): typeof baseConfiguration => ({
+      ...baseConfiguration,
+      features: {
+        ...baseConfiguration.features,
+        ethSign: true,
+        trustedDelegateCall: true,
+      },
+    });
+    await initApp(testConfiguration);
+
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder()
+      .with('address', safeAddress)
+      .with('owners', [signer.address])
+      .build();
+    const safeApps = [safeAppBuilder().build()];
+    const contract = contractBuilder()
+      .with('trustedForDelegateCall', false)
+      .build();
+    const transaction = await multisigTransactionBuilder()
+      .with('safe', safeAddress)
+      .with('operation', Operation.DELEGATE)
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers: [signer],
+      });
+    const proposeTransactionDto = proposeTransactionDtoBuilder()
+      .with('to', transaction.to)
+      .with('value', transaction.value)
+      .with('data', transaction.data)
+      .with('nonce', transaction.nonce.toString())
+      .with('operation', transaction.operation)
+      .with('safeTxGas', transaction.safeTxGas!.toString())
+      .with('baseGas', transaction.baseGas!.toString())
+      .with('gasPrice', transaction.gasPrice!)
+      .with('gasToken', transaction.gasToken!)
+      .with('refundReceiver', transaction.refundReceiver)
+      .with('safeTxHash', transaction.safeTxHash)
+      .with('sender', transaction.confirmations![0].owner)
+      .with('signature', transaction.confirmations![0].signature)
+      .build();
+    const transactions = pageBuilder().build();
+    const token = tokenBuilder().build();
+    const gasToken = tokenBuilder().build();
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+      const getContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(transaction)),
+            status: 200,
+          });
+        case getMultisigTransactionsUrl:
+          return Promise.resolve({ data: rawify(transactions), status: 200 });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        case getSafeAppsUrl:
+          return Promise.resolve({ data: rawify(safeApps), status: 200 });
+        case getContractUrl:
+          return Promise.resolve({ data: rawify(contract), status: 200 });
+        case getTokenUrl:
+          return Promise.resolve({ data: rawify(token), status: 200 });
+        case getGasTokenContractUrl:
+          return Promise.resolve({ data: rawify(gasToken), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    networkService.post.mockImplementation(({ url }) => {
+      const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      switch (url) {
+        case proposeTransactionUrl:
+          return Promise.resolve({ data: rawify({}), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chainId}/transactions/${safeAddress}/propose`)
+      .send(proposeTransactionDto)
+      .expect(422)
+      .expect({
+        error: 'Unprocessable Entity',
+        message: 'Delegate call is disabled',
+        statusCode: 422,
+      });
+  });
+
+  it('should return an error from the Transaction Service', async () => {
+    const baseConfiguration = configuration();
+    const testConfiguration = (): typeof baseConfiguration => ({
+      ...baseConfiguration,
+      features: {
+        ...baseConfiguration.features,
+        ethSign: true,
+        trustedDelegateCall: true,
+      },
+    });
+    await initApp(testConfiguration);
+
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder()
+      .with('address', safeAddress)
+      .with('owners', [signer.address])
+      .build();
+    const safeApps = [safeAppBuilder().build()];
+    const transaction = await multisigTransactionBuilder()
+      .with('safe', safeAddress)
+      .with('operation', Operation.DELEGATE)
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers: [signer],
+      });
+    const proposeTransactionDto = proposeTransactionDtoBuilder()
+      .with('to', transaction.to)
+      .with('value', transaction.value)
+      .with('data', transaction.data)
+      .with('nonce', transaction.nonce.toString())
+      .with('operation', transaction.operation)
+      .with('safeTxGas', transaction.safeTxGas!.toString())
+      .with('baseGas', transaction.baseGas!.toString())
+      .with('gasPrice', transaction.gasPrice!)
+      .with('gasToken', transaction.gasToken!)
+      .with('refundReceiver', transaction.refundReceiver)
+      .with('safeTxHash', transaction.safeTxHash)
+      .with('sender', transaction.confirmations![0].owner)
+      .with('signature', transaction.confirmations![0].signature)
+      .build();
+    const transactions = pageBuilder().build();
+    const token = tokenBuilder().build();
+    const gasToken = tokenBuilder().build();
+    const errorMessage = faker.word.words();
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+      const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+      const getContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const error = new NetworkResponseError(
+        new URL(getContractUrl),
+        { status: 404 } as Response,
+        { message: errorMessage },
+      );
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(transaction)),
+            status: 200,
+          });
+        case getMultisigTransactionsUrl:
+          return Promise.resolve({ data: rawify(transactions), status: 200 });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        case getSafeAppsUrl:
+          return Promise.resolve({ data: rawify(safeApps), status: 200 });
+        case getContractUrl:
+          return Promise.reject(error);
+        case getTokenUrl:
+          return Promise.resolve({ data: rawify(token), status: 200 });
+        case getGasTokenContractUrl:
+          return Promise.resolve({ data: rawify(gasToken), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    networkService.post.mockImplementation(({ url }) => {
+      const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      switch (url) {
+        case proposeTransactionUrl:
+          return Promise.resolve({ data: rawify({}), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chainId}/transactions/${safeAddress}/propose`)
+      .send(proposeTransactionDto)
+      .expect(404)
+      .expect({
+        code: 404,
+        message: errorMessage,
+      });
   });
 });
