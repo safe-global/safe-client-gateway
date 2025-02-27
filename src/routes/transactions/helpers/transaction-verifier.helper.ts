@@ -16,6 +16,8 @@ import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import {
+  isApprovedHashV,
+  isContractSignatureV,
   isEoaV,
   isEthSignV,
   normalizeEthSignSignature,
@@ -195,7 +197,7 @@ export class TransactionVerifierHelper {
         continue;
       }
 
-      let address: `0x${string}`;
+      let address: `0x${string}` | null;
       try {
         address = await this.recoverAddress({
           ...args,
@@ -253,7 +255,9 @@ export class TransactionVerifierHelper {
           safeTxHash: args.proposal.safeTxHash,
           signature,
         });
-        recoveredAddresses.push(recoveredAddress);
+        if (recoveredAddress) {
+          recoveredAddresses.push(recoveredAddress);
+        }
       } catch (e) {
         throw new UnprocessableEntityException(asError(e).message);
       }
@@ -296,7 +300,7 @@ export class TransactionVerifierHelper {
     chainId: string;
     safeTxHash: `0x${string}`;
     signature: `0x${string}`;
-  }): Promise<`0x${string}`> {
+  }): Promise<`0x${string}` | null> {
     const { v } = splitSignature(args.signature);
 
     if (isEthSignV(v) && !this.isEthSignEnabled) {
@@ -318,6 +322,9 @@ export class TransactionVerifierHelper {
       }
       // Approved hashes are valid
       // Contract signatures would need be verified on-chain
+      if (isApprovedHashV(v) || isContractSignatureV(v)) {
+        return null;
+      }
     } catch {
       this.logUnrecoverableAddress(args);
     }
