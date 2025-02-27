@@ -52,33 +52,31 @@ export class MessagesRepository implements IMessagesRepository {
   async createMessage(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    message: unknown;
+    message: string | Record<string, unknown>;
     safeAppId: number | null;
-    signature: string;
+    signature: `0x${string}`;
     origin: string | null;
   }): Promise<unknown> {
     const safe = await this.safeRepository.getSafe({
       chainId: args.chainId,
       address: args.safeAddress,
     });
+    await this.messageVerifier.verifyCreation({
+      chainId: args.chainId,
+      safe,
+      message: args.message,
+      signature: args.signature,
+    });
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const response = await transactionService.postMessage({
+    return transactionService.postMessage({
       safeAddress: args.safeAddress,
       message: args.message,
       safeAppId: args.safeAppId,
       signature: args.signature,
       origin: args.origin,
     });
-    const message = MessageSchema.parse(response);
-    this.messageVerifier.verifyMessageHash({
-      chainId: args.chainId,
-      safe,
-      expectedHash: message.messageHash,
-      message: message.message,
-    });
-    return message;
   }
 
   async updateMessageSignature(args: {
@@ -86,6 +84,19 @@ export class MessagesRepository implements IMessagesRepository {
     messageHash: `0x${string}`;
     signature: `0x${string}`;
   }): Promise<unknown> {
+    const message = await this.getMessageByHash({
+      chainId: args.chainId,
+      messageHash: args.messageHash,
+    });
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: message.safe,
+    });
+    await this.messageVerifier.verifyUpdate({
+      ...args,
+      safe,
+      message,
+    });
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );

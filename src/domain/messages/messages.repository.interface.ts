@@ -24,9 +24,9 @@ export interface IMessagesRepository {
   createMessage(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    message: unknown;
+    message: string | Record<string, unknown>;
     safeAppId: number;
-    signature: string;
+    signature: `0x${string}`;
     origin: string | null;
   }): Promise<unknown>;
 
