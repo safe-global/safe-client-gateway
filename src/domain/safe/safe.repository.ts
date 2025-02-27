@@ -1,4 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -32,17 +36,29 @@ import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creati
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
+  private readonly isDelegateCallEnabled: boolean;
+
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+    @Inject(IContractsRepository)
+    private readonly contractsRepository: IContractsRepository,
     private readonly transactionVerifier: TransactionVerifierHelper,
-  ) {}
+  ) {
+    this.isDelegateCallEnabled = this.configurationService.getOrThrow(
+      'features.delegateCall',
+    );
+  }
 
   async getSafe(args: {
     chainId: string;
@@ -516,6 +532,20 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
+
+    if (!this.isDelegateCallEnabled) {
+      try {
+        const contract = await this.contractsRepository.getContract({
+          chainId: args.chainId,
+          contractAddress: args.proposeTransactionDto.to,
+        });
+        if (!contract.trustedForDelegateCall) {
+          throw new Error('Delegate call is disabled');
+        }
+      } catch {
+        throw new UnprocessableEntityException('Delegate call is disabled');
+      }
+    }
 
     const safe = await this.getSafe({
       chainId: args.chainId,
