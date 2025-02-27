@@ -39,6 +39,7 @@ import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messag
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -84,7 +85,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       features: {
         ...baseConfiguration.features,
         ethSign: true,
-        delegateCall: true,
+        trustedDelegateCall: true,
       },
     });
 
@@ -229,7 +230,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       features: {
         ...baseConfiguration.features,
         ethSign: false,
-        delegateCall: true,
+        trustedDelegateCall: false,
       },
     });
     await initApp(testConfiguration);
@@ -306,7 +307,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       features: {
         ...baseConfiguration.features,
         ethSign: true,
-        delegateCall: false,
+        trustedDelegateCall: true,
       },
     });
     await initApp(testConfiguration);
@@ -323,6 +324,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       .build();
     const transaction = await multisigTransactionBuilder()
       .with('safe', safeAddress)
+      .with('operation', Operation.DELEGATE)
       .buildWithConfirmations({
         chainId,
         safe,

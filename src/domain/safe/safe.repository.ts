@@ -38,10 +38,11 @@ import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
-  private readonly isDelegateCallEnabled: boolean;
+  private readonly isTrustedDelegateCallEnabled: boolean;
 
   constructor(
     @Inject(ITransactionApiManager)
@@ -55,8 +56,8 @@ export class SafeRepository implements ISafeRepository {
     private readonly contractsRepository: IContractsRepository,
     private readonly transactionVerifier: TransactionVerifierHelper,
   ) {
-    this.isDelegateCallEnabled = this.configurationService.getOrThrow(
-      'features.delegateCall',
+    this.isTrustedDelegateCallEnabled = this.configurationService.getOrThrow(
+      'features.trustedDelegateCall',
     );
   }
 
@@ -533,7 +534,10 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
 
-    if (!this.isDelegateCallEnabled) {
+    if (
+      this.isTrustedDelegateCallEnabled &&
+      args.proposeTransactionDto.operation === Operation.DELEGATE
+    ) {
       try {
         const contract = await this.contractsRepository.getContract({
           chainId: args.chainId,

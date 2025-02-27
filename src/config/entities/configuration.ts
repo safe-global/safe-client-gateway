@@ -257,7 +257,8 @@ export default () => ({
         'true',
     },
     ethSign: process.env.FF_ETH_SIGN?.toLowerCase() === 'true',
-    delegateCall: process.env.FF_DELEGATE_CALL?.toLowerCase() === 'true',
+    trustedDelegateCall:
+      process.env.FF_TRUSTED_DELEGATE_CALL?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
