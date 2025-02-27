@@ -1064,7 +1064,7 @@ describe('TransactionVerifierHelper', () => {
         },
       );
 
-      it('should throw if the signature does not match the sender and no approved hashes or contract signatures are present', async () => {
+      it('should throw if the signature does not match the sender', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
           { length: faker.number.int({ min: 1, max: 5 }) },
@@ -1131,10 +1131,10 @@ describe('TransactionVerifierHelper', () => {
         });
       });
 
-      it('should not throw if the signature does not match the sender', async () => {
+      it('should throw it not all individual signatures, after being split, are from owners or delegates', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
+          { length: faker.number.int({ min: 2, max: 5 }) },
           () => {
             const privateKey = generatePrivateKey();
             return privateKeyToAccount(privateKey);
@@ -1158,12 +1158,15 @@ describe('TransactionVerifierHelper', () => {
           });
         if (
           !transaction.confirmations ||
-          transaction.confirmations.length === 0
+          transaction.confirmations.length < 2
         ) {
-          throw new Error('Transaction must have at least 1 confirmation');
+          throw new Error('Transaction must have at least 2 confirmations');
         }
-        const confirmation = faker.helpers.arrayElement(
-          transaction.confirmations,
+        const sender =
+          transaction.confirmations[transaction.confirmations.length - 1].owner;
+        safe.owners.pop();
+        const signature = concat(
+          transaction.confirmations.map(({ signature }) => signature!),
         );
         const proposal = proposeTransactionDtoBuilder()
           .with('to', transaction.to)
@@ -1177,8 +1180,8 @@ describe('TransactionVerifierHelper', () => {
           .with('gasToken', transaction.gasToken!)
           .with('refundReceiver', transaction.refundReceiver)
           .with('safeTxHash', transaction.safeTxHash)
-          .with('sender', getAddress(faker.finance.ethereumAddress()))
-          .with('signature', confirmation.signature)
+          .with('sender', sender)
+          .with('signature', signature)
           .build();
 
         await expect(
