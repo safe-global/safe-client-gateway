@@ -4,7 +4,7 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { recoverAddress, isAddressEqual, recoverMessageAddress } from 'viem';
+import { recoverAddress, recoverMessageAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   BaseMultisigTransaction,
@@ -256,9 +256,9 @@ export class TransactionVerifierHelper {
         continue;
       }
 
-      let address: `0x${string}` | null;
+      let potentialAddresses: Array<`0x${string}`>;
       try {
-        address = await this.recoverAddress({
+        potentialAddresses = await this.recoverPotentialAddresses({
           ...args,
           safeTxHash: args.transaction.safeTxHash,
           signature: confirmation.signature,
@@ -267,17 +267,25 @@ export class TransactionVerifierHelper {
         throw new BadGatewayException(asError(e).message);
       }
 
-      const isBlocked = address && this.blocklist.includes(address);
+      // Approved hashes or contract signatures
+      if (potentialAddresses.length === 0) {
+        continue;
+      }
+
+      const isBlocked = potentialAddresses.some((address) =>
+        this.blocklist.includes(address),
+      );
       if (isBlocked) {
         throw new BadGatewayException('Unauthorized address');
       }
 
-      if (
-        address &&
-        (!isAddressEqual(address, confirmation.owner) ||
-          // We can be certain of no ownership changes as we only verify the queue
-          !args.safe.owners.includes(address))
-      ) {
+      const isConfirmer = potentialAddresses.includes(confirmation.owner);
+      // We can be certain of no ownership changes as we only verify the queue
+      const isOwner = potentialAddresses.some((address) =>
+        args.safe.owners.includes(address),
+      );
+
+      if (!isConfirmer || !isOwner) {
         this.logInvalidSignature({
           ...args,
           safeTxHash: args.transaction.safeTxHash,
@@ -294,6 +302,10 @@ export class TransactionVerifierHelper {
     safe: Safe;
     proposal: ProposeTransactionDto;
   }): Promise<void> {
+    if (this.blocklist.includes(args.proposal.sender)) {
+      throw new UnprocessableEntityException('Unauthorized address');
+    }
+
     if (!args.proposal.signature) {
       return;
     }
@@ -311,30 +323,34 @@ export class TransactionVerifierHelper {
       throw new UnprocessableEntityException(ErrorMessage.UnrecoverableAddress);
     }
 
-    const recoveredAddresses: Array<`0x${string}`> = [];
+    const potentialAddresses: Array<`0x${string}`> = [];
     for (const signature of signatures) {
       try {
-        const recoveredAddress = await this.recoverAddress({
-          ...args,
-          safeTxHash: args.proposal.safeTxHash,
-          signature,
-        });
-        if (recoveredAddress) {
-          recoveredAddresses.push(recoveredAddress);
-        }
+        potentialAddresses.push(
+          ...(await this.recoverPotentialAddresses({
+            ...args,
+            safeTxHash: args.proposal.safeTxHash,
+            signature,
+          })),
+        );
       } catch (e) {
         throw new UnprocessableEntityException(asError(e).message);
       }
     }
 
-    const hasBlockedAddresses = recoveredAddresses.some((address) => {
+    // Approved hashes or contract signatures
+    if (potentialAddresses.length === 0) {
+      return;
+    }
+
+    const hasBlockedAddresses = potentialAddresses.some((address) => {
       return this.blocklist.includes(address);
     });
     if (hasBlockedAddresses) {
       throw new UnprocessableEntityException('Unauthorized address');
     }
 
-    const isSender = recoveredAddresses.includes(args.proposal.sender);
+    const isSender = potentialAddresses.includes(args.proposal.sender);
     if (!isSender) {
       this.logInvalidSignature({
         ...args,
@@ -345,10 +361,10 @@ export class TransactionVerifierHelper {
       throw new UnprocessableEntityException(ErrorMessage.InvalidSignature);
     }
 
-    const areOwners = recoveredAddresses.every((address) =>
+    const isOwner = potentialAddresses.some((address) =>
       args.safe.owners.includes(address),
     );
-    if (!areOwners) {
+    if (!isOwner) {
       const delegates = await this.delegatesV2Repository.getDelegates({
         chainId: args.chainId,
         safeAddress: args.safe.address,
@@ -374,9 +390,9 @@ export class TransactionVerifierHelper {
     transaction: MultisigTransaction;
     signature: `0x${string}`;
   }): Promise<void> {
-    let address: `0x${string}` | null;
+    let potentialAddresses: Array<`0x${string}`>;
     try {
-      address = await this.recoverAddress({
+      potentialAddresses = await this.recoverPotentialAddresses({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
         signature: args.signature,
@@ -385,23 +401,31 @@ export class TransactionVerifierHelper {
       throw new UnprocessableEntityException(asError(e).message);
     }
 
-    if (address && !args.safe.owners.includes(address)) {
+    // Approved hashes or contract signatures
+    if (potentialAddresses.length === 0) {
+      return;
+    }
+
+    if (
+      potentialAddresses.every((address) => !args.safe.owners.includes(address))
+    ) {
       this.logInvalidSignature({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
-        signer: address,
+        signer: 'Unknown',
         signature: args.signature,
       });
       throw new UnprocessableEntityException(ErrorMessage.InvalidSignature);
     }
   }
 
-  private async recoverAddress(args: {
+  // TODO: Propagate "potentialness" to message recovery
+  private async recoverPotentialAddresses(args: {
     safe: Safe;
     chainId: string;
     safeTxHash: `0x${string}`;
     signature: `0x${string}`;
-  }): Promise<`0x${string}` | null> {
+  }): Promise<Array<`0x${string}`>> {
     const { v } = splitSignature(args.signature);
 
     if (isEthSignV(v) && !this.isEthSignEnabled) {
@@ -410,21 +434,32 @@ export class TransactionVerifierHelper {
 
     try {
       if (isEoaV(v)) {
-        return await recoverAddress({
+        const eoaAddress = await recoverAddress({
           hash: args.safeTxHash,
           signature: args.signature,
         });
+
+        return [eoaAddress];
       }
       if (isEthSignV(v)) {
-        return await recoverMessageAddress({
-          message: { raw: args.safeTxHash },
-          signature: normalizeEthSignSignature(args.signature),
-        });
+        const signature = normalizeEthSignSignature(args.signature);
+
+        // We can't be certain if the message signed was the (raw) hash
+        return await Promise.all([
+          await recoverMessageAddress({
+            message: args.safeTxHash,
+            signature,
+          }),
+          await recoverMessageAddress({
+            message: { raw: args.safeTxHash },
+            signature,
+          }),
+        ]);
       }
       // Approved hashes are valid
       // Contract signatures would need be verified on-chain
       if (isApprovedHashV(v) || isContractSignatureV(v)) {
-        return null;
+        return [];
       }
     } catch {
       this.logUnrecoverableAddress(args);
@@ -511,7 +546,7 @@ export class TransactionVerifierHelper {
     chainId: string;
     safe: Safe;
     safeTxHash: `0x${string}`;
-    signer: `0x${string}`;
+    signer: `0x${string}` | 'Unknown';
     signature: `0x${string}`;
   }): void {
     this.loggingService.error({

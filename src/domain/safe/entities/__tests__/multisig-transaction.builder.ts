@@ -60,8 +60,12 @@ class BuilderWithConfirmations<
         if (signatureType === SignatureType.Eoa) {
           signature = await signer.sign({ hash: transaction.safeTxHash });
         } else {
+          const message = faker.datatype.boolean()
+            ? transaction.safeTxHash
+            : { raw: transaction.safeTxHash };
+
           signature = await signer
-            .signMessage({ message: { raw: transaction.safeTxHash } })
+            .signMessage({ message })
             .then(adjustEthSignSignature);
         }
 

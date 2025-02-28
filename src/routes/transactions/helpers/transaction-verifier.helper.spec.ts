@@ -1325,73 +1325,6 @@ describe('TransactionVerifierHelper', () => {
         });
       });
 
-      it('should throw it not all individual signatures, after being split, are from owners or delegates', async () => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from({ length: 4 }, () => {
-          const privateKey = generatePrivateKey();
-          return privateKeyToAccount(privateKey);
-        });
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .buildWithConfirmations({
-            chainId,
-            signers,
-            safe,
-          });
-        if (
-          !transaction.confirmations ||
-          transaction.confirmations.length < 2
-        ) {
-          throw new Error('Transaction must have at least 2 confirmations');
-        }
-        const sender =
-          transaction.confirmations[transaction.confirmations.length - 1].owner;
-        safe.owners.pop();
-        const signature = concat(
-          transaction.confirmations.map(({ signature }) => signature!),
-        );
-        const proposal = proposeTransactionDtoBuilder()
-          .with('to', transaction.to)
-          .with('value', transaction.value)
-          .with('data', transaction.data)
-          .with('nonce', transaction.nonce.toString())
-          .with('operation', transaction.operation)
-          .with('safeTxGas', transaction.safeTxGas!.toString())
-          .with('baseGas', transaction.baseGas!.toString())
-          .with('gasPrice', transaction.gasPrice!)
-          .with('gasToken', transaction.gasToken!)
-          .with('refundReceiver', transaction.refundReceiver)
-          .with('safeTxHash', transaction.safeTxHash)
-          .with('sender', sender)
-          .with('signature', signature)
-          .build();
-        mockDelegatesRepository.getDelegates.mockResolvedValue(
-          pageBuilder<Delegate>().with('results', []).build(),
-        );
-
-        await expect(
-          target.verifyProposal({ chainId, safe, proposal }),
-        ).rejects.toThrow(new BadGatewayException('Invalid signature'));
-
-        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-        expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-          message: 'Recovered address does not match signer',
-          chainId,
-          safeAddress: safe.address,
-          safeVersion: safe.version,
-          safeTxHash: transaction.safeTxHash,
-          signer: proposal.sender,
-          signature: proposal.signature,
-          type: 'TRANSACTION_VALIDITY',
-        });
-      });
-
       it('should not throw if the signature is not from an owner or a delegate', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
@@ -1914,7 +1847,7 @@ describe('TransactionVerifierHelper', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
-          signer: signer.address,
+          signer: 'Unknown',
           signature: transaction.confirmations![0].signature!,
           type: 'TRANSACTION_VALIDITY',
         });
