@@ -361,9 +361,7 @@ export class TransactionVerifierHelper {
       throw new UnprocessableEntityException(ErrorMessage.InvalidSignature);
     }
 
-    const isOwner = potentialAddresses.some((address) =>
-      args.safe.owners.includes(address),
-    );
+    const isOwner = args.safe.owners.includes(args.proposal.sender);
     if (!isOwner) {
       const delegates = await this.delegatesV2Repository.getDelegates({
         chainId: args.chainId,
