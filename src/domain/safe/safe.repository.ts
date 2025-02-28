@@ -182,6 +182,23 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
 
+    const transaction = await this.getMultiSigTransaction({
+      chainId: args.chainId,
+      safeTransactionHash: args.safeTxHash,
+    });
+
+    const safe = await this.getSafe({
+      chainId: args.chainId,
+      address: transaction.safe,
+    });
+
+    await this.transactionVerifier.verifyConfirmation({
+      chainId: args.chainId,
+      safe,
+      transaction,
+      signature: args.addConfirmationDto.signature,
+    });
+
     await transactionService.postConfirmation(args);
   }
 

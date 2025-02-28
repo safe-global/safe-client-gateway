@@ -68,7 +68,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       .post(
         `/v1/chains/${faker.string.numeric()}/transactions/${faker.string.hexadecimal()}/confirmations`,
       )
-      .send({ signedSafeTxHash: 1 });
+      .send({ signature: 1 });
   });
 
   it('should create a confirmation and return the updated transaction', async () => {
@@ -76,7 +76,6 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);
     const safe = safeBuilder().with('owners', [signer.address]).build();
-    const addConfirmationDto = addConfirmationDtoBuilder().build();
     const safeApps = [safeAppBuilder().build()];
     const contract = contractBuilder().build();
     const transaction = multisigToJson(
@@ -88,6 +87,9 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           safe,
         }),
     ) as MultisigTransaction;
+    const addConfirmationDto = addConfirmationDtoBuilder()
+      .with('signature', transaction.confirmations![0].signature!)
+      .build();
     const gasToken = tokenBuilder().build();
     const token = tokenBuilder().build();
     const rejectionTxsPage = pageBuilder().with('results', []).build();

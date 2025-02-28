@@ -260,7 +260,10 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
-      it('should validate an approved hash or contract signature', async () => {
+      it.each([
+        SignatureType.ApprovedHash as const,
+        SignatureType.ContractSignature as const,
+      ])('should validate a %s signature', async (signatureType) => {
         const chainId = faker.string.numeric();
         const privateKey = generatePrivateKey();
         const signer = privateKeyToAccount(privateKey);
@@ -273,11 +276,7 @@ describe('TransactionVerifierHelper', () => {
             signers: [signer],
             safe,
           });
-        transaction.confirmations![0].signatureType =
-          faker.helpers.arrayElement([
-            SignatureType.ApprovedHash,
-            SignatureType.ContractSignature,
-          ]);
+        transaction.confirmations![0].signatureType = signatureType;
 
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
@@ -826,7 +825,10 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
-      it('should validate an approved hash or contract signature', async () => {
+      it.each([
+        SignatureType.ApprovedHash as const,
+        SignatureType.ContractSignature as const,
+      ])('should validate a %s signature', async (signatureType) => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
           { length: faker.number.int({ min: 1, max: 5 }) },
@@ -849,11 +851,7 @@ describe('TransactionVerifierHelper', () => {
             signers: faker.helpers.arrayElements(signers),
             safe,
           });
-        transaction.confirmations![0].signatureType =
-          faker.helpers.arrayElement([
-            SignatureType.ApprovedHash,
-            SignatureType.ContractSignature,
-          ]);
+        transaction.confirmations![0].signatureType = signatureType;
         if (
           !transaction.confirmations ||
           transaction.confirmations.length === 0
@@ -1406,12 +1404,383 @@ describe('TransactionVerifierHelper', () => {
       await expect(
         target.verifyProposal({ chainId, safe, proposal }),
       ).rejects.toThrow(new BadGatewayException('eth_sign is disabled'));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
   });
 
-  it.todo('verifyConfirmation');
+  describe('verifyConfirmation', () => {
+    describe('safeTxHash verification', () => {
+      it('should validate a valid safeTxHash', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
 
-  it.todo(
-    'verifyConfirmation - should validate an approved hash or contract signature',
-  );
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).resolves.not.toThrow();
+      });
+
+      it('should throw if safeTxHash could not be calculated', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+        // @ts-expect-error - data is hex
+        transaction.data = faker.number.int();
+
+        await expect(() => {
+          return target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          });
+        }).rejects.toThrow(
+          new UnprocessableEntityException('Could not calculate safeTxHash'),
+        );
+
+        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
+        expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
+          message: 'Could not calculate safeTxHash',
+          chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          safeTxHash: transaction.safeTxHash,
+          transaction: {
+            to: transaction.to,
+            value: transaction.value,
+            data: transaction.data,
+            operation: transaction.operation,
+            safeTxGas: transaction.safeTxGas,
+            baseGas: transaction.baseGas,
+            gasPrice: transaction.gasPrice,
+            gasToken: transaction.gasToken,
+            refundReceiver: transaction.refundReceiver,
+            nonce: transaction.nonce,
+          },
+          type: 'TRANSACTION_VALIDITY',
+        });
+      });
+
+      it('should throw if safeTxHash is invalid', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+        transaction.data = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+
+        await expect(() => {
+          return target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          });
+        }).rejects.toThrow(
+          new UnprocessableEntityException('Invalid safeTxHash'),
+        );
+
+        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
+        expect(mockLoggingRepository.error).toHaveBeenCalledWith({
+          message: 'safeTxHash does not match',
+          chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          safeTxHash: transaction.safeTxHash,
+          transaction: {
+            to: transaction.to,
+            value: transaction.value,
+            data: transaction.data,
+            operation: transaction.operation,
+            safeTxGas: transaction.safeTxGas,
+            baseGas: transaction.baseGas,
+            gasPrice: transaction.gasPrice,
+            gasToken: transaction.gasToken,
+            refundReceiver: transaction.refundReceiver,
+            nonce: transaction.nonce,
+          },
+          type: 'TRANSACTION_VALIDITY',
+        });
+      });
+    });
+
+    describe('signature verification', () => {
+      it('should validate a signature', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).resolves.not.toThrow();
+      });
+
+      it.each([
+        SignatureType.ApprovedHash as const,
+        SignatureType.ContractSignature as const,
+      ])('should validate a %s signature', async (signatureType) => {
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: [signer],
+            safe,
+          });
+        transaction.confirmations![0].signatureType = signatureType;
+
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).resolves.not.toThrow();
+      });
+
+      it.each([SignatureType.Eoa as const, SignatureType.EthSign as const])(
+        'should throw if an an address cannot be recovered from an %s signature',
+        async (signatureType) => {
+          const chainId = faker.string.numeric();
+          const signers = Array.from(
+            { length: faker.number.int({ min: 1, max: 5 }) },
+            () => {
+              const privateKey = generatePrivateKey();
+              return privateKeyToAccount(privateKey);
+            },
+          );
+          const safe = safeBuilder()
+            .with(
+              'owners',
+              signers.map((s) => s.address),
+            )
+            .build();
+          const transaction = await multisigTransactionBuilder()
+            .with('safe', safe.address)
+            .with('isExecuted', false)
+            .buildWithConfirmations({
+              chainId,
+              signers: faker.helpers.arrayElements(signers, {
+                min: 1,
+                max: signers.length,
+              }),
+              safe,
+            });
+          const v = faker.helpers.arrayElement(
+            signatureType === SignatureType.Eoa ? [27, 28] : [31, 32],
+          );
+          transaction.confirmations![0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v.toString(16)}`;
+
+          await expect(
+            target.verifyConfirmation({
+              chainId,
+              safe,
+              transaction,
+              signature: transaction.confirmations![0].signature,
+            }),
+          ).rejects.toThrow(
+            new UnprocessableEntityException('Could not recover address'),
+          );
+
+          expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
+          expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
+            message: 'Could not recover address',
+            chainId,
+            safeAddress: safe.address,
+            safeVersion: safe.version,
+            safeTxHash: transaction.safeTxHash,
+            signature: transaction.confirmations![0].signature,
+            type: 'TRANSACTION_VALIDITY',
+          });
+        },
+      );
+
+      it('should throw if the signature is not from an owner', async () => {
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: [signer],
+            safe,
+          });
+        safe.owners = [getAddress(faker.finance.ethereumAddress())];
+
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).rejects.toThrow(
+          new UnprocessableEntityException('Invalid signature'),
+        );
+
+        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
+        expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
+          message: 'Recovered address does not match signer',
+          chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          safeTxHash: transaction.safeTxHash,
+          signer: signer.address,
+          signature: transaction.confirmations![0].signature!,
+          type: 'TRANSACTION_VALIDITY',
+        });
+      });
+
+      it('should block eth_sign', async () => {
+        initTarget(false);
+
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+            signatureType: SignatureType.EthSign,
+          });
+
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).rejects.toThrow(
+          new UnprocessableEntityException('eth_sign is disabled'),
+        );
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+      });
+    });
+  });
 });
