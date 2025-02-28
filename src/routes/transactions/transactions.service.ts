@@ -40,6 +40,7 @@ import { getAddress, isAddress } from 'viem';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -138,6 +139,17 @@ export class TransactionsService {
         );
       }
     }
+  }
+
+  async getBySafeTxHash(args: {
+    chainId: string;
+    safeTxHash: string;
+  }): Promise<TXSMultisigTransaction> {
+    const tx = await this.safeRepository.getMultiSigTransactionWithNoCache({
+      chainId: args.chainId,
+      safeTransactionHash: args.safeTxHash,
+    });
+    return new TXSMultisigTransaction(tx);
   }
 
   async getMultisigTransactions(args: {

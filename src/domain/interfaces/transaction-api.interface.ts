@@ -150,6 +150,10 @@ export interface ITransactionApi {
     safeTransactionHash: string,
   ): Promise<Raw<MultisigTransaction>>;
 
+  getMultisigTransactionWithNoCache(
+    safeTransactionHash: string,
+  ): Promise<Raw<MultisigTransaction>>;
+
   deleteTransaction(args: {
     safeTxHash: string;
     signature: string;

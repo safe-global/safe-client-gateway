@@ -729,6 +729,20 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getMultisigTransactionWithNoCache(
+    safeTransactionHash: string,
+  ): Promise<Raw<MultisigTransaction>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}`;
+      const { data } = await this.networkService.get<Raw<MultisigTransaction>>({
+        url,
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
   async deleteTransaction(args: {
     safeTxHash: string;
     signature: string;

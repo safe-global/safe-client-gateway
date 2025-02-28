@@ -41,6 +41,7 @@ import { DeleteTransactionDtoSchema } from '@/routes/transactions/entities/schem
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { CreationTransaction } from '@/routes/transactions/entities/creation-transaction.entity';
 import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
+import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
 
 @ApiTags('transactions')
 @Controller({
@@ -59,6 +60,18 @@ export class TransactionsController {
     return this.transactionsService.getById({
       chainId,
       txId: id,
+    });
+  }
+
+  @ApiOkResponse({ type: TXSMultisigTransaction })
+  @Get(`chains/:chainId/multisig-transactions/:safeTxHash`)
+  async getMultisigTransactionBySafeTxHash(
+    @Param('chainId') chainId: string,
+    @Param('safeTxHash') safeTxHash: string,
+  ): Promise<TXSMultisigTransaction> {
+    return this.transactionsService.getBySafeTxHash({
+      chainId,
+      safeTxHash,
     });
   }
 
