@@ -541,7 +541,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
   it('should return a 502 if there is a safeTxHash mismatch', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const safe = safeBuilder().with('nonce', 1).build();
     const getTransaction = (nonce: number): MultisigTransaction => {
       const transaction = multisigTransactionBuilder()
         .with('safe', safe.address)
@@ -618,6 +618,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         safe,
@@ -627,6 +628,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       await multisigTransactionBuilder()
         .with('safe', safe.address)
         .with('isExecuted', false)
+        .with('nonce', safe.nonce)
         .buildWithConfirmations({
           chainId: chain.chainId,
           safe,
@@ -689,6 +691,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         safe,
@@ -698,6 +701,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       await multisigTransactionBuilder()
         .with('safe', safe.address)
         .with('isExecuted', false)
+        .with('nonce', safe.nonce)
         .buildWithConfirmations({
           chainId: chain.chainId,
           safe,
@@ -773,6 +777,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         signers,
@@ -781,6 +786,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const invalidEoaMultisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         signers: [signers[0]],
@@ -847,6 +853,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         signers: [signer],
@@ -856,6 +863,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     const invalidEthSignMultisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         signers: [signer],

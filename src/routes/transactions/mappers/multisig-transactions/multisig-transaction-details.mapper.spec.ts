@@ -104,6 +104,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const transaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId,
         safe,
@@ -155,6 +156,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const transaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId,
         safe,
@@ -214,6 +216,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const transaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId,
         safe,
