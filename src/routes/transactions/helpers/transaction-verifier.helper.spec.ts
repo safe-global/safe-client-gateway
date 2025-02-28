@@ -675,6 +675,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', faker.number.int({ min: safe.nonce }))
           .buildWithConfirmations({
             chainId,
             signers: [blockedSigner, legitSigner],
