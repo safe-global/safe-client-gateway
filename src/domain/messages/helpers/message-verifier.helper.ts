@@ -13,6 +13,7 @@ import { recoverAddress, TypedDataDefinition } from 'viem';
 @Injectable()
 export class MessageVerifierHelper {
   private readonly isMessageVerificationEnabled: boolean;
+  private readonly blocklist: Array<`0x${string}`>;
 
   constructor(
     @Inject(IConfigurationService)
@@ -20,6 +21,9 @@ export class MessageVerifierHelper {
   ) {
     this.isMessageVerificationEnabled = this.configurationService.getOrThrow(
       'features.messageVerification',
+    );
+    this.blocklist = this.configurationService.getOrThrow(
+      'blockchain.blocklist',
     );
   }
 
@@ -112,6 +116,11 @@ export class MessageVerifierHelper {
       messageHash: args.messageHash,
       signature: args.signature,
     });
+
+    const isBlocked = this.blocklist.includes(signerAddress);
+    if (isBlocked) {
+      throw new BadGatewayException('Unauthorized address');
+    }
 
     const isOwner = args.safe.owners.includes(signerAddress);
     if (!isOwner) {
