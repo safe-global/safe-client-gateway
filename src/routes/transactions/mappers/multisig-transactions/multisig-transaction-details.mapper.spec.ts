@@ -64,14 +64,18 @@ const mockLoggingService = {
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
-  function initTarget(ethSign: boolean): void {
+  function initTarget(args: {
+    ethSign: boolean;
+    blocklist: Array<`0x${string}`>;
+  }): void {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'blockchain.blocklist') return args.blocklist;
       return [
         'features.hashVerification.api',
         'features.signatureVerification.api',
         'features.hashVerification.proposal',
         'features.signatureVerification.proposal',
-        ethSign ? 'features.ethSign' : null,
+        args.ethSign ? 'features.ethSign' : null,
       ].includes(key);
     });
     mapper = new MultisigTransactionDetailsMapper(
@@ -93,7 +97,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    initTarget(true);
+    initTarget({ ethSign: true, blocklist: [] });
   });
 
   it('should return a TransactionDetails object with null addressInfoIndex', async () => {
@@ -207,7 +211,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
   });
 
   it('should block eth_sign', async () => {
-    initTarget(false);
+    initTarget({ ethSign: false, blocklist: [] });
 
     const chainId = faker.string.numeric();
     const privateKey = generatePrivateKey();

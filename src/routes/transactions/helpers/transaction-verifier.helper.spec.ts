@@ -32,14 +32,18 @@ const mockLoggingRepository = jest.mocked({
 describe('TransactionVerifierHelper', () => {
   let target: TransactionVerifierHelper;
 
-  function initTarget(ethSign: boolean): void {
+  function initTarget(args: {
+    ethSign: boolean;
+    blocklist: Array<`0x${string}`>;
+  }): void {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'blockchain.blocklist') return args.blocklist;
       return [
         'features.hashVerification.api',
         'features.signatureVerification.api',
         'features.hashVerification.proposal',
         'features.signatureVerification.proposal',
-        ethSign ? 'features.ethSign' : null,
+        args.ethSign ? 'features.ethSign' : null,
       ].includes(key);
     });
 
@@ -53,7 +57,7 @@ describe('TransactionVerifierHelper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    initTarget(true);
+    initTarget({ ethSign: true, blocklist: [] });
   });
 
   describe('verifyApiTransaction', () => {
@@ -627,7 +631,7 @@ describe('TransactionVerifierHelper', () => {
       });
 
       it('should block eth_sign', async () => {
-        initTarget(false);
+        initTarget({ ethSign: false, blocklist: [] });
 
         const chainId = faker.string.numeric();
         const privateKey = generatePrivateKey();
@@ -647,6 +651,39 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(new BadGatewayException('eth_sign is disabled'));
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+      });
+
+      it('should block addresses in the blocklist', async () => {
+        const chainId = faker.string.numeric();
+        const blockedPrivateKey = generatePrivateKey();
+        const blockedSigner = privateKeyToAccount(blockedPrivateKey);
+        const legitPrivateKey = generatePrivateKey();
+        const legitSigner = privateKeyToAccount(legitPrivateKey);
+        initTarget({
+          ethSign: true,
+          blocklist: [
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(blockedSigner.address),
+          ],
+        });
+        const safe = safeBuilder()
+          .with('owners', [blockedSigner.address, legitSigner.address])
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: [blockedSigner, legitSigner],
+            safe,
+          });
+
+        await expect(
+          target.verifyApiTransaction({ chainId, safe, transaction }),
+        ).rejects.toThrow(new BadGatewayException('Unauthorized address'));
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       });
@@ -1424,10 +1461,76 @@ describe('TransactionVerifierHelper', () => {
           type: 'TRANSACTION_VALIDITY',
         });
       });
+
+      it('should block addresses in the blocklist', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        signers.push(privateKeyToAccount(generatePrivateKey()));
+        // Last signer is blocked
+        const blockedAddress = getAddress(signers[signers.length - 1].address);
+        initTarget({
+          ethSign: true,
+          blocklist: [
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+            blockedAddress,
+            getAddress(faker.finance.ethereumAddress()),
+          ],
+        });
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId,
+            signers,
+            safe,
+          });
+        if (
+          !transaction.confirmations ||
+          transaction.confirmations.length === 0
+        ) {
+          throw new Error('Transaction must have at least 1 confirmation');
+        }
+        const proposal = proposeTransactionDtoBuilder()
+          .with('to', transaction.to)
+          .with('value', transaction.value)
+          .with('data', transaction.data)
+          .with('nonce', transaction.nonce.toString())
+          .with('operation', transaction.operation)
+          .with('safeTxGas', transaction.safeTxGas!.toString())
+          .with('baseGas', transaction.baseGas!.toString())
+          .with('gasPrice', transaction.gasPrice!)
+          .with('gasToken', transaction.gasToken!)
+          .with('refundReceiver', transaction.refundReceiver)
+          .with('safeTxHash', transaction.safeTxHash)
+          .with('sender', blockedAddress)
+          // Use the last signer's signature
+          .with(
+            'signature',
+            transaction.confirmations[transaction.confirmations.length - 1]
+              .signature,
+          )
+          .build();
+
+        await expect(
+          target.verifyProposal({ chainId, safe, proposal }),
+        ).rejects.toThrow(new BadGatewayException('Unauthorized address'));
+      });
     });
 
     it('should block eth_sign', async () => {
-      initTarget(false);
+      initTarget({ ethSign: false, blocklist: [] });
 
       const chainId = faker.string.numeric();
       const signers = Array.from(

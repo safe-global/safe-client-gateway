@@ -1,3 +1,4 @@
+import { getBlocklist } from '@/config/entities/blocklist.config';
 import { randomBytes } from 'crypto';
 
 // Custom configuration for the application
@@ -145,6 +146,7 @@ export default () => ({
     },
   },
   blockchain: {
+    blocklist: getBlocklist(),
     infura: {
       apiKey: process.env.INFURA_API_KEY,
     },
