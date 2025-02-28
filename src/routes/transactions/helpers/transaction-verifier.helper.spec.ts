@@ -76,6 +76,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -108,6 +109,44 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', true)
+          .with('nonce', safe.nonce)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+        // @ts-expect-error - data is hex
+        transaction.data = faker.number.int();
+
+        await expect(
+          target.verifyApiTransaction({ chainId, safe, transaction }),
+        ).resolves.not.toThrow();
+      });
+
+      it('should not validate queued transactions with a nonce lower than the Safe', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const nonce = faker.number.int({ min: 1, max: 5 });
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .with('nonce', nonce)
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', true)
+          .with('nonce', nonce - 1)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -142,6 +181,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -200,6 +240,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -249,6 +290,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: [signer],
@@ -271,6 +313,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: [signer],
@@ -301,6 +344,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -321,6 +365,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: [],
@@ -339,6 +384,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: [],
@@ -359,6 +405,32 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', true)
+          .with('nonce', safe.nonce)
+          .buildWithConfirmations({
+            chainId,
+            // Duplicate owners
+            signers: [signer, signer],
+            safe,
+          });
+
+        await expect(
+          target.verifyApiTransaction({ chainId, safe, transaction }),
+        ).resolves.not.toThrow();
+      });
+
+      it('should not validate queued transactions with a nonce lower than the Safe', async () => {
+        const chainId = faker.string.numeric();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const nonce = faker.number.int({ min: 1, max: 5 });
+        const safe = safeBuilder()
+          .with('owners', [signer.address])
+          .with('nonce', nonce)
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('isExecuted', true)
+          .with('nonce', nonce - 1)
           .buildWithConfirmations({
             chainId,
             // Duplicate owners
@@ -379,6 +451,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: [signer, signer],
@@ -418,6 +491,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers,
@@ -454,6 +528,7 @@ describe('TransactionVerifierHelper', () => {
           const transaction = await multisigTransactionBuilder()
             .with('safe', safe.address)
             .with('isExecuted', false)
+            .with('nonce', safe.nonce)
             .buildWithConfirmations({
               chainId,
               signers: [signer],
@@ -491,6 +566,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: [signer],
@@ -525,6 +601,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: [signer],
@@ -559,6 +636,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: [signer],

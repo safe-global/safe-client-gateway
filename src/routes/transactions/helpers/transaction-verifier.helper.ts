@@ -80,7 +80,10 @@ export class TransactionVerifierHelper {
     safe: Safe;
     transaction: MultisigTransaction;
   }): Promise<void> {
-    if (args.transaction.isExecuted) {
+    if (
+      args.transaction.isExecuted ||
+      args.transaction.nonce < args.safe.nonce
+    ) {
       return;
     }
     if (this.isApiHashVerificationEnabled) {

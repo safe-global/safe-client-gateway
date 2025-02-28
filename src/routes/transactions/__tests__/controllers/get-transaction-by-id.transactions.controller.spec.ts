@@ -979,6 +979,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const multisigTransaction = multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .build();
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -1024,6 +1025,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         safe,
@@ -1073,6 +1075,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         safe,
@@ -1127,6 +1130,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         signers: [signer],
@@ -1181,6 +1185,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         chainId: chain.chainId,
         signers: [signer],
@@ -1250,6 +1255,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('safe', safe.address)
       .with('nonce', safe.nonce)
       .with('isExecuted', false)
+      .with('nonce', safe.nonce)
       .buildWithConfirmations({
         signers: signers,
         chainId: chain.chainId,
