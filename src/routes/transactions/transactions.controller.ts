@@ -421,7 +421,7 @@ export class TransactionsController {
 
   @HttpCode(200)
   @ApiOkResponse({ type: TXSCreationTransaction })
-  @Get('chains/:chainId/safes/:safeAddress/transactions/creation/raw')
+  @Get('chains/:chainId/safes/:safeAddress/creation/raw')
   async getDomainCreationTransaction(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
