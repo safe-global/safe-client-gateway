@@ -340,10 +340,9 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const multiSigTransaction =
-      await transactionService.getMultisigTransactionWithNoCache(
-        args.safeTransactionHash,
-      );
+    const multiSigTransaction = await transactionService.getMultisigTransaction(
+      args.safeTransactionHash,
+    );
 
     return MultisigTransactionSchema.parse(multiSigTransaction);
   }
