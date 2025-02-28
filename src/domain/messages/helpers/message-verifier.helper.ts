@@ -117,7 +117,7 @@ export class MessageVerifierHelper {
       signature: args.signature,
     });
 
-    const isBlocked = signerAddress && this.blocklist.includes(signerAddress);
+    const isBlocked = this.blocklist.includes(signerAddress);
     if (isBlocked) {
       throw new BadGatewayException('Unauthorized address');
     }

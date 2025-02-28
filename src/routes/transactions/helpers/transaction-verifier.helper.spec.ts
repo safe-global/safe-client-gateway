@@ -675,6 +675,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('isExecuted', false)
+          .with('nonce', faker.number.int({ min: safe.nonce }))
           .buildWithConfirmations({
             chainId,
             signers: [blockedSigner, legitSigner],
@@ -1920,7 +1921,7 @@ describe('TransactionVerifierHelper', () => {
       });
 
       it('should block eth_sign', async () => {
-        initTarget(false);
+        initTarget({ ethSign: false, blocklist: [] });
 
         const chainId = faker.string.numeric();
         const signers = Array.from(
