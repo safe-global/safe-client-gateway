@@ -213,6 +213,10 @@ export interface ITransactionApi {
     safeAddress: `0x${string}`,
   ): Promise<Raw<CreationTransaction>>;
 
+  getCreationTransactionWithNoCache(
+    safeAddress: `0x${string}`,
+  ): Promise<Raw<CreationTransaction>>;
+
   getAllTransactions(args: {
     safeAddress: `0x${string}`;
     ordering?: string;

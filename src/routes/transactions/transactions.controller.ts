@@ -43,6 +43,7 @@ import { CreationTransaction } from '@/routes/transactions/entities/creation-tra
 import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
 import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-multisig-transaction-page.entity';
+import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creation-transaction.entity';
 
 @ApiTags('transactions')
 @Controller({
@@ -413,6 +414,20 @@ export class TransactionsController {
     safeAddress: `0x${string}`,
   ): Promise<CreationTransaction> {
     return this.transactionsService.getCreationTransaction({
+      chainId,
+      safeAddress,
+    });
+  }
+
+  @HttpCode(200)
+  @ApiOkResponse({ type: TXSCreationTransaction })
+  @Get('chains/:chainId/safes/:safeAddress/creation/raw')
+  async getDomainCreationTransaction(
+    @Param('chainId') chainId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: `0x${string}`,
+  ): Promise<TXSCreationTransaction> {
+    return this.transactionsService.getDomainCreationTransaction({
       chainId,
       safeAddress,
     });

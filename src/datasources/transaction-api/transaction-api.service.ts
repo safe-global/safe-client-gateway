@@ -839,6 +839,20 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getCreationTransactionWithNoCache(
+    safeAddress: `0x${string}`,
+  ): Promise<Raw<CreationTransaction>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/creation/`;
+      const { data } = await this.networkService.get({
+        url,
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
   async getAllTransactions(args: {
     safeAddress: `0x${string}`;
     ordering?: string;

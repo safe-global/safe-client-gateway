@@ -42,6 +42,7 @@ import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/mul
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-multisig-transaction-page.entity';
+import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creation-transaction.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -511,6 +512,14 @@ export class TransactionsService {
     safeAddress: `0x${string}`;
   }): Promise<CreationTransaction> {
     return this.safeRepository.getCreationTransaction(args);
+  }
+
+  async getDomainCreationTransaction(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<TXSCreationTransaction> {
+    const tx = await this.safeRepository.getCreationTransaction(args);
+    return new TXSCreationTransaction(tx);
   }
 
   /**
