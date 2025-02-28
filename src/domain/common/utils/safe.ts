@@ -1,11 +1,53 @@
 import semverSatisfies from 'semver/functions/satisfies';
-import { hashTypedData } from 'viem';
+import { hashMessage, hashTypedData, type TypedDataDefinition } from 'viem';
+import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 
 const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';
 const BASE_GAS_SAFETX_HASH_VERSION = '>=1.0.0';
+const MESSAGE_PRIMARY_TYPE = 'SafeMessage';
+
+export function getSafeMessageMessageHash(args: {
+  chainId: string;
+  safe: Safe;
+  message: string | Record<string, unknown>;
+}): `0x${string}` {
+  if (!args.safe.version) {
+    throw new Error('Safe version is required');
+  }
+  try {
+    const message = MessageSchema.shape.message.parse(args.message) as
+      | string
+      | TypedDataDefinition;
+
+    return hashTypedData({
+      domain: _getSafeDomain({
+        chainId: args.chainId,
+        address: args.safe.address,
+        version: args.safe.version,
+      }),
+      primaryType: MESSAGE_PRIMARY_TYPE,
+      types: {
+        [MESSAGE_PRIMARY_TYPE]: [
+          {
+            name: 'message',
+            type: 'bytes',
+          },
+        ],
+      },
+      message: {
+        message:
+          typeof message === 'string'
+            ? hashMessage(message)
+            : hashTypedData(message),
+      },
+    });
+  } catch {
+    throw new Error('Failed to hash message data');
+  }
+}
 
 export type BaseMultisigTransaction = Pick<
   MultisigTransaction,
@@ -47,7 +89,7 @@ export function getSafeTxHash(args: {
     throw new Error('Safe version is required');
   }
 
-  const domain = _getSafeTxDomain({
+  const domain = _getSafeDomain({
     address: args.safe.address,
     version: args.safe.version,
     chainId: args.chainId,
@@ -70,7 +112,7 @@ export function getSafeTxHash(args: {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function _getSafeTxDomain(args: {
+export function _getSafeDomain(args: {
   address: Safe['address'];
   version: NonNullable<Safe['version']>;
   chainId: string;

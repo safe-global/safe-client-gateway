@@ -4,7 +4,7 @@ import { Builder } from '@/__tests__/builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import {
-  _getSafeTxDomain,
+  _getSafeDomain,
   _getSafeTxTypesAndMessage,
   getSafeTxHash,
 } from '@/domain/common/utils/safe';
@@ -257,7 +257,7 @@ describe('Safe', () => {
         const chainId = faker.string.numeric();
         const address = getAddress(faker.finance.ethereumAddress());
 
-        const result = _getSafeTxDomain({
+        const result = _getSafeDomain({
           address,
           version,
           chainId,
@@ -275,7 +275,7 @@ describe('Safe', () => {
         const chainId = faker.string.numeric();
         const address = getAddress(faker.finance.ethereumAddress());
 
-        const result = _getSafeTxDomain({
+        const result = _getSafeDomain({
           address,
           version,
           chainId,

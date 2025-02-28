@@ -256,6 +256,8 @@ export default () => ({
         process.env.FF_SIGNATURE_VERIFICATION_PROPOSAL?.toLowerCase() ===
         'true',
     },
+    messageVerification:
+      process.env.FF_MESSAGE_VERIFICATION?.toLowerCase() === 'true',
     ethSign: process.env.FF_ETH_SIGN?.toLowerCase() === 'true',
     trustedDelegateCall:
       process.env.FF_TRUSTED_DELEGATE_CALL?.toLowerCase() === 'true',

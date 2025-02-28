@@ -29,7 +29,7 @@ export class MessagesService {
 
   async getMessageByHash(args: {
     chainId: string;
-    messageHash: string;
+    messageHash: `0x${string}`;
   }): Promise<Message> {
     const message = await this.messagesRepository.getMessageByHash(args);
     const safe = await this.safeRepository.getSafe({
@@ -138,7 +138,7 @@ export class MessagesService {
 
   async updateMessageSignature(args: {
     chainId: string;
-    messageHash: string;
+    messageHash: `0x${string}`;
     updateMessageSignatureDto: UpdateMessageSignatureDto;
   }): Promise<unknown> {
     return await this.messagesRepository.updateMessageSignature({

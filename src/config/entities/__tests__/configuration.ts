@@ -167,6 +167,7 @@ export default (): ReturnType<typeof configuration> => ({
       api: true,
       proposal: true,
     },
+    messageVerification: true,
     ethSign: true,
     trustedDelegateCall: false,
   },
