@@ -300,6 +300,20 @@ export class SafeRepository implements ISafeRepository {
     return CreationTransactionSchema.parse(createTransaction);
   }
 
+  async getCreationTransactionWithNoCache(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<CreationTransaction> {
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+    const createTransaction =
+      await transactionService.getCreationTransactionWithNoCache(
+        args.safeAddress,
+      );
+    return CreationTransactionSchema.parse(createTransaction);
+  }
+
   async getTransactionHistory(args: {
     chainId: string;
     safeAddress: `0x${string}`;
