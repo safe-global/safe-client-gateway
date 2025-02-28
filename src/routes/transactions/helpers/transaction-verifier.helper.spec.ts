@@ -1920,7 +1920,7 @@ describe('TransactionVerifierHelper', () => {
       });
 
       it('should block eth_sign', async () => {
-        initTarget(false);
+        initTarget({ ethSign: false, blocklist: [] });
 
         const chainId = faker.string.numeric();
         const signers = Array.from(
