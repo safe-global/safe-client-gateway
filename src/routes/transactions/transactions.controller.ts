@@ -123,7 +123,7 @@ export class TransactionsController {
     nonce__gte?: number,
     @Query('nonce', new ParseIntPipe({ optional: true })) nonce?: number,
     @Query('safe_tx_hash') safe_tx_hash?: string,
-    @Query('to', new ValidationPipe(AddressSchema)) to?: string,
+    @Query('to') to?: string,
     @Query('value__lt', new ParseIntPipe({ optional: true }))
     value__lt?: number,
     @Query('value__gt', new ParseIntPipe({ optional: true }))
