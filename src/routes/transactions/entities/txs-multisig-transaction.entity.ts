@@ -69,8 +69,6 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
   signatures: `0x${string}` | null;
   @ApiProperty()
   trusted: boolean;
-  @ApiProperty()
-  txType: 'MULTISIG_TRANSACTION';
 
   constructor(args: {
     safe: `0x${string}`;
@@ -136,6 +134,5 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
     this.confirmations = args.confirmations;
     this.signatures = args.signatures;
     this.trusted = args.trusted;
-    this.txType = 'MULTISIG_TRANSACTION';
   }
 }

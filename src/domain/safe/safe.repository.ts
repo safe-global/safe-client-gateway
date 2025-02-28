@@ -355,12 +355,22 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const multiSigTransaction =
-      await transactionService.getMultisigTransactionWithNoCache(
-        args.safeTransactionHash,
-      );
+    const multisigTransaction = await transactionService
+      .getMultisigTransactionWithNoCache(args.safeTransactionHash)
+      .then(MultisigTransactionSchema.parse);
 
-    return MultisigTransactionSchema.parse(multiSigTransaction);
+    const safe = await this.getSafe({
+      chainId: args.chainId,
+      address: multisigTransaction.safe,
+    });
+
+    await this.transactionVerifier.verifyApiTransaction({
+      chainId: args.chainId,
+      transaction: multisigTransaction,
+      safe: safe,
+    });
+
+    return multisigTransaction;
   }
 
   async deleteTransaction(args: {
@@ -396,6 +406,58 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
     return transactionService.clearMultisigTransactions(args.safeAddress);
+  }
+
+  async getMultisigTransactionsWithNoCache(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    // Transaction Service parameters
+    failed?: boolean;
+    modified__lt?: string;
+    modified__gt?: string;
+    modified__lte?: string;
+    modified__gte?: string;
+    nonce__lt?: number;
+    nonce__gt?: number;
+    nonce__lte?: number;
+    nonce__gte?: number;
+    nonce?: number;
+    safe_tx_hash?: string;
+    to?: string;
+    value__lt?: number;
+    value__gt?: number;
+    value?: number;
+    executed?: boolean;
+    has_confirmations?: boolean;
+    trusted?: boolean;
+    execution_date__gte?: string;
+    execution_date__lte?: string;
+    submission_date__gte?: string;
+    submission_date__lte?: string;
+    transaction_hash?: string;
+    ordering?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<MultisigTransaction>> {
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+    const [multisigTransactions, safe] = await Promise.all([
+      transactionService
+        .getMultisigTransactionsWithNoCache(args)
+        .then(MultisigTransactionPageSchema.parse),
+      this.getSafe({ chainId: args.chainId, address: args.safeAddress }),
+    ]);
+
+    for (const transaction of multisigTransactions.results) {
+      await this.transactionVerifier.verifyApiTransaction({
+        chainId: args.chainId,
+        transaction,
+        safe,
+      });
+    }
+
+    return multisigTransactions;
   }
 
   async getMultisigTransactions(args: {

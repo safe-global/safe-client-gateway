@@ -41,6 +41,7 @@ import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
+import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-multisig-transaction-page.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -141,7 +142,7 @@ export class TransactionsService {
     }
   }
 
-  async getBySafeTxHash(args: {
+  async getDomainMultisigTransactionBySafeTxHash(args: {
     chainId: string;
     safeTxHash: string;
   }): Promise<TXSMultisigTransaction> {
@@ -202,6 +203,40 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  async getDomainMultisigTransactions(args: {
+    safeAddress: `0x${string}`;
+    chainId: string;
+    // Transaction Service parameters
+    failed?: boolean;
+    modified__lt?: string;
+    modified__gt?: string;
+    modified__lte?: string;
+    modified__gte?: string;
+    nonce__lt?: number;
+    nonce__gt?: number;
+    nonce__lte?: number;
+    nonce__gte?: number;
+    nonce?: number;
+    safe_tx_hash?: string;
+    to?: string;
+    value__lt?: number;
+    value__gt?: number;
+    value?: number;
+    executed?: boolean;
+    has_confirmations?: boolean;
+    trusted?: boolean;
+    execution_date__gte?: string;
+    execution_date__lte?: string;
+    submission_date__gte?: string;
+    submission_date__lte?: string;
+    transaction_hash?: string;
+    ordering?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<TXSMultisigTransactionPage> {
+    return await this.safeRepository.getMultisigTransactionsWithNoCache(args);
   }
 
   async deleteTransaction(args: {
