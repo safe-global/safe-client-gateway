@@ -1007,7 +1007,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .expect(502)
       .expect({
         message: 'Invalid safeTxHash',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -1057,7 +1056,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .expect(502)
       .expect({
         message: 'Duplicate owners in confirmations',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -1111,7 +1109,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .expect(502)
       .expect({
         message: 'Duplicate signatures in confirmations',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -1166,7 +1163,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .expect(502)
       .expect({
         message: 'Invalid signature',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -1221,7 +1217,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .expect(502)
       .expect({
         message: 'Invalid signature',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -1288,7 +1283,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .expect(502)
       .expect({
         message: 'eth_sign is disabled',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });

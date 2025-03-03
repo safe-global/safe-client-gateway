@@ -1,8 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -39,6 +35,7 @@ import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transac
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import { TransactionValidityError } from '@/routes/transactions/errors/transaction-validity.error';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -642,9 +639,13 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
 
+    const error = new TransactionValidityError({
+      code: HttpStatus.UNPROCESSABLE_ENTITY,
+      type: 'DelegateCallDisabled',
+    });
     if (args.proposeTransactionDto.operation === Operation.DELEGATE) {
       if (!this.isTrustedDelegateCallEnabled) {
-        throw new UnprocessableEntityException('Delegate call is disabled');
+        throw error;
       }
       try {
         const contract = await this.contractsRepository.getContract({
@@ -652,10 +653,10 @@ export class SafeRepository implements ISafeRepository {
           contractAddress: args.proposeTransactionDto.to,
         });
         if (!contract.trustedForDelegateCall) {
-          throw new Error('Delegate call is disabled');
+          throw error;
         }
       } catch {
-        throw new UnprocessableEntityException('Delegate call is disabled');
+        throw error;
       }
     }
 

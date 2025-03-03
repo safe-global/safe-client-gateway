@@ -1,8 +1,5 @@
 import { faker } from '@faker-js/faker';
-import {
-  BadGatewayException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { concat, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
@@ -16,6 +13,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import { TransactionValidityError } from '@/routes/transactions/errors/transaction-validity.error';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -200,7 +198,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(() => {
           return target.verifyApiTransaction({ chainId, safe, transaction });
         }).rejects.toThrow(
-          new BadGatewayException('Could not calculate safeTxHash'),
+          new TransactionValidityError({
+            code: HttpStatus.BAD_GATEWAY,
+            type: 'MalformedHash',
+          }),
         );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -259,7 +260,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(() => {
           return target.verifyApiTransaction({ chainId, safe, transaction });
-        }).rejects.toThrow(new BadGatewayException('Invalid safeTxHash'));
+        }).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.BAD_GATEWAY,
+            type: 'HashMismatch',
+          }),
+        );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
         expect(mockLoggingRepository.error).toHaveBeenCalledWith({
@@ -465,7 +471,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(
-          new BadGatewayException('Duplicate owners in confirmations'),
+          new TransactionValidityError({
+            code: HttpStatus.BAD_GATEWAY,
+            type: 'DuplicateOwners',
+          }),
         );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -507,7 +516,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(
-          new BadGatewayException('Duplicate signatures in confirmations'),
+          new TransactionValidityError({
+            code: HttpStatus.BAD_GATEWAY,
+            type: 'DuplicateSignatures',
+          }),
         );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -546,7 +558,10 @@ describe('TransactionVerifierHelper', () => {
           await expect(
             target.verifyApiTransaction({ chainId, safe, transaction }),
           ).rejects.toThrow(
-            new BadGatewayException('Could not recover address'),
+            new TransactionValidityError({
+              code: HttpStatus.BAD_GATEWAY,
+              type: 'UnrecoverableAddress',
+            }),
           );
 
           expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -582,7 +597,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(new BadGatewayException('Invalid signature'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.BAD_GATEWAY,
+            type: 'InvalidSignature',
+          }),
+        );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
         expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -591,7 +611,7 @@ describe('TransactionVerifierHelper', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
-          signer: transaction.confirmations![0].owner,
+          signerAddress: transaction.confirmations![0].owner,
           signature: transaction.confirmations![0].signature,
           type: 'TRANSACTION_VALIDITY',
         });
@@ -615,7 +635,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(new BadGatewayException('Invalid signature'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.BAD_GATEWAY,
+            type: 'InvalidSignature',
+          }),
+        );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
         expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -624,7 +649,7 @@ describe('TransactionVerifierHelper', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
-          signer: transaction.confirmations![0].owner,
+          signerAddress: transaction.confirmations![0].owner,
           signature: transaction.confirmations![0].signature,
           type: 'TRANSACTION_VALIDITY',
         });
@@ -650,7 +675,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(new BadGatewayException('eth_sign is disabled'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.BAD_GATEWAY,
+            type: 'EthSignDisabled',
+          }),
+        );
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       });
@@ -684,7 +714,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(new BadGatewayException('Unauthorized address'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.BAD_GATEWAY,
+            type: 'BlockedAddress',
+          }),
+        );
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       });
@@ -783,7 +818,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new UnprocessableEntityException('Could not calculate safeTxHash'),
+          new TransactionValidityError({
+            code: HttpStatus.UNRECOVERABLE_ERROR,
+            type: 'MalformedHash',
+          }),
         );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -858,7 +896,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new UnprocessableEntityException('Invalid safeTxHash'),
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'HashMismatch',
+          }),
         );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1168,7 +1209,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
-        ).rejects.toThrow(new BadGatewayException('Could not recover address'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'UnrecoverableAddress',
+          }),
+        );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
         expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -1242,7 +1288,10 @@ describe('TransactionVerifierHelper', () => {
           await expect(
             target.verifyProposal({ chainId, safe, proposal }),
           ).rejects.toThrow(
-            new BadGatewayException('Could not recover address'),
+            new TransactionValidityError({
+              code: HttpStatus.UNPROCESSABLE_ENTITY,
+              type: 'UnrecoverableAddress',
+            }),
           );
 
           expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1310,7 +1359,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
-        ).rejects.toThrow(new BadGatewayException('Invalid signature'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidSignature',
+          }),
+        );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
         expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -1319,7 +1373,7 @@ describe('TransactionVerifierHelper', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
-          signer: proposal.sender,
+          signerAddress: proposal.sender,
           signature: proposal.signature,
           type: 'TRANSACTION_VALIDITY',
         });
@@ -1377,7 +1431,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
-        ).rejects.toThrow(new BadGatewayException('Invalid signature'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidSignature',
+          }),
+        );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
         expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -1386,7 +1445,7 @@ describe('TransactionVerifierHelper', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
-          signer: proposal.sender,
+          signerAddress: proposal.sender,
           signature: proposal.signature,
           type: 'TRANSACTION_VALIDITY',
         });
@@ -1448,7 +1507,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
-        ).rejects.toThrow(new BadGatewayException('Invalid signature'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidSignature',
+          }),
+        );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
         expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -1457,7 +1521,7 @@ describe('TransactionVerifierHelper', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
-          signer: proposal.sender,
+          signerAddress: proposal.sender,
           signature: proposal.signature,
           type: 'TRANSACTION_VALIDITY',
         });
@@ -1526,7 +1590,12 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
-        ).rejects.toThrow(new BadGatewayException('Unauthorized address'));
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'BlockedAddress',
+          }),
+        );
       });
     });
 
@@ -1585,7 +1654,12 @@ describe('TransactionVerifierHelper', () => {
 
       await expect(
         target.verifyProposal({ chainId, safe, proposal }),
-      ).rejects.toThrow(new BadGatewayException('eth_sign is disabled'));
+      ).rejects.toThrow(
+        new TransactionValidityError({
+          code: HttpStatus.UNPROCESSABLE_ENTITY,
+          type: 'EthSignDisabled',
+        }),
+      );
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -1667,7 +1741,10 @@ describe('TransactionVerifierHelper', () => {
             signature: transaction.confirmations![0].signature!,
           });
         }).rejects.toThrow(
-          new UnprocessableEntityException('Could not calculate safeTxHash'),
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'MalformedHash',
+          }),
         );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1731,7 +1808,10 @@ describe('TransactionVerifierHelper', () => {
             signature: transaction.confirmations![0].signature!,
           });
         }).rejects.toThrow(
-          new UnprocessableEntityException('Invalid safeTxHash'),
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'HashMismatch',
+          }),
         );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1865,7 +1945,10 @@ describe('TransactionVerifierHelper', () => {
               signature: transaction.confirmations![0].signature,
             }),
           ).rejects.toThrow(
-            new UnprocessableEntityException('Could not recover address'),
+            new TransactionValidityError({
+              code: HttpStatus.UNPROCESSABLE_ENTITY,
+              type: 'UnrecoverableAddress',
+            }),
           );
 
           expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1904,7 +1987,10 @@ describe('TransactionVerifierHelper', () => {
             signature: transaction.confirmations![0].signature!,
           }),
         ).rejects.toThrow(
-          new UnprocessableEntityException('Invalid signature'),
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidSignature',
+          }),
         );
 
         expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1914,7 +2000,7 @@ describe('TransactionVerifierHelper', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeTxHash: transaction.safeTxHash,
-          signer: signer.address,
+          signerAddress: signer.address,
           signature: transaction.confirmations![0].signature!,
           type: 'TRANSACTION_VALIDITY',
         });
@@ -1958,7 +2044,10 @@ describe('TransactionVerifierHelper', () => {
             signature: transaction.confirmations![0].signature!,
           }),
         ).rejects.toThrow(
-          new UnprocessableEntityException('eth_sign is disabled'),
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'EthSignDisabled',
+          }),
         );
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();

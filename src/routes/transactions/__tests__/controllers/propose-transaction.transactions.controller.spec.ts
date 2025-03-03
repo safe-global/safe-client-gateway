@@ -297,7 +297,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       .expect(422)
       .expect({
         message: 'eth_sign is disabled',
-        error: 'Unprocessable Entity',
         statusCode: 422,
       });
   });
@@ -373,7 +372,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       .expect(422)
       .expect({
         message: 'Delegate call is disabled',
-        error: 'Unprocessable Entity',
         statusCode: 422,
       });
   });
