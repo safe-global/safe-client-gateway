@@ -16,6 +16,8 @@ import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import {
+  isApprovedHashV,
+  isContractSignatureV,
   isEoaV,
   isEthSignV,
   normalizeEthSignSignature,
@@ -251,6 +253,12 @@ export class TransactionVerifierHelper {
 
     for (const confirmation of args.transaction.confirmations) {
       if (!confirmation.signature) {
+        continue;
+      }
+
+      const { v } = splitSignature(confirmation.signature);
+      // We cannot verify contract signatures or approved hashes on-chain
+      if (isContractSignatureV(v) || isApprovedHashV(v)) {
         continue;
       }
 
