@@ -16,8 +16,6 @@ import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import {
-  isApprovedHashV,
-  isContractSignatureV,
   isEoaV,
   isEthSignV,
   normalizeEthSignSignature,
@@ -314,6 +312,11 @@ export class TransactionVerifierHelper {
     const recoveredAddresses: Array<`0x${string}`> = [];
     for (const signature of signatures) {
       try {
+        const { v } = splitSignature(signature);
+        if (isEthSignV(v) && !this.isEthSignEnabled) {
+          throw new Error(ErrorMessage.EthSignDisabled);
+        }
+
         const recoveredAddress = await this.recoverAddress({
           ...args,
           safeTxHash: args.proposal.safeTxHash,
@@ -376,6 +379,11 @@ export class TransactionVerifierHelper {
   }): Promise<void> {
     let address: `0x${string}` | null;
     try {
+      const { v } = splitSignature(args.signature);
+      if (isEthSignV(v) && !this.isEthSignEnabled) {
+        throw new Error(ErrorMessage.EthSignDisabled);
+      }
+
       address = await this.recoverAddress({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
@@ -404,10 +412,6 @@ export class TransactionVerifierHelper {
   }): Promise<`0x${string}` | null> {
     const { v } = splitSignature(args.signature);
 
-    if (isEthSignV(v) && !this.isEthSignEnabled) {
-      throw new Error(ErrorMessage.EthSignDisabled);
-    }
-
     try {
       if (isEoaV(v)) {
         return await recoverAddress({
@@ -420,11 +424,6 @@ export class TransactionVerifierHelper {
           message: { raw: args.safeTxHash },
           signature: normalizeEthSignSignature(args.signature),
         });
-      }
-      // Approved hashes are valid
-      // Contract signatures would need be verified on-chain
-      if (isApprovedHashV(v) || isContractSignatureV(v)) {
-        return null;
       }
     } catch {
       this.logUnrecoverableAddress(args);
