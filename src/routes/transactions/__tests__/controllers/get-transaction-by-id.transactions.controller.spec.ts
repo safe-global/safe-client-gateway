@@ -48,6 +48,8 @@ import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messag
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+import { APP_FILTER } from '@nestjs/core';
 
 describe('Get by id - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -57,6 +59,13 @@ describe('Get by id - Transactions Controller (Unit)', () => {
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule.register(config)],
+      providers: [
+        // TODO: Add to all tests to reflect app implementation
+        {
+          provide: APP_FILTER,
+          useClass: GlobalErrorFilter,
+        },
+      ],
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
@@ -1221,7 +1230,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       });
   });
 
-  it('should block eth_sign', async () => {
+  it('should not block eth_sign', async () => {
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
@@ -1233,19 +1242,17 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     await initApp(testConfiguration);
 
     const chain = chainBuilder().build();
-    const signers = Array.from(
-      { length: faker.number.int({ min: 1, max: 5 }) },
-      () => {
-        const privateKey = generatePrivateKey();
-        return privateKeyToAccount(privateKey);
-      },
-    );
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
     const safe = safeBuilder()
       .with(
         'owners',
         signers.map((signer) => signer.address),
       )
       .build();
+    const contract = contractBuilder().build();
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('nonce', safe.nonce)
@@ -1257,33 +1264,69 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         safe,
         signatureType: SignatureType.EthSign,
       });
-    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+    const rejectionTx = multisigTransactionBuilder().build();
+    const rejectionTxsPage = pageBuilder()
+      .with('results', [multisigToJson(rejectionTx)])
+      .build();
+    const safeAppsResponse = [
+      safeAppBuilder()
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
+        .build(),
+    ];
+    const gasToken = tokenBuilder().build();
+    const token = tokenBuilder().build();
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+    const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.gasToken}`;
+    const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${multisigTransaction.to}`;
+    const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
     networkService.get.mockImplementation(({ url }) => {
-      if (url === getChainUrl) {
-        return Promise.resolve({ data: rawify(chain), status: 200 });
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(multisigTransaction)),
+            status: 200,
+          });
+        case getMultisigTransactionsUrl:
+          return Promise.resolve({
+            data: rawify(rejectionTxsPage),
+            status: 200,
+          });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        case getGasTokenContractUrl:
+          return Promise.resolve({ data: rawify(gasToken), status: 200 });
+        case getToContractUrl:
+          return Promise.resolve({ data: rawify(contract), status: 200 });
+        case getToTokenUrl:
+          return Promise.resolve({ data: rawify(token), status: 200 });
+        case getSafeAppsUrl:
+          return Promise.resolve({
+            data: rawify(safeAppsResponse),
+            status: 200,
+          });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
       }
-      if (url === getMultisigTransactionUrl) {
-        return Promise.resolve({
-          data: rawify(multisigToJson(multisigTransaction)),
-          status: 200,
-        });
-      }
-      if (url === getSafeUrl) {
-        return Promise.resolve({ data: rawify(safe), status: 200 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
     });
 
     await request(app.getHttpServer())
       .get(
         `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
       )
-      .expect(502)
-      .expect({
-        message: 'eth_sign is disabled',
-        statusCode: 502,
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toMatchObject({
+          safeAddress: safe.address,
+          txId: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+        });
       });
   });
 });

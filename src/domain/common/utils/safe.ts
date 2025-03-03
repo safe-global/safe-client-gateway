@@ -1,5 +1,10 @@
 import semverSatisfies from 'semver/functions/satisfies';
-import { hashMessage, hashTypedData, type TypedDataDefinition } from 'viem';
+import {
+  hashMessage,
+  hashTypedData,
+  zeroAddress,
+  type TypedDataDefinition,
+} from 'viem';
 import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
@@ -132,28 +137,15 @@ export function _getSafeTxTypesAndMessage(args: {
   transaction: BaseMultisigTransaction;
   version: NonNullable<Safe['version']>;
 }) {
-  const {
-    to,
-    value,
-    operation,
-    safeTxGas,
-    baseGas,
-    gasPrice,
-    gasToken,
-    refundReceiver,
-    nonce,
-  } = args.transaction;
+  const { to, value, operation, safeTxGas, baseGas, gasPrice, nonce } =
+    args.transaction;
 
   // Transfer of funds has no data
   const data = args.transaction.data || '0x';
+  const gasToken = args.transaction.gasToken || zeroAddress;
+  const refundReceiver = args.transaction.refundReceiver || zeroAddress;
 
-  if (
-    safeTxGas === null ||
-    baseGas === null ||
-    gasPrice === null ||
-    gasToken === null ||
-    refundReceiver === null
-  ) {
+  if (safeTxGas === null || baseGas === null || gasPrice === null) {
     throw new Error('Transaction data is incomplete');
   }
 

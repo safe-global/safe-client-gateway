@@ -210,7 +210,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     });
   });
 
-  it('should block eth_sign', async () => {
+  it('should not block eth_sign', async () => {
     initTarget({ ethSign: false, blocklist: [] });
 
     const chainId = faker.string.numeric();
@@ -228,8 +228,13 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         signatureType: SignatureType.EthSign,
       });
 
-    await expect(mapper.mapDetails(chainId, transaction, safe)).rejects.toThrow(
-      'eth_sign is disabled',
+    await expect(
+      mapper.mapDetails(chainId, transaction, safe),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        safeAddress: safe.address,
+        txId: `multisig_${safe.address}_${transaction.safeTxHash}`,
+      }),
     );
   });
 });

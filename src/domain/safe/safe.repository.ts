@@ -35,7 +35,7 @@ import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transac
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import { TransactionValidityError } from '@/routes/transactions/errors/transaction-validity.error';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -639,10 +639,10 @@ export class SafeRepository implements ISafeRepository {
       args.chainId,
     );
 
-    const error = new TransactionValidityError({
-      code: HttpStatus.UNPROCESSABLE_ENTITY,
-      type: 'DelegateCallDisabled',
-    });
+    const error = new HttpExceptionNoLog(
+      'Delegate call is disabled',
+      HttpStatus.UNPROCESSABLE_ENTITY,
+    );
     if (args.proposeTransactionDto.operation === Operation.DELEGATE) {
       if (!this.isTrustedDelegateCallEnabled) {
         throw error;
