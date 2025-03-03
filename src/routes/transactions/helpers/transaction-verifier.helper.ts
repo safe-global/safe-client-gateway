@@ -19,7 +19,7 @@ import {
   splitConcatenatedSignatures,
   splitSignature,
 } from '@/domain/common/utils/signatures';
-import { HttpExceptionWithLog } from '@/domain/common/errors/http-exception-with-log.errors';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
@@ -139,11 +139,7 @@ export class TransactionVerifierHelper {
         ...args,
         safeTxHash: args.transaction.safeTxHash,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.MalformedHash,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.MalformedHash, args.code);
     }
 
     if (safeTxHash !== args.transaction.safeTxHash) {
@@ -151,11 +147,7 @@ export class TransactionVerifierHelper {
         ...args,
         safeTxHash: args.transaction.safeTxHash,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.HashMismatch,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.HashMismatch, args.code);
     }
   }
 
@@ -184,11 +176,7 @@ export class TransactionVerifierHelper {
         transaction,
         safeTxHash: args.proposal.safeTxHash,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.MalformedHash,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.MalformedHash, args.code);
     }
 
     if (safeTxHash !== args.proposal.safeTxHash) {
@@ -197,11 +185,7 @@ export class TransactionVerifierHelper {
         transaction,
         safeTxHash: args.proposal.safeTxHash,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.HashMismatch,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.HashMismatch, args.code);
     }
   }
 
@@ -220,11 +204,7 @@ export class TransactionVerifierHelper {
         transaction: args.transaction,
         safeTxHash: args.transaction.safeTxHash,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.MalformedHash,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.MalformedHash, args.code);
     }
 
     if (safeTxHash !== args.transaction.safeTxHash) {
@@ -232,11 +212,7 @@ export class TransactionVerifierHelper {
         ...args,
         safeTxHash: args.transaction.safeTxHash,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.HashMismatch,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.HashMismatch, args.code);
     }
   }
 
@@ -263,11 +239,7 @@ export class TransactionVerifierHelper {
         confirmations: args.transaction.confirmations,
         type: 'owners',
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.DuplicateOwners,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.DuplicateOwners, args.code);
     }
 
     const uniqueSignatures = new Set(
@@ -280,11 +252,7 @@ export class TransactionVerifierHelper {
         confirmations: args.transaction.confirmations,
         type: 'signatures',
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.DuplicateSignatures,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.DuplicateSignatures, args.code);
     }
 
     for (const confirmation of args.transaction.confirmations) {
@@ -306,11 +274,7 @@ export class TransactionVerifierHelper {
 
       const isBlocked = address && this.blocklist.includes(address);
       if (isBlocked) {
-        throw new HttpExceptionWithLog({
-          code: args.code,
-          message: ErrorMessage.BlockedAddress,
-          log: false,
-        });
+        throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
       if (
@@ -325,11 +289,7 @@ export class TransactionVerifierHelper {
           signerAddress: confirmation.owner,
           signature: confirmation.signature,
         });
-        throw new HttpExceptionWithLog({
-          code: args.code,
-          message: ErrorMessage.InvalidSignature,
-          log: false,
-        });
+        throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
       }
     }
   }
@@ -354,22 +314,17 @@ export class TransactionVerifierHelper {
         safeTxHash: args.proposal.safeTxHash,
         signature: args.proposal.signature,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.UnrecoverableAddress,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(
+        ErrorMessage.UnrecoverableAddress,
+        args.code,
+      );
     }
 
     const recoveredAddresses: Array<`0x${string}`> = [];
     for (const signature of signatures) {
       const { v } = splitSignature(signature);
       if (isEthSignV(v) && !this.isEthSignEnabled) {
-        throw new HttpExceptionWithLog({
-          code: args.code,
-          message: ErrorMessage.EthSignDisabled,
-          log: false,
-        });
+        throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);
       }
 
       const recoveredAddress = await this.recoverAddress({
@@ -386,11 +341,7 @@ export class TransactionVerifierHelper {
       return this.blocklist.includes(address);
     });
     if (hasBlockedAddresses) {
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.BlockedAddress,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
     }
 
     const isSender = recoveredAddresses.includes(args.proposal.sender);
@@ -401,11 +352,7 @@ export class TransactionVerifierHelper {
         signerAddress: args.proposal.sender,
         signature: args.proposal.signature,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.InvalidSignature,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
     }
 
     const areOwners = recoveredAddresses.every((address) =>
@@ -432,11 +379,7 @@ export class TransactionVerifierHelper {
       signerAddress: args.proposal.sender,
       signature: args.proposal.signature,
     });
-    throw new HttpExceptionWithLog({
-      code: args.code,
-      message: ErrorMessage.InvalidSignature,
-      log: false,
-    });
+    throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
   }
 
   private async verifyConfirmationSignature(args: {
@@ -448,11 +391,7 @@ export class TransactionVerifierHelper {
   }): Promise<void> {
     const { v } = splitSignature(args.signature);
     if (isEthSignV(v) && !this.isEthSignEnabled) {
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.EthSignDisabled,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);
     }
 
     const address = await this.recoverAddress({
@@ -468,11 +407,7 @@ export class TransactionVerifierHelper {
         signerAddress: address,
         signature: args.signature,
       });
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.InvalidSignature,
-        log: false,
-      });
+      throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
     }
   }
 
@@ -502,11 +437,7 @@ export class TransactionVerifierHelper {
       this.logUnrecoverableAddress(args);
     }
 
-    throw new HttpExceptionWithLog({
-      code: args.code,
-      message: ErrorMessage.UnrecoverableAddress,
-      log: false,
-    });
+    throw new HttpExceptionNoLog(ErrorMessage.UnrecoverableAddress, args.code);
   }
 
   private logMalformedSafeTxHash(args: {

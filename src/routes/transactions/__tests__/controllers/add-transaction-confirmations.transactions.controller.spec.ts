@@ -28,6 +28,8 @@ import { addConfirmationDtoBuilder } from '@/routes/transactions/__tests__/entit
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+import { APP_FILTER } from '@nestjs/core';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -46,6 +48,13 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
+      ],
+      providers: [
+        // TODO: Add to all tests to reflect app implementation
+        {
+          provide: APP_FILTER,
+          useClass: GlobalErrorFilter,
+        },
       ],
     }).compile();
 

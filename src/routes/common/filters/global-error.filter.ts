@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { HttpAdapterHost } from '@nestjs/core';
-import { HttpExceptionWithLog } from '@/domain/common/errors/http-exception-with-log.errors';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
@@ -23,14 +23,14 @@ export class GlobalErrorFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
 
     const isHttpException = exception instanceof HttpException;
-    const isHttpExceptionWithLog = exception instanceof HttpExceptionWithLog;
+    const isHttpExceptionNoLog = exception.constructor === HttpExceptionNoLog;
 
     const httpStatus =
-      isHttpException || isHttpExceptionWithLog
+      isHttpException || isHttpExceptionNoLog
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    if (!isHttpExceptionWithLog || exception.log) {
+    if (!isHttpExceptionNoLog) {
       const logMessage = {
         name: exception.name,
         message: exception.message,
@@ -44,7 +44,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
     }
 
     const responseBody =
-      isHttpException || isHttpExceptionWithLog
+      isHttpException || isHttpExceptionNoLog
         ? exception.getResponse()
         : {
             code: httpStatus,

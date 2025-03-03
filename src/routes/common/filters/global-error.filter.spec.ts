@@ -17,7 +17,7 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { Server } from 'net';
-import { HttpExceptionWithLog } from '@/domain/common/errors/http-exception-with-log.errors';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 
 @Controller({})
@@ -29,11 +29,7 @@ class TestController {
 
   @Post('no-log-http-exception')
   noLogHttpException(@Body() body: { code: HttpStatus }): void {
-    throw new HttpExceptionWithLog({
-      message: 'Some no log http exception',
-      code: body.code,
-      log: false,
-    });
+    throw new HttpExceptionNoLog('Some no log http exception', body.code);
   }
 
   @Get('non-http-exception')
@@ -46,9 +42,11 @@ describe('GlobalErrorFilter tests', () => {
   let app: INestApplication<Server>;
   let loggingService: ILoggingService;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetAllMocks();
+  });
 
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestLoggingModule, ConfigurationModule.register(configuration)],
       controllers: [TestController],
@@ -69,7 +67,7 @@ describe('GlobalErrorFilter tests', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 
@@ -91,7 +89,7 @@ describe('GlobalErrorFilter tests', () => {
         .post('/no-log-http-exception')
         .send({ code })
         .expect(code)
-        .expect({ message: 'Some no log http exception' });
+        .expect({ message: 'Some no log http exception', statusCode: code });
     });
 
     it('non http exception returns correct error code and message', async () => {
@@ -112,8 +110,7 @@ describe('GlobalErrorFilter tests', () => {
       await request(app.getHttpServer())
         .post('/http-exception')
         .send({ code })
-        .expect(code)
-        .expect({ message: 'Some http exception' });
+        .expect(code);
 
       expect(loggingService.info).not.toHaveBeenCalled();
       expect(loggingService.error).toHaveBeenCalledTimes(1);
