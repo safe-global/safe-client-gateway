@@ -73,12 +73,12 @@ export function normalizeEthSignSignature(
   return `0x${r.slice(2)}${s.slice(2)}${(v - ETH_SIGN_V_ADJUSTMENT).toString(16)}`;
 }
 
-export function isApprovedHashV(v: Signature['v']): boolean {
-  return v === 1;
-}
-
 export function isContractSignatureV(v: Signature['v']): boolean {
   return v === 0;
+}
+
+export function isApprovedHashV(v: Signature['v']): boolean {
+  return v === 1;
 }
 
 export function isEoaV(v: Signature['v']): boolean {
@@ -86,5 +86,5 @@ export function isEoaV(v: Signature['v']): boolean {
 }
 
 export function isEthSignV(v: Signature['v']): boolean {
-  return v === 31 || v === 32;
+  return v > 30;
 }

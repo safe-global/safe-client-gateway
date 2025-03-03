@@ -292,6 +292,12 @@ export class TransactionVerifierHelper {
         continue;
       }
 
+      const { v } = splitSignature(confirmation.signature);
+      // We cannot verify contract signatures or approved hashes on-chain
+      if (isContractSignatureV(v) || isApprovedHashV(v)) {
+        continue;
+      }
+
       const address = await this.recoverAddress({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
@@ -357,6 +363,15 @@ export class TransactionVerifierHelper {
 
     const recoveredAddresses: Array<`0x${string}`> = [];
     for (const signature of signatures) {
+      const { v } = splitSignature(signature);
+      if (isEthSignV(v) && !this.isEthSignEnabled) {
+        throw new HttpExceptionWithLog({
+          code: args.code,
+          message: ErrorMessage.EthSignDisabled,
+          log: false,
+        });
+      }
+
       const recoveredAddress = await this.recoverAddress({
         ...args,
         safeTxHash: args.proposal.safeTxHash,
@@ -431,6 +446,15 @@ export class TransactionVerifierHelper {
     signature: `0x${string}`;
     code: HttpStatus;
   }): Promise<void> {
+    const { v } = splitSignature(args.signature);
+    if (isEthSignV(v) && !this.isEthSignEnabled) {
+      throw new HttpExceptionWithLog({
+        code: args.code,
+        message: ErrorMessage.EthSignDisabled,
+        log: false,
+      });
+    }
+
     const address = await this.recoverAddress({
       ...args,
       safeTxHash: args.transaction.safeTxHash,
@@ -461,14 +485,6 @@ export class TransactionVerifierHelper {
   }): Promise<`0x${string}` | null> {
     const { v } = splitSignature(args.signature);
 
-    if (isEthSignV(v) && !this.isEthSignEnabled) {
-      throw new HttpExceptionWithLog({
-        code: args.code,
-        message: ErrorMessage.EthSignDisabled,
-        log: false,
-      });
-    }
-
     try {
       if (isEoaV(v)) {
         return await recoverAddress({
@@ -481,11 +497,6 @@ export class TransactionVerifierHelper {
           message: { raw: args.safeTxHash },
           signature: normalizeEthSignSignature(args.signature),
         });
-      }
-      // Approved hashes are valid
-      // Contract signatures would need be verified on-chain
-      if (isApprovedHashV(v) || isContractSignatureV(v)) {
-        return null;
       }
     } catch {
       this.logUnrecoverableAddress(args);

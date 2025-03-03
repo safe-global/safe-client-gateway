@@ -1,11 +1,12 @@
 import { faker } from '@faker-js/faker';
-import { HttpStatus } from '@nestjs/common';
+import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
 import { concat, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
@@ -331,7 +332,14 @@ describe('TransactionVerifierHelper', () => {
             signers: [signer],
             safe,
           });
-        transaction.confirmations![0].signatureType = signatureType;
+        const v = signatureType === SignatureType.ApprovedHash ? '01' : '00';
+        transaction.confirmations![0] = confirmationBuilder()
+          .with('signatureType', signatureType)
+          .with(
+            'signature',
+            (faker.string.hexadecimal({ length: 128 }) + v) as `0x${string}`,
+          )
+          .build();
 
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
@@ -662,7 +670,7 @@ describe('TransactionVerifierHelper', () => {
         });
       });
 
-      it('should block eth_sign', async () => {
+      it('should not block eth_sign', async () => {
         initTarget({ ethSign: false, blocklist: [] });
 
         const chainId = faker.string.numeric();
@@ -682,13 +690,7 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(
-          new HttpExceptionWithLog({
-            code: HttpStatus.BAD_GATEWAY,
-            message: 'eth_sign is disabled',
-            log: false,
-          }),
-        );
+        ).resolves.not.toThrow();
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       });
@@ -996,7 +998,7 @@ describe('TransactionVerifierHelper', () => {
       it.each([
         SignatureType.ApprovedHash as const,
         SignatureType.ContractSignature as const,
-      ])('should validate a %s signature', async (signatureType) => {
+      ])('should not allow a %s signature', async (signatureType) => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
           { length: faker.number.int({ min: 1, max: 5 }) },
@@ -1019,7 +1021,14 @@ describe('TransactionVerifierHelper', () => {
             signers: faker.helpers.arrayElements(signers),
             safe,
           });
-        transaction.confirmations![0].signatureType = signatureType;
+        const v = signatureType === SignatureType.ApprovedHash ? '01' : '00';
+        transaction.confirmations![0] = confirmationBuilder()
+          .with('signatureType', signatureType)
+          .with(
+            'signature',
+            (faker.string.hexadecimal({ length: 128 }) + v) as `0x${string}`,
+          )
+          .build();
         if (
           !transaction.confirmations ||
           transaction.confirmations.length === 0
@@ -1045,7 +1054,9 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
-        ).resolves.not.toThrow();
+        ).rejects.toThrow(
+          new UnprocessableEntityException('Could not recover address'),
+        );
       });
 
       it('should validate a delegate signature', async () => {
@@ -1912,7 +1923,14 @@ describe('TransactionVerifierHelper', () => {
             signers: [signer],
             safe,
           });
-        transaction.confirmations![0].signatureType = signatureType;
+        const v = signatureType === SignatureType.ApprovedHash ? '01' : '00';
+        transaction.confirmations![0] = confirmationBuilder()
+          .with('signatureType', signatureType)
+          .with(
+            'signature',
+            (faker.string.hexadecimal({ length: 128 }) + v) as `0x${string}`,
+          )
+          .build();
 
         await expect(
           target.verifyConfirmation({
@@ -1921,7 +1939,9 @@ describe('TransactionVerifierHelper', () => {
             transaction,
             signature: transaction.confirmations![0].signature!,
           }),
-        ).resolves.not.toThrow();
+        ).rejects.toThrow(
+          new UnprocessableEntityException('Could not recover address'),
+        );
       });
 
       it.each([SignatureType.Eoa as const, SignatureType.EthSign as const])(
