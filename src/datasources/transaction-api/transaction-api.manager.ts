@@ -15,7 +15,6 @@ import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class TransactionApiManager implements ITransactionApiManager {
@@ -62,13 +61,5 @@ export class TransactionApiManager implements ITransactionApiManager {
     if (this.transactionApiMap[chainId] !== undefined) {
       delete this.transactionApiMap[chainId];
     }
-  }
-
-  /**
-   * Refreshes TransactionApiMap every minute.
-   */
-  @Cron(CronExpression.EVERY_MINUTE)
-  public refreshApi(): void {
-    Object.assign(this.transactionApiMap, {});
   }
 }
