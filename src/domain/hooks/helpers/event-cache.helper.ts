@@ -186,6 +186,15 @@ export class EventCacheHelper {
     this.unsupportedChains = [];
   }
 
+  @Cron(CronExpression.EVERY_MINUTE, {
+    disabled: process.env.NODE_ENV === 'test',
+  })
+  public clearSupportedChainsMemo(): void {
+    if (this.isSupportedChainMemo.cache.clear) {
+      this.isSupportedChainMemo.cache.clear();
+    }
+  }
+
   // Transaction Service events
 
   private onTransactionEventPendingMultisigTransaction(
