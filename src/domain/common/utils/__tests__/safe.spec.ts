@@ -223,8 +223,6 @@ describe('Safe', () => {
       'safeTxGas',
       'baseGas',
       'gasPrice',
-      'gasToken',
-      'refundReceiver',
     ])('should throw if the %s is not present', (key) => {
       const chainId = faker.string.numeric();
       const safe = safeBuilder().build();
@@ -304,12 +302,29 @@ describe('Safe', () => {
       expect(result.message.data).toEqual('0x');
     });
 
+    it.each<keyof BaseMultisigTransaction>(['gasToken', 'refundReceiver'])(
+      'should default a missing %s to a zero address if not present',
+      (key) => {
+        const transaction = safeTxHashMultisigTransactionBuilder()
+          .with(key, null)
+          .build();
+        const version = faker.helpers.arrayElement(TYPES_WITH_BASEGAS_VERSIONS);
+
+        const result = _getSafeTxTypesAndMessage({
+          transaction,
+          version,
+        });
+
+        expect(result.message[key]).toEqual(
+          '0x0000000000000000000000000000000000000000',
+        );
+      },
+    );
+
     it.each<keyof BaseMultisigTransaction>([
       'safeTxGas',
       'baseGas',
       'gasPrice',
-      'gasToken',
-      'refundReceiver',
     ])('should throw if %s is not present', (key) => {
       const transaction = safeTxHashMultisigTransactionBuilder()
         .with(key, null)
