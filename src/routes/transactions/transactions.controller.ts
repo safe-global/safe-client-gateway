@@ -45,14 +45,15 @@ import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
 import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-multisig-transaction-page.entity';
 import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creation-transaction.entity';
-import { TransactionValidityExceptionFilter } from '@/routes/transactions/exception-filters/transaction-validity.exception-filter';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 
 @ApiTags('transactions')
 @Controller({
   path: '',
   version: '1',
 })
-@UseFilters(TransactionValidityExceptionFilter)
+// TODO: Globally attach to tests so this can be removed here
+@UseFilters(GlobalErrorFilter)
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 

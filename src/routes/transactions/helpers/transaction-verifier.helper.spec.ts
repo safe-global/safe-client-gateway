@@ -9,11 +9,11 @@ import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/mul
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { HttpExceptionWithLog } from '@/domain/common/errors/http-exception-with-log.errors';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
-import { TransactionValidityError } from '@/routes/transactions/errors/transaction-validity.error';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -198,9 +198,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(() => {
           return target.verifyApiTransaction({ chainId, safe, transaction });
         }).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.BAD_GATEWAY,
-            type: 'MalformedHash',
+            message: 'Could not calculate safeTxHash',
+            log: false,
           }),
         );
 
@@ -261,9 +262,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(() => {
           return target.verifyApiTransaction({ chainId, safe, transaction });
         }).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.BAD_GATEWAY,
-            type: 'HashMismatch',
+            message: 'Invalid safeTxHash',
+            log: false,
           }),
         );
 
@@ -471,9 +473,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.BAD_GATEWAY,
-            type: 'DuplicateOwners',
+            message: 'Duplicate owners in confirmations',
+            log: false,
           }),
         );
 
@@ -516,9 +519,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.BAD_GATEWAY,
-            type: 'DuplicateSignatures',
+            message: 'Duplicate signatures in confirmations',
+            log: false,
           }),
         );
 
@@ -558,9 +562,10 @@ describe('TransactionVerifierHelper', () => {
           await expect(
             target.verifyApiTransaction({ chainId, safe, transaction }),
           ).rejects.toThrow(
-            new TransactionValidityError({
+            new HttpExceptionWithLog({
               code: HttpStatus.BAD_GATEWAY,
-              type: 'UnrecoverableAddress',
+              message: 'Could not recover address',
+              log: false,
             }),
           );
 
@@ -598,9 +603,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.BAD_GATEWAY,
-            type: 'InvalidSignature',
+            message: 'Invalid signature',
+            log: false,
           }),
         );
 
@@ -636,9 +642,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.BAD_GATEWAY,
-            type: 'InvalidSignature',
+            message: 'Invalid signature',
+            log: false,
           }),
         );
 
@@ -676,9 +683,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.BAD_GATEWAY,
-            type: 'EthSignDisabled',
+            message: 'eth_sign is disabled',
+            log: false,
           }),
         );
 
@@ -715,9 +723,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.BAD_GATEWAY,
-            type: 'BlockedAddress',
+            message: 'Unauthorized address',
+            log: false,
           }),
         );
 
@@ -818,9 +827,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new TransactionValidityError({
-            code: HttpStatus.UNRECOVERABLE_ERROR,
-            type: 'MalformedHash',
+          new HttpExceptionWithLog({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            message: 'Could not calculate safeTxHash',
+            log: false,
           }),
         );
 
@@ -896,9 +906,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'HashMismatch',
+            message: 'Invalid safeTxHash',
+            log: false,
           }),
         );
 
@@ -1210,9 +1221,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'UnrecoverableAddress',
+            message: 'Could not recover address',
+            log: false,
           }),
         );
 
@@ -1288,9 +1300,10 @@ describe('TransactionVerifierHelper', () => {
           await expect(
             target.verifyProposal({ chainId, safe, proposal }),
           ).rejects.toThrow(
-            new TransactionValidityError({
+            new HttpExceptionWithLog({
               code: HttpStatus.UNPROCESSABLE_ENTITY,
-              type: 'UnrecoverableAddress',
+              message: 'Could not recover address',
+              log: false,
             }),
           );
 
@@ -1360,9 +1373,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'InvalidSignature',
+            message: 'Invalid signature',
+            log: false,
           }),
         );
 
@@ -1432,9 +1446,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'InvalidSignature',
+            message: 'Invalid signature',
+            log: false,
           }),
         );
 
@@ -1508,9 +1523,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'InvalidSignature',
+            message: 'Invalid signature',
+            log: false,
           }),
         );
 
@@ -1591,9 +1607,10 @@ describe('TransactionVerifierHelper', () => {
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'BlockedAddress',
+            message: 'Unauthorized address',
+            log: false,
           }),
         );
       });
@@ -1655,9 +1672,10 @@ describe('TransactionVerifierHelper', () => {
       await expect(
         target.verifyProposal({ chainId, safe, proposal }),
       ).rejects.toThrow(
-        new TransactionValidityError({
+        new HttpExceptionWithLog({
           code: HttpStatus.UNPROCESSABLE_ENTITY,
-          type: 'EthSignDisabled',
+          message: 'eth_sign is disabled',
+          log: false,
         }),
       );
 
@@ -1741,9 +1759,10 @@ describe('TransactionVerifierHelper', () => {
             signature: transaction.confirmations![0].signature!,
           });
         }).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'MalformedHash',
+            message: 'Could not calculate safeTxHash',
+            log: false,
           }),
         );
 
@@ -1808,9 +1827,10 @@ describe('TransactionVerifierHelper', () => {
             signature: transaction.confirmations![0].signature!,
           });
         }).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'HashMismatch',
+            message: 'Invalid safeTxHash',
+            log: false,
           }),
         );
 
@@ -1945,9 +1965,10 @@ describe('TransactionVerifierHelper', () => {
               signature: transaction.confirmations![0].signature,
             }),
           ).rejects.toThrow(
-            new TransactionValidityError({
+            new HttpExceptionWithLog({
               code: HttpStatus.UNPROCESSABLE_ENTITY,
-              type: 'UnrecoverableAddress',
+              message: 'Could not recover address',
+              log: false,
             }),
           );
 
@@ -1987,9 +2008,10 @@ describe('TransactionVerifierHelper', () => {
             signature: transaction.confirmations![0].signature!,
           }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'InvalidSignature',
+            message: 'Invalid signature',
+            log: false,
           }),
         );
 
@@ -2044,9 +2066,10 @@ describe('TransactionVerifierHelper', () => {
             signature: transaction.confirmations![0].signature!,
           }),
         ).rejects.toThrow(
-          new TransactionValidityError({
+          new HttpExceptionWithLog({
             code: HttpStatus.UNPROCESSABLE_ENTITY,
-            type: 'EthSignDisabled',
+            message: 'eth_sign is disabled',
+            log: false,
           }),
         );
 
