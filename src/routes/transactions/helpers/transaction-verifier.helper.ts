@@ -90,6 +90,9 @@ export class TransactionVerifierHelper {
   }): Promise<void> {
     const code = HttpStatus.UNPROCESSABLE_ENTITY;
 
+    if (Number(args.proposal.nonce) < args.safe.nonce) {
+      throw new TransactionValidityError({ code, type: 'InvalidNonce' });
+    }
     if (this.isProposalHashVerificationEnabled) {
       this.verifyProposalSafeTxHash({ ...args, code });
     }
@@ -106,6 +109,12 @@ export class TransactionVerifierHelper {
   }): Promise<void> {
     const code = HttpStatus.UNPROCESSABLE_ENTITY;
 
+    if (
+      args.transaction.isExecuted ||
+      args.transaction.nonce < args.safe.nonce
+    ) {
+      throw new TransactionValidityError({ code, type: 'InvalidNonce' });
+    }
     if (this.isProposalHashVerificationEnabled) {
       this.verifyConfirmSafeTxHash({ ...args, code });
     }

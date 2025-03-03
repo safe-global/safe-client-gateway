@@ -745,6 +745,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -774,6 +775,58 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
+      it('should throw if the nonce is below that of the Safe', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce - 1)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+        const proposal = proposeTransactionDtoBuilder()
+          .with('to', transaction.to)
+          .with('value', transaction.value)
+          .with('data', transaction.data)
+          .with('nonce', transaction.nonce.toString())
+          .with('operation', transaction.operation)
+          .with('safeTxGas', transaction.safeTxGas!.toString())
+          .with('baseGas', transaction.baseGas!.toString())
+          .with('gasPrice', transaction.gasPrice!)
+          .with('gasToken', transaction.gasToken!)
+          .with('refundReceiver', transaction.refundReceiver)
+          .with('safeTxHash', transaction.safeTxHash)
+          .with('sender', transaction.confirmations![0].owner)
+          .with('signature', transaction.confirmations![0].signature)
+          .build();
+
+        await expect(
+          target.verifyProposal({ chainId, safe, proposal }),
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidNonce',
+          }),
+        );
+      });
+
       it('should throw if safeTxHash could not be calculated', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
@@ -791,6 +844,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -864,6 +918,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -944,6 +999,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -982,6 +1038,67 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
+      it('should throw if the nonce is below that of the Safe', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce - 1)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+        if (
+          !transaction.confirmations ||
+          transaction.confirmations.length === 0
+        ) {
+          throw new Error('Transaction must have at least 1 confirmation');
+        }
+        const confirmation = faker.helpers.arrayElement(
+          transaction.confirmations,
+        );
+        const proposal = proposeTransactionDtoBuilder()
+          .with('to', transaction.to)
+          .with('value', transaction.value)
+          .with('data', transaction.data)
+          .with('nonce', transaction.nonce.toString())
+          .with('operation', transaction.operation)
+          .with('safeTxGas', transaction.safeTxGas!.toString())
+          .with('baseGas', transaction.baseGas!.toString())
+          .with('gasPrice', transaction.gasPrice!)
+          .with('gasToken', transaction.gasToken!)
+          .with('refundReceiver', transaction.refundReceiver)
+          .with('safeTxHash', transaction.safeTxHash)
+          .with('sender', confirmation.owner)
+          .with('signature', confirmation.signature)
+          .build();
+
+        await expect(
+          target.verifyProposal({ chainId, safe, proposal }),
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidNonce',
+          }),
+        );
+      });
+
       it.each([
         SignatureType.ApprovedHash as const,
         SignatureType.ContractSignature as const,
@@ -1002,6 +1119,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .with('isExecuted', false)
           .buildWithConfirmations({
             chainId,
@@ -1054,6 +1172,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1117,6 +1236,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1173,6 +1293,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1247,6 +1368,7 @@ describe('TransactionVerifierHelper', () => {
             .build();
           const transaction = await multisigTransactionBuilder()
             .with('safe', safe.address)
+            .with('nonce', safe.nonce)
             .buildWithConfirmations({
               chainId,
               signers: faker.helpers.arrayElements(signers, {
@@ -1324,6 +1446,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1393,6 +1516,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers,
@@ -1468,6 +1592,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1556,6 +1681,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .buildWithConfirmations({
             chainId,
             signers,
@@ -1618,6 +1744,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
       const transaction = await multisigTransactionBuilder()
         .with('safe', safe.address)
+        .with('nonce', safe.nonce)
         .buildWithConfirmations({
           chainId,
           signers: faker.helpers.arrayElements(signers, {
@@ -1684,6 +1811,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .with('isExecuted', false)
           .buildWithConfirmations({
             chainId,
@@ -1704,6 +1832,92 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
+      it('should not validate historical transactions', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce)
+          .with('isExecuted', true)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidNonce',
+          }),
+        );
+      });
+
+      it('should throw if the nonce is below that of the Safe', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce - 1)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidNonce',
+          }),
+        );
+      });
+
       it('should throw if safeTxHash could not be calculated', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
@@ -1721,6 +1935,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .with('isExecuted', false)
           .buildWithConfirmations({
             chainId,
@@ -1787,6 +2002,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .with('isExecuted', false)
           .buildWithConfirmations({
             chainId,
@@ -1856,6 +2072,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .with('isExecuted', false)
           .buildWithConfirmations({
             chainId,
@@ -1876,6 +2093,92 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
+      it('should not validate historical transactions', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce)
+          .with('isExecuted', true)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidNonce',
+          }),
+        );
+      });
+
+      it('should throw if the nonce is below that of the Safe', async () => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce - 1)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+          });
+
+        await expect(
+          target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          }),
+        ).rejects.toThrow(
+          new TransactionValidityError({
+            code: HttpStatus.UNPROCESSABLE_ENTITY,
+            type: 'InvalidNonce',
+          }),
+        );
+      });
+
       it.each([
         SignatureType.ApprovedHash as const,
         SignatureType.ContractSignature as const,
@@ -1886,6 +2189,7 @@ describe('TransactionVerifierHelper', () => {
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .with('isExecuted', false)
           .buildWithConfirmations({
             chainId,
@@ -1923,6 +2227,7 @@ describe('TransactionVerifierHelper', () => {
             .build();
           const transaction = await multisigTransactionBuilder()
             .with('safe', safe.address)
+            .with('nonce', safe.nonce)
             .with('isExecuted', false)
             .buildWithConfirmations({
               chainId,
@@ -1971,6 +2276,7 @@ describe('TransactionVerifierHelper', () => {
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .with('isExecuted', false)
           .buildWithConfirmations({
             chainId,
@@ -2025,6 +2331,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
+          .with('nonce', safe.nonce)
           .with('isExecuted', false)
           .buildWithConfirmations({
             chainId,

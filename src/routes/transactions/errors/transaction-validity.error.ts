@@ -11,6 +11,7 @@ enum TransactionValidityErrorType {
   BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
   DelegateCallDisabled = 'Delegate call is disabled',
+  InvalidNonce = 'Invalid nonce',
 }
 
 export class TransactionValidityError extends HttpException {
