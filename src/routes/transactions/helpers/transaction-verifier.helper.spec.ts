@@ -630,7 +630,7 @@ describe('TransactionVerifierHelper', () => {
         });
       });
 
-      it('should block eth_sign', async () => {
+      it('should not block eth_sign', async () => {
         initTarget({ ethSign: false, blocklist: [] });
 
         const chainId = faker.string.numeric();
@@ -650,7 +650,7 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(new BadGatewayException('eth_sign is disabled'));
+        ).resolves.not.toThrow();
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       });

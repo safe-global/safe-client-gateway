@@ -926,7 +926,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       });
   });
 
-  it('should block eth_sign', async () => {
+  it('should not block eth_sign', async () => {
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
@@ -1008,11 +1008,26 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .get(
         `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`,
       )
-      .expect(502)
-      .expect({
-        message: 'eth_sign is disabled',
-        error: 'Bad Gateway',
-        statusCode: 502,
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toEqual({
+          count: 2,
+          next: null,
+          previous: null,
+          results: [
+            {
+              type: 'LABEL',
+              label: 'Next',
+            },
+            {
+              type: 'TRANSACTION',
+              transaction: expect.objectContaining({
+                id: `multisig_${safe.address}_${transactions[0].safeTxHash}`,
+              }),
+              conflictType: 'None',
+            },
+          ],
+        });
       });
   });
 });
