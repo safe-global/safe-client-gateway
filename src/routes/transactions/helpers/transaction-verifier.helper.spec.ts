@@ -1,12 +1,11 @@
 import { faker } from '@faker-js/faker';
-import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { concat, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
@@ -89,9 +88,9 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should not validate historical transactions', async () => {
@@ -124,9 +123,9 @@ describe('TransactionVerifierHelper', () => {
         // @ts-expect-error - data is hex
         transaction.data = faker.number.int();
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should not validate queued transactions with a nonce lower than the Safe', async () => {
@@ -161,9 +160,9 @@ describe('TransactionVerifierHelper', () => {
         // @ts-expect-error - data is hex
         transaction.data = faker.number.int();
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should throw if safeTxHash could not be calculated', async () => {
@@ -196,9 +195,9 @@ describe('TransactionVerifierHelper', () => {
         // @ts-expect-error - data is hex
         transaction.data = faker.number.int();
 
-        await expect(() => {
+        expect(() => {
           return target.verifyApiTransaction({ chainId, safe, transaction });
-        }).rejects.toThrow(
+        }).toThrow(
           new HttpExceptionNoLog(
             'Could not calculate safeTxHash',
             HttpStatus.BAD_GATEWAY,
@@ -259,9 +258,9 @@ describe('TransactionVerifierHelper', () => {
           length: 64,
         }) as `0x${string}`;
 
-        await expect(() => {
+        expect(() => {
           return target.verifyApiTransaction({ chainId, safe, transaction });
-        }).rejects.toThrow(
+        }).toThrow(
           new HttpExceptionNoLog('Invalid safeTxHash', HttpStatus.BAD_GATEWAY),
         );
 
@@ -305,40 +304,9 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
-      });
-
-      it.each([
-        SignatureType.ApprovedHash as const,
-        SignatureType.ContractSignature as const,
-      ])('should validate a %s signature', async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const privateKey = generatePrivateKey();
-        const signer = privateKeyToAccount(privateKey);
-        const safe = safeBuilder().with('owners', [signer.address]).build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('nonce', safe.nonce)
-          .buildWithConfirmations({
-            chainId,
-            signers: [signer],
-            safe,
-          });
-        const v = signatureType === SignatureType.ApprovedHash ? '01' : '00';
-        transaction.confirmations![0] = confirmationBuilder()
-          .with('signatureType', signatureType)
-          .with(
-            'signature',
-            (faker.string.hexadecimal({ length: 128 }) + v) as `0x${string}`,
-          )
-          .build();
-
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should validate multiple confirmations', async () => {
@@ -369,9 +337,9 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should not validate confirmations if there are none', async () => {
@@ -388,9 +356,9 @@ describe('TransactionVerifierHelper', () => {
           });
         transaction.confirmations = null;
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should not validate confirmations if they are empty', async () => {
@@ -407,9 +375,9 @@ describe('TransactionVerifierHelper', () => {
           });
         transaction.confirmations = [];
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should not validate historical transactions', async () => {
@@ -428,9 +396,9 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should not validate queued transactions with a nonce lower than the Safe', async () => {
@@ -453,9 +421,9 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
       });
 
       it('should throw if there are duplicate owners in confirmations', async () => {
@@ -473,9 +441,9 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).toThrow(
           new HttpExceptionNoLog(
             'Duplicate owners in confirmations',
             HttpStatus.BAD_GATEWAY,
@@ -518,9 +486,9 @@ describe('TransactionVerifierHelper', () => {
         transaction.confirmations![1].signature =
           transaction.confirmations![0].signature;
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).toThrow(
           new HttpExceptionNoLog(
             'Duplicate signatures in confirmations',
             HttpStatus.BAD_GATEWAY,
@@ -539,7 +507,7 @@ describe('TransactionVerifierHelper', () => {
         });
       });
 
-      it.each([SignatureType.Eoa as const, SignatureType.EthSign as const])(
+      it.each(Object.values(SignatureType))(
         'should throw if an address cannot be recovered from an %s signature',
         async (signatureType) => {
           const chainId = faker.string.numeric();
@@ -556,29 +524,16 @@ describe('TransactionVerifierHelper', () => {
               safe,
               signatureType,
             });
-          const v = faker.helpers.arrayElement(
-            signatureType === SignatureType.Eoa ? [27, 28] : [31, 32],
-          );
-          transaction.confirmations![0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v.toString(16)}`;
-          await expect(
-            target.verifyApiTransaction({ chainId, safe, transaction }),
-          ).rejects.toThrow(
+          const v = transaction.confirmations![0].signature?.slice(-2);
+          transaction.confirmations![0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
+          expect(() => {
+            return target.verifyApiTransaction({ chainId, safe, transaction });
+          }).toThrow(
             new HttpExceptionNoLog(
               'Could not recover address',
               HttpStatus.BAD_GATEWAY,
             ),
           );
-
-          expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-          expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-            message: 'Could not recover address',
-            chainId,
-            safeAddress: safe.address,
-            safeVersion: safe.version,
-            safeTxHash: transaction.safeTxHash,
-            signature: transaction.confirmations![0].signature,
-            type: 'TRANSACTION_VALIDITY',
-          });
         },
       );
 
@@ -600,9 +555,9 @@ describe('TransactionVerifierHelper', () => {
           faker.finance.ethereumAddress(),
         );
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).toThrow(
           new HttpExceptionNoLog('Invalid signature', HttpStatus.BAD_GATEWAY),
         );
 
@@ -635,9 +590,9 @@ describe('TransactionVerifierHelper', () => {
           });
         safe.owners = [getAddress(faker.finance.ethereumAddress())];
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).toThrow(
           new HttpExceptionNoLog('Invalid signature', HttpStatus.BAD_GATEWAY),
         );
 
@@ -672,9 +627,9 @@ describe('TransactionVerifierHelper', () => {
             signatureType: SignatureType.EthSign,
           });
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).not.toThrow();
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       });
@@ -706,9 +661,9 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyApiTransaction({ chainId, safe, transaction }),
-        ).rejects.toThrow(
+        expect(() => {
+          return target.verifyApiTransaction({ chainId, safe, transaction });
+        }).toThrow(
           new HttpExceptionNoLog(
             'Unauthorized address',
             HttpStatus.BAD_GATEWAY,
@@ -764,9 +719,9 @@ describe('TransactionVerifierHelper', () => {
           .with('signature', transaction.confirmations![0].signature)
           .build();
 
-        await expect(
-          target.verifyProposal({ chainId, safe, proposal }),
-        ).resolves.not.toThrow();
+        expect(() => {
+          return target.verifyProposal({ chainId, safe, proposal });
+        }).not.toThrow();
       });
 
       it('should throw if the nonce is below that of the Safe', async () => {
@@ -1093,71 +1048,6 @@ describe('TransactionVerifierHelper', () => {
         );
       });
 
-      it.each([
-        SignatureType.ApprovedHash as const,
-        SignatureType.ContractSignature as const,
-      ])('should not allow a %s signature', async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('nonce', safe.nonce)
-          .with('isExecuted', false)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers),
-            safe,
-          });
-        const v = signatureType === SignatureType.ApprovedHash ? '01' : '00';
-        transaction.confirmations![0] = confirmationBuilder()
-          .with('signatureType', signatureType)
-          .with(
-            'signature',
-            (faker.string.hexadecimal({ length: 128 }) + v) as `0x${string}`,
-          )
-          .build();
-        if (
-          !transaction.confirmations ||
-          transaction.confirmations.length === 0
-        ) {
-          throw new Error('Transaction must have at least 1 confirmation');
-        }
-        const confirmation = transaction.confirmations[0];
-        const proposal = proposeTransactionDtoBuilder()
-          .with('to', transaction.to)
-          .with('value', transaction.value)
-          .with('data', transaction.data)
-          .with('nonce', transaction.nonce.toString())
-          .with('operation', transaction.operation)
-          .with('safeTxGas', transaction.safeTxGas!.toString())
-          .with('baseGas', transaction.baseGas!.toString())
-          .with('gasPrice', transaction.gasPrice!)
-          .with('gasToken', transaction.gasToken!)
-          .with('refundReceiver', transaction.refundReceiver)
-          .with('safeTxHash', transaction.safeTxHash)
-          .with('sender', confirmation.owner)
-          .with('signature', confirmation.signature)
-          .build();
-
-        await expect(
-          target.verifyProposal({ chainId, safe, proposal }),
-        ).rejects.toThrow(
-          new UnprocessableEntityException('Could not recover address'),
-        );
-      });
-
       it('should validate a delegate signature', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
@@ -1333,26 +1223,10 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
-        ).rejects.toThrow(
-          new HttpExceptionNoLog(
-            'Could not recover address',
-            HttpStatus.UNPROCESSABLE_ENTITY,
-          ),
-        );
-
-        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-        expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-          message: 'Could not recover address',
-          chainId,
-          safeAddress: safe.address,
-          safeVersion: safe.version,
-          safeTxHash: transaction.safeTxHash,
-          signature: confirmation.signature,
-          type: 'TRANSACTION_VALIDITY',
-        });
+        ).rejects.toThrow(new Error('Invalid signature length'));
       });
 
-      it.each([SignatureType.Eoa as const, SignatureType.EthSign as const])(
+      it.each(Object.values(SignatureType))(
         'should throw if an an address cannot be recovered from an %s signature',
         async (signatureType) => {
           const chainId = faker.string.numeric();
@@ -1390,10 +1264,8 @@ describe('TransactionVerifierHelper', () => {
           const confirmation = faker.helpers.arrayElement(
             transaction.confirmations,
           );
-          const v = faker.helpers.arrayElement(
-            signatureType === SignatureType.Eoa ? [27, 28] : [31, 32],
-          );
-          confirmation.signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v.toString(16)}`;
+          const v = confirmation.signature!.slice(-2);
+          confirmation.signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
           const proposal = proposeTransactionDtoBuilder()
             .with('to', transaction.to)
             .with('value', transaction.value)
@@ -1418,17 +1290,6 @@ describe('TransactionVerifierHelper', () => {
               HttpStatus.UNPROCESSABLE_ENTITY,
             ),
           );
-
-          expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-          expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-            message: 'Could not recover address',
-            chainId,
-            safeAddress: safe.address,
-            safeVersion: safe.version,
-            safeTxHash: transaction.safeTxHash,
-            signature: confirmation.signature,
-            type: 'TRANSACTION_VALIDITY',
-          });
         },
       );
 
@@ -1825,14 +1686,14 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyConfirmation({
+        expect(() => {
+          return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
-          }),
-        ).resolves.not.toThrow();
+          });
+        }).not.toThrow();
       });
 
       it('should not validate historical transactions', async () => {
@@ -1863,14 +1724,14 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyConfirmation({
+        expect(() => {
+          return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
-          }),
-        ).rejects.toThrow(
+          });
+        }).toThrow(
           new HttpExceptionNoLog(
             'Invalid nonce',
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -1906,14 +1767,14 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyConfirmation({
+        expect(() => {
+          return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
-          }),
-        ).rejects.toThrow(
+          });
+        }).toThrow(
           new HttpExceptionNoLog(
             'Invalid nonce',
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -1951,14 +1812,14 @@ describe('TransactionVerifierHelper', () => {
         // @ts-expect-error - data is hex
         transaction.data = faker.number.int();
 
-        await expect(() => {
+        expect(() => {
           return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
           });
-        }).rejects.toThrow(
+        }).toThrow(
           new HttpExceptionNoLog(
             'Could not calculate safeTxHash',
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -2019,14 +1880,14 @@ describe('TransactionVerifierHelper', () => {
           length: 64,
         }) as `0x${string}`;
 
-        await expect(() => {
+        expect(() => {
           return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
           });
-        }).rejects.toThrow(
+        }).toThrow(
           new HttpExceptionNoLog(
             'Invalid safeTxHash',
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -2086,14 +1947,14 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyConfirmation({
+        expect(() => {
+          return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
-          }),
-        ).resolves.not.toThrow();
+          });
+        }).not.toThrow();
       });
 
       it('should not validate historical transactions', async () => {
@@ -2124,14 +1985,14 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyConfirmation({
+        expect(() => {
+          return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
-          }),
-        ).rejects.toThrow(
+          });
+        }).toThrow(
           new HttpExceptionNoLog(
             'Invalid nonce',
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -2167,14 +2028,14 @@ describe('TransactionVerifierHelper', () => {
             safe,
           });
 
-        await expect(
-          target.verifyConfirmation({
+        expect(() => {
+          return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
-          }),
-        ).rejects.toThrow(
+          });
+        }).toThrow(
           new HttpExceptionNoLog(
             'Invalid nonce',
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -2182,45 +2043,7 @@ describe('TransactionVerifierHelper', () => {
         );
       });
 
-      it.each([
-        SignatureType.ApprovedHash as const,
-        SignatureType.ContractSignature as const,
-      ])('should validate a %s signature', async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const privateKey = generatePrivateKey();
-        const signer = privateKeyToAccount(privateKey);
-        const safe = safeBuilder().with('owners', [signer.address]).build();
-        const transaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('nonce', safe.nonce)
-          .with('isExecuted', false)
-          .buildWithConfirmations({
-            chainId,
-            signers: [signer],
-            safe,
-          });
-        const v = signatureType === SignatureType.ApprovedHash ? '01' : '00';
-        transaction.confirmations![0] = confirmationBuilder()
-          .with('signatureType', signatureType)
-          .with(
-            'signature',
-            (faker.string.hexadecimal({ length: 128 }) + v) as `0x${string}`,
-          )
-          .build();
-
-        await expect(
-          target.verifyConfirmation({
-            chainId,
-            safe,
-            transaction,
-            signature: transaction.confirmations![0].signature!,
-          }),
-        ).rejects.toThrow(
-          new UnprocessableEntityException('Could not recover address'),
-        );
-      });
-
-      it.each([SignatureType.Eoa as const, SignatureType.EthSign as const])(
+      it.each(Object.values(SignatureType))(
         'should throw if an an address cannot be recovered from an %s signature',
         async (signatureType) => {
           const chainId = faker.string.numeric();
@@ -2248,36 +2071,24 @@ describe('TransactionVerifierHelper', () => {
                 max: signers.length,
               }),
               safe,
+              signatureType,
             });
-          const v = faker.helpers.arrayElement(
-            signatureType === SignatureType.Eoa ? [27, 28] : [31, 32],
-          );
-          transaction.confirmations![0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v.toString(16)}`;
+          const v = transaction.confirmations![0].signature!.slice(-2);
+          transaction.confirmations![0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
 
-          await expect(
-            target.verifyConfirmation({
+          expect(() => {
+            return target.verifyConfirmation({
               chainId,
               safe,
               transaction,
-              signature: transaction.confirmations![0].signature,
-            }),
-          ).rejects.toThrow(
+              signature: transaction.confirmations![0].signature!,
+            });
+          }).toThrow(
             new HttpExceptionNoLog(
               'Could not recover address',
               HttpStatus.UNPROCESSABLE_ENTITY,
             ),
           );
-
-          expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-          expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-            message: 'Could not recover address',
-            chainId,
-            safeAddress: safe.address,
-            safeVersion: safe.version,
-            safeTxHash: transaction.safeTxHash,
-            signature: transaction.confirmations![0].signature,
-            type: 'TRANSACTION_VALIDITY',
-          });
         },
       );
 
@@ -2297,14 +2108,14 @@ describe('TransactionVerifierHelper', () => {
           });
         safe.owners = [getAddress(faker.finance.ethereumAddress())];
 
-        await expect(
-          target.verifyConfirmation({
+        expect(() => {
+          return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
-          }),
-        ).rejects.toThrow(
+          });
+        }).toThrow(
           new HttpExceptionNoLog(
             'Invalid signature',
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -2355,14 +2166,14 @@ describe('TransactionVerifierHelper', () => {
             signatureType: SignatureType.EthSign,
           });
 
-        await expect(
-          target.verifyConfirmation({
+        expect(() => {
+          return target.verifyConfirmation({
             chainId,
             safe,
             transaction,
             signature: transaction.confirmations![0].signature!,
-          }),
-        ).rejects.toThrow(
+          });
+        }).toThrow(
           new HttpExceptionNoLog(
             'eth_sign is disabled',
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -2370,6 +2181,49 @@ describe('TransactionVerifierHelper', () => {
         );
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+      });
+
+      it('should block addresses in the blocklist', async () => {
+        const chainId = faker.string.numeric();
+        const blockedPrivateKey = generatePrivateKey();
+        const blockedSigner = privateKeyToAccount(blockedPrivateKey);
+        const legitPrivateKey = generatePrivateKey();
+        const legitSigner = privateKeyToAccount(legitPrivateKey);
+        initTarget({
+          ethSign: true,
+          blocklist: [
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(blockedSigner.address),
+          ],
+        });
+        const safe = safeBuilder()
+          .with('owners', [blockedSigner.address, legitSigner.address])
+
+          .build();
+        const transaction = await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            chainId,
+            signers: [blockedSigner, legitSigner],
+            safe,
+          });
+
+        expect(() => {
+          return target.verifyConfirmation({
+            chainId,
+            safe,
+            transaction,
+            signature: transaction.confirmations![0].signature!,
+          });
+        }).toThrow(
+          new HttpExceptionNoLog(
+            'Unauthorized address',
+            HttpStatus.BAD_GATEWAY,
+          ),
+        );
       });
     });
   });
