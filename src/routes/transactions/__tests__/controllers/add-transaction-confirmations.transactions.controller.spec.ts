@@ -168,7 +168,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       );
   });
 
-  it('should not validate historical transactions', async () => {
+  it('should throw for historical transactions', async () => {
     const chain = chainBuilder().build();
     const privateKey = generatePrivateKey();
     const signer = privateKeyToAccount(privateKey);

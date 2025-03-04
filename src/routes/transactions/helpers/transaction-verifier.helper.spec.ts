@@ -1835,7 +1835,7 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
-      it('should not validate historical transactions', async () => {
+      it('should throw for historical transactions', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
           { length: faker.number.int({ min: 1, max: 5 }) },
@@ -2096,7 +2096,7 @@ describe('TransactionVerifierHelper', () => {
         ).resolves.not.toThrow();
       });
 
-      it('should not validate historical transactions', async () => {
+      it('should throw for historical transactions', async () => {
         const chainId = faker.string.numeric();
         const signers = Array.from(
           { length: faker.number.int({ min: 1, max: 5 }) },
