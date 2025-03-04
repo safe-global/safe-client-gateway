@@ -95,7 +95,7 @@ export class MessagesRepository implements IMessagesRepository {
     await this.messageVerifier.verifyUpdate({
       ...args,
       safe,
-      message,
+      message: message.message,
     });
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,

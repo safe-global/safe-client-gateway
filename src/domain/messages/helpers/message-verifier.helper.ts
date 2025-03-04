@@ -100,7 +100,7 @@ export class MessageVerifierHelper {
     chainId: string;
     safe: Safe;
     expectedHash: `0x${string}`;
-    message: string | Record<string, unknown>;
+    message: Message['message'];
   }): void {
     const calculatedHash = this.calculateMessageHash(args);
 
@@ -119,7 +119,7 @@ export class MessageVerifierHelper {
   private calculateMessageHash(args: {
     chainId: string;
     safe: Safe;
-    message: string | Record<string, unknown>;
+    message: Message['message'];
   }): `0x${string}` {
     let calculatedHash: `0x${string}`;
     try {
