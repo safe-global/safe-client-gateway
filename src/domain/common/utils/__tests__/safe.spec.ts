@@ -50,8 +50,6 @@ describe('Safe', () => {
 
   it.todo('getSafeMessageMessageHash');
 
-  it.todo('getSafeMessageTypedAndMessage');
-
   describe('getSafeTxHash', () => {
     describe('generates a valid safeTxHash', () => {
       it('should handle valid transactions', () => {

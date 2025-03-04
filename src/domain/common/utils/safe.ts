@@ -22,23 +22,32 @@ export function getSafeMessageMessageHash(args: {
   if (!args.safe.version) {
     throw new Error('Safe version is required');
   }
-
-  const domain = _getSafeDomain({
-    address: args.safe.address,
-    version: args.safe.version,
-    chainId: args.chainId,
-  });
-  const _message = MessageSchema.shape.message.parse(args.message) as
-    | string
-    | TypedDataDefinition;
-  const { types, message } = _getSafeMessageTypedAndMessage(_message);
-
   try {
+    const message = MessageSchema.shape.message.parse(args.message) as
+      | string
+      | TypedDataDefinition;
+
     return hashTypedData({
-      domain,
+      domain: _getSafeDomain({
+        chainId: args.chainId,
+        address: args.safe.address,
+        version: args.safe.version,
+      }),
       primaryType: MESSAGE_PRIMARY_TYPE,
-      types,
-      message,
+      types: {
+        [MESSAGE_PRIMARY_TYPE]: [
+          {
+            name: 'message',
+            type: 'bytes',
+          },
+        ],
+      },
+      message: {
+        message:
+          typeof message === 'string'
+            ? hashMessage(message)
+            : hashTypedData(message),
+      },
     });
   } catch {
     throw new Error('Failed to hash message data');
