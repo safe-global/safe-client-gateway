@@ -463,7 +463,14 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         safe,
         signers,
       });
-    const rejectionTx = multisigTransactionBuilder().build();
+    const rejectionTx = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('nonce', tx.nonce)
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers: [signers[0]],
+      });
     const rejectionTxsPage = pageBuilder()
       .with('results', [multisigToJson(rejectionTx)])
       .build();
