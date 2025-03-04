@@ -6,14 +6,13 @@ export const AddConfirmationDtoSchema = z
     signature: HexSchema,
   })
   .or(
-    // Note: mobile proposes signatures under the signedSafeTxHash property
-    z
-      .object({
-        signedSafeTxHash: HexSchema,
-      })
-      .transform((data) => {
-        return {
-          signature: data.signedSafeTxHash,
-        };
-      }),
-  );
+    z.object({
+      // Note: mobile proposes signatures under the signedSafeTxHash property
+      signedSafeTxHash: HexSchema,
+    }),
+  )
+  .transform((data) => {
+    return {
+      signature: 'signature' in data ? data.signature : data.signedSafeTxHash,
+    };
+  });
