@@ -22,36 +22,44 @@ export function getSafeMessageMessageHash(args: {
   if (!args.safe.version) {
     throw new Error('Safe version is required');
   }
-  try {
-    const message = MessageSchema.shape.message.parse(args.message) as
-      | string
-      | TypedDataDefinition;
 
+  const domain = _getSafeDomain({
+    address: args.safe.address,
+    version: args.safe.version,
+    chainId: args.chainId,
+  });
+  const _message = MessageSchema.shape.message.parse(args.message) as
+    | string
+    | TypedDataDefinition;
+  const { types, message } = _getSafeMessageTypedAndMessage(_message);
+
+  try {
     return hashTypedData({
-      domain: _getSafeDomain({
-        chainId: args.chainId,
-        address: args.safe.address,
-        version: args.safe.version,
-      }),
+      domain,
       primaryType: MESSAGE_PRIMARY_TYPE,
-      types: {
-        [MESSAGE_PRIMARY_TYPE]: [
-          {
-            name: 'message',
-            type: 'bytes',
-          },
-        ],
-      },
-      message: {
-        message:
-          typeof message === 'string'
-            ? hashMessage(message)
-            : hashTypedData(message),
-      },
+      types,
+      message,
     });
   } catch {
     throw new Error('Failed to hash message data');
   }
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export function _getSafeMessageTypedAndMessage(
+  message: string | TypedDataDefinition,
+) {
+  const hash =
+    typeof message === 'string' ? hashMessage(message) : hashTypedData(message);
+
+  return {
+    types: {
+      [MESSAGE_PRIMARY_TYPE]: [{ name: 'message', type: 'bytes' }],
+    },
+    message: {
+      message: hash,
+    },
+  };
 }
 
 export type BaseMultisigTransaction = Pick<

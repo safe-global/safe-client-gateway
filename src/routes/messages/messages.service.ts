@@ -16,6 +16,8 @@ import { MessageItem } from '@/routes/messages/entities/message-item.entity';
 import { Message } from '@/routes/messages/entities/message.entity';
 import { UpdateMessageSignatureDto } from '@/routes/messages/entities/update-message-signature.entity';
 import { MessageMapper } from '@/routes/messages/mappers/message-mapper';
+import { LoggingService, ILoggingService } from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 @Injectable()
 export class MessagesService {
@@ -25,6 +27,7 @@ export class MessagesService {
     @Inject(ISafeRepository)
     private readonly safeRepository: SafeRepository,
     private readonly messageMapper: MessageMapper,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
   async getMessageByHash(args: {
@@ -126,6 +129,7 @@ export class MessagesService {
     safeAddress: `0x${string}`;
     createMessageDto: CreateMessageDto;
   }): Promise<unknown> {
+    this.logProposeMessage(args);
     return await this.messagesRepository.createMessage({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
@@ -145,6 +149,17 @@ export class MessagesService {
       chainId: args.chainId,
       messageHash: args.messageHash,
       signature: args.updateMessageSignatureDto.signature,
+    });
+  }
+
+  private logProposeMessage(
+    args: Parameters<MessagesService['createMessage']>[0],
+  ): void {
+    this.loggingService.info({
+      safeAddress: args.safeAddress,
+      chainId: args.chainId,
+      message: args.createMessageDto,
+      type: LogType.MessagePropose,
     });
   }
 }

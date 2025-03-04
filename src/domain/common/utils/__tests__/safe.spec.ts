@@ -46,6 +46,12 @@ function safeTxHashMultisigTransactionBuilder(): IBuilder<BaseMultisigTransactio
 }
 
 describe('Safe', () => {
+  it.todo('getBaseMultisigTransaction');
+
+  it.todo('getSafeMessageMessageHash');
+
+  it.todo('getSafeMessageTypedAndMessage');
+
   describe('getSafeTxHash', () => {
     describe('generates a valid safeTxHash', () => {
       it('should handle valid transactions', () => {

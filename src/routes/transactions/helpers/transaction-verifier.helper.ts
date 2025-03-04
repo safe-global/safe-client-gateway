@@ -274,6 +274,11 @@ export class TransactionVerifierHelper {
 
       const isBlocked = address && this.blocklist.includes(address);
       if (isBlocked) {
+        this.logBlockedAddress({
+          ...args,
+          safeTxHash: args.transaction.safeTxHash,
+          blockedAddress: address,
+        });
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
@@ -337,10 +342,15 @@ export class TransactionVerifierHelper {
       }
     }
 
-    const hasBlockedAddresses = recoveredAddresses.some((address) => {
+    const blockedAddress = recoveredAddresses.find((address) => {
       return this.blocklist.includes(address);
     });
-    if (hasBlockedAddresses) {
+    if (blockedAddress) {
+      this.logBlockedAddress({
+        ...args,
+        safeTxHash: args.proposal.safeTxHash,
+        blockedAddress,
+      });
       throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
     }
 
@@ -510,6 +520,23 @@ export class TransactionVerifierHelper {
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       signature: args.signature,
+      type: LogType.TransactionValidity,
+    });
+  }
+
+  private logBlockedAddress(args: {
+    chainId: string;
+    safe: Safe;
+    safeTxHash: `0x${string}`;
+    blockedAddress: `0x${string}`;
+  }): void {
+    this.loggingService.error({
+      message: 'Unauthorized address',
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+      safeVersion: args.safe.version,
+      safeTxHash: args.safeTxHash,
+      blockedAddress: args.blockedAddress,
       type: LogType.TransactionValidity,
     });
   }

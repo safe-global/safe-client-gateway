@@ -39,8 +39,7 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
-import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
-import type { TypedDataDefinition } from 'viem';
+import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Messages controller', () => {
@@ -776,13 +775,13 @@ describe('Messages controller', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = messageBuilder().build();
-      message.messageHash = getSafeMessageMessageHash({
-        chainId: chain.chainId,
-        safe,
-        message: message.message as string | TypedDataDefinition,
-      });
-      const signature = await signer.sign({ hash: message.messageHash });
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
       networkService.post.mockImplementation(({ url }) => {
         switch (url) {
           case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
@@ -813,7 +812,7 @@ describe('Messages controller', () => {
         .send(
           createMessageDtoBuilder()
             .with('message', message.message)
-            .with('signature', signature)
+            .with('signature', message.confirmations[0].signature)
             .build(),
         )
         .expect(200)
@@ -822,18 +821,23 @@ describe('Messages controller', () => {
         });
     });
 
+    it.todo('should fail if the messageHash could not be calculated');
+
+    it.todo('should fail if the signer is blocked');
+
     it('should fail if the signer is not a Safe owner', async () => {
       const chain = chainBuilder().build();
-      const safe = safeBuilder().build();
-      const message = messageBuilder().build();
-      message.messageHash = getSafeMessageMessageHash({
-        chainId: chain.chainId,
-        safe,
-        message: message.message as string | TypedDataDefinition,
-      });
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
-      const signature = await signer.sign({ hash: message.messageHash });
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
+      safe.owners = [getAddress(faker.finance.ethereumAddress())];
       networkService.post.mockImplementation(({ url }) => {
         switch (url) {
           case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
@@ -864,14 +868,13 @@ describe('Messages controller', () => {
         .send(
           createMessageDtoBuilder()
             .with('message', message.message)
-            .with('signature', signature)
+            .with('signature', message.confirmations[0].signature)
             .build(),
         )
-        .expect(502)
+        .expect(422)
         .expect({
           message: 'Invalid signature',
-          error: 'Bad Gateway',
-          statusCode: 502,
+          statusCode: 422,
         });
     });
 
@@ -880,13 +883,13 @@ describe('Messages controller', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = messageBuilder().build();
-      message.messageHash = getSafeMessageMessageHash({
-        chainId: chain.chainId,
-        safe,
-        message: message.message as string | TypedDataDefinition,
-      });
-      const signature = await signer.sign({ hash: message.messageHash });
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
       const errorMessage = faker.word.words();
       const error = new NetworkResponseError(
         new URL(chain.transactionService),
@@ -918,7 +921,7 @@ describe('Messages controller', () => {
         .send(
           createMessageDtoBuilder()
             .with('message', message.message)
-            .with('signature', signature)
+            .with('signature', message.confirmations[0].signature)
             .build(),
         )
         .expect(400)
@@ -946,6 +949,8 @@ describe('Messages controller', () => {
           message: 'Expected object, received number',
         });
     });
+
+    it.todo('should disable eth_sign');
   });
 
   describe('Update message signatures', () => {
@@ -954,17 +959,15 @@ describe('Messages controller', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = messageBuilder()
+      const message = await messageBuilder()
         .with('safeAppId', null)
         .with('safe', safe.address)
         .with('created', faker.date.recent())
-        .build();
-      message.messageHash = getSafeMessageMessageHash({
-        chainId: chain.chainId,
-        safe,
-        message: message.message as string | TypedDataDefinition,
-      });
-      const signature = await signer.sign({ hash: message.messageHash });
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -987,7 +990,7 @@ describe('Messages controller', () => {
         url ===
         `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
           ? Promise.resolve({
-              data: rawify({ signature }),
+              data: rawify({ signature: message.confirmations[0].signature }),
               status: 200,
             })
           : Promise.reject(`No matching rule for url: ${url}`),
@@ -999,29 +1002,33 @@ describe('Messages controller', () => {
         )
         .send(
           updateMessageSignatureDtoBuilder()
-            .with('signature', signature)
+            .with('signature', message.confirmations[0].signature)
             .build(),
         )
         .expect(200)
-        .expect({ signature });
+        .expect({ signature: message.confirmations[0].signature });
     });
+
+    it.todo('should fail if the messageHash could not be calculated');
+
+    it.todo('should fail if the messageHash is invalid');
+
+    it.todo('should fail if the signer is blocked');
 
     it('should fail if the signer is not a Safe owner', async () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const safe = safeBuilder().build();
-      const message = messageBuilder()
+      const message = await messageBuilder()
         .with('safeAppId', null)
         .with('safe', safe.address)
         .with('created', faker.date.recent())
-        .build();
-      message.messageHash = getSafeMessageMessageHash({
-        chainId: chain.chainId,
-        safe,
-        message: message.message as string | TypedDataDefinition,
-      });
-      const signature = await signer.sign({ hash: message.messageHash });
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -1044,7 +1051,7 @@ describe('Messages controller', () => {
         url ===
         `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
           ? Promise.resolve({
-              data: rawify({ signature }),
+              data: rawify({ signature: message.confirmations[0].signature }),
               status: 200,
             })
           : Promise.reject(`No matching rule for url: ${url}`),
@@ -1056,7 +1063,7 @@ describe('Messages controller', () => {
         )
         .send(
           updateMessageSignatureDtoBuilder()
-            .with('signature', signature)
+            .with('signature', message.confirmations[0].signature)
             .build(),
         )
         .expect(502)
@@ -1072,17 +1079,15 @@ describe('Messages controller', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = messageBuilder()
+      const message = await messageBuilder()
         .with('safeAppId', null)
         .with('safe', safe.address)
         .with('created', faker.date.recent())
-        .build();
-      message.messageHash = getSafeMessageMessageHash({
-        chainId: chain.chainId,
-        safe,
-        message: message.message as string | TypedDataDefinition,
-      });
-      const signature = await signer.sign({ hash: message.messageHash });
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
       const errorMessage = faker.word.words();
       const transactionServiceUrl = `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`;
       const error = new NetworkResponseError(
@@ -1122,7 +1127,7 @@ describe('Messages controller', () => {
         )
         .send(
           updateMessageSignatureDtoBuilder()
-            .with('signature', signature)
+            .with('signature', message.confirmations[0].signature)
             .build(),
         )
         .expect(400)
@@ -1154,5 +1159,7 @@ describe('Messages controller', () => {
           message: 'Required',
         });
     });
+
+    it.todo('should disable eth_sign');
   });
 });

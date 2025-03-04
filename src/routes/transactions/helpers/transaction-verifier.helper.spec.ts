@@ -715,7 +715,16 @@ describe('TransactionVerifierHelper', () => {
           ),
         );
 
-        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
+        expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
+          message: 'Unauthorized address',
+          chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          safeTxHash: transaction.safeTxHash,
+          blockedAddress: blockedSigner.address,
+          type: 'TRANSACTION_VALIDITY',
+        });
       });
     });
   });
@@ -1599,6 +1608,17 @@ describe('TransactionVerifierHelper', () => {
             HttpStatus.UNPROCESSABLE_ENTITY,
           ),
         );
+
+        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
+        expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
+          message: 'Unauthorized address',
+          chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          safeTxHash: transaction.safeTxHash,
+          blockedAddress: blockedAddress,
+          type: 'TRANSACTION_VALIDITY',
+        });
       });
     });
 
