@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { HttpAdapterHost } from '@nestjs/core';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
@@ -21,29 +22,43 @@ export class GlobalErrorFilter implements ExceptionFilter {
 
     const ctx = host.switchToHttp();
 
+    const isHttpException = exception instanceof HttpException;
+    const isHttpExceptionNoLog = exception instanceof HttpExceptionNoLog;
+
     const httpStatus =
-      exception instanceof HttpException
+      isHttpException || isHttpExceptionNoLog
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const logMessage = {
-      name: exception.name,
-      message: exception.message,
-      stacktrace: exception.stack,
-    };
-    if (httpStatus >= 500 && httpStatus < 600) {
-      this.loggingService.error(logMessage);
-    } else {
-      this.loggingService.info(logMessage);
+    if (!isHttpExceptionNoLog) {
+      this.log({
+        exception,
+        httpStatus,
+      });
     }
 
     const responseBody =
-      exception instanceof HttpException
+      isHttpException || isHttpExceptionNoLog
         ? exception.getResponse()
         : {
             code: httpStatus,
             message: 'Internal server error',
           };
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
+  }
+
+  private log(args: { exception: Error; httpStatus: number }): void {
+    const logMessage = {
+      name: args.exception.name,
+      message: args.exception.message,
+      stacktrace: args.exception.stack,
+    };
+
+    const isServerError = args.httpStatus >= 500 && args.httpStatus < 600;
+    if (isServerError) {
+      this.loggingService.error(logMessage);
+    } else {
+      this.loggingService.info(logMessage);
+    }
   }
 }

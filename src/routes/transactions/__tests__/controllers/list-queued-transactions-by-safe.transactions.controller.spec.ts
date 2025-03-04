@@ -605,7 +605,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .expect(502)
       .expect({
         message: 'Invalid safeTxHash',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -678,7 +677,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .expect(502)
       .expect({
         message: 'Duplicate owners in confirmations',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -757,7 +755,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .expect(502)
       .expect({
         message: 'Duplicate signatures in confirmations',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -840,7 +837,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .expect(502)
       .expect({
         message: 'Invalid signature',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
@@ -921,7 +917,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       .expect(502)
       .expect({
         message: 'Invalid signature',
-        error: 'Bad Gateway',
         statusCode: 502,
       });
   });
