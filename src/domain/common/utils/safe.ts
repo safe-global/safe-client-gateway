@@ -54,23 +54,6 @@ export function getSafeMessageMessageHash(args: {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function _getSafeMessageTypedAndMessage(
-  message: string | TypedDataDefinition,
-) {
-  const hash =
-    typeof message === 'string' ? hashMessage(message) : hashTypedData(message);
-
-  return {
-    types: {
-      [MESSAGE_PRIMARY_TYPE]: [{ name: 'message', type: 'bytes' }],
-    },
-    message: {
-      message: hash,
-    },
-  };
-}
-
 export type BaseMultisigTransaction = Pick<
   MultisigTransaction,
   | 'to'
