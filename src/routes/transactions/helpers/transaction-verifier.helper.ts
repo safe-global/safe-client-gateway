@@ -32,6 +32,7 @@ enum ErrorMessage {
   InvalidSignature = 'Invalid signature',
   BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
+  InvalidNonce = 'Invalid nonce',
 }
 
 @Injectable()
@@ -101,6 +102,9 @@ export class TransactionVerifierHelper {
   }): Promise<void> {
     const code = HttpStatus.UNPROCESSABLE_ENTITY;
 
+    if (Number(args.proposal.nonce) < args.safe.nonce) {
+      throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
+    }
     if (this.isProposalHashVerificationEnabled) {
       this.verifyProposalSafeTxHash({ ...args, code });
     }
@@ -117,6 +121,12 @@ export class TransactionVerifierHelper {
   }): Promise<void> {
     const code = HttpStatus.UNPROCESSABLE_ENTITY;
 
+    if (
+      args.transaction.isExecuted ||
+      args.transaction.nonce < args.safe.nonce
+    ) {
+      throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
+    }
     if (this.isProposalHashVerificationEnabled) {
       this.verifyConfirmSafeTxHash({ ...args, code });
     }
