@@ -9,17 +9,18 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
-import { SafeSignature } from '@/domain/common/entities/safe-signature';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { SafeSignature } from '@/domain/common/entities/safe-signature';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
   HashMismatch = 'Invalid safeTxHash',
   DuplicateOwners = 'Duplicate owners in confirmations',
   DuplicateSignatures = 'Duplicate signatures in confirmations',
+  UnrecoverableAddress = 'Could not recover address',
   InvalidSignature = 'Invalid signature',
   BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
@@ -447,6 +448,23 @@ export class TransactionVerifierHelper {
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       confirmations: args.confirmations,
+      type: LogType.TransactionValidity,
+    });
+  }
+
+  private logUnrecoverableAddress(args: {
+    chainId: string;
+    safe: Safe;
+    safeTxHash: `0x${string}`;
+    signature: `0x${string}`;
+  }): void {
+    this.loggingService.error({
+      message: 'Could not recover address',
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+      safeVersion: args.safe.version,
+      safeTxHash: args.safeTxHash,
+      signature: args.signature,
       type: LogType.TransactionValidity,
     });
   }

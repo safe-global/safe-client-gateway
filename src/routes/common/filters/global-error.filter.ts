@@ -23,7 +23,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
 
     const isHttpException = exception instanceof HttpException;
-    const isHttpExceptionNoLog = exception.constructor === HttpExceptionNoLog;
+    const isHttpExceptionNoLog = exception instanceof HttpExceptionNoLog;
 
     const httpStatus =
       isHttpException || isHttpExceptionNoLog
@@ -31,16 +31,10 @@ export class GlobalErrorFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     if (!isHttpExceptionNoLog) {
-      const logMessage = {
-        name: exception.name,
-        message: exception.message,
-        stacktrace: exception.stack,
-      };
-      if (httpStatus >= 500 && httpStatus < 600) {
-        this.loggingService.error(logMessage);
-      } else {
-        this.loggingService.info(logMessage);
-      }
+      this.log({
+        exception,
+        httpStatus,
+      });
     }
 
     const responseBody =
@@ -51,5 +45,20 @@ export class GlobalErrorFilter implements ExceptionFilter {
             message: 'Internal server error',
           };
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
+  }
+
+  private log(args: { exception: Error; httpStatus: number }): void {
+    const logMessage = {
+      name: args.exception.name,
+      message: args.exception.message,
+      stacktrace: args.exception.stack,
+    };
+
+    const isServerError = args.httpStatus >= 500 && args.httpStatus < 600;
+    if (isServerError) {
+      this.loggingService.error(logMessage);
+    } else {
+      this.loggingService.info(logMessage);
+    }
   }
 }
