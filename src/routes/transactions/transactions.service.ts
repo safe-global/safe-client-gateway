@@ -36,7 +36,7 @@ import { TransactionPreviewMapper } from '@/routes/transactions/mappers/transact
 import { TransactionsHistoryMapper } from '@/routes/transactions/mappers/transactions-history.mapper';
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
-import { getAddress, isAddress } from 'viem';
+import { getAddress, isAddress, isAddressEqual } from 'viem';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { LogType } from '@/domain/common/entities/log-type.entity';
@@ -117,6 +117,11 @@ export class TransactionsService {
             address: getAddress(safeAddress),
           }),
         ]);
+
+        if (!isAddressEqual(tx.safe, safe.address)) {
+          throw new BadRequestException('Invalid transaction ID');
+        }
+
         return this.multisigTransactionDetailsMapper.mapDetails(
           args.chainId,
           tx,
