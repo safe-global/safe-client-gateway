@@ -73,9 +73,7 @@ describe('GlobalErrorFilter tests', () => {
 
   describe('responses', () => {
     it('http exception returns correct error code and message', async () => {
-      const code = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const code = faker.helpers.arrayElement([422, 502]);
 
       await request(app.getHttpServer())
         .post('/http-exception')
@@ -85,9 +83,7 @@ describe('GlobalErrorFilter tests', () => {
     });
 
     it('no log http exception returns correct error code and message', async () => {
-      const code = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const code = faker.helpers.arrayElement([422, 502]);
 
       await request(app.getHttpServer())
         .post('/no-log-http-exception')
@@ -109,7 +105,7 @@ describe('GlobalErrorFilter tests', () => {
 
   describe('logs', () => {
     it('should log server errors as errors', async () => {
-      const code = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const code = 502;
 
       await request(app.getHttpServer())
         .post('/http-exception')
@@ -126,9 +122,7 @@ describe('GlobalErrorFilter tests', () => {
     });
 
     it('should log non-server errors as info', async () => {
-      const code = faker.internet.httpStatusCode({
-        types: ['clientError'],
-      });
+      const code = 422;
 
       await request(app.getHttpServer())
         .post('/http-exception')
@@ -145,9 +139,7 @@ describe('GlobalErrorFilter tests', () => {
     });
 
     it('should not log no log http exception', async () => {
-      const code = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const code = faker.helpers.arrayElement([422, 502]);
 
       await request(app.getHttpServer())
         .post('/no-log-http-exception')
