@@ -61,6 +61,8 @@ export class SafeSignature {
             return uint256ToAddress(this.r);
           }
           case SignatureType.EthSign: {
+            // To differentiate signature types, eth_sign signatures have v value increased by 4
+            // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
             const normalizedSignature: `0x${string}` = `${this.r}${this.s.slice(2)}${(this.v - 4).toString(16)}`;
             return recoverAddress({
               hash: hashMessage({ raw: this.hash }),
