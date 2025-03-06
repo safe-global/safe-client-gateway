@@ -119,6 +119,9 @@ export class TransactionVerifierHelper {
     ) {
       throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
     }
+
+    this.verifyApiTransaction(args);
+
     if (this.isProposalHashVerificationEnabled) {
       this.verifyConfirmSafeTxHash({ ...args, code });
     }

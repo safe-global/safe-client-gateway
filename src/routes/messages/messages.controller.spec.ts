@@ -44,11 +44,16 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { APP_FILTER } from '@nestjs/core';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -82,6 +87,10 @@ describe('Messages controller', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    loggingService = moduleFixture.get(LoggingService);
+
+    // TODO: Override module to avoid spying
+    jest.spyOn(loggingService, 'error');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -784,224 +793,6 @@ describe('Messages controller', () => {
   });
 
   describe('Create messages', () => {
-    it('Success', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safe', safe.address)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      networkService.post.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(
-          createMessageDtoBuilder()
-            .with('message', message.message)
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(200)
-        .expect(({ body }) => {
-          expect(body).toEqual(messageToJson(message));
-        });
-    });
-
-    it('should fail if the messageHash could not be calculated', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safe', safe.address)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      safe.version = null;
-      networkService.post.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(
-          createMessageDtoBuilder()
-            .with('message', message.message)
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          message: 'Could not calculate messageHash',
-        });
-    });
-
-    it('should fail if the signer is blocked', async () => {
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): typeof defaultConfiguration => ({
-        ...defaultConfiguration,
-        blockchain: {
-          ...defaultConfiguration.blockchain,
-          blocklist: [signer.address],
-        },
-      });
-      await initApp(testConfiguration);
-      const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safe', safe.address)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      networkService.post.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(
-          createMessageDtoBuilder()
-            .with('message', message.message)
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(422)
-        .expect({
-          message: 'Unauthorized address',
-          statusCode: 422,
-        });
-    });
-
-    it('should fail if the signer is not a Safe owner', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safe', safe.address)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      safe.owners = [getAddress(faker.finance.ethereumAddress())];
-      networkService.post.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(
-          createMessageDtoBuilder()
-            .with('message', message.message)
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(422)
-        .expect({
-          message: 'Invalid signature',
-          statusCode: 422,
-        });
-    });
-
     it('should return an error from the Transaction Service', async () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
@@ -1074,16 +865,7 @@ describe('Messages controller', () => {
         });
     });
 
-    it('should disable eth_sign', async () => {
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): typeof defaultConfiguration => ({
-        ...defaultConfiguration,
-        features: {
-          ...defaultConfiguration.features,
-          ethSign: false,
-        },
-      });
-      await initApp(testConfiguration);
+    it('Success', async () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
@@ -1094,7 +876,6 @@ describe('Messages controller', () => {
           chainId: chain.chainId,
           safe,
           signers: [signer],
-          signatureType: SignatureType.EthSign,
         });
       networkService.post.mockImplementation(({ url }) => {
         switch (url) {
@@ -1129,11 +910,319 @@ describe('Messages controller', () => {
             .with('signature', message.confirmations[0].signature)
             .build(),
         )
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          message: 'eth_sign is disabled',
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual(messageToJson(message));
         });
+    });
+
+    describe('Verification', () => {
+      it('should throw and log if the messageHash could not be calculated', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        safe.version = null;
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+          .send(
+            createMessageDtoBuilder()
+              .with('message', message.message)
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'Could not calculate messageHash',
+          });
+
+        expect(loggingService.error).toHaveBeenCalledWith({
+          message: 'Could not calculate messageHash',
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          safeMessage: message.message,
+          type: 'MESSAGE_VALIDITY',
+        });
+      });
+
+      it('should throw if a signature length is invalid', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+          .send(
+            createMessageDtoBuilder()
+              .with('message', message.message)
+              .with('signature', '0xdeadbeef')
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'custom',
+            message: 'Invalid signature',
+            path: ['signature'],
+          });
+
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
+
+      it.each(Object.values(SignatureType))(
+        'should throw and log if a %s signature is invalid',
+        async (signatureType) => {
+          const chain = chainBuilder().build();
+          const privateKey = generatePrivateKey();
+          const signer = privateKeyToAccount(privateKey);
+          const safe = safeBuilder().with('owners', [signer.address]).build();
+          const message = await messageBuilder()
+            .with('safe', safe.address)
+            .buildWithConfirmations({
+              chainId: chain.chainId,
+              safe,
+              signers: [signer],
+              signatureType,
+            });
+          const v = message.confirmations[0].signature?.slice(-2);
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: rawify(chain), status: 200 });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: rawify(safe),
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+            .send(
+              createMessageDtoBuilder()
+                .with('message', message.message)
+                .with(
+                  'signature',
+                  `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
+                )
+                .build(),
+            )
+            .expect(422)
+            .expect({
+              statusCode: 422,
+              code: 'custom',
+              message: 'Invalid "0x" notated hex string',
+              path: ['signature'],
+            });
+
+          expect(loggingService.error).not.toHaveBeenCalled();
+        },
+      );
+
+      it('should throw and log if the signer is blocked', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const defaultConfiguration = configuration();
+        const testConfiguration = (): ReturnType<typeof configuration> => {
+          return {
+            ...defaultConfiguration,
+            blockchain: {
+              ...defaultConfiguration.blockchain,
+              blocklist: [signer.address],
+            },
+          };
+        };
+        await initApp(testConfiguration);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+          .send(
+            createMessageDtoBuilder()
+              .with('message', message.message)
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'Unauthorized address',
+          });
+
+        expect(loggingService.error).toHaveBeenCalledWith({
+          message: 'Unauthorized address',
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          messageHash: message.messageHash,
+          signature: message.confirmations[0].signature,
+          blockedAddress: signer.address,
+          type: 'MESSAGE_VALIDITY',
+        });
+      });
+
+      it('should disable eth_sign', async () => {
+        const defaultConfiguration = configuration();
+        const testConfiguration = (): ReturnType<typeof configuration> => {
+          return {
+            ...defaultConfiguration,
+            features: {
+              ...defaultConfiguration.features,
+              ethSign: false,
+            },
+          };
+        };
+        await initApp(testConfiguration);
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+            signatureType: SignatureType.EthSign,
+          });
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+          .send(
+            createMessageDtoBuilder()
+              .with('message', message.message)
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'eth_sign is disabled',
+          });
+
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
+
+      it('should throw and log if the signer is not an owner', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        safe.owners = [getAddress(faker.finance.ethereumAddress())];
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+          .send(
+            createMessageDtoBuilder()
+              .with('message', message.message)
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'Invalid signature',
+          });
+
+        expect(loggingService.error).toHaveBeenCalledWith({
+          message: 'Recovered address does not match signer',
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          messageHash: message.messageHash,
+          signerAddress: signer.address,
+          signature: message.confirmations[0].signature,
+          type: 'MESSAGE_VALIDITY',
+        });
+      });
     });
   });
 
@@ -1191,249 +1280,6 @@ describe('Messages controller', () => {
         )
         .expect(200)
         .expect({ signature: message.confirmations[0].signature });
-    });
-
-    it('should fail if the messageHash could not be calculated', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safeAppId', null)
-        .with('safe', safe.address)
-        .with('created', faker.date.recent())
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      safe.version = null;
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-      networkService.post.mockImplementation(({ url }) =>
-        url ===
-        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
-          ? Promise.resolve({
-              data: rawify({ signature: message.confirmations[0].signature }),
-              status: 200,
-            })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
-
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
-        )
-        .send(
-          updateMessageSignatureDtoBuilder()
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          message: 'Could not calculate messageHash',
-        });
-    });
-
-    it('should fail if the messageHash is invalid', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safeAppId', null)
-        .with('safe', safe.address)
-        .with('created', faker.date.recent())
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      message.messageHash = faker.string.hexadecimal({
-        length: 64,
-      }) as `0x${string}`;
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-      networkService.post.mockImplementation(({ url }) =>
-        url ===
-        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
-          ? Promise.resolve({
-              data: rawify({ signature: message.confirmations[0].signature }),
-              status: 200,
-            })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
-
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
-        )
-        .send(
-          updateMessageSignatureDtoBuilder()
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(422)
-        .expect({ statusCode: 422, message: 'Invalid messageHash' });
-    });
-
-    it('should fail if the signer is blocked', async () => {
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): typeof defaultConfiguration => ({
-        ...defaultConfiguration,
-        blockchain: {
-          ...defaultConfiguration.blockchain,
-          blocklist: [signer.address],
-        },
-      });
-      await initApp(testConfiguration);
-      const chain = chainBuilder().build();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safeAppId', null)
-        .with('safe', safe.address)
-        .with('created', faker.date.recent())
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-      networkService.post.mockImplementation(({ url }) =>
-        url ===
-        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
-          ? Promise.resolve({
-              data: rawify({ signature: message.confirmations[0].signature }),
-              status: 200,
-            })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
-
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
-        )
-        .send(
-          updateMessageSignatureDtoBuilder()
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          message: 'Unauthorized address',
-        });
-    });
-
-    it('should fail if the signer is not a Safe owner', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safeAppId', null)
-        .with('safe', safe.address)
-        .with('created', faker.date.recent())
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      safe.owners = [getAddress(faker.finance.ethereumAddress())];
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-      networkService.post.mockImplementation(({ url }) =>
-        url ===
-        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
-          ? Promise.resolve({
-              data: rawify({ signature: message.confirmations[0].signature }),
-              status: 200,
-            })
-          : Promise.reject(`No matching rule for url: ${url}`),
-      );
-
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
-        )
-        .send(
-          updateMessageSignatureDtoBuilder()
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(422)
-        .expect({
-          message: 'Invalid signature',
-          statusCode: 422,
-        });
     });
 
     it('should return an error from the provider', async () => {
@@ -1522,72 +1368,418 @@ describe('Messages controller', () => {
         });
     });
 
-    it('should disable eth_sign', async () => {
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): typeof defaultConfiguration => ({
-        ...defaultConfiguration,
-        features: {
-          ...defaultConfiguration.features,
-          ethSign: false,
-        },
-      });
-      await initApp(testConfiguration);
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safeAppId', null)
-        .with('safe', safe.address)
-        .with('created', faker.date.recent())
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-          signatureType: SignatureType.EthSign,
+    describe('Verification', () => {
+      it('should throw and log if the messageHash could not be calculated', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safeAppId', null)
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        safe.version = null;
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+              return Promise.resolve({
+                data: rawify(messageToJson(message)),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
         });
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({
-              data: rawify(safe),
-              status: 200,
-            });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
-            return Promise.resolve({
-              data: rawify(messageToJson(message)),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'Could not calculate messageHash',
+          });
+
+        expect(loggingService.error).toHaveBeenCalledWith({
+          message: 'Could not calculate messageHash',
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          safeMessage: message.message,
+          type: 'MESSAGE_VALIDITY',
+        });
       });
-      networkService.post.mockImplementation(({ url }) =>
-        url ===
-        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
-          ? Promise.resolve({
-              data: rawify({ signature: message.confirmations[0].signature }),
-              status: 200,
-            })
-          : Promise.reject(`No matching rule for url: ${url}`),
+
+      it('should throw and log if the messageHash does not match', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safeAppId', null)
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        message.messageHash = faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`;
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+              return Promise.resolve({
+                data: rawify(messageToJson(message)),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'Invalid messageHash',
+          });
+
+        expect(loggingService.error).toHaveBeenCalledWith({
+          message: 'messageHash does not match',
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          messageHash: message.messageHash,
+          safeMessage: message.message,
+          type: 'MESSAGE_VALIDITY',
+        });
+      });
+
+      it('should throw if a signature length is invalid', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safeAppId', null)
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with('signature', '0xdeadbeef')
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'custom',
+            message: 'Invalid signature',
+            path: ['signature'],
+          });
+
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
+
+      it.each(Object.values(SignatureType))(
+        'should throw and log if a %s signature is invalid',
+        async (signatureType) => {
+          const chain = chainBuilder().build();
+          const privateKey = generatePrivateKey();
+          const signer = privateKeyToAccount(privateKey);
+          const safe = safeBuilder().with('owners', [signer.address]).build();
+          const message = await messageBuilder()
+            .with('safeAppId', null)
+            .with('safe', safe.address)
+            .with('created', faker.date.recent())
+            .buildWithConfirmations({
+              chainId: chain.chainId,
+              safe,
+              signers: [signer],
+              signatureType,
+            });
+          const v = message.confirmations[0].signature?.slice(-2);
+          networkService.get.mockImplementation(({ url }) => {
+            switch (url) {
+              case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+                return Promise.resolve({ data: rawify(chain), status: 200 });
+              case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+                return Promise.resolve({
+                  data: rawify(safe),
+                  status: 200,
+                });
+              case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+                return Promise.resolve({
+                  data: rawify(messageToJson(message)),
+                  status: 200,
+                });
+              default:
+                return Promise.reject(new Error(`Could not match ${url}`));
+            }
+          });
+
+          await request(app.getHttpServer())
+            .post(
+              `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+            )
+            .send(
+              updateMessageSignatureDtoBuilder()
+                .with(
+                  'signature',
+                  `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
+                )
+                .build(),
+            )
+            .expect(422)
+            .expect({
+              statusCode: 422,
+              code: 'custom',
+              message: 'Invalid "0x" notated hex string',
+              path: ['signature'],
+            });
+
+          expect(loggingService.error).not.toHaveBeenCalled();
+        },
       );
 
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
-        )
-        .send(
-          updateMessageSignatureDtoBuilder()
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        )
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          message: 'eth_sign is disabled',
+      it('should throw and log if the signer is blocked', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const defaultConfiguration = configuration();
+        const testConfiguration = (): ReturnType<typeof configuration> => {
+          return {
+            ...defaultConfiguration,
+            blockchain: {
+              ...defaultConfiguration.blockchain,
+              blocklist: [signer.address],
+            },
+          };
+        };
+        await initApp(testConfiguration);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safeAppId', null)
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+              return Promise.resolve({
+                data: rawify(messageToJson(message)),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
         });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'Unauthorized address',
+          });
+
+        expect(loggingService.error).toHaveBeenCalledWith({
+          message: 'Unauthorized address',
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          messageHash: message.messageHash,
+          signature: message.confirmations[0].signature,
+          blockedAddress: signer.address,
+          type: 'MESSAGE_VALIDITY',
+        });
+      });
+
+      it('should disable eth_sign', async () => {
+        const defaultConfiguration = configuration();
+        const testConfiguration = (): ReturnType<typeof configuration> => {
+          return {
+            ...defaultConfiguration,
+            features: {
+              ...defaultConfiguration.features,
+              ethSign: false,
+            },
+          };
+        };
+        await initApp(testConfiguration);
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safeAppId', null)
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+            signatureType: SignatureType.EthSign,
+          });
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+              return Promise.resolve({
+                data: rawify(messageToJson(message)),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'eth_sign is disabled',
+          });
+
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
+
+      it('should throw and log if the signer is not an owner', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safeAppId', null)
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+        safe.owners = [getAddress(faker.finance.ethereumAddress())];
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+              return Promise.resolve({
+                data: rawify(safe),
+                status: 200,
+              });
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+              return Promise.resolve({
+                data: rawify(messageToJson(message)),
+                status: 200,
+              });
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with('signature', message.confirmations[0].signature)
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            message: 'Invalid signature',
+          });
+
+        expect(loggingService.error).toHaveBeenCalledWith({
+          message: 'Recovered address does not match signer',
+          chainId: chain.chainId,
+          safeAddress: safe.address,
+          safeVersion: safe.version,
+          messageHash: message.messageHash,
+          signerAddress: signer.address,
+          signature: message.confirmations[0].signature,
+          type: 'MESSAGE_VALIDITY',
+        });
+      });
     });
   });
 });

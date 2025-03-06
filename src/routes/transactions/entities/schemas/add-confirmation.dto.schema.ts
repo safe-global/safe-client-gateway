@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
 
 export const AddConfirmationDtoSchema = z
   .object({
-    signature: HexSchema,
+    signature: SignatureSchema,
   })
   .or(
     z.object({
       // Note: mobile proposes signatures under the signedSafeTxHash property
-      signedSafeTxHash: HexSchema,
+      signedSafeTxHash: SignatureSchema,
     }),
   )
   .transform((data) => {

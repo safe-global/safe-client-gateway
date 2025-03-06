@@ -141,16 +141,6 @@ export class MessageVerifierHelper {
       signature: args.signature,
     });
 
-    if (
-      !this.isEthSignEnabled &&
-      signature.signatureType === SignatureType.EthSign
-    ) {
-      throw new HttpExceptionNoLog(
-        'eth_sign is disabled',
-        MessageVerifierHelper.StatusCode,
-      );
-    }
-
     const isBlocked = this.blocklist.includes(signature.owner);
     if (isBlocked) {
       this.logBlockedAddress({
@@ -159,6 +149,16 @@ export class MessageVerifierHelper {
       });
       throw new HttpExceptionNoLog(
         ErrorMessage.BlockedAddress,
+        MessageVerifierHelper.StatusCode,
+      );
+    }
+
+    if (
+      !this.isEthSignEnabled &&
+      signature.signatureType === SignatureType.EthSign
+    ) {
+      throw new HttpExceptionNoLog(
+        'eth_sign is disabled',
         MessageVerifierHelper.StatusCode,
       );
     }

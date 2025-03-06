@@ -149,6 +149,29 @@ describe('CreateMessageDtoSchema', () => {
   });
 
   describe('signature', () => {
+    it('should not validate a non-hex signature', () => {
+      const createMessageDto = createMessageDtoBuilder()
+        .with('signature', faker.string.numeric() as `0x${string}`)
+        .build();
+
+      const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            message: 'Invalid "0x" notated hex string',
+            path: ['signature'],
+          },
+          {
+            code: 'custom',
+            message: 'Invalid signature',
+            path: ['signature'],
+          },
+        ]),
+      );
+    });
+
     it('should not validate without a signature', () => {
       const createMessageDto = createMessageDtoBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional properties
