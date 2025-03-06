@@ -1,5 +1,4 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { recoverAddress, isAddressEqual, recoverMessageAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   BaseMultisigTransaction,
@@ -10,18 +9,11 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository.interface';
-import {
-  isApprovedHashV,
-  isContractSignatureV,
-  isEoaV,
-  isEthSignV,
-  normalizeEthSignSignature,
-  splitConcatenatedSignatures,
-  splitSignature,
-} from '@/domain/common/utils/signatures';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { SafeSignature } from '@/domain/common/entities/safe-signature';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -74,11 +66,11 @@ export class TransactionVerifierHelper {
     );
   }
 
-  public async verifyApiTransaction(args: {
+  public verifyApiTransaction(args: {
     chainId: string;
     safe: Safe;
     transaction: MultisigTransaction;
-  }): Promise<void> {
+  }): void {
     if (
       args.transaction.isExecuted ||
       args.transaction.nonce < args.safe.nonce
@@ -91,7 +83,7 @@ export class TransactionVerifierHelper {
       this.verifyApiSafeTxHash({ ...args, code });
     }
     if (this.isApiSignatureVerificationEnabled) {
-      await this.verifyApiSignatures({ ...args, code });
+      this.verifyApiSignatures({ ...args, code });
     }
   }
 
@@ -113,12 +105,12 @@ export class TransactionVerifierHelper {
     }
   }
 
-  public async verifyConfirmation(args: {
+  public verifyConfirmation(args: {
     chainId: string;
     safe: Safe;
     transaction: MultisigTransaction;
     signature: `0x${string}`;
-  }): Promise<void> {
+  }): void {
     const code = HttpStatus.UNPROCESSABLE_ENTITY;
 
     if (
@@ -131,7 +123,7 @@ export class TransactionVerifierHelper {
       this.verifyConfirmSafeTxHash({ ...args, code });
     }
     if (this.isProposalHashVerificationEnabled) {
-      await this.verifyConfirmationSignature({ ...args, code });
+      this.verifyConfirmationSignature({ ...args, code });
     }
   }
 
@@ -226,12 +218,12 @@ export class TransactionVerifierHelper {
     }
   }
 
-  private async verifyApiSignatures(args: {
+  private verifyApiSignatures(args: {
     chainId: string;
     safe: Safe;
     transaction: MultisigTransaction;
     code: HttpStatus;
-  }): Promise<void> {
+  }): void {
     if (
       !args.transaction.confirmations ||
       args.transaction.confirmations.length === 0
@@ -270,28 +262,20 @@ export class TransactionVerifierHelper {
         continue;
       }
 
-      const { v } = splitSignature(confirmation.signature);
-      // We cannot verify contract signatures or approved hashes on-chain
-      if (isContractSignatureV(v) || isApprovedHashV(v)) {
-        continue;
-      }
-
-      const address = await this.recoverAddress({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
+      const signature = new SafeSignature({
+        hash: args.transaction.safeTxHash,
         signature: confirmation.signature,
       });
 
-      const isBlocked = address && this.blocklist.includes(address);
+      const isBlocked = this.blocklist.includes(signature.owner);
       if (isBlocked) {
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
       if (
-        address &&
-        (!isAddressEqual(address, confirmation.owner) ||
-          // We can be certain of no ownership changes as we only verify the queue
-          !args.safe.owners.includes(address))
+        signature.owner !== confirmation.owner ||
+        // We can be certain of no ownership changes as we only verify the queue
+        !args.safe.owners.includes(signature.owner)
       ) {
         this.logInvalidSignature({
           ...args,
@@ -314,47 +298,32 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    let signatures: Array<`0x${string}`>;
-    try {
-      // Clients may propose concatenated signatures so we need to split them
-      signatures = splitConcatenatedSignatures(args.proposal.signature);
-    } catch {
-      this.logUnrecoverableAddress({
-        ...args,
-        safeTxHash: args.proposal.safeTxHash,
-        signature: args.proposal.signature,
-      });
-      throw new HttpExceptionNoLog(
-        ErrorMessage.UnrecoverableAddress,
-        args.code,
-      );
-    }
+    const signatures: Array<SafeSignature> = [];
 
-    const recoveredAddresses: Array<`0x${string}`> = [];
-    for (const signature of signatures) {
-      const { v } = splitSignature(signature);
-      if (isEthSignV(v) && !this.isEthSignEnabled) {
+    // Clients may propose concatenated signatures so we need to split them
+    for (let i = 2; i < args.proposal.signature.length; i += 130) {
+      const signature = new SafeSignature({
+        hash: args.proposal.safeTxHash,
+        signature: `0x${args.proposal.signature.slice(i, i + 130)}`,
+      });
+
+      if (this.blocklist.includes(signature.owner)) {
+        throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
+      }
+
+      if (
+        !this.isEthSignEnabled &&
+        signature.signatureType === SignatureType.EthSign
+      ) {
         throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);
       }
 
-      const recoveredAddress = await this.recoverAddress({
-        ...args,
-        safeTxHash: args.proposal.safeTxHash,
-        signature,
-      });
-      if (recoveredAddress) {
-        recoveredAddresses.push(recoveredAddress);
-      }
+      signatures.push(signature);
     }
 
-    const hasBlockedAddresses = recoveredAddresses.some((address) => {
-      return this.blocklist.includes(address);
+    const isSender = signatures.some((signature) => {
+      return signature.owner === args.proposal.sender;
     });
-    if (hasBlockedAddresses) {
-      throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
-    }
-
-    const isSender = recoveredAddresses.includes(args.proposal.sender);
     if (!isSender) {
       this.logInvalidSignature({
         ...args,
@@ -365,9 +334,9 @@ export class TransactionVerifierHelper {
       throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
     }
 
-    const areOwners = recoveredAddresses.every((address) =>
-      args.safe.owners.includes(address),
-    );
+    const areOwners = signatures.every((signature) => {
+      return args.safe.owners.includes(signature.owner);
+    });
     if (areOwners) {
       return;
     }
@@ -392,62 +361,38 @@ export class TransactionVerifierHelper {
     throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
   }
 
-  private async verifyConfirmationSignature(args: {
+  private verifyConfirmationSignature(args: {
     chainId: string;
     safe: Safe;
     transaction: MultisigTransaction;
     signature: `0x${string}`;
     code: HttpStatus;
-  }): Promise<void> {
-    const { v } = splitSignature(args.signature);
-    if (isEthSignV(v) && !this.isEthSignEnabled) {
+  }): void {
+    const signature = new SafeSignature({
+      signature: args.signature,
+      hash: args.transaction.safeTxHash,
+    });
+
+    if (this.blocklist.includes(signature.owner)) {
+      throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
+    }
+
+    if (
+      !this.isEthSignEnabled &&
+      signature.signatureType === SignatureType.EthSign
+    ) {
       throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);
     }
 
-    const address = await this.recoverAddress({
-      ...args,
-      safeTxHash: args.transaction.safeTxHash,
-      signature: args.signature,
-    });
-
-    if (address && !args.safe.owners.includes(address)) {
+    if (!args.safe.owners.includes(signature.owner)) {
       this.logInvalidSignature({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
-        signerAddress: address,
+        signerAddress: signature.owner,
         signature: args.signature,
       });
       throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
     }
-  }
-
-  private async recoverAddress(args: {
-    safe: Safe;
-    chainId: string;
-    safeTxHash: `0x${string}`;
-    signature: `0x${string}`;
-    code: HttpStatus;
-  }): Promise<`0x${string}` | null> {
-    const { v } = splitSignature(args.signature);
-
-    try {
-      if (isEoaV(v)) {
-        return await recoverAddress({
-          hash: args.safeTxHash,
-          signature: args.signature,
-        });
-      }
-      if (isEthSignV(v)) {
-        return await recoverMessageAddress({
-          message: { raw: args.safeTxHash },
-          signature: normalizeEthSignSignature(args.signature),
-        });
-      }
-    } catch {
-      this.logUnrecoverableAddress(args);
-    }
-
-    throw new HttpExceptionNoLog(ErrorMessage.UnrecoverableAddress, args.code);
   }
 
   private logMalformedSafeTxHash(args: {

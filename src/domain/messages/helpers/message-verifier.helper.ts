@@ -1,4 +1,6 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { SafeSignature } from '@/domain/common/entities/safe-signature';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
 import { Message } from '@/domain/messages/entities/message.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
@@ -8,10 +10,11 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { recoverAddress, TypedDataDefinition } from 'viem';
+import { TypedDataDefinition } from 'viem';
 
 @Injectable()
 export class MessageVerifierHelper {
+  private readonly isEthSignEnabled: boolean;
   private readonly isMessageVerificationEnabled: boolean;
   private readonly blocklist: Array<`0x${string}`>;
 
@@ -19,6 +22,8 @@ export class MessageVerifierHelper {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
+    this.isEthSignEnabled =
+      this.configurationService.getOrThrow('features.ethSign');
     this.isMessageVerificationEnabled = this.configurationService.getOrThrow(
       'features.messageVerification',
     );
@@ -27,12 +32,12 @@ export class MessageVerifierHelper {
     );
   }
 
-  public async verifyCreation(args: {
+  public verifyCreation(args: {
     chainId: string;
     safe: Safe;
     message: string | Record<string, unknown>;
     signature: `0x${string}`;
-  }): Promise<void> {
+  }): void {
     if (!this.isMessageVerificationEnabled) {
       return;
     }
@@ -50,7 +55,7 @@ export class MessageVerifierHelper {
       throw new UnprocessableEntityException('Could not calculate messageHash');
     }
 
-    await this.verifySignature({
+    this.verifySignature({
       safe: args.safe,
       chainId: args.chainId,
       messageHash: calculatedHash,
@@ -58,13 +63,13 @@ export class MessageVerifierHelper {
     });
   }
 
-  public async verifyUpdate(args: {
+  public verifyUpdate(args: {
     chainId: string;
     safe: Safe;
     message: Message;
     messageHash: `0x${string}`;
     signature: `0x${string}`;
-  }): Promise<void> {
+  }): void {
     if (!this.isMessageVerificationEnabled) {
       return;
     }
@@ -76,7 +81,7 @@ export class MessageVerifierHelper {
       expectedHash: args.messageHash,
     });
 
-    await this.verifySignature({
+    this.verifySignature({
       safe: args.safe,
       chainId: args.chainId,
       messageHash: args.messageHash,
@@ -106,40 +111,32 @@ export class MessageVerifierHelper {
     }
   }
 
-  public async verifySignature(args: {
+  public verifySignature(args: {
     safe: Safe;
     chainId: string;
     messageHash: `0x${string}`;
     signature: `0x${string}`;
-  }): Promise<void> {
-    const signerAddress = await this.recoverSignerAddress({
-      messageHash: args.messageHash,
+  }): void {
+    const signature = new SafeSignature({
+      hash: args.messageHash,
       signature: args.signature,
     });
 
-    const isBlocked = this.blocklist.includes(signerAddress);
+    if (
+      !this.isEthSignEnabled &&
+      signature.signatureType === SignatureType.EthSign
+    ) {
+      throw new BadGatewayException('eth_sign is disabled');
+    }
+
+    const isBlocked = this.blocklist.includes(signature.owner);
     if (isBlocked) {
       throw new BadGatewayException('Unauthorized address');
     }
 
-    const isOwner = args.safe.owners.includes(signerAddress);
+    const isOwner = args.safe.owners.includes(signature.owner);
     if (!isOwner) {
       throw new BadGatewayException('Invalid signature');
-    }
-  }
-
-  public async recoverSignerAddress(args: {
-    messageHash: `0x${string}`;
-    signature: `0x${string}`;
-  }): Promise<`0x${string}`> {
-    // TODO: Throw is v is eth_sign and feature disabled
-    try {
-      return await recoverAddress({
-        hash: args.messageHash,
-        signature: args.signature,
-      });
-    } catch {
-      throw new BadGatewayException('Could not recover signer address');
     }
   }
 }
