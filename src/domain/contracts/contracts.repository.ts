@@ -24,10 +24,10 @@ export class ContractsRepository implements IContractsRepository {
     return ContractSchema.parse(data);
   }
 
-  async getTrustedForDelegateCallContracts(args: {
-    chainId: string;
-  }): Promise<Page<Contract>> {
-    const api = await this.transactionApiManager.getApi(args.chainId);
+  async getTrustedForDelegateCallContracts(
+    chainId: string,
+  ): Promise<Page<Contract>> {
+    const api = await this.transactionApiManager.getApi(chainId);
     const contracts = await api.getTrustedForDelegateCallContracts();
     return ContractPageSchema.parse(contracts);
   }
