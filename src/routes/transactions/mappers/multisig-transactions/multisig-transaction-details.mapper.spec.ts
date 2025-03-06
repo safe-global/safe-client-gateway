@@ -19,6 +19,7 @@ import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.re
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import type { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -61,6 +62,10 @@ const mockLoggingService = {
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
+const mockContractsRepository = jest.mocked({
+  getContract: jest.fn(),
+} as jest.MockedObjectDeep<IContractsRepository>);
+
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
@@ -90,6 +95,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         mockConfigurationService,
         mockDelegatesRepository,
         mockLoggingService,
+        mockContractsRepository,
       ),
     );
   }
