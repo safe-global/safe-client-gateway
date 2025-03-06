@@ -144,7 +144,7 @@ export class TransactionVerifierHelper {
     proposal: ProposeTransactionDto;
     code: HttpStatus;
   }): Promise<void> {
-    if (args.proposal.operation === Operation.CALL) {
+    if (args.proposal.operation !== Operation.DELEGATE) {
       return;
     }
 
