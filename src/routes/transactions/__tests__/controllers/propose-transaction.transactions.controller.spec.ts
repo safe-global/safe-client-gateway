@@ -418,11 +418,15 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       .with('signature', transaction.confirmations![0].signature)
       .build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
     const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
     networkService.get.mockImplementation(({ url }) => {
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url === getMultisigTransactionUrl) {
         return Promise.resolve({

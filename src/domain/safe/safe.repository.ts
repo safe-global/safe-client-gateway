@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -32,15 +32,10 @@ import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creati
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
-import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Operation } from '@/domain/safe/entities/operation.entity';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
-  private readonly isTrustedDelegateCallEnabled: boolean;
-
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
@@ -49,14 +44,8 @@ export class SafeRepository implements ISafeRepository {
     private readonly chainsRepository: IChainsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(IContractsRepository)
-    private readonly contractsRepository: IContractsRepository,
     private readonly transactionVerifier: TransactionVerifierHelper,
-  ) {
-    this.isTrustedDelegateCallEnabled = this.configurationService.getOrThrow(
-      'features.trustedDelegateCall',
-    );
-  }
+  ) {}
 
   async getSafe(args: {
     chainId: string;
@@ -638,27 +627,6 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-
-    const error = new HttpExceptionNoLog(
-      'Delegate call is disabled',
-      HttpStatus.UNPROCESSABLE_ENTITY,
-    );
-    if (args.proposeTransactionDto.operation === Operation.DELEGATE) {
-      if (!this.isTrustedDelegateCallEnabled) {
-        throw error;
-      }
-      try {
-        const contract = await this.contractsRepository.getContract({
-          chainId: args.chainId,
-          contractAddress: args.proposeTransactionDto.to,
-        });
-        if (!contract.trustedForDelegateCall) {
-          throw error;
-        }
-      } catch {
-        throw error;
-      }
-    }
 
     const safe = await this.getSafe({
       chainId: args.chainId,

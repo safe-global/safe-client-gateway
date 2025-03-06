@@ -10,10 +10,13 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { proposeTransactionDtoBuilder } from '@/routes/transactions/entities/__tests__/propose-transaction.dto.builder';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import type { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -27,11 +30,16 @@ const mockLoggingRepository = jest.mocked({
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
+const mockContractsRepository = jest.mocked({
+  getContract: jest.fn(),
+} as jest.MockedObjectDeep<IContractsRepository>);
+
 describe('TransactionVerifierHelper', () => {
   let target: TransactionVerifierHelper;
 
   function initTarget(args: {
     ethSign: boolean;
+    trustedDelegateCall: boolean;
     blocklist: Array<`0x${string}`>;
   }): void {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
@@ -42,6 +50,7 @@ describe('TransactionVerifierHelper', () => {
         'features.hashVerification.proposal',
         'features.signatureVerification.proposal',
         args.ethSign ? 'features.ethSign' : null,
+        args.trustedDelegateCall ? 'features.trustedDelegateCall' : null,
       ].includes(key);
     });
 
@@ -49,13 +58,14 @@ describe('TransactionVerifierHelper', () => {
       mockConfigurationService,
       mockDelegatesRepository,
       mockLoggingRepository,
+      mockContractsRepository,
     );
   }
 
   beforeEach(() => {
     jest.resetAllMocks();
 
-    initTarget({ ethSign: true, blocklist: [] });
+    initTarget({ ethSign: true, trustedDelegateCall: true, blocklist: [] });
   });
 
   describe('verifyApiTransaction', () => {
@@ -610,7 +620,11 @@ describe('TransactionVerifierHelper', () => {
       });
 
       it('should not block eth_sign', async () => {
-        initTarget({ ethSign: false, blocklist: [] });
+        initTarget({
+          ethSign: false,
+          trustedDelegateCall: true,
+          blocklist: [],
+        });
 
         const chainId = faker.string.numeric();
         const privateKey = generatePrivateKey();
@@ -642,6 +656,7 @@ describe('TransactionVerifierHelper', () => {
         const legitSigner = privateKeyToAccount(legitPrivateKey);
         initTarget({
           ethSign: true,
+          trustedDelegateCall: true,
           blocklist: [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
@@ -695,6 +710,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -718,6 +734,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', transaction.confirmations![0].owner)
           .with('signature', transaction.confirmations![0].signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         expect(() => {
           return target.verifyProposal({ chainId, safe, proposal });
@@ -742,6 +763,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce - 1)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -765,6 +787,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', transaction.confirmations![0].owner)
           .with('signature', transaction.confirmations![0].signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -794,6 +821,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -817,6 +845,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', transaction.confirmations![0].owner)
           .with('signature', transaction.confirmations![0].signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -868,6 +901,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -896,6 +930,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', transaction.confirmations![0].owner)
           .with('signature', transaction.confirmations![0].signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -949,6 +988,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -981,6 +1021,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', confirmation.owner)
           .with('signature', confirmation.signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1005,6 +1050,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce - 1)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1037,6 +1083,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', confirmation.owner)
           .with('signature', confirmation.signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1066,6 +1117,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1106,6 +1158,11 @@ describe('TransactionVerifierHelper', () => {
             ])
             .build(),
         );
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1130,6 +1187,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1163,6 +1221,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', sender)
           .with('signature', signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1187,6 +1250,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1220,6 +1284,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', confirmation.owner)
           .with('signature', confirmation.signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1246,6 +1315,7 @@ describe('TransactionVerifierHelper', () => {
           const transaction = await multisigTransactionBuilder()
             .with('safe', safe.address)
             .with('nonce', safe.nonce)
+            .with('operation', Operation.CALL)
             .buildWithConfirmations({
               chainId,
               signers: faker.helpers.arrayElements(signers, {
@@ -1281,6 +1351,11 @@ describe('TransactionVerifierHelper', () => {
             .with('sender', confirmation.owner)
             .with('signature', confirmation.signature)
             .build();
+          const contract = contractBuilder()
+            .with('address', transaction.to)
+            .with('trustedForDelegateCall', true)
+            .build();
+          mockContractsRepository.getContract.mockResolvedValue(contract);
 
           await expect(
             target.verifyProposal({ chainId, safe, proposal }),
@@ -1311,6 +1386,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1343,6 +1419,11 @@ describe('TransactionVerifierHelper', () => {
           .with('sender', getAddress(faker.finance.ethereumAddress()))
           .with('signature', confirmation.signature)
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1381,6 +1462,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers,
@@ -1416,6 +1498,11 @@ describe('TransactionVerifierHelper', () => {
         mockDelegatesRepository.getDelegates.mockResolvedValue(
           pageBuilder<Delegate>().with('results', []).build(),
         );
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1457,6 +1544,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers: faker.helpers.arrayElements(signers, {
@@ -1493,6 +1581,11 @@ describe('TransactionVerifierHelper', () => {
         mockDelegatesRepository.getDelegates.mockResolvedValue(
           pageBuilder<Delegate>().with('results', []).build(),
         );
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1530,6 +1623,7 @@ describe('TransactionVerifierHelper', () => {
         const blockedAddress = getAddress(signers[signers.length - 1].address);
         initTarget({
           ethSign: true,
+          trustedDelegateCall: true,
           blocklist: [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
@@ -1546,6 +1640,7 @@ describe('TransactionVerifierHelper', () => {
         const transaction = await multisigTransactionBuilder()
           .with('safe', safe.address)
           .with('nonce', safe.nonce)
+          .with('operation', Operation.CALL)
           .buildWithConfirmations({
             chainId,
             signers,
@@ -1577,6 +1672,11 @@ describe('TransactionVerifierHelper', () => {
               .signature,
           )
           .build();
+        const contract = contractBuilder()
+          .with('address', transaction.to)
+          .with('trustedForDelegateCall', true)
+          .build();
+        mockContractsRepository.getContract.mockResolvedValue(contract);
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal }),
@@ -1590,7 +1690,7 @@ describe('TransactionVerifierHelper', () => {
     });
 
     it('should block eth_sign', async () => {
-      initTarget({ ethSign: false, blocklist: [] });
+      initTarget({ ethSign: false, trustedDelegateCall: true, blocklist: [] });
 
       const chainId = faker.string.numeric();
       const signers = Array.from(
@@ -1609,6 +1709,7 @@ describe('TransactionVerifierHelper', () => {
       const transaction = await multisigTransactionBuilder()
         .with('safe', safe.address)
         .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
         .buildWithConfirmations({
           chainId,
           signers: faker.helpers.arrayElements(signers, {
@@ -1642,12 +1743,304 @@ describe('TransactionVerifierHelper', () => {
         .with('sender', confirmation.owner)
         .with('signature', confirmation.signature)
         .build();
+      const contract = contractBuilder()
+        .with('address', transaction.to)
+        .with('trustedForDelegateCall', true)
+        .build();
+      mockContractsRepository.getContract.mockResolvedValue(contract);
 
       await expect(
         target.verifyProposal({ chainId, safe, proposal }),
       ).rejects.toThrow(
         new HttpExceptionNoLog(
           'eth_sign is disabled',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        ),
+      );
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
+    it('should block delegate calls by default', async () => {
+      initTarget({
+        ethSign: true,
+        trustedDelegateCall: false,
+        blocklist: [],
+      });
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.DELEGATE)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      if (
+        !transaction.confirmations ||
+        transaction.confirmations.length === 0
+      ) {
+        throw new Error('Transaction must have at least 1 confirmation');
+      }
+      const confirmation = faker.helpers.arrayElement(
+        transaction.confirmations,
+      );
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', confirmation.owner)
+        .with('signature', confirmation.signature)
+        .build();
+      const contract = contractBuilder()
+        .with('address', transaction.to)
+        .with('trustedForDelegateCall', true)
+        .build();
+      mockContractsRepository.getContract.mockResolvedValue(contract);
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Delegate call is disabled',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        ),
+      );
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
+    it('should allow trusted delegate calls', async () => {
+      initTarget({
+        ethSign: true,
+        trustedDelegateCall: true,
+        blocklist: [],
+      });
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.DELEGATE)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      if (
+        !transaction.confirmations ||
+        transaction.confirmations.length === 0
+      ) {
+        throw new Error('Transaction must have at least 1 confirmation');
+      }
+      const confirmation = faker.helpers.arrayElement(
+        transaction.confirmations,
+      );
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', confirmation.owner)
+        .with('signature', confirmation.signature)
+        .build();
+      const contract = contractBuilder()
+        .with('address', transaction.to)
+        .with('trustedForDelegateCall', true)
+        .build();
+      mockContractsRepository.getContract.mockResolvedValue(contract);
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).resolves.not.toThrow();
+    });
+
+    it('should block untrusted delegate calls', async () => {
+      initTarget({
+        ethSign: true,
+        trustedDelegateCall: true,
+        blocklist: [],
+      });
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.DELEGATE)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      if (
+        !transaction.confirmations ||
+        transaction.confirmations.length === 0
+      ) {
+        throw new Error('Transaction must have at least 1 confirmation');
+      }
+      const confirmation = faker.helpers.arrayElement(
+        transaction.confirmations,
+      );
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', confirmation.owner)
+        .with('signature', confirmation.signature)
+        .build();
+      const contract = contractBuilder()
+        .with('address', transaction.to)
+        .with('trustedForDelegateCall', false)
+        .build();
+      mockContractsRepository.getContract.mockResolvedValue(contract);
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Delegate call is disabled',
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        ),
+      );
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
+    it('should block delegate calls if the contract cannot be found', async () => {
+      initTarget({
+        ethSign: true,
+        trustedDelegateCall: true,
+        blocklist: [],
+      });
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.DELEGATE)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      if (
+        !transaction.confirmations ||
+        transaction.confirmations.length === 0
+      ) {
+        throw new Error('Transaction must have at least 1 confirmation');
+      }
+      const confirmation = faker.helpers.arrayElement(
+        transaction.confirmations,
+      );
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', confirmation.owner)
+        .with('signature', confirmation.signature)
+        .build();
+      mockContractsRepository.getContract.mockRejectedValue(
+        new Error('Not found'),
+      );
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Delegate call is disabled',
           HttpStatus.UNPROCESSABLE_ENTITY,
         ),
       );
@@ -2136,7 +2529,11 @@ describe('TransactionVerifierHelper', () => {
       });
 
       it('should block eth_sign', async () => {
-        initTarget({ ethSign: false, blocklist: [] });
+        initTarget({
+          ethSign: false,
+          trustedDelegateCall: true,
+          blocklist: [],
+        });
 
         const chainId = faker.string.numeric();
         const signers = Array.from(
@@ -2191,6 +2588,7 @@ describe('TransactionVerifierHelper', () => {
         const legitSigner = privateKeyToAccount(legitPrivateKey);
         initTarget({
           ethSign: true,
+          trustedDelegateCall: true,
           blocklist: [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
