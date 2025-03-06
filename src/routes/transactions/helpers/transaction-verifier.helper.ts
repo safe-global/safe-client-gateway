@@ -20,7 +20,6 @@ enum ErrorMessage {
   HashMismatch = 'Invalid safeTxHash',
   DuplicateOwners = 'Duplicate owners in confirmations',
   DuplicateSignatures = 'Duplicate signatures in confirmations',
-  UnrecoverableAddress = 'Could not recover address',
   InvalidSignature = 'Invalid signature',
   BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
@@ -269,6 +268,11 @@ export class TransactionVerifierHelper {
 
       const isBlocked = this.blocklist.includes(signature.owner);
       if (isBlocked) {
+        this.logBlockedAddress({
+          ...args,
+          safeTxHash: args.transaction.safeTxHash,
+          blockedAddress: signature.owner,
+        });
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
@@ -308,6 +312,11 @@ export class TransactionVerifierHelper {
       });
 
       if (this.blocklist.includes(signature.owner)) {
+        this.logBlockedAddress({
+          ...args,
+          safeTxHash: args.proposal.safeTxHash,
+          blockedAddress: signature.owner,
+        });
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
@@ -374,6 +383,11 @@ export class TransactionVerifierHelper {
     });
 
     if (this.blocklist.includes(signature.owner)) {
+      this.logBlockedAddress({
+        ...args,
+        safeTxHash: args.transaction.safeTxHash,
+        blockedAddress: signature.owner,
+      });
       throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
     }
 
@@ -452,19 +466,19 @@ export class TransactionVerifierHelper {
     });
   }
 
-  private logUnrecoverableAddress(args: {
+  private logBlockedAddress(args: {
     chainId: string;
     safe: Safe;
     safeTxHash: `0x${string}`;
-    signature: `0x${string}`;
+    blockedAddress: `0x${string}`;
   }): void {
     this.loggingService.error({
-      message: 'Could not recover address',
+      message: 'Unauthorized address',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
-      signature: args.signature,
+      blockedAddress: args.blockedAddress,
       type: LogType.TransactionValidity,
     });
   }

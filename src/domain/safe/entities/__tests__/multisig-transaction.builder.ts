@@ -4,8 +4,6 @@ import { dataDecodedBuilder } from '@/domain/data-decoder/v1/entities/__tests__/
 import {
   confirmationBuilder,
   toJson as confirmationToJson,
-  getApprovedHashSignature,
-  getContractSignature,
 } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
@@ -16,6 +14,11 @@ import type {
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 import type { Operation } from '@/domain/safe/entities/operation.entity';
 import { getAddress, type PrivateKeyAccount } from 'viem';
+import {
+  getContractSignature,
+  getApprovedHashSignature,
+  adjustEthSignSignature,
+} from '@/domain/common/utils/__tests__/signatures.builder';
 
 const HASH_LENGTH = 32;
 
@@ -54,6 +57,7 @@ class BuilderWithConfirmations<
 
         let signature: `0x${string}`;
 
+        // TODO: Refactor with multisig BuilderWithConfirmations
         if (signatureType === SignatureType.ContractSignature) {
           signature = getContractSignature(signer.address);
         } else if (signatureType === SignatureType.ApprovedHash) {
@@ -80,11 +84,6 @@ class BuilderWithConfirmations<
 
     return transaction;
   }
-}
-
-function adjustEthSignSignature(signature: `0x${string}`): `0x${string}` {
-  const v = parseInt(signature.slice(-2), 16);
-  return (signature.slice(0, 130) + (v + 4).toString(16)) as `0x${string}`;
 }
 
 export function multisigTransactionBuilder(): BuilderWithConfirmations<MultisigTransaction> {

@@ -4,9 +4,9 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import {
-  getApprovedHashSignature,
   getContractSignature,
-} from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+  getApprovedHashSignature,
+} from '@/domain/common/utils/__tests__/signatures.builder';
 
 describe('SafeSignature', () => {
   it('should create an instance', () => {

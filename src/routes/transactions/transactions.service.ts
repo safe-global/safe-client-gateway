@@ -624,7 +624,7 @@ export class TransactionsService {
     args: Parameters<TransactionsService['proposeTransaction']>[0],
   ): void {
     this.loggingService.info({
-      ...args.proposeTransactionDto,
+      transaction: args.proposeTransactionDto,
       safeAddress: args.safeAddress,
       chainId: args.chainId,
       type: LogType.TransactionPropose,

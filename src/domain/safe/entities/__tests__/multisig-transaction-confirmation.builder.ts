@@ -26,20 +26,6 @@ export function confirmationBuilder(): IBuilder<Confirmation> {
     );
 }
 
-export function getApprovedHashSignature(owner: `0x${string}`): `0x${string}` {
-  return ('0x000000000000000000000000' +
-    owner.slice(2) +
-    '0000000000000000000000000000000000000000000000000000000000000000' +
-    '01') as `0x${string}`;
-}
-
-export function getContractSignature(owner: `0x${string}`): `0x${string}` {
-  return ('0x000000000000000000000000' +
-    owner.slice(2) +
-    '0000000000000000000000000000000000000000000000000000000000000000' +
-    '00') as `0x${string}`;
-}
-
 export function toJson(confirmation: Confirmation): unknown {
   return {
     ...confirmation,
