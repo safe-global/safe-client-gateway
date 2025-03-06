@@ -139,7 +139,11 @@ describe('SafeSignature', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
-      const signatureType = faker.helpers.enumValue(SignatureType);
+      // Recovered via encodeAbiParameters
+      const signatureType = faker.helpers.arrayElement([
+        SignatureType.ApprovedHash,
+        SignatureType.ContractSignature,
+      ]);
       const signature = await getSignature({
         signer,
         hash,
