@@ -224,6 +224,7 @@ describe('TransactionVerifierHelper', () => {
             nonce: transaction.nonce,
           },
           type: 'TRANSACTION_VALIDITY',
+          source: 'API',
         });
       });
 
@@ -284,6 +285,7 @@ describe('TransactionVerifierHelper', () => {
             nonce: transaction.nonce,
           },
           type: 'TRANSACTION_VALIDITY',
+          source: 'API',
         });
       });
     });
@@ -459,6 +461,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           confirmations: transaction.confirmations,
           type: 'TRANSACTION_VALIDITY',
+          source: 'API',
         });
       });
 
@@ -504,6 +507,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           confirmations: transaction.confirmations,
           type: 'TRANSACTION_VALIDITY',
+          source: 'API',
         });
       });
 
@@ -571,6 +575,7 @@ describe('TransactionVerifierHelper', () => {
           signerAddress: transaction.confirmations![0].owner,
           signature: transaction.confirmations![0].signature,
           type: 'TRANSACTION_VALIDITY',
+          source: 'API',
         });
       });
 
@@ -606,6 +611,7 @@ describe('TransactionVerifierHelper', () => {
           signerAddress: transaction.confirmations![0].owner,
           signature: transaction.confirmations![0].signature,
           type: 'TRANSACTION_VALIDITY',
+          source: 'API',
         });
       });
 
@@ -679,6 +685,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           blockedAddress: blockedSigner.address,
           type: 'TRANSACTION_VALIDITY',
+          source: 'API',
         });
       });
     });
@@ -856,6 +863,7 @@ describe('TransactionVerifierHelper', () => {
             nonce: transaction.nonce,
           },
           type: 'TRANSACTION_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
 
@@ -935,6 +943,7 @@ describe('TransactionVerifierHelper', () => {
             nonce: transaction.nonce,
           },
           type: 'TRANSACTION_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
     });
@@ -1372,6 +1381,7 @@ describe('TransactionVerifierHelper', () => {
           signerAddress: proposal.sender,
           signature: proposal.signature,
           type: 'TRANSACTION_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
 
@@ -1445,6 +1455,7 @@ describe('TransactionVerifierHelper', () => {
           signerAddress: proposal.sender,
           signature: proposal.signature,
           type: 'TRANSACTION_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
 
@@ -1522,6 +1533,7 @@ describe('TransactionVerifierHelper', () => {
           signerAddress: proposal.sender,
           signature: proposal.signature,
           type: 'TRANSACTION_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
 
@@ -1605,6 +1617,7 @@ describe('TransactionVerifierHelper', () => {
           safeTxHash: transaction.safeTxHash,
           blockedAddress: blockedAddress,
           type: 'TRANSACTION_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
     });
@@ -1866,6 +1879,7 @@ describe('TransactionVerifierHelper', () => {
             nonce: transaction.nonce,
           },
           type: 'TRANSACTION_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
 
@@ -1934,6 +1948,7 @@ describe('TransactionVerifierHelper', () => {
             nonce: transaction.nonce,
           },
           type: 'TRANSACTION_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
     });
@@ -2152,6 +2167,7 @@ describe('TransactionVerifierHelper', () => {
           signerAddress: signer.address,
           signature: transaction.confirmations![0].signature!,
           type: 'TRANSACTION_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
 
