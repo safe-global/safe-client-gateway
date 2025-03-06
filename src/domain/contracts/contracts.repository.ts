@@ -2,7 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ContractSchema } from '@/domain/contracts/entities/schemas/contract.schema';
+import {
+  ContractPageSchema,
+  ContractSchema,
+} from '@/domain/contracts/entities/schemas/contract.schema';
+import { Page } from '@/domain/entities/page.entity';
 
 @Injectable()
 export class ContractsRepository implements IContractsRepository {
@@ -18,5 +22,13 @@ export class ContractsRepository implements IContractsRepository {
     const api = await this.transactionApiManager.getApi(args.chainId);
     const data = await api.getContract(args.contractAddress);
     return ContractSchema.parse(data);
+  }
+
+  async getTrustedForDelegateCallContracts(args: {
+    chainId: string;
+  }): Promise<Page<Contract>> {
+    const api = await this.transactionApiManager.getApi(args.chainId);
+    const contracts = await api.getTrustedForDelegateCallContracts();
+    return ContractPageSchema.parse(contracts);
   }
 }

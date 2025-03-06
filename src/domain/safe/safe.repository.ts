@@ -648,6 +648,8 @@ export class SafeRepository implements ISafeRepository {
         throw error;
       }
       try {
+        // TODO: FF
+        // TODO: contractRepository.getTrustedForDelegateCallContracts, check it's included.
         const contract = await this.contractsRepository.getContract({
           chainId: args.chainId,
           contractAddress: args.proposeTransactionDto.to,

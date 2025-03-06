@@ -79,6 +79,9 @@ export class TransactionDataMapper {
   ): Promise<boolean | null> {
     if (operation !== Operation.DELEGATE) return null;
 
+    // TODO: FF
+    // TODO: contractRepository.getTrustedForDelegateCallContracts, check it's included.
+
     let contract: Contract;
     try {
       contract = await this.contractRepository.getContract({
