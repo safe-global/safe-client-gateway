@@ -3,7 +3,6 @@ import isEmpty from 'lodash/isEmpty';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -79,15 +78,13 @@ export class TransactionDataMapper {
   ): Promise<boolean | null> {
     if (operation !== Operation.DELEGATE) return null;
 
-    // TODO: FF
-    // TODO: contractRepository.getTrustedForDelegateCallContracts, check it's included.
-
-    let contract: Contract;
+    let isTrustedForDelegateCall: boolean;
     try {
-      contract = await this.contractRepository.getContract({
-        chainId,
-        contractAddress: to,
-      });
+      isTrustedForDelegateCall =
+        await this.contractRepository.isTrustedForDelegateCall({
+          chainId,
+          contractAddress: to,
+        });
     } catch {
       return false;
     }
@@ -96,7 +93,7 @@ export class TransactionDataMapper {
       ? this.dataDecodedParamHelper.hasNestedDelegate(dataDecoded)
       : false;
 
-    return contract.trustedForDelegateCall && !hasNestedDelegate;
+    return isTrustedForDelegateCall && !hasNestedDelegate;
   }
 
   /**

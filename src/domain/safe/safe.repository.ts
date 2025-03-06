@@ -36,12 +36,10 @@ import { IContractsRepository } from '@/domain/contracts/contracts.repository.in
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { getAddress } from 'viem';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
   private readonly isTrustedDelegateCallEnabled: boolean;
-  private readonly isTrustedForDelegateCallContractsListEnabled: boolean;
 
   constructor(
     @Inject(ITransactionApiManager)
@@ -58,10 +56,6 @@ export class SafeRepository implements ISafeRepository {
     this.isTrustedDelegateCallEnabled = this.configurationService.getOrThrow(
       'features.trustedDelegateCall',
     );
-    this.isTrustedForDelegateCallContractsListEnabled =
-      this.configurationService.getOrThrow(
-        'features.trustedForDelegateCallContractsList',
-      );
   }
 
   async getSafe(args: {
@@ -654,15 +648,11 @@ export class SafeRepository implements ISafeRepository {
         throw error;
       }
       try {
-        const isTrusted = this.isTrustedForDelegateCallContractsListEnabled
-          ? await this.isIncludedInTrustedForDelegateCallContractsList({
-              chainId: args.chainId,
-              contractAddress: args.proposeTransactionDto.to,
-            })
-          : await this.isTrustedForDelegateCallContract({
-              chainId: args.chainId,
-              contractAddress: args.proposeTransactionDto.to,
-            });
+        const isTrusted =
+          await this.contractsRepository.isTrustedForDelegateCall({
+            chainId: args.chainId,
+            contractAddress: args.proposeTransactionDto.to,
+          });
         if (!isTrusted) {
           throw error;
         }
@@ -686,31 +676,6 @@ export class SafeRepository implements ISafeRepository {
       address: args.safeAddress,
       data: args.proposeTransactionDto,
     });
-  }
-
-  private async isIncludedInTrustedForDelegateCallContractsList(args: {
-    chainId: string;
-    contractAddress: `0x${string}`;
-  }): Promise<boolean> {
-    const trustedContracts =
-      await this.contractsRepository.getTrustedForDelegateCallContracts(
-        args.chainId,
-      );
-    return trustedContracts.results.some(
-      (contract) =>
-        getAddress(contract.address) === getAddress(args.contractAddress),
-    );
-  }
-
-  private async isTrustedForDelegateCallContract(args: {
-    chainId: string;
-    contractAddress: `0x${string}`;
-  }): Promise<boolean> {
-    const contract = await this.contractsRepository.getContract({
-      chainId: args.chainId,
-      contractAddress: args.contractAddress,
-    });
-    return contract.trustedForDelegateCall;
   }
 
   async getNonces(args: {
