@@ -22,8 +22,7 @@ class BuilderWithConfirmations<T extends Message> extends Builder<T> {
     chainId: string;
     safe: Safe;
     signers: Array<PrivateKeyAccount>;
-    // TODO: Add all types when SafeSignature refactor is merged
-    signatureType?: SignatureType.Eoa | SignatureType.EthSign;
+    signatureType?: SignatureType;
   }): Promise<T> {
     const areAllOwners = args.signers.every((signer) => {
       return args.safe.owners.includes(signer.address);

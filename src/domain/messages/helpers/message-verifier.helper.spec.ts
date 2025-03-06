@@ -7,6 +7,7 @@ import { faker } from '@faker-js/faker/.';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { getAddress } from 'viem';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -129,16 +130,123 @@ describe('MessageVerifierHelper', () => {
       });
     });
 
-    it.todo('should throw if eth_sign is disabled');
+    it('should throw if eth_sign is disabled', async () => {
+      initTarget({ ethSign: false, blocklist: [] });
 
-    it.todo('should throw if the signature is an invalid length');
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType: SignatureType.EthSign,
+        });
 
-    it.todo(
-      'should throw and log if an address can not be recovered from an approved hash',
-    );
+      expect(() => {
+        return target.verifyCreation({
+          chainId,
+          safe,
+          message: message.message,
+          signature: message.confirmations[0].signature,
+        });
+      }).toThrow(new HttpExceptionNoLog('eth_sign is disabled', 422));
+    });
 
-    it.todo(
-      'should throw and log if an address can not be recovered from a contract signature',
+    it('should throw if the signature is an invalid length', async () => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      message.confirmations[0].signature += 'extra';
+
+      expect(() => {
+        return target.verifyCreation({
+          chainId,
+          safe,
+          message: message.message,
+          signature: message.confirmations[0].signature,
+        });
+      }).toThrow(new Error('Invalid signature length'));
+    });
+
+    it.each(Object.values(SignatureType))(
+      'should throw if an address cannot be recovered from an %s signature',
+      async (signatureType) => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+            signatureType,
+          });
+        const v = message.confirmations[0].signature?.slice(-2);
+        message.confirmations[0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
+
+        expect(() => {
+          return target.verifyUpdate({
+            chainId,
+            safe,
+            message: message.message,
+            messageHash: message.messageHash,
+            signature: message.confirmations[0].signature,
+          });
+        }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
+      },
     );
 
     it('should throw and log if the recovered address is blocked', async () => {
@@ -355,16 +463,125 @@ describe('MessageVerifierHelper', () => {
       });
     });
 
-    it.todo('should throw if eth_sign is disabled');
+    it('should throw if eth_sign is disabled', async () => {
+      initTarget({ ethSign: false, blocklist: [] });
 
-    it.todo('should throw if the signature is an invalid length');
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+          signatureType: SignatureType.EthSign,
+        });
 
-    it.todo(
-      'should throw and log if an address can not be recovered from an approved hash',
-    );
+      expect(() => {
+        return target.verifyUpdate({
+          chainId,
+          safe,
+          message: message.message,
+          messageHash: message.messageHash,
+          signature: message.confirmations[0].signature,
+        });
+      }).toThrow(new HttpExceptionNoLog('eth_sign is disabled', 422));
+    });
 
-    it.todo(
-      'should throw and log if an address can not be recovered from a contract signature',
+    it('should throw if the signature is an invalid length', async () => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      message.confirmations[0].signature += 'extra';
+
+      expect(() => {
+        return target.verifyUpdate({
+          chainId,
+          safe,
+          message: message.message,
+          messageHash: message.messageHash,
+          signature: message.confirmations[0].signature,
+        });
+      }).toThrow(new Error('Invalid signature length'));
+    });
+
+    it.each(Object.values(SignatureType))(
+      'should throw if an address cannot be recovered from an %s signature',
+      async (signatureType) => {
+        const chainId = faker.string.numeric();
+        const signers = Array.from(
+          { length: faker.number.int({ min: 1, max: 5 }) },
+          () => {
+            const privateKey = generatePrivateKey();
+            return privateKeyToAccount(privateKey);
+          },
+        );
+        const safe = safeBuilder()
+          .with(
+            'owners',
+            signers.map((s) => s.address),
+          )
+          .build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+            safe,
+            signatureType,
+          });
+        const v = message.confirmations[0].signature?.slice(-2);
+        message.confirmations[0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
+
+        expect(() => {
+          return target.verifyUpdate({
+            chainId,
+            safe,
+            message: message.message,
+            messageHash: message.messageHash,
+            signature: message.confirmations[0].signature,
+          });
+        }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
+      },
     );
 
     it('should throw and log if the recovered address is blocked', async () => {

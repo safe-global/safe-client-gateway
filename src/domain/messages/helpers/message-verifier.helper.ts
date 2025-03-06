@@ -8,18 +8,12 @@ import { Message } from '@/domain/messages/entities/message.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
-import {
-  BadGatewayException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { TypedDataDefinition } from 'viem';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate messageHash',
   HashMismatch = 'Invalid messageHash',
-  UnrecoverableAddress = 'Could not recover address',
   InvalidSignature = 'Invalid signature',
   BlockedAddress = 'Unauthorized address',
 }
@@ -151,7 +145,10 @@ export class MessageVerifierHelper {
       !this.isEthSignEnabled &&
       signature.signatureType === SignatureType.EthSign
     ) {
-      throw new BadGatewayException('eth_sign is disabled');
+      throw new HttpExceptionNoLog(
+        'eth_sign is disabled',
+        MessageVerifierHelper.StatusCode,
+      );
     }
 
     const isBlocked = this.blocklist.includes(signature.owner);

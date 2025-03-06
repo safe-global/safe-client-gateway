@@ -43,6 +43,7 @@ import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { APP_FILTER } from '@nestjs/core';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
@@ -1073,7 +1074,67 @@ describe('Messages controller', () => {
         });
     });
 
-    it.todo('should disable eth_sign');
+    it('should disable eth_sign', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          ethSign: false,
+        },
+      });
+      await initApp(testConfiguration);
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+          signatureType: SignatureType.EthSign,
+        });
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({
+              data: rawify(messageToJson(message)),
+              status: 200,
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({
+              data: rawify(safe),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(
+          createMessageDtoBuilder()
+            .with('message', message.message)
+            .with('signature', message.confirmations[0].signature)
+            .build(),
+        )
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          message: 'eth_sign is disabled',
+        });
+    });
   });
 
   describe('Update message signatures', () => {
@@ -1461,6 +1522,72 @@ describe('Messages controller', () => {
         });
     });
 
-    it.todo('should disable eth_sign');
+    it('should disable eth_sign', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          ethSign: false,
+        },
+      });
+      await initApp(testConfiguration);
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const message = await messageBuilder()
+        .with('safeAppId', null)
+        .with('safe', safe.address)
+        .with('created', faker.date.recent())
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+          signatureType: SignatureType.EthSign,
+        });
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({
+              data: rawify(safe),
+              status: 200,
+            });
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            return Promise.resolve({
+              data: rawify(messageToJson(message)),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+      networkService.post.mockImplementation(({ url }) =>
+        url ===
+        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
+          ? Promise.resolve({
+              data: rawify({ signature: message.confirmations[0].signature }),
+              status: 200,
+            })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+        )
+        .send(
+          updateMessageSignatureDtoBuilder()
+            .with('signature', message.confirmations[0].signature)
+            .build(),
+        )
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          message: 'eth_sign is disabled',
+        });
+    });
   });
 });
