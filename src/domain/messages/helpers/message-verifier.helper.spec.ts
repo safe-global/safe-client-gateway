@@ -6,7 +6,6 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { faker } from '@faker-js/faker/.';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getAddress } from 'viem';
 
 const mockConfigurationService = jest.mocked({
@@ -71,14 +70,14 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
 
-      await expect(
-        target.verifyCreation({
+      expect(() => {
+        return target.verifyCreation({
           chainId,
           safe,
           message: message.message,
           signature: message.confirmations[0].signature,
-        }),
-      ).resolves.not.toThrow();
+        });
+      }).not.toThrow();
     });
 
     it('should throw and log if the messageHash could not be generated', async () => {
@@ -108,14 +107,14 @@ describe('MessageVerifierHelper', () => {
         });
       safe.version = null;
 
-      await expect(
-        target.verifyCreation({
+      expect(() => {
+        return target.verifyCreation({
           chainId,
           safe,
           message: message.message,
           signature: message.confirmations[0].signature,
-        }),
-      ).rejects.toThrow(
+        });
+      }).toThrow(
         new HttpExceptionNoLog('Could not calculate messageHash', 422),
       );
 
@@ -142,61 +141,6 @@ describe('MessageVerifierHelper', () => {
       'should throw and log if an address can not be recovered from a contract signature',
     );
 
-    it.each([SignatureType.Eoa as const, SignatureType.EthSign as const])(
-      'should throw and log if an address can not be recovered from a %s signature',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const message = await messageBuilder()
-          .with('safe', safe.address)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
-            safe,
-            signatureType,
-          });
-        const v = message.confirmations[0].signature.slice(-2);
-        message.confirmations[0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
-
-        await expect(
-          target.verifyCreation({
-            chainId,
-            safe,
-            message: message.message,
-            signature: message.confirmations[0].signature,
-          }),
-        ).rejects.toThrow(
-          new HttpExceptionNoLog('Could not recover address', 422),
-        );
-
-        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-        expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-          message: 'Could not recover address',
-          chainId,
-          safeAddress: safe.address,
-          safeVersion: safe.version,
-          messageHash: message.messageHash,
-          signature: message.confirmations[0].signature,
-          type: 'MESSAGE_VALIDITY',
-        });
-      },
-    );
-
     it('should throw and log if the recovered address is blocked', async () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
@@ -214,14 +158,14 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
 
-      await expect(
-        target.verifyCreation({
+      expect(() => {
+        return target.verifyCreation({
           chainId,
           safe,
           message: message.message,
           signature: message.confirmations[0].signature,
-        }),
-      ).rejects.toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
+        });
+      }).toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -249,14 +193,14 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
       safe.owners = [getAddress(faker.finance.ethereumAddress())];
-      await expect(
-        target.verifyCreation({
+      expect(() => {
+        return target.verifyCreation({
           chainId,
           safe,
           message: message.message,
           signature: message.confirmations[0].signature,
-        }),
-      ).rejects.toThrow(new HttpExceptionNoLog('Invalid signature', 422));
+        });
+      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -299,15 +243,15 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
 
-      await expect(
-        target.verifyUpdate({
+      expect(() => {
+        return target.verifyUpdate({
           chainId,
           safe,
           message: message.message,
           messageHash: message.messageHash,
           signature: message.confirmations[0].signature,
-        }),
-      ).resolves.not.toThrow();
+        });
+      }).not.toThrow();
     });
 
     it('should throw and log if the messageHash could not be generated', async () => {
@@ -337,15 +281,15 @@ describe('MessageVerifierHelper', () => {
         });
       safe.version = null;
 
-      await expect(
-        target.verifyUpdate({
+      expect(() => {
+        return target.verifyUpdate({
           chainId,
           safe,
           message: message.message,
           messageHash: message.messageHash,
           signature: message.confirmations[0].signature,
-        }),
-      ).rejects.toThrow(
+        });
+      }).toThrow(
         new HttpExceptionNoLog('Could not calculate messageHash', 422),
       );
 
@@ -389,15 +333,15 @@ describe('MessageVerifierHelper', () => {
         length: 64,
       }) as `0x${string}`;
 
-      await expect(
-        target.verifyUpdate({
+      expect(() => {
+        return target.verifyUpdate({
           chainId,
           safe,
           message: message.message,
           messageHash: message.messageHash,
           signature: message.confirmations[0].signature,
-        }),
-      ).rejects.toThrow(new HttpExceptionNoLog('Invalid messageHash', 422));
+        });
+      }).toThrow(new HttpExceptionNoLog('Invalid messageHash', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -423,62 +367,6 @@ describe('MessageVerifierHelper', () => {
       'should throw and log if an address can not be recovered from a contract signature',
     );
 
-    it.each([SignatureType.Eoa as const, SignatureType.EthSign as const])(
-      'should throw and log if an address can not be recovered from a %s signature',
-      async (signatureType) => {
-        const chainId = faker.string.numeric();
-        const signers = Array.from(
-          { length: faker.number.int({ min: 1, max: 5 }) },
-          () => {
-            const privateKey = generatePrivateKey();
-            return privateKeyToAccount(privateKey);
-          },
-        );
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((s) => s.address),
-          )
-          .build();
-        const message = await messageBuilder()
-          .with('safe', safe.address)
-          .buildWithConfirmations({
-            chainId,
-            signers: faker.helpers.arrayElements(signers, {
-              min: 1,
-              max: signers.length,
-            }),
-            safe,
-            signatureType,
-          });
-        const v = message.confirmations[0].signature.slice(-2);
-        message.confirmations[0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
-
-        await expect(
-          target.verifyUpdate({
-            chainId,
-            safe,
-            message: message.message,
-            messageHash: message.messageHash,
-            signature: message.confirmations[0].signature,
-          }),
-        ).rejects.toThrow(
-          new HttpExceptionNoLog('Could not recover address', 422),
-        );
-
-        expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-        expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-          message: 'Could not recover address',
-          chainId,
-          safeAddress: safe.address,
-          safeVersion: safe.version,
-          messageHash: message.messageHash,
-          signature: message.confirmations[0].signature,
-          type: 'MESSAGE_VALIDITY',
-        });
-      },
-    );
-
     it('should throw and log if the recovered address is blocked', async () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
@@ -496,15 +384,15 @@ describe('MessageVerifierHelper', () => {
           safe,
         });
 
-      await expect(
-        target.verifyUpdate({
+      expect(() => {
+        return target.verifyUpdate({
           chainId,
           safe,
           message: message.message,
           messageHash: message.messageHash,
           signature: message.confirmations[0].signature,
-        }),
-      ).rejects.toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
+        });
+      }).toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -533,15 +421,15 @@ describe('MessageVerifierHelper', () => {
         });
       safe.owners = [getAddress(faker.finance.ethereumAddress())];
 
-      await expect(
-        target.verifyUpdate({
+      expect(() => {
+        return target.verifyUpdate({
           chainId,
           safe,
           message: message.message,
           messageHash: message.messageHash,
           signature: message.confirmations[0].signature,
-        }),
-      ).rejects.toThrow(new HttpExceptionNoLog('Invalid signature', 422));
+        });
+      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {

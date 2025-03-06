@@ -9,7 +9,11 @@ import { getAddress, type PrivateKeyAccount } from 'viem';
 import { fakeJson } from '@/__tests__/faker';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
-import { adjustEthSignSignature } from '@/domain/common/utils/signatures';
+import {
+  getContractSignature,
+  getApprovedHashSignature,
+  adjustEthSignSignature,
+} from '@/domain/common/utils/__tests__/signatures.builder';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 import type { MessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
 
@@ -43,20 +47,23 @@ class BuilderWithConfirmations<T extends Message> extends Builder<T> {
     message.confirmations = await Promise.all(
       args.signers.map(async (signer): Promise<MessageConfirmation> => {
         const signatureType: SignatureType =
-          args.signatureType ??
-          faker.helpers.arrayElement([
-            SignatureType.Eoa,
-            SignatureType.EthSign,
-          ]);
+          args.signatureType ?? faker.helpers.enumValue(SignatureType);
 
         let signature: `0x${string}`;
 
-        if (signatureType === SignatureType.Eoa) {
+        // TODO: Refactor with multisig BuilderWithConfirmations
+        if (signatureType === SignatureType.ContractSignature) {
+          signature = getContractSignature(signer.address);
+        } else if (signatureType === SignatureType.ApprovedHash) {
+          signature = getApprovedHashSignature(signer.address);
+        } else if (signatureType === SignatureType.Eoa) {
           signature = await signer.sign({ hash: message.messageHash });
-        } else {
+        } else if (SignatureType.EthSign) {
           signature = await signer
             .signMessage({ message: { raw: message.messageHash } })
             .then(adjustEthSignSignature);
+        } else {
+          throw new Error(`Unknown signature type: ${signatureType}`);
         }
 
         return {

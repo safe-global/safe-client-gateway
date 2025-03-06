@@ -28,6 +28,8 @@ import { addConfirmationDtoBuilder } from '@/routes/transactions/__tests__/entit
 import type { Server } from 'net';
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+import { APP_FILTER } from '@nestjs/core';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -46,6 +48,13 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         ConfigurationModule.register(configuration),
         TestLoggingModule,
         TestNetworkModule,
+      ],
+      providers: [
+        // TODO: Add to all tests to reflect app implementation
+        {
+          provide: APP_FILTER,
+          useClass: GlobalErrorFilter,
+        },
       ],
     }).compile();
 
@@ -81,6 +90,8 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
     const transaction = multisigToJson(
       await multisigTransactionBuilder()
         .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('isExecuted', false)
         .buildWithConfirmations({
           signers: [signer],
           chainId: chain.chainId,
@@ -155,5 +166,105 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           safeAppInfo: expect.any(Object),
         }),
       );
+  });
+
+  it('should throw for historical transactions', async () => {
+    const chain = chainBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
+    const transaction = multisigToJson(
+      await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('isExecuted', true)
+        .buildWithConfirmations({
+          signers: [signer],
+          chainId: chain.chainId,
+          safe,
+        }),
+    ) as MultisigTransaction;
+    const addConfirmationDto = addConfirmationDtoBuilder()
+      .with('signature', transaction.confirmations![0].signature!)
+      .build();
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${transaction.safeTxHash}/`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(transaction),
+            status: 200,
+          });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(
+        `/v1/chains/${chain.chainId}/transactions/${transaction.safeTxHash}/confirmations`,
+      )
+      .send(addConfirmationDto)
+      .expect(422)
+      .expect({
+        message: 'Invalid nonce',
+        statusCode: 422,
+      });
+  });
+
+  it('should throw if the nonce is below that of the Safe', async () => {
+    const chain = chainBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
+    const transaction = multisigToJson(
+      await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce - 1)
+        .with('isExecuted', false)
+        .buildWithConfirmations({
+          signers: [signer],
+          chainId: chain.chainId,
+          safe,
+        }),
+    ) as MultisigTransaction;
+    const addConfirmationDto = addConfirmationDtoBuilder()
+      .with('signature', transaction.confirmations![0].signature!)
+      .build();
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${transaction.safeTxHash}/`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(transaction),
+            status: 200,
+          });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .post(
+        `/v1/chains/${chain.chainId}/transactions/${transaction.safeTxHash}/confirmations`,
+      )
+      .send(addConfirmationDto)
+      .expect(422)
+      .expect({
+        message: 'Invalid nonce',
+        statusCode: 422,
+      });
   });
 });

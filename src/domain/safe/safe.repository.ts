@@ -189,7 +189,7 @@ export class SafeRepository implements ISafeRepository {
       address: transaction.safe,
     });
 
-    await this.transactionVerifier.verifyConfirmation({
+    this.transactionVerifier.verifyConfirmation({
       chainId: args.chainId,
       safe,
       transaction,
@@ -391,7 +391,7 @@ export class SafeRepository implements ISafeRepository {
       address: multisigTransaction.safe,
     });
 
-    await this.transactionVerifier.verifyApiTransaction({
+    this.transactionVerifier.verifyApiTransaction({
       chainId: args.chainId,
       transaction: multisigTransaction,
       safe: safe,
@@ -477,7 +477,7 @@ export class SafeRepository implements ISafeRepository {
     ]);
 
     for (const transaction of multisigTransactions.results) {
-      await this.transactionVerifier.verifyApiTransaction({
+      this.transactionVerifier.verifyApiTransaction({
         chainId: args.chainId,
         transaction,
         safe,

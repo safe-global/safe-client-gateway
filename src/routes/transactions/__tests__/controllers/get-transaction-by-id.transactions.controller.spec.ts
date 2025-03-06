@@ -983,6 +983,41 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       });
   });
 
+  it('should throw a 502 if the Safe and Safe of the transaction do not match', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const tx = multisigTransactionBuilder().build();
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case getChainUrl:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case getMultisigTransactionUrl:
+          return Promise.resolve({
+            data: rawify(multisigToJson(tx)),
+            status: 200,
+          });
+        case getSafeUrl:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${tx.safeTxHash}`,
+      )
+      .expect(400)
+      .expect({
+        message: 'Invalid transaction ID',
+        error: 'Bad Request',
+        statusCode: 400,
+      });
+  });
+
   it('should return a 502 if there is a safeTxHash mismatch', async () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();

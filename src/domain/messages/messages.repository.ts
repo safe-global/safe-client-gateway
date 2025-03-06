@@ -61,7 +61,7 @@ export class MessagesRepository implements IMessagesRepository {
       chainId: args.chainId,
       address: args.safeAddress,
     });
-    await this.messageVerifier.verifyCreation({
+    this.messageVerifier.verifyCreation({
       chainId: args.chainId,
       safe,
       message: args.message,
@@ -92,7 +92,7 @@ export class MessagesRepository implements IMessagesRepository {
       chainId: args.chainId,
       address: message.safe,
     });
-    await this.messageVerifier.verifyUpdate({
+    this.messageVerifier.verifyUpdate({
       ...args,
       safe,
       message: message.message,
