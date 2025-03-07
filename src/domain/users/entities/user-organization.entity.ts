@@ -22,14 +22,14 @@ export const UserOrganizationSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
     user: User;
     organization: Organization;
-    name: string | null;
+    name: string;
     role: keyof typeof UserOrganizationRole;
     status: keyof typeof UserOrganizationStatus;
   }
 > = RowSchema.extend({
   user: z.lazy(() => UserSchema),
   organization: z.lazy(() => OrganizationSchema),
-  name: z.string().nullable(),
+  name: z.string(),
   role: z.enum(getStringEnumKeys(UserOrganizationRole)),
   status: z.enum(getStringEnumKeys(UserOrganizationStatus)),
 });

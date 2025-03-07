@@ -25,6 +25,9 @@ class UserOrganizationDto {
   @ApiProperty({ type: String, enum: getStringEnumKeys(UserOrganizationRole) })
   public role!: UserOrganization['role'];
 
+  @ApiProperty({ type: String })
+  public name!: UserOrganization['name'];
+
   @ApiProperty({
     type: String,
     enum: getStringEnumKeys(UserOrganizationStatus),
