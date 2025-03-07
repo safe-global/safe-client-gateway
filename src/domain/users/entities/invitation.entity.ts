@@ -7,4 +7,5 @@ export type Invitation = {
   orgId: Organization['id'];
   role: UserOrganization['role'];
   status: UserOrganization['status'];
+  invitedBy: UserOrganization['invitedBy'];
 };

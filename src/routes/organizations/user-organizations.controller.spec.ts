@@ -144,12 +144,14 @@ describe('UserOrganizationsController', () => {
               orgId,
               role: 'ADMIN',
               status: 'INVITED',
+              invitedBy: authPayloadDto.signer_address,
             },
             {
               userId: expect.any(Number),
               orgId,
               role: 'MEMBER',
               status: 'INVITED',
+              invitedBy: authPayloadDto.signer_address,
             },
           ]),
         );
@@ -943,6 +945,7 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'ADMIN',
                 status: 'ACTIVE',
+                invitedBy: null, // org creator's `invitedBy` field value is null
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -954,6 +957,7 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'ADMIN',
                 status: 'INVITED',
+                invitedBy: authPayloadDto.signer_address,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -965,6 +969,7 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'MEMBER',
                 status: 'INVITED',
+                invitedBy: authPayloadDto.signer_address,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
