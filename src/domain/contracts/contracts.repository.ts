@@ -65,8 +65,10 @@ export class ContractsRepository implements IContractsRepository {
     const trustedContracts = await this.getTrustedForDelegateCallContracts(
       args.chainId,
     );
-    return trustedContracts.results.some((contract) =>
-      isAddressEqual(contract.address, args.contractAddress),
+    return trustedContracts.results.some(
+      (contract) =>
+        isAddressEqual(contract.address, args.contractAddress) &&
+        contract.trustedForDelegateCall,
     );
   }
 

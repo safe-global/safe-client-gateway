@@ -526,7 +526,10 @@ describe('TransactionApi', () => {
   describe('getTrustedForDelegateCallContracts', () => {
     it('should return the trusted for delegate call contracts received', async () => {
       const contractPage = pageBuilder()
-        .with('results', [contractBuilder().build(), contractBuilder().build()])
+        .with('results', [
+          contractBuilder().with('trustedForDelegateCall', true).build(),
+          contractBuilder().with('trustedForDelegateCall', true).build(),
+        ])
         .build();
       const getTrustedForDelegateCallContractsUrl = `${baseUrl}/api/v1/contracts/`;
       const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
