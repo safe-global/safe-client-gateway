@@ -175,6 +175,7 @@ export default (): ReturnType<typeof configuration> => ({
     messageVerification: true,
     ethSign: true,
     trustedDelegateCall: false,
+    trustedForDelegateCallContractsList: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
