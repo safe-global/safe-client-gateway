@@ -1035,10 +1035,7 @@ describe('Messages controller', () => {
             .send(
               createMessageDtoBuilder()
                 .with('message', message.message)
-                .with(
-                  'signature',
-                  `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
-                )
+                .with('signature', `0x${'-'.repeat(128)}${v}`)
                 .build(),
             )
             .expect(422)
@@ -1568,10 +1565,7 @@ describe('Messages controller', () => {
             )
             .send(
               updateMessageSignatureDtoBuilder()
-                .with(
-                  'signature',
-                  `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
-                )
+                .with('signature', `0x${'-'.repeat(128)}${v}`)
                 .build(),
             )
             .expect(422)

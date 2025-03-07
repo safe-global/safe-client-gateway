@@ -1392,7 +1392,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             signatureType,
           });
         const v = multisigTransaction.confirmations![0].signature?.slice(-2);
-        multisigTransaction.confirmations![0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
+        multisigTransaction.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
 
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;

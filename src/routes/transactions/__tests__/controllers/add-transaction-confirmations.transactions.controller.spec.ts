@@ -509,10 +509,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
         ) as MultisigTransaction;
         const v = transaction.confirmations![0].signature?.slice(-2);
         const addConfirmationDto = addConfirmationDtoBuilder()
-          .with(
-            'signature',
-            `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
-          )
+          .with('signature', `0x${'-'.repeat(128)}${v}`)
           .build();
 
         await request(app.getHttpServer())

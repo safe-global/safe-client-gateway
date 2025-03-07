@@ -252,7 +252,7 @@ describe('MessageVerifierHelper', () => {
             safe,
             message: message.message,
             messageHash: message.messageHash,
-            signature: `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
+            signature: `0x${'-'.repeat(128)}${v}`,
           });
         }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
 
@@ -610,7 +610,7 @@ describe('MessageVerifierHelper', () => {
             safe,
             message: message.message,
             messageHash: message.messageHash,
-            signature: `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
+            signature: `0x${'-'.repeat(128)}${v}`,
           });
         }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
 

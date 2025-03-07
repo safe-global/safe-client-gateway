@@ -483,7 +483,7 @@ describe('TransactionVerifierHelper', () => {
             signatureType,
           });
         const v = transaction.confirmations![0].signature?.slice(-2);
-        transaction.confirmations![0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
+        transaction.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
 
         expect(() => {
           return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -1126,10 +1126,7 @@ describe('TransactionVerifierHelper', () => {
           .with('refundReceiver', transaction.refundReceiver)
           .with('safeTxHash', transaction.safeTxHash)
           .with('sender', transaction.confirmations![0].owner)
-          .with(
-            'signature',
-            `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
-          )
+          .with('signature', `0x${'-'.repeat(128)}${v}`)
           .build();
 
         await expect(
@@ -1815,7 +1812,7 @@ describe('TransactionVerifierHelper', () => {
             chainId,
             safe,
             transaction,
-            signature: `0x--------------------------------------------------------------------------------------------------------------------------------${v}`,
+            signature: `0x${'-'.repeat(128)}${v}`,
           });
         }).toThrow(new Error('Could not recover address'));
 

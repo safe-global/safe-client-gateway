@@ -1077,7 +1077,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         };
         const nonce1 = await getTransaction(1);
         const v = nonce1.confirmations![0].signature?.slice(-2);
-        nonce1.confirmations![0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
+        nonce1.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
         const nonce2 = await getTransaction(2);
         const transactions: Array<MultisigTransaction> = [
           multisigToJson(nonce1) as MultisigTransaction,
