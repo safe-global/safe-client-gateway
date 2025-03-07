@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
 import type { ContractsRepository } from '@/domain/contracts/contracts.repository';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
@@ -19,7 +18,7 @@ const addressInfoHelper = jest.mocked({
 } as jest.MockedObjectDeep<AddressInfoHelper>);
 
 const contractsRepository = jest.mocked({
-  getContract: jest.fn(),
+  isTrustedForDelegateCall: jest.fn(),
 } as jest.MockedObjectDeep<ContractsRepository>);
 
 const dataDecodedParamHelper = jest.mocked({
@@ -50,10 +49,7 @@ describe('Transaction Data Mapper (Unit)', () => {
     });
 
     it('should return true if data decoded is null', async () => {
-      const contract = contractBuilder()
-        .with('trustedForDelegateCall', true)
-        .build();
-      contractsRepository.getContract.mockResolvedValue(contract);
+      contractsRepository.isTrustedForDelegateCall.mockResolvedValue(true);
 
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
@@ -65,8 +61,10 @@ describe('Transaction Data Mapper (Unit)', () => {
       expect(actual).toBe(true);
     });
 
-    it('should mark as non-trusted for delegate call if the contract cannot be retrieved', async () => {
-      contractsRepository.getContract.mockRejectedValue({ status: 404 });
+    it('should mark as non-trusted for delegate call if an error happens', async () => {
+      contractsRepository.isTrustedForDelegateCall.mockRejectedValue({
+        status: 502,
+      });
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
         1,
@@ -77,9 +75,7 @@ describe('Transaction Data Mapper (Unit)', () => {
     });
 
     it('should mark as non-trusted for delegate call if the contract is not trusted', async () => {
-      contractsRepository.getContract.mockResolvedValue(
-        contractBuilder().with('trustedForDelegateCall', false).build(),
-      );
+      contractsRepository.isTrustedForDelegateCall.mockResolvedValue(false);
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
         1,
@@ -90,9 +86,7 @@ describe('Transaction Data Mapper (Unit)', () => {
     });
 
     it('should mark as trusted for delegate call if there is not nested delegate calls', async () => {
-      contractsRepository.getContract.mockResolvedValue(
-        contractBuilder().with('trustedForDelegateCall', true).build(),
-      );
+      contractsRepository.isTrustedForDelegateCall.mockResolvedValue(true);
       dataDecodedParamHelper.hasNestedDelegate.mockReturnValue(false);
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),
@@ -104,9 +98,7 @@ describe('Transaction Data Mapper (Unit)', () => {
     });
 
     it('should mark as non-trusted for delegate call if there are nested delegate calls', async () => {
-      contractsRepository.getContract.mockResolvedValue(
-        contractBuilder().with('trustedForDelegateCall', true).build(),
-      );
+      contractsRepository.isTrustedForDelegateCall.mockResolvedValue(true);
       dataDecodedParamHelper.hasNestedDelegate.mockReturnValue(true);
       const actual = await mapper.isTrustedDelegateCall(
         faker.string.numeric(),

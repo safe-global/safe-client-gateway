@@ -11,6 +11,8 @@ export class CacheRouter {
   private static readonly CHAIN_KEY = 'chain';
   private static readonly CHAINS_KEY = 'chains';
   private static readonly CONTRACT_KEY = 'contract';
+  private static readonly TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_KEY =
+    'trusted_contracts';
   private static readonly COUNTERFACTUAL_SAFE_KEY = 'counterfactual_safe';
   private static readonly COUNTERFACTUAL_SAFES_KEY = 'counterfactual_safes';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
@@ -166,6 +168,17 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.CONTRACT_KEY}_${args.contractAddress}`,
+      '',
+    );
+  }
+
+  static getTrustedForDelegateCallContractsCacheKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_KEY}`;
+  }
+
+  static getTrustedForDelegateCallContractsCacheDir(chainId: string): CacheDir {
+    return new CacheDir(
+      CacheRouter.getTrustedForDelegateCallContractsCacheKey(chainId),
       '',
     );
   }

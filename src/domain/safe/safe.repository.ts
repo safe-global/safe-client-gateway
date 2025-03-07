@@ -648,11 +648,12 @@ export class SafeRepository implements ISafeRepository {
         throw error;
       }
       try {
-        const contract = await this.contractsRepository.getContract({
-          chainId: args.chainId,
-          contractAddress: args.proposeTransactionDto.to,
-        });
-        if (!contract.trustedForDelegateCall) {
+        const isTrusted =
+          await this.contractsRepository.isTrustedForDelegateCall({
+            chainId: args.chainId,
+            contractAddress: args.proposeTransactionDto.to,
+          });
+        if (!isTrusted) {
           throw error;
         }
       } catch {

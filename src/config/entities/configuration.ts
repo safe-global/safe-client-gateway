@@ -263,6 +263,10 @@ export default () => ({
     ethSign: process.env.FF_ETH_SIGN?.toLowerCase() === 'true',
     trustedDelegateCall:
       process.env.FF_TRUSTED_DELEGATE_CALL?.toLowerCase() === 'true',
+    // TODO: Remove this feature flag once the feature is established.
+    trustedForDelegateCallContractsList:
+      process.env.FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST?.toLowerCase() ===
+      'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
