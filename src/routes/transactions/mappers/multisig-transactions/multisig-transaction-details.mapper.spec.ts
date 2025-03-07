@@ -18,6 +18,8 @@ import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transac
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -60,6 +62,10 @@ const mockLoggingService = {
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
+const mockContractsRepository = jest.mocked({
+  isTrustedForDelegateCall: jest.fn(),
+} as jest.MockedObjectDeep<IContractsRepository>);
+
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
@@ -89,6 +95,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         mockConfigurationService,
         mockDelegatesRepository,
         mockLoggingService,
+        mockContractsRepository,
       ),
     );
   }
@@ -108,6 +115,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       .with('safe', safe.address)
       .with('isExecuted', false)
       .with('nonce', safe.nonce)
+      .with('operation', Operation.CALL)
       .buildWithConfirmations({
         chainId,
         safe,
@@ -160,6 +168,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       .with('safe', safe.address)
       .with('isExecuted', false)
       .with('nonce', safe.nonce)
+      .with('operation', Operation.CALL)
       .buildWithConfirmations({
         chainId,
         safe,

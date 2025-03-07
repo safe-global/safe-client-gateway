@@ -16,6 +16,8 @@ import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { LogSource } from '@/domain/common/entities/log-source.entity';
 import { isAddressEqual } from 'viem';
+import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -25,11 +27,13 @@ enum ErrorMessage {
   InvalidSignature = 'Invalid signature',
   BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
+  DelegateCallDisabled = 'Delegate call is disabled',
   InvalidNonce = 'Invalid nonce',
 }
 
 @Injectable()
 export class TransactionVerifierHelper {
+  private readonly isTrustedDelegateCallEnabled: boolean;
   private readonly isEthSignEnabled: boolean;
   private readonly isApiHashVerificationEnabled: boolean;
   private readonly isApiSignatureVerificationEnabled: boolean;
@@ -44,7 +48,12 @@ export class TransactionVerifierHelper {
     private readonly delegatesV2Repository: IDelegatesV2Repository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(IContractsRepository)
+    private readonly contractsRepository: IContractsRepository,
   ) {
+    this.isTrustedDelegateCallEnabled = this.configurationService.getOrThrow(
+      'features.trustedDelegateCall',
+    );
     this.isEthSignEnabled =
       this.configurationService.getOrThrow('features.ethSign');
     this.isApiHashVerificationEnabled = this.configurationService.getOrThrow(
@@ -98,6 +107,9 @@ export class TransactionVerifierHelper {
     if (Number(args.proposal.nonce) < args.safe.nonce) {
       throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
     }
+
+    await this.verifyProposalDelegateCall({ ...args, code });
+
     if (this.isProposalHashVerificationEnabled) {
       this.verifyProposalSafeTxHash({ ...args, code });
     }
@@ -128,6 +140,35 @@ export class TransactionVerifierHelper {
     }
     if (this.isProposalHashVerificationEnabled) {
       this.verifyConfirmationSignature({ ...args, code });
+    }
+  }
+
+  private async verifyProposalDelegateCall(args: {
+    chainId: string;
+    proposal: ProposeTransactionDto;
+    code: HttpStatus;
+  }): Promise<void> {
+    if (args.proposal.operation !== Operation.DELEGATE) {
+      return;
+    }
+
+    const error = new HttpExceptionNoLog(
+      ErrorMessage.DelegateCallDisabled,
+      args.code,
+    );
+    if (!this.isTrustedDelegateCallEnabled) {
+      throw error;
+    }
+
+    const isTrustedDelegateCallEnabled = await this.contractsRepository
+      .isTrustedForDelegateCall({
+        chainId: args.chainId,
+        contractAddress: args.proposal.to,
+      })
+      .catch(() => false);
+
+    if (!isTrustedDelegateCallEnabled) {
+      throw error;
     }
   }
 

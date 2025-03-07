@@ -17,6 +17,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
+import type { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -30,6 +31,10 @@ const mockLoggingRepository = jest.mocked({
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>);
 
+const mockContractsRepository = jest.mocked({
+  isTrustedForDelegateCall: jest.fn(),
+} as jest.MockedObjectDeep<IContractsRepository>);
+
 describe('TransactionVerifierHelper', () => {
   let target: TransactionVerifierHelper;
 
@@ -42,6 +47,7 @@ describe('TransactionVerifierHelper', () => {
       mockConfigurationService,
       mockDelegatesRepository,
       mockLoggingRepository,
+      mockContractsRepository,
     );
   }
 
@@ -775,6 +781,7 @@ describe('TransactionVerifierHelper', () => {
       const transaction = await multisigTransactionBuilder()
         .with('safe', safe.address)
         .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
         .buildWithConfirmations({
           chainId,
           signers: faker.helpers.arrayElements(signers, {
@@ -866,18 +873,261 @@ describe('TransactionVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    // TODO: Add once https://github.com/safe-global/safe-client-gateway/pull/2427 is merged
-    it.todo('should allow trusted delegate calls');
+    it('should allow trusted delegate calls', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            trustedDelegateCall: true,
+          },
+        };
+      };
+      initTarget(testConfiguration);
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.DELEGATE)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', transaction.confirmations![0].signature)
+        .build();
+      mockContractsRepository.isTrustedForDelegateCall.mockResolvedValue(true);
 
-    it.todo('should throw for delegate calls by default');
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).resolves.not.toThrow();
 
-    it.todo(
-      'should throw for untrusted delegate calls if only trusted delegate calls are enabled',
-    );
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
-    it.todo(
-      'should throw for delegate calls when the contract cannot be found and only trusted delegate calls are enabled',
-    );
+    it('should throw for delegate calls by default', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            trustedDelegateCall: false,
+          },
+        };
+      };
+      initTarget(testConfiguration);
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.DELEGATE)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', transaction.confirmations![0].signature)
+        .build();
+      mockContractsRepository.isTrustedForDelegateCall.mockResolvedValue(true);
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog('Delegate call is disabled', 422),
+      );
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
+    it('should throw for untrusted delegate calls if only trusted delegate calls are enabled', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            trustedDelegateCall: true,
+          },
+        };
+      };
+      initTarget(testConfiguration);
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.DELEGATE)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', transaction.confirmations![0].signature)
+        .build();
+      mockContractsRepository.isTrustedForDelegateCall.mockResolvedValue(false);
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog('Delegate call is disabled', 422),
+      );
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
+    it('should throw for delegate calls when the contract cannot be found and only trusted delegate calls are enabled', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            trustedDelegateCall: true,
+          },
+        };
+      };
+      initTarget(testConfiguration);
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.DELEGATE)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', transaction.confirmations![0].signature)
+        .build();
+      mockContractsRepository.isTrustedForDelegateCall.mockRejectedValue(
+        new Error('Contract not found'),
+      );
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog('Delegate call is disabled', 422),
+      );
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
 
     it('should throw and log if the safeTxHash could not be calculated', async () => {
       const chainId = faker.string.numeric();
