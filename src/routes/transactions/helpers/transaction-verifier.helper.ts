@@ -15,6 +15,7 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { LogSource } from '@/domain/common/entities/log-source.entity';
+import { isAddressEqual } from 'viem';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -119,6 +120,9 @@ export class TransactionVerifierHelper {
     ) {
       throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
     }
+
+    this.verifyApiTransaction(args);
+
     if (this.isProposalHashVerificationEnabled) {
       this.verifyConfirmSafeTxHash({ ...args, code });
     }
@@ -275,7 +279,9 @@ export class TransactionVerifierHelper {
         signature: confirmation.signature,
       });
 
-      const isBlocked = this.blocklist.includes(signature.owner);
+      const isBlocked = this.blocklist.some((blockedAddress) => {
+        return isAddressEqual(blockedAddress, signature.owner);
+      });
       if (isBlocked) {
         this.logBlockedAddress({
           ...args,
@@ -286,10 +292,13 @@ export class TransactionVerifierHelper {
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
+      const isOwner = args.safe.owners.some((owner) => {
+        return isAddressEqual(owner, signature.owner);
+      });
       if (
-        signature.owner !== confirmation.owner ||
         // We can be certain of no ownership changes as we only verify the queue
-        !args.safe.owners.includes(signature.owner)
+        !isOwner ||
+        !isAddressEqual(signature.owner, confirmation.owner)
       ) {
         this.logInvalidSignature({
           ...args,
@@ -322,7 +331,10 @@ export class TransactionVerifierHelper {
         signature: `0x${args.proposal.signature.slice(i, i + 130)}`,
       });
 
-      if (this.blocklist.includes(signature.owner)) {
+      const isBlocked = this.blocklist.some((blockedAddress) => {
+        return isAddressEqual(blockedAddress, signature.owner);
+      });
+      if (isBlocked) {
         this.logBlockedAddress({
           ...args,
           safeTxHash: args.proposal.safeTxHash,
@@ -343,7 +355,7 @@ export class TransactionVerifierHelper {
     }
 
     const isSender = signatures.some((signature) => {
-      return signature.owner === args.proposal.sender;
+      return isAddressEqual(signature.owner, args.proposal.sender);
     });
     if (!isSender) {
       this.logInvalidSignature({
@@ -357,7 +369,9 @@ export class TransactionVerifierHelper {
     }
 
     const areOwners = signatures.every((signature) => {
-      return args.safe.owners.includes(signature.owner);
+      return args.safe.owners.some((owner) => {
+        return isAddressEqual(owner, signature.owner);
+      });
     });
     if (areOwners) {
       return;
@@ -368,7 +382,7 @@ export class TransactionVerifierHelper {
       safeAddress: args.safe.address,
     });
     const isDelegate = delegates.results.some(({ delegate }) => {
-      return delegate === args.proposal.sender;
+      return isAddressEqual(delegate, args.proposal.sender);
     });
     if (isDelegate) {
       return;
@@ -396,7 +410,10 @@ export class TransactionVerifierHelper {
       hash: args.transaction.safeTxHash,
     });
 
-    if (this.blocklist.includes(signature.owner)) {
+    const isBlocked = this.blocklist.some((blockedAddress) => {
+      return isAddressEqual(blockedAddress, signature.owner);
+    });
+    if (isBlocked) {
       this.logBlockedAddress({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
@@ -413,7 +430,10 @@ export class TransactionVerifierHelper {
       throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);
     }
 
-    if (!args.safe.owners.includes(signature.owner)) {
+    const isOwner = args.safe.owners.some((owner) => {
+      return isAddressEqual(owner, signature.owner);
+    });
+    if (!isOwner) {
       this.logInvalidSignature({
         ...args,
         safeTxHash: args.transaction.safeTxHash,

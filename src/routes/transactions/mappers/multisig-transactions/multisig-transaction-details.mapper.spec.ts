@@ -18,7 +18,6 @@ import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transac
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -208,33 +207,5 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       detailedExecutionInfo: multisigExecutionDetails,
       safeAppInfo,
     });
-  });
-
-  it('should not block eth_sign', async () => {
-    initTarget({ ethSign: false, blocklist: [] });
-
-    const chainId = faker.string.numeric();
-    const privateKey = generatePrivateKey();
-    const signer = privateKeyToAccount(privateKey);
-    const safe = safeBuilder().with('owners', [signer.address]).build();
-    const transaction = await multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .with('isExecuted', false)
-      .with('nonce', safe.nonce)
-      .buildWithConfirmations({
-        chainId,
-        safe,
-        signers: [signer],
-        signatureType: SignatureType.EthSign,
-      });
-
-    await expect(
-      mapper.mapDetails(chainId, transaction, safe),
-    ).resolves.toEqual(
-      expect.objectContaining({
-        safeAddress: safe.address,
-        txId: `multisig_${safe.address}_${transaction.safeTxHash}`,
-      }),
-    );
   });
 });
