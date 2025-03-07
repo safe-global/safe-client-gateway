@@ -3,10 +3,7 @@ import * as viem from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import {
-  getApprovedHashSignature,
-  getContractSignature,
-} from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
+import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
 
 describe('SafeSignature', () => {
   it('should create an instance', () => {
@@ -118,76 +115,61 @@ describe('SafeSignature', () => {
   });
 
   describe('owner', () => {
-    it('should recover the address of contract signatures', () => {
-      const owner = viem.getAddress(faker.finance.ethereumAddress());
-      const signature = getContractSignature(owner);
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+    it.each(Object.values(SignatureType))(
+      'should recover the address of a %s signature',
+      async (signatureType) => {
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+        const signature = await getSignature({
+          signer,
+          hash,
+          signatureType,
+        });
 
-      const safeSignature = new SafeSignature({ signature, hash });
+        const safeSignature = new SafeSignature({ signature, hash });
 
-      expect(safeSignature.owner).toBe(owner);
-    });
+        expect(safeSignature.owner).toBe(signer.address);
+      },
+    );
 
-    it('should recover the address of an approved hash', () => {
-      const owner = viem.getAddress(faker.finance.ethereumAddress());
-      const signature = getApprovedHashSignature(owner);
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
-
-      const safeSignature = new SafeSignature({ signature, hash });
-
-      expect(safeSignature.owner).toBe(owner);
-    });
-
-    it('should recover the address of an eth_sign signature', async () => {
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
-      const signature = await signer.signMessage({ message: { raw: hash } });
-      const v = parseInt(signature.slice(-2), 16) + 4;
-
-      const safeSignature = new SafeSignature({
-        signature:
-          `${signature.slice(0, 130)}${v.toString(16)}` as `0x${string}`,
-        hash,
-      });
-
-      expect(safeSignature.owner).toBe(signer.address);
-    });
-
-    it('should recover the address of an EOA signature', async () => {
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
-      const signature = await signer.sign({ hash });
-
-      const safeSignature = new SafeSignature({
-        signature,
-        hash,
-      });
-
-      expect(safeSignature.owner).toBe(signer.address);
-    });
-
-    it('should memoize the owner', () => {
+    it('should memoize the owner', async () => {
       const encodeApiParametersSpy = jest.spyOn(viem, 'encodeAbiParameters');
 
-      const owner = viem.getAddress(faker.finance.ethereumAddress());
-      const signature = getContractSignature(owner);
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
       const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
+      // Recovered via encodeAbiParameters
+      const signatureType = faker.helpers.arrayElement([
+        SignatureType.ApprovedHash,
+        SignatureType.ContractSignature,
+      ]);
+      const signature = await getSignature({
+        signer,
+        hash,
+        signatureType,
+      });
 
       const safeSignature = new SafeSignature({ signature, hash });
 
-      expect(safeSignature.owner).toBe(owner);
-      expect(encodeApiParametersSpy).toHaveBeenCalledTimes(1);
-      expect(safeSignature.owner).toBe(owner);
+      expect(safeSignature.owner).toBe(signer.address);
       expect(encodeApiParametersSpy).toHaveBeenCalledTimes(1);
 
-      const newOwner = viem.getAddress(faker.finance.ethereumAddress());
-      safeSignature.signature = getContractSignature(newOwner);
+      expect(safeSignature.owner).toBe(signer.address);
+      expect(encodeApiParametersSpy).toHaveBeenCalledTimes(1);
 
-      expect(safeSignature.owner).toBe(newOwner);
+      const newPrivateKey = generatePrivateKey();
+      const newSigner = privateKeyToAccount(newPrivateKey);
+      safeSignature.signature = await getSignature({
+        signer: newSigner,
+        hash,
+        signatureType,
+      });
+
+      expect(safeSignature.owner).toBe(newSigner.address);
       expect(encodeApiParametersSpy).toHaveBeenCalledTimes(2);
-      expect(safeSignature.owner).toBe(newOwner);
+
+      expect(safeSignature.owner).toBe(newSigner.address);
       expect(encodeApiParametersSpy).toHaveBeenCalledTimes(2);
     });
   });

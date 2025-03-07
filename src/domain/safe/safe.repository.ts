@@ -32,7 +32,6 @@ import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creati
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -42,8 +41,6 @@ export class SafeRepository implements ISafeRepository {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     private readonly transactionVerifier: TransactionVerifierHelper,
   ) {}
 
@@ -624,10 +621,6 @@ export class SafeRepository implements ISafeRepository {
     safeAddress: `0x${string}`;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-
     const safe = await this.getSafe({
       chainId: args.chainId,
       address: args.safeAddress,
@@ -638,6 +631,10 @@ export class SafeRepository implements ISafeRepository {
       safe,
       proposal: args.proposeTransactionDto,
     });
+
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
 
     return transactionService.postMultisigTransaction({
       address: args.safeAddress,

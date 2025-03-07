@@ -14,6 +14,8 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { LogSource } from '@/domain/common/entities/log-source.entity';
+import { isAddressEqual } from 'viem';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 
@@ -22,7 +24,6 @@ enum ErrorMessage {
   HashMismatch = 'Invalid safeTxHash',
   DuplicateOwners = 'Duplicate owners in confirmations',
   DuplicateSignatures = 'Duplicate signatures in confirmations',
-  UnrecoverableAddress = 'Could not recover address',
   InvalidSignature = 'Invalid signature',
   BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
@@ -131,6 +132,9 @@ export class TransactionVerifierHelper {
     ) {
       throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
     }
+
+    this.verifyApiTransaction(args);
+
     if (this.isProposalHashVerificationEnabled) {
       this.verifyConfirmSafeTxHash({ ...args, code });
     }
@@ -156,15 +160,14 @@ export class TransactionVerifierHelper {
       throw error;
     }
 
-    try {
-      const contract = await this.contractsRepository.getContract({
+    const isTrustedDelegateCallEnabled = await this.contractsRepository
+      .isTrustedForDelegateCall({
         chainId: args.chainId,
         contractAddress: args.proposal.to,
-      });
-      if (!contract.trustedForDelegateCall) {
-        throw error;
-      }
-    } catch {
+      })
+      .catch(() => false);
+
+    if (!isTrustedDelegateCallEnabled) {
       throw error;
     }
   }
@@ -182,6 +185,7 @@ export class TransactionVerifierHelper {
       this.logMalformedSafeTxHash({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
+        source: LogSource.Api,
       });
       throw new HttpExceptionNoLog(ErrorMessage.MalformedHash, args.code);
     }
@@ -190,6 +194,7 @@ export class TransactionVerifierHelper {
       this.logMismatchSafeTxHash({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
+        source: LogSource.Api,
       });
       throw new HttpExceptionNoLog(ErrorMessage.HashMismatch, args.code);
     }
@@ -219,6 +224,7 @@ export class TransactionVerifierHelper {
         ...args,
         transaction,
         safeTxHash: args.proposal.safeTxHash,
+        source: LogSource.Proposal,
       });
       throw new HttpExceptionNoLog(ErrorMessage.MalformedHash, args.code);
     }
@@ -228,6 +234,7 @@ export class TransactionVerifierHelper {
         ...args,
         transaction,
         safeTxHash: args.proposal.safeTxHash,
+        source: LogSource.Proposal,
       });
       throw new HttpExceptionNoLog(ErrorMessage.HashMismatch, args.code);
     }
@@ -247,6 +254,7 @@ export class TransactionVerifierHelper {
         ...args,
         transaction: args.transaction,
         safeTxHash: args.transaction.safeTxHash,
+        source: LogSource.Confirmation,
       });
       throw new HttpExceptionNoLog(ErrorMessage.MalformedHash, args.code);
     }
@@ -255,6 +263,7 @@ export class TransactionVerifierHelper {
       this.logMismatchSafeTxHash({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
+        source: LogSource.Confirmation,
       });
       throw new HttpExceptionNoLog(ErrorMessage.HashMismatch, args.code);
     }
@@ -282,6 +291,7 @@ export class TransactionVerifierHelper {
         safeTxHash: args.transaction.safeTxHash,
         confirmations: args.transaction.confirmations,
         type: 'owners',
+        source: LogSource.Api,
       });
       throw new HttpExceptionNoLog(ErrorMessage.DuplicateOwners, args.code);
     }
@@ -295,6 +305,7 @@ export class TransactionVerifierHelper {
         safeTxHash: args.transaction.safeTxHash,
         confirmations: args.transaction.confirmations,
         type: 'signatures',
+        source: LogSource.Api,
       });
       throw new HttpExceptionNoLog(ErrorMessage.DuplicateSignatures, args.code);
     }
@@ -309,21 +320,33 @@ export class TransactionVerifierHelper {
         signature: confirmation.signature,
       });
 
-      const isBlocked = this.blocklist.includes(signature.owner);
+      const isBlocked = this.blocklist.some((blockedAddress) => {
+        return isAddressEqual(blockedAddress, signature.owner);
+      });
       if (isBlocked) {
+        this.logBlockedAddress({
+          ...args,
+          safeTxHash: args.transaction.safeTxHash,
+          blockedAddress: signature.owner,
+          source: LogSource.Api,
+        });
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
+      const isOwner = args.safe.owners.some((owner) => {
+        return isAddressEqual(owner, signature.owner);
+      });
       if (
-        signature.owner !== confirmation.owner ||
         // We can be certain of no ownership changes as we only verify the queue
-        !args.safe.owners.includes(signature.owner)
+        !isOwner ||
+        !isAddressEqual(signature.owner, confirmation.owner)
       ) {
         this.logInvalidSignature({
           ...args,
           safeTxHash: args.transaction.safeTxHash,
           signerAddress: confirmation.owner,
           signature: confirmation.signature,
+          source: LogSource.Api,
         });
         throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
       }
@@ -349,7 +372,16 @@ export class TransactionVerifierHelper {
         signature: `0x${args.proposal.signature.slice(i, i + 130)}`,
       });
 
-      if (this.blocklist.includes(signature.owner)) {
+      const isBlocked = this.blocklist.some((blockedAddress) => {
+        return isAddressEqual(blockedAddress, signature.owner);
+      });
+      if (isBlocked) {
+        this.logBlockedAddress({
+          ...args,
+          safeTxHash: args.proposal.safeTxHash,
+          blockedAddress: signature.owner,
+          source: LogSource.Proposal,
+        });
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
@@ -364,7 +396,7 @@ export class TransactionVerifierHelper {
     }
 
     const isSender = signatures.some((signature) => {
-      return signature.owner === args.proposal.sender;
+      return isAddressEqual(signature.owner, args.proposal.sender);
     });
     if (!isSender) {
       this.logInvalidSignature({
@@ -372,12 +404,15 @@ export class TransactionVerifierHelper {
         safeTxHash: args.proposal.safeTxHash,
         signerAddress: args.proposal.sender,
         signature: args.proposal.signature,
+        source: LogSource.Proposal,
       });
       throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
     }
 
     const areOwners = signatures.every((signature) => {
-      return args.safe.owners.includes(signature.owner);
+      return args.safe.owners.some((owner) => {
+        return isAddressEqual(owner, signature.owner);
+      });
     });
     if (areOwners) {
       return;
@@ -388,7 +423,7 @@ export class TransactionVerifierHelper {
       safeAddress: args.safe.address,
     });
     const isDelegate = delegates.results.some(({ delegate }) => {
-      return delegate === args.proposal.sender;
+      return isAddressEqual(delegate, args.proposal.sender);
     });
     if (isDelegate) {
       return;
@@ -399,6 +434,7 @@ export class TransactionVerifierHelper {
       safeTxHash: args.proposal.safeTxHash,
       signerAddress: args.proposal.sender,
       signature: args.proposal.signature,
+      source: LogSource.Proposal,
     });
     throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
   }
@@ -415,7 +451,16 @@ export class TransactionVerifierHelper {
       hash: args.transaction.safeTxHash,
     });
 
-    if (this.blocklist.includes(signature.owner)) {
+    const isBlocked = this.blocklist.some((blockedAddress) => {
+      return isAddressEqual(blockedAddress, signature.owner);
+    });
+    if (isBlocked) {
+      this.logBlockedAddress({
+        ...args,
+        safeTxHash: args.transaction.safeTxHash,
+        blockedAddress: signature.owner,
+        source: LogSource.Confirmation,
+      });
       throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
     }
 
@@ -426,12 +471,16 @@ export class TransactionVerifierHelper {
       throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);
     }
 
-    if (!args.safe.owners.includes(signature.owner)) {
+    const isOwner = args.safe.owners.some((owner) => {
+      return isAddressEqual(owner, signature.owner);
+    });
+    if (!isOwner) {
       this.logInvalidSignature({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
         signerAddress: signature.owner,
         signature: args.signature,
+        source: LogSource.Confirmation,
       });
       throw new HttpExceptionNoLog(ErrorMessage.InvalidSignature, args.code);
     }
@@ -442,6 +491,7 @@ export class TransactionVerifierHelper {
     safe: Safe;
     safeTxHash: `0x${string}`;
     transaction: BaseMultisigTransaction;
+    source: LogSource;
   }): void {
     this.loggingService.error({
       message: 'Could not calculate safeTxHash',
@@ -451,6 +501,7 @@ export class TransactionVerifierHelper {
       safeTxHash: args.safeTxHash,
       transaction: getBaseMultisigTransaction(args.transaction),
       type: LogType.TransactionValidity,
+      source: args.source,
     });
   }
 
@@ -459,6 +510,7 @@ export class TransactionVerifierHelper {
     safe: Safe;
     safeTxHash: `0x${string}`;
     transaction: BaseMultisigTransaction;
+    source: LogSource;
   }): void {
     this.loggingService.error({
       message: 'safeTxHash does not match',
@@ -468,6 +520,7 @@ export class TransactionVerifierHelper {
       safeTxHash: args.safeTxHash,
       transaction: getBaseMultisigTransaction(args.transaction),
       type: LogType.TransactionValidity,
+      source: args.source,
     });
   }
 
@@ -477,6 +530,7 @@ export class TransactionVerifierHelper {
     safe: Safe;
     safeTxHash: `0x${string}`;
     confirmations: NonNullable<MultisigTransaction['confirmations']>;
+    source: LogSource;
   }): void {
     const message =
       args.type === 'owners'
@@ -491,23 +545,26 @@ export class TransactionVerifierHelper {
       safeTxHash: args.safeTxHash,
       confirmations: args.confirmations,
       type: LogType.TransactionValidity,
+      source: args.source,
     });
   }
 
-  private logUnrecoverableAddress(args: {
+  private logBlockedAddress(args: {
     chainId: string;
     safe: Safe;
     safeTxHash: `0x${string}`;
-    signature: `0x${string}`;
+    blockedAddress: `0x${string}`;
+    source: LogSource;
   }): void {
     this.loggingService.error({
-      message: 'Could not recover address',
+      message: 'Unauthorized address',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
-      signature: args.signature,
+      blockedAddress: args.blockedAddress,
       type: LogType.TransactionValidity,
+      source: args.source,
     });
   }
 
@@ -517,6 +574,7 @@ export class TransactionVerifierHelper {
     safeTxHash: `0x${string}`;
     signerAddress: `0x${string}`;
     signature: `0x${string}`;
+    source: LogSource;
   }): void {
     this.loggingService.error({
       message: 'Recovered address does not match signer',
@@ -527,6 +585,7 @@ export class TransactionVerifierHelper {
       signerAddress: args.signerAddress,
       signature: args.signature,
       type: LogType.TransactionValidity,
+      source: args.source,
     });
   }
 }

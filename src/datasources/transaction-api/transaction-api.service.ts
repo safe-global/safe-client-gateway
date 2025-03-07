@@ -270,6 +270,30 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
+  async getTrustedForDelegateCallContracts(): Promise<Raw<Page<Contract>>> {
+    try {
+      const cacheDir = CacheRouter.getTrustedForDelegateCallContractsCacheDir(
+        this.chainId,
+      );
+      const url = `${this.baseUrl}/api/v1/contracts/`;
+      return await this.dataSource.get<Page<Contract>>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          params: {
+            trusted_for_delegate_call: true,
+          },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
   async getDelegates(args: {
     safeAddress?: `0x${string}`;
     delegate?: `0x${string}`;
