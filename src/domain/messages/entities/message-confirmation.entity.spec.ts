@@ -60,7 +60,7 @@ describe('MessageConfirmationSchema', () => {
         },
         {
           code: 'custom',
-          message: 'Invalid signature',
+          message: 'Invalid hex bytes',
           path: ['signature'],
         },
       ]),

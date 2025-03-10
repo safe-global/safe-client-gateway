@@ -7,7 +7,7 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
-import { SignatureLikeSchema } from '@/validation/entities/schemas/signature.schema';
+import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
 
 export type Confirmation = z.infer<typeof ConfirmationSchema>;
 
@@ -18,7 +18,8 @@ export const ConfirmationSchema = z.object({
   submissionDate: z.coerce.date(),
   transactionHash: HexSchema.nullish().default(null),
   signatureType: z.nativeEnum(SignatureType),
-  signature: SignatureLikeSchema.nullish().default(null),
+  // We don't validate signature length as they are on the Transaction Service
+  signature: HexBytesSchema.nullish().default(null),
 });
 
 export const MultisigTransactionSchema = z.object({
