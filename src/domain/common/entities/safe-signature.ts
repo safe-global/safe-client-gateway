@@ -1,22 +1,23 @@
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { memoize } from 'lodash';
-import {
-  checksumAddress,
-  encodeAbiParameters,
-  hashMessage,
-  hexToBigInt,
-  parseAbiParameters,
-} from 'viem';
+import { getAddress, hashMessage } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { parseSignaturesByType } from '@/domain/common/utils/signatures';
 
 export class SafeSignature {
   public signature: `0x${string}`;
   public hash: `0x${string}`;
 
   constructor(args: { signature: `0x${string}`; hash: `0x${string}` }) {
-    if (args.signature.length !== 132) {
-      throw new Error('Invalid signature length');
+    const signatures = parseSignaturesByType(args.signature);
+
+    if (signatures.length !== 1) {
+      throw new Error('Concatenated signatures are not supported');
+    }
+
+    if (!signatures.includes(args.signature)) {
+      throw new Error('Invalid signature');
     }
 
     this.signature = args.signature;
@@ -32,7 +33,7 @@ export class SafeSignature {
   }
 
   get v(): number {
-    return parseInt(this.signature.slice(-2), 16);
+    return parseInt(this.signature.slice(130, 132), 16);
   }
 
   get signatureType(): SignatureType {
@@ -58,7 +59,7 @@ export class SafeSignature {
         switch (this.signatureType) {
           case SignatureType.ContractSignature:
           case SignatureType.ApprovedHash: {
-            return uint256ToAddress(this.r);
+            return getAddress(`0x${this.r.slice(-40)}`);
           }
           case SignatureType.EthSign: {
             // To differentiate signature types, eth_sign signatures have v value increased by 4
@@ -84,13 +85,6 @@ export class SafeSignature {
       return this.signature + this.hash;
     },
   );
-}
-
-function uint256ToAddress(value: `0x${string}`): `0x${string}` {
-  const encoded = encodeAbiParameters(parseAbiParameters('uint256'), [
-    hexToBigInt(value),
-  ]);
-  return checksumAddress(`0x${encoded.slice(-40)}`);
 }
 
 function recoverAddress(args: {

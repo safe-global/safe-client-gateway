@@ -968,6 +968,38 @@ describe('Messages controller', () => {
         });
       });
 
+      it('should throw if a signature is not a valid hex bytes string', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safe', safe.address)
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+          .send(
+            createMessageDtoBuilder()
+              .with('message', message.message)
+              .with('signature', '0xdeadbee')
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'custom',
+            message: 'Invalid hex bytes',
+            path: ['signature'],
+          });
+
+        expect(loggingService.error).not.toHaveBeenCalled();
+      });
+
       it('should throw if a signature length is invalid', async () => {
         const chain = chainBuilder().build();
         const privateKey = generatePrivateKey();
@@ -1485,6 +1517,41 @@ describe('Messages controller', () => {
           safeMessage: message.message,
           type: 'MESSAGE_VALIDITY',
         });
+      });
+
+      it('should throw if a signature is not a valid hex bytes string', async () => {
+        const chain = chainBuilder().build();
+        const privateKey = generatePrivateKey();
+        const signer = privateKeyToAccount(privateKey);
+        const safe = safeBuilder().with('owners', [signer.address]).build();
+        const message = await messageBuilder()
+          .with('safeAppId', null)
+          .with('safe', safe.address)
+          .with('created', faker.date.recent())
+          .buildWithConfirmations({
+            chainId: chain.chainId,
+            safe,
+            signers: [signer],
+          });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/messages/${message.messageHash}/signatures`,
+          )
+          .send(
+            updateMessageSignatureDtoBuilder()
+              .with('signature', '0xdeadbee')
+              .build(),
+          )
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'custom',
+            message: 'Invalid hex bytes',
+            path: ['signature'],
+          });
+
+        expect(loggingService.error).not.toHaveBeenCalled();
       });
 
       it('should throw if a signature length is invalid', async () => {

@@ -177,6 +177,46 @@ describe('MessageVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
+    it('should throw if a signature is not a valid hex bytes string', async () => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      message.confirmations[0].signature =
+        message.confirmations[0].signature.slice(0, 129) as `0x${string}`;
+
+      expect(() => {
+        return target.verifyCreation({
+          chainId,
+          safe,
+          message: message.message,
+          signature: message.confirmations[0].signature,
+        });
+      }).toThrow(new Error('Invalid hex bytes length'));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
     it('should throw if the signature length is invalid', async () => {
       const chainId = faker.string.numeric();
       const signers = Array.from(
@@ -202,14 +242,15 @@ describe('MessageVerifierHelper', () => {
           }),
           safe,
         });
+      message.confirmations[0].signature =
+        message.confirmations[0].signature.slice(0, 128) as `0x${string}`;
 
       expect(() => {
         return target.verifyCreation({
           chainId,
           safe,
           message: message.message,
-          signature: (message.confirmations[0].signature +
-            'deadbeef') as `0x${string}`,
+          signature: message.confirmations[0].signature,
         });
       }).toThrow(new Error('Invalid signature length'));
 
@@ -534,6 +575,47 @@ describe('MessageVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
+    it('should throw if a signature is not a valid hex bytes string', async () => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      message.confirmations[0].signature =
+        message.confirmations[0].signature.slice(0, 129) as `0x${string}`;
+
+      expect(() => {
+        return target.verifyUpdate({
+          chainId,
+          safe,
+          message: message.message,
+          messageHash: message.messageHash,
+          signature: message.confirmations[0].signature,
+        });
+      }).toThrow(new Error('Invalid hex bytes length'));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
     it('should throw if the signature length is invalid', async () => {
       const chainId = faker.string.numeric();
       const signers = Array.from(
@@ -559,6 +641,8 @@ describe('MessageVerifierHelper', () => {
           }),
           safe,
         });
+      message.confirmations[0].signature =
+        message.confirmations[0].signature.slice(0, 128) as `0x${string}`;
 
       expect(() => {
         return target.verifyUpdate({
@@ -566,8 +650,7 @@ describe('MessageVerifierHelper', () => {
           safe,
           message: message.message,
           messageHash: message.messageHash,
-          signature: (message.confirmations[0].signature +
-            'deadbeef') as `0x${string}`,
+          signature: message.confirmations[0].signature,
         });
       }).toThrow(new Error('Invalid signature length'));
 
