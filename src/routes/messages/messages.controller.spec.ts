@@ -965,6 +965,7 @@ describe('Messages controller', () => {
           safeVersion: safe.version,
           safeMessage: message.message,
           type: 'MESSAGE_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
 
@@ -1110,6 +1111,7 @@ describe('Messages controller', () => {
           signature: message.confirmations[0].signature,
           blockedAddress: signer.address,
           type: 'MESSAGE_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
 
@@ -1218,6 +1220,7 @@ describe('Messages controller', () => {
           signerAddress: signer.address,
           signature: message.confirmations[0].signature,
           type: 'MESSAGE_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
     });
@@ -1422,6 +1425,7 @@ describe('Messages controller', () => {
           safeVersion: safe.version,
           safeMessage: message.message,
           type: 'MESSAGE_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
 
@@ -1484,6 +1488,7 @@ describe('Messages controller', () => {
           messageHash: message.messageHash,
           safeMessage: message.message,
           type: 'MESSAGE_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
 
@@ -1648,6 +1653,7 @@ describe('Messages controller', () => {
           signature: message.confirmations[0].signature,
           blockedAddress: signer.address,
           type: 'MESSAGE_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
 
@@ -1772,6 +1778,7 @@ describe('Messages controller', () => {
           signerAddress: signer.address,
           signature: message.confirmations[0].signature,
           type: 'MESSAGE_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
     });

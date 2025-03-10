@@ -109,7 +109,6 @@ export class MessageVerifierHelper {
       this.logMismatchMessageHash({
         ...args,
         messageHash: args.expectedHash,
-        source: args.source,
       });
       throw new HttpExceptionNoLog(
         ErrorMessage.HashMismatch,
@@ -159,7 +158,6 @@ export class MessageVerifierHelper {
       this.logBlockedAddress({
         ...args,
         blockedAddress: signature.owner,
-        source: args.source,
       });
       throw new HttpExceptionNoLog(
         ErrorMessage.BlockedAddress,
@@ -184,7 +182,6 @@ export class MessageVerifierHelper {
       this.logInvalidSignature({
         ...args,
         signerAddress: signature.owner,
-        source: args.source,
       });
       throw new HttpExceptionNoLog(
         ErrorMessage.InvalidSignature,
