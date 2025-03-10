@@ -101,6 +101,11 @@ export default (): ReturnType<typeof configuration> => ({
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
   },
+  contracts: {
+    trustedForDelegateCall: {
+      maxSequentialPages: faker.number.int(),
+    },
+  },
   db: {
     migrator: {
       executeMigrations: true,

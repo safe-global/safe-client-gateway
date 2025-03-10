@@ -43,7 +43,10 @@ export interface ITransactionApi {
 
   getContract(contractAddress: `0x${string}`): Promise<Raw<Contract>>;
 
-  getTrustedForDelegateCallContracts(): Promise<Raw<Page<Contract>>>;
+  getTrustedForDelegateCallContracts(args: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<Contract>>>;
 
   getDelegates(args: {
     safeAddress?: `0x${string}`;
