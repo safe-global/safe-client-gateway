@@ -1,4 +1,5 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { LogSource } from '@/domain/common/entities/log-source.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
@@ -53,13 +54,17 @@ export class MessageVerifierHelper {
     }
 
     // We can't verify the messageHash as we have no comparison hash
-    const calculatedHash = this.calculateMessageHash(args);
+    const calculatedHash = this.calculateMessageHash({
+      ...args,
+      source: LogSource.Proposal,
+    });
 
     this.verifySignature({
       safe: args.safe,
       chainId: args.chainId,
       messageHash: calculatedHash,
       signature: args.signature,
+      source: LogSource.Proposal,
     });
   }
 
@@ -79,6 +84,7 @@ export class MessageVerifierHelper {
       safe: args.safe,
       message: args.message,
       expectedHash: args.messageHash,
+      source: LogSource.Confirmation,
     });
 
     this.verifySignature({
@@ -86,6 +92,7 @@ export class MessageVerifierHelper {
       chainId: args.chainId,
       messageHash: args.messageHash,
       signature: args.signature,
+      source: LogSource.Confirmation,
     });
   }
 
@@ -94,6 +101,7 @@ export class MessageVerifierHelper {
     safe: Safe;
     expectedHash: `0x${string}`;
     message: string | Record<string, unknown>;
+    source: LogSource;
   }): void {
     const calculatedHash = this.calculateMessageHash(args);
 
@@ -113,6 +121,7 @@ export class MessageVerifierHelper {
     chainId: string;
     safe: Safe;
     message: Message['message'];
+    source: LogSource;
   }): `0x${string}` {
     let calculatedHash: `0x${string}`;
     try {
@@ -135,6 +144,7 @@ export class MessageVerifierHelper {
     chainId: string;
     messageHash: `0x${string}`;
     signature: `0x${string}`;
+    source: LogSource;
   }): void {
     const signature = new SafeSignature({
       hash: args.messageHash,
@@ -184,6 +194,7 @@ export class MessageVerifierHelper {
     chainId: string;
     safe: Safe;
     message: CreateMessageDto['message'];
+    source: LogSource;
   }): void {
     this.loggingService.error({
       message: 'Could not calculate messageHash',
@@ -192,6 +203,7 @@ export class MessageVerifierHelper {
       safeVersion: args.safe.version,
       safeMessage: args.message,
       type: LogType.MessageValidity,
+      source: args.source,
     });
   }
 
@@ -200,6 +212,7 @@ export class MessageVerifierHelper {
     safe: Safe;
     messageHash: `0x${string}`;
     message: CreateMessageDto['message'];
+    source: LogSource;
   }): void {
     this.loggingService.error({
       message: 'messageHash does not match',
@@ -209,6 +222,7 @@ export class MessageVerifierHelper {
       messageHash: args.messageHash,
       safeMessage: args.message,
       type: LogType.MessageValidity,
+      source: args.source,
     });
   }
 
@@ -218,6 +232,7 @@ export class MessageVerifierHelper {
     messageHash: `0x${string}`;
     signature: `0x${string}`;
     blockedAddress: `0x${string}`;
+    source: LogSource;
   }): void {
     this.loggingService.error({
       message: 'Unauthorized address',
@@ -228,6 +243,7 @@ export class MessageVerifierHelper {
       signature: args.signature,
       blockedAddress: args.blockedAddress,
       type: LogType.MessageValidity,
+      source: args.source,
     });
   }
 
@@ -237,6 +253,7 @@ export class MessageVerifierHelper {
     messageHash: `0x${string}`;
     signerAddress: `0x${string}`;
     signature: `0x${string}`;
+    source: LogSource;
   }): void {
     this.loggingService.error({
       message: 'Recovered address does not match signer',
@@ -247,6 +264,7 @@ export class MessageVerifierHelper {
       signerAddress: args.signerAddress,
       signature: args.signature,
       type: LogType.MessageValidity,
+      source: args.source,
     });
   }
 }

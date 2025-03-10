@@ -124,6 +124,7 @@ describe('MessageVerifierHelper', () => {
         safeVersion: safe.version,
         safeMessage: message.message,
         type: 'MESSAGE_VALIDITY',
+        source: 'PROPOSAL',
       });
     });
 
@@ -303,6 +304,7 @@ describe('MessageVerifierHelper', () => {
         signature: message.confirmations[0].signature,
         blockedAddress: signer.address,
         type: 'MESSAGE_VALIDITY',
+        source: 'PROPOSAL',
       });
     });
 
@@ -338,6 +340,7 @@ describe('MessageVerifierHelper', () => {
         signerAddress: signer.address,
         signature: message.confirmations[0].signature,
         type: 'MESSAGE_VALIDITY',
+        source: 'PROPOSAL',
       });
     });
   });
@@ -429,6 +432,7 @@ describe('MessageVerifierHelper', () => {
         safeVersion: safe.version,
         safeMessage: message.message,
         type: 'MESSAGE_VALIDITY',
+        source: 'CONFIRMATION',
       });
     });
 
@@ -480,6 +484,7 @@ describe('MessageVerifierHelper', () => {
         messageHash: message.messageHash,
         safeMessage: message.message,
         type: 'MESSAGE_VALIDITY',
+        source: 'CONFIRMATION',
       });
     });
 
@@ -666,6 +671,7 @@ describe('MessageVerifierHelper', () => {
         signature: message.confirmations[0].signature,
         blockedAddress: signer.address,
         type: 'MESSAGE_VALIDITY',
+        source: 'CONFIRMATION',
       });
     });
 
@@ -703,6 +709,7 @@ describe('MessageVerifierHelper', () => {
         signerAddress: signer.address,
         signature: message.confirmations[0].signature,
         type: 'MESSAGE_VALIDITY',
+        source: 'CONFIRMATION',
       });
     });
   });
