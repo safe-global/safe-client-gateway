@@ -103,7 +103,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   contracts: {
     trustedForDelegateCall: {
-      maxSequentialPages: faker.number.int(),
+      maxSequentialPages: faker.number.int({ min: 1, max: 5 }),
     },
   },
   db: {
