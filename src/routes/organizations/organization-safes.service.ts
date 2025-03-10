@@ -5,10 +5,7 @@ import { IOrganizationsRepository } from '@/domain/organizations/organizations.r
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { CreateOrganizationSafeDto } from '@/routes/organizations/entities/create-organization-safe.dto.entity';
 import { DeleteOrganizationSafeDto } from '@/routes/organizations/entities/delete-organization-safe.dto.entity';
-import {
-  GetOrganizationSafeResponse,
-  GetOrganizationSafes,
-} from '@/routes/organizations/entities/get-organization-safe.dto.entity';
+import { GetOrganizationSafeResponse } from '@/routes/organizations/entities/get-organization-safe.dto.entity';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { IOrganizationSafesRepository } from '@/domain/organizations/organizations-safe.repository.interface';
@@ -130,7 +127,7 @@ export class OrganizationSafesService {
    */
   private transformOrganizationSafesResponse(
     organizationSafes: Array<Pick<OrganizationSafe, 'chainId' | 'address'>>,
-  ): GetOrganizationSafes {
+  ): GetOrganizationSafeResponse['safes'] {
     const grouped = groupBy(organizationSafes, 'chainId');
 
     return mapValues(grouped, (items) => items.map((item) => item.address));
