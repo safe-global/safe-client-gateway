@@ -1,7 +1,7 @@
 import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import type { Singleton } from '@/domain/chains/entities/singleton.entity';
 import type { Contract } from '@/domain/contracts/entities/contract.entity';
-import type { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import type { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Estimation } from '@/domain/estimations/entities/estimation.entity';
@@ -29,7 +29,7 @@ export interface ITransactionApi {
 
   getBackbone(): Promise<Raw<Backbone>>;
 
-  getSingletons(): Promise<Raw<Singleton[]>>;
+  getSingletons(): Promise<Raw<Array<Singleton>>>;
 
   getIndexingStatus(): Promise<Raw<IndexingStatus>>;
 
@@ -42,6 +42,8 @@ export interface ITransactionApi {
   clearIsSafe(address: `0x${string}`): Promise<void>;
 
   getContract(contractAddress: `0x${string}`): Promise<Raw<Contract>>;
+
+  getTrustedForDelegateCallContracts(): Promise<Raw<Page<Contract>>>;
 
   getDelegates(args: {
     safeAddress?: `0x${string}`;
@@ -150,6 +152,10 @@ export interface ITransactionApi {
     safeTransactionHash: string,
   ): Promise<Raw<MultisigTransaction>>;
 
+  getMultisigTransactionWithNoCache(
+    safeTransactionHash: string,
+  ): Promise<Raw<MultisigTransaction>>;
+
   deleteTransaction(args: {
     safeTxHash: string;
     signature: string;
@@ -172,11 +178,46 @@ export interface ITransactionApi {
     offset?: number;
   }): Promise<Raw<Page<MultisigTransaction>>>;
 
+  getMultisigTransactionsWithNoCache(args: {
+    safeAddress: `0x${string}`;
+    // Transaction Service parameters
+    failed?: boolean;
+    modified__lt?: string;
+    modified__gt?: string;
+    modified__lte?: string;
+    modified__gte?: string;
+    nonce__lt?: number;
+    nonce__gt?: number;
+    nonce__lte?: number;
+    nonce__gte?: number;
+    nonce?: number;
+    safe_tx_hash?: string;
+    to?: string;
+    value__lt?: number;
+    value__gt?: number;
+    value?: number;
+    executed?: boolean;
+    has_confirmations?: boolean;
+    trusted?: boolean;
+    execution_date__gte?: string;
+    execution_date__lte?: string;
+    submission_date__gte?: string;
+    submission_date__lte?: string;
+    transaction_hash?: string;
+    ordering?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<MultisigTransaction>>>;
+
   clearMultisigTransactions(safeAddress: `0x${string}`): Promise<void>;
 
   getCreationTransaction(
     safeAddress: `0x${string}`,
-  ): Promise<CreationTransaction>;
+  ): Promise<Raw<CreationTransaction>>;
+
+  getCreationTransactionWithNoCache(
+    safeAddress: `0x${string}`,
+  ): Promise<Raw<CreationTransaction>>;
 
   getAllTransactions(args: {
     safeAddress: `0x${string}`;
@@ -200,8 +241,8 @@ export interface ITransactionApi {
 
   postDeviceRegistration(args: {
     device: Device;
-    safes: string[];
-    signatures: string[];
+    safes: Array<string>;
+    signatures: Array<string>;
   }): Promise<void>;
 
   deleteDeviceRegistration(uuid: string): Promise<void>;

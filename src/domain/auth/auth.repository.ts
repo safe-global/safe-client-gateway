@@ -22,6 +22,7 @@ export class AuthRepository implements IAuthRepository {
     options?: {
       exp?: Date;
       nbf?: Date;
+      iat?: Date;
     },
   ): string {
     const authPayloadDto = AuthPayloadDtoSchema.parse(payload);
@@ -29,6 +30,7 @@ export class AuthRepository implements IAuthRepository {
       ...authPayloadDto,
       exp: options?.exp,
       nbf: options?.nbf,
+      iat: options?.iat,
     });
   }
 

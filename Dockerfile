@@ -1,25 +1,24 @@
 #
 # BUILD CONTAINER
 #
-FROM node:22.11.0 as base
+FROM node:22.14.0 as base
 ENV NODE_ENV production
-ENV YARN_CACHE_FOLDER /root/.yarn
 WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
 COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
 COPY --chown=node:node scripts/generate-abis.js ./scripts/generate-abis.js
-RUN --mount=type=cache,target=/root/.yarn yarn
 COPY --chown=node:node assets ./assets
 COPY --chown=node:node migrations ./migrations
 COPY --chown=node:node src ./src
-RUN --mount=type=cache,target=/root/.yarn yarn run build \
-    && rm -rf ./node_modules \
-    && yarn workspaces focus --production
+RUN yarn install --immutable \
+     && yarn run build \
+     && rm -rf ./node_modules \
+     && yarn workspaces focus --production
 
 #
 # PRODUCTION CONTAINER
 #
-FROM node:22.11.0-alpine as production
+FROM node:22.14.0-alpine as production
 USER node
 
 ARG VERSION

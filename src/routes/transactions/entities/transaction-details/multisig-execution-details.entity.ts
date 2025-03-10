@@ -9,7 +9,7 @@ import {
 export class MultisigConfirmationDetails {
   @ApiProperty()
   signer: AddressInfo;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   signature: string | null;
   @ApiProperty()
   submittedAt: number;
@@ -46,14 +46,14 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   safeTxHash: string;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   executor: AddressInfo | null;
-  @ApiProperty()
-  signers: AddressInfo[];
+  @ApiProperty({ type: AddressInfo, isArray: true })
+  signers: Array<AddressInfo>;
   @ApiProperty()
   confirmationsRequired: number;
-  @ApiProperty()
-  confirmations: MultisigConfirmationDetails[];
+  @ApiProperty({ type: MultisigConfirmationDetails, isArray: true })
+  confirmations: Array<MultisigConfirmationDetails>;
   @ApiProperty({ type: AddressInfo, isArray: true })
-  rejectors: AddressInfo[];
+  rejectors: Array<AddressInfo>;
   @ApiPropertyOptional({ type: Token, nullable: true })
   gasTokenInfo: Token | null;
   @ApiProperty()
@@ -73,10 +73,10 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     refundReceiver: AddressInfo,
     safeTxHash: string,
     executor: AddressInfo | null,
-    signers: AddressInfo[],
+    signers: Array<AddressInfo>,
     confirmationsRequired: number,
-    confirmations: MultisigConfirmationDetails[],
-    rejectors: AddressInfo[],
+    confirmations: Array<MultisigConfirmationDetails>,
+    rejectors: Array<AddressInfo>,
     gasTokenInfo: Token | null,
     trusted: boolean,
     proposer: AddressInfo | null,

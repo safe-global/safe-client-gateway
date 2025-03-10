@@ -15,7 +15,7 @@ import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/mul
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { SettingsChangeMapper } from '@/routes/transactions/mappers/common/settings-change.mapper';
 

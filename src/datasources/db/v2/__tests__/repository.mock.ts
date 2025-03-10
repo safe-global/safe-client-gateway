@@ -6,4 +6,10 @@ export const mockRepository = {
   upsert: jest.fn(),
   remove: jest.fn(),
   delete: jest.fn(),
+  create: jest.fn(),
+  save: jest.fn(),
+  insert: jest.fn(),
+  count: jest.fn(),
+  findBy: jest.fn(),
+  findOneBy: jest.fn(),
 } as jest.MockedObjectDeep<Repository<ObjectLiteral>>;

@@ -1,3 +1,4 @@
+import { getBlocklist } from '@/config/entities/blocklist.config';
 import { randomBytes } from 'crypto';
 
 // Custom configuration for the application
@@ -145,6 +146,7 @@ export default () => ({
     },
   },
   blockchain: {
+    blocklist: getBlocklist(),
     infura: {
       apiKey: process.env.INFURA_API_KEY,
     },
@@ -237,10 +239,34 @@ export default () => ({
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     accounts: process.env.FF_ACCOUNTS?.toLowerCase() === 'true',
+    users: process.env.FF_USERS?.toLowerCase() === 'true',
+    // TODO: When enabled, we must add `db` as a requirement alongside `redis`
     pushNotifications:
       process.env.FF_PUSH_NOTIFICATIONS?.toLowerCase() === 'true',
+    hookHttpPostEvent:
+      process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
+    hashVerification: {
+      api: process.env.FF_HASH_VERIFICATION_API?.toLowerCase() === 'true',
+      proposal:
+        process.env.FF_HASH_VERIFICATION_PROPOSAL?.toLowerCase() === 'true',
+    },
+    signatureVerification: {
+      api: process.env.FF_SIGNATURE_VERIFICATION_API?.toLowerCase() === 'true',
+      proposal:
+        process.env.FF_SIGNATURE_VERIFICATION_PROPOSAL?.toLowerCase() ===
+        'true',
+    },
+    messageVerification:
+      process.env.FF_MESSAGE_VERIFICATION?.toLowerCase() === 'true',
+    ethSign: process.env.FF_ETH_SIGN?.toLowerCase() === 'true',
+    trustedDelegateCall:
+      process.env.FF_TRUSTED_DELEGATE_CALL?.toLowerCase() === 'true',
+    // TODO: Remove this feature flag once the feature is established.
+    trustedForDelegateCallContractsList:
+      process.env.FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST?.toLowerCase() ===
+      'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -268,6 +294,7 @@ export default () => ({
   log: {
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+    prettyColorize: process.env.LOG_PRETTY_COLORIZE?.toLowerCase() === 'true',
   },
   owners: {
     // There is no hook to invalidate the owners, so defaulting 0 disables the cache
@@ -292,6 +319,11 @@ export default () => ({
       maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${10}`),
     },
   },
+  portfolio: {
+    baseUri:
+      process.env.PORTFOLIO_API_BASE_URI || 'https://octav-api.hasura.app',
+    apiKey: process.env.PORTFOLIO_API_KEY || 'TODO',
+  },
   pushNotifications: {
     baseUri:
       process.env.PUSH_NOTIFICATIONS_API_BASE_URI ||
@@ -305,8 +337,13 @@ export default () => ({
     },
   },
   redis: {
+    user: process.env.REDIS_USER,
+    pass: process.env.REDIS_PASS,
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
+    timeout: process.env.REDIS_TIMEOUT || 2 * 1_000, // Milliseconds
+    disableOfflineQueue:
+      process.env.REDIS_DISABLE_OFFLINE_QUEUE?.toString() === 'true',
   },
   relay: {
     baseUri:
@@ -371,6 +408,7 @@ export default () => ({
     api: {
       1: 'https://api.cow.fi/mainnet',
       100: 'https://api.cow.fi/xdai',
+      8453: 'https://api.cow.fi/base',
       42161: 'https://api.cow.fi/arbitrum_one',
       11155111: 'https://api.cow.fi/sepolia',
     },
@@ -414,5 +452,8 @@ export default () => ({
           'assets/targeted-messaging',
       },
     },
+  },
+  users: {
+    maxInvites: 50,
   },
 });

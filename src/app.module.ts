@@ -46,7 +46,6 @@ import { RelayControllerModule } from '@/routes/relay/relay.controller.module';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { AuthModule } from '@/routes/auth/auth.module';
-import { TransactionsViewControllerModule } from '@/routes/transactions/transactions-view.controller';
 import { DelegatesV2Module } from '@/routes/delegates/v2/delegates.v2.module';
 import { AccountsModule } from '@/routes/accounts/accounts.module';
 import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.module';
@@ -59,16 +58,17 @@ import {
   LoggingService,
   type ILoggingService,
 } from '@/logging/logging.interface';
+import { UsersModule } from '@/routes/users/users.module';
+import { OrganizationsModule } from '@/routes/organizations/organizations.module';
+import { UserOrganizationsModule } from '@/routes/organizations/user-organizations.module';
 
 @Module({})
 export class AppModule implements NestModule {
-  // Important: values read via the config factory do not take the .env file
-  // into account. The .env file loading is done by the ConfigurationModule
-  // which is not available at this stage.
   static register(configFactory = configuration): DynamicModule {
     const {
       auth: isAuthFeatureEnabled,
       accounts: isAccountsFeatureEnabled,
+      users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       delegatesV2: isDelegatesV2Enabled,
       pushNotifications: isPushNotificationsEnabled,
@@ -102,6 +102,9 @@ export class AppModule implements NestModule {
           : [HooksModule]),
         MessagesModule,
         NotificationsModule,
+        ...(isUsersFeatureEnabled
+          ? [UsersModule, OrganizationsModule, UserOrganizationsModule]
+          : []),
         OwnersModule,
         RelayControllerModule,
         RootModule,
@@ -109,7 +112,6 @@ export class AppModule implements NestModule {
         SafesModule,
         TargetedMessagingModule,
         TransactionsModule,
-        TransactionsViewControllerModule,
         // common
         CacheModule,
         // Module for storing and reading from the async local storage
@@ -129,7 +131,7 @@ export class AppModule implements NestModule {
           // Excludes the paths under '/' (base url) from being served as static content
           // If we do not exclude these paths, the service will try to find the file and
           // return 500 for files that do not exist instead of a 404
-          exclude: ['/(.*)'],
+          exclude: ['{*any}'],
         }),
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
@@ -181,6 +183,6 @@ export class AppModule implements NestModule {
       // The ClsMiddleware needs to be applied before the LoggerMiddleware
       // in order to generate the request ids that will be logged afterward
       .apply(ClsMiddleware, NotFoundLoggerMiddleware)
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
+      .forRoutes({ path: '{*any}', method: RequestMethod.ALL });
   }
 }

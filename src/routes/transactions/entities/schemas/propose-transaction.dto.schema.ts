@@ -3,6 +3,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
 
 export const ProposeTransactionDtoSchema = z.object({
   to: AddressSchema,
@@ -17,6 +18,6 @@ export const ProposeTransactionDtoSchema = z.object({
   refundReceiver: AddressSchema.nullish().default(null),
   safeTxHash: HexSchema,
   sender: AddressSchema,
-  signature: HexSchema.nullish().default(null),
+  signature: SignatureSchema.nullish().default(null),
   origin: z.string().nullish().default(null),
 });

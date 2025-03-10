@@ -21,6 +21,8 @@ import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.post
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
+import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;
@@ -43,6 +45,8 @@ describe('Events queue processing e2e tests', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
+      .overrideModule(PushNotificationsApiModule)
+      .useModule(TestPushNotificationsApiModule)
       .overrideProvider(CacheKeyPrefix)
       .useValue(cacheKeyPrefix)
       .overrideModule(PostgresDatabaseModule)
@@ -118,12 +122,16 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'NEW_CONFIRMATION',
@@ -164,12 +172,16 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'PENDING_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'NEW_CONFIRMATION',
@@ -210,8 +222,11 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'MODULE_TRANSACTION',
@@ -248,8 +263,11 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',
@@ -291,8 +309,11 @@ describe('Events queue processing e2e tests', () => {
   it.each([
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',
@@ -410,8 +431,11 @@ describe('Events queue processing e2e tests', () => {
     },
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
     },
     {
       type: 'INCOMING_TOKEN',

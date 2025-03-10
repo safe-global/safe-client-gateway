@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
 
 export const UpdateMessageSignatureDtoSchema = z.object({
-  signature: HexSchema,
+  signature: SignatureSchema,
 });

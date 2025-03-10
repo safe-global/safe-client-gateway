@@ -12,6 +12,9 @@ import { Module } from '@nestjs/common';
 import { SafeRepository } from '@/domain/safe/safe.repository';
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
+import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -175,9 +178,13 @@ export interface ISafeRepository {
     ownerAddress: `0x${string}`;
   }): Promise<SafeList>;
 
-  getAllSafesByOwner(args: {
+  deprecated__getAllSafesByOwner(args: {
     ownerAddress: `0x${string}`;
   }): Promise<{ [chainId: string]: Array<string> }>;
+
+  getAllSafesByOwner(args: {
+    ownerAddress: `0x${string}`;
+  }): Promise<{ [chainId: string]: Array<string> | null }>;
 
   getLastTransactionSortedByNonce(args: {
     chainId: string;
@@ -212,12 +219,18 @@ export interface ISafeRepository {
 }
 
 @Module({
-  imports: [ChainsRepositoryModule, TransactionApiManagerModule],
+  imports: [
+    ChainsRepositoryModule,
+    TransactionApiManagerModule,
+    DelegatesV2RepositoryModule,
+    ContractsRepositoryModule,
+  ],
   providers: [
     {
       provide: ISafeRepository,
       useClass: SafeRepository,
     },
+    TransactionVerifierHelper,
   ],
   exports: [ISafeRepository],
 })

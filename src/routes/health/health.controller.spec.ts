@@ -93,7 +93,30 @@ describe('Health Controller tests', () => {
   });
 
   describe('liveness tests', () => {
-    it('service is alive if it accepts requests', async () => {
+    it('cache service is not ready', async () => {
+      cacheService.setReadyState(false);
+      queuesApi.isReady.mockReturnValue(true);
+
+      await request(app.getHttpServer())
+        .get(`/health/live`)
+        .expect(503)
+        .expect({ status: 'KO' });
+    });
+
+    it('queues are not ready', async () => {
+      cacheService.setReadyState(true);
+      queuesApi.isReady.mockReturnValue(false);
+
+      await request(app.getHttpServer())
+        .get(`/health/live`)
+        .expect(503)
+        .expect({ status: 'KO' });
+    });
+
+    it('service is alive if it accepts requests, cache service and queues are ready', async () => {
+      cacheService.setReadyState(true);
+      queuesApi.isReady.mockReturnValue(true);
+
       await request(app.getHttpServer())
         .get(`/health/live`)
         .expect(200)

@@ -28,7 +28,7 @@ describe('UpdateAddressBookItemDtoSchema', () => {
         code: 'too_small',
         inclusive: true,
         exact: false,
-        message: 'Address Books items names must be at least 3 characters long',
+        message: 'Address book entry names must be at least 3 characters long',
         minimum: 3,
         path: ['name'],
         type: 'string',
@@ -92,7 +92,7 @@ describe('UpdateAddressBookItemDtoSchema', () => {
         code: 'too_big',
         inclusive: true,
         exact: false,
-        message: 'Address Books items names must be at most 50 characters long',
+        message: 'Address book entry names must be at most 50 characters long',
         maximum: 50,
         path: ['name'],
         type: 'string',
@@ -113,7 +113,7 @@ describe('UpdateAddressBookItemDtoSchema', () => {
       {
         code: 'invalid_string',
         message:
-          'Address Books items names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
+          'Address book entry names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
         path: ['name'],
         validation: 'regex',
       },

@@ -2,7 +2,7 @@ import { fakeJson } from '@/__tests__/faker';
 import configurationValidator from '@/config/configuration.validator';
 import { RootConfigurationSchema } from '@/config/entities/schemas/configuration.schema';
 import { faker } from '@faker-js/faker';
-import { omit } from 'lodash';
+import omit from 'lodash/omit';
 
 describe('Configuration validator', () => {
   const validConfiguration: Record<string, unknown> = {
@@ -30,6 +30,7 @@ describe('Configuration validator', () => {
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: faker.internet.email(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY:
       faker.string.alphanumeric(),
+    // PORTFOLIO_API_KEY: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_OPTIMISM: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_BSC: faker.string.uuid(),
     RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
@@ -76,6 +77,7 @@ describe('Configuration validator', () => {
     { key: 'PUSH_NOTIFICATIONS_API_PROJECT' },
     { key: 'PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL' },
     { key: 'PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY' },
+    // { key: 'PORTFOLIO_API_KEY' },
     { key: 'RELAY_PROVIDER_API_KEY_OPTIMISM' },
     { key: 'RELAY_PROVIDER_API_KEY_BSC' },
     { key: 'RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN' },
@@ -127,6 +129,7 @@ describe('Configuration validator', () => {
         faker.internet.email(),
       PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY:
         faker.string.alphanumeric(),
+      // PORTFOLIO_API_KEY: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_OPTIMISM: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_BSC: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),
@@ -177,6 +180,7 @@ describe('Configuration validator', () => {
         faker.internet.email(),
       PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY:
         faker.string.alphanumeric(),
+      // PORTFOLIO_API_KEY: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_OPTIMISM: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_BSC: faker.string.uuid(),
       RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: faker.string.uuid(),

@@ -102,12 +102,17 @@ export class SwapTransferTransactionInfo
   })
   explorerUrl: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
-    nullable: true,
     description: 'The amount of fees paid for this order.',
   })
-  executedSurplusFee: string | null;
+  executedFee: string;
+
+  @ApiProperty({
+    description:
+      'The token in which the fee was paid, expressed by SURPLUS tokens (BUY tokens for SELL orders and SELL tokens for BUY orders).',
+  })
+  executedFeeToken: TokenInfo;
 
   @ApiPropertyOptional({
     type: String,
@@ -148,7 +153,8 @@ export class SwapTransferTransactionInfo
     sellToken: TokenInfo;
     buyToken: TokenInfo;
     explorerUrl: string;
-    executedSurplusFee: string | null;
+    executedFee: string;
+    executedFeeToken: TokenInfo;
     receiver: string | null;
     owner: `0x${string}`;
     fullAppData: Record<string, unknown> | null;
@@ -172,7 +178,8 @@ export class SwapTransferTransactionInfo
     this.sellToken = args.sellToken;
     this.buyToken = args.buyToken;
     this.explorerUrl = args.explorerUrl;
-    this.executedSurplusFee = args.executedSurplusFee;
+    this.executedFee = args.executedFee;
+    this.executedFeeToken = args.executedFeeToken;
     this.receiver = args.receiver;
     this.owner = args.owner;
     this.fullAppData = args.fullAppData;

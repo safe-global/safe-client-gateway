@@ -1,10 +1,12 @@
-import type { INestApplication } from '@nestjs/common';
+import type { DynamicModule, INestApplication } from '@nestjs/common';
 import { VersioningType } from '@nestjs/common';
+import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestFactory } from '@nestjs/core';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { json } from 'express';
 import cookieParser from 'cookie-parser';
+import type { TestingModule } from '@nestjs/testing';
 
 function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -26,7 +28,28 @@ function configureSwagger(app: INestApplication): void {
     .setVersion(configurationService.get('about.version') ?? '')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const options: SwaggerDocumentOptions = {
+    operationIdFactory: (
+      controllerKey: string,
+      methodKey: string,
+      version: string | undefined,
+    ) => {
+      const capitalize = (str: string): string =>
+        str ? str[0].toUpperCase() + str.slice(1) : '';
+      const decapitalize = (str: string): string =>
+        str ? str[0].toLowerCase() + str.slice(1) : '';
+      const versionPart = version ? capitalize(version) : '';
+      const controllerPart = decapitalize(
+        controllerKey
+          .replace('Controller', '')
+          .replace(new RegExp(versionPart, 'i'), ''),
+      );
+      const methodPart = capitalize(methodKey);
+      return `${controllerPart}${methodPart}${versionPart}`;
+    },
+  };
+
+  const document = SwaggerModule.createDocument(app, config, options);
   SwaggerModule.setup('api', app, document, {
     customfavIcon: '/favicon.png',
     customSiteTitle: 'Safe Client Gateway',
@@ -50,7 +73,7 @@ function configureCookies(app: INestApplication): void {
   app.use(cookieParser());
 }
 
-export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
+export const DEFAULT_CONFIGURATION: Array<(app: INestApplication) => void> = [
   configureVersioning,
   configureShutdownHooks,
   configureSwagger,
@@ -68,10 +91,10 @@ export const DEFAULT_CONFIGURATION: ((app: INestApplication) => void)[] = [
  * Each provider should have a {@link configuration} which specifies
  * the steps taken to configure the application
  */
-export abstract class AppProvider<T> {
-  protected abstract readonly configuration: ((
-    app: INestApplication,
-  ) => void)[];
+export abstract class AppProvider<T extends DynamicModule | TestingModule> {
+  protected abstract readonly configuration: Array<
+    (app: INestApplication) => void
+  >;
 
   public async provide(module: T): Promise<INestApplication> {
     const app = await this.getApp(module);
@@ -88,8 +111,10 @@ export abstract class AppProvider<T> {
  * This provider should be used to retrieve the actual implementation of the
  * service
  */
-export class DefaultAppProvider<T> extends AppProvider<T> {
-  protected readonly configuration: ((app: INestApplication) => void)[] =
+export class DefaultAppProvider<
+  T extends DynamicModule,
+> extends AppProvider<T> {
+  protected readonly configuration: Array<(app: INestApplication) => void> =
     DEFAULT_CONFIGURATION;
 
   protected getApp(module: T): Promise<INestApplication> {

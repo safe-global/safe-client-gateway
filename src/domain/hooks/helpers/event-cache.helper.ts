@@ -22,7 +22,8 @@ import {
 import { Event } from '@/routes/hooks/entities/event.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { memoize, MemoizedFunction } from 'lodash';
+import memoize from 'lodash/memoize';
+import type { MemoizedFunction } from 'lodash';
 
 @Injectable()
 export class EventCacheHelper {
@@ -183,6 +184,15 @@ export class EventCacheHelper {
       }),
     );
     this.unsupportedChains = [];
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE, {
+    disabled: process.env.NODE_ENV === 'test',
+  })
+  public clearSupportedChainsMemo(): void {
+    if (this.isSupportedChainMemo.cache.clear) {
+      this.isSupportedChainMemo.cache.clear();
+    }
   }
 
   // Transaction Service events

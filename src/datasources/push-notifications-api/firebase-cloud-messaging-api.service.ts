@@ -11,8 +11,16 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
-import { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
+import {
+  FireabaseNotificationApn,
+  FirebaseNotification,
+  NotificationContent,
+} from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import {
+  FirebaseOauth2Token,
+  FirebaseOauth2TokenSchema,
+} from '@/datasources/push-notifications-api/entities/firebase-oauth2-token.entity';
 
 @Injectable()
 export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
@@ -21,6 +29,10 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
   private static readonly OAuth2TokenTtlBufferInSeconds = 5;
   private static readonly Scope =
     'https://www.googleapis.com/auth/firebase.messaging';
+
+  private static readonly DefaultIosNotificationTitle = 'New Activity';
+  private static readonly DefaultIosNotificationBody =
+    'New Activity with your Safe';
 
   private readonly baseUrl: string;
   private readonly project: string;
@@ -54,6 +66,39 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
   }
 
   /**
+   * Returns the notification data for iOS devices.
+   *
+   * On iOS, a title and body are required for a notification to be displayed.
+   * The `mutable-content` field is set to `1` to allow the notification to be modified by the app.
+   *      This ensures an appropriate title and body are displayed to the user.
+   *
+   * @param {NotificationContent} notification - notification payload
+   *
+   * @returns {FireabaseNotificationApn} - iOS notification data
+   **/
+  private getIosNotificationData(
+    notification?: NotificationContent,
+  ): FireabaseNotificationApn {
+    return {
+      apns: {
+        payload: {
+          aps: {
+            alert: {
+              title:
+                notification?.title ??
+                FirebaseCloudMessagingApiService.DefaultIosNotificationTitle,
+              body:
+                notification?.body ??
+                FirebaseCloudMessagingApiService.DefaultIosNotificationBody,
+            },
+            'mutable-content': 1,
+          },
+        },
+      },
+    };
+  }
+
+  /**
    * Enqueues a notification to be sent to a device with given FCM token.
    *
    * @param fcmToken - device's FCM token
@@ -72,6 +117,7 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
           message: {
             token: fcmToken,
             ...notification,
+            ...this.getIosNotificationData(notification.notification),
           },
         },
         networkRequest: {
@@ -105,17 +151,15 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
       return cachedToken;
     }
 
-    const { data } = await this.networkService.post<{
-      access_token: string;
-      expires_in: number;
-      token_type: string;
-    }>({
-      url: FirebaseCloudMessagingApiService.OAuth2TokenUrl,
-      data: {
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: this.getAssertion(),
-      },
-    });
+    const data = await this.networkService
+      .post<FirebaseOauth2Token>({
+        url: FirebaseCloudMessagingApiService.OAuth2TokenUrl,
+        data: {
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion: this.getAssertion(),
+        },
+      })
+      .then((response) => FirebaseOauth2TokenSchema.parse(response.data));
 
     // Token cached according to issuance
     await this.cacheService.hSet(

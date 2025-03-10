@@ -12,7 +12,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   creationTransactionBuilder,
@@ -26,7 +26,6 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/domain/safe/entities/__tests__/module-transaction.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
@@ -66,6 +65,8 @@ import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.mo
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { rawify } from '@/validation/entities/raw.entity';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -149,7 +150,7 @@ describe('Transactions History Controller (Unit)', () => {
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/all-transactions/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
       if (url === getAllTransactions) {
         const error = new NetworkResponseError(new URL(getAllTransactions), {
@@ -180,11 +181,11 @@ describe('Transactions History Controller (Unit)', () => {
       // Param ValidationPipe checksums address
       const getAllTransactions = `${chain.transactionService}/api/v1/safes/${getAddress(safeAddress)}/all-transactions/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: page,
+          data: rawify(page),
           status: 200,
         });
       }
@@ -195,8 +196,8 @@ describe('Transactions History Controller (Unit)', () => {
       .get(
         `/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/history/`,
       )
-      .expect(500)
-      .expect({ statusCode: 500, message: 'Internal server error' });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('Should return only creation transaction', async () => {
@@ -219,20 +220,20 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
       const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/creation/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: transactionHistoryBuilder,
+          data: rawify(transactionHistoryBuilder),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url === getSafeCreationUrl) {
         return Promise.resolve({
-          data: creationTransactionToJson(creationTransaction),
+          data: rawify(creationTransactionToJson(creationTransaction)),
           status: 200,
         });
       }
@@ -250,8 +251,51 @@ describe('Transactions History Controller (Unit)', () => {
       });
   });
 
-  it('Should return correctly each date label', async () => {
+  it('Should not throw if creation transaction does not exist', async () => {
+    const chainResponse = chainBuilder().build();
+    const chainId = chainResponse.chainId;
     const safe = safeBuilder().build();
+    const transactionHistoryBuilder = {
+      count: 0,
+      next: null,
+      previous: null,
+      results: [],
+    };
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${safe.address}/creation/`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({
+          data: rawify(transactionHistoryBuilder),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url === getSafeCreationUrl) {
+        return Promise.reject(new Error('Not found'));
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chainId}/safes/${safe.address}/transactions/history/`)
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.results).toHaveLength(0);
+      });
+  });
+
+  it('Should return correctly each date label', async () => {
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
     const chain = chainBuilder().build();
     const moduleTransaction = moduleTransactionToJson(
       moduleTransactionBuilder()
@@ -259,13 +303,16 @@ describe('Transactions History Controller (Unit)', () => {
         .with('executionDate', new Date('2022-12-06T23:00:00Z'))
         .build(),
     );
-    const multisigTransaction = multisigTransactionToJson(
-      multisigTransactionBuilder()
-        .with('dataDecoded', null)
-        .with('origin', null)
-        .with('executionDate', new Date('2022-12-25T00:00:00Z'))
-        .build(),
-    );
+    const multisigTransaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('dataDecoded', null)
+      .with('origin', null)
+      .with('executionDate', new Date('2022-12-25T00:00:00Z'))
+      .buildWithConfirmations({
+        safe,
+        signers: [signer],
+        chainId: chain.chainId,
+      });
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-12-31T00:00:00Z'))
       .build();
@@ -281,23 +328,27 @@ describe('Transactions History Controller (Unit)', () => {
       count: 40,
       next: `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
       previous: null,
-      results: [moduleTransaction, multisigTransaction, incomingTransaction],
+      results: [
+        moduleTransaction,
+        multisigTransactionToJson(multisigTransaction),
+        incomingTransaction,
+      ],
     };
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: transactionHistoryBuilder,
+          data: rawify(transactionHistoryBuilder),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -347,16 +398,16 @@ describe('Transactions History Controller (Unit)', () => {
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: transactionHistoryBuilder,
+          data: rawify(transactionHistoryBuilder),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -403,16 +454,16 @@ describe('Transactions History Controller (Unit)', () => {
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: transactionHistoryBuilder,
+          data: rawify(transactionHistoryBuilder),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -473,16 +524,16 @@ describe('Transactions History Controller (Unit)', () => {
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: transactionHistoryBuilder,
+          data: rawify(transactionHistoryBuilder),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -502,7 +553,16 @@ describe('Transactions History Controller (Unit)', () => {
 
   it('Should return correctly each transaction', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
     const moduleTransaction = moduleTransactionBuilder()
       .with('executionDate', new Date('2022-12-14T13:19:12Z'))
       .with('safe', getAddress(safe.address))
@@ -514,14 +574,13 @@ describe('Transactions History Controller (Unit)', () => {
       .build();
     const multisigTransactionToAddress = faker.finance.ethereumAddress();
     const multisigTransactionValue = faker.string.numeric();
-    const multisigTransaction = multisigTransactionBuilder()
+    const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('value', '0')
       .with('operation', 0)
       .with('safeTxGas', 0)
       .with('executionDate', new Date('2022-11-16T07:31:11Z'))
       .with('submissionDate', new Date('2022-11-16T07:29:56.401601Z'))
-      .with('safeTxHash', '0x31d44c67')
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
@@ -544,12 +603,11 @@ describe('Transactions History Controller (Unit)', () => {
           .build(),
       )
       .with('confirmationsRequired', 2)
-      .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-      ])
-      .build();
-
+      .buildWithConfirmations({
+        safe,
+        signers,
+        chainId: chain.chainId,
+      });
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
       .with('to', safe.address)
@@ -570,25 +628,27 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: pageBuilder()
-            .with('results', [
-              moduleTransactionToJson(moduleTransaction),
-              multisigTransactionToJson(multisigTransaction),
-              ethereumTransactionToJson(incomingTransaction),
-            ])
-            .build(),
+          data: rawify(
+            pageBuilder()
+              .with('results', [
+                moduleTransactionToJson(moduleTransaction),
+                multisigTransactionToJson(multisigTransaction),
+                ethereumTransactionToJson(incomingTransaction),
+              ])
+              .build(),
+          ),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url === getTokenUrlPattern) {
-        return Promise.resolve({ data: tokenResponse, status: 200 });
+        return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -637,7 +697,7 @@ describe('Transactions History Controller (Unit)', () => {
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_0x31d44c67`,
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: 1668583871000,
                 txStatus: 'SUCCESS',
@@ -726,23 +786,23 @@ describe('Transactions History Controller (Unit)', () => {
       const getContractUrl = `${chainResponse.transactionService}/api/v1/contracts/`;
       const getSafeCreationUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/creation/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: allTransactionsResponse,
+          data: rawify(allTransactionsResponse),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
         return Promise.resolve({
-          data: safe,
+          data: rawify(safe),
           status: 200,
         });
       }
       if (url === getSafeCreationUrl) {
         return Promise.resolve({
-          data: creationTransactionToJson(creationTransaction),
+          data: rawify(creationTransactionToJson(creationTransaction)),
           status: 200,
         });
       }
@@ -806,16 +866,16 @@ describe('Transactions History Controller (Unit)', () => {
       const getAllTransactions = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}/all-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${getAddress(safeAddress)}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chainResponse, status: 200 });
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
       if (url === getAllTransactions) {
         return Promise.resolve({
-          data: transactionHistoryBuilder,
+          data: rawify(transactionHistoryBuilder),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -881,11 +941,14 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         case getAllTransactions:
-          return Promise.resolve({ data: transactionHistoryData, status: 200 });
+          return Promise.resolve({
+            data: rawify(transactionHistoryData),
+            status: 200,
+          });
         case getSafeUrl:
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -946,15 +1009,18 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         case getAllTransactions:
-          return Promise.resolve({ data: transactionHistoryData, status: 200 });
+          return Promise.resolve({
+            data: rawify(transactionHistoryData),
+            status: 200,
+          });
         case getSafeUrl:
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
-          return Promise.resolve({ data: trustedToken, status: 200 });
+          return Promise.resolve({ data: rawify(trustedToken), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
-          return Promise.resolve({ data: untrustedToken, status: 200 });
+          return Promise.resolve({ data: rawify(untrustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -1038,13 +1104,16 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         case getAllTransactions:
-          return Promise.resolve({ data: transactionHistoryData, status: 200 });
+          return Promise.resolve({
+            data: rawify(transactionHistoryData),
+            status: 200,
+          });
         case getSafeUrl:
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
-          return Promise.resolve({ data: untrustedToken, status: 200 });
+          return Promise.resolve({ data: rawify(untrustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -1139,15 +1208,18 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         case getAllTransactions:
-          return Promise.resolve({ data: transactionHistoryData, status: 200 });
+          return Promise.resolve({
+            data: rawify(transactionHistoryData),
+            status: 200,
+          });
         case getSafeUrl:
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
-          return Promise.resolve({ data: trustedToken, status: 200 });
+          return Promise.resolve({ data: rawify(trustedToken), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
-          return Promise.resolve({ data: untrustedToken, status: 200 });
+          return Promise.resolve({ data: rawify(untrustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -1227,15 +1299,18 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         case getAllTransactions:
-          return Promise.resolve({ data: transactionHistoryData, status: 200 });
+          return Promise.resolve({
+            data: rawify(transactionHistoryData),
+            status: 200,
+          });
         case getSafeUrl:
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
-          return Promise.resolve({ data: trustedToken, status: 200 });
+          return Promise.resolve({ data: rawify(trustedToken), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${untrustedToken.address}`:
-          return Promise.resolve({ data: untrustedToken, status: 200 });
+          return Promise.resolve({ data: rawify(untrustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -1308,13 +1383,16 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         case getAllTransactions:
-          return Promise.resolve({ data: transactionHistoryData, status: 200 });
+          return Promise.resolve({
+            data: rawify(transactionHistoryData),
+            status: 200,
+          });
         case getSafeUrl:
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${trustedToken.address}`:
-          return Promise.resolve({ data: trustedToken, status: 200 });
+          return Promise.resolve({ data: rawify(trustedToken), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -1384,15 +1462,21 @@ describe('Transactions History Controller (Unit)', () => {
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       switch (url) {
         case getChainUrl:
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         case getAllTransactions:
-          return Promise.resolve({ data: transactionHistoryData, status: 200 });
+          return Promise.resolve({
+            data: rawify(transactionHistoryData),
+            status: 200,
+          });
         case getSafeUrl:
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${trustedErc721.address}`:
-          return Promise.resolve({ data: trustedErc721, status: 200 });
+          return Promise.resolve({ data: rawify(trustedErc721), status: 200 });
         case `${chain.transactionService}/api/v1/tokens/${notTrustedErc721.address}`:
-          return Promise.resolve({ data: notTrustedErc721, status: 200 });
+          return Promise.resolve({
+            data: rawify(notTrustedErc721),
+            status: 200,
+          });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }

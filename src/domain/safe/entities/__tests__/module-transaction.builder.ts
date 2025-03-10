@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';

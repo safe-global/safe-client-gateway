@@ -181,7 +181,7 @@ export class NativeStakingMapper {
     ]);
     this.validateDeployment(deployment);
     const publicKeys = this.kilnNativeStakingHelper.splitPublicKeys(
-      this.kilnDecoder.decodeValidatorsExit(args.data)!.parameters[0].value,
+      this.kilnDecoder.decodeValidatorsExit(args.data)!,
     );
 
     const value =
@@ -245,7 +245,7 @@ export class NativeStakingMapper {
     this.validateDeployment(deployment);
 
     const publicKeys = this.kilnNativeStakingHelper.splitPublicKeys(
-      this.kilnDecoder.decodeBatchWithdrawCLFee(args.data)!.parameters[0].value,
+      this.kilnDecoder.decodeBatchWithdrawCLFee(args.data)!,
     );
     const value = await this.getWithdrawValue({
       txHash: args.txHash,

@@ -1,4 +1,4 @@
-import { DataDecodedParameter as DomainDataDecodedParameter } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { DataDecodedParameter as DomainDataDecodedParameter } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class DataDecodedParameter implements DomainDataDecodedParameter {
@@ -12,13 +12,16 @@ export class DataDecodedParameter implements DomainDataDecodedParameter {
     oneOf: [{ type: 'object' }, { type: 'array', items: { type: 'object' } }],
     nullable: true,
   })
-  valueDecoded: Record<string, unknown> | Record<string, unknown>[] | null;
+  valueDecoded: Record<string, unknown> | Array<Record<string, unknown>> | null;
 
   constructor(
     name: string,
     type: string,
     value: Required<unknown>,
-    valueDecoded: Record<string, unknown> | Record<string, unknown>[] | null,
+    valueDecoded:
+      | Record<string, unknown>
+      | Array<Record<string, unknown>>
+      | null,
   ) {
     this.name = name;
     this.type = type;

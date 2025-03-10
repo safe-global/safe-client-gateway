@@ -15,7 +15,7 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 ## Requirements
 
-- Node.js v22.11.0 'Jod' LTS ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
+- Node.js v22.14.0 'Jod' LTS ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
@@ -95,3 +95,18 @@ These checks can be automatically executed using Git hooks. If you wish to insta
 yarn install
 yarn husky install
 ```
+
+## Database Migrations
+
+Database migrations are configured to execute automatically. To disable them, set the following environment variables:
+
+```
+RUN_MIGRATIONS=false
+DB_MIGRATIONS_EXECUTE=false
+```
+
+For migrations to be generated automatically, the entity file must follow this structure and naming convention:
+
+`src/**/entities/*.entity.db.ts`
+
+The file should be located in the `src` folder, inside an `entities` directory. The filename should follow the format `{FILE_NAME}.entity.db.ts`, where `{FILE_NAME}` is replaced with your desired name.

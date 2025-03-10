@@ -13,11 +13,11 @@ import {
  *
  * If the module provided is not a {@link TestingModule}, an error is thrown
  */
-export class TestAppProvider<T> extends AppProvider<T> {
+export class TestAppProvider<T extends TestingModule> extends AppProvider<T> {
   // Disables shutdown hooks for tests (they are not required)
   // Enabling this in the tests might result in a MaxListenersExceededWarning
   // as the number of listeners that this adds exceed the default
-  protected readonly configuration: ((app: INestApplication) => void)[] =
+  protected readonly configuration: Array<(app: INestApplication) => void> =
     DEFAULT_CONFIGURATION.filter((config) => config !== configureShutdownHooks);
 
   constructor() {

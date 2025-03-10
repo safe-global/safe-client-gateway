@@ -13,6 +13,14 @@ export interface IContractsRepository {
     chainId: string;
     contractAddress: `0x${string}`;
   }): Promise<Contract>;
+
+  /**
+   * Determines if the contract at the {@link contractAddress} is trusted for delegate calls.
+   */
+  isTrustedForDelegateCall(args: {
+    chainId: string;
+    contractAddress: `0x${string}`;
+  }): Promise<boolean>;
 }
 
 @Module({

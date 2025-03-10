@@ -13,10 +13,9 @@ import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
@@ -42,6 +41,8 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { rawify } from '@/validation/entities/raw.entity';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('List multisig transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -114,7 +115,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     networkService.get.mockResolvedValueOnce({
-      data: chainResponse,
+      data: rawify(chainResponse),
       status: 200,
     });
     const error = new NetworkResponseError(
@@ -156,18 +157,18 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     networkService.get.mockResolvedValueOnce({
-      data: chainResponse,
+      data: rawify(chainResponse),
       status: 200,
     });
     networkService.get.mockResolvedValueOnce({
-      data: { results: ['invalidData'] },
+      data: rawify({ results: ['invalidData'] }),
       status: 200,
     });
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
-      .expect(500)
-      .expect({ statusCode: 500, message: 'Internal server error' });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('Failure: data page validation fails', async () => {
@@ -176,29 +177,37 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const chainResponse = chainBuilder().with('chainId', chainId).build();
     const page = pageBuilder().build();
     networkService.get.mockResolvedValueOnce({
-      data: chainResponse,
+      data: rawify(chainResponse),
       status: 200,
     });
     networkService.get.mockResolvedValueOnce({
-      data: { ...page, count: 'invalid' },
+      data: rawify({ ...page, count: 'invalid' }),
       status: 200,
     });
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chainId}/safes/${safeAddress}/multisig-transactions`)
-      .expect(500)
-      .expect({ statusCode: 500, message: 'Internal server error' });
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('Should get a ERC20 transfer mapped to the expected format', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
-    const multisigTransaction = multisigTransactionBuilder()
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('value', '0')
       .with('operation', 0)
       .with('executionDate', new Date('2022-11-16T07:31:11Z'))
-      .with('safeTxHash', '0x31d44c6')
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
@@ -221,11 +230,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .build(),
       )
       .with('confirmationsRequired', 2)
-      .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-      ])
-      .build();
+      .buildWithConfirmations({
+        chainId: chain.chainId,
+        safe,
+        signers,
+      });
     const token = tokenBuilder()
       .with('type', TokenType.Erc20)
       .with('address', getAddress(multisigTransaction.to))
@@ -237,24 +246,26 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
-          data: pageBuilder()
-            .with('results', [multisigTransactionToJson(multisigTransaction)])
-            .build(),
+          data: rawify(
+            pageBuilder()
+              .with('results', [multisigTransactionToJson(multisigTransaction)])
+              .build(),
+          ),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.reject({ detail: 'Not found', status: 404 });
       }
       if (url === getTokenUrlPattern) {
-        return Promise.resolve({ data: token, status: 200 });
+        return Promise.resolve({ data: rawify(token), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -270,7 +281,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_0x31d44c6`,
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: multisigTransaction.executionDate?.getTime(),
                 txStatus: 'SUCCESS',
@@ -309,18 +320,26 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
 
   it('Should get a ERC721 transfer mapped to the expected format', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const signers = Array.from({ length: 3 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
     const token = tokenBuilder()
       .with('type', TokenType.Erc721)
       .with('address', '0x7Af3460d552f832fD7E2DE973c628ACeA59B0712')
       .build();
-    const multisigTransaction = multisigTransactionBuilder()
+    const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('to', token.address)
       .with('value', '0')
       .with('operation', 0)
       .with('executionDate', new Date('2022-06-21T23:12:32.000Z'))
-      .with('safeTxHash', '0x0f9f1b72')
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', '{}')
@@ -348,12 +367,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .build(),
       )
       .with('confirmationsRequired', 3)
-      .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-      ])
-      .build();
+      .buildWithConfirmations({
+        safe,
+        chainId: chain.chainId,
+        signers,
+      });
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -361,24 +379,26 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0x7Af3460d552f832fD7E2DE973c628ACeA59B0712`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
-          data: pageBuilder()
-            .with('results', [multisigTransactionToJson(multisigTransaction)])
-            .build(),
+          data: rawify(
+            pageBuilder()
+              .with('results', [multisigTransactionToJson(multisigTransaction)])
+              .build(),
+          ),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safe, status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.reject({ detail: 'Not found', status: 404 });
       }
       if (url === getTokenUrlPattern) {
-        return Promise.resolve({ data: token, status: 200 });
+        return Promise.resolve({ data: rawify(token), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -394,7 +414,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_0x0f9f1b72`,
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: 1655853152000,
                 txStatus: 'SUCCESS',
@@ -434,7 +454,18 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const chain = chainBuilder().build();
     const safeAppsResponse = [safeAppBuilder().build()];
     const contractResponse = contractBuilder().build();
-    const domainTransaction = multisigTransactionBuilder()
+    const signers = Array.from({ length: 3 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const domainTransaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
       .with('value', '0')
       .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
       .with('isExecuted', true)
@@ -451,7 +482,12 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           ])
           .build(),
       )
-      .build();
+      .with('confirmationsRequired', 3)
+      .buildWithConfirmations({
+        chainId: chain.chainId,
+        safe,
+        signers,
+      });
     const multisigTransactionsPage = pageBuilder()
       .with('results', [multisigTransactionToJson(domainTransaction)])
       .build();
@@ -462,22 +498,22 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${domainTransaction.safe}`;
       const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
       if (url === getChainUrl) {
-        return Promise.resolve({ data: chain, status: 200 });
+        return Promise.resolve({ data: rawify(chain), status: 200 });
       }
       if (url === getSafeAppsUrl) {
-        return Promise.resolve({ data: safeAppsResponse, status: 200 });
+        return Promise.resolve({ data: rawify(safeAppsResponse), status: 200 });
       }
       if (url === getMultisigTransactionsUrl) {
         return Promise.resolve({
-          data: multisigTransactionsPage,
+          data: rawify(multisigTransactionsPage),
           status: 200,
         });
       }
       if (url === getSafeUrl) {
-        return Promise.resolve({ data: safeBuilder().build(), status: 200 });
+        return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: contractResponse, status: 200 });
+        return Promise.resolve({ data: rawify(contractResponse), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });

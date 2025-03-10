@@ -12,20 +12,19 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   ethereumTransactionBuilder,
   toJson as ethereumTransactionToJson,
 } from '@/domain/safe/entities/__tests__/ethereum-transaction.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { TokenType } from '@/domain/tokens/entities/token.entity';
+import { type Token, TokenType } from '@/domain/tokens/entities/token.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import type {
   ERC20Transfer,
@@ -54,6 +53,8 @@ import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.mo
 import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { rawify } from '@/validation/entities/raw.entity';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
   let app: INestApplication<Server>;
@@ -65,7 +66,9 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
   const valueTolerance = BigInt(1);
   const echoLimit = BigInt(10);
   const chain = chainBuilder().build();
-  const safe = safeBuilder().build();
+  const privateKey = generatePrivateKey();
+  const signer = privateKeyToAccount(privateKey);
+  const safe = safeBuilder().with('owners', [signer.address]).build();
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -134,193 +137,218 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       return value * BigInt(10 ** decimals);
     }
 
-    const multisigExecutionDate = new Date('2024-03-20T09:41:25Z');
-    const multisigToken = tokenBuilder().with('type', TokenType.Erc20).build();
-    // Use value higher than BigInt(2) as we use tolerance +/- BigInt(1) to signify outside tolerance
-    // later in tests, and values of 0 are not mapped
-    const testValueBuffer = valueTolerance + faker.number.bigInt({ min: 2 });
-    const multisigTransferValue = parseUnits(
-      faker.number.bigInt({
-        min: testValueBuffer,
-        max: testValueBuffer + valueTolerance,
-      }),
-      multisigToken.decimals!,
-    );
-    const multisigTransfer = {
-      ...erc20TransferBuilder()
-        .with('executionDate', multisigExecutionDate)
-        .with('from', safe.address)
-        .with('tokenAddress', multisigToken.address)
-        .with('value', multisigTransferValue.toString())
-        .build(),
-      tokenInfo: multisigToken,
-    };
-    const multisigTransaction = {
-      ...(multisigTransactionToJson(
-        multisigTransactionBuilder()
+    let multisigTransfer: ERC20Transfer;
+    let multisigTransferValue: bigint;
+    let multisigToken: Token;
+    let multisigTransaction: MultisigTransaction;
+    let imitationAddress: `0x${string}`;
+    let imitationToken: Token;
+    let imitationOutgoingTransaction: EthereumTransaction;
+    let imitationIncomingTransaction: EthereumTransaction;
+    let notImitatedMultisigTransfer: ERC20Transfer;
+    let notImitatedMultisigToken: Token;
+    let notImitatedMultisigTransaction: MultisigTransaction;
+
+    let getAllTransactionsUrl: string;
+    let getSafeUrl: string;
+    let getTokenAddressUrl: string;
+    let getNotImitatedTokenAddressUrl: string;
+    let getImitationTokenAddressUrl: string;
+
+    beforeAll(async () => {
+      const multisigExecutionDate = new Date('2024-03-20T09:41:25Z');
+      multisigToken = tokenBuilder().with('type', TokenType.Erc20).build();
+      // Use value higher than BigInt(2) as we use tolerance +/- BigInt(1) to signify outside tolerance
+      // later in tests, and values of 0 are not mapped
+      const testValueBuffer = valueTolerance + faker.number.bigInt({ min: 2 });
+      multisigTransferValue = parseUnits(
+        faker.number.bigInt({
+          min: testValueBuffer,
+          max: testValueBuffer + valueTolerance,
+        }),
+        multisigToken.decimals!,
+      );
+      multisigTransfer = {
+        ...erc20TransferBuilder()
           .with('executionDate', multisigExecutionDate)
-          .with('safe', safe.address)
-          .with('to', multisigToken.address)
-          .with('value', '0')
-          .with('operation', 0)
-          .with('gasToken', zeroAddress)
-          .with('safeTxGas', 0)
-          .with('baseGas', 0)
-          .with('gasPrice', '0')
-          .with('refundReceiver', zeroAddress)
-          .with('proposer', safe.owners[0])
-          .with('executor', safe.owners[0])
-          .with('isExecuted', true)
-          .with('isSuccessful', true)
-          .with('origin', null)
-          .with(
-            'dataDecoded',
-            dataDecodedBuilder()
-              .with('method', 'transfer')
-              .with('parameters', [
-                dataDecodedParameterBuilder()
-                  .with('name', 'to')
-                  .with('type', 'address')
-                  .with('value', multisigTransfer.to)
-                  .build(),
-                dataDecodedParameterBuilder()
-                  .with('name', 'value')
-                  .with('type', 'uint256')
-                  .with('value', multisigTransfer.value)
-                  .build(),
-              ])
-              .build(),
-          )
-          .with('confirmationsRequired', 1)
-          .with('confirmations', [
-            confirmationBuilder().with('owner', safe.owners[0]).build(),
-          ])
-          .with('trusted', true)
+          .with('from', safe.address)
+          .with('tokenAddress', multisigToken.address)
+          .with('value', multisigTransferValue.toString())
           .build(),
-      ) as MultisigTransaction),
-      // TODO: Update type to include transfers
-      transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
-    } as MultisigTransaction;
+        tokenInfo: multisigToken,
+      } as ERC20Transfer;
+      multisigTransaction = {
+        ...(multisigTransactionToJson(
+          await multisigTransactionBuilder()
+            .with('executionDate', multisigExecutionDate)
+            .with('safe', safe.address)
+            .with('to', multisigToken.address)
+            .with('value', '0')
+            .with('operation', 0)
+            .with('gasToken', zeroAddress)
+            .with('safeTxGas', 0)
+            .with('baseGas', 0)
+            .with('gasPrice', '0')
+            .with('refundReceiver', zeroAddress)
+            .with('proposer', safe.owners[0])
+            .with('executor', safe.owners[0])
+            .with('isExecuted', true)
+            .with('isSuccessful', true)
+            .with('origin', null)
+            .with(
+              'dataDecoded',
+              dataDecodedBuilder()
+                .with('method', 'transfer')
+                .with('parameters', [
+                  dataDecodedParameterBuilder()
+                    .with('name', 'to')
+                    .with('type', 'address')
+                    .with('value', multisigTransfer.to)
+                    .build(),
+                  dataDecodedParameterBuilder()
+                    .with('name', 'value')
+                    .with('type', 'uint256')
+                    .with('value', multisigTransfer.value)
+                    .build(),
+                ])
+                .build(),
+            )
+            .with('confirmationsRequired', 1)
+            .with('trusted', true)
+            .buildWithConfirmations({
+              signers: [signer],
+              chainId: chain.chainId,
+              safe,
+            }),
+        ) as MultisigTransaction),
+        // TODO: Update type to include transfers
+        transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
+      } as MultisigTransaction;
 
-    const notImitatedMultisigToken = tokenBuilder()
-      .with('type', TokenType.Erc20)
-      .build();
-    const notImitatedMultisigTransfer = {
-      ...erc20TransferBuilder()
-        .with('executionDate', multisigExecutionDate)
-        .with('from', safe.address)
-        .with('tokenAddress', notImitatedMultisigToken.address)
-        .with('value', multisigTransfer.value)
-        .build(),
-      tokenInfo: multisigToken,
-    };
-    const notImitatedMultisigTransaction = {
-      ...(multisigTransactionToJson(
-        multisigTransactionBuilder()
+      notImitatedMultisigToken = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .build();
+      notImitatedMultisigTransfer = {
+        ...erc20TransferBuilder()
           .with('executionDate', multisigExecutionDate)
-          .with('safe', safe.address)
-          .with('to', notImitatedMultisigToken.address)
-          .with('value', '0')
-          .with('operation', 0)
-          .with('gasToken', zeroAddress)
-          .with('safeTxGas', 0)
-          .with('baseGas', 0)
-          .with('gasPrice', '0')
-          .with('refundReceiver', zeroAddress)
-          .with('proposer', safe.owners[0])
-          .with('executor', safe.owners[0])
-          .with('isExecuted', true)
-          .with('isSuccessful', true)
-          .with('origin', null)
-          .with(
-            'dataDecoded',
-            dataDecodedBuilder()
-              .with('method', 'transfer')
-              .with('parameters', [
-                dataDecodedParameterBuilder()
-                  .with('name', 'to')
-                  .with('type', 'address')
-                  .with('value', notImitatedMultisigTransfer.to)
-                  .build(),
-                dataDecodedParameterBuilder()
-                  .with('name', 'value')
-                  .with('type', 'uint256')
-                  .with('value', notImitatedMultisigTransfer.value)
-                  .build(),
-              ])
-              .build(),
-          )
-          .with('confirmationsRequired', 1)
-          .with('confirmations', [
-            confirmationBuilder().with('owner', safe.owners[0]).build(),
-          ])
-          .with('trusted', true)
+          .with('from', safe.address)
+          .with('tokenAddress', notImitatedMultisigToken.address)
+          .with('value', multisigTransfer.value)
           .build(),
-      ) as MultisigTransaction),
-      // TODO: Update type to include transfers
-      transfers: [erc20TransferToJson(notImitatedMultisigTransfer) as Transfer],
-    } as MultisigTransaction;
+        tokenInfo: multisigToken,
+      } as ERC20Transfer;
+      notImitatedMultisigTransaction = {
+        ...(multisigTransactionToJson(
+          await multisigTransactionBuilder()
+            .with('executionDate', multisigExecutionDate)
+            .with('safe', safe.address)
+            .with('to', notImitatedMultisigToken.address)
+            .with('value', '0')
+            .with('operation', 0)
+            .with('gasToken', zeroAddress)
+            .with('safeTxGas', 0)
+            .with('baseGas', 0)
+            .with('gasPrice', '0')
+            .with('refundReceiver', zeroAddress)
+            .with('proposer', safe.owners[0])
+            .with('executor', safe.owners[0])
+            .with('isExecuted', true)
+            .with('isSuccessful', true)
+            .with('origin', null)
+            .with(
+              'dataDecoded',
+              dataDecodedBuilder()
+                .with('method', 'transfer')
+                .with('parameters', [
+                  dataDecodedParameterBuilder()
+                    .with('name', 'to')
+                    .with('type', 'address')
+                    .with('value', notImitatedMultisigTransfer.to)
+                    .build(),
+                  dataDecodedParameterBuilder()
+                    .with('name', 'value')
+                    .with('type', 'uint256')
+                    .with('value', notImitatedMultisigTransfer.value)
+                    .build(),
+                ])
+                .build(),
+            )
+            .with('confirmationsRequired', 1)
 
-    const imitationAddress = getImitationAddress(multisigTransfer.to);
-    const imitationExecutionDate = new Date('2024-03-20T09:42:58Z');
-    const imitationToken = tokenBuilder()
-      .with('type', TokenType.Erc20)
-      .with('decimals', multisigToken.decimals)
-      .build();
+            .with('trusted', true)
+            .buildWithConfirmations({
+              signers: [signer],
+              chainId: chain.chainId,
+              safe,
+            }),
+        ) as MultisigTransaction),
+        // TODO: Update type to include transfers
+        transfers: [
+          erc20TransferToJson(notImitatedMultisigTransfer) as Transfer,
+        ],
+      } as MultisigTransaction;
 
-    const imitationIncomingTransfer = {
-      ...erc20TransferBuilder()
-        .with('from', imitationAddress)
+      imitationAddress = getImitationAddress(multisigTransfer.to);
+      const imitationExecutionDate = new Date('2024-03-20T09:42:58Z');
+      imitationToken = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .with('decimals', multisigToken.decimals)
+        .build();
+
+      const imitationIncomingTransfer = {
+        ...erc20TransferBuilder()
+          .with('from', imitationAddress)
+          .with('to', safe.address)
+          .with('tokenAddress', imitationToken.address)
+          .with('value', multisigTransfer.value)
+          .with('executionDate', imitationExecutionDate)
+          .build(),
+        // TODO: Update type to include tokenInfo
+        tokenInfo: imitationToken,
+      };
+      const imitationIncomingErc20Transfer = erc20TransferEncoder()
         .with('to', safe.address)
-        .with('tokenAddress', imitationToken.address)
-        .with('value', multisigTransfer.value)
-        .with('executionDate', imitationExecutionDate)
-        .build(),
-      // TODO: Update type to include tokenInfo
-      tokenInfo: imitationToken,
-    };
-    const imitationIncomingErc20Transfer = erc20TransferEncoder()
-      .with('to', safe.address)
-      .with('value', BigInt(multisigTransfer.value));
-    const imitationIncomingTransaction = ethereumTransactionToJson(
-      ethereumTransactionBuilder()
-        .with('executionDate', imitationIncomingTransfer.executionDate)
-        .with('data', imitationIncomingErc20Transfer.encode())
-        .with('transfers', [
-          erc20TransferToJson(imitationIncomingTransfer) as Transfer,
-        ])
-        .build(),
-    ) as EthereumTransaction;
+        .with('value', BigInt(multisigTransfer.value));
+      imitationIncomingTransaction = ethereumTransactionToJson(
+        ethereumTransactionBuilder()
+          .with('executionDate', imitationIncomingTransfer.executionDate)
+          .with('data', imitationIncomingErc20Transfer.encode())
+          .with('transfers', [
+            erc20TransferToJson(imitationIncomingTransfer) as Transfer,
+          ])
+          .build(),
+      ) as EthereumTransaction;
 
-    const imitationOutgoingTransfer = {
-      ...erc20TransferBuilder()
-        .with('from', safe.address)
+      const imitationOutgoingTransfer = {
+        ...erc20TransferBuilder()
+          .with('from', safe.address)
+          .with('to', imitationAddress)
+          .with('tokenAddress', imitationToken.address)
+          .with('value', multisigTransfer.value)
+          .with('executionDate', imitationExecutionDate)
+          .build(),
+        // TODO: Update type to include tokenInfo
+        tokenInfo: imitationToken,
+      };
+      const imitationOutgoingErc20Transfer = erc20TransferEncoder()
         .with('to', imitationAddress)
-        .with('tokenAddress', imitationToken.address)
-        .with('value', multisigTransfer.value)
-        .with('executionDate', imitationExecutionDate)
-        .build(),
-      // TODO: Update type to include tokenInfo
-      tokenInfo: imitationToken,
-    };
-    const imitationOutgoingErc20Transfer = erc20TransferEncoder()
-      .with('to', imitationAddress)
-      .with('value', BigInt(multisigTransfer.value));
-    const imitationOutgoingTransaction = ethereumTransactionToJson(
-      ethereumTransactionBuilder()
-        .with('executionDate', imitationOutgoingTransfer.executionDate)
-        .with('data', imitationOutgoingErc20Transfer.encode())
-        .with('transfers', [
-          erc20TransferToJson(imitationOutgoingTransfer) as Transfer,
-        ])
-        .build(),
-    ) as EthereumTransaction;
+        .with('value', BigInt(multisigTransfer.value));
+      imitationOutgoingTransaction = ethereumTransactionToJson(
+        ethereumTransactionBuilder()
+          .with('executionDate', imitationOutgoingTransfer.executionDate)
+          .with('data', imitationOutgoingErc20Transfer.encode())
+          .with('transfers', [
+            erc20TransferToJson(imitationOutgoingTransfer) as Transfer,
+          ])
+          .build(),
+      ) as EthereumTransaction;
 
-    const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
-    const getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
-    const getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${imitationToken.address}`;
+      getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
+      getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
+      getImitationTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${imitationToken.address}`;
+    });
 
     describe('Tolerant value', () => {
       it('should flag imitation incoming/outgoing transfers with a tolerant value within the lookup distance', async () => {
@@ -333,32 +361,32 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         ];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
           if (url === getImitationTokenAddressUrl) {
             return Promise.resolve({
-              data: imitationToken,
+              data: rawify(imitationToken),
               status: 200,
             });
           }
@@ -604,32 +632,32 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
           if (url === getImitationTokenAddressUrl) {
             return Promise.resolve({
-              data: imitationToken,
+              data: rawify(imitationToken),
               status: 200,
             });
           }
@@ -876,32 +904,32 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
           if (url === getImitationTokenAddressUrl) {
             return Promise.resolve({
-              data: imitationToken,
+              data: rawify(imitationToken),
               status: 200,
             });
           }
@@ -1067,32 +1095,32 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
           if (url === getImitationTokenAddressUrl) {
             return Promise.resolve({
-              data: imitationToken,
+              data: rawify(imitationToken),
               status: 200,
             });
           }
@@ -1330,30 +1358,35 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     });
 
     describe('Intolerant value', () => {
-      const intolerantDiff = parseUnits(
-        valueTolerance * BigInt(2),
-        multisigToken.decimals!,
-      );
-      const valueIntolerantIncomingTransaction = ((): EthereumTransaction => {
-        const transaction = structuredClone(imitationIncomingTransaction);
-        (transaction.transfers![0] as ERC20Transfer).value = faker.helpers
-          .arrayElement([
-            multisigTransferValue + intolerantDiff,
-            multisigTransferValue - intolerantDiff,
-          ])
-          .toString();
-        return transaction;
-      })();
-      const valueIntolerantOutgoingTransaction = ((): EthereumTransaction => {
-        const transaction = structuredClone(imitationOutgoingTransaction);
-        (transaction.transfers![0] as ERC20Transfer).value = faker.helpers
-          .arrayElement([
-            multisigTransferValue + intolerantDiff,
-            multisigTransferValue - intolerantDiff,
-          ])
-          .toString();
-        return transaction;
-      })();
+      let valueIntolerantIncomingTransaction: EthereumTransaction;
+      let valueIntolerantOutgoingTransaction: EthereumTransaction;
+
+      beforeEach(() => {
+        const intolerantDiff = parseUnits(
+          valueTolerance * BigInt(2),
+          multisigToken.decimals!,
+        );
+        valueIntolerantIncomingTransaction = ((): EthereumTransaction => {
+          const transaction = structuredClone(imitationIncomingTransaction);
+          (transaction.transfers![0] as ERC20Transfer).value = faker.helpers
+            .arrayElement([
+              multisigTransferValue + intolerantDiff,
+              multisigTransferValue - intolerantDiff,
+            ])
+            .toString();
+          return transaction;
+        })();
+        valueIntolerantOutgoingTransaction = ((): EthereumTransaction => {
+          const transaction = structuredClone(imitationOutgoingTransaction);
+          (transaction.transfers![0] as ERC20Transfer).value = faker.helpers
+            .arrayElement([
+              multisigTransferValue + intolerantDiff,
+              multisigTransferValue - intolerantDiff,
+            ])
+            .toString();
+          return transaction;
+        })();
+      });
 
       it('should not flag incoming/outgoing transfers of vanity with an intolerant value within the lookup distance', async () => {
         const results = [
@@ -1365,32 +1398,32 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         ];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
           if (url === getImitationTokenAddressUrl) {
             return Promise.resolve({
-              data: imitationToken,
+              data: rawify(imitationToken),
               status: 200,
             });
           }
@@ -1645,32 +1678,32 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         ];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
           if (url === getImitationTokenAddressUrl) {
             return Promise.resolve({
-              data: imitationToken,
+              data: rawify(imitationToken),
               status: 200,
             });
           }
@@ -1926,32 +1959,32 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         ];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
           if (url === getImitationTokenAddressUrl) {
             return Promise.resolve({
-              data: imitationToken,
+              data: rawify(imitationToken),
               status: 200,
             });
           }
@@ -2206,32 +2239,32 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         ];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
           if (url === getImitationTokenAddressUrl) {
             return Promise.resolve({
-              data: imitationToken,
+              data: rawify(imitationToken),
               status: 200,
             });
           }
@@ -2532,20 +2565,20 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       ];
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-          return Promise.resolve({ data: chain, status: 200 });
+          return Promise.resolve({ data: rawify(chain), status: 200 });
         }
         if (url === getAllTransactionsUrl) {
           return Promise.resolve({
-            data: pageBuilder().with('results', results).build(),
+            data: rawify(pageBuilder().with('results', results).build()),
             status: 200,
           });
         }
         if (url === getSafeUrl) {
-          return Promise.resolve({ data: safe, status: 200 });
+          return Promise.resolve({ data: rawify(safe), status: 200 });
         }
         if (url === getTokenAddressUrl) {
           return Promise.resolve({
-            data: multisigToken,
+            data: rawify(multisigToken),
             status: 200,
           });
         }
@@ -2554,7 +2587,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           `${chain.transactionService}/api/v1/tokens/${imitationWithDifferentDecimalsToken.address}`
         ) {
           return Promise.resolve({
-            data: imitationWithDifferentDecimalsToken,
+            data: rawify(imitationWithDifferentDecimalsToken),
             status: 200,
           });
         }
@@ -2663,187 +2696,210 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
   });
 
   describe('Echo transfers', () => {
-    const multisigExecutionDate = new Date('2024-03-20T09:42:58Z');
-    const multisigToken = tokenBuilder().with('type', TokenType.Erc20).build();
-    const multisigTransfer = {
-      ...erc20TransferBuilder()
-        .with('executionDate', multisigExecutionDate)
-        .with('from', safe.address)
-        .with('tokenAddress', multisigToken.address)
-        .with(
-          'value',
-          parseUnits(
-            // Value vastly above echo limit for testing flagging
-            (echoLimit * faker.number.bigInt({ min: 3, max: 9 })).toString(),
-            multisigToken.decimals!,
-          ).toString(),
-        )
-        .build(),
-      tokenInfo: multisigToken,
-    };
-    const multisigTransaction = {
-      ...(multisigTransactionToJson(
-        multisigTransactionBuilder()
-          .with('executionDate', multisigExecutionDate)
-          .with('safe', safe.address)
-          .with('to', multisigToken.address)
-          .with('value', '0')
-          .with('operation', 0)
-          .with('gasToken', zeroAddress)
-          .with('safeTxGas', 0)
-          .with('baseGas', 0)
-          .with('gasPrice', '0')
-          .with('refundReceiver', zeroAddress)
-          .with('proposer', safe.owners[0])
-          .with('executor', safe.owners[0])
-          .with('isExecuted', true)
-          .with('isSuccessful', true)
-          .with('origin', null)
-          .with(
-            'dataDecoded',
-            dataDecodedBuilder()
-              .with('method', 'transfer')
-              .with('parameters', [
-                dataDecodedParameterBuilder()
-                  .with('name', 'to')
-                  .with('type', 'address')
-                  .with('value', multisigTransfer.to)
-                  .build(),
-                dataDecodedParameterBuilder()
-                  .with('name', 'value')
-                  .with('type', 'uint256')
-                  .with('value', multisigTransfer.value)
-                  .build(),
-              ])
-              .build(),
-          )
-          .with('confirmationsRequired', 1)
-          .with('confirmations', [
-            confirmationBuilder().with('owner', safe.owners[0]).build(),
-          ])
-          .with('trusted', true)
-          .build(),
-      ) as MultisigTransaction),
-      // TODO: Update type to include transfers
-      transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
-    } as MultisigTransaction;
+    let multisigToken: Token;
+    let multisigTransfer: ERC20Transfer;
+    let multisigTransaction: MultisigTransaction;
+    let notImitatedMultisigToken: Token;
+    let notImitatedMultisigTransaction: MultisigTransaction;
+    let imitationAddress: `0x${string}`;
+    let notImitatedMultisigTransfer: ERC20Transfer;
+    let imitationIncomingTransfer: ERC20Transfer;
+    let imitationIncomingTransaction: EthereumTransaction;
 
-    const notImitatedMultisigToken = tokenBuilder()
-      .with('type', TokenType.Erc20)
-      .with('decimals', multisigToken.decimals)
-      .build();
-    const notImitatedMultisigTransfer = {
-      ...erc20TransferBuilder()
-        .with('executionDate', multisigExecutionDate)
-        .with('from', safe.address)
-        .with('tokenAddress', notImitatedMultisigToken.address)
-        .with('value', faker.string.numeric({ exclude: ['0'] }))
-        .build(),
-      tokenInfo: multisigToken,
-    };
-    const notImitatedMultisigTransaction = {
-      ...(multisigTransactionToJson(
-        multisigTransactionBuilder()
-          .with('executionDate', multisigExecutionDate)
-          .with('safe', safe.address)
-          .with('to', notImitatedMultisigToken.address)
-          .with('value', '0')
-          .with('operation', 0)
-          .with('gasToken', zeroAddress)
-          .with('safeTxGas', 0)
-          .with('baseGas', 0)
-          .with('gasPrice', '0')
-          .with('refundReceiver', zeroAddress)
-          .with('proposer', safe.owners[0])
-          .with('executor', safe.owners[0])
-          .with('isExecuted', true)
-          .with('isSuccessful', true)
-          .with('origin', null)
-          .with(
-            'dataDecoded',
-            dataDecodedBuilder()
-              .with('method', 'transfer')
-              .with('parameters', [
-                dataDecodedParameterBuilder()
-                  .with('name', 'to')
-                  .with('type', 'address')
-                  .with('value', notImitatedMultisigTransfer.to)
-                  .build(),
-                dataDecodedParameterBuilder()
-                  .with('name', 'value')
-                  .with('type', 'uint256')
-                  .with('value', notImitatedMultisigTransfer.value)
-                  .build(),
-              ])
-              .build(),
-          )
-          .with('confirmationsRequired', 1)
-          .with('confirmations', [
-            confirmationBuilder().with('owner', safe.owners[0]).build(),
-          ])
-          .with('trusted', true)
-          .build(),
-      ) as MultisigTransaction),
-      // TODO: Update type to include transfers
-      transfers: [erc20TransferToJson(notImitatedMultisigTransfer) as Transfer],
-    } as MultisigTransaction;
-    const imitationAddress = getImitationAddress(multisigTransfer.to);
+    let getAllTransactionsUrl: string;
+    let getSafeUrl: string;
+    let getTokenAddressUrl: string;
+    let getNotImitatedTokenAddressUrl: string;
 
-    const getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
-    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-    const getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
-    const getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
-
-    describe('Below limit', () => {
-      const imitationExecutionDate = new Date('2024-03-20T09:42:58Z');
-      const imitationIncomingTransfer = {
+    beforeEach(async () => {
+      const multisigExecutionDate = new Date('2024-03-20T09:42:58Z');
+      multisigToken = tokenBuilder().with('type', TokenType.Erc20).build();
+      multisigTransfer = {
         ...erc20TransferBuilder()
-          .with('to', safe.address)
-          .with('from', imitationAddress)
+          .with('executionDate', multisigExecutionDate)
+          .with('from', safe.address)
           .with('tokenAddress', multisigToken.address)
           .with(
             'value',
             parseUnits(
-              faker.number.bigInt({ min: 1, max: echoLimit }).toString(),
+              // Value vastly above echo limit for testing flagging
+              (echoLimit * faker.number.bigInt({ min: 3, max: 9 })).toString(),
               multisigToken.decimals!,
             ).toString(),
           )
-          .with('executionDate', imitationExecutionDate)
           .build(),
-        // TODO: Update type to include tokenInfo
         tokenInfo: multisigToken,
-      };
-      const imitationIncomingErc20Transfer = erc20TransferEncoder()
-        .with('to', safe.address)
-        .with('value', BigInt(imitationIncomingTransfer.value));
-      const imitationIncomingTransaction = ethereumTransactionToJson(
-        ethereumTransactionBuilder()
-          .with('executionDate', imitationIncomingTransfer.executionDate)
-          .with('data', imitationIncomingErc20Transfer.encode())
-          .with('transfers', [
-            erc20TransferToJson(imitationIncomingTransfer) as Transfer,
-          ])
+      } as ERC20Transfer;
+      multisigTransaction = {
+        ...(multisigTransactionToJson(
+          await multisigTransactionBuilder()
+            .with('executionDate', multisigExecutionDate)
+            .with('safe', safe.address)
+            .with('to', multisigToken.address)
+            .with('value', '0')
+            .with('operation', 0)
+            .with('gasToken', zeroAddress)
+            .with('safeTxGas', 0)
+            .with('baseGas', 0)
+            .with('gasPrice', '0')
+            .with('refundReceiver', zeroAddress)
+            .with('proposer', safe.owners[0])
+            .with('executor', safe.owners[0])
+            .with('isExecuted', true)
+            .with('isSuccessful', true)
+            .with('origin', null)
+            .with(
+              'dataDecoded',
+              dataDecodedBuilder()
+                .with('method', 'transfer')
+                .with('parameters', [
+                  dataDecodedParameterBuilder()
+                    .with('name', 'to')
+                    .with('type', 'address')
+                    .with('value', multisigTransfer.to)
+                    .build(),
+                  dataDecodedParameterBuilder()
+                    .with('name', 'value')
+                    .with('type', 'uint256')
+                    .with('value', multisigTransfer.value)
+                    .build(),
+                ])
+                .build(),
+            )
+            .with('confirmationsRequired', 1)
+            .with('trusted', true)
+            .buildWithConfirmations({
+              signers: [signer],
+              chainId: chain.chainId,
+              safe,
+            }),
+        ) as MultisigTransaction),
+        // TODO: Update type to include transfers
+        transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
+      } as MultisigTransaction;
+
+      notImitatedMultisigToken = tokenBuilder()
+        .with('type', TokenType.Erc20)
+        .with('decimals', multisigToken.decimals)
+        .build();
+      notImitatedMultisigTransfer = {
+        ...erc20TransferBuilder()
+          .with('executionDate', multisigExecutionDate)
+          .with('from', safe.address)
+          .with('tokenAddress', notImitatedMultisigToken.address)
+          .with('value', faker.string.numeric({ exclude: ['0'] }))
           .build(),
-      ) as EthereumTransaction;
+        tokenInfo: multisigToken,
+      } as ERC20Transfer;
+      notImitatedMultisigTransaction = {
+        ...(multisigTransactionToJson(
+          await multisigTransactionBuilder()
+            .with('executionDate', multisigExecutionDate)
+            .with('safe', safe.address)
+            .with('to', notImitatedMultisigToken.address)
+            .with('value', '0')
+            .with('operation', 0)
+            .with('gasToken', zeroAddress)
+            .with('safeTxGas', 0)
+            .with('baseGas', 0)
+            .with('gasPrice', '0')
+            .with('refundReceiver', zeroAddress)
+            .with('proposer', safe.owners[0])
+            .with('executor', safe.owners[0])
+            .with('isExecuted', true)
+            .with('isSuccessful', true)
+            .with('origin', null)
+            .with(
+              'dataDecoded',
+              dataDecodedBuilder()
+                .with('method', 'transfer')
+                .with('parameters', [
+                  dataDecodedParameterBuilder()
+                    .with('name', 'to')
+                    .with('type', 'address')
+                    .with('value', notImitatedMultisigTransfer.to)
+                    .build(),
+                  dataDecodedParameterBuilder()
+                    .with('name', 'value')
+                    .with('type', 'uint256')
+                    .with('value', notImitatedMultisigTransfer.value)
+                    .build(),
+                ])
+                .build(),
+            )
+            .with('confirmationsRequired', 1)
+            .with('trusted', true)
+            .buildWithConfirmations({
+              signers: [signer],
+              chainId: chain.chainId,
+              safe,
+            }),
+        ) as MultisigTransaction),
+        // TODO: Update type to include transfers
+        transfers: [
+          erc20TransferToJson(notImitatedMultisigTransfer) as Transfer,
+        ],
+      } as MultisigTransaction;
+      imitationAddress = getImitationAddress(multisigTransfer.to);
+
+      getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+      getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      getTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${multisigToken.address}`;
+      getNotImitatedTokenAddressUrl = `${chain.transactionService}/api/v1/tokens/${notImitatedMultisigToken.address}`;
+    });
+
+    describe('Below limit', () => {
+      beforeEach(() => {
+        const imitationExecutionDate = new Date('2024-03-20T09:42:58Z');
+        imitationIncomingTransfer = {
+          ...erc20TransferBuilder()
+            .with('to', safe.address)
+            .with('from', imitationAddress)
+            .with('tokenAddress', multisigToken.address)
+            .with(
+              'value',
+              parseUnits(
+                faker.number.bigInt({ min: 1, max: echoLimit }).toString(),
+                multisigToken.decimals!,
+              ).toString(),
+            )
+            .with('executionDate', imitationExecutionDate)
+            .build(),
+          // TODO: Update type to include tokenInfo
+          tokenInfo: multisigToken,
+        } as ERC20Transfer;
+        const imitationIncomingErc20Transfer = erc20TransferEncoder()
+          .with('to', safe.address)
+          .with('value', BigInt(imitationIncomingTransfer.value));
+        imitationIncomingTransaction = ethereumTransactionToJson(
+          ethereumTransactionBuilder()
+            .with('executionDate', imitationIncomingTransfer.executionDate)
+            .with('data', imitationIncomingErc20Transfer.encode())
+            .with('transfers', [
+              erc20TransferToJson(imitationIncomingTransfer) as Transfer,
+            ])
+            .build(),
+        ) as EthereumTransaction;
+      });
 
       it('should flag imitation incoming transfers of vanity with a below-limit value within the lookup distance', async () => {
         const results = [imitationIncomingTransaction, multisigTransaction];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
@@ -2960,26 +3016,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
@@ -3224,20 +3280,20 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         const results = [imitationIncomingTransaction, multisigTransaction];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
@@ -3314,26 +3370,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
 
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }
@@ -3576,36 +3632,41 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     });
 
     describe('Above limit', () => {
-      const aboveLimitExecutionDate = new Date('2024-03-20T09:42:58Z');
-      const aboveLimitIncomingTransfer = {
-        ...erc20TransferBuilder()
+      let aboveLimitIncomingTransaction: EthereumTransaction;
+      let aboveLimitIncomingTransfer: ERC20Transfer;
+
+      beforeEach(() => {
+        const aboveLimitExecutionDate = new Date('2024-03-20T09:42:58Z');
+        aboveLimitIncomingTransfer = {
+          ...erc20TransferBuilder()
+            .with('to', safe.address)
+            .with('from', imitationAddress)
+            .with('tokenAddress', multisigToken.address)
+            .with(
+              'value',
+              parseUnits(
+                faker.number.bigInt({ min: echoLimit }).toString(),
+                multisigToken.decimals!,
+              ).toString(),
+            )
+            .with('executionDate', aboveLimitExecutionDate)
+            .build(),
+          // TODO: Update type to include tokenInfo
+          tokenInfo: multisigToken,
+        } as ERC20Transfer;
+        const aboveLimitErc20Transfer = erc20TransferEncoder()
           .with('to', safe.address)
-          .with('from', imitationAddress)
-          .with('tokenAddress', multisigToken.address)
-          .with(
-            'value',
-            parseUnits(
-              faker.number.bigInt({ min: echoLimit }).toString(),
-              multisigToken.decimals!,
-            ).toString(),
-          )
-          .with('executionDate', aboveLimitExecutionDate)
-          .build(),
-        // TODO: Update type to include tokenInfo
-        tokenInfo: multisigToken,
-      };
-      const aboveLimitErc20Transfer = erc20TransferEncoder()
-        .with('to', safe.address)
-        .with('value', BigInt(aboveLimitIncomingTransfer.value));
-      const aboveLimitIncomingTransaction = ethereumTransactionToJson(
-        ethereumTransactionBuilder()
-          .with('executionDate', aboveLimitIncomingTransfer.executionDate)
-          .with('data', aboveLimitErc20Transfer.encode())
-          .with('transfers', [
-            erc20TransferToJson(aboveLimitIncomingTransfer) as Transfer,
-          ])
-          .build(),
-      ) as EthereumTransaction;
+          .with('value', BigInt(aboveLimitIncomingTransfer.value));
+        aboveLimitIncomingTransaction = ethereumTransactionToJson(
+          ethereumTransactionBuilder()
+            .with('executionDate', aboveLimitIncomingTransfer.executionDate)
+            .with('data', aboveLimitErc20Transfer.encode())
+            .with('transfers', [
+              erc20TransferToJson(aboveLimitIncomingTransfer) as Transfer,
+            ])
+            .build(),
+        ) as EthereumTransaction;
+      });
 
       it.each([
         [
@@ -3620,20 +3681,20 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         const results = [aboveLimitIncomingTransaction, multisigTransaction];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
@@ -3758,26 +3819,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         ];
         networkService.get.mockImplementation(({ url }) => {
           if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-            return Promise.resolve({ data: chain, status: 200 });
+            return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           if (url === getAllTransactionsUrl) {
             return Promise.resolve({
-              data: pageBuilder().with('results', results).build(),
+              data: rawify(pageBuilder().with('results', results).build()),
               status: 200,
             });
           }
           if (url === getSafeUrl) {
-            return Promise.resolve({ data: safe, status: 200 });
+            return Promise.resolve({ data: rawify(safe), status: 200 });
           }
           if (url === getTokenAddressUrl) {
             return Promise.resolve({
-              data: multisigToken,
+              data: rawify(multisigToken),
               status: 200,
             });
           }
           if (url === getNotImitatedTokenAddressUrl) {
             return Promise.resolve({
-              data: notImitatedMultisigToken,
+              data: rawify(notImitatedMultisigToken),
               status: 200,
             });
           }

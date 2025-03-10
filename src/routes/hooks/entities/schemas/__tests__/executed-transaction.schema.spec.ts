@@ -42,44 +42,51 @@ describe('ExecutedTransactionEventSchema', () => {
     );
   });
 
-  it('should not allow a non-address address', () => {
-    const executedTransactionEvent = executedTransactionEventBuilder()
-      .with('address', faker.string.sample() as `0x${string}`)
-      .build();
+  it.each(['to' as const, 'address' as const])(
+    'should not allow a non-address %s',
+    (field) => {
+      const executedTransactionEvent = executedTransactionEventBuilder()
+        .with(field, faker.string.sample() as `0x${string}`)
+        .build();
 
-    const result = ExecutedTransactionEventSchema.safeParse(
-      executedTransactionEvent,
-    );
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
 
-    expect(!result.success && result.error).toStrictEqual(
-      new ZodError([
-        {
-          code: 'custom',
-          message: 'Invalid address',
-          path: ['address'],
-        },
-      ]),
-    );
-  });
+      expect(!result.success && result.error).toStrictEqual(
+        new ZodError([
+          {
+            code: 'custom',
+            message: 'Invalid address',
+            path: [field],
+          },
+        ]),
+      );
+    },
+  );
 
-  it('should checksum the address', () => {
-    const nonChecksummedAddress = faker.finance
-      .ethereumAddress()
-      .toLowerCase() as `0x${string}`;
-    const executedTransactionEvent = executedTransactionEventBuilder()
-      .with('address', nonChecksummedAddress)
-      .build();
+  it.each(['to' as const, 'address' as const])(
+    'should checksum the %s',
+    (field) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as `0x${string}`;
+      const executedTransactionEvent = executedTransactionEventBuilder()
+        .with(field, nonChecksummedAddress)
+        .build();
 
-    const result = ExecutedTransactionEventSchema.safeParse(
-      executedTransactionEvent,
-    );
-    expect(result.success && result.data.address).toBe(
-      getAddress(nonChecksummedAddress),
-    );
-  });
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
+      expect(result.success && result.data[field]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    },
+  );
 
   it.each([
     'type' as const,
+    'to' as const,
     'address' as const,
     'chainId' as const,
     'safeTxHash' as const,
@@ -98,5 +105,46 @@ describe('ExecutedTransactionEventSchema', () => {
         result.error.issues[0].path.length === 1 &&
         result.error.issues[0].path[0] === field,
     ).toBe(true);
+  });
+
+  it('should not allow a non-hex data', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder()
+      .with('data', faker.string.sample() as `0x${string}`)
+      .build();
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid "0x" notated hex string',
+        path: ['data'],
+      },
+    ]);
+  });
+
+  it('should allow undefined data', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder().build();
+    delete executedTransactionEvent.data;
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(result.success && result.data.data).toBe(undefined);
+  });
+
+  it('should allow null data, defaulting to undefined', () => {
+    const executedTransactionEvent = executedTransactionEventBuilder().build();
+    // @ts-expect-error - inferred schema expects undefined
+    executedTransactionEvent.data = null;
+
+    const result = ExecutedTransactionEventSchema.safeParse(
+      executedTransactionEvent,
+    );
+
+    expect(result.success && result.data.data).toBe(undefined);
   });
 });
