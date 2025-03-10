@@ -99,15 +99,15 @@ export class UsersOrganizationsRepository
     }>;
   }): Promise<Array<Invitation>> {
     this.assertSignerAddress(args.authPayload);
+    const { signer_address: adminAddress } = args.authPayload;
 
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
+    const admin =
+      await this.usersRepository.findByWalletAddressOrFail(adminAddress);
     const org = await this.organizationsRepository.findOneOrFail({
       where: {
         id: args.orgId,
         userOrganizations: {
-          user: { id: user.id },
+          user: { id: admin.id },
           status: 'ACTIVE',
           role: 'ADMIN',
         },
@@ -156,6 +156,7 @@ export class UsersOrganizationsRepository
           organization: org,
           role: userToInvite.role,
           status: 'INVITED',
+          invitedBy: adminAddress,
         });
 
         invitations.push({
@@ -163,6 +164,7 @@ export class UsersOrganizationsRepository
           orgId: org.id,
           role: userToInvite.role,
           status: 'INVITED',
+          invitedBy: adminAddress,
         });
       }
     });
