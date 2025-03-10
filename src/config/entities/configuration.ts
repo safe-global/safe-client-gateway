@@ -151,6 +151,13 @@ export default () => ({
       apiKey: process.env.INFURA_API_KEY,
     },
   },
+  contracts: {
+    trustedForDelegateCall: {
+      maxSequentialPages: parseInt(
+        process.env.TRUSTED_CONTRACTS_MAX_SEQUENTIAL_PAGES ?? `${3}`,
+      ),
+    },
+  },
   db: {
     migrator: {
       // Determines if database migrations should be executed. By default, it will execute

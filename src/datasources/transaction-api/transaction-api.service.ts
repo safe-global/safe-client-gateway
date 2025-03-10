@@ -272,7 +272,10 @@ export class TransactionApi implements ITransactionApi {
 
   // Important: there is no hook which invalidates this endpoint,
   // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
-  async getTrustedForDelegateCallContracts(): Promise<Raw<Page<Contract>>> {
+  async getTrustedForDelegateCallContracts(args: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<Contract>>> {
     try {
       const cacheDir = CacheRouter.getTrustedForDelegateCallContractsCacheDir(
         this.chainId,
@@ -286,6 +289,8 @@ export class TransactionApi implements ITransactionApi {
         networkRequest: {
           params: {
             trusted_for_delegate_call: true,
+            limit: args.limit,
+            offset: args.offset,
           },
         },
       });

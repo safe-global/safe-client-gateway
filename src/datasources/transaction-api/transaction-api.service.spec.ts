@@ -535,7 +535,7 @@ describe('TransactionApi', () => {
       const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
       mockDataSource.get.mockResolvedValueOnce(rawify(contractPage));
 
-      const actual = await service.getTrustedForDelegateCallContracts();
+      const actual = await service.getTrustedForDelegateCallContracts({});
 
       expect(actual).toBe(contractPage);
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
@@ -547,6 +547,41 @@ describe('TransactionApi', () => {
         networkRequest: {
           params: {
             trusted_for_delegate_call: true,
+          },
+        },
+      });
+    });
+
+    it('should relay pagination', async () => {
+      const contractPage = pageBuilder()
+        .with('results', [
+          contractBuilder().with('trustedForDelegateCall', true).build(),
+          contractBuilder().with('trustedForDelegateCall', true).build(),
+        ])
+        .build();
+      const getTrustedForDelegateCallContractsUrl = `${baseUrl}/api/v1/contracts/`;
+      const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
+      mockDataSource.get.mockResolvedValueOnce(rawify(contractPage));
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+
+      const actual = await service.getTrustedForDelegateCallContracts({
+        limit,
+        offset,
+      });
+
+      expect(actual).toBe(contractPage);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        url: getTrustedForDelegateCallContractsUrl,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+        networkRequest: {
+          params: {
+            trusted_for_delegate_call: true,
+            limit,
+            offset,
           },
         },
       });
@@ -574,7 +609,7 @@ describe('TransactionApi', () => {
       );
 
       await expect(
-        service.getTrustedForDelegateCallContracts(),
+        service.getTrustedForDelegateCallContracts({}),
       ).rejects.toThrow(expected);
 
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);

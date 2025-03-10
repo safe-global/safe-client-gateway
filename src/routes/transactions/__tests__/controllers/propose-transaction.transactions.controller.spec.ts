@@ -586,6 +586,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
             .build(),
           contractBuilder().with('trustedForDelegateCall', true).build(),
         ])
+        .with('next', null)
         .build();
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
@@ -773,6 +774,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           contractBuilder().with('trustedForDelegateCall', true).build(),
           contractBuilder().with('trustedForDelegateCall', true).build(),
         ])
+        .with('next', null)
         .build();
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
