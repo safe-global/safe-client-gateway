@@ -14,14 +14,11 @@ import type {
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 import type { Operation } from '@/domain/safe/entities/operation.entity';
 import { getAddress, type PrivateKeyAccount } from 'viem';
-import {
-  getContractSignature,
-  getApprovedHashSignature,
-  adjustEthSignSignature,
-} from '@/domain/common/utils/__tests__/signatures.builder';
+import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
 
 const HASH_LENGTH = 32;
 
+// TODO: Refactor with multisig BuilderWithConfirmations
 class BuilderWithConfirmations<
   T extends MultisigTransaction,
 > extends Builder<T> {
@@ -52,25 +49,13 @@ class BuilderWithConfirmations<
 
     transaction.confirmations = await Promise.all(
       args.signers.map(async (signer): Promise<Confirmation> => {
-        const signatureType: SignatureType =
+        const signatureType =
           args.signatureType ?? faker.helpers.enumValue(SignatureType);
-
-        let signature: `0x${string}`;
-
-        // TODO: Refactor with multisig BuilderWithConfirmations
-        if (signatureType === SignatureType.ContractSignature) {
-          signature = getContractSignature(signer.address);
-        } else if (signatureType === SignatureType.ApprovedHash) {
-          signature = getApprovedHashSignature(signer.address);
-        } else if (signatureType === SignatureType.Eoa) {
-          signature = await signer.sign({ hash: transaction.safeTxHash });
-        } else if (SignatureType.EthSign) {
-          signature = await signer
-            .signMessage({ message: { raw: transaction.safeTxHash } })
-            .then(adjustEthSignSignature);
-        } else {
-          throw new Error(`Unknown signature type: ${signatureType}`);
-        }
+        const signature = await getSignature({
+          signer,
+          hash: transaction.safeTxHash,
+          signatureType,
+        });
 
         return {
           owner: signer.address,

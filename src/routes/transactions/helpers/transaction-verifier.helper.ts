@@ -15,6 +15,9 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { SafeSignature } from '@/domain/common/entities/safe-signature';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { LogSource } from '@/domain/common/entities/log-source.entity';
+import { isAddressEqual } from 'viem';
+import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import { Operation } from '@/domain/safe/entities/operation.entity';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -24,11 +27,13 @@ enum ErrorMessage {
   InvalidSignature = 'Invalid signature',
   BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
+  DelegateCallDisabled = 'Delegate call is disabled',
   InvalidNonce = 'Invalid nonce',
 }
 
 @Injectable()
 export class TransactionVerifierHelper {
+  private readonly isTrustedDelegateCallEnabled: boolean;
   private readonly isEthSignEnabled: boolean;
   private readonly isApiHashVerificationEnabled: boolean;
   private readonly isApiSignatureVerificationEnabled: boolean;
@@ -43,7 +48,12 @@ export class TransactionVerifierHelper {
     private readonly delegatesV2Repository: IDelegatesV2Repository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(IContractsRepository)
+    private readonly contractsRepository: IContractsRepository,
   ) {
+    this.isTrustedDelegateCallEnabled = this.configurationService.getOrThrow(
+      'features.trustedDelegateCall',
+    );
     this.isEthSignEnabled =
       this.configurationService.getOrThrow('features.ethSign');
     this.isApiHashVerificationEnabled = this.configurationService.getOrThrow(
@@ -97,6 +107,9 @@ export class TransactionVerifierHelper {
     if (Number(args.proposal.nonce) < args.safe.nonce) {
       throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
     }
+
+    await this.verifyProposalDelegateCall({ ...args, code });
+
     if (this.isProposalHashVerificationEnabled) {
       this.verifyProposalSafeTxHash({ ...args, code });
     }
@@ -119,11 +132,43 @@ export class TransactionVerifierHelper {
     ) {
       throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
     }
+
+    this.verifyApiTransaction(args);
+
     if (this.isProposalHashVerificationEnabled) {
       this.verifyConfirmSafeTxHash({ ...args, code });
     }
     if (this.isProposalHashVerificationEnabled) {
       this.verifyConfirmationSignature({ ...args, code });
+    }
+  }
+
+  private async verifyProposalDelegateCall(args: {
+    chainId: string;
+    proposal: ProposeTransactionDto;
+    code: HttpStatus;
+  }): Promise<void> {
+    if (args.proposal.operation !== Operation.DELEGATE) {
+      return;
+    }
+
+    const error = new HttpExceptionNoLog(
+      ErrorMessage.DelegateCallDisabled,
+      args.code,
+    );
+    if (!this.isTrustedDelegateCallEnabled) {
+      throw error;
+    }
+
+    const isTrustedDelegateCallEnabled = await this.contractsRepository
+      .isTrustedForDelegateCall({
+        chainId: args.chainId,
+        contractAddress: args.proposal.to,
+      })
+      .catch(() => false);
+
+    if (!isTrustedDelegateCallEnabled) {
+      throw error;
     }
   }
 
@@ -275,7 +320,9 @@ export class TransactionVerifierHelper {
         signature: confirmation.signature,
       });
 
-      const isBlocked = this.blocklist.includes(signature.owner);
+      const isBlocked = this.blocklist.some((blockedAddress) => {
+        return isAddressEqual(blockedAddress, signature.owner);
+      });
       if (isBlocked) {
         this.logBlockedAddress({
           ...args,
@@ -286,10 +333,13 @@ export class TransactionVerifierHelper {
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
+      const isOwner = args.safe.owners.some((owner) => {
+        return isAddressEqual(owner, signature.owner);
+      });
       if (
-        signature.owner !== confirmation.owner ||
         // We can be certain of no ownership changes as we only verify the queue
-        !args.safe.owners.includes(signature.owner)
+        !isOwner ||
+        !isAddressEqual(signature.owner, confirmation.owner)
       ) {
         this.logInvalidSignature({
           ...args,
@@ -322,7 +372,10 @@ export class TransactionVerifierHelper {
         signature: `0x${args.proposal.signature.slice(i, i + 130)}`,
       });
 
-      if (this.blocklist.includes(signature.owner)) {
+      const isBlocked = this.blocklist.some((blockedAddress) => {
+        return isAddressEqual(blockedAddress, signature.owner);
+      });
+      if (isBlocked) {
         this.logBlockedAddress({
           ...args,
           safeTxHash: args.proposal.safeTxHash,
@@ -343,7 +396,7 @@ export class TransactionVerifierHelper {
     }
 
     const isSender = signatures.some((signature) => {
-      return signature.owner === args.proposal.sender;
+      return isAddressEqual(signature.owner, args.proposal.sender);
     });
     if (!isSender) {
       this.logInvalidSignature({
@@ -357,7 +410,9 @@ export class TransactionVerifierHelper {
     }
 
     const areOwners = signatures.every((signature) => {
-      return args.safe.owners.includes(signature.owner);
+      return args.safe.owners.some((owner) => {
+        return isAddressEqual(owner, signature.owner);
+      });
     });
     if (areOwners) {
       return;
@@ -368,7 +423,7 @@ export class TransactionVerifierHelper {
       safeAddress: args.safe.address,
     });
     const isDelegate = delegates.results.some(({ delegate }) => {
-      return delegate === args.proposal.sender;
+      return isAddressEqual(delegate, args.proposal.sender);
     });
     if (isDelegate) {
       return;
@@ -396,7 +451,10 @@ export class TransactionVerifierHelper {
       hash: args.transaction.safeTxHash,
     });
 
-    if (this.blocklist.includes(signature.owner)) {
+    const isBlocked = this.blocklist.some((blockedAddress) => {
+      return isAddressEqual(blockedAddress, signature.owner);
+    });
+    if (isBlocked) {
       this.logBlockedAddress({
         ...args,
         safeTxHash: args.transaction.safeTxHash,
@@ -413,7 +471,10 @@ export class TransactionVerifierHelper {
       throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);
     }
 
-    if (!args.safe.owners.includes(signature.owner)) {
+    const isOwner = args.safe.owners.some((owner) => {
+      return isAddressEqual(owner, signature.owner);
+    });
+    if (!isOwner) {
       this.logInvalidSignature({
         ...args,
         safeTxHash: args.transaction.safeTxHash,

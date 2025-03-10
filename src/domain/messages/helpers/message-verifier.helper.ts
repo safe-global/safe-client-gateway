@@ -10,7 +10,7 @@ import { Safe } from '@/domain/safe/entities/safe.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { TypedDataDefinition } from 'viem';
+import { isAddressEqual, TypedDataDefinition } from 'viem';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate messageHash',
@@ -152,17 +152,9 @@ export class MessageVerifierHelper {
       signature: args.signature,
     });
 
-    if (
-      !this.isEthSignEnabled &&
-      signature.signatureType === SignatureType.EthSign
-    ) {
-      throw new HttpExceptionNoLog(
-        'eth_sign is disabled',
-        MessageVerifierHelper.StatusCode,
-      );
-    }
-
-    const isBlocked = this.blocklist.includes(signature.owner);
+    const isBlocked = this.blocklist.some((blockedAddress) => {
+      return isAddressEqual(signature.owner, blockedAddress);
+    });
     if (isBlocked) {
       this.logBlockedAddress({
         ...args,
@@ -175,7 +167,19 @@ export class MessageVerifierHelper {
       );
     }
 
-    const isOwner = args.safe.owners.includes(signature.owner);
+    if (
+      !this.isEthSignEnabled &&
+      signature.signatureType === SignatureType.EthSign
+    ) {
+      throw new HttpExceptionNoLog(
+        'eth_sign is disabled',
+        MessageVerifierHelper.StatusCode,
+      );
+    }
+
+    const isOwner = args.safe.owners.some((owner) => {
+      return isAddressEqual(signature.owner, owner);
+    });
     if (!isOwner) {
       this.logInvalidSignature({
         ...args,

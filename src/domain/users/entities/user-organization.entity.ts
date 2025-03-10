@@ -5,6 +5,7 @@ import { UserSchema } from '@/domain/users/entities/user.entity';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Organization } from '@/domain/organizations/entities/organization.entity';
 import type { User } from '@/domain/users/entities/user.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export enum UserOrganizationRole {
   ADMIN = 1,
@@ -25,6 +26,7 @@ export const UserOrganizationSchema: z.ZodType<
     name: string | null;
     role: keyof typeof UserOrganizationRole;
     status: keyof typeof UserOrganizationStatus;
+    invitedBy: `0x${string}` | null;
   }
 > = RowSchema.extend({
   user: z.lazy(() => UserSchema),
@@ -32,6 +34,7 @@ export const UserOrganizationSchema: z.ZodType<
   name: z.string().nullable(),
   role: z.enum(getStringEnumKeys(UserOrganizationRole)),
   status: z.enum(getStringEnumKeys(UserOrganizationStatus)),
+  invitedBy: AddressSchema.nullable() as z.ZodType<`0x${string}` | null>,
 });
 
 export type UserOrganization = z.infer<typeof UserOrganizationSchema>;

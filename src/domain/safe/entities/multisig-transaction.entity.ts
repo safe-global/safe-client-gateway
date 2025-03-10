@@ -7,6 +7,7 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
+import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
 
 export type Confirmation = z.infer<typeof ConfirmationSchema>;
 
@@ -17,7 +18,7 @@ export const ConfirmationSchema = z.object({
   submissionDate: z.coerce.date(),
   transactionHash: HexSchema.nullish().default(null),
   signatureType: z.nativeEnum(SignatureType),
-  signature: HexSchema.nullish().default(null),
+  signature: SignatureSchema.nullish().default(null),
 });
 
 export const MultisigTransactionSchema = z.object({

@@ -157,6 +157,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         status: faker.helpers.arrayElement(UserOrgStatusKeys),
         role: faker.helpers.arrayElement(UserOrgRoleKeys),
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       const after = new Date().getTime();
@@ -193,6 +194,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         status: 'ACTIVE',
         role: faker.helpers.arrayElement(UserOrgRoleKeys),
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       const userOrgId = prevUserOrg.identifiers[0].id as User['id'];
@@ -223,6 +225,7 @@ describe('UserOrganizationsRepository', () => {
       const userOrgName = faker.word.noun();
       const userOrgStatus = faker.helpers.arrayElement(UserOrgStatusKeys);
       const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -236,6 +239,7 @@ describe('UserOrganizationsRepository', () => {
         name: userOrgName,
         status: userOrgStatus,
         role: userOrgRole,
+        invitedBy: userOrgInvitedBy,
       });
       const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
 
@@ -247,6 +251,7 @@ describe('UserOrganizationsRepository', () => {
         name: userOrgName,
         role: userOrgRole,
         status: userOrgStatus,
+        invitedBy: userOrgInvitedBy,
         updatedAt: expect.any(Date),
       });
     });
@@ -271,6 +276,7 @@ describe('UserOrganizationsRepository', () => {
       const userOrgName = faker.word.noun();
       const userOrgStatus = faker.helpers.arrayElement(UserOrgStatusKeys);
       const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -284,6 +290,7 @@ describe('UserOrganizationsRepository', () => {
         name: userOrgName,
         status: userOrgStatus,
         role: userOrgRole,
+        invitedBy: userOrgInvitedBy,
       });
       const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
 
@@ -293,6 +300,7 @@ describe('UserOrganizationsRepository', () => {
         name: userOrgName,
         role: userOrgRole,
         status: userOrgStatus,
+        invitedBy: userOrgInvitedBy,
         updatedAt: expect.any(Date),
       });
     });
@@ -319,6 +327,8 @@ describe('UserOrganizationsRepository', () => {
       const userOrgStatus2 = faker.helpers.arrayElement(UserOrgStatusKeys);
       const userOrgRole1 = faker.helpers.arrayElement(UserOrgRoleKeys);
       const userOrgRole2 = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const userOrgInvitedBy1 = getAddress(faker.finance.ethereumAddress());
+      const userOrgInvitedBy2 = getAddress(faker.finance.ethereumAddress());
       const user1 = await dbUserRepo.insert({
         status: userStatus1,
       });
@@ -335,6 +345,7 @@ describe('UserOrganizationsRepository', () => {
         name: userOrgName1,
         status: userOrgStatus1,
         role: userOrgRole1,
+        invitedBy: userOrgInvitedBy1,
       });
       const userOrgId1 = userOrg1.identifiers[0].id as UserOrganization['id'];
       const userOrg2 = await dbUserOrgRepo.insert({
@@ -343,6 +354,7 @@ describe('UserOrganizationsRepository', () => {
         name: userOrgName2,
         status: userOrgStatus2,
         role: userOrgRole2,
+        invitedBy: userOrgInvitedBy2,
       });
       const userOrgId2 = userOrg2.identifiers[0].id as UserOrganization['id'];
 
@@ -355,6 +367,7 @@ describe('UserOrganizationsRepository', () => {
           name: userOrgName1,
           role: userOrgRole1,
           status: userOrgStatus1,
+          invitedBy: userOrgInvitedBy1,
           updatedAt: expect.any(Date),
         },
         {
@@ -363,6 +376,7 @@ describe('UserOrganizationsRepository', () => {
           name: userOrgName2,
           role: userOrgRole2,
           status: userOrgStatus2,
+          invitedBy: userOrgInvitedBy2,
           updatedAt: expect.any(Date),
         },
       ]);
@@ -392,6 +406,8 @@ describe('UserOrganizationsRepository', () => {
       const userOrgStatus2 = faker.helpers.arrayElement(UserOrgStatusKeys);
       const userOrgRole1 = faker.helpers.arrayElement(UserOrgRoleKeys);
       const userOrgRole2 = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const userOrgInvitedBy1 = getAddress(faker.finance.ethereumAddress());
+      const userOrgInvitedBy2 = getAddress(faker.finance.ethereumAddress());
       const user1 = await dbUserRepo.insert({
         status: userStatus1,
       });
@@ -408,6 +424,7 @@ describe('UserOrganizationsRepository', () => {
         name: userOrgName1,
         status: userOrgStatus1,
         role: userOrgRole1,
+        invitedBy: userOrgInvitedBy1,
       });
       const userOrgId1 = userOrg1.identifiers[0].id as UserOrganization['id'];
       const userOrg2 = await dbUserOrgRepo.insert({
@@ -416,6 +433,7 @@ describe('UserOrganizationsRepository', () => {
         name: userOrgName2,
         status: userOrgStatus2,
         role: userOrgRole2,
+        invitedBy: userOrgInvitedBy2,
       });
       const userOrgId2 = userOrg2.identifiers[0].id as UserOrganization['id'];
 
@@ -428,6 +446,7 @@ describe('UserOrganizationsRepository', () => {
           name: userOrgName1,
           role: userOrgRole1,
           status: userOrgStatus1,
+          invitedBy: userOrgInvitedBy1,
           updatedAt: expect.any(Date),
         },
         {
@@ -436,6 +455,7 @@ describe('UserOrganizationsRepository', () => {
           name: userOrgName2,
           role: userOrgRole2,
           status: userOrgStatus2,
+          invitedBy: userOrgInvitedBy2,
           updatedAt: expect.any(Date),
         },
       ]);
@@ -474,6 +494,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const users = faker.helpers.multiple(
         () => {
@@ -498,6 +519,7 @@ describe('UserOrganizationsRepository', () => {
             orgId,
             role: user.role,
             status: 'INVITED',
+            invitedBy: authPayloadDto.signer_address,
           };
         }),
       );
@@ -523,6 +545,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const member = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -630,6 +653,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const users = faker.helpers.multiple(
         () => {
@@ -705,12 +729,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: invitedAdmin.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'INVITED',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const users: Array<{
         address: `0x${string}`;
@@ -730,6 +756,7 @@ describe('UserOrganizationsRepository', () => {
   describe('acceptInvite', () => {
     it('should accept an invite to an organization, setting the user organization and user to ACTIVE', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
+      const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
       const orgName = faker.word.noun();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -757,12 +784,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: userOrgInvitedBy,
       });
       const userOrg = await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: 'INVITED',
+        invitedBy: userOrgInvitedBy,
       });
       const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
 
@@ -781,6 +810,7 @@ describe('UserOrganizationsRepository', () => {
         name: null,
         role: userOrgRole,
         status: 'ACTIVE',
+        invitedBy: userOrgInvitedBy,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -824,6 +854,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -917,12 +948,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -961,12 +994,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -981,6 +1016,7 @@ describe('UserOrganizationsRepository', () => {
   describe('declineInvite', () => {
     it('should accept an invite to an organization, setting the user organization to DECLINED', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
+      const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
       const orgName = faker.word.noun();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -1008,12 +1044,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: userOrgInvitedBy,
       });
       const userOrg = await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: 'INVITED',
+        invitedBy: userOrgInvitedBy,
       });
       const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
 
@@ -1032,6 +1070,7 @@ describe('UserOrganizationsRepository', () => {
         name: null,
         role: userOrgRole,
         status: 'DECLINED',
+        invitedBy: userOrgInvitedBy,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -1075,6 +1114,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1168,12 +1208,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1212,12 +1254,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1234,6 +1278,7 @@ describe('UserOrganizationsRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -1253,6 +1298,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: userOrgRole,
         status: userOrgStatus,
+        invitedBy: userOrgInvitedBy,
       });
       const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
 
@@ -1268,6 +1314,7 @@ describe('UserOrganizationsRepository', () => {
           name: null,
           role: userOrgRole,
           status: userOrgStatus,
+          invitedBy: userOrgInvitedBy,
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
@@ -1364,12 +1411,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1411,12 +1460,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1458,12 +1509,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1548,12 +1601,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1587,6 +1642,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1629,12 +1685,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const memberUserOrg = await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const memberUserOrgId = memberUserOrg.identifiers[0]
         .id as UserOrganization['id'];
@@ -1681,12 +1739,14 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       await dbUserOrgRepo.insert({
         user: member.generatedMaps[0],
         organization: org.generatedMaps[0],
         role: 'MEMBER',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(
@@ -1761,6 +1821,7 @@ describe('UserOrganizationsRepository', () => {
         organization: org.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
 
       await expect(

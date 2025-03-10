@@ -1,13 +1,15 @@
+import { faker } from '@faker-js/faker';
+import { get } from 'lodash';
+import { getAddress } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { faker } from '@faker-js/faker/.';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { getAddress } from 'viem';
+import configuration from '@/config/entities/__tests__/configuration';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -20,16 +22,9 @@ const mockLoggingRepository = jest.mocked({
 describe('MessageVerifierHelper', () => {
   let target: MessageVerifierHelper;
 
-  function initTarget(args: {
-    ethSign: boolean;
-    blocklist: Array<`0x${string}`>;
-  }): void {
+  function initTarget(config: typeof configuration): void {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'blockchain.blocklist') return args.blocklist;
-      return [
-        'features.messageVerification',
-        args.ethSign ? 'features.ethSign' : null,
-      ].includes(key);
+      return get(config(), key);
     });
 
     target = new MessageVerifierHelper(
@@ -41,7 +36,7 @@ describe('MessageVerifierHelper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    initTarget({ ethSign: true, blocklist: [] });
+    initTarget(configuration);
   });
 
   describe('verifyCreation', () => {
@@ -79,6 +74,8 @@ describe('MessageVerifierHelper', () => {
           signature: message.confirmations[0].signature,
         });
       }).not.toThrow();
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
     it('should throw and log if the messageHash could not be generated', async () => {
@@ -132,8 +129,17 @@ describe('MessageVerifierHelper', () => {
     });
 
     it('should throw if eth_sign is disabled', async () => {
-      initTarget({ ethSign: false, blocklist: [] });
-
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            ethSign: false,
+          },
+        };
+      };
+      initTarget(testConfiguration);
       const chainId = faker.string.numeric();
       const signers = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
@@ -168,9 +174,11 @@ describe('MessageVerifierHelper', () => {
           signature: message.confirmations[0].signature,
         });
       }).toThrow(new HttpExceptionNoLog('eth_sign is disabled', 422));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    it('should throw if the signature is an invalid length', async () => {
+    it('should throw if the signature length is invalid', async () => {
       const chainId = faker.string.numeric();
       const signers = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
@@ -195,16 +203,18 @@ describe('MessageVerifierHelper', () => {
           }),
           safe,
         });
-      message.confirmations[0].signature += 'extra';
 
       expect(() => {
         return target.verifyCreation({
           chainId,
           safe,
           message: message.message,
-          signature: message.confirmations[0].signature,
+          signature: (message.confirmations[0].signature +
+            'deadbeef') as `0x${string}`,
         });
       }).toThrow(new Error('Invalid signature length'));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
     it.each(Object.values(SignatureType))(
@@ -236,7 +246,6 @@ describe('MessageVerifierHelper', () => {
             signatureType,
           });
         const v = message.confirmations[0].signature?.slice(-2);
-        message.confirmations[0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
 
         expect(() => {
           return target.verifyUpdate({
@@ -244,9 +253,11 @@ describe('MessageVerifierHelper', () => {
             safe,
             message: message.message,
             messageHash: message.messageHash,
-            signature: message.confirmations[0].signature,
+            signature: `0x${'-'.repeat(128)}${v}`,
           });
         }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
     );
 
@@ -254,10 +265,17 @@ describe('MessageVerifierHelper', () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
-      initTarget({
-        ethSign: true,
-        blocklist: [signer.address],
-      });
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          blockchain: {
+            ...defaultConfiguration.blockchain,
+            blocklist: [signer.address],
+          },
+        };
+      };
+      initTarget(testConfiguration);
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const message = await messageBuilder()
         .with('safe', safe.address)
@@ -363,6 +381,8 @@ describe('MessageVerifierHelper', () => {
           signature: message.confirmations[0].signature,
         });
       }).not.toThrow();
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
     it('should throw and log if the messageHash could not be generated', async () => {
@@ -469,8 +489,17 @@ describe('MessageVerifierHelper', () => {
     });
 
     it('should throw if eth_sign is disabled', async () => {
-      initTarget({ ethSign: false, blocklist: [] });
-
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            ethSign: false,
+          },
+        };
+      };
+      initTarget(testConfiguration);
       const chainId = faker.string.numeric();
       const signers = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
@@ -506,9 +535,11 @@ describe('MessageVerifierHelper', () => {
           signature: message.confirmations[0].signature,
         });
       }).toThrow(new HttpExceptionNoLog('eth_sign is disabled', 422));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    it('should throw if the signature is an invalid length', async () => {
+    it('should throw if the signature length is invalid', async () => {
       const chainId = faker.string.numeric();
       const signers = Array.from(
         { length: faker.number.int({ min: 1, max: 5 }) },
@@ -533,7 +564,6 @@ describe('MessageVerifierHelper', () => {
           }),
           safe,
         });
-      message.confirmations[0].signature += 'extra';
 
       expect(() => {
         return target.verifyUpdate({
@@ -541,9 +571,12 @@ describe('MessageVerifierHelper', () => {
           safe,
           message: message.message,
           messageHash: message.messageHash,
-          signature: message.confirmations[0].signature,
+          signature: (message.confirmations[0].signature +
+            'deadbeef') as `0x${string}`,
         });
       }).toThrow(new Error('Invalid signature length'));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
     it.each(Object.values(SignatureType))(
@@ -575,7 +608,6 @@ describe('MessageVerifierHelper', () => {
             signatureType,
           });
         const v = message.confirmations[0].signature?.slice(-2);
-        message.confirmations[0].signature = `0x--------------------------------------------------------------------------------------------------------------------------------${v}`;
 
         expect(() => {
           return target.verifyUpdate({
@@ -583,9 +615,11 @@ describe('MessageVerifierHelper', () => {
             safe,
             message: message.message,
             messageHash: message.messageHash,
-            signature: message.confirmations[0].signature,
+            signature: `0x${'-'.repeat(128)}${v}`,
           });
         }).toThrow(new HttpExceptionNoLog('Could not recover address', 422));
+
+        expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
     );
 
@@ -593,10 +627,21 @@ describe('MessageVerifierHelper', () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
-      initTarget({
-        ethSign: true,
-        blocklist: [signer.address],
-      });
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            ethSign: true,
+          },
+          blockchain: {
+            ...defaultConfiguration.blockchain,
+            blocklist: [signer.address],
+          },
+        };
+      };
+      initTarget(testConfiguration);
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const message = await messageBuilder()
         .with('safe', safe.address)

@@ -9,14 +9,11 @@ import { getAddress, type PrivateKeyAccount } from 'viem';
 import { fakeJson } from '@/__tests__/faker';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
-import {
-  getContractSignature,
-  getApprovedHashSignature,
-  adjustEthSignSignature,
-} from '@/domain/common/utils/__tests__/signatures.builder';
+import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
 import type { MessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
 
+// TODO: Refactor with multisig BuilderWithConfirmations
 class BuilderWithConfirmations<T extends Message> extends Builder<T> {
   public async buildWithConfirmations(args: {
     chainId: string;
@@ -45,25 +42,13 @@ class BuilderWithConfirmations<T extends Message> extends Builder<T> {
 
     message.confirmations = await Promise.all(
       args.signers.map(async (signer): Promise<MessageConfirmation> => {
-        const signatureType: SignatureType =
+        const signatureType =
           args.signatureType ?? faker.helpers.enumValue(SignatureType);
-
-        let signature: `0x${string}`;
-
-        // TODO: Refactor with multisig BuilderWithConfirmations
-        if (signatureType === SignatureType.ContractSignature) {
-          signature = getContractSignature(signer.address);
-        } else if (signatureType === SignatureType.ApprovedHash) {
-          signature = getApprovedHashSignature(signer.address);
-        } else if (signatureType === SignatureType.Eoa) {
-          signature = await signer.sign({ hash: message.messageHash });
-        } else if (SignatureType.EthSign) {
-          signature = await signer
-            .signMessage({ message: { raw: message.messageHash } })
-            .then(adjustEthSignSignature);
-        } else {
-          throw new Error(`Unknown signature type: ${signatureType}`);
-        }
+        const signature = await getSignature({
+          signer,
+          hash: message.messageHash,
+          signatureType,
+        });
 
         return {
           owner: signer.address,
