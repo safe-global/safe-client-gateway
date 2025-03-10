@@ -6,6 +6,7 @@ export type Invitation = {
   userId: User['id'];
   orgId: Organization['id'];
   role: UserOrganization['role'];
+  name: UserOrganization['name'];
   status: UserOrganization['status'];
   invitedBy: UserOrganization['invitedBy'];
 };

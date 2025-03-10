@@ -94,6 +94,7 @@ export class UsersOrganizationsRepository
     authPayload: AuthPayload;
     orgId: Organization['id'];
     users: Array<{
+      name: UserOrganization['name'];
       address: `0x${string}`;
       role: UserOrganization['role'];
     }>;
@@ -154,6 +155,7 @@ export class UsersOrganizationsRepository
         await entityManager.insert(DbUserOrganization, {
           user: { id: invitedUserId },
           organization: org,
+          name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
           invitedBy: adminAddress,
@@ -162,6 +164,7 @@ export class UsersOrganizationsRepository
         invitations.push({
           userId: invitedUserId,
           orgId: org.id,
+          name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
           invitedBy: adminAddress,
@@ -175,6 +178,7 @@ export class UsersOrganizationsRepository
   public async acceptInvite(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
+    payload: Pick<UserOrganization, 'name'>;
   }): Promise<void> {
     this.assertSignerAddress(args.authPayload);
 
@@ -192,6 +196,7 @@ export class UsersOrganizationsRepository
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await this.updateStatus({
+        name: args.payload.name,
         userOrgId: userOrg.id,
         status: 'ACTIVE',
         entityManager,
@@ -236,6 +241,7 @@ export class UsersOrganizationsRepository
     userOrgId: UserOrganization['id'];
     status: UserOrganization['status'];
     entityManager: EntityManager;
+    name?: UserOrganization['name'];
   }): Promise<void> {
     await args.entityManager.update(DbUserOrganization, args.userOrgId, {
       status: args.status,
