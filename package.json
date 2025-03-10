@@ -32,7 +32,7 @@
   "dependencies": {
     "@aws-sdk/client-kms": "3.758.0",
     "@aws-sdk/client-s3": "3.758.0",
-    "@fingerprintjs/fingerprintjs-pro-server-api": "6.1.0",
+    "@fingerprintjs/fingerprintjs-pro-server-api": "6.2.0",
     "@nestjs/cli": "11.0.4",
     "@nestjs/common": "11.0.11",
     "@nestjs/config": "4.0.0",
