@@ -23,7 +23,7 @@ import { UserWithWallets } from '@/routes/users/entities/user-with-wallets.entit
 import { CreatedUserWithWallet } from '@/routes/users/entities/created-user-with-wallet.entity';
 import { WalletAddedToUser } from '@/routes/users/entities/wallet-added-to-user.entity';
 import { SiweDtoSchema } from '@/routes/auth/entities/siwe.dto.entity';
-import type { SiweDto } from '@/routes/auth/entities/siwe.dto.entity';
+import { SiweDto } from '@/routes/auth/entities/siwe.dto.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 @ApiTags('users')
