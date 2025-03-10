@@ -12,7 +12,7 @@ export function messageConfirmationBuilder(): IBuilder<MessageConfirmation> {
     .with('owner', getAddress(faker.finance.ethereumAddress()))
     .with(
       'signature',
-      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+      faker.string.hexadecimal({ length: 130 }) as `0x${string}`,
     )
     .with('signatureType', faker.helpers.objectValue(SignatureType));
 }
