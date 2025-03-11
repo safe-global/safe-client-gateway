@@ -33,6 +33,11 @@ describe('UpdateMessageSignatureDtoSchema', () => {
         },
         {
           code: 'custom',
+          message: 'Invalid hex bytes',
+          path: ['signature'],
+        },
+        {
+          code: 'custom',
           message: 'Invalid signature',
           path: ['signature'],
         },
@@ -54,6 +59,11 @@ describe('UpdateMessageSignatureDtoSchema', () => {
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
+        {
+          code: 'custom',
+          message: 'Invalid hex bytes',
+          path: ['signature'],
+        },
         {
           code: 'custom',
           message: 'Invalid signature',

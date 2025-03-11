@@ -58,6 +58,11 @@ describe('MessageConfirmationSchema', () => {
           message: 'Invalid "0x" notated hex string',
           path: ['signature'],
         },
+        {
+          code: 'custom',
+          message: 'Invalid hex bytes',
+          path: ['signature'],
+        },
       ]),
     );
   });
