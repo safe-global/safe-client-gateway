@@ -1,3 +1,4 @@
+import { getBlocklist } from '@/config/entities/blocklist.config';
 import { randomBytes } from 'crypto';
 
 // Custom configuration for the application
@@ -145,6 +146,7 @@ export default () => ({
     },
   },
   blockchain: {
+    blocklist: getBlocklist(),
     infura: {
       apiKey: process.env.INFURA_API_KEY,
     },
@@ -245,6 +247,26 @@ export default () => ({
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
+    hashVerification: {
+      api: process.env.FF_HASH_VERIFICATION_API?.toLowerCase() === 'true',
+      proposal:
+        process.env.FF_HASH_VERIFICATION_PROPOSAL?.toLowerCase() === 'true',
+    },
+    signatureVerification: {
+      api: process.env.FF_SIGNATURE_VERIFICATION_API?.toLowerCase() === 'true',
+      proposal:
+        process.env.FF_SIGNATURE_VERIFICATION_PROPOSAL?.toLowerCase() ===
+        'true',
+    },
+    messageVerification:
+      process.env.FF_MESSAGE_VERIFICATION?.toLowerCase() === 'true',
+    ethSign: process.env.FF_ETH_SIGN?.toLowerCase() === 'true',
+    trustedDelegateCall:
+      process.env.FF_TRUSTED_DELEGATE_CALL?.toLowerCase() === 'true',
+    // TODO: Remove this feature flag once the feature is established.
+    trustedForDelegateCallContractsList:
+      process.env.FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST?.toLowerCase() ===
+      'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -320,6 +342,8 @@ export default () => ({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
     timeout: process.env.REDIS_TIMEOUT || 2 * 1_000, // Milliseconds
+    disableOfflineQueue:
+      process.env.REDIS_DISABLE_OFFLINE_QUEUE?.toString() === 'true',
   },
   relay: {
     baseUri:
@@ -428,5 +452,8 @@ export default () => ({
           'assets/targeted-messaging',
       },
     },
+  },
+  users: {
+    maxInvites: 50,
   },
 });

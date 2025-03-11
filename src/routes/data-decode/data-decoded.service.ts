@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository';
-import { IDataDecodedRepository } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { DataDecodedRepository } from '@/domain/data-decoder/v1/data-decoded.repository';
+import { IDataDecodedRepository } from '@/domain/data-decoder/v1/data-decoded.repository.interface';
 import { TransactionDataDto } from '@/routes/common/entities/transaction-data.dto.entity';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 

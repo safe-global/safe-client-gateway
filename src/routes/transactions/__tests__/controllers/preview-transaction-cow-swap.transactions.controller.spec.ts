@@ -9,7 +9,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { AppModule } from '@/app.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -182,7 +182,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             executedSellAmount: order.executedSellAmount.toString(),
             executedBuyAmount: order.executedBuyAmount.toString(),
             explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
-            executedSurplusFee: order.executedSurplusFee.toString(),
             executedFee: order.executedFee.toString(),
             executedFeeToken: {
               address: sellToken.address,
@@ -329,7 +328,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             executedSellAmount: order.executedSellAmount.toString(),
             executedBuyAmount: order.executedBuyAmount.toString(),
             explorerUrl: `${swapsExplorerUrl}orders/${order.uid}`,
-            executedSurplusFee: order.executedSurplusFee.toString(),
             executedFee: order.executedFee.toString(),
             executedFeeToken: {
               address: sellToken.address,
@@ -754,7 +752,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             buyAmount: '1222579021996502268',
             executedSellAmount: '0',
             executedBuyAmount: '0',
-            executedSurplusFee: '0',
             executedFee: '0',
             executedFeeToken: {
               address: sellToken.address,
@@ -899,7 +896,6 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             buyAmount: '1222579021996502268',
             executedSellAmount: '0',
             executedBuyAmount: '0',
-            executedSurplusFee: '0',
             executedFee: '0',
             executedFeeToken: {
               address: sellToken.address,

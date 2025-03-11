@@ -19,6 +19,7 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
@@ -29,6 +30,10 @@ import {
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
@@ -38,17 +43,17 @@ import { Test } from '@nestjs/testing';
 import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
-
+  async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(config)],
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
@@ -73,9 +78,28 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    loggingService = moduleFixture.get(LoggingService);
+
+    // TODO: Override module to avoid spying
+    jest.spyOn(loggingService, 'error');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  }
+
+  beforeEach(async () => {
+    jest.resetAllMocks();
+
+    const baseConfiguration = configuration();
+    const testConfiguration = (): typeof baseConfiguration => ({
+      ...baseConfiguration,
+      features: {
+        ...baseConfiguration.features,
+        ethSign: true,
+      },
+    });
+
+    await initApp(testConfiguration);
   });
 
   afterAll(async () => {
@@ -83,12 +107,11 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('Failure: data page validation fails', async () => {
-    const chainId = faker.string.numeric();
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const page = pageBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       if (url === getChainUrl) {
@@ -107,18 +130,27 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safe.address}/transactions/queued`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/queued`,
+      )
       .expect(502)
       .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 
   it('should get a transactions queue with labels and conflict headers', async () => {
-    const chainId = faker.string.numeric();
     const chainResponse = chainBuilder().build();
+    const signers = Array.from({ length: 3 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const safeResponse = safeBuilder()
       .with('address', safeAddress)
       .with('nonce', 1)
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
@@ -128,65 +160,38 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .build(),
     ];
     const contractResponse = contractBuilder().build();
+    const getTransaction = async (
+      nonce: number,
+    ): Promise<MultisigTransaction> => {
+      return multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('isExecuted', false)
+        .with('nonce', nonce)
+        .with('dataDecoded', null)
+        .buildWithConfirmations({
+          safe: safeResponse,
+          chainId: chainResponse.chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+        });
+    };
+    const nonce1 = await getTransaction(1);
+    const nonce2 = await getTransaction(2);
+    const nonce3 = await getTransaction(3);
+    const nonce4 = await getTransaction(4);
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('nonce', 2)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('nonce', 2)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('nonce', 3)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('nonce', 4)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
+      multisigToJson(nonce3) as MultisigTransaction,
+      multisigToJson(nonce4) as MultisigTransaction,
     ];
 
     networkService.get.mockImplementation(({ url }) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -218,7 +223,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chainId}/safes/${safeAddress}/transactions/queued`)
+      .get(
+        `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+      )
       .expect(200)
       .then(({ body }) => {
         expect(body).toEqual({
@@ -290,13 +297,20 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('should get a transactions queue with labels and conflict headers for a multi-page queue', async () => {
-    const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainResponse = chainBuilder().build();
+    const signers = Array.from({ length: 3 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
     const contractResponse = contractBuilder().build();
     const safeResponse = safeBuilder()
       .with('address', safeAddress)
       .with('nonce', 1)
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
       .build();
     const safeAppsResponse = [
       safeAppBuilder()
@@ -305,82 +319,38 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .with('name', faker.word.words())
         .build(),
     ];
+    const getTransaction = async (
+      nonce: number,
+    ): Promise<MultisigTransaction> => {
+      return multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('isExecuted', false)
+        .with('nonce', nonce)
+        .with('dataDecoded', null)
+        .buildWithConfirmations({
+          safe: safeResponse,
+          chainId: chainResponse.chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+        });
+    };
+    const nonce1 = await getTransaction(1);
+    const nonce2 = await getTransaction(2);
+    const nonce3 = await getTransaction(3);
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('nonce', 2)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('nonce', 2)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('nonce', 3)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('nonce', 3)
-          .with('safeTxHash', faker.string.hexadecimal() as `0x${string}`)
-          .with('isExecuted', false)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
+      multisigToJson(nonce3) as MultisigTransaction,
+      multisigToJson(nonce3) as MultisigTransaction,
     ];
     networkService.get.mockImplementation(({ url }) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -417,7 +387,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/queued/?cursor=limit%3D10%26offset%3D2`,
+        `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued/?cursor=limit%3D10%26offset%3D2`,
       )
       .expect(200)
       .then(({ body }) => {
@@ -493,35 +463,47 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
   });
 
   it('should get an "untrusted" queue', async () => {
-    const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const chainResponse = chainBuilder().build();
+    const signers = Array.from({ length: 3 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
     const contractResponse = contractBuilder().build();
     const safeResponse = safeBuilder()
       .with('address', safeAddress)
       .with('nonce', 1)
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
       .build();
     const safeAppsResponse = [safeAppBuilder().build()];
+    const getTransaction = async (
+      nonce: number,
+    ): Promise<MultisigTransaction> => {
+      return multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('isExecuted', false)
+        .with('nonce', nonce)
+        .with('dataDecoded', null)
+        .buildWithConfirmations({
+          safe: safeResponse,
+          chainId: chainResponse.chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+        });
+    };
+    const nonce1 = await getTransaction(1);
+    const nonce2 = await getTransaction(2);
     const transactions: Array<MultisigTransaction> = [
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 1)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
-      multisigToJson(
-        multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', 2)
-          .with('dataDecoded', null)
-          .build(),
-      ) as MultisigTransaction,
+      multisigToJson(nonce1) as MultisigTransaction,
+      multisigToJson(nonce2) as MultisigTransaction,
     ];
     networkService.get.mockImplementation(({ url, networkRequest }) => {
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
@@ -559,7 +541,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${chainId}/safes/${safeAddress}/transactions/queued/?trusted=false`,
+        `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued/?trusted=false`,
       )
       .expect(200)
       .then(({ body }) => {
@@ -593,5 +575,827 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           ],
         });
       });
+  });
+
+  describe('Verification', () => {
+    it('should throw and log if the safeTxHash could not be calculated', async () => {
+      const chainResponse = chainBuilder().build();
+      const signers = Array.from({ length: 3 }, () => {
+        const privateKey = generatePrivateKey();
+        return privateKeyToAccount(privateKey);
+      });
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with(
+          'owners',
+          signers.map((signer) => signer.address),
+        )
+        .build();
+      const getTransaction = async (
+        nonce: number,
+      ): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .with('dataDecoded', null)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+          });
+      };
+      const nonce1 = await getTransaction(1);
+      const nonce2 = await getTransaction(2);
+      safeResponse.version = null;
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
+
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({ data: rawify(safeResponse), status: 200 });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Could not calculate safeTxHash',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).toHaveBeenCalledWith({
+        message: 'Could not calculate safeTxHash',
+        chainId: chainResponse.chainId,
+        safeAddress: safeResponse.address,
+        safeVersion: safeResponse.version,
+        safeTxHash: nonce1.safeTxHash,
+        transaction: {
+          to: nonce1.to,
+          value: nonce1.value,
+          data: nonce1.data,
+          operation: nonce1.operation,
+          safeTxGas: nonce1.safeTxGas,
+          baseGas: nonce1.baseGas,
+          gasPrice: nonce1.gasPrice,
+          gasToken: nonce1.gasToken,
+          refundReceiver: nonce1.refundReceiver,
+          nonce: nonce1.nonce,
+        },
+        type: 'TRANSACTION_VALIDITY',
+        source: 'API',
+      });
+    });
+
+    it('should throw and log if the safeTxHash does not match', async () => {
+      const chainResponse = chainBuilder().build();
+      const signers = Array.from({ length: 3 }, () => {
+        const privateKey = generatePrivateKey();
+        return privateKeyToAccount(privateKey);
+      });
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with(
+          'owners',
+          signers.map((signer) => signer.address),
+        )
+        .build();
+      const getTransaction = async (
+        nonce: number,
+      ): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .with('dataDecoded', null)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+          });
+      };
+      const nonce1 = await getTransaction(1);
+      const nonce2 = await getTransaction(2);
+      nonce1.data = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
+
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: rawify(safeResponse),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Invalid safeTxHash',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).toHaveBeenCalledWith({
+        message: 'safeTxHash does not match',
+        chainId: chainResponse.chainId,
+        safeAddress: safeResponse.address,
+        safeVersion: safeResponse.version,
+        safeTxHash: nonce1.safeTxHash,
+        transaction: {
+          to: nonce1.to,
+          value: nonce1.value,
+          data: nonce1.data,
+          operation: nonce1.operation,
+          safeTxGas: nonce1.safeTxGas,
+          baseGas: nonce1.baseGas,
+          gasPrice: nonce1.gasPrice,
+          gasToken: nonce1.gasToken,
+          refundReceiver: nonce1.refundReceiver,
+          nonce: nonce1.nonce,
+        },
+        type: 'TRANSACTION_VALIDITY',
+        source: 'API',
+      });
+    });
+
+    it('should throw and log if confirmations contain duplicate owners', async () => {
+      const chainResponse = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with('owners', [signer.address])
+        .build();
+      const getTransaction = async (
+        nonce: number,
+      ): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .with('dataDecoded', null)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers: [signer, signer],
+          });
+      };
+      const nonce1 = await getTransaction(1);
+      const nonce2 = await getTransaction(2);
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
+
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: rawify(safeResponse),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Duplicate owners in confirmations',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).toHaveBeenCalledWith({
+        message: 'Duplicate owners in confirmations',
+        chainId: chainResponse.chainId,
+        safeAddress: safeResponse.address,
+        safeVersion: safeResponse.version,
+        safeTxHash: nonce1.safeTxHash,
+        confirmations: nonce1.confirmations,
+        type: 'TRANSACTION_VALIDITY',
+        source: 'API',
+      });
+    });
+
+    it('should throw and log if confirmations contain duplicate signatures', async () => {
+      const chainResponse = chainBuilder().build();
+      const signers = Array.from({ length: 2 }, () => {
+        const privateKey = generatePrivateKey();
+        return privateKeyToAccount(privateKey);
+      });
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with(
+          'owners',
+          signers.map((signer) => signer.address),
+        )
+        .build();
+      const getTransaction = async (
+        nonce: number,
+      ): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .with('dataDecoded', null)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers,
+          });
+      };
+      const nonce1 = await getTransaction(1);
+      nonce1.confirmations![1].signature = nonce1.confirmations![0].signature;
+      const nonce2 = await getTransaction(2);
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
+
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: rawify(safeResponse),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Duplicate signatures in confirmations',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).toHaveBeenCalledWith({
+        message: 'Duplicate signatures in confirmations',
+        chainId: chainResponse.chainId,
+        safeAddress: safeResponse.address,
+        safeVersion: safeResponse.version,
+        safeTxHash: nonce1.safeTxHash,
+        confirmations: nonce1.confirmations,
+        type: 'TRANSACTION_VALIDITY',
+        source: 'API',
+      });
+    });
+
+    it('should throw if a signature length is invalid', async () => {
+      const chainResponse = chainBuilder().build();
+      const signers = Array.from({ length: 3 }, () => {
+        const privateKey = generatePrivateKey();
+        return privateKeyToAccount(privateKey);
+      });
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with(
+          'owners',
+          signers.map((signer) => signer.address),
+        )
+        .build();
+      const getTransaction = async (
+        nonce: number,
+      ): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .with('dataDecoded', null)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers: faker.helpers.arrayElements(signers, {
+              min: 1,
+              max: signers.length,
+            }),
+          });
+      };
+      const nonce1 = await getTransaction(1);
+      nonce1.confirmations![0].signature = '0xdeadbeef';
+      const nonce2 = await getTransaction(2);
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
+
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: rawify(safeResponse),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Bad gateway',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'TRANSACTION_VALIDITY',
+        }),
+      );
+    });
+
+    it.each(Object.values(SignatureType))(
+      'should throw if a confirmation contains an invalid %s signature',
+      async (signatureType) => {
+        const chainResponse = chainBuilder().build();
+        const signers = Array.from({ length: 3 }, () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        });
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const safeResponse = safeBuilder()
+          .with('address', safeAddress)
+          .with('nonce', 1)
+          .with(
+            'owners',
+            signers.map((signer) => signer.address),
+          )
+          .build();
+        const getTransaction = async (
+          nonce: number,
+        ): Promise<MultisigTransaction> => {
+          return multisigTransactionBuilder()
+            .with('safe', safeAddress)
+            .with('isExecuted', false)
+            .with('nonce', nonce)
+            .with('dataDecoded', null)
+            .buildWithConfirmations({
+              safe: safeResponse,
+              chainId: chainResponse.chainId,
+              signers: faker.helpers.arrayElements(signers, {
+                min: 1,
+                max: signers.length,
+              }),
+              signatureType,
+            });
+        };
+        const nonce1 = await getTransaction(1);
+        const v = nonce1.confirmations![0].signature?.slice(-2);
+        nonce1.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
+        const nonce2 = await getTransaction(2);
+        const transactions: Array<MultisigTransaction> = [
+          multisigToJson(nonce1) as MultisigTransaction,
+          multisigToJson(nonce2) as MultisigTransaction,
+        ];
+
+        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+        const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+        const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === getChainUrl) {
+            return Promise.resolve({
+              data: rawify(chainResponse),
+              status: 200,
+            });
+          }
+          if (url === getMultisigTransactionsUrl) {
+            return Promise.resolve({
+              data: rawify({
+                count: 6,
+                next: null,
+                previous: null,
+                results: transactions,
+              }),
+              status: 200,
+            });
+          }
+          if (url === getSafeUrl) {
+            return Promise.resolve({
+              data: rawify(safeResponse),
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+          )
+          .expect(502)
+          .expect({
+            message: 'Bad gateway',
+            statusCode: 502,
+          });
+
+        expect(loggingService.error).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'TRANSACTION_VALIDITY',
+          }),
+        );
+      },
+    );
+
+    it('should throw and log if a signer is blocked', async () => {
+      const chainResponse = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          blockchain: {
+            ...defaultConfiguration.blockchain,
+            blocklist: [signer.address],
+          },
+        };
+      };
+      await initApp(testConfiguration);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with('owners', [signer.address])
+        .build();
+      const getTransaction = async (
+        nonce: number,
+      ): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .with('dataDecoded', null)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers: [signer],
+          });
+      };
+      const nonce1 = await getTransaction(1);
+      const nonce2 = await getTransaction(2);
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
+
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: rawify(safeResponse),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Unauthorized address',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).toHaveBeenCalledWith({
+        message: 'Unauthorized address',
+        chainId: chainResponse.chainId,
+        safeAddress: safeResponse.address,
+        safeVersion: safeResponse.version,
+        safeTxHash: nonce1.safeTxHash,
+        blockedAddress: signer.address,
+        type: 'TRANSACTION_VALIDITY',
+        source: 'API',
+      });
+    });
+
+    it('should throw and log if a signer does not match the confirmation owner', async () => {
+      const chainResponse = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with('owners', [signer.address])
+        .build();
+      const getTransaction = async (
+        nonce: number,
+      ): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .with('dataDecoded', null)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers: [signer],
+          });
+      };
+      const nonce1 = await getTransaction(1);
+      nonce1.confirmations![0].owner = getAddress(
+        faker.finance.ethereumAddress(),
+      );
+      const nonce2 = await getTransaction(2);
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
+
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: rawify(safeResponse),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Invalid signature',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).toHaveBeenCalledWith({
+        message: 'Recovered address does not match signer',
+        chainId: chainResponse.chainId,
+        safeAddress: safeResponse.address,
+        safeVersion: safeResponse.version,
+        safeTxHash: nonce1.safeTxHash,
+        signerAddress: nonce1.confirmations![0].owner,
+        signature: nonce1.confirmations![0].signature,
+        type: 'TRANSACTION_VALIDITY',
+        source: 'API',
+      });
+    });
+
+    it('should throw and log if a signer is not an owner of the Safe', async () => {
+      const chainResponse = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeResponse = safeBuilder()
+        .with('address', safeAddress)
+        .with('nonce', 1)
+        .with('owners', [signer.address])
+        .build();
+      const getTransaction = async (
+        nonce: number,
+      ): Promise<MultisigTransaction> => {
+        return multisigTransactionBuilder()
+          .with('safe', safeAddress)
+          .with('isExecuted', false)
+          .with('nonce', nonce)
+          .with('dataDecoded', null)
+          .buildWithConfirmations({
+            safe: safeResponse,
+            chainId: chainResponse.chainId,
+            signers: [signer],
+          });
+      };
+      const nonce1 = await getTransaction(1);
+      const nonce2 = await getTransaction(2);
+      const transactions: Array<MultisigTransaction> = [
+        multisigToJson(nonce1) as MultisigTransaction,
+        multisigToJson(nonce2) as MultisigTransaction,
+      ];
+      safeResponse.owners = [getAddress(faker.finance.ethereumAddress())];
+
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === getChainUrl) {
+          return Promise.resolve({
+            data: rawify(chainResponse),
+            status: 200,
+          });
+        }
+        if (url === getMultisigTransactionsUrl) {
+          return Promise.resolve({
+            data: rawify({
+              count: 6,
+              next: null,
+              previous: null,
+              results: transactions,
+            }),
+            status: 200,
+          });
+        }
+        if (url === getSafeUrl) {
+          return Promise.resolve({
+            data: rawify(safeResponse),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Invalid signature',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).toHaveBeenCalledWith({
+        message: 'Recovered address does not match signer',
+        chainId: chainResponse.chainId,
+        safeAddress: safeResponse.address,
+        safeVersion: safeResponse.version,
+        safeTxHash: nonce1.safeTxHash,
+        signerAddress: nonce1.confirmations![0].owner,
+        signature: nonce1.confirmations![0].signature,
+        type: 'TRANSACTION_VALIDITY',
+        source: 'API',
+      });
+    });
   });
 });

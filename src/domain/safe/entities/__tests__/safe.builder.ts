@@ -14,5 +14,15 @@ export function safeBuilder(): IBuilder<Safe> {
     .with('modules', null)
     .with('fallbackHandler', getAddress(faker.finance.ethereumAddress()))
     .with('guard', getAddress(faker.finance.ethereumAddress()))
-    .with('version', faker.system.semver());
+    .with(
+      'version',
+      faker.helpers.arrayElement([
+        '1.0.0',
+        '1.1.1',
+        '1.2.0',
+        '1.3.0',
+        '1.4.0',
+        '1.4.1',
+      ]),
+    );
 }

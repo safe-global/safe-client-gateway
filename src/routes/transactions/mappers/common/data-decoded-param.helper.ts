@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 
 @Injectable()

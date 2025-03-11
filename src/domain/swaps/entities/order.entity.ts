@@ -99,7 +99,6 @@ export const OrderSchema = z.object({
     })
     .nullish()
     .default(null),
-  executedSurplusFee: z.coerce.bigint(),
   executedFee: z.coerce.bigint(),
   executedFeeToken: AddressSchema,
   fullAppData: FullAppDataSchema.shape.fullAppData,

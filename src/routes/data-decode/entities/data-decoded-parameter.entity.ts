@@ -1,4 +1,4 @@
-import { DataDecodedParameter as DomainDataDecodedParameter } from '@/domain/data-decoder/entities/data-decoded.entity';
+import { DataDecodedParameter as DomainDataDecodedParameter } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class DataDecodedParameter implements DomainDataDecodedParameter {

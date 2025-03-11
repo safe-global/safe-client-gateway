@@ -12,7 +12,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/entities/__tests__/data-decoded.builder';
+} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   creationTransactionBuilder,
@@ -26,7 +26,6 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/domain/safe/entities/__tests__/module-transaction.builder';
-import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
@@ -69,6 +68,7 @@ import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.post
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -295,7 +295,9 @@ describe('Transactions History Controller (Unit)', () => {
   });
 
   it('Should return correctly each date label', async () => {
-    const safe = safeBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
     const chain = chainBuilder().build();
     const moduleTransaction = moduleTransactionToJson(
       moduleTransactionBuilder()
@@ -303,13 +305,16 @@ describe('Transactions History Controller (Unit)', () => {
         .with('executionDate', new Date('2022-12-06T23:00:00Z'))
         .build(),
     );
-    const multisigTransaction = multisigTransactionToJson(
-      multisigTransactionBuilder()
-        .with('dataDecoded', null)
-        .with('origin', null)
-        .with('executionDate', new Date('2022-12-25T00:00:00Z'))
-        .build(),
-    );
+    const multisigTransaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('dataDecoded', null)
+      .with('origin', null)
+      .with('executionDate', new Date('2022-12-25T00:00:00Z'))
+      .buildWithConfirmations({
+        safe,
+        signers: [signer],
+        chainId: chain.chainId,
+      });
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-12-31T00:00:00Z'))
       .build();
@@ -325,7 +330,11 @@ describe('Transactions History Controller (Unit)', () => {
       count: 40,
       next: `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
       previous: null,
-      results: [moduleTransaction, multisigTransaction, incomingTransaction],
+      results: [
+        moduleTransaction,
+        multisigTransactionToJson(multisigTransaction),
+        incomingTransaction,
+      ],
     };
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
@@ -546,7 +555,16 @@ describe('Transactions History Controller (Unit)', () => {
 
   it('Should return correctly each transaction', async () => {
     const chain = chainBuilder().build();
-    const safe = safeBuilder().build();
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
     const moduleTransaction = moduleTransactionBuilder()
       .with('executionDate', new Date('2022-12-14T13:19:12Z'))
       .with('safe', getAddress(safe.address))
@@ -558,14 +576,13 @@ describe('Transactions History Controller (Unit)', () => {
       .build();
     const multisigTransactionToAddress = faker.finance.ethereumAddress();
     const multisigTransactionValue = faker.string.numeric();
-    const multisigTransaction = multisigTransactionBuilder()
+    const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('value', '0')
       .with('operation', 0)
       .with('safeTxGas', 0)
       .with('executionDate', new Date('2022-11-16T07:31:11Z'))
       .with('submissionDate', new Date('2022-11-16T07:29:56.401601Z'))
-      .with('safeTxHash', '0x31d44c67')
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
@@ -588,12 +605,11 @@ describe('Transactions History Controller (Unit)', () => {
           .build(),
       )
       .with('confirmationsRequired', 2)
-      .with('confirmations', [
-        confirmationBuilder().build(),
-        confirmationBuilder().build(),
-      ])
-      .build();
-
+      .buildWithConfirmations({
+        safe,
+        signers,
+        chainId: chain.chainId,
+      });
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
       .with('to', safe.address)
@@ -682,7 +698,7 @@ describe('Transactions History Controller (Unit)', () => {
             {
               type: 'TRANSACTION',
               transaction: {
-                id: `multisig_${safe.address}_0x31d44c67`,
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
                 txHash: multisigTransaction.transactionHash,
                 timestamp: 1668583871000,
                 txStatus: 'SUCCESS',

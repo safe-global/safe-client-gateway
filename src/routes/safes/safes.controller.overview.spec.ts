@@ -134,14 +134,14 @@ describe('Safes Controller Overview (Unit)', () => {
         [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
         [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
       };
-      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const confirmation = confirmationBuilder().build();
       const multisigTransactions = [
         multisigTransactionToJson(
           multisigTransactionBuilder()
             .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Signature provided
-              confirmationBuilder().with('owner', walletAddress).build(),
+              confirmation,
             ])
             .build(),
         ),
@@ -192,7 +192,7 @@ describe('Safes Controller Overview (Unit)', () => {
 
       await request(app.getHttpServer())
         .get(
-          `/v1/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}&wallet_address=${walletAddress}`,
+          `/v1/safes?currency=${currency}&safes=${chain.chainId}:${safeInfo.address}&wallet_address=${confirmation.owner}`,
         )
         .expect(200)
         .expect(({ body }) =>
@@ -301,9 +301,7 @@ describe('Safes Controller Overview (Unit)', () => {
             .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Not wallet address
-              confirmationBuilder()
-                .with('owner', getAddress(faker.finance.ethereumAddress()))
-                .build(),
+              confirmationBuilder().build(),
             ])
             .build(),
         ),
@@ -312,9 +310,7 @@ describe('Safes Controller Overview (Unit)', () => {
             .with('confirmationsRequired', 0)
             .with('confirmations', [
               // Not wallet address
-              confirmationBuilder()
-                .with('owner', getAddress(faker.finance.ethereumAddress()))
-                .build(),
+              confirmationBuilder().build(),
             ])
             .build(),
         ),

@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import type configuration from '@/config/entities/configuration';
+import { getAddress } from 'viem';
 
 export default (): ReturnType<typeof configuration> => ({
   about: {
@@ -92,6 +93,10 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   blockchain: {
+    blocklist: faker.helpers.multiple(
+      () => getAddress(faker.finance.ethereumAddress()),
+      { count: { min: 1, max: 5 } },
+    ),
     infura: {
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
@@ -159,6 +164,18 @@ export default (): ReturnType<typeof configuration> => ({
     pushNotifications: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
+    signatureVerification: {
+      api: true,
+      proposal: true,
+    },
+    hashVerification: {
+      api: true,
+      proposal: true,
+    },
+    messageVerification: true,
+    ethSign: true,
+    trustedDelegateCall: false,
+    trustedForDelegateCallContractsList: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
@@ -216,6 +233,8 @@ export default (): ReturnType<typeof configuration> => ({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
     timeout: process.env.REDIS_TIMEOUT || 1 * 1_000, // Milliseconds
+    disableOfflineQueue:
+      process.env.REDIS_DISABLE_OFFLINE_QUEUE?.toString() === 'true',
   },
   relay: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -281,5 +300,8 @@ export default (): ReturnType<typeof configuration> => ({
         baseDir: 'assets/targeted-messaging',
       },
     },
+  },
+  users: {
+    maxInvites: faker.number.int({ min: 5, max: 10 }),
   },
 });

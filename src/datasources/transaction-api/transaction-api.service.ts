@@ -9,7 +9,7 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import type { Singleton } from '@/domain/chains/entities/singleton.entity';
 import type { Contract } from '@/domain/contracts/entities/contract.entity';
-import type { DataDecoded } from '@/domain/data-decoder/entities/data-decoded.entity';
+import type { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Estimation } from '@/domain/estimations/entities/estimation.entity';
@@ -264,6 +264,30 @@ export class TransactionApi implements ITransactionApi {
         url,
         notFoundExpireTimeSeconds: this.contractNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [defaultExpirationTimeInSeconds]
+  async getTrustedForDelegateCallContracts(): Promise<Raw<Page<Contract>>> {
+    try {
+      const cacheDir = CacheRouter.getTrustedForDelegateCallContractsCacheDir(
+        this.chainId,
+      );
+      const url = `${this.baseUrl}/api/v1/contracts/`;
+      return await this.dataSource.get<Page<Contract>>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          params: {
+            trusted_for_delegate_call: true,
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
@@ -572,7 +596,7 @@ export class TransactionApi implements ITransactionApi {
       return await this.networkService.post({
         url,
         data: {
-          signature: args.addConfirmationDto.signedSafeTxHash,
+          signature: args.addConfirmationDto.signature,
         },
       });
     } catch (error) {
@@ -701,6 +725,55 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async getMultisigTransactionsWithNoCache({
+    safeAddress,
+    ...params
+  }: {
+    safeAddress: `0x${string}`;
+    // Transaction Service parameters
+    failed?: boolean;
+    modified__lt?: string;
+    modified__gt?: string;
+    modified__lte?: string;
+    modified__gte?: string;
+    nonce__lt?: number;
+    nonce__gt?: number;
+    nonce__lte?: number;
+    nonce__gte?: number;
+    nonce?: number;
+    safe_tx_hash?: string;
+    to?: string;
+    value__lt?: number;
+    value__gt?: number;
+    value?: number;
+    executed?: boolean;
+    has_confirmations?: boolean;
+    trusted?: boolean;
+    execution_date__gte?: string;
+    execution_date__lte?: string;
+    submission_date__gte?: string;
+    submission_date__lte?: string;
+    transaction_hash?: string;
+    ordering?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<MultisigTransaction>>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+      const { data } = await this.networkService.get<Page<MultisigTransaction>>(
+        {
+          url,
+          networkRequest: {
+            params,
+          },
+        },
+      );
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
   async clearMultisigTransactions(safeAddress: `0x${string}`): Promise<void> {
     const key = CacheRouter.getMultisigTransactionsCacheKey({
       chainId: this.chainId,
@@ -724,6 +797,20 @@ export class TransactionApi implements ITransactionApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
+  async getMultisigTransactionWithNoCache(
+    safeTransactionHash: string,
+  ): Promise<Raw<MultisigTransaction>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}`;
+      const { data } = await this.networkService.get<Raw<MultisigTransaction>>({
+        url,
+      });
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }
@@ -771,6 +858,20 @@ export class TransactionApi implements ITransactionApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
+  async getCreationTransactionWithNoCache(
+    safeAddress: `0x${string}`,
+  ): Promise<Raw<CreationTransaction>> {
+    try {
+      const url = `${this.baseUrl}/api/v1/safes/${safeAddress}/creation/`;
+      const { data } = await this.networkService.get({
+        url,
+      });
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }

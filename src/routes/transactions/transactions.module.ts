@@ -1,6 +1,6 @@
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
-import { DataDecodedRepositoryModule } from '@/domain/data-decoder/data-decoded.repository.interface';
+import { DataDecodedRepositoryModule } from '@/domain/data-decoder/v1/data-decoded.repository.interface';
 import { HumanDescriptionRepositoryModule } from '@/domain/human-description/human-description.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
@@ -48,6 +48,8 @@ import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer
 import { TransactionsController } from '@/routes/transactions/transactions.controller';
 import { TransactionsService } from '@/routes/transactions/transactions.service';
 import { Module } from '@nestjs/common';
+import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 
 @Module({
   controllers: [TransactionsController],
@@ -56,6 +58,7 @@ import { Module } from '@nestjs/common';
     ChainsRepositoryModule,
     ContractsRepositoryModule,
     DataDecodedRepositoryModule,
+    DelegatesV2RepositoryModule,
     HumanDescriptionRepositoryModule,
     SafeRepositoryModule,
     SafeAppsRepositoryModule,
@@ -101,6 +104,7 @@ import { Module } from '@nestjs/common';
     TransferDetailsMapper,
     TransferInfoMapper,
     TransferImitationMapper,
+    TransactionVerifierHelper,
     HumanDescriptionMapper,
   ],
 })
