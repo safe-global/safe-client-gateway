@@ -7,8 +7,10 @@ import {
   OrderKind,
   OrderStatus,
 } from '@/domain/swaps/entities/order.entity';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { TokenType } from '@/domain/tokens/entities/token.entity';
+import {
+  erc20TokenBuilder,
+  erc721TokenBuilder,
+} from '@/domain/tokens/__tests__/token.builder';
 import type { TokenRepository } from '@/domain/tokens/token.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
@@ -108,7 +110,7 @@ describe('Transfer mapper (Unit)', () => {
           .with('from', safe.address)
           .build();
         const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-        const token = tokenBuilder()
+        const token = erc721TokenBuilder()
           .with('address', getAddress(transfer.tokenAddress))
           .build();
         swapTransferInfoMapper.mapSwapTransferInfo.mockRejectedValue(
@@ -151,7 +153,7 @@ describe('Transfer mapper (Unit)', () => {
             .with('from', safe.address)
             .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-          const token = tokenBuilder()
+          const token = erc20TokenBuilder()
             .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
@@ -192,7 +194,7 @@ describe('Transfer mapper (Unit)', () => {
             .with('from', safe.address)
             .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-          const token = tokenBuilder()
+          const token = erc20TokenBuilder()
             .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
@@ -219,7 +221,7 @@ describe('Transfer mapper (Unit)', () => {
             .with('from', safe.address)
             .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-          const token = tokenBuilder()
+          const token = erc20TokenBuilder()
             .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', true)
             .build();
@@ -270,7 +272,7 @@ describe('Transfer mapper (Unit)', () => {
             .with('from', safe.address)
             .build();
           const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-          const token = tokenBuilder()
+          const token = erc20TokenBuilder()
             .with('address', getAddress(transfer.tokenAddress))
             .with('trusted', trusted)
             .build();
@@ -334,7 +336,7 @@ describe('Transfer mapper (Unit)', () => {
             transfer.tokenInfo.decimals,
             transfer.tokenInfo.trusted,
           );
-          const sellToken = tokenBuilder().build() as TokenInfo & {
+          const sellToken = erc20TokenBuilder().build() as TokenInfo & {
             decimals: number;
           };
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
@@ -387,7 +389,7 @@ describe('Transfer mapper (Unit)', () => {
           addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
           tokenRepository.getToken.mockResolvedValue({
             ...transfer.tokenInfo,
-            type: TokenType.Erc20,
+            type: 'ERC20',
           });
 
           const actual = await mapper.mapTransfers({
@@ -458,7 +460,7 @@ describe('Transfer mapper (Unit)', () => {
             transfer.tokenInfo.decimals,
             transfer.tokenInfo.trusted,
           );
-          const sellToken = tokenBuilder().build() as TokenInfo & {
+          const sellToken = erc20TokenBuilder().build() as TokenInfo & {
             decimals: number;
           };
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
@@ -511,7 +513,7 @@ describe('Transfer mapper (Unit)', () => {
           addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
           tokenRepository.getToken.mockResolvedValue({
             ...transfer.tokenInfo,
-            type: TokenType.Erc20,
+            type: 'ERC20',
           });
 
           const actual = await mapper.mapTransfers({
@@ -580,7 +582,7 @@ describe('Transfer mapper (Unit)', () => {
             transfer.tokenInfo.decimals,
             transfer.tokenInfo.trusted,
           );
-          const sellToken = tokenBuilder().build() as TokenInfo & {
+          const sellToken = erc20TokenBuilder().build() as TokenInfo & {
             decimals: number;
           };
           swapTransferInfoMapper.mapSwapTransferInfo.mockResolvedValue({
@@ -633,7 +635,7 @@ describe('Transfer mapper (Unit)', () => {
           addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
           tokenRepository.getToken.mockResolvedValue({
             ...transfer.tokenInfo,
-            type: TokenType.Erc20,
+            type: 'ERC20',
           });
 
           const actual = await mapper.mapTransfers({
@@ -658,14 +660,14 @@ describe('Transfer mapper (Unit)', () => {
       const erc721Transfer = erc721TransferBuilder()
         .with('from', safe.address)
         .build();
-      const erc721Token = tokenBuilder()
+      const erc721Token = erc721TokenBuilder()
         .with('address', getAddress(erc721Transfer.tokenAddress))
         .build();
       const trustedErc20TransferWithValue = erc20TransferBuilder()
         .with('value', '1')
         .with('from', safe.address)
         .build();
-      const trustedErc20Token = tokenBuilder()
+      const trustedErc20Token = erc20TokenBuilder()
         .with('address', getAddress(trustedErc20TransferWithValue.tokenAddress))
         .with('trusted', true)
         .build();
@@ -677,7 +679,7 @@ describe('Transfer mapper (Unit)', () => {
         .with('value', '1')
         .with('from', safe.address)
         .build();
-      const untrustedErc20Token = tokenBuilder()
+      const untrustedErc20Token = erc20TokenBuilder()
         .with('address', getAddress(trustedErc20TransferWithValue.tokenAddress))
         .with('trusted', false)
         .build();
