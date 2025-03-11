@@ -8,6 +8,7 @@ import type { InviteUsersDto } from '@/routes/organizations/entities/invite-user
 import type { Invitation } from '@/routes/organizations/entities/invitation.entity';
 import type { UserOrganizationsDto } from '@/routes/organizations/entities/user-organizations.dto.entity';
 import type { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
+import { AcceptInviteDto } from '@/routes/organizations/entities/accept-invite.dto.entity';
 
 export class UserOrganizationsService {
   private readonly maxInvites: number;
@@ -40,8 +41,13 @@ export class UserOrganizationsService {
   public async acceptInvite(args: {
     authPayload: AuthPayload;
     orgId: Organization['id'];
+    acceptInviteDto: AcceptInviteDto;
   }): Promise<void> {
-    return await this.usersOrgRepository.acceptInvite(args);
+    return await this.usersOrgRepository.acceptInvite({
+      authPayload: args.authPayload,
+      orgId: args.orgId,
+      payload: args.acceptInviteDto,
+    });
   }
 
   public async declineInvite(args: {
