@@ -363,6 +363,45 @@ describe('OrganizationSafesRepository', () => {
         })),
       );
     });
+
+    it('should fail if an OrganizationSafe with the same address and chainId already exists', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      await dbWalletRepo.insert({
+        user: { id: userId },
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      await dbUserOrgRepo.insert({
+        user: { id: userId },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        organization: { id: orgId },
+      });
+
+      await expect(
+        Promise.all([
+          orgSafesRepo.create({
+            organizationId: orgId,
+            payload: [{ chainId, address }],
+          }),
+          orgSafesRepo.create({
+            organizationId: orgId,
+            payload: [{ chainId, address }],
+          }),
+        ]),
+      ).rejects.toThrow('duplicate key value violates unique constraint');
+    });
   });
 
   describe('findByOrganizationId', () => {

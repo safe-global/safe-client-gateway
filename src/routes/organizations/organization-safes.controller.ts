@@ -1,5 +1,6 @@
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { UniqueConstraintExceptionFilter } from '@/domain/relay/exception-filters/unique-constraint.exception-filter';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import {
@@ -23,6 +24,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -48,6 +50,7 @@ export class OrganizationSafesController {
   ) {}
 
   @Post()
+  @UseFilters(UniqueConstraintExceptionFilter)
   @ApiCreatedResponse({ description: 'Safes created successfully' })
   @ApiBody({ type: CreateOrganizationSafesDto })
   @ApiUnauthorizedResponse({

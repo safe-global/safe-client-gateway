@@ -166,6 +166,49 @@ describe('OrganizationSafeController', () => {
         .expect(201);
     });
 
+    it('Should fail on duplicate organization safes', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.company.name();
+      const chain1 = chainBuilder().build();
+      const chain2 = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
+      const orgSafe1 = {
+        chainId: chain1.chainId,
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const orgSafe2 = {
+        chainId: chain2.chainId,
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const duplicatedOrgSafe = {
+        chainId: orgSafe1.chainId,
+        address: orgSafe1.address,
+      };
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          safes: [orgSafe1, orgSafe2, duplicatedOrgSafe],
+        })
+        .expect(409)
+        .expect({
+          message:
+            'An OrganizationSafe with the same chainId and address already exists.',
+          statusCode: 409,
+        });
+    });
+
     it('Should return a 401 if user is not authorized', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);

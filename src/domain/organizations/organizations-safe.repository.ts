@@ -1,8 +1,12 @@
-import { Inject, NotFoundException } from '@nestjs/common';
-import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import {
+  isUniqueConstraintError,
+  UniqueConstraintError,
+} from '@/datasources/errors/unique-constraint-error';
+import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import type { IOrganizationSafesRepository } from '@/domain/organizations/organizations-safe.repository.interface';
+import { Inject, NotFoundException } from '@nestjs/common';
 import {
   FindOptionsRelations,
   FindOptionsSelect,
@@ -35,7 +39,15 @@ export class OrganizationSafesRepository
       address: safe.address,
     }));
 
-    await organizationSafeRepository.insert(safesToInsert);
+    try {
+      await organizationSafeRepository.insert(safesToInsert);
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new UniqueConstraintError(
+          'An OrganizationSafe with the same chainId and address already exists.',
+        );
+      }
+    }
   }
 
   public async findByOrganizationId(
