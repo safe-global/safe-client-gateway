@@ -388,6 +388,7 @@ describe('OrganizationSafesRepository', () => {
         user: { id: userId },
         role: 'ADMIN',
         status: 'ACTIVE',
+        name: faker.word.noun(),
         organization: { id: orgId },
       });
 
@@ -402,7 +403,9 @@ describe('OrganizationSafesRepository', () => {
             payload: [{ chainId, address }],
           }),
         ]),
-      ).rejects.toThrow('duplicate key value violates unique constraint');
+      ).rejects.toThrow(
+        'An OrganizationSafe with the same chainId and address already exists.',
+      );
     });
   });
 
