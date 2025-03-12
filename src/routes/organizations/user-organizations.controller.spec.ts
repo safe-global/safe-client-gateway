@@ -1108,6 +1108,7 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'ADMIN',
                 status: 'ACTIVE',
+                name: orgName,
                 invitedBy: null, // org creator's `invitedBy` field value is null
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
@@ -1120,6 +1121,7 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'ADMIN',
                 status: 'INVITED',
+                name: user1Name,
                 invitedBy: authPayloadDto.signer_address,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
@@ -1132,6 +1134,7 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'MEMBER',
                 status: 'INVITED',
+                name: user2Name,
                 invitedBy: authPayloadDto.signer_address,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
