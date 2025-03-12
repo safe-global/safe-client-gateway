@@ -25,6 +25,9 @@ class UserOrganization {
   @ApiProperty({ enum: getStringEnumKeys(UserOrganizationStatus) })
   status!: keyof typeof UserOrganizationStatus;
 
+  @ApiProperty({ type: String })
+  name!: DomainUserOrganization['name'];
+
   @ApiPropertyOptional({ type: String, nullable: true })
   invitedBy!: DomainUserOrganization['invitedBy'];
 
