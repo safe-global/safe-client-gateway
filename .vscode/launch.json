@@ -14,10 +14,20 @@
       "console": "integratedTerminal",
       "outputCapture": "std",
       "env": {
-        "FF_AUTH": "true",
-        "FF_EMAIL": "true",
         "FF_ACCOUNTS": "true",
-        "FF_DELEGATES_V2": "true"
+        "FF_AUTH": "true",
+        "FF_COUNTERFACTUAL_BALANCES": "true",
+        "FF_DELEGATES_V2": "true",
+        "FF_EMAIL": "true",
+        "FF_ETH_SIGN": "true",
+        "FF_HASH_VERIFICATION_API": "true",
+        "FF_HASH_VERIFICATION_PROPOSAL": "true",
+        "FF_MESSAGE_VERIFICATION": "true",
+        "FF_SIGNATURE_VERIFICATION_API": "true",
+        "FF_SIGNATURE_VERIFICATION_PROPOSAL": "true",
+        "FF_TRUSTED_DELEGATE_CALL": "true",
+        "FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST": "true",
+        "FF_USERS": "true"
       }
     },
     {
