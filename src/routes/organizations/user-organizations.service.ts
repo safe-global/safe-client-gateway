@@ -74,6 +74,7 @@ export class UserOrganizationsService {
           id: userOrg.id,
           role: userOrg.role,
           status: userOrg.status,
+          name: userOrg.name,
           invitedBy: userOrg.invitedBy,
           createdAt: userOrg.createdAt,
           updatedAt: userOrg.updatedAt,
