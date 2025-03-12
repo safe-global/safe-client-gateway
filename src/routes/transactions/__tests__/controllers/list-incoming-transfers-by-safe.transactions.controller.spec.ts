@@ -23,8 +23,10 @@ import {
   toJson as nativeTokenTransferToJson,
 } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { TokenType } from '@/domain/tokens/entities/token.entity';
+import {
+  erc20TokenBuilder,
+  erc721TokenBuilder,
+} from '@/domain/tokens/__tests__/token.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -203,8 +205,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('transferId', 'e1015fc6905')
       .with('value', faker.number.int({ min: 1 }).toString())
       .build();
-    const token = tokenBuilder()
-      .with('type', TokenType.Erc20)
+    const token = erc20TokenBuilder()
       .with('address', getAddress(erc20Transfer.tokenAddress))
       .with('trusted', true)
       .build();
@@ -290,8 +291,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('value', faker.number.int({ min: 1 }).toString())
       .build();
     const trusted = false;
-    const token = tokenBuilder()
-      .with('type', TokenType.Erc20)
+    const token = erc20TokenBuilder()
       .with('address', getAddress(erc20Transfer.tokenAddress))
       .with('trusted', trusted)
       .build();
@@ -376,8 +376,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('transferId', 'e1015fc6905')
       .with('value', faker.number.int({ min: 1 }).toString())
       .build();
-    const token = tokenBuilder()
-      .with('type', TokenType.Erc20)
+    const token = erc20TokenBuilder()
       .with('address', getAddress(erc20Transfer.tokenAddress))
       .with('trusted', false)
       .build();
@@ -432,8 +431,7 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
       .with('to', safe.address)
       .with('transferId', 'e1015fc6905')
       .build();
-    const token = tokenBuilder()
-      .with('type', TokenType.Erc721)
+    const token = erc721TokenBuilder()
       .with('address', getAddress(erc721Transfer.tokenAddress))
       .build();
     networkService.get.mockImplementation(({ url }) => {

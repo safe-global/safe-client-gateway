@@ -35,6 +35,11 @@ describe('SignatureSchema', () => {
       },
       {
         code: 'custom',
+        message: 'Invalid hex bytes',
+        path: [],
+      },
+      {
+        code: 'custom',
         message: 'Invalid signature',
         path: [],
       },
@@ -49,6 +54,11 @@ describe('SignatureSchema', () => {
     const result = SignatureSchema.safeParse(signature);
 
     expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid hex bytes',
+        path: [],
+      },
       {
         code: 'custom',
         message: 'Invalid signature',

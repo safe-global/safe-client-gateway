@@ -6,24 +6,31 @@ import {
   ContractPageSchema,
   ContractSchema,
 } from '@/domain/contracts/entities/schemas/contract.schema';
-import { Page } from '@/domain/entities/page.entity';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 
 @Injectable()
 export class ContractsRepository implements IContractsRepository {
   private readonly isTrustedForDelegateCallContractsListEnabled: boolean;
+  private readonly maxSequentialPages: number;
 
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.isTrustedForDelegateCallContractsListEnabled =
       this.configurationService.getOrThrow(
         'features.trustedForDelegateCallContractsList',
       );
+    this.maxSequentialPages = this.configurationService.getOrThrow<number>(
+      'contracts.trustedForDelegateCall.maxSequentialPages',
+    );
   }
 
   async getContract(args: {
@@ -52,10 +59,40 @@ export class ContractsRepository implements IContractsRepository {
 
   private async getTrustedForDelegateCallContracts(
     chainId: string,
-  ): Promise<Page<Contract>> {
+  ): Promise<Array<Contract>> {
+    const contracts: Array<Contract> = [];
+
+    let offset = 0;
+    let next = null;
     const api = await this.transactionApiManager.getApi(chainId);
-    const contracts = await api.getTrustedForDelegateCallContracts();
-    return ContractPageSchema.parse(contracts);
+
+    for (let i = 0; i < this.maxSequentialPages; i++) {
+      const result = await api.getTrustedForDelegateCallContracts({
+        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+        offset,
+      });
+      const page = ContractPageSchema.parse(result);
+      next = page.next;
+      contracts.push(...page.results);
+
+      if (!next) {
+        break;
+      }
+
+      const url = new URL(next);
+      const paginationData = PaginationData.fromLimitAndOffset(url);
+      offset = paginationData.offset;
+
+      if (i === this.maxSequentialPages - 1) {
+        this.loggingService.error({
+          message: 'Max sequential pages reached',
+          chainId,
+          next,
+        });
+      }
+    }
+
+    return contracts;
   }
 
   private async isIncludedInTrustedForDelegateCallContractsList(args: {
@@ -65,7 +102,7 @@ export class ContractsRepository implements IContractsRepository {
     const trustedContracts = await this.getTrustedForDelegateCallContracts(
       args.chainId,
     );
-    return trustedContracts.results.some(
+    return trustedContracts.some(
       (contract) =>
         isAddressEqual(contract.address, args.contractAddress) &&
         contract.trustedForDelegateCall,

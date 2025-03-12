@@ -258,6 +258,7 @@ describe('OrganizationSafeController', () => {
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
       const orgName = faker.company.name();
+      const orgMemberName = faker.person.firstName();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
@@ -277,6 +278,7 @@ describe('OrganizationSafeController', () => {
           users: [
             {
               address: getAddress(memberAuthPayloadDto.signer_address),
+              name: orgMemberName,
               role: 'MEMBER',
             },
           ],

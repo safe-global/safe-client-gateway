@@ -150,6 +150,11 @@ describe('ProposeTransactionDtoSchema', () => {
         },
         {
           code: 'custom',
+          message: 'Invalid hex bytes',
+          path: ['signature'],
+        },
+        {
+          code: 'custom',
           message: 'Invalid signature',
           path: ['signature'],
         },

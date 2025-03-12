@@ -32,6 +32,10 @@ import { UserOrganizationsDto } from '@/routes/organizations/entities/user-organ
 import { Invitation } from '@/routes/organizations/entities/invitation.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
+import {
+  AcceptInviteDto,
+  AcceptInviteDtoSchema,
+} from '@/routes/organizations/entities/accept-invite.dto.entity';
 
 @ApiTags('organizations')
 @Controller({ path: 'organizations', version: '1' })
@@ -80,10 +84,13 @@ export class UserOrganizationsController {
     @Auth() authPayload: AuthPayload,
     @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     orgId: number,
+    @Body(new ValidationPipe(AcceptInviteDtoSchema))
+    acceptInviteDto: AcceptInviteDto,
   ): Promise<void> {
     return await this.userOrgService.acceptInvite({
       authPayload,
       orgId,
+      acceptInviteDto,
     });
   }
 
