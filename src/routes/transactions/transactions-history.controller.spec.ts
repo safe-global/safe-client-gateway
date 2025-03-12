@@ -35,8 +35,10 @@ import {
   toJson as nativeTokenTransferToJson,
 } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { TokenType } from '@/domain/tokens/entities/token.entity';
+import {
+  erc20TokenBuilder,
+  erc721TokenBuilder,
+} from '@/domain/tokens/__tests__/token.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import type { Transfer } from '@/domain/safe/entities/transfer.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -618,8 +620,7 @@ describe('Transactions History Controller (Unit)', () => {
         nativeTokenTransferToJson(nativeTokenTransfer) as Transfer,
       ])
       .build();
-    const tokenResponse = tokenBuilder()
-      .with('type', TokenType.Erc20)
+    const tokenResponse = erc20TokenBuilder()
       .with('address', getAddress(multisigTransaction.to))
       .build();
     networkService.get.mockImplementation(({ url }) => {
@@ -973,8 +974,8 @@ describe('Transactions History Controller (Unit)', () => {
   it('Untrusted token transfers are ignored by default', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const untrustedToken = tokenBuilder().with('trusted', false).build();
-    const trustedToken = tokenBuilder().with('trusted', true).build();
+    const untrustedToken = erc20TokenBuilder().with('trusted', false).build();
+    const trustedToken = erc20TokenBuilder().with('trusted', true).build();
     // Use same date so that groups are created deterministically
     const date = faker.date.recent();
     const transfers = [
@@ -1049,7 +1050,7 @@ describe('Transactions History Controller (Unit)', () => {
   it('Should return an empty array with no date labels if all the token transfers are untrusted', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const untrustedToken = tokenBuilder().with('trusted', false).build();
+    const untrustedToken = erc20TokenBuilder().with('trusted', false).build();
     // Use same date so that groups are created deterministically
     const date = faker.date.recent();
     const oneDayAfter = new Date(date.getTime() + 1000 * 60 * 60 * 24);
@@ -1133,8 +1134,8 @@ describe('Transactions History Controller (Unit)', () => {
   it('Should not return a date label if all the token transfers for that date are untrusted', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const untrustedToken = tokenBuilder().with('trusted', false).build();
-    const trustedToken = tokenBuilder().with('trusted', true).build();
+    const untrustedToken = erc20TokenBuilder().with('trusted', false).build();
+    const trustedToken = erc20TokenBuilder().with('trusted', true).build();
     // Use same date so that groups are created deterministically
     const date = faker.date.recent();
     const oneDayAfter = new Date(date.getTime() + 1000 * 60 * 60 * 24);
@@ -1263,8 +1264,8 @@ describe('Transactions History Controller (Unit)', () => {
   it('Untrusted transfers are returned when trusted=false', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const untrustedToken = tokenBuilder().with('trusted', false).build();
-    const trustedToken = tokenBuilder().with('trusted', true).build();
+    const untrustedToken = erc20TokenBuilder().with('trusted', false).build();
+    const trustedToken = erc20TokenBuilder().with('trusted', true).build();
     // Use same date so that groups are created deterministically
     const date = faker.date.recent();
     const transfers = [
@@ -1348,7 +1349,7 @@ describe('Transactions History Controller (Unit)', () => {
   it('Nested transfers with a value of zero are not returned', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const trustedToken = tokenBuilder().with('trusted', true).build();
+    const trustedToken = erc20TokenBuilder().with('trusted', true).build();
     // Use same date so that groups are created deterministically
     const date = faker.date.recent();
     const transfers = [
@@ -1422,14 +1423,10 @@ describe('Transactions History Controller (Unit)', () => {
   it('ERC721 transfers marked as non-trusted are returned', async () => {
     const safe = safeBuilder().build();
     const chain = chainBuilder().build();
-    const notTrustedErc721 = tokenBuilder()
+    const notTrustedErc721 = erc721TokenBuilder()
       .with('trusted', false)
-      .with('type', TokenType.Erc721)
       .build();
-    const trustedErc721 = tokenBuilder()
-      .with('trusted', true)
-      .with('type', TokenType.Erc721)
-      .build();
+    const trustedErc721 = erc721TokenBuilder().with('trusted', true).build();
     // Use the same date so that groups are created deterministically
     const date = faker.date.recent();
     const transfers = [

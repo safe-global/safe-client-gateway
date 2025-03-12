@@ -5,7 +5,10 @@ import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 import { NativeCurrency } from '@/domain/chains/entities/native.currency.entity';
 import { Balance } from '@/routes/balances/entities/balance.entity';
 import { Balances } from '@/routes/balances/entities/balances.entity';
-import { TokenType } from '@/routes/balances/entities/token-type.entity';
+import {
+  NativeToken,
+  Erc20Token,
+} from '@/routes/balances/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import orderBy from 'lodash/orderBy';
 import { getNumberString } from '@/domain/common/utils/utils';
@@ -50,8 +53,8 @@ export class BalancesService {
     nativeCurrency: NativeCurrency,
   ): Balance {
     const tokenAddress = balance.tokenAddress;
-    const tokenType =
-      tokenAddress === null ? TokenType.NativeToken : TokenType.Erc20;
+    const tokenType: (NativeToken | Erc20Token)['type'] =
+      tokenAddress === null ? 'NATIVE_TOKEN' : 'ERC20';
 
     const tokenMetaData =
       tokenAddress === null

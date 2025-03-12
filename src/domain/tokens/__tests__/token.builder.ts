@@ -1,21 +1,52 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { Token } from '@/domain/tokens/entities/token.entity';
-import { TokenType } from '@/domain/tokens/entities/token.entity';
+import type {
+  Erc20Token,
+  Erc721Token,
+  NativeToken,
+  Token,
+} from '@/domain/tokens/entities/token.entity';
 import { getAddress } from 'viem';
 
+export function nativeTokenBuilder(): IBuilder<NativeToken> {
+  return new Builder<NativeToken>()
+    .with('type', 'NATIVE_TOKEN')
+    .with('decimals', faker.number.int({ min: 0, max: 18 }))
+    .with('address', getAddress(faker.finance.ethereumAddress()))
+    .with('logoUri', faker.internet.url({ appendSlash: false }))
+    .with('name', faker.word.sample())
+    .with('symbol', faker.finance.currencySymbol())
+    .with('trusted', faker.datatype.boolean());
+}
+
+export function erc20TokenBuilder(): IBuilder<Erc20Token> {
+  return new Builder<Erc20Token>()
+    .with('type', 'ERC20')
+    .with('decimals', faker.number.int({ min: 0, max: 18 }))
+    .with('address', getAddress(faker.finance.ethereumAddress()))
+    .with('logoUri', faker.internet.url({ appendSlash: false }))
+    .with('name', faker.word.sample())
+    .with('symbol', faker.finance.currencySymbol())
+    .with('trusted', faker.datatype.boolean());
+}
+
+export function erc721TokenBuilder(): IBuilder<Erc721Token> {
+  return new Builder<Erc721Token>()
+    .with('type', 'ERC721')
+    .with('decimals', 0)
+    .with('trusted', true)
+    .with('address', getAddress(faker.finance.ethereumAddress()))
+    .with('logoUri', faker.internet.url({ appendSlash: false }))
+    .with('name', faker.word.sample())
+    .with('symbol', faker.finance.currencySymbol())
+    .with('trusted', faker.datatype.boolean());
+}
+
 export function tokenBuilder(): IBuilder<Token> {
-  return (
-    new Builder<Token>()
-      .with('address', getAddress(faker.finance.ethereumAddress()))
-      // min/max boundaries are set here in order to prevent overflows on balances calculation.
-      // See: https://github.com/safe-global/safe-client-gateway/blob/65364f9ad31fc9832b32248f74356c4f6660787e/src/datasources/balances-api/safe-balances-api.service.ts#L173
-      .with('decimals', faker.number.int({ min: 0, max: 32 }))
-      .with('logoUri', faker.internet.url({ appendSlash: false }))
-      .with('name', faker.word.sample())
-      .with('symbol', faker.finance.currencySymbol())
-      .with('type', faker.helpers.arrayElement(Object.values(TokenType)))
-      .with('trusted', faker.datatype.boolean())
-  );
+  return faker.helpers.arrayElement([
+    nativeTokenBuilder,
+    erc20TokenBuilder,
+    erc721TokenBuilder,
+  ])();
 }

@@ -107,7 +107,9 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
+      const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
+      const user2Name = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -129,10 +131,12 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: user1,
+              name: user1Name,
             },
             {
               role: 'MEMBER',
               address: user2,
+              name: user2Name,
             },
           ],
         })
@@ -142,6 +146,7 @@ describe('UserOrganizationsController', () => {
             {
               userId: expect.any(Number),
               orgId,
+              name: user1Name,
               role: 'ADMIN',
               status: 'INVITED',
               invitedBy: authPayloadDto.signer_address,
@@ -149,6 +154,7 @@ describe('UserOrganizationsController', () => {
             {
               userId: expect.any(Number),
               orgId,
+              name: user2Name,
               role: 'MEMBER',
               status: 'INVITED',
               invitedBy: authPayloadDto.signer_address,
@@ -165,6 +171,7 @@ describe('UserOrganizationsController', () => {
         return {
           role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
           address: getAddress(faker.finance.ethereumAddress()),
+          name: faker.person.firstName(),
         };
       });
 
@@ -185,7 +192,9 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
+      const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
+      const user2Name = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -206,10 +215,12 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: user1,
+              name: user1Name,
             },
             {
               role: 'MEMBER',
               address: user2,
+              name: user2Name,
             },
           ],
         })
@@ -252,7 +263,9 @@ describe('UserOrganizationsController', () => {
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const orgName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
+      const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
+      const user2Name = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -274,10 +287,12 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: user1,
+              name: user1Name,
             },
             {
               role: 'MEMBER',
               address: user2,
+              name: user2Name,
             },
           ],
         })
@@ -297,7 +312,9 @@ describe('UserOrganizationsController', () => {
         max: DB_MAX_SAFE_INTEGER,
       });
       const user1 = getAddress(faker.finance.ethereumAddress());
+      const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
+      const user2Name = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -312,10 +329,12 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: user1,
+              name: user1Name,
             },
             {
               role: 'MEMBER',
               address: user2,
+              name: user2Name,
             },
           ],
         })
@@ -334,7 +353,9 @@ describe('UserOrganizationsController', () => {
       const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
       const orgName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
+      const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
+      const user2Name = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -361,10 +382,12 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: user1,
+              name: user1Name,
             },
             {
               role: 'MEMBER',
               address: user2,
+              name: user2Name,
             },
           ],
         })
@@ -383,6 +406,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
       const user = getAddress(faker.finance.ethereumAddress());
+      const userName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -404,6 +428,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: userName,
             },
           ],
         })
@@ -417,6 +442,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: user,
+              name: userName,
             },
           ],
         })
@@ -436,6 +462,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -457,6 +484,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -465,6 +493,54 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
+        .expect(201)
+        .expect({});
+    });
+
+    it('should accept an invite for a user, changing name', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const orgInvitedUserName = faker.person.firstName();
+      const orgAcceptedUserName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+              name: orgInvitedUserName,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgAcceptedUserName,
+        })
         .expect(201)
         .expect({});
     });
@@ -474,6 +550,7 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -495,6 +572,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -502,6 +580,9 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
+        .send({
+          name: orgUserName,
+        })
         .expect(403)
         .expect({
           message: 'Forbidden resource',
@@ -516,6 +597,7 @@ describe('UserOrganizationsController', () => {
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -532,6 +614,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(404)
         .expect({
           message: 'User not found.',
@@ -547,6 +632,7 @@ describe('UserOrganizationsController', () => {
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -556,6 +642,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(404)
         .expect({
           message: 'Organization not found.',
@@ -571,6 +660,7 @@ describe('UserOrganizationsController', () => {
       const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
       const orgName = faker.word.noun();
       const user = getAddress(faker.finance.ethereumAddress());
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -597,6 +687,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: user,
+              name: orgUserName,
             },
           ],
         })
@@ -605,6 +696,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(404)
         .expect({
           message: 'Organization not found.',
@@ -619,6 +713,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -640,6 +735,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -648,17 +744,72 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(201)
         .expect({});
 
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(404)
         .expect({
           message: 'Organization not found.',
           error: 'Not Found',
           statusCode: 404,
+        });
+    });
+
+    it('should throw a 422 if the user name is not provided', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send()
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'invalid_type',
+          expected: 'object',
+          received: 'undefined',
+          path: [],
+          message: 'Required',
         });
     });
   });
@@ -670,6 +821,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -691,6 +843,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -708,6 +861,7 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -729,6 +883,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -804,6 +959,7 @@ describe('UserOrganizationsController', () => {
       const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
       const user = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
@@ -831,6 +987,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: user,
+              name: orgUserName,
             },
           ],
         })
@@ -853,6 +1010,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -874,6 +1032,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -903,7 +1062,9 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
+      const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
+      const user2Name = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -925,10 +1086,12 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: user1,
+              name: user1Name,
             },
             {
               role: 'MEMBER',
               address: user2,
+              name: user2Name,
             },
           ],
         })
@@ -987,7 +1150,9 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
+      const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
+      const user2Name = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1009,10 +1174,12 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: user1,
+              name: user1Name,
             },
             {
               role: 'MEMBER',
               address: user2,
+              name: user2Name,
             },
           ],
         })
@@ -1090,6 +1257,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1111,6 +1279,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -1120,6 +1289,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -1136,6 +1308,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1157,6 +1330,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -1166,6 +1340,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -1187,6 +1364,7 @@ describe('UserOrganizationsController', () => {
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1208,6 +1386,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -1217,6 +1396,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -1237,6 +1419,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1258,6 +1441,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -1282,6 +1466,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1303,6 +1488,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -1312,6 +1498,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -1401,6 +1590,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1422,6 +1612,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -1431,6 +1622,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -1506,6 +1700,8 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const member = getAddress(faker.finance.ethereumAddress());
       const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1527,10 +1723,12 @@ describe('UserOrganizationsController', () => {
             {
               role: 'ADMIN',
               address: inviteeAuthPayloadDto.signer_address,
+              name: adminName,
             },
             {
               role: 'MEMBER',
               address: member,
+              name: memberName,
             },
           ],
         })
@@ -1554,6 +1752,7 @@ describe('UserOrganizationsController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const orgName = faker.word.noun();
+      const orgUserName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1575,6 +1774,7 @@ describe('UserOrganizationsController', () => {
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
+              name: orgUserName,
             },
           ],
         })
@@ -1584,6 +1784,9 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: orgUserName,
+        })
         .expect(201);
 
       await request(app.getHttpServer())

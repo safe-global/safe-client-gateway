@@ -41,7 +41,6 @@ export class OrganizationsRepository implements IOrganizationsRepository {
 
     // @todo Move to UserOrganizationsRepository
     const userOrganization = new UserOrganization();
-    // @todo We should remove name
     userOrganization.name = args.name;
     userOrganization.role = getEnumKey(
       UserOrganizationRole,

@@ -21,8 +21,10 @@ import {
   toJson as multisigTransactionToJson,
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
-import { TokenType } from '@/domain/tokens/entities/token.entity';
+import {
+  erc20TokenBuilder,
+  erc721TokenBuilder,
+} from '@/domain/tokens/__tests__/token.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -235,8 +237,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
         safe,
         signers,
       });
-    const token = tokenBuilder()
-      .with('type', TokenType.Erc20)
+    const token = erc20TokenBuilder()
       .with('address', getAddress(multisigTransaction.to))
       .build();
     networkService.get.mockImplementation(({ url }) => {
@@ -330,8 +331,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
         signers.map((signer) => signer.address),
       )
       .build();
-    const token = tokenBuilder()
-      .with('type', TokenType.Erc721)
+    const token = erc721TokenBuilder()
       .with('address', '0x7Af3460d552f832fD7E2DE973c628ACeA59B0712')
       .build();
     const multisigTransaction = await multisigTransactionBuilder()

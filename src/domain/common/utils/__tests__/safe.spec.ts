@@ -1,11 +1,14 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { getAddress, type TypedDataDomain } from 'viem';
 import { Builder } from '@/__tests__/builder';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import {
   _getSafeDomain,
   _getSafeTxTypesAndMessage,
+  getBaseMultisigTransaction,
+  getSafeMessageMessageHash,
   getSafeTxHash,
 } from '@/domain/common/utils/safe';
 import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
@@ -31,6 +34,43 @@ const TYPES_WITH_BASEGAS_VERSIONS = [
   '1.4.1',
 ];
 
+// Note: the following is not strictly typed
+function buildTypedData(): IBuilder<{
+  domain: TypedDataDomain;
+  primaryType: string;
+  types: Record<string, Array<{ name: string; type: string }>>;
+  message: Record<string, unknown>;
+}> {
+  const domain = {
+    chainId: faker.number.int(),
+    verifyingContract: getAddress(faker.finance.ethereumAddress()),
+  };
+
+  const primaryType = faker.lorem.word();
+
+  const types = {
+    [primaryType]: [
+      { name: 'field1', type: 'uint256' },
+      { name: 'field2', type: 'address' },
+    ],
+  };
+  const message = {
+    field1: BigInt(faker.number.int()),
+    field2: getAddress(faker.finance.ethereumAddress()),
+  };
+
+  return new Builder<{
+    domain: TypedDataDomain;
+    primaryType: string;
+    types: Record<string, Array<{ name: string; type: string }>>;
+    message: Record<string, unknown>;
+  }>()
+    .with('domain', domain)
+    .with('primaryType', primaryType)
+    .with('types', types)
+    .with('message', message);
+}
+
 function safeTxHashMultisigTransactionBuilder(): IBuilder<BaseMultisigTransaction> {
   return new Builder<BaseMultisigTransaction>()
     .with('to', getAddress(faker.finance.ethereumAddress()))
@@ -46,9 +86,264 @@ function safeTxHashMultisigTransactionBuilder(): IBuilder<BaseMultisigTransactio
 }
 
 describe('Safe', () => {
-  it.todo('getBaseMultisigTransaction');
+  describe('getBaseMultisigTransaction', () => {
+    it('should return a valid BaseMultisigTransaction', () => {
+      const multisigTransaction = multisigTransactionBuilder().build();
 
-  it.todo('getSafeMessageMessageHash');
+      const result = getBaseMultisigTransaction(multisigTransaction);
+
+      expect(result).toEqual({
+        to: multisigTransaction.to,
+        value: multisigTransaction.value,
+        data: multisigTransaction.data,
+        operation: multisigTransaction.operation,
+        safeTxGas: multisigTransaction.safeTxGas,
+        baseGas: multisigTransaction.baseGas,
+        gasPrice: multisigTransaction.gasPrice,
+        gasToken: multisigTransaction.gasToken,
+        refundReceiver: multisigTransaction.refundReceiver,
+        nonce: multisigTransaction.nonce,
+      });
+    });
+  });
+
+  describe('getSafeMessageMessageHash', () => {
+    describe('generates a valid messageHash', () => {
+      it('should handle strings', () => {
+        const chainId = faker.string.numeric();
+        const safe = safeBuilder().build();
+        const message = faker.lorem.sentence();
+
+        expect(() =>
+          getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          }),
+        ).not.toThrow();
+      });
+
+      it('should handle typedData', () => {
+        const chainId = faker.string.numeric();
+        const safe = safeBuilder().build();
+        const message = buildTypedData().build();
+
+        expect(() =>
+          getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          }),
+        ).not.toThrow();
+      });
+
+      it.each(DOMAIN_WITHOUT_CHAIN_ID_VERSIONS)(
+        "should handle versions that don't include the chainId in the domain (%s)",
+        (version) => {
+          const chainId = faker.string.numeric();
+          const safe = safeBuilder().with('version', version).build();
+          const message = faker.helpers.arrayElement([
+            faker.lorem.sentence(),
+            buildTypedData().build(),
+          ]);
+
+          expect(() =>
+            getSafeMessageMessageHash({ chainId, message, safe }),
+          ).not.toThrow();
+        },
+      );
+
+      it.each(DOMAIN_WITH_CHAIN_ID_VERSIONS)(
+        'should handle versions that include the chainId in the domain (%s)',
+        (version) => {
+          const chainId = faker.string.numeric();
+          const safe = safeBuilder().with('version', version).build();
+          const message = faker.helpers.arrayElement([
+            faker.lorem.sentence(),
+            buildTypedData().build(),
+          ]);
+
+          expect(() =>
+            getSafeMessageMessageHash({ chainId, message, safe }),
+          ).not.toThrow();
+        },
+      );
+    });
+
+    describe.skip('examples', () => {
+      describe('strings', () => {
+        it('should generate a valid 1.0.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.0.0').build();
+          const message = '';
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.1.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.1.1').build();
+          const message = '';
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.2.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.2.0').build();
+          const message = '';
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.3.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.3.0').build();
+          const message = '';
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.4.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.4.0').build();
+          const message = '';
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.4.1 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.4.1').build();
+          const message = '';
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+      });
+
+      describe('typedData', () => {
+        it('should generate a valid 1.0.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.0.0').build();
+          const message = {};
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.1.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.1.1').build();
+          const message = {};
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.2.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.2.0').build();
+          const message = {};
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.3.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.3.0').build();
+          const message = {};
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.4.0 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.4.0').build();
+          const message = {};
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+
+        it('should generate a valid 1.4.1 messageHash', () => {
+          const chainId = '';
+          const safe = safeBuilder().with('version', '1.4.1').build();
+          const message = {};
+
+          const result = getSafeMessageMessageHash({
+            chainId,
+            message: message,
+            safe,
+          });
+
+          expect(result).toBe('');
+        });
+      });
+    });
+  });
 
   describe('getSafeTxHash', () => {
     describe('generates a valid safeTxHash', () => {
