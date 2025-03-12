@@ -290,6 +290,7 @@ describe('OrganizationSafesRepository', () => {
         user: { id: userId },
         role: 'ADMIN',
         status: 'ACTIVE',
+        name: faker.word.noun(),
         organization: { id: orgId },
       });
 
@@ -345,6 +346,7 @@ describe('OrganizationSafesRepository', () => {
         user: { id: userId },
         role: 'ADMIN',
         status: 'ACTIVE',
+        name: faker.word.noun(),
         organization: { id: orgId },
       });
 
