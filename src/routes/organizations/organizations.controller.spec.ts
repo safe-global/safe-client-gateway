@@ -314,6 +314,7 @@ describe('OrganizationController', () => {
                 {
                   id: expect.any(Number),
                   name: expect.any(String),
+                  invitedBy: null,
                   role: getEnumKey(
                     UserOrganizationRole,
                     UserOrganizationRole.ADMIN,
@@ -339,6 +340,7 @@ describe('OrganizationController', () => {
                 {
                   id: expect.any(Number),
                   name: expect.any(String),
+                  invitedBy: null,
                   role: getEnumKey(
                     UserOrganizationRole,
                     UserOrganizationRole.ADMIN,
@@ -436,6 +438,7 @@ describe('OrganizationController', () => {
               {
                 id: expect.any(Number),
                 name: expect.any(String),
+                invitedBy: null,
                 status: getEnumKey(
                   UserOrganizationStatus,
                   UserOrganizationStatus.ACTIVE,
