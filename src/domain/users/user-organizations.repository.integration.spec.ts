@@ -774,7 +774,7 @@ describe('UserOrganizationsRepository', () => {
   });
 
   describe('acceptInvite', () => {
-    it('should accept an invite to an organization, setting the user organization and user to ACTIVE', async () => {
+    it('should accept an invite to an organization, setting the user organization and user to ACTIVE, and overwriting the name', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
       const orgName = faker.word.noun();
@@ -818,12 +818,13 @@ describe('UserOrganizationsRepository', () => {
         invitedBy: userOrgInvitedBy,
       });
       const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
+      const updatedName = faker.person.firstName();
 
       await userOrgRepo.acceptInvite({
         authPayload: new AuthPayload(authPayloadDto),
         orgId,
         payload: {
-          name: userOrgName,
+          name: updatedName,
         },
       });
 
@@ -834,7 +835,7 @@ describe('UserOrganizationsRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         id: userOrgId,
-        name: userOrgName,
+        name: updatedName,
         role: userOrgRole,
         status: 'ACTIVE',
         invitedBy: userOrgInvitedBy,
