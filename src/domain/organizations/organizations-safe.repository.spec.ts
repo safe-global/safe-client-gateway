@@ -18,6 +18,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { NotFoundException } from '@nestjs/common';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -400,11 +401,19 @@ describe('OrganizationSafesRepository', () => {
           }),
           orgSafesRepo.create({
             organizationId: orgId,
-            payload: [{ chainId, address }],
+            payload: [
+              { chainId, address },
+              {
+                chainId: faker.string.numeric(),
+                address: getAddress(faker.finance.ethereumAddress()),
+              },
+            ],
           }),
         ]),
       ).rejects.toThrow(
-        'An OrganizationSafe with the same chainId and address already exists.',
+        new UniqueConstraintError(
+          `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address)=(${chainId}, ${address}) already exists.`,
+        ),
       );
     });
   });

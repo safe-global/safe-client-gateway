@@ -10,11 +10,11 @@ export class AddOrganizationsSafeUniqueIndex1741709533269
       `DELETE FROM organization_safes WHERE id NOT IN (SELECT MIN(id) FROM organization_safes GROUP BY chain_id, address);`,
     );
     await queryRunner.query(
-      `CREATE UNIQUE INDEX idx_OS_unique_chain_id_address ON organization_safes (chain_id, address);`,
+      `CREATE UNIQUE INDEX UQ_OS_chainId_address ON organization_safes (chain_id, address);`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX idx_OS_unique_chain_id_address;`);
+    await queryRunner.query(`DROP INDEX UQ_OS_chainId_address;`);
   }
 }

@@ -203,8 +203,8 @@ describe('OrganizationSafeController', () => {
         })
         .expect(409)
         .expect({
-          message:
-            'An OrganizationSafe with the same chainId and address already exists.',
+          message: `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address)=(${duplicatedOrgSafe.chainId}, ${duplicatedOrgSafe.address}) already exists.`,
+          error: 'Conflict',
           statusCode: 409,
         });
     });

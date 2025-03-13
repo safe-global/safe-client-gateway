@@ -1,17 +1,15 @@
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import {
-  isUniqueConstraintError,
-  UniqueConstraintError,
-} from '@/datasources/errors/unique-constraint-error';
+import { Inject, NotFoundException } from '@nestjs/common';
 import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
 import type { IOrganizationSafesRepository } from '@/domain/organizations/organizations-safe.repository.interface';
-import { Inject, NotFoundException } from '@nestjs/common';
 import {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 
 export class OrganizationSafesRepository
   implements IOrganizationSafesRepository
@@ -44,9 +42,10 @@ export class OrganizationSafesRepository
     } catch (err) {
       if (isUniqueConstraintError(err)) {
         throw new UniqueConstraintError(
-          'An OrganizationSafe with the same chainId and address already exists.',
+          `An OrganizationSafe with the same chainId and address already exists: ${err.driverError.detail}`,
         );
       }
+      throw err;
     }
   }
 

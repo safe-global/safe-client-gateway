@@ -8,13 +8,11 @@ import {
   ManyToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
-  Index,
+  Unique,
 } from 'typeorm';
 
 @Entity('organization_safes')
-@Index('idx_OS_unique_chain_id_address', ['chainId', 'address'], {
-  unique: true,
-})
+@Unique('UQ_OS_chainId_address', ['chainId', 'address'])
 export class OrganizationSafe implements DomainOrganizationSafe {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_OS_id',
