@@ -32,6 +32,7 @@ export class UserOrganization implements DomainUserOrganization {
     nullable: false,
   })
   @JoinColumn({
+    name: 'user_id',
     foreignKeyConstraintName: 'FK_UO_user_id',
   })
   user!: User;
@@ -45,6 +46,7 @@ export class UserOrganization implements DomainUserOrganization {
     },
   )
   @JoinColumn({
+    name: 'organization_id',
     foreignKeyConstraintName: 'FK_UO_organization_id',
   })
   organization!: Organization;
