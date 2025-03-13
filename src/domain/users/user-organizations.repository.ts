@@ -254,9 +254,20 @@ export class UsersOrganizationsRepository
   }): Promise<Array<UserOrganization>> {
     this.assertSignerAddress(args.authPayload);
 
-    await this.usersRepository.findByWalletAddressOrFail(
+    const user = await this.usersRepository.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
+    const userOrganizationRepository =
+      await this.postgresDatabaseService.getRepository(DbUserOrganization);
+    const userOrganization = await userOrganizationRepository.findOne({
+      where: { user: { id: user.id }, organization: { id: args.orgId } },
+    });
+
+    if (!userOrganization) {
+      throw new UnauthorizedException(
+        'The user is not a member of the organization.',
+      );
+    }
 
     const org = await this.organizationsRepository.findOneOrFail({
       where: { id: args.orgId },
