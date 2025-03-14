@@ -204,7 +204,7 @@ describe('OrganizationsRepository', () => {
         id: expect.any(Number),
         role: 'ADMIN',
         status: 'ACTIVE',
-        name,
+        name: expect.any(String),
         invitedBy: null,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
@@ -217,6 +217,58 @@ describe('OrganizationsRepository', () => {
         organization: {
           id: expect.any(Number),
           name,
+          status: orgStatus,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
+      });
+    });
+
+    it('should set the name of the organization', async () => {
+      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const organizationName = faker.word.noun();
+      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const user = await dbUserRepo.insert({
+        status: userStatus,
+      });
+      const userId = user.identifiers[0].id as User['id'];
+
+      const org = await orgRepo.create({
+        userId,
+        name: organizationName,
+        status: orgStatus,
+      });
+
+      expect(org).toEqual({
+        id: expect.any(Number),
+        name: organizationName,
+      });
+
+      const dbUserOrg = await dbUserOrgRepo.findOneOrFail({
+        where: { user: { id: userId } },
+        relations: {
+          user: true,
+          organization: true,
+        },
+      });
+
+      expect(dbUserOrg).toEqual({
+        id: expect.any(Number),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        name: `${organizationName} creator`,
+        invitedBy: null,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        user: {
+          id: userId,
+          status: userStatus,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
+        organization: {
+          id: expect.any(Number),
+          name: organizationName,
           status: orgStatus,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),

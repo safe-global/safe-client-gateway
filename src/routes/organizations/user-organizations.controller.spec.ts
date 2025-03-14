@@ -1108,7 +1108,7 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'ADMIN',
                 status: 'ACTIVE',
-                name: orgName,
+                name: `${orgName} creator`,
                 invitedBy: null, // org creator's `invitedBy` field value is null
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),

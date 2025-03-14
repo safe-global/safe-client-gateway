@@ -52,7 +52,7 @@ export class OrganizationsController {
 
   @Post()
   @ApiOkResponse({
-    description: 'Organizations created',
+    description: 'Organization created',
     type: CreateOrganizationResponse,
   })
   @ApiNotFoundResponse({ description: 'User not found.' })
@@ -72,7 +72,7 @@ export class OrganizationsController {
 
   @Post('/create-with-user')
   @ApiOkResponse({
-    description: 'Organizations created',
+    description: 'Organization created',
     type: CreateOrganizationResponse,
   })
   @ApiForbiddenResponse({ description: 'Forbidden resource' })
