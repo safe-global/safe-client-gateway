@@ -18,6 +18,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { NotFoundException } from '@nestjs/common';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -363,6 +364,56 @@ describe('OrganizationSafesRepository', () => {
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         })),
+      );
+    });
+
+    it('should fail if an OrganizationSafe with the same address and chainId already exists', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      await dbWalletRepo.insert({
+        user: { id: userId },
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const org = await dbOrgRepo.insert({
+        status: faker.helpers.arrayElement(
+          getStringEnumKeys(OrganizationStatus),
+        ),
+        name: faker.word.noun(),
+      });
+      const orgId = org.identifiers[0].id as Organization['id'];
+      await dbUserOrgRepo.insert({
+        user: { id: userId },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        name: faker.word.noun(),
+        organization: { id: orgId },
+      });
+
+      await expect(
+        Promise.all([
+          orgSafesRepo.create({
+            organizationId: orgId,
+            payload: [{ chainId, address }],
+          }),
+          orgSafesRepo.create({
+            organizationId: orgId,
+            payload: [
+              { chainId, address },
+              {
+                chainId: faker.string.numeric(),
+                address: getAddress(faker.finance.ethereumAddress()),
+              },
+            ],
+          }),
+        ]),
+      ).rejects.toThrow(
+        new UniqueConstraintError(
+          `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address)=(${chainId}, ${address}) already exists.`,
+        ),
       );
     });
   });
