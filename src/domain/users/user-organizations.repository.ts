@@ -16,7 +16,6 @@ import { In } from 'typeorm';
 import type {
   FindOptionsWhere,
   FindOptionsRelations,
-  EntityManager,
   FindManyOptions,
 } from 'typeorm';
 import type { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
@@ -195,11 +194,9 @@ export class UsersOrganizationsRepository
     const userOrg = org.userOrganizations[0];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await this.updateStatus({
-        name: args.payload.name,
-        userOrgId: userOrg.id,
+      await entityManager.update(DbUserOrganization, userOrg.id, {
         status: 'ACTIVE',
-        entityManager,
+        name: args.payload.name,
       });
 
       await this.usersRepository.updateStatus({
@@ -229,22 +226,9 @@ export class UsersOrganizationsRepository
     const userOrg = org.userOrganizations[0];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await this.updateStatus({
-        userOrgId: userOrg.id,
+      await entityManager.update(DbUserOrganization, userOrg.id, {
         status: 'DECLINED',
-        entityManager,
       });
-    });
-  }
-
-  private async updateStatus(args: {
-    userOrgId: UserOrganization['id'];
-    status: UserOrganization['status'];
-    entityManager: EntityManager;
-    name?: UserOrganization['name'];
-  }): Promise<void> {
-    await args.entityManager.update(DbUserOrganization, args.userOrgId, {
-      status: args.status,
     });
   }
 
