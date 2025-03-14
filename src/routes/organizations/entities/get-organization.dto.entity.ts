@@ -28,6 +28,9 @@ class UserOrganizationDto {
   @ApiProperty({ type: String })
   public name!: UserOrganization['name'];
 
+  @ApiProperty({ type: String })
+  public invitedBy!: UserOrganization['invitedBy'];
+
   @ApiProperty({
     type: String,
     enum: getStringEnumKeys(UserOrganizationStatus),
