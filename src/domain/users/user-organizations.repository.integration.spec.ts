@@ -852,7 +852,7 @@ describe('UserOrganizationsRepository', () => {
       });
     });
 
-    it('should accept an invite to an organization, setting the user organization and user to ACTIVE, and overwriting the name', async () => {
+    it('should accept an invite to an organization and override the name', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
       const orgName = faker.word.noun();
