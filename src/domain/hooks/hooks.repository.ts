@@ -8,12 +8,9 @@ import { EventSchema } from '@/routes/hooks/entities/schemas/event.schema';
 import { IHooksRepository } from '@/domain/hooks/hooks.repository.interface';
 import { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
 import { EventCacheHelper } from '@/domain/hooks/helpers/event-cache.helper';
-import { ConfigEventType } from '@/routes/hooks/entities/event-type.entity';
 
 @Injectable()
-export class HooksRepositoryWithNotifications
-  implements IHooksRepository, OnModuleInit
-{
+export class HooksRepository implements IHooksRepository, OnModuleInit {
   private readonly queueName: string;
 
   constructor(
@@ -55,56 +52,6 @@ export class HooksRepositoryWithNotifications
         this.eventCacheHelper.onEventClearCache(event),
         this.eventNotificationsHelper.onEventEnqueueNotifications(event),
       ]).finally(() => {
-        this.eventCacheHelper.onEventLog(event);
-      });
-    } else {
-      return this.eventCacheHelper.onUnsupportedChainEvent(event);
-    }
-  }
-}
-
-// TODO: Remove after notifications FF is enabled
-// Note: trying to convert this into a dynamic module proved to be too complex
-// due to config injection issues from the ConfigurationService so this is a
-// temporary solution
-@Injectable()
-export class HooksRepository implements IHooksRepository, OnModuleInit {
-  private readonly queueName: string;
-
-  constructor(
-    @Inject(LoggingService)
-    private readonly loggingService: ILoggingService,
-    @Inject(IQueuesRepository)
-    private readonly queuesRepository: IQueuesRepository,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
-    @Inject(EventCacheHelper)
-    private readonly eventCacheHelper: EventCacheHelper,
-  ) {
-    this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
-  }
-
-  onModuleInit(): Promise<void> {
-    return this.queuesRepository.subscribe(
-      this.queueName,
-      async (msg: ConsumeMessage) => {
-        try {
-          const content = JSON.parse(msg.content.toString());
-          const event: Event = EventSchema.parse(content);
-          await this.onEvent(event);
-        } catch (err) {
-          this.loggingService.error(err);
-        }
-      },
-    );
-  }
-
-  async onEvent(event: Event): Promise<unknown> {
-    const isSupportedChainId = await this.eventCacheHelper.isSupportedChainMemo(
-      event.chainId,
-    );
-    if (isSupportedChainId || event.type === ConfigEventType.CHAIN_UPDATE) {
-      return this.eventCacheHelper.onEventClearCache(event).finally(() => {
         this.eventCacheHelper.onEventLog(event);
       });
     } else {
