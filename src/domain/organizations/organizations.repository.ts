@@ -13,6 +13,7 @@ import {
   FindOptionsWhere,
   FindOptionsSelect,
   FindOptionsRelations,
+  In,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { getEnumKey } from '@/domain/common/utils/enum';
@@ -143,12 +144,15 @@ export class OrganizationsRepository implements IOrganizationsRepository {
       where: { user: { id: args.userId } },
       relations: ['organization'],
     });
+    const userOrganizationsIds = userOrganizations.map(
+      (userOrganization) => userOrganization.organization.id,
+    );
 
     return await organizationRepository.find({
       select: args.select,
-      where: userOrganizations.map((userOrganization) => ({
-        id: userOrganization.organization.id,
-      })),
+      where: {
+        id: In(userOrganizationsIds),
+      },
       relations: args.relations,
     });
   }
