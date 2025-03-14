@@ -9,6 +9,7 @@ import { GetOrganizationSafeResponse } from '@/routes/organizations/entities/get
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { IOrganizationSafesRepository } from '@/domain/organizations/organizations-safe.repository.interface';
+import { In } from 'typeorm';
 
 @Injectable()
 export class OrganizationSafesService {
@@ -45,7 +46,7 @@ export class OrganizationSafesService {
     authPayload: AuthPayload,
   ): Promise<GetOrganizationSafeResponse> {
     this.assertSignerAddress(authPayload);
-    await this.assertOrganizationAdmin(
+    await this.assertOrganizationMembership(
       organizationId,
       authPayload.signer_address,
     );
@@ -97,6 +98,32 @@ export class OrganizationSafesService {
         id: organizationId,
         userOrganizations: {
           role: 'ADMIN',
+          user: {
+            id: userId,
+          },
+        },
+      },
+    });
+
+    if (!organization) {
+      throw new UnauthorizedException(
+        'User is unauthorized. signer_address= ' + signerAddress,
+      );
+    }
+  }
+
+  public async assertOrganizationMembership(
+    organizationId: Organization['id'],
+    signerAddress: `0x${string}`,
+  ): Promise<void> {
+    const { id: userId } =
+      await this.userRepository.findByWalletAddressOrFail(signerAddress);
+
+    const organization = await this.organizationsRepository.findOne({
+      where: {
+        id: organizationId,
+        userOrganizations: {
+          role: In(['ADMIN', 'MEMBER']),
           user: {
             id: userId,
           },
