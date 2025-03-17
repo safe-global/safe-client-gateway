@@ -8,6 +8,8 @@ import {
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 
 export class OrganizationSafesRepository
   implements IOrganizationSafesRepository
@@ -35,7 +37,16 @@ export class OrganizationSafesRepository
       address: safe.address,
     }));
 
-    await organizationSafeRepository.insert(safesToInsert);
+    try {
+      await organizationSafeRepository.insert(safesToInsert);
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new UniqueConstraintError(
+          `An OrganizationSafe with the same chainId and address already exists: ${err.driverError.detail}`,
+        );
+      }
+      throw err;
+    }
   }
 
   public async findByOrganizationId(
