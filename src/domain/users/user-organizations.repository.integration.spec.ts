@@ -852,6 +852,85 @@ describe('UserOrganizationsRepository', () => {
       });
     });
 
+    it('should accept an invite to an organization and override the name', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const user = await dbUserRepo.insert({
+        status: 'PENDING',
+      });
+      const userId = user.generatedMaps[0].id;
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      await dbWalletRepo.insert({
+        user: user.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: admin.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: userOrgInvitedBy,
+      });
+      const userOrg = await dbUserOrgRepo.insert({
+        user: user.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName,
+        role: userOrgRole,
+        status: 'INVITED',
+        invitedBy: userOrgInvitedBy,
+      });
+      const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
+      const updatedName = faker.person.firstName();
+
+      await userOrgRepo.acceptInvite({
+        authPayload: new AuthPayload(authPayloadDto),
+        orgId,
+        payload: {
+          name: updatedName,
+        },
+      });
+
+      await expect(
+        dbUserOrgRepo.findOneOrFail({
+          where: { id: userOrgId },
+        }),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: userOrgId,
+        name: updatedName,
+        role: userOrgRole,
+        status: 'ACTIVE',
+        invitedBy: userOrgInvitedBy,
+        updatedAt: expect.any(Date),
+      });
+      await expect(
+        dbUserRepo.findOneOrFail({
+          where: { id: user.generatedMaps[0].id },
+        }),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: userId,
+        status: 'ACTIVE', // No longer PENDING
+        updatedAt: expect.any(Date),
+      });
+    });
+
     it('should not accept the invite if the user was not invited', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
