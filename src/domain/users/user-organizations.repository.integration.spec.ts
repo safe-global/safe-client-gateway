@@ -26,6 +26,7 @@ import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-pay
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { getAddress } from 'viem';
 import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import { UnauthorizedException } from '@nestjs/common';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -1509,9 +1510,10 @@ describe('UserOrganizationsRepository', () => {
       ).rejects.toThrow('User not found.');
     });
 
-    it('should throw an error if the org does not exist', async () => {
+    it('should throw an error if the user is not a member of the organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const orgName = faker.word.noun();
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -1519,17 +1521,22 @@ describe('UserOrganizationsRepository', () => {
         user: user.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
-      const orgId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
       });
+      const orgId = org.generatedMaps[0].id;
 
       await expect(
         userOrgRepo.findAuthorizedUserOrgsOrFail({
           authPayload: new AuthPayload(authPayloadDto),
           orgId,
         }),
-      ).rejects.toThrow('Organization not found.');
+      ).rejects.toThrow(
+        new UnauthorizedException(
+          'The user is not a member of the organization.',
+        ),
+      );
     });
   });
 
