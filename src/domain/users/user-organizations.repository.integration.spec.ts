@@ -26,6 +26,7 @@ import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-pay
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { getAddress } from 'viem';
 import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import { UnauthorizedException } from '@nestjs/common';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -1531,7 +1532,11 @@ describe('UserOrganizationsRepository', () => {
           authPayload: new AuthPayload(authPayloadDto),
           orgId,
         }),
-      ).rejects.toThrow('The user is not a member of the organization.');
+      ).rejects.toThrow(
+        new UnauthorizedException(
+          'The user is not a member of the organization.',
+        ),
+      );
     });
   });
 
