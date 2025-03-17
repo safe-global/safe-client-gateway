@@ -314,6 +314,7 @@ export class UsersOrganizationsRepository
       await this.postgresDatabaseService.getRepository(DbUserOrganization);
     const deleteResult = await userOrganizationRepository.delete({
       user: { id: args.userId },
+      organization: { id: args.orgId },
     });
 
     if (deleteResult.affected === 0) {
