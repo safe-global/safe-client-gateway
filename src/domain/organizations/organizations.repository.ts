@@ -13,10 +13,12 @@ import {
   FindOptionsWhere,
   FindOptionsSelect,
   FindOptionsRelations,
+  In,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 
+// TODO: Add tests
 @Injectable()
 export class OrganizationsRepository implements IOrganizationsRepository {
   public constructor(
@@ -135,11 +137,22 @@ export class OrganizationsRepository implements IOrganizationsRepository {
     const organizationRepository =
       await this.postgresDatabaseService.getRepository(Organization);
 
+    const userOrganizationRepository =
+      await this.postgresDatabaseService.getRepository(UserOrganization);
+
+    const userOrganizations = await userOrganizationRepository.find({
+      where: { user: { id: args.userId } },
+      relations: ['organization'],
+    });
+    const userOrganizationsIds = userOrganizations.map(
+      (userOrganization) => userOrganization.organization.id,
+    );
+
     return await organizationRepository.find({
-      where: {
-        userOrganizations: { user: { id: args.userId } },
-      },
       select: args.select,
+      where: {
+        id: In(userOrganizationsIds),
+      },
       relations: args.relations,
     });
   }
