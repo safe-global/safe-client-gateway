@@ -282,7 +282,7 @@ export class UsersOrganizationsRepository
     const userOrganizationRepository =
       await this.postgresDatabaseService.getRepository(DbUserOrganization);
     const updateResult = await userOrganizationRepository.update(
-      { user: { id: args.userId } },
+      { user: { id: args.userId }, organization: { id: args.orgId } },
       { role: args.role },
     );
 

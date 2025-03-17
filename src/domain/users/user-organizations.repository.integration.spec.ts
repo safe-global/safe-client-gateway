@@ -1586,6 +1586,118 @@ describe('UserOrganizationsRepository', () => {
       ).resolves.not.toThrow();
     });
 
+    it('should update the role of a member within the organization only', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto2 = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const org2Name = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
+      const userOrg2Name = faker.person.firstName();
+      const adminUser = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const memberUser = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: adminUser.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      await dbWalletRepo.insert({
+        user: memberUser.generatedMaps[0],
+        address: authPayloadDto2.signer_address,
+      });
+      const memberUserId = memberUser.generatedMaps[0].id;
+      await dbWalletRepo.insert({
+        user: memberUser.generatedMaps[0],
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const org2 = await dbOrgRepo.insert({
+        name: org2Name,
+        status: 'ACTIVE',
+      });
+      const orgId = org.generatedMaps[0].id;
+      const org2Id = org2.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: adminUser.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      // Add the user to org1
+      await dbUserOrgRepo.insert({
+        user: memberUser.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      // Add the user to org2
+      await dbUserOrgRepo.insert({
+        user: memberUser.generatedMaps[0],
+        organization: org2.generatedMaps[0],
+        name: userOrg2Name,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        userOrgRepo.updateRole({
+          authPayload: new AuthPayload(authPayloadDto),
+          orgId,
+          role: 'ADMIN',
+          userId: memberUserId,
+        }),
+      ).resolves.not.toThrow();
+      // Member role in org1 is updated
+      await expect(
+        userOrgRepo.findOneOrFail(
+          {
+            organization: { id: orgId },
+            user: { id: memberUserId },
+          },
+          { organization: true },
+        ),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: expect.any(Number),
+        name: userOrgName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: expect.any(String),
+        updatedAt: expect.any(Date),
+        organization: expect.objectContaining({ id: orgId }),
+      });
+      // Member role in org2 should not be affected
+      await expect(
+        userOrgRepo.findOneOrFail(
+          {
+            organization: { id: org2Id },
+            user: { id: memberUserId },
+          },
+          { organization: true },
+        ),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: expect.any(Number),
+        name: userOrg2Name,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: expect.any(String),
+        updatedAt: expect.any(Date),
+        organization: expect.objectContaining({ id: org2Id }),
+      });
+    });
+
     it('should not allow updating MEMBERs if the signer is not an ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
