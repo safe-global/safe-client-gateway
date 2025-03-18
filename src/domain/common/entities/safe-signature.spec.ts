@@ -134,12 +134,12 @@ describe('SafeSignature', () => {
     );
 
     it('should memoize the owner', async () => {
-      const encodeApiParametersSpy = jest.spyOn(viem, 'encodeAbiParameters');
+      const getAddressSpy = jest.spyOn(viem, 'getAddress');
 
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
-      // Recovered via encodeAbiParameters
+      // Recovered via getAddress
       const signatureType = faker.helpers.arrayElement([
         SignatureType.ApprovedHash,
         SignatureType.ContractSignature,
@@ -153,10 +153,10 @@ describe('SafeSignature', () => {
       const safeSignature = new SafeSignature({ signature, hash });
 
       expect(safeSignature.owner).toBe(signer.address);
-      expect(encodeApiParametersSpy).toHaveBeenCalledTimes(1);
+      expect(getAddressSpy).toHaveBeenCalledTimes(1);
 
       expect(safeSignature.owner).toBe(signer.address);
-      expect(encodeApiParametersSpy).toHaveBeenCalledTimes(1);
+      expect(getAddressSpy).toHaveBeenCalledTimes(1);
 
       const newPrivateKey = generatePrivateKey();
       const newSigner = privateKeyToAccount(newPrivateKey);
@@ -167,10 +167,10 @@ describe('SafeSignature', () => {
       });
 
       expect(safeSignature.owner).toBe(newSigner.address);
-      expect(encodeApiParametersSpy).toHaveBeenCalledTimes(2);
+      expect(getAddressSpy).toHaveBeenCalledTimes(2);
 
       expect(safeSignature.owner).toBe(newSigner.address);
-      expect(encodeApiParametersSpy).toHaveBeenCalledTimes(2);
+      expect(getAddressSpy).toHaveBeenCalledTimes(2);
     });
   });
 });
