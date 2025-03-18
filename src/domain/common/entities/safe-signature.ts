@@ -1,12 +1,6 @@
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { memoize } from 'lodash';
-import {
-  checksumAddress,
-  encodeAbiParameters,
-  hashMessage,
-  hexToBigInt,
-  parseAbiParameters,
-} from 'viem';
+import { getAddress, hashMessage } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 
@@ -58,7 +52,7 @@ export class SafeSignature {
         switch (this.signatureType) {
           case SignatureType.ContractSignature:
           case SignatureType.ApprovedHash: {
-            return uint256ToAddress(this.r);
+            return getAddress(`0x${this.r.slice(-40)}`);
           }
           case SignatureType.EthSign: {
             // To differentiate signature types, eth_sign signatures have v value increased by 4
@@ -84,13 +78,6 @@ export class SafeSignature {
       return this.signature + this.hash;
     },
   );
-}
-
-function uint256ToAddress(value: `0x${string}`): `0x${string}` {
-  const encoded = encodeAbiParameters(parseAbiParameters('uint256'), [
-    hexToBigInt(value),
-  ]);
-  return checksumAddress(`0x${encoded.slice(-40)}`);
 }
 
 function recoverAddress(args: {
