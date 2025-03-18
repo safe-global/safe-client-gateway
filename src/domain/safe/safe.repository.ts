@@ -629,7 +629,13 @@ export class SafeRepository implements ISafeRepository {
       this.getMultiSigTransaction({
         chainId: args.chainId,
         safeTransactionHash: args.proposeTransactionDto.safeTxHash,
-      }).catch(() => null),
+      }).catch(async () => {
+        await this.clearMultisigTransaction({
+          chainId: args.chainId,
+          safeTransactionHash: args.proposeTransactionDto.safeTxHash,
+        });
+        return null;
+      }),
     ]);
 
     await this.transactionVerifier.verifyProposal({
