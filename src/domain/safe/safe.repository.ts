@@ -630,6 +630,7 @@ export class SafeRepository implements ISafeRepository {
         chainId: args.chainId,
         safeTransactionHash: args.proposeTransactionDto.safeTxHash,
       }).catch(async () => {
+        // If the transaction is not found, clear it from cache to avoid caching its absence.
         await this.clearMultisigTransaction({
           chainId: args.chainId,
           safeTransactionHash: args.proposeTransactionDto.safeTxHash,
