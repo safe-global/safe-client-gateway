@@ -9,6 +9,7 @@ import { GetOrganizationSafeResponse } from '@/routes/organizations/entities/get
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { IOrganizationSafesRepository } from '@/domain/organizations/organizations-safe.repository.interface';
+import { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
 
 @Injectable()
 export class OrganizationSafesService {
@@ -19,9 +20,9 @@ export class OrganizationSafesService {
     private readonly organizationsRepository: IOrganizationsRepository,
     @Inject(IOrganizationSafesRepository)
     private readonly organizationSafesRepository: IOrganizationSafesRepository,
-  ) {
-    //
-  }
+    @Inject(IUsersOrganizationsRepository)
+    private readonly userOrganizationsRepository: IUsersOrganizationsRepository,
+  ) {}
 
   public async create(args: {
     organizationId: Organization['id'];
@@ -45,7 +46,7 @@ export class OrganizationSafesService {
     authPayload: AuthPayload,
   ): Promise<GetOrganizationSafeResponse> {
     this.assertSignerAddress(authPayload);
-    await this.assertOrganizationAdmin(
+    await this.assertOrganizationMembership(
       organizationId,
       authPayload.signer_address,
     );
@@ -105,6 +106,25 @@ export class OrganizationSafesService {
     });
 
     if (!organization) {
+      throw new UnauthorizedException(
+        'User is unauthorized. signer_address= ' + signerAddress,
+      );
+    }
+  }
+
+  public async assertOrganizationMembership(
+    organizationId: Organization['id'],
+    signerAddress: `0x${string}`,
+  ): Promise<void> {
+    const { id: userId } =
+      await this.userRepository.findByWalletAddressOrFail(signerAddress);
+
+    const userOrganization = await this.userOrganizationsRepository.findOne({
+      user: { id: userId },
+      organization: { id: organizationId },
+    });
+
+    if (!userOrganization) {
       throw new UnauthorizedException(
         'User is unauthorized. signer_address= ' + signerAddress,
       );

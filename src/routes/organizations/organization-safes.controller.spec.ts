@@ -518,7 +518,7 @@ describe('OrganizationSafeController', () => {
   });
 
   describe('GET /organizations/:organizationId/safes', () => {
-    it('Should return a list of organization safes', async () => {
+    it('Should return a list of organization safes if the user is an admin', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const orgName = faker.company.name();
@@ -575,7 +575,103 @@ describe('OrganizationSafeController', () => {
         });
     });
 
-    it('Should return a 401 if user is not authorized', async () => {
+    it('Should return a list of organization safes if the user is a member', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const orgName = faker.company.name();
+      const chain1 = chainBuilder()
+        .with('chainId', faker.string.numeric({ length: { min: 1, max: 2 } }))
+        .build();
+      const chain2 = chainBuilder()
+        .with('chainId', faker.string.numeric({ length: { min: 3, max: 4 } }))
+        .build();
+      const createOrgSafePayload = {
+        safes: [
+          {
+            chainId: chain1.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+          {
+            chainId: chain2.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+          {
+            chainId: chain2.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ],
+      };
+
+      // Create the admin user and the wallet
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`]);
+
+      // Create the organization
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
+
+      // Create the member user and the wallet
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+          }),
+        );
+
+      // Invite the member user
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              address: memberAuthPayloadDto.signer_address,
+              name: faker.person.firstName(),
+              role: 'MEMBER',
+            },
+          ],
+        });
+
+      // Accept the invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({
+          name: faker.person.firstName(),
+        });
+
+      // Create the safes
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/safes`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send(createOrgSafePayload);
+
+      // Get the safes as a member
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${orgId}/safes`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(200)
+        .expect({
+          safes: {
+            [chain1.chainId]: [createOrgSafePayload.safes[0].address],
+            [chain2.chainId]: [
+              createOrgSafePayload.safes[1].address,
+              createOrgSafePayload.safes[2].address,
+            ],
+          },
+        });
+    });
+
+    it('Should return a 401 if user is not a member', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const userAuthPayloadDto = authPayloadDtoBuilder().build();

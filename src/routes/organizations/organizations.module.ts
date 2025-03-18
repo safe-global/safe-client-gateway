@@ -6,12 +6,14 @@ import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
 import { UserRepositoryModule } from '@/domain/users/users.repository.module';
 import { OrganizationSafesController } from '@/routes/organizations/organization-safes.controller';
 import { OrganizationSafesService } from '@/routes/organizations/organization-safes.service';
+import { UsersOrganizationsRepositoryModule } from '@/domain/users/user-organizations.repository.module';
 
 @Module({
   imports: [
-    OrganizationsRepositoryModule,
     AuthRepositoryModule,
+    OrganizationsRepositoryModule,
     UserRepositoryModule,
+    UsersOrganizationsRepositoryModule,
   ],
   controllers: [OrganizationsController, OrganizationSafesController],
   providers: [OrganizationsService, OrganizationSafesService],
