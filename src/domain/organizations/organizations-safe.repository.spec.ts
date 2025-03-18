@@ -412,7 +412,7 @@ describe('OrganizationSafesRepository', () => {
         ]),
       ).rejects.toThrow(
         new UniqueConstraintError(
-          `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address)=(${chainId}, ${address}) already exists.`,
+          `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address, organization_id)=(${chainId}, ${address}, ${orgId}) already exists.`,
         ),
       );
     });
