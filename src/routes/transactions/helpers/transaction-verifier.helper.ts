@@ -101,6 +101,7 @@ export class TransactionVerifierHelper {
     chainId: string;
     safe: Safe;
     proposal: ProposeTransactionDto;
+    transaction: MultisigTransaction | null;
   }): Promise<void> {
     const code = HttpStatus.UNPROCESSABLE_ENTITY;
 
@@ -357,6 +358,7 @@ export class TransactionVerifierHelper {
     chainId: string;
     safe: Safe;
     proposal: ProposeTransactionDto;
+    transaction: MultisigTransaction | null;
     code: HttpStatus;
   }): Promise<void> {
     if (!args.proposal.signature) {
@@ -385,8 +387,15 @@ export class TransactionVerifierHelper {
         throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
       }
 
+      const isExisting = args.transaction?.confirmations?.some(
+        (confirmation) => {
+          return isAddressEqual(confirmation.owner, signature.owner);
+        },
+      );
+
       if (
         !this.isEthSignEnabled &&
+        !isExisting &&
         signature.signatureType === SignatureType.EthSign
       ) {
         throw new HttpExceptionNoLog(ErrorMessage.EthSignDisabled, args.code);
