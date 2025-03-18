@@ -86,7 +86,7 @@ export class OrganizationSafesService {
     }
   }
 
-  public async assertOrganizationAdmin(
+  private async assertOrganizationAdmin(
     organizationId: Organization['id'],
     signerAddress: `0x${string}`,
   ): Promise<void> {
@@ -112,7 +112,7 @@ export class OrganizationSafesService {
     }
   }
 
-  public async assertOrganizationMembership(
+  private async assertOrganizationMembership(
     organizationId: Organization['id'],
     signerAddress: `0x${string}`,
   ): Promise<void> {
