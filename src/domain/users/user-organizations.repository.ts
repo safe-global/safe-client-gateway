@@ -104,16 +104,16 @@ export class UsersOrganizationsRepository
     const admin =
       await this.usersRepository.findByWalletAddressOrFail(adminAddress);
     const org = await this.organizationsRepository.findOneOrFail({
-      where: {
-        id: args.orgId,
-        userOrganizations: {
-          user: { id: admin.id },
-          status: 'ACTIVE',
-          role: 'ADMIN',
-        },
-      },
-      relations: { userOrganizations: { user: true } },
+      where: { id: args.orgId },
     });
+    const userOrganizationsRepository =
+      await this.postgresDatabaseService.getRepository(DbUserOrganization);
+    const activeAdmin = await userOrganizationsRepository.findOne({
+      where: { user: { id: admin.id }, status: 'ACTIVE', role: 'ADMIN' },
+    });
+    if (!activeAdmin) {
+      throw new UnauthorizedException('Signer is not an active admin.');
+    }
 
     const invitedAddresses = args.users.map((user) => user.address);
     const invitedWallets = await this.walletsRepository.find({

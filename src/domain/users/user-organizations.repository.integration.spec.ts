@@ -687,7 +687,55 @@ describe('UserOrganizationsRepository', () => {
           orgId,
           users,
         }),
-      ).rejects.toThrow('Organization not found.');
+      ).rejects.toThrow(
+        new UnauthorizedException('Signer is not an active admin.'),
+      );
+    });
+
+    it('should not allow inviting users if the user is a NON-ACTIVE ADMIN', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const userOrgName = faker.person.firstName();
+      const owner = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: owner.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: owner.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName,
+        role: 'ADMIN',
+        status: 'INVITED',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      const users = faker.helpers.multiple(
+        () => {
+          return {
+            address: getAddress(faker.finance.ethereumAddress()),
+            role: faker.helpers.arrayElement(UserOrgRoleKeys),
+            name: faker.person.firstName(),
+          };
+        },
+        { count: { min: 2, max: 5 } },
+      );
+
+      await expect(
+        userOrgRepo.inviteUsers({
+          authPayload: new AuthPayload(authPayloadDto),
+          orgId,
+          users,
+        }),
+      ).rejects.toThrow(
+        new UnauthorizedException('Signer is not an active admin.'),
+      );
     });
 
     it('should throw an error if the organization does not exist', async () => {
@@ -770,7 +818,9 @@ describe('UserOrganizationsRepository', () => {
           orgId,
           users,
         }),
-      ).rejects.toThrow('Organization not found.');
+      ).rejects.toThrow(
+        new UnauthorizedException('Signer is not an active admin.'),
+      );
     });
   });
 
