@@ -346,7 +346,7 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 404 if the user organization does not exist', async () => {
+    it('should throw a 401 if the signer is not a member of the organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -391,15 +391,15 @@ describe('UserOrganizationsController', () => {
             },
           ],
         })
-        .expect(404)
+        .expect(401)
         .expect({
-          message: 'Organization not found.',
-          error: 'Not Found',
-          statusCode: 404,
+          message: 'Signer is not an active admin.',
+          error: 'Unauthorized',
+          statusCode: 401,
         });
     });
 
-    it('should throw a 404 if the status of the user organization is not ACTIVE', async () => {
+    it('should throw a 401 if the signer is not an admin', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -426,7 +426,7 @@ describe('UserOrganizationsController', () => {
         .send({
           users: [
             {
-              role: 'MEMBER',
+              role: 'MEMBER', // Should be ADMIN to invite new members
               address: inviteeAuthPayloadDto.signer_address,
               name: userName,
             },
@@ -446,11 +446,66 @@ describe('UserOrganizationsController', () => {
             },
           ],
         })
-        .expect(404)
+        .expect(401)
         .expect({
-          message: 'Organization not found.',
-          error: 'Not Found',
-          statusCode: 404,
+          message: 'Signer is not an active admin.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it('should throw a 401 if the signer is not an active admin', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const user = getAddress(faker.finance.ethereumAddress());
+      const userName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName })
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'ADMIN', // Should be ACTIVE to invite new members
+              address: inviteeAuthPayloadDto.signer_address,
+              name: userName,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: user,
+              name: userName,
+            },
+          ],
+        })
+        .expect(401)
+        .expect({
+          message: 'Signer is not an active admin.',
+          error: 'Unauthorized',
+          statusCode: 401,
         });
     });
   });
