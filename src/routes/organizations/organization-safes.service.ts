@@ -9,7 +9,7 @@ import { GetOrganizationSafeResponse } from '@/routes/organizations/entities/get
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { IOrganizationSafesRepository } from '@/domain/organizations/organizations-safe.repository.interface';
-import { In } from 'typeorm';
+import { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
 
 @Injectable()
 export class OrganizationSafesService {
@@ -20,9 +20,9 @@ export class OrganizationSafesService {
     private readonly organizationsRepository: IOrganizationsRepository,
     @Inject(IOrganizationSafesRepository)
     private readonly organizationSafesRepository: IOrganizationSafesRepository,
-  ) {
-    //
-  }
+    @Inject(IUsersOrganizationsRepository)
+    private readonly userOrganizationsRepository: IUsersOrganizationsRepository,
+  ) {}
 
   public async create(args: {
     organizationId: Organization['id'];
@@ -119,19 +119,12 @@ export class OrganizationSafesService {
     const { id: userId } =
       await this.userRepository.findByWalletAddressOrFail(signerAddress);
 
-    const organization = await this.organizationsRepository.findOne({
-      where: {
-        id: organizationId,
-        userOrganizations: {
-          role: In(['ADMIN', 'MEMBER']),
-          user: {
-            id: userId,
-          },
-        },
-      },
+    const userOrganization = await this.userOrganizationsRepository.findOne({
+      user: { id: userId },
+      organization: { id: organizationId },
     });
 
-    if (!organization) {
+    if (!userOrganization) {
       throw new UnauthorizedException(
         'User is unauthorized. signer_address= ' + signerAddress,
       );
