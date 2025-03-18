@@ -1108,7 +1108,7 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'ADMIN',
                 status: 'ACTIVE',
-                name: orgName,
+                name: `${orgName} creator`,
                 invitedBy: null, // org creator's `invitedBy` field value is null
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
@@ -1228,9 +1228,10 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 404 if the organization does not exist', async () => {
+    it('should throw a 401 if the user is not a member of the organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
+      // Organization does not even exist
       const orgId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -1244,11 +1245,11 @@ describe('UserOrganizationsController', () => {
       await request(app.getHttpServer())
         .get(`/v1/organizations/${orgId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(404)
+        .expect(401)
         .expect({
-          message: 'Organization not found.',
-          error: 'Not Found',
-          statusCode: 404,
+          message: 'The user is not a member of the organization.',
+          error: 'Unauthorized',
+          statusCode: 401,
         });
     });
   });

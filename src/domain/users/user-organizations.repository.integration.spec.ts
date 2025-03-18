@@ -26,6 +26,7 @@ import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-pay
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { getAddress } from 'viem';
 import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import { UnauthorizedException } from '@nestjs/common';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -852,6 +853,85 @@ describe('UserOrganizationsRepository', () => {
       });
     });
 
+    it('should accept an invite to an organization and override the name', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const userOrgInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const orgName = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const user = await dbUserRepo.insert({
+        status: 'PENDING',
+      });
+      const userId = user.generatedMaps[0].id;
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      await dbWalletRepo.insert({
+        user: user.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: admin.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: userOrgInvitedBy,
+      });
+      const userOrg = await dbUserOrgRepo.insert({
+        user: user.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName,
+        role: userOrgRole,
+        status: 'INVITED',
+        invitedBy: userOrgInvitedBy,
+      });
+      const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
+      const updatedName = faker.person.firstName();
+
+      await userOrgRepo.acceptInvite({
+        authPayload: new AuthPayload(authPayloadDto),
+        orgId,
+        payload: {
+          name: updatedName,
+        },
+      });
+
+      await expect(
+        dbUserOrgRepo.findOneOrFail({
+          where: { id: userOrgId },
+        }),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: userOrgId,
+        name: updatedName,
+        role: userOrgRole,
+        status: 'ACTIVE',
+        invitedBy: userOrgInvitedBy,
+        updatedAt: expect.any(Date),
+      });
+      await expect(
+        dbUserRepo.findOneOrFail({
+          where: { id: user.generatedMaps[0].id },
+        }),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: userId,
+        status: 'ACTIVE', // No longer PENDING
+        updatedAt: expect.any(Date),
+      });
+    });
+
     it('should not accept the invite if the user was not invited', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -1430,9 +1510,10 @@ describe('UserOrganizationsRepository', () => {
       ).rejects.toThrow('User not found.');
     });
 
-    it('should throw an error if the org does not exist', async () => {
+    it('should throw an error if the user is not a member of the organization', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const orgName = faker.word.noun();
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -1440,17 +1521,22 @@ describe('UserOrganizationsRepository', () => {
         user: user.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
-      const orgId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
       });
+      const orgId = org.generatedMaps[0].id;
 
       await expect(
         userOrgRepo.findAuthorizedUserOrgsOrFail({
           authPayload: new AuthPayload(authPayloadDto),
           orgId,
         }),
-      ).rejects.toThrow('Organization not found.');
+      ).rejects.toThrow(
+        new UnauthorizedException(
+          'The user is not a member of the organization.',
+        ),
+      );
     });
   });
 
@@ -1505,6 +1591,118 @@ describe('UserOrganizationsRepository', () => {
           userId: memberUserId,
         }),
       ).resolves.not.toThrow();
+    });
+
+    it('should update the role of a member within the organization only', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto2 = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const org2Name = faker.word.noun();
+      const adminName = faker.person.firstName();
+      const userOrgName = faker.person.firstName();
+      const userOrg2Name = faker.person.firstName();
+      const adminUser = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const memberUser = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: adminUser.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      await dbWalletRepo.insert({
+        user: memberUser.generatedMaps[0],
+        address: authPayloadDto2.signer_address,
+      });
+      const memberUserId = memberUser.generatedMaps[0].id;
+      await dbWalletRepo.insert({
+        user: memberUser.generatedMaps[0],
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const org2 = await dbOrgRepo.insert({
+        name: org2Name,
+        status: 'ACTIVE',
+      });
+      const orgId = org.generatedMaps[0].id;
+      const org2Id = org2.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: adminUser.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      // Add the user to org1
+      await dbUserOrgRepo.insert({
+        user: memberUser.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      // Add the user to org2
+      await dbUserOrgRepo.insert({
+        user: memberUser.generatedMaps[0],
+        organization: org2.generatedMaps[0],
+        name: userOrg2Name,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        userOrgRepo.updateRole({
+          authPayload: new AuthPayload(authPayloadDto),
+          orgId,
+          role: 'ADMIN',
+          userId: memberUserId,
+        }),
+      ).resolves.not.toThrow();
+      // Member role in org1 is updated
+      await expect(
+        userOrgRepo.findOneOrFail(
+          {
+            organization: { id: orgId },
+            user: { id: memberUserId },
+          },
+          { organization: true },
+        ),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: expect.any(Number),
+        name: userOrgName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: expect.any(String),
+        updatedAt: expect.any(Date),
+        organization: expect.objectContaining({ id: orgId }),
+      });
+      // Member role in org2 should not be affected
+      await expect(
+        userOrgRepo.findOneOrFail(
+          {
+            organization: { id: org2Id },
+            user: { id: memberUserId },
+          },
+          { organization: true },
+        ),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: expect.any(Number),
+        name: userOrg2Name,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: expect.any(String),
+        updatedAt: expect.any(Date),
+        organization: expect.objectContaining({ id: org2Id }),
+      });
     });
 
     it('should not allow updating MEMBERs if the signer is not an ADMIN', async () => {
@@ -1802,6 +2000,108 @@ describe('UserOrganizationsRepository', () => {
       await expect(
         dbUserOrgRepo.findOne({ where: { id: memberUserOrgId } }),
       ).resolves.toBeNull();
+    });
+
+    it('should keep the user as a member of other organizations', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const org2Name = faker.word.noun();
+      const userOrgName = faker.person.firstName();
+      const memberName = faker.person.firstName();
+      const userOrg2Name = faker.person.firstName();
+      const member2Name = faker.person.firstName();
+      const owner = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: owner.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const member = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const memberUserId = member.generatedMaps[0].id;
+      await dbWalletRepo.insert({
+        user: member.generatedMaps[0],
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const org2 = await dbOrgRepo.insert({
+        name: org2Name,
+        status: 'ACTIVE',
+      });
+
+      // Add as a member of org1
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: owner.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: userOrgName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      const memberUserOrg = await dbUserOrgRepo.insert({
+        user: member.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: memberName,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      const memberUserOrgId = memberUserOrg.identifiers[0]
+        .id as UserOrganization['id'];
+
+      // Add as a member of org2
+      await dbUserOrgRepo.insert({
+        user: owner.generatedMaps[0],
+        organization: org2.generatedMaps[0],
+        name: userOrg2Name,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      const member2UserOrgInvitedBy = getAddress(
+        faker.finance.ethereumAddress(),
+      );
+      const member2UserOrg = await dbUserOrgRepo.insert({
+        user: member.generatedMaps[0],
+        organization: org2.generatedMaps[0],
+        name: member2Name,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: member2UserOrgInvitedBy,
+      });
+      const member2UserOrgId = member2UserOrg.identifiers[0]
+        .id as UserOrganization['id'];
+
+      // Delete from org1
+      await expect(
+        userOrgRepo.removeUser({
+          authPayload: new AuthPayload(authPayloadDto),
+          orgId,
+          userId: memberUserId,
+        }),
+      ).resolves.not.toThrow();
+      await expect(
+        dbUserOrgRepo.findOne({ where: { id: memberUserOrgId } }),
+      ).resolves.toBeNull();
+
+      // Ensure still a member of org2
+      await expect(
+        dbUserOrgRepo.findOne({ where: { id: member2UserOrgId } }),
+      ).resolves.toEqual({
+        createdAt: expect.any(Date),
+        id: member2UserOrgId,
+        name: member2Name,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: member2UserOrgInvitedBy,
+        updatedAt: expect.any(Date),
+      });
     });
 
     it('should not allow removing a user if the user is not an ADMIN', async () => {

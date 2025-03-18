@@ -16,7 +16,6 @@ import { In } from 'typeorm';
 import type {
   FindOptionsWhere,
   FindOptionsRelations,
-  EntityManager,
   FindManyOptions,
 } from 'typeorm';
 import type { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
@@ -195,11 +194,9 @@ export class UsersOrganizationsRepository
     const userOrg = org.userOrganizations[0];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await this.updateStatus({
-        name: args.payload.name,
-        userOrgId: userOrg.id,
+      await entityManager.update(DbUserOrganization, userOrg.id, {
         status: 'ACTIVE',
-        entityManager,
+        name: args.payload.name,
       });
 
       await this.usersRepository.updateStatus({
@@ -229,22 +226,9 @@ export class UsersOrganizationsRepository
     const userOrg = org.userOrganizations[0];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await this.updateStatus({
-        userOrgId: userOrg.id,
+      await entityManager.update(DbUserOrganization, userOrg.id, {
         status: 'DECLINED',
-        entityManager,
       });
-    });
-  }
-
-  private async updateStatus(args: {
-    userOrgId: UserOrganization['id'];
-    status: UserOrganization['status'];
-    entityManager: EntityManager;
-    name?: UserOrganization['name'];
-  }): Promise<void> {
-    await args.entityManager.update(DbUserOrganization, args.userOrgId, {
-      status: args.status,
     });
   }
 
@@ -254,10 +238,19 @@ export class UsersOrganizationsRepository
   }): Promise<Array<UserOrganization>> {
     this.assertSignerAddress(args.authPayload);
 
-    await this.usersRepository.findByWalletAddressOrFail(
+    const user = await this.usersRepository.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
-
+    const userOrganizationRepository =
+      await this.postgresDatabaseService.getRepository(DbUserOrganization);
+    const userOrganization = await userOrganizationRepository.findOne({
+      where: { user: { id: user.id }, organization: { id: args.orgId } },
+    });
+    if (!userOrganization) {
+      throw new UnauthorizedException(
+        'The user is not a member of the organization.',
+      );
+    }
     const org = await this.organizationsRepository.findOneOrFail({
       where: { id: args.orgId },
       relations: { userOrganizations: { user: true } },
@@ -298,7 +291,7 @@ export class UsersOrganizationsRepository
     const userOrganizationRepository =
       await this.postgresDatabaseService.getRepository(DbUserOrganization);
     const updateResult = await userOrganizationRepository.update(
-      { user: { id: args.userId } },
+      { user: { id: args.userId }, organization: { id: args.orgId } },
       { role: args.role },
     );
 
@@ -330,6 +323,7 @@ export class UsersOrganizationsRepository
       await this.postgresDatabaseService.getRepository(DbUserOrganization);
     const deleteResult = await userOrganizationRepository.delete({
       user: { id: args.userId },
+      organization: { id: args.orgId },
     });
 
     if (deleteResult.affected === 0) {
