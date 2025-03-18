@@ -961,6 +961,72 @@ describe('OrganizationSafeController', () => {
         });
     });
 
+    it('should fail if the user is not an admin', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.company.name();
+      const chain = chainBuilder().build();
+      const orgSafes = {
+        safes: [
+          {
+            chainId: chain.chainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ],
+      };
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
+
+      // Invite the member user
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              address: getAddress(memberAuthPayloadDto.signer_address),
+              name: faker.person.firstName(),
+              role: 'MEMBER',
+            },
+          ],
+        });
+      // Accept the invite
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/accept`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({
+          name: faker.person.firstName(),
+        });
+
+      // Create the Safe with the admin
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(orgSafes);
+
+      // Try to delete the Safe with the member
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${orgId}/safes`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send(orgSafes)
+        .expect(401)
+        .expect({
+          message: `User is unauthorized. signer_address= ${memberAuthPayloadDto.signer_address}`,
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
     it('should return a 403 if not authenticated', async () => {
       const orgId = faker.number.int();
       await request(app.getHttpServer())
