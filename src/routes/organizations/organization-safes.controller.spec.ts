@@ -203,10 +203,61 @@ describe('OrganizationSafeController', () => {
         })
         .expect(409)
         .expect({
-          message: `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address)=(${duplicatedOrgSafe.chainId}, ${duplicatedOrgSafe.address}) already exists.`,
+          message: `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address, organization_id)=(${duplicatedOrgSafe.chainId}, ${duplicatedOrgSafe.address}, ${orgId}) already exists.`,
           error: 'Conflict',
           statusCode: 409,
         });
+    });
+
+    it('Should allow multiple organizations to add the same Safe', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const orgName = faker.company.name();
+      const org2Name = faker.company.name();
+      const chain1 = chainBuilder().build();
+      const chain2 = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: orgName });
+      const createOrganization2Response = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: org2Name });
+      const orgId = createOrganizationResponse.body.id;
+      const org2Id = createOrganization2Response.body.id;
+      const orgSafe1 = {
+        chainId: chain1.chainId,
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const orgSafe2 = {
+        chainId: chain2.chainId,
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const orgSafe3 = {
+        chainId: chain2.chainId,
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          safes: [orgSafe1, orgSafe2],
+        })
+        .expect(201);
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${org2Id}/safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          safes: [orgSafe2, orgSafe3], // orgSafe2 is shared between org1 and org2
+        })
+        .expect(201);
     });
 
     it('Should return a 401 if user is not authorized', async () => {

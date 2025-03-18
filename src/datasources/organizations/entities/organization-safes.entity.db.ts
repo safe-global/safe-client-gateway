@@ -12,7 +12,11 @@ import {
 } from 'typeorm';
 
 @Entity('organization_safes')
-@Unique('UQ_OS_chainId_address', ['chainId', 'address'])
+@Unique('UQ_OS_chainId_address_organization', [
+  'chainId',
+  'address',
+  'organization',
+])
 export class OrganizationSafe implements DomainOrganizationSafe {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_OS_id',
