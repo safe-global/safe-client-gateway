@@ -155,7 +155,7 @@ jobs:
       - *docker-setup-qemu
       - *docker-setup-buildx
       - *docker-login
-      - *docker-build-push
+      - <<: *docker-build-push
         with:
           tags: ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:staging
 
@@ -171,7 +171,7 @@ jobs:
       - *docker-setup-qemu
       - *docker-setup-buildx
       - *docker-login
-      - *docker-build-push
+      - <<: *docker-build-push
         with:
           tags: |
             ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
