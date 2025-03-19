@@ -1302,7 +1302,55 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401)
         .expect({
-          message: 'The user is not a member of the organization.',
+          message: 'The user is not an active member of the organization.',
+          error: 'Unauthorized',
+          statusCode: 401,
+        });
+    });
+
+    it('should throw a 401 if the user is not an active member of the organization', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const orgName = faker.word.noun();
+      const memberAddress = getAddress(faker.finance.ethereumAddress());
+      const memberAuthPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', memberAddress)
+        .build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const memberName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(201);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: orgName })
+        .expect(201);
+      const orgId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: memberAddress,
+              name: memberName,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${orgId}/members`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(401)
+        .expect({
+          message: 'The user is not an active member of the organization.',
           error: 'Unauthorized',
           statusCode: 401,
         });
