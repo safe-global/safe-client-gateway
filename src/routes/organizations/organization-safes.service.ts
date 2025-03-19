@@ -98,6 +98,7 @@ export class OrganizationSafesService {
         id: organizationId,
         userOrganizations: {
           role: 'ADMIN',
+          status: 'ACTIVE',
           user: {
             id: userId,
           },
