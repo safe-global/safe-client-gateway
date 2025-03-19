@@ -667,6 +667,57 @@ describe('OrganizationController', () => {
             memberAuthPayloadDto.signer_address,
         });
     });
+    it('Should throw a 401 if a an inactive admin tries to update the organization', async () => {
+      const activeAdminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
+      const inactiveAdminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inactiveAdminAccessToken = jwtService.sign(
+        inactiveAdminAuthPayloadDto,
+      );
+      const previousOrganizationName = faker.company.name();
+      const newOrganizationName = faker.company.name();
+      const organizationMemberName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${activeAdminAccessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${activeAdminAccessToken}`])
+        .send({ name: previousOrganizationName });
+      const organizationId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${organizationId}/members/invite`)
+        .set('Cookie', [`access_token=${activeAdminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              name: organizationMemberName,
+              address: inactiveAdminAuthPayloadDto.signer_address,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${inactiveAdminAccessToken}`])
+        .send({
+          name: newOrganizationName,
+          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+        })
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. signer_address= ' +
+            inactiveAdminAuthPayloadDto.signer_address,
+        });
+    });
 
     it('Should throw a 401 if user does not have access to update an organization', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -801,6 +852,53 @@ describe('OrganizationController', () => {
           message:
             'User is unauthorized. signer_address= ' +
             memberAuthPayloadDto.signer_address,
+        });
+    });
+
+    it('Should throw a 401 if an inactive admin tries to delete the organization', async () => {
+      const activeAdminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
+      const inactiveAdminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inactiveAdminAccessToken = jwtService.sign(
+        inactiveAdminAuthPayloadDto,
+      );
+      const organizationName = faker.company.name();
+      const organizationMemberName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${activeAdminAccessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${activeAdminAccessToken}`])
+        .send({ name: organizationName });
+      const organizationId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${organizationId}/members/invite`)
+        .set('Cookie', [`access_token=${activeAdminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: inactiveAdminAuthPayloadDto.signer_address,
+              name: organizationMemberName,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/organizations/${organizationId}`)
+        .set('Cookie', [`access_token=${inactiveAdminAccessToken}`])
+        .expect(401)
+        .expect({
+          statusCode: 401,
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. signer_address= ' +
+            inactiveAdminAuthPayloadDto.signer_address,
         });
     });
 

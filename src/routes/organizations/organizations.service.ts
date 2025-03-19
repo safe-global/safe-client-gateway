@@ -189,6 +189,7 @@ export class OrganizationsService {
         id: organizationId,
         userOrganizations: {
           role: getEnumKey(UserOrganizationRole, UserOrganizationRole.ADMIN),
+          status: 'ACTIVE',
           user: {
             id: userId,
           },
