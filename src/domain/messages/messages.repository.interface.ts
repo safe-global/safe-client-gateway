@@ -5,6 +5,7 @@ import { MessagesRepository } from '@/domain/messages/messages.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
 import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
+import { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
 export const IMessagesRepository = Symbol('IMessagesRepository');
 
@@ -24,7 +25,7 @@ export interface IMessagesRepository {
   createMessage(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    message: string | Record<string, unknown>;
+    message: string | TypedData;
     safeAppId: number;
     signature: `0x${string}`;
     origin: string | null;
