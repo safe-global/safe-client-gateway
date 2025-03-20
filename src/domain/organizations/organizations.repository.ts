@@ -141,7 +141,7 @@ export class OrganizationsRepository implements IOrganizationsRepository {
       await this.postgresDatabaseService.getRepository(UserOrganization);
 
     const userOrganizations = await userOrganizationRepository.find({
-      where: { user: { id: args.userId } },
+      where: { user: { id: args.userId }, status: 'ACTIVE' },
       relations: ['organization'],
     });
     const userOrganizationsIds = userOrganizations.map(

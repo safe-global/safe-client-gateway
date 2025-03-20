@@ -583,6 +583,48 @@ describe('OrganizationsRepository', () => {
       ]);
     });
 
+    it('should not find organizations where the user is not active', async () => {
+      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const orgStatus1 = faker.helpers.arrayElement(OrgStatusKeys);
+      const orgStatus2 = faker.helpers.arrayElement(OrgStatusKeys);
+      const user = await dbUserRepo.insert({
+        status: userStatus,
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      const org1 = await orgRepo.create({
+        userId,
+        name: faker.word.noun(),
+        status: orgStatus1,
+      });
+      const org2 = await dbOrgRepo.insert({
+        status: orgStatus2,
+        name: faker.word.noun(),
+      });
+      const org2Id = org2.identifiers[0].id as Organization['id'];
+      await dbUserOrgRepo.insert({
+        user: { id: userId },
+        role: 'MEMBER',
+        status: faker.helpers.arrayElement(['INVITED', 'DECLINED']),
+        name: faker.word.noun(),
+        organization: { id: org2Id },
+      });
+
+      // Only org1 should be visible
+      await expect(
+        orgRepo.findByUserId({
+          userId,
+        }),
+      ).resolves.toEqual([
+        {
+          id: org1.id,
+          name: org1.name,
+          status: orgStatus1,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
+      ]);
+    });
+
     it('should return an empty array if organizations do not exist', async () => {
       const userId = faker.number.int({
         min: 69420,

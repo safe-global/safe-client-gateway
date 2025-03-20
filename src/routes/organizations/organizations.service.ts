@@ -114,7 +114,7 @@ export class OrganizationsService {
     return await this.organizationsRepository.findOneOrFail({
       where: {
         id,
-        userOrganizations: { user: { id: userId } },
+        userOrganizations: { user: { id: userId, status: 'ACTIVE' } },
       },
       select: {
         id: true,

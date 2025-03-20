@@ -136,7 +136,7 @@ export class SpacesService {
     const space = await this.spacesRepository.findOneOrFail({
       where: {
         id,
-        userOrganizations: { user: { id: userId } },
+        userOrganizations: { user: { id: userId, status: 'ACTIVE' } },
       },
       select: {
         id: true,
