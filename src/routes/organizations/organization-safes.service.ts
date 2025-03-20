@@ -123,6 +123,7 @@ export class OrganizationSafesService {
     const userOrganization = await this.userOrganizationsRepository.findOne({
       user: { id: userId },
       organization: { id: organizationId },
+      status: 'ACTIVE',
     });
 
     if (!userOrganization) {

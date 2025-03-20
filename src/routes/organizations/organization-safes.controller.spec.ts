@@ -810,6 +810,53 @@ describe('OrganizationSafeController', () => {
         });
     });
 
+    it('Should return a 401 if user is not an active member', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const orgName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${memberAccessToken}`]);
+
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/organizations/${orgId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              address: memberAuthPayloadDto.signer_address,
+              name: faker.person.firstName(),
+              role: 'MEMBER',
+            },
+          ],
+        });
+
+      await request(app.getHttpServer())
+        .get(`/v1/organizations/${orgId}/safes`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(401)
+        .expect({
+          error: 'Unauthorized',
+          message:
+            'User is unauthorized. signer_address= ' +
+            memberAuthPayloadDto.signer_address,
+          statusCode: 401,
+        });
+    });
+
     it('should return a 403 if not authenticated', async () => {
       const orgId = faker.number.int();
       await request(app.getHttpServer())

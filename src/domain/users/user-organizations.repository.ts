@@ -244,11 +244,15 @@ export class UsersOrganizationsRepository
     const userOrganizationRepository =
       await this.postgresDatabaseService.getRepository(DbUserOrganization);
     const userOrganization = await userOrganizationRepository.findOne({
-      where: { user: { id: user.id }, organization: { id: args.orgId } },
+      where: {
+        user: { id: user.id },
+        organization: { id: args.orgId },
+        status: 'ACTIVE',
+      },
     });
     if (!userOrganization) {
       throw new UnauthorizedException(
-        'The user is not a member of the organization.',
+        'The user is not an active member of the organization.',
       );
     }
     const org = await this.organizationsRepository.findOneOrFail({

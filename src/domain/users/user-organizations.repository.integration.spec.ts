@@ -1493,13 +1493,12 @@ describe('UserOrganizationsRepository', () => {
       });
       const userOrgRole = faker.helpers.arrayElement(UserOrgRoleKeys);
       const orgId = org.generatedMaps[0].id;
-      const userOrgStatus = faker.helpers.arrayElement(UserOrgStatusKeys);
       const userOrg = await dbUserOrgRepo.insert({
         user: user.generatedMaps[0],
         organization: org.generatedMaps[0],
         name: userOrgName,
         role: userOrgRole,
-        status: userOrgStatus,
+        status: 'ACTIVE',
         invitedBy: userOrgInvitedBy,
       });
       const userOrgId = userOrg.identifiers[0].id as UserOrganization['id'];
@@ -1515,7 +1514,7 @@ describe('UserOrganizationsRepository', () => {
           id: userOrgId,
           name: userOrgName,
           role: userOrgRole,
-          status: userOrgStatus,
+          status: 'ACTIVE',
           invitedBy: userOrgInvitedBy,
           updatedAt: expect.any(Date),
           user: {
@@ -1584,7 +1583,43 @@ describe('UserOrganizationsRepository', () => {
         }),
       ).rejects.toThrow(
         new UnauthorizedException(
-          'The user is not a member of the organization.',
+          'The user is not an active member of the organization.',
+        ),
+      );
+    });
+
+    it('should throw an error if the user is not an active member of the organization', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const orgName = faker.word.noun();
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: user.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const org = await dbOrgRepo.insert({
+        name: orgName,
+        status: 'ACTIVE',
+      });
+      const orgId = org.generatedMaps[0].id;
+      await dbUserOrgRepo.insert({
+        user: user.generatedMaps[0],
+        organization: org.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(UserOrgRoleKeys),
+        status: faker.helpers.arrayElement(['INVITED', 'DECLINED']),
+        invitedBy: authPayloadDto.signer_address,
+      });
+
+      await expect(
+        userOrgRepo.findAuthorizedUserOrgsOrFail({
+          authPayload: new AuthPayload(authPayloadDto),
+          orgId,
+        }),
+      ).rejects.toThrow(
+        new UnauthorizedException(
+          'The user is not an active member of the organization.',
         ),
       );
     });
