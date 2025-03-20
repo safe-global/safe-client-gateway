@@ -1302,7 +1302,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401)
         .expect({
-          message: 'The user is not a member of the organization.', // TODO: (compatibility) change to 'The user is not a member of the space.'
+          message: 'The user is not an active member of the organization.', // TODO: (compatibility) change to 'The user is not an active member of the space.'
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1350,7 +1350,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .expect(401)
         .expect({
-          message: 'The user is not an active member of the space.',
+          message: 'The user is not an active member of the organization.', // TODO: (compatibility) change to 'The user is not an active member of the space.'
           error: 'Unauthorized',
           statusCode: 401,
         });
