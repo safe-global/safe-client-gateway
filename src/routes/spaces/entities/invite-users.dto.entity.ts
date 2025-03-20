@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
+import { UserOrganizationRole as MemberRole } from '@/domain/users/entities/user-organization.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { ApiProperty } from '@nestjs/swagger';
@@ -8,7 +8,7 @@ const InviteUserDtoSchema = z
   .array(
     z.object({
       address: AddressSchema,
-      role: z.enum(getStringEnumKeys(UserOrganizationRole)),
+      role: z.enum(getStringEnumKeys(MemberRole)),
       name: z.string().max(255),
     }),
   )
@@ -26,9 +26,9 @@ export class InviteUserDto {
   public readonly name!: string;
 
   @ApiProperty({
-    enum: getStringEnumKeys(UserOrganizationRole),
+    enum: getStringEnumKeys(MemberRole),
   })
-  public readonly role!: keyof typeof UserOrganizationRole;
+  public readonly role!: keyof typeof MemberRole;
 }
 
 export class InviteUsersDto implements z.infer<typeof InviteUsersDtoSchema> {

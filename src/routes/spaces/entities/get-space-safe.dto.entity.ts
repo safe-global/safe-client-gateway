@@ -1,7 +1,7 @@
-import type { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import type { OrganizationSafe as SpaceSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class GetOrganizationSafeResponse {
+export class GetSpaceSafeResponse {
   @ApiProperty({
     type: 'object',
     additionalProperties: {
@@ -15,6 +15,6 @@ export class GetOrganizationSafeResponse {
     },
   })
   public readonly safes!: {
-    [chainId: OrganizationSafe['chainId']]: Array<OrganizationSafe['address']>;
+    [chainId: SpaceSafe['chainId']]: Array<SpaceSafe['address']>;
   };
 }

@@ -26,20 +26,20 @@ import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
-import { OrganizationsController } from '@/routes/organizations/organizations.controller';
+import { SpacesController } from '@/routes/spaces/spaces.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker/.';
-import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
+import { OrganizationStatus as SpaceStatus } from '@/domain/organizations/entities/organization.entity';
 import {
-  UserOrganizationRole,
-  UserOrganizationStatus,
+  UserOrganizationRole as MemberRole,
+  UserOrganizationStatus as MemberStatus,
 } from '@/domain/users/entities/user-organization.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 
-describe('OrganizationController', () => {
+describe('SpacesController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
 
@@ -93,45 +93,42 @@ describe('OrganizationController', () => {
 
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(
-      OrganizationsController.prototype,
+      SpacesController.prototype,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     ) as Array<Function>;
 
     endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
   });
 
-  describe('POST /v1/organizations', () => {
-    it('Should create an organization', async () => {
+  describe('POST /v1/spaces', () => {
+    it('Should create a space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationName = faker.company.name();
+      const spaceName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
       await request(app.getHttpServer())
-        .post('/v1/organizations')
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName })
+        .send({ name: spaceName })
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
             id: expect.any(Number),
-            name: organizationName,
+            name: spaceName,
           }),
         );
     });
 
     it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer())
-        .post('/v1/organizations')
-        .expect(403)
-        .expect({
-          statusCode: 403,
-          message: 'Forbidden resource',
-          error: 'Forbidden',
-        });
+      await request(app.getHttpServer()).post('/v1/spaces').expect(403).expect({
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      });
     });
 
     it('Should return a 403 if the AuthPayload is empty', async () => {
@@ -141,7 +138,7 @@ describe('OrganizationController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .post('/v1/organizations')
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -154,12 +151,12 @@ describe('OrganizationController', () => {
     it('Should return a 404 if user is not found', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationName = faker.company.name();
+      const spaceName = faker.company.name();
 
       await request(app.getHttpServer())
-        .post('/v1/organizations')
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName })
+        .send({ name: spaceName })
         .expect(404)
         .expect({
           statusCode: 404,
@@ -173,7 +170,7 @@ describe('OrganizationController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .post('/v1/organizations')
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send()
         .expect(422)
@@ -188,50 +185,50 @@ describe('OrganizationController', () => {
     });
   });
 
-  describe('POST /v1/organizations/create-with-user', () => {
-    it('Should create an organization when user exists', async () => {
+  describe('POST /v1/spaces/create-with-user', () => {
+    it('Should create a space when user exists', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationName = faker.company.name();
+      const spaceName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
       await request(app.getHttpServer())
-        .post('/v1/organizations/create-with-user')
+        .post('/v1/spaces/create-with-user')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName })
+        .send({ name: spaceName })
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
             id: expect.any(Number),
-            name: organizationName,
+            name: spaceName,
           }),
         );
     });
 
-    it('Should create an organization with user does not exist', async () => {
+    it('Should create a space with user does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationName = faker.company.name();
+      const spaceName = faker.company.name();
 
       await request(app.getHttpServer())
-        .post('/v1/organizations/create-with-user')
+        .post('/v1/spaces/create-with-user')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName })
+        .send({ name: spaceName })
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
             id: expect.any(Number),
-            name: organizationName,
+            name: spaceName,
           }),
         );
     });
 
     it('should return a 403 if not authenticated', async () => {
       await request(app.getHttpServer())
-        .post('/v1/organizations/create-with-user')
+        .post('/v1/spaces/create-with-user')
         .expect(403)
         .expect({
           statusCode: 403,
@@ -247,7 +244,7 @@ describe('OrganizationController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .post('/v1/organizations/create-with-user')
+        .post('/v1/spaces/create-with-user')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -262,7 +259,7 @@ describe('OrganizationController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .post('/v1/organizations/create-with-user')
+        .post('/v1/spaces/create-with-user')
         .set('Cookie', [`access_token=${accessToken}`])
         .send()
         .expect(422)
@@ -277,52 +274,46 @@ describe('OrganizationController', () => {
     });
   });
 
-  describe('GET /organizations', () => {
-    it('Should return a list of organizations', async () => {
+  describe('GET /spaces', () => {
+    it('Should return a list of spaces', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const firstOrganizationName = faker.company.name();
-      const secondOrganizationName = faker.company.name();
+      const firstSpaceName = faker.company.name();
+      const secondSpaceName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
       await request(app.getHttpServer())
-        .post('/v1/organizations')
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: firstOrganizationName })
+        .send({ name: firstSpaceName })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post('/v1/organizations')
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: secondOrganizationName })
+        .send({ name: secondSpaceName })
         .expect(201);
 
       await request(app.getHttpServer())
-        .get('/v1/organizations')
+        .get('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
           expect(body).toEqual([
             {
               id: expect.any(Number),
-              name: firstOrganizationName,
-              status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
-              userOrganizations: [
+              name: firstSpaceName,
+              status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+              members: [
                 {
                   id: expect.any(Number),
                   name: expect.any(String),
                   invitedBy: null,
-                  role: getEnumKey(
-                    UserOrganizationRole,
-                    UserOrganizationRole.ADMIN,
-                  ),
-                  status: getEnumKey(
-                    OrganizationStatus,
-                    OrganizationStatus.ACTIVE,
-                  ),
+                  role: getEnumKey(MemberRole, MemberRole.ADMIN),
+                  status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                   user: {
@@ -334,21 +325,15 @@ describe('OrganizationController', () => {
             },
             {
               id: expect.any(Number),
-              name: secondOrganizationName,
-              status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
-              userOrganizations: [
+              name: secondSpaceName,
+              status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+              members: [
                 {
                   id: expect.any(Number),
                   name: expect.any(String),
                   invitedBy: null,
-                  role: getEnumKey(
-                    UserOrganizationRole,
-                    UserOrganizationRole.ADMIN,
-                  ),
-                  status: getEnumKey(
-                    UserOrganizationStatus,
-                    UserOrganizationStatus.ACTIVE,
-                  ),
+                  role: getEnumKey(MemberRole, MemberRole.ADMIN),
+                  status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                   user: {
@@ -367,7 +352,7 @@ describe('OrganizationController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .get('/v1/organizations')
+        .get('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
@@ -378,14 +363,11 @@ describe('OrganizationController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer())
-        .get('/v1/organizations')
-        .expect(403)
-        .expect({
-          statusCode: 403,
-          message: 'Forbidden resource',
-          error: 'Forbidden',
-        });
+      await request(app.getHttpServer()).get('/v1/spaces').expect(403).expect({
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      });
     });
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
@@ -395,7 +377,7 @@ describe('OrganizationController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .get('/v1/organizations')
+        .get('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -406,11 +388,11 @@ describe('OrganizationController', () => {
     });
   });
 
-  describe('GET /organizations/:id', () => {
-    it('Should return an organization by its id', async () => {
+  describe('GET /spaces/:id', () => {
+    it('Should return a space by its id', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationName = faker.company.name();
+      const spaceName = faker.company.name();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -418,35 +400,29 @@ describe('OrganizationController', () => {
         .expect(201);
       const userId = createUserResponse.body.id;
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName })
+        .send({ name: spaceName })
         .expect(201);
-      const organizationId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .get(`/v1/organizations/${organizationId}`)
+        .get(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
           expect(body).toEqual({
-            id: organizationId,
-            name: organizationName,
-            status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
-            userOrganizations: [
+            id: spaceId,
+            name: spaceName,
+            status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+            members: [
               {
                 id: expect.any(Number),
                 name: expect.any(String),
                 invitedBy: null,
-                status: getEnumKey(
-                  UserOrganizationStatus,
-                  UserOrganizationStatus.ACTIVE,
-                ),
-                role: getEnumKey(
-                  UserOrganizationRole,
-                  UserOrganizationRole.ADMIN,
-                ),
+                status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
+                role: getEnumKey(MemberRole, MemberRole.ADMIN),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -459,10 +435,10 @@ describe('OrganizationController', () => {
         });
     });
 
-    it('Should return a 404 if an organization id does not exist', async () => {
+    it('Should return a 404 if a space id does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationId = faker.number.int({ min: 10000, max: 20000 });
+      const spaceId = faker.number.int({ min: 10000, max: 20000 });
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -470,12 +446,12 @@ describe('OrganizationController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .get(`/v1/organizations/${organizationId}`)
+        .get(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Organization not found.',
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
           error: 'Not Found',
         });
     });
@@ -483,10 +459,10 @@ describe('OrganizationController', () => {
     it('Should return a 404 if the user does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationId = faker.number.int({ min: 10000, max: 20000 });
+      const spaceId = faker.number.int({ min: 10000, max: 20000 });
 
       await request(app.getHttpServer())
-        .get(`/v1/organizations/${organizationId}`)
+        .get(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
@@ -497,14 +473,11 @@ describe('OrganizationController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer())
-        .get('/v1/organizations')
-        .expect(403)
-        .expect({
-          statusCode: 403,
-          message: 'Forbidden resource',
-          error: 'Forbidden',
-        });
+      await request(app.getHttpServer()).get('/v1/spaces').expect(403).expect({
+        statusCode: 403,
+        message: 'Forbidden resource',
+        error: 'Forbidden',
+      });
     });
 
     it('Should return a 403 is the AuthPayload is empty', async () => {
@@ -514,7 +487,7 @@ describe('OrganizationController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
 
       await request(app.getHttpServer())
-        .get('/v1/organizations')
+        .get('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -525,44 +498,44 @@ describe('OrganizationController', () => {
     });
   });
 
-  describe('PATCH /organizations/:id', () => {
-    it('Should update an organization', async () => {
+  describe('PATCH /spaces/:id', () => {
+    it('Should update a space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const previousOrganizationName = faker.company.name();
-      const newOrganizationName = faker.company.name();
+      const previousSpaceName = faker.company.name();
+      const newSpaceName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: previousOrganizationName });
+        .send({ name: previousSpaceName });
 
-      const organizationId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${organizationId}`)
+        .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
-          name: newOrganizationName,
-          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+          name: newSpaceName,
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
         })
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: organizationId,
+            id: spaceId,
           }),
         );
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.number.int({ min: 900000, max: 990000 });
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${organizationId}`)
+        .patch(`/v1/spaces/${spaceId}`)
         .expect(403)
         .expect({
           statusCode: 403,
@@ -576,10 +549,10 @@ describe('OrganizationController', () => {
         .with('signer_address', undefined as unknown as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationId = faker.number.int({ min: 1 });
+      const spaceId = faker.number.int({ min: 1 });
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${organizationId}`)
+        .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -589,22 +562,22 @@ describe('OrganizationController', () => {
         });
     });
 
-    it('Should throw a 401 if user can not update an organization because organization does not exist', async () => {
+    it('Should throw a 401 if user can not update a space because the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationName = faker.company.name();
-      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceName = faker.company.name();
+      const spaceId = faker.number.int({ min: 900000, max: 990000 });
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${organizationId}`)
+        .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
-          name: organizationName,
-          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+          name: spaceName,
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
         })
         .expect(401)
         .expect(({ body }) =>
@@ -618,33 +591,33 @@ describe('OrganizationController', () => {
         );
     });
 
-    it('Should throw a 401 if a member of the organization does not have access to update an organization', async () => {
+    it('Should throw a 401 if a member of the space does not have access to update a space', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const previousOrganizationName = faker.company.name();
-      const newOrganizationName = faker.company.name();
-      const organizationMemberName = faker.person.firstName();
+      const previousSpaceName = faker.company.name();
+      const newSpaceName = faker.company.name();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${adminAccessToken}`]);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: previousOrganizationName });
-      const organizationId = createOrganizationResponse.body.id;
+        .send({ name: previousSpaceName });
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${organizationId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
-              name: organizationMemberName,
+              name: memberName,
               address: memberAuthPayloadDto.signer_address,
             },
           ],
@@ -652,11 +625,11 @@ describe('OrganizationController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${organizationId}`)
+        .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .send({
-          name: newOrganizationName,
-          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+          name: newSpaceName,
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
         })
         .expect(401)
         .expect({
@@ -667,35 +640,35 @@ describe('OrganizationController', () => {
             memberAuthPayloadDto.signer_address,
         });
     });
-    it('Should throw a 401 if a an inactive admin tries to update the organization', async () => {
+    it('Should throw a 401 if a an inactive admin tries to update the space', async () => {
       const activeAdminAuthPayloadDto = authPayloadDtoBuilder().build();
       const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
       const inactiveAdminAuthPayloadDto = authPayloadDtoBuilder().build();
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayloadDto,
       );
-      const previousOrganizationName = faker.company.name();
-      const newOrganizationName = faker.company.name();
-      const organizationMemberName = faker.person.firstName();
+      const previousSpaceName = faker.company.name();
+      const newSpaceName = faker.company.name();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`]);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
-        .send({ name: previousOrganizationName });
-      const organizationId = createOrganizationResponse.body.id;
+        .send({ name: previousSpaceName });
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${organizationId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({
           users: [
             {
               role: 'ADMIN',
-              name: organizationMemberName,
+              name: memberName,
               address: inactiveAdminAuthPayloadDto.signer_address,
             },
           ],
@@ -703,11 +676,11 @@ describe('OrganizationController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${organizationId}`)
+        .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${inactiveAdminAccessToken}`])
         .send({
-          name: newOrganizationName,
-          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+          name: newSpaceName,
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
         })
         .expect(401)
         .expect({
@@ -719,13 +692,13 @@ describe('OrganizationController', () => {
         });
     });
 
-    it('Should throw a 401 if user does not have access to update an organization', async () => {
+    it('Should throw a 401 if user does not have access to update a space', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
-      const previousOrganizationName = faker.company.name();
-      const newOrganizationName = faker.company.name();
+      const previousSpaceName = faker.company.name();
+      const newSpaceName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -734,18 +707,18 @@ describe('OrganizationController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonMemberAccessToken}`]);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: previousOrganizationName });
-      const organizationId = createOrganizationResponse.body.id;
+        .send({ name: previousSpaceName });
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${organizationId}`)
+        .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .send({
-          name: newOrganizationName,
-          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+          name: newSpaceName,
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
         })
         .expect(401)
         .expect({
@@ -758,45 +731,45 @@ describe('OrganizationController', () => {
     });
   });
 
-  describe('DELETE /organizations/:id', () => {
-    it('Should delete an organization', async () => {
+  describe('DELETE /spaces/:id', () => {
+    it('Should delete a space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationName = faker.company.name();
+      const spaceName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: organizationName });
+        .send({ name: spaceName });
 
-      const organizationId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${organizationId}`)
+        .delete(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(204);
     });
 
-    it('Should throw a 401 if user can not update an organization because organization does not exist', async () => {
+    it('Should throw a 401 if user can not update a space because the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationName = faker.company.name();
-      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceName = faker.company.name();
+      const spaceId = faker.number.int({ min: 900000, max: 990000 });
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${organizationId}`)
+        .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
-          name: organizationName,
-          status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+          name: spaceName,
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
         })
         .expect(401)
         .expect(({ body }) =>
@@ -810,40 +783,40 @@ describe('OrganizationController', () => {
         );
     });
 
-    it('Should throw a 401 if a member of the organization does not have access to delete an organization', async () => {
+    it('Should throw a 401 if a member of the space does not have access to delete a space', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const organizationName = faker.company.name();
-      const organizationMemberName = faker.person.firstName();
+      const spaceName = faker.company.name();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${adminAccessToken}`]);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: organizationName });
-      const organizationId = createOrganizationResponse.body.id;
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${organizationId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: memberAuthPayloadDto.signer_address,
-              name: organizationMemberName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${organizationId}`)
+        .delete(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .expect(401)
         .expect({
@@ -855,42 +828,42 @@ describe('OrganizationController', () => {
         });
     });
 
-    it('Should throw a 401 if an inactive admin tries to delete the organization', async () => {
+    it('Should throw a 401 if an inactive admin tries to delete the space', async () => {
       const activeAdminAuthPayloadDto = authPayloadDtoBuilder().build();
       const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
       const inactiveAdminAuthPayloadDto = authPayloadDtoBuilder().build();
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayloadDto,
       );
-      const organizationName = faker.company.name();
-      const organizationMemberName = faker.person.firstName();
+      const spaceName = faker.company.name();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`]);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
-        .send({ name: organizationName });
-      const organizationId = createOrganizationResponse.body.id;
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${organizationId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({
           users: [
             {
               role: 'ADMIN',
               address: inactiveAdminAuthPayloadDto.signer_address,
-              name: organizationMemberName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${organizationId}`)
+        .delete(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${inactiveAdminAccessToken}`])
         .expect(401)
         .expect({
@@ -902,12 +875,12 @@ describe('OrganizationController', () => {
         });
     });
 
-    it('Should throw a 401 if user does not have access to delete an organization', async () => {
+    it('Should throw a 401 if user does not have access to delete a space', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
-      const organizationName = faker.company.name();
+      const spaceName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -916,14 +889,14 @@ describe('OrganizationController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonMemberAccessToken}`]);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: organizationName });
-      const organizationId = createOrganizationResponse.body.id;
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${organizationId}`)
+        .delete(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .expect(401)
         .expect({
@@ -940,10 +913,10 @@ describe('OrganizationController', () => {
         .with('signer_address', undefined as unknown as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const organizationId = faker.number.int({ min: 1 });
+      const spaceId = faker.number.int({ min: 1 });
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${organizationId}`)
+        .delete(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -954,10 +927,10 @@ describe('OrganizationController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const organizationId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.number.int({ min: 900000, max: 990000 });
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${organizationId}`)
+        .delete(`/v1/spaces/${spaceId}`)
         .expect(403)
         .expect({
           statusCode: 403,

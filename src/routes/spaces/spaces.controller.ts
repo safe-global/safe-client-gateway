@@ -19,81 +19,77 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { OrganizationsService } from '@/routes/organizations/organizations.service';
+import { OrganizationsService as SpacesService } from '@/routes/spaces/spaces.service';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
+import { OrganizationStatus as SpaceStatus } from '@/domain/organizations/entities/organization.entity';
 import {
-  CreateOrganizationDto,
-  CreateOrganizationResponse,
-  CreateOrganizationSchema,
-} from '@/routes/organizations/entities/create-organization.dto.entity';
-import { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
+  CreateSpaceDto,
+  CreateSpaceResponse,
+  CreateSpaceSchema,
+} from '@/routes/spaces/entities/create-space.dto.entity';
+import { GetSpaceResponse } from '@/routes/spaces/entities/get-space.dto.entity';
 import {
-  UpdateOrganizationDto,
-  UpdateOrganizationResponse,
-  UpdateOrganizationSchema,
-} from '@/routes/organizations/entities/update-organization.dto.entity';
+  UpdateSpaceDto,
+  UpdateSpaceResponse,
+  UpdateSpaceSchema,
+} from '@/routes/spaces/entities/update-space.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 
-@ApiTags('organizations')
+@ApiTags('spaces')
 @UseGuards(AuthGuard)
-@Controller({ path: 'organizations', version: '1' })
-export class OrganizationsController {
-  public constructor(
-    private readonly organizationsService: OrganizationsService,
-  ) {
-    //
-  }
+@Controller({ path: 'spaces', version: '1' })
+export class SpacesController {
+  public constructor(private readonly spacesService: SpacesService) {}
 
   @Post()
   @ApiOkResponse({
-    description: 'Organization created',
-    type: CreateOrganizationResponse,
+    description: 'Space created',
+    type: CreateSpaceResponse,
   })
   @ApiNotFoundResponse({ description: 'User not found.' })
   @ApiForbiddenResponse({ description: 'Forbidden resource' })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   public async create(
-    @Body(new ValidationPipe(CreateOrganizationSchema))
-    body: CreateOrganizationDto,
+    @Body(new ValidationPipe(CreateSpaceSchema))
+    body: CreateSpaceDto,
     @Auth() authPayload: AuthPayload,
-  ): Promise<CreateOrganizationResponse> {
-    return await this.organizationsService.create({
+  ): Promise<CreateSpaceResponse> {
+    return await this.spacesService.create({
       authPayload,
       name: body.name,
-      status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+      status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
     });
   }
 
   @Post('/create-with-user')
   @ApiOkResponse({
-    description: 'Organization created',
-    type: CreateOrganizationResponse,
+    description: 'Space created',
+    type: CreateSpaceResponse,
   })
   @ApiForbiddenResponse({ description: 'Forbidden resource' })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   public async createWithUser(
-    @Body(new ValidationPipe(CreateOrganizationSchema))
-    body: CreateOrganizationDto,
+    @Body(new ValidationPipe(CreateSpaceSchema))
+    body: CreateSpaceDto,
     @Auth() authPayload: AuthPayload,
-  ): Promise<CreateOrganizationResponse> {
-    return await this.organizationsService.createWithUser({
+  ): Promise<CreateSpaceResponse> {
+    return await this.spacesService.createWithUser({
       authPayload,
       name: body.name,
-      status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+      status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
       userStatus: getEnumKey(UserStatus, UserStatus.ACTIVE),
     });
   }
 
   @Get()
   @ApiOkResponse({
-    description: 'Organizations found',
-    type: GetOrganizationResponse,
+    description: 'Spaces found',
+    type: GetSpaceResponse,
     isArray: true,
   })
   @ApiNotFoundResponse({ description: 'User not found.' })
@@ -101,17 +97,17 @@ export class OrganizationsController {
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   public async get(
     @Auth() authPayload: AuthPayload,
-  ): Promise<Array<GetOrganizationResponse>> {
-    return await this.organizationsService.get(authPayload);
+  ): Promise<Array<GetSpaceResponse>> {
+    return await this.spacesService.get(authPayload);
   }
 
   @Get('/:id')
   @ApiOkResponse({
-    description: 'Organization found',
-    type: GetOrganizationResponse,
+    description: 'Space found',
+    type: GetSpaceResponse,
   })
   @ApiNotFoundResponse({
-    description: 'Organization not found. OR User not found.',
+    description: 'Space not found. OR User not found.',
   })
   @ApiForbiddenResponse({ description: 'Forbidden resource' })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
@@ -119,14 +115,14 @@ export class OrganizationsController {
     @Param('id', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     id: number,
     @Auth() authPayload: AuthPayload,
-  ): Promise<GetOrganizationResponse> {
-    return await this.organizationsService.getOne(id, authPayload);
+  ): Promise<GetSpaceResponse> {
+    return await this.spacesService.getOne(id, authPayload);
   }
 
   @Patch('/:id')
   @ApiOkResponse({
-    description: 'Organization updated',
-    type: UpdateOrganizationResponse,
+    description: 'Space updated',
+    type: UpdateSpaceResponse,
   })
   @ApiForbiddenResponse({ description: 'Forbidden resource' })
   @ApiUnauthorizedResponse({
@@ -134,13 +130,13 @@ export class OrganizationsController {
   })
   @ApiNotFoundResponse({ description: 'User not found.' })
   public async update(
-    @Body(new ValidationPipe(UpdateOrganizationSchema))
-    payload: UpdateOrganizationDto,
+    @Body(new ValidationPipe(UpdateSpaceSchema))
+    payload: UpdateSpaceDto,
     @Param('id', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     id: number,
     @Auth() authPayload: AuthPayload,
-  ): Promise<UpdateOrganizationResponse> {
-    return await this.organizationsService.update({
+  ): Promise<UpdateSpaceResponse> {
+    return await this.spacesService.update({
       id,
       authPayload,
       updatePayload: payload,
@@ -149,7 +145,7 @@ export class OrganizationsController {
 
   @Delete('/:id')
   @ApiResponse({
-    description: 'Organization deleted',
+    description: 'Spaces deleted',
     status: HttpStatus.NO_CONTENT,
   })
   @ApiForbiddenResponse({ description: 'Forbidden resource' })
@@ -163,6 +159,6 @@ export class OrganizationsController {
     id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
-    return await this.organizationsService.delete({ id, authPayload });
+    return await this.spacesService.delete({ id, authPayload });
   }
 }

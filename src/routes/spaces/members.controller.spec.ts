@@ -25,7 +25,7 @@ import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notif
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { UserOrganizationsController } from '@/routes/organizations/user-organizations.controller';
+import { MembersController } from '@/routes/spaces/members.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
@@ -35,7 +35,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 
-describe('UserOrganizationsController', () => {
+describe('MembersController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
   let maxInvites: number;
@@ -94,18 +94,18 @@ describe('UserOrganizationsController', () => {
 
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(
-      UserOrganizationsController.prototype,
+      MembersController.prototype,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     ) as Array<Function>;
 
     endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
   });
 
-  describe('POST /v1/organizations/:orgId/members/invite', () => {
+  describe('POST /v1/spaces/:spaceId/members/invite', () => {
     it('should invite users', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -116,15 +116,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
@@ -145,7 +145,7 @@ describe('UserOrganizationsController', () => {
           expect(body).toEqual([
             {
               userId: expect.any(Number),
-              orgId,
+              spaceId,
               name: user1Name,
               role: 'ADMIN',
               status: 'INVITED',
@@ -153,7 +153,7 @@ describe('UserOrganizationsController', () => {
             },
             {
               userId: expect.any(Number),
-              orgId,
+              spaceId,
               name: user2Name,
               role: 'MEMBER',
               status: 'INVITED',
@@ -166,7 +166,7 @@ describe('UserOrganizationsController', () => {
     it('should throw a 409 if there are too many invites', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgId = faker.number.int();
+      const spaceId = faker.number.int();
       const invites = Array.from({ length: maxInvites + 1 }).map(() => {
         return {
           role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
@@ -176,7 +176,7 @@ describe('UserOrganizationsController', () => {
       });
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ users: invites })
         .expect(409)
@@ -190,7 +190,7 @@ describe('UserOrganizationsController', () => {
     it('should throw a 403 if the user is not authenticated', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -201,15 +201,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .send({
           users: [
             {
@@ -235,22 +235,22 @@ describe('UserOrganizationsController', () => {
     it('should throw a 422 if no addresses are provided', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ users: [] })
         .expect(422);
@@ -261,7 +261,7 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -272,15 +272,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .send({
           users: [
@@ -304,10 +304,10 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 404 if the organization does not exist', async () => {
+    it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgId = faker.number.int({
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
@@ -322,7 +322,7 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
@@ -340,18 +340,18 @@ describe('UserOrganizationsController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.',
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 401 if the signer is not a member of the organization', async () => {
+    it('should throw a 401 if the signer is not a member of the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
-      const nonUserOrgAccessToken = jwtService.sign(nonUserOrgAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
+      const spaceName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -364,19 +364,19 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
+        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
-        .set('Cookie', [`access_token=${nonUserOrgAccessToken}`])
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .send({
           users: [
             {
@@ -404,7 +404,7 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const user = getAddress(faker.finance.ethereumAddress());
       const userName = faker.person.firstName();
 
@@ -413,15 +413,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
@@ -435,7 +435,7 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
           users: [
@@ -459,7 +459,7 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const user = getAddress(faker.finance.ethereumAddress());
       const userName = faker.person.firstName();
 
@@ -468,15 +468,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
@@ -490,7 +490,7 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
           users: [
@@ -510,46 +510,46 @@ describe('UserOrganizationsController', () => {
     });
   });
 
-  describe('POST /v1/organizations/:orgId/members/accept', () => {
+  describe('POST /v1/spaces/:spaceId/members/accept', () => {
     it('should accept an invite for a user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(201)
         .expect({});
@@ -560,41 +560,41 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgInvitedUserName = faker.person.firstName();
-      const orgAcceptedUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const invitedMemberName = faker.person.firstName();
+      const acceptedMemberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgInvitedUserName,
+              name: invitedMemberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgAcceptedUserName,
+          name: acceptedMemberName,
         })
         .expect(201)
         .expect({});
@@ -604,39 +604,39 @@ describe('UserOrganizationsController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(403)
         .expect({
@@ -651,26 +651,26 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(404)
         .expect({
@@ -680,14 +680,14 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 404 if the organization does not exist', async () => {
+    it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgId = faker.number.int({
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
-      const orgUserName = faker.person.firstName();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -695,27 +695,27 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.',
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 404 if the user organization does not exist', async () => {
+    it('should throw a 404 if the user space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
-      const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
+      const spaceName = faker.word.noun();
       const user = getAddress(faker.finance.ethereumAddress());
-      const orgUserName = faker.person.firstName();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -724,96 +724,96 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: user,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
-        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .post(`/v1/spaces/${spaceId}/members/accept`)
+        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.',
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 404 if the status of the user organization is not INVITED', async () => {
+    it('should throw a 404 if the status of the member is not INVITED', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(201)
         .expect({});
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.',
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
           error: 'Not Found',
           statusCode: 404,
         });
@@ -824,37 +824,37 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send()
         .expect(422)
@@ -869,43 +869,43 @@ describe('UserOrganizationsController', () => {
     });
   });
 
-  describe('POST /v1/organizations/:orgId/members/decline', () => {
+  describe('POST /v1/spaces/:spaceId/members/decline', () => {
     it('should decline an invite for a user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/decline`)
+        .post(`/v1/spaces/${spaceId}/members/decline`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201)
         .expect({});
@@ -915,37 +915,37 @@ describe('UserOrganizationsController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/decline`)
+        .post(`/v1/spaces/${spaceId}/members/decline`)
         .expect(403)
         .expect({
           message: 'Forbidden resource',
@@ -959,22 +959,22 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/decline`)
+        .post(`/v1/spaces/${spaceId}/members/decline`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .expect(404)
         .expect({
@@ -984,10 +984,10 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 404 if the organization does not exist', async () => {
+    it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgId = faker.number.int({
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
@@ -998,23 +998,23 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/decline`)
+        .post(`/v1/spaces/${spaceId}/members/decline`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.',
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 404 if the user organization does not exist', async () => {
+    it('should throw a 404 if the member does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
-      const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
       const user = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
@@ -1024,98 +1024,98 @@ describe('UserOrganizationsController', () => {
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: user,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/decline`)
-        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .post(`/v1/spaces/${spaceId}/members/decline`)
+        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.',
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 404 if the status of the user organization is not INVITED', async () => {
+    it('should throw a 404 if the status of the member is not INVITED', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/decline`)
+        .post(`/v1/spaces/${spaceId}/members/decline`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(201)
         .expect({});
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/decline`)
+        .post(`/v1/spaces/${spaceId}/members/decline`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.',
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
           error: 'Not Found',
           statusCode: 404,
         });
     });
   });
 
-  describe('GET /v1/organizations/:orgId/members', () => {
-    it('should return a list of members of an organization', async () => {
+  describe('GET /v1/spaces/:spaceId/members', () => {
+    it('should return a list of members of a space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -1126,15 +1126,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
@@ -1153,7 +1153,7 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .get(`/v1/organizations/${orgId}/members`)
+        .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
@@ -1163,8 +1163,8 @@ describe('UserOrganizationsController', () => {
                 id: expect.any(Number),
                 role: 'ADMIN',
                 status: 'ACTIVE',
-                name: `${orgName} creator`,
-                invitedBy: null, // org creator's `invitedBy` field value is null
+                name: `${spaceName} creator`,
+                invitedBy: null, // Space creator's `invitedBy` field value is null
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -1206,7 +1206,7 @@ describe('UserOrganizationsController', () => {
     it('should throw a 403 if the user is not authenticated', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -1217,15 +1217,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
@@ -1244,7 +1244,7 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .get(`/v1/organizations/${orgId}/members`)
+        .get(`/v1/spaces/${spaceId}/members`)
         .expect(403)
         .expect({
           message: 'Forbidden resource',
@@ -1258,22 +1258,22 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .get(`/v1/organizations/${orgId}/members`)
+        .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .expect(404)
         .expect({
@@ -1283,11 +1283,11 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 401 if the user is not a member of the organization', async () => {
+    it('should throw a 401 if the user is not a member of the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      // Organization does not even exist
-      const orgId = faker.number.int({
+      // Space does not even exist
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
@@ -1298,47 +1298,47 @@ describe('UserOrganizationsController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .get(`/v1/organizations/${orgId}/members`)
+        .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401)
         .expect({
-          message: 'The user is not a member of the organization.',
+          message: 'The user is not a member of the organization.', // TODO: (compatibility) change to 'The user is not a member of the space.'
           error: 'Unauthorized',
           statusCode: 401,
         });
     });
   });
 
-  describe('PATCH /v1/organizations/:orgId/members/:userId/role', () => {
+  describe('PATCH /v1/spaces/:spaceId/members/:userId/role', () => {
     it('should update the role of userId', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       const inviteUsersResponse = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
@@ -1346,15 +1346,15 @@ describe('UserOrganizationsController', () => {
       const userId = inviteUsersResponse.body[0].userId;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ role: 'ADMIN' })
         .expect(200)
@@ -1366,30 +1366,30 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       const inviteUsersResponse = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
@@ -1397,15 +1397,15 @@ describe('UserOrganizationsController', () => {
       const userId = inviteUsersResponse.body[0].userId;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .send({ role: 'ADMIN' })
         .expect(403)
         .expect({
@@ -1422,30 +1422,30 @@ describe('UserOrganizationsController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       const inviteUsersResponse = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
@@ -1453,15 +1453,15 @@ describe('UserOrganizationsController', () => {
       const userId = inviteUsersResponse.body[0].userId;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .send({ role: 'ADMIN' })
         .expect(404)
@@ -1472,35 +1472,35 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 401 if the status of the signer user organization is not ACTIVE', async () => {
+    it('should throw a 401 if the status of the signer member is not ACTIVE', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       const inviteUsersResponse = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
@@ -1508,7 +1508,7 @@ describe('UserOrganizationsController', () => {
       const userId = inviteUsersResponse.body[0].userId;
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({ role: 'ADMIN' })
         .expect(401)
@@ -1519,35 +1519,35 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 401 if the signer user organization is not of ADMIN role', async () => {
+    it('should throw a 401 if the signer member is not of ADMIN role', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       const inviteUsersResponse = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
@@ -1555,15 +1555,15 @@ describe('UserOrganizationsController', () => {
       const userId = inviteUsersResponse.body[0].userId;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({ role: 'ADMIN' })
         .expect(401)
@@ -1577,7 +1577,7 @@ describe('UserOrganizationsController', () => {
     it('should throw a 409 if downgrading the last ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1585,15 +1585,15 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const userId = createUserResponse.body.id;
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ role: 'MEMBER' })
         .expect(409)
@@ -1604,12 +1604,12 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 404 if the user-to-update user organization does not exist', async () => {
+    it('should throw a 404 if the user-to-update member does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserOrgAuthPayloadDto = authPayloadDtoBuilder().build();
-      const nonUserOrgAuthPayload = jwtService.sign(nonUserOrgAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
+      const spaceName = faker.word.noun();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1618,60 +1618,60 @@ describe('UserOrganizationsController', () => {
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonUserOrgAuthPayload}`])
+        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .expect(201);
       const userId = createUserResponse.body.id;
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .patch(`/v1/organizations/${orgId}/members/${userId}/role`)
+        .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ role: 'ADMIN' })
         .expect(404)
         .expect({
-          message: 'User organization not found.',
+          message: 'User organization not found.', // TODO: (compatibility) change to 'Member not found.'
           error: 'Not Found',
           statusCode: 404,
         });
     });
   });
 
-  describe('DELETE /v1/organizations/:orgId/members/:userId', () => {
+  describe('DELETE /v1/spaces/:spaceId/members/:userId', () => {
     it('should remove a user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       const inviteUsersResponse = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'ADMIN',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
@@ -1679,15 +1679,15 @@ describe('UserOrganizationsController', () => {
       const userId = inviteUsersResponse.body[0].userId;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .delete(`/v1/spaces/${spaceId}/members/${userId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({});
@@ -1698,7 +1698,7 @@ describe('UserOrganizationsController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -1709,15 +1709,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .delete(`/v1/spaces/${spaceId}/members/${userId}`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .expect(404)
         .expect({
@@ -1727,10 +1727,10 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 404 if the organization does not exist', async () => {
+    it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgId = faker.number.int({
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
@@ -1742,23 +1742,23 @@ describe('UserOrganizationsController', () => {
       const userId = createUserResponse.body.id;
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .delete(`/v1/spaces/${spaceId}/members/${userId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'No user organizations found.',
+          message: 'No user organizations found.', // TODO: (compatibility) change to 'No members found.'
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 401 if the status of the signer user organization is not ACTIVE', async () => {
+    it('should throw a 401 if the status of the signer member is not ACTIVE', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const member = getAddress(faker.finance.ethereumAddress());
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
       const adminName = faker.person.firstName();
       const memberName = faker.person.firstName();
 
@@ -1767,15 +1767,15 @@ describe('UserOrganizationsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       const inviteUsersResponse = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
@@ -1795,7 +1795,7 @@ describe('UserOrganizationsController', () => {
       const memberUserId = inviteUsersResponse.body[1].userId;
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${memberUserId}`)
+        .delete(`/v1/spaces/${spaceId}/members/${memberUserId}`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(401)
         .expect({
@@ -1805,35 +1805,35 @@ describe('UserOrganizationsController', () => {
         });
     });
 
-    it('should throw a 401 if the signer user organization is not of ADMIN status', async () => {
+    it('should throw a 401 if the signer member is not of ADMIN status', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const orgName = faker.word.noun();
-      const orgUserName = faker.person.firstName();
+      const spaceName = faker.word.noun();
+      const memberName = faker.person.firstName();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       const inviteUsersResponse = await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/invite`)
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
               role: 'MEMBER',
               address: inviteeAuthPayloadDto.signer_address,
-              name: orgUserName,
+              name: memberName,
             },
           ],
         })
@@ -1841,15 +1841,15 @@ describe('UserOrganizationsController', () => {
       const userId = inviteUsersResponse.body[0].userId;
 
       await request(app.getHttpServer())
-        .post(`/v1/organizations/${orgId}/members/accept`)
+        .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({
-          name: orgUserName,
+          name: memberName,
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .delete(`/v1/spaces/${spaceId}/members/${userId}`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(401)
         .expect({
@@ -1862,7 +1862,7 @@ describe('UserOrganizationsController', () => {
     it('should throw a 409 if removing the last ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const orgName = faker.word.noun();
+      const spaceName = faker.word.noun();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1870,15 +1870,15 @@ describe('UserOrganizationsController', () => {
         .expect(201);
       const userId = createUserResponse.body.id;
 
-      const createOrganizationResponse = await request(app.getHttpServer())
-        .post('/v1/organizations')
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: orgName })
+        .send({ name: spaceName })
         .expect(201);
-      const orgId = createOrganizationResponse.body.id;
+      const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .delete(`/v1/organizations/${orgId}/members/${userId}`)
+        .delete(`/v1/spaces/${spaceId}/members/${userId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(409)
         .expect({

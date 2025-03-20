@@ -3,15 +3,15 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import {
-  CreateOrganizationSafesDto,
-  CreateOrganizationSafesSchema,
-} from '@/routes/organizations/entities/create-organization-safe.dto.entity';
+  CreateSpaceSafesDto,
+  CreateSpaceSafesSchema,
+} from '@/routes/spaces/entities/create-space-safe.dto.entity';
 import {
-  DeleteOrganizationSafesDto,
-  DeleteOrganizationSafesSchema,
-} from '@/routes/organizations/entities/delete-organization-safe.dto.entity';
-import { GetOrganizationSafeResponse } from '@/routes/organizations/entities/get-organization-safe.dto.entity';
-import { OrganizationSafesService } from '@/routes/organizations/organization-safes.service';
+  DeleteSpaceSafesDto,
+  DeleteSpaceSafesSchema,
+} from '@/routes/spaces/entities/delete-space-safe.dto.entity';
+import { GetSpaceSafeResponse } from '@/routes/spaces/entities/get-space-safe.dto.entity';
+import { SpaceSafesService } from '@/routes/spaces/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
@@ -35,38 +35,34 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-@ApiTags('organizations-safe')
+@ApiTags('spaces')
 @Controller({
-  path: 'organizations/:organizationId/safes',
+  path: 'spaces/:spaceId/safes',
   version: '1',
 })
 @UseGuards(AuthGuard)
-export class OrganizationSafesController {
+export class SpaceSafesController {
   public constructor(
-    @Inject(OrganizationSafesService)
-    private readonly organizationSafesService: OrganizationSafesService,
+    @Inject(SpaceSafesService)
+    private readonly spaceSafesService: SpaceSafesService,
   ) {}
 
   @Post()
   @ApiCreatedResponse({ description: 'Safes created successfully' })
-  @ApiBody({ type: CreateOrganizationSafesDto })
+  @ApiBody({ type: CreateSpaceSafesDto })
   @ApiUnauthorizedResponse({
     description: 'User unauthorize OR signer address not provided',
   })
   @ApiNotFoundResponse({ description: 'User not found.' })
   public async create(
-    @Body(new ValidationPipe(CreateOrganizationSafesSchema))
-    body: CreateOrganizationSafesDto,
-    @Param(
-      'organizationId',
-      ParseIntPipe,
-      new ValidationPipe(RowSchema.shape.id),
-    )
-    organizationId: number,
+    @Body(new ValidationPipe(CreateSpaceSafesSchema))
+    body: CreateSpaceSafesDto,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
-    return await this.organizationSafesService.create({
-      organizationId,
+    return await this.spaceSafesService.create({
+      spaceId,
       authPayload,
       payload: body.safes,
     });
@@ -75,7 +71,7 @@ export class OrganizationSafesController {
   @Get()
   @ApiOkResponse({
     description: 'Safes fetched successfully',
-    type: GetOrganizationSafeResponse,
+    type: GetSpaceSafeResponse,
   })
   @ApiUnauthorizedResponse({
     description: 'User unauthorized OR signer address not provided',
@@ -84,15 +80,11 @@ export class OrganizationSafesController {
     description: 'User not found.',
   })
   public async get(
-    @Param(
-      'organizationId',
-      ParseIntPipe,
-      new ValidationPipe(RowSchema.shape.id),
-    )
-    organizationId: number,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
     @Auth() authPayload: AuthPayload,
-  ): Promise<GetOrganizationSafeResponse> {
-    return await this.organizationSafesService.get(organizationId, authPayload);
+  ): Promise<GetSpaceSafeResponse> {
+    return await this.spaceSafesService.get(spaceId, authPayload);
   }
 
   @Delete()
@@ -102,23 +94,19 @@ export class OrganizationSafesController {
     description: 'User unauthorized OR signer address not provided',
   })
   @ApiNotFoundResponse({
-    description: 'Organization has no Safes OR user not found.',
+    description: 'Space has no Safes OR user not found.',
   })
   public async delete(
-    @Body(new ValidationPipe(DeleteOrganizationSafesSchema))
-    body: DeleteOrganizationSafesDto,
-    @Param(
-      'organizationId',
-      ParseIntPipe,
-      new ValidationPipe(RowSchema.shape.id),
-    )
-    organizationId: number,
+    @Body(new ValidationPipe(DeleteSpaceSafesSchema))
+    body: DeleteSpaceSafesDto,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
-    return await this.organizationSafesService.delete({
+    return await this.spaceSafesService.delete({
       authPayload,
       payload: body.safes,
-      organizationId,
+      spaceId,
     });
   }
 }

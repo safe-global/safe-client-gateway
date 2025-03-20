@@ -1,20 +1,20 @@
 import { ConflictException, Inject } from '@nestjs/common';
-import { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
+import { IUsersOrganizationsRepository as IMembersRepository } from '@/domain/users/user-organizations.repository.interface';
 import { User } from '@/domain/users/entities/user.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { Organization } from '@/domain/organizations/entities/organization.entity';
-import type { InviteUsersDto } from '@/routes/organizations/entities/invite-users.dto.entity';
-import type { Invitation } from '@/routes/organizations/entities/invitation.entity';
-import type { UserOrganizationsDto } from '@/routes/organizations/entities/user-organizations.dto.entity';
-import type { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
-import { AcceptInviteDto } from '@/routes/organizations/entities/accept-invite.dto.entity';
+import type { Organization as Space } from '@/domain/organizations/entities/organization.entity';
+import type { InviteUsersDto } from '@/routes/spaces/entities/invite-users.dto.entity';
+import type { Invitation } from '@/routes/spaces/entities/invitation.entity';
+import type { MembersDto } from '@/routes/spaces/entities/members.dto.entity';
+import type { UpdateRoleDto } from '@/routes/spaces/entities/update-role.dto.entity';
+import { AcceptInviteDto } from '@/routes/spaces/entities/accept-invite.dto.entity';
 
-export class UserOrganizationsService {
+export class MembersService {
   private readonly maxInvites: number;
   public constructor(
-    @Inject(IUsersOrganizationsRepository)
-    private readonly usersOrgRepository: IUsersOrganizationsRepository,
+    @Inject(IMembersRepository)
+    private readonly membersRepository: IMembersRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
@@ -24,49 +24,62 @@ export class UserOrganizationsService {
 
   public async inviteUser(args: {
     authPayload: AuthPayload;
-    orgId: Organization['id'];
+    spaceId: Space['id'];
     inviteUsersDto: InviteUsersDto;
   }): Promise<Array<Invitation>> {
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
 
-    return await this.usersOrgRepository.inviteUsers({
+    const invitations = await this.membersRepository.inviteUsers({
       authPayload: args.authPayload,
-      orgId: args.orgId,
+      orgId: args.spaceId,
       users: args.inviteUsersDto.users,
+    });
+
+    // TODO: (compatibility) remove this mapping when the Invitation domain entity is updated.
+    return invitations.map((invitation) => {
+      return {
+        userId: invitation.userId,
+        name: invitation.name,
+        spaceId: invitation.orgId,
+        role: invitation.role,
+        status: invitation.status,
+        invitedBy: invitation.invitedBy,
+      };
     });
   }
 
   public async acceptInvite(args: {
     authPayload: AuthPayload;
-    orgId: Organization['id'];
+    spaceId: Space['id'];
     acceptInviteDto: AcceptInviteDto;
   }): Promise<void> {
-    return await this.usersOrgRepository.acceptInvite({
+    return await this.membersRepository.acceptInvite({
       authPayload: args.authPayload,
-      orgId: args.orgId,
+      orgId: args.spaceId,
       payload: args.acceptInviteDto,
     });
   }
 
   public async declineInvite(args: {
     authPayload: AuthPayload;
-    orgId: Organization['id'];
+    spaceId: Space['id'];
   }): Promise<void> {
-    return await this.usersOrgRepository.declineInvite(args);
+    return await this.membersRepository.declineInvite({
+      authPayload: args.authPayload,
+      orgId: args.spaceId,
+    });
   }
 
   public async get(args: {
     authPayload: AuthPayload;
-    orgId: Organization['id'];
-  }): Promise<UserOrganizationsDto> {
-    const userOrgs = await this.usersOrgRepository.findAuthorizedUserOrgsOrFail(
-      {
-        authPayload: args.authPayload,
-        orgId: args.orgId,
-      },
-    );
+    spaceId: Space['id'];
+  }): Promise<MembersDto> {
+    const userOrgs = await this.membersRepository.findAuthorizedUserOrgsOrFail({
+      authPayload: args.authPayload,
+      orgId: args.spaceId,
+    });
 
     return {
       members: userOrgs.map((userOrg) => {
@@ -89,13 +102,13 @@ export class UserOrganizationsService {
 
   public async updateRole(args: {
     authPayload: AuthPayload;
-    orgId: Organization['id'];
+    spaceId: Space['id'];
     userId: User['id'];
     updateRoleDto: UpdateRoleDto;
   }): Promise<void> {
-    return await this.usersOrgRepository.updateRole({
+    return await this.membersRepository.updateRole({
       authPayload: args.authPayload,
-      orgId: args.orgId,
+      orgId: args.spaceId,
       userId: args.userId,
       role: args.updateRoleDto.role,
     });
@@ -103,13 +116,13 @@ export class UserOrganizationsService {
 
   public async removeUser(args: {
     authPayload: AuthPayload;
-    orgId: Organization['id'];
+    spaceId: Space['id'];
     userId: User['id'];
   }): Promise<void> {
-    return await this.usersOrgRepository.removeUser({
+    return await this.membersRepository.removeUser({
       authPayload: args.authPayload,
       userId: args.userId,
-      orgId: args.orgId,
+      orgId: args.spaceId,
     });
   }
 }

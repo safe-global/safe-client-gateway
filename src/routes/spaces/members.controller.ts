@@ -18,31 +18,31 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { UserOrganizationsService } from '@/routes/organizations/user-organizations.service';
+import { MembersService } from '@/routes/spaces/members.service';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   InviteUsersDto,
   InviteUsersDtoSchema,
-} from '@/routes/organizations/entities/invite-users.dto.entity';
-import { UpdateRoleDtoSchema } from '@/routes/organizations/entities/update-role.dto.entity';
+} from '@/routes/spaces/entities/invite-users.dto.entity';
+import { UpdateRoleDtoSchema } from '@/routes/spaces/entities/update-role.dto.entity';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { UserOrganizationsDto } from '@/routes/organizations/entities/user-organizations.dto.entity';
-import { Invitation } from '@/routes/organizations/entities/invitation.entity';
+import { MembersDto } from '@/routes/spaces/entities/members.dto.entity';
+import { Invitation } from '@/routes/spaces/entities/invitation.entity';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { UpdateRoleDto } from '@/routes/organizations/entities/update-role.dto.entity';
+import { UpdateRoleDto } from '@/routes/spaces/entities/update-role.dto.entity';
 import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
-} from '@/routes/organizations/entities/accept-invite.dto.entity';
+} from '@/routes/spaces/entities/accept-invite.dto.entity';
 
-@ApiTags('organizations')
-@Controller({ path: 'organizations', version: '1' })
-export class UserOrganizationsController {
+@ApiTags('spaces')
+@Controller({ path: 'spaces', version: '1' })
+export class MembersController {
   constructor(
-    @Inject(UserOrganizationsService)
-    private readonly userOrgService: UserOrganizationsService,
+    @Inject(MembersService)
+    private readonly membersService: MembersService,
   ) {}
 
   @ApiOkResponse({
@@ -56,18 +56,18 @@ export class UserOrganizationsController {
     description:
       'User not admin OR signer address not provided OR member is not active',
   })
-  @Post('/:orgId/members/invite')
+  @Post('/:spaceId/members/invite')
   @UseGuards(AuthGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    orgId: number,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
     @Body(new ValidationPipe(InviteUsersDtoSchema))
     inviteUsersDto: InviteUsersDto,
   ): Promise<Array<Invitation>> {
-    return await this.userOrgService.inviteUser({
+    return await this.membersService.inviteUser({
       authPayload,
-      orgId,
+      spaceId,
       inviteUsersDto,
     });
   }
@@ -75,21 +75,21 @@ export class UserOrganizationsController {
   @ApiOkResponse({ description: 'Invite accepted' })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer, organization or membership not found',
+    description: 'Signer, space or membership not found',
   })
   @ApiConflictResponse({ description: 'User invite not pending' })
-  @Post('/:orgId/members/accept')
+  @Post('/:spaceId/members/accept')
   @UseGuards(AuthGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    orgId: number,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
     @Body(new ValidationPipe(AcceptInviteDtoSchema))
     acceptInviteDto: AcceptInviteDto,
   ): Promise<void> {
-    return await this.userOrgService.acceptInvite({
+    return await this.membersService.acceptInvite({
       authPayload,
-      orgId,
+      spaceId,
       acceptInviteDto,
     });
   }
@@ -97,65 +97,64 @@ export class UserOrganizationsController {
   @ApiOkResponse({ description: 'Invite declined' })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer, organization or membership not found',
+    description: 'Signer, space or membership not found',
   })
   @ApiConflictResponse({ description: 'User invite not pending' })
-  @Post('/:orgId/members/decline')
+  @Post('/:spaceId/members/decline')
   @UseGuards(AuthGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    orgId: number,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
   ): Promise<void> {
-    return await this.userOrgService.declineInvite({
+    return await this.membersService.declineInvite({
       authPayload,
-      orgId,
+      spaceId,
     });
   }
 
   @ApiOkResponse({
-    description: 'Organization and members list',
-    type: UserOrganizationsDto,
+    description: 'Space and members list',
+    type: MembersDto,
   })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer or organization not found',
+    description: 'Signer or space not found',
   })
-  @Get('/:orgId/members')
+  @Get('/:spaceId/members')
   @UseGuards(AuthGuard)
   public async getUsers(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    orgId: number,
-  ): Promise<UserOrganizationsDto> {
-    return await this.userOrgService.get({
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+  ): Promise<MembersDto> {
+    return await this.membersService.get({
       authPayload,
-      orgId,
+      spaceId,
     });
   }
 
   @ApiOkResponse({ description: 'Role updated' })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
-    description:
-      'Signer, organization or signer/user-to-update membership not found',
+    description: 'Signer, space or signer/user-to-update membership not found',
   })
   @ApiUnauthorizedResponse({ description: 'Signer not active or admin' })
   @ApiConflictResponse({ description: 'Cannot remove last admin' })
-  @Patch('/:orgId/members/:userId/role')
+  @Patch('/:spaceId/members/:userId/role')
   @UseGuards(AuthGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    orgId: number,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
     @Body(new ValidationPipe(UpdateRoleDtoSchema))
     updateRoleDto: UpdateRoleDto,
   ): Promise<void> {
-    return await this.userOrgService.updateRole({
+    return await this.membersService.updateRole({
       authPayload,
-      orgId,
+      spaceId,
       userId,
       updateRoleDto,
     });
@@ -164,22 +163,22 @@ export class UserOrganizationsController {
   @ApiOkResponse({ description: 'Membership deleted' })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
-    description: 'Signer or organization not found',
+    description: 'Signer or space not found',
   })
   @ApiUnauthorizedResponse({ description: 'Signer not active or admin' })
   @ApiConflictResponse({ description: 'Cannot remove last admin' })
-  @Delete('/:orgId/members/:userId')
+  @Delete('/:spaceId/members/:userId')
   @UseGuards(AuthGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
-    @Param('orgId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    orgId: number,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<void> {
-    return await this.userOrgService.removeUser({
+    return await this.membersService.removeUser({
       authPayload,
-      orgId,
+      spaceId,
       userId,
     });
   }

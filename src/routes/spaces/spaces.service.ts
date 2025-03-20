@@ -5,12 +5,12 @@ import { IOrganizationsRepository } from '@/domain/organizations/organizations.r
 import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
 import { User } from '@/domain/users/entities/user.entity';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
-import { CreateOrganizationResponse } from '@/routes/organizations/entities/create-organization.dto.entity';
-import type { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
+import { CreateSpaceResponse } from '@/routes/spaces/entities/create-space.dto.entity';
+import type { GetSpaceResponse } from '@/routes/spaces/entities/get-space.dto.entity';
 import type {
-  UpdateOrganizationDto,
-  UpdateOrganizationResponse,
-} from '@/routes/organizations/entities/update-organization.dto.entity';
+  UpdateSpaceDto,
+  UpdateSpaceResponse,
+} from '@/routes/spaces/entities/update-space.dto.entity';
 import { Inject, UnauthorizedException } from '@nestjs/common';
 
 export class OrganizationsService {
@@ -25,7 +25,7 @@ export class OrganizationsService {
     name: Organization['name'];
     status: Organization['status'];
     authPayload: AuthPayload;
-  }): Promise<CreateOrganizationResponse> {
+  }): Promise<CreateSpaceResponse> {
     this.assertSignerAddress(args.authPayload);
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       args.authPayload.signer_address,
@@ -39,7 +39,7 @@ export class OrganizationsService {
     status: Organization['status'];
     userStatus: User['status'];
     authPayload: AuthPayload;
-  }): Promise<CreateOrganizationResponse> {
+  }): Promise<CreateSpaceResponse> {
     this.assertSignerAddress(args.authPayload);
     const user = await this.userRepository.findByWalletAddress(
       args.authPayload.signer_address,
@@ -64,16 +64,14 @@ export class OrganizationsService {
     });
   }
 
-  public async get(
-    authPayload: AuthPayload,
-  ): Promise<Array<GetOrganizationResponse>> {
+  public async get(authPayload: AuthPayload): Promise<Array<GetSpaceResponse>> {
     this.assertSignerAddress(authPayload);
 
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       authPayload.signer_address,
     );
 
-    return await this.organizationsRepository.findByUserId({
+    const spaces = await this.organizationsRepository.findByUserId({
       userId,
       select: {
         id: true,
@@ -99,19 +97,43 @@ export class OrganizationsService {
         },
       },
     });
+
+    // TODO: (compatibility) remove this mapping and return findByUserId result directly after the rename.
+    return spaces.map((space) => {
+      return {
+        id: space.id,
+        name: space.name,
+        status: space.status,
+        members: space.userOrganizations.map((userOrganization) => {
+          return {
+            id: userOrganization.id,
+            role: userOrganization.role,
+            name: userOrganization.name,
+            invitedBy: userOrganization.invitedBy,
+            status: userOrganization.status,
+            createdAt: userOrganization.createdAt,
+            updatedAt: userOrganization.updatedAt,
+            user: {
+              id: userOrganization.user.id,
+              status: userOrganization.user.status,
+            },
+          };
+        }),
+      };
+    });
   }
 
   public async getOne(
     id: number,
     authPayload: AuthPayload,
-  ): Promise<GetOrganizationResponse> {
+  ): Promise<GetSpaceResponse> {
     this.assertSignerAddress(authPayload);
 
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       authPayload.signer_address,
     );
 
-    return await this.organizationsRepository.findOneOrFail({
+    const space = await this.organizationsRepository.findOneOrFail({
       where: {
         id,
         userOrganizations: { user: { id: userId } },
@@ -140,13 +162,35 @@ export class OrganizationsService {
         },
       },
     });
+
+    // TODO: (compatibility) remove this mapping and return findOneOrFail result directly after the rename.
+    return {
+      id: space.id,
+      name: space.name,
+      status: space.status,
+      members: space.userOrganizations.map((userOrganization) => {
+        return {
+          id: userOrganization.id,
+          role: userOrganization.role,
+          name: userOrganization.name,
+          invitedBy: userOrganization.invitedBy,
+          status: userOrganization.status,
+          createdAt: userOrganization.createdAt,
+          updatedAt: userOrganization.updatedAt,
+          user: {
+            id: userOrganization.user.id,
+            status: userOrganization.user.status,
+          },
+        };
+      }),
+    };
   }
 
   public async update(args: {
     id: Organization['id'];
-    updatePayload: UpdateOrganizationDto;
+    updatePayload: UpdateSpaceDto;
     authPayload: AuthPayload;
-  }): Promise<UpdateOrganizationResponse> {
+  }): Promise<UpdateSpaceResponse> {
     this.assertSignerAddress(args.authPayload);
     await this.assertOrganizationAdmin(
       args.id,
