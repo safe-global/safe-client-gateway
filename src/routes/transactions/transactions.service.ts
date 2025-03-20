@@ -36,13 +36,20 @@ import { TransactionPreviewMapper } from '@/routes/transactions/mappers/transact
 import { TransactionsHistoryMapper } from '@/routes/transactions/mappers/transactions-history.mapper';
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
-import { getAddress, isAddress, isAddressEqual } from 'viem';
+import {
+  getAddress,
+  isAddress,
+  isAddressEqual,
+  parseEther,
+  parseUnits,
+} from 'viem';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-multisig-transaction-page.entity';
 import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creation-transaction.entity';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 
 @Injectable()
 export class TransactionsService {
@@ -59,6 +66,8 @@ export class TransactionsService {
     private readonly multisigTransactionNoteMapper: MultisigTransactionNoteMapper,
     private readonly transferDetailsMapper: TransferDetailsMapper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: ITokenRepository,
   ) {}
 
   async getById(args: {
@@ -332,6 +341,12 @@ export class TransactionsService {
   }): Promise<Partial<Page<IncomingTransfer>>> {
     const transfers = await this.safeRepository.getIncomingTransfers({
       ...args,
+      ...(args.value && {
+        value: await this.parseTokenValue({
+          ...args,
+          value: args.value,
+        }),
+      }),
       limit: args.paginationData?.limit,
       offset: args.paginationData?.offset,
     });
@@ -360,6 +375,21 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  private async parseTokenValue(args: {
+    chainId: string;
+    value: string;
+    tokenAddress?: `0x${string}`;
+  }): Promise<string | undefined> {
+    if (!args.tokenAddress) {
+      return parseEther(args.value).toString();
+    }
+    const token = await this.tokenRepository.getToken({
+      chainId: args.chainId,
+      address: args.tokenAddress,
+    });
+    return parseUnits(args.value, token.decimals).toString();
   }
 
   async previewTransaction(args: {
