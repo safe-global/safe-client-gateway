@@ -52,6 +52,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@angular-devkit/core@npm:19.1.8":
+  version: 19.1.8
+  resolution: "@angular-devkit/core@npm:19.1.8"
+  dependencies:
+    ajv: "npm:8.17.1"
+    ajv-formats: "npm:3.0.1"
+    jsonc-parser: "npm:3.3.1"
+    picomatch: "npm:4.0.2"
+    rxjs: "npm:7.8.1"
+    source-map: "npm:0.7.4"
+  peerDependencies:
+    chokidar: ^4.0.0
+  peerDependenciesMeta:
+    chokidar:
+      optional: true
+  checksum: 10/e0d8cafd5c35ed7f14927c31fde3036847b42f30b12e437a8a6b3549a7523a2fcfb0459fe59e6cb6153bdd6a1ab417dca2115583c6effd053f2b9e4512f1c4e5
+  languageName: node
+  linkType: hard
+
 "@angular-devkit/core@npm:19.2.0":
   version: 19.2.0
   resolution: "@angular-devkit/core@npm:19.2.0"
@@ -71,19 +90,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/schematics-cli@npm:19.1.7":
-  version: 19.1.7
-  resolution: "@angular-devkit/schematics-cli@npm:19.1.7"
+"@angular-devkit/schematics-cli@npm:19.1.8":
+  version: 19.1.8
+  resolution: "@angular-devkit/schematics-cli@npm:19.1.8"
   dependencies:
-    "@angular-devkit/core": "npm:19.1.7"
-    "@angular-devkit/schematics": "npm:19.1.7"
+    "@angular-devkit/core": "npm:19.1.8"
+    "@angular-devkit/schematics": "npm:19.1.8"
     "@inquirer/prompts": "npm:7.2.1"
     ansi-colors: "npm:4.1.3"
     symbol-observable: "npm:4.0.0"
     yargs-parser: "npm:21.1.1"
   bin:
     schematics: bin/schematics.js
-  checksum: 10/bb631a853fe01422744bd603d54063916ed26949cd8808be59a1dbaaedf8ea534ed9acd4f82fdc2c4c64a14b3a34564cc62dd9de574180335ae8636d0ea619e4
+  checksum: 10/e2c1ca828309748600c90557efe47d11dbe43d5d5dd012ce58947e9e8f167411044f76c74fe97fd8f58e6109ccc60c84a494c36d87a8908cda729902c33f1e7f
   languageName: node
   linkType: hard
 
@@ -97,6 +116,19 @@ __metadata:
     ora: "npm:5.4.1"
     rxjs: "npm:7.8.1"
   checksum: 10/f61cfe2d2e633201c7bf2ea0cf83cc51e232f551a48fb8fcb027eb3bc8ce14f9beb52b62ddd7cc129a2d0255a3b3b9237b81bcb16ec71c5ee4f811b1dd68fa73
+  languageName: node
+  linkType: hard
+
+"@angular-devkit/schematics@npm:19.1.8":
+  version: 19.1.8
+  resolution: "@angular-devkit/schematics@npm:19.1.8"
+  dependencies:
+    "@angular-devkit/core": "npm:19.1.8"
+    jsonc-parser: "npm:3.3.1"
+    magic-string: "npm:0.30.17"
+    ora: "npm:5.4.1"
+    rxjs: "npm:7.8.1"
+  checksum: 10/4336968256d9565e06c262b0a38a97cf77fc4c9b3b3e61d9109d724ab6ec50a55d09e04040adca94d9ba2d7d80df7c42dcb6a878e88d86b6ffa0729b86535e51
   languageName: node
   linkType: hard
 
@@ -1945,16 +1977,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/cli@npm:11.0.4":
-  version: 11.0.4
-  resolution: "@nestjs/cli@npm:11.0.4"
+"@nestjs/cli@npm:11.0.5":
+  version: 11.0.5
+  resolution: "@nestjs/cli@npm:11.0.5"
   dependencies:
-    "@angular-devkit/core": "npm:19.1.7"
-    "@angular-devkit/schematics": "npm:19.1.7"
-    "@angular-devkit/schematics-cli": "npm:19.1.7"
+    "@angular-devkit/core": "npm:19.1.8"
+    "@angular-devkit/schematics": "npm:19.1.8"
+    "@angular-devkit/schematics-cli": "npm:19.1.8"
     "@inquirer/prompts": "npm:7.3.2"
     "@nestjs/schematics": "npm:^11.0.1"
-    ansis: "npm:3.15.0"
+    ansis: "npm:3.16.0"
     chokidar: "npm:4.0.3"
     cli-table3: "npm:0.6.5"
     commander: "npm:4.1.1"
@@ -1978,7 +2010,7 @@ __metadata:
       optional: true
   bin:
     nest: bin/nest.js
-  checksum: 10/20b85f52483fddccb310a30437274e55b979c3e567b805dd445cdfc8623d501f1b7c91609863ce9663738fe9990890015580840cb29c306944b4f3f5dd027684
+  checksum: 10/680853fd5f96458356012aed3ebb4a9ba0437e13d839552d05fef135be17477e4ca34f379c7616046a2ddf31203842233522b8b60ea66110b599df9e23b9c60f
   languageName: node
   linkType: hard
 
@@ -4021,10 +4053,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ansis@npm:3.15.0":
-  version: 3.15.0
-  resolution: "ansis@npm:3.15.0"
-  checksum: 10/f9517e855789b2c8cc1f442d36499e8238e6dbf4b6bc6cc27d2826050749253d758f633aaec122a5f39a0e00c3753c1ebe6e47f7daa3f45f339bbbbbebc7fbfd
+"ansis@npm:3.16.0":
+  version: 3.16.0
+  resolution: "ansis@npm:3.16.0"
+  checksum: 10/e9ead958bc7250eb878dc48f55fdae32aa7b22a32a10bf321c57885fa68889c1648e43ecb29ca60dc769479276fe99607fc00c9ad19f569ecc9349a4df340c21
   languageName: node
   linkType: hard
 
@@ -8719,7 +8751,7 @@ __metadata:
     "@aws-sdk/client-s3": "npm:3.758.0"
     "@faker-js/faker": "npm:9.3.0"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.2.0"
-    "@nestjs/cli": "npm:11.0.4"
+    "@nestjs/cli": "npm:11.0.5"
     "@nestjs/common": "npm:11.0.11"
     "@nestjs/config": "npm:4.0.0"
     "@nestjs/core": "npm:11.0.11"
