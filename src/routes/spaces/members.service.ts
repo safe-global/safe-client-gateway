@@ -76,24 +76,25 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MembersDto> {
-    const userOrgs = await this.membersRepository.findAuthorizedUserOrgsOrFail({
+    const members = await this.membersRepository.findAuthorizedUserOrgsOrFail({
       authPayload: args.authPayload,
       orgId: args.spaceId,
     });
 
+    // TODO: (compatibility) remove this mapping when the Member domain entity is updated.
     return {
-      members: userOrgs.map((userOrg) => {
+      members: members.map((member) => {
         return {
-          id: userOrg.id,
-          role: userOrg.role,
-          status: userOrg.status,
-          name: userOrg.name,
-          invitedBy: userOrg.invitedBy,
-          createdAt: userOrg.createdAt,
-          updatedAt: userOrg.updatedAt,
+          id: member.id,
+          role: member.role,
+          status: member.status,
+          name: member.name,
+          invitedBy: member.invitedBy,
+          createdAt: member.createdAt,
+          updatedAt: member.updatedAt,
           user: {
-            id: userOrg.user.id,
-            status: userOrg.user.status,
+            id: member.user.id,
+            status: member.user.status,
           },
         };
       }),
