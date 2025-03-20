@@ -8,7 +8,6 @@ import type { Estimation } from '@/domain/estimations/entities/estimation.entity
 import type { GetEstimationDto } from '@/domain/estimations/entities/get-estimation.dto.entity';
 import type { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
 import type { Message } from '@/domain/messages/entities/message.entity';
-import type { Device } from '@/domain/notifications/v1/entities/device.entity';
 import type { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
@@ -241,19 +240,6 @@ export interface ITransactionApi {
   }): Promise<Raw<Page<Token>>>;
 
   getSafesByOwner(ownerAddress: `0x${string}`): Promise<Raw<SafeList>>;
-
-  postDeviceRegistration(args: {
-    device: Device;
-    safes: Array<string>;
-    signatures: Array<string>;
-  }): Promise<void>;
-
-  deleteDeviceRegistration(uuid: string): Promise<void>;
-
-  deleteSafeRegistration(args: {
-    uuid: string;
-    safeAddress: `0x${string}`;
-  }): Promise<void>;
 
   getEstimation(args: {
     address: `0x${string}`;
