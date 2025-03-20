@@ -508,6 +508,59 @@ describe('MembersController', () => {
           statusCode: 401,
         });
     });
+
+    it('should throw a 409 if the user is already a member of the space', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAddress = getAddress(faker.finance.ethereumAddress());
+      const memberName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: faker.word.noun() })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: memberAddress,
+              name: memberName,
+            },
+          ],
+        })
+        .expect(201);
+
+      // A second invitation to the same user should fail
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'ADMIN',
+              address: memberAddress,
+              name: memberName,
+            },
+          ],
+        })
+        .expect(409)
+        .expect({
+          message: `${memberAddress} is already in this space or has a pending invite.`,
+          error: 'Conflict',
+          statusCode: 409,
+        });
+    });
   });
 
   describe('POST /v1/spaces/:spaceId/members/accept', () => {

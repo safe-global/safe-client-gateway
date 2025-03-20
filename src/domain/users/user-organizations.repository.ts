@@ -23,6 +23,8 @@ import type { Organization } from '@/domain/organizations/entities/organization.
 import type { User } from '@/domain/users/entities/user.entity';
 import type { Invitation } from '@/domain/users/entities/invitation.entity';
 import { type UserOrganization } from '@/domain/users/entities/user-organization.entity';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 
 @Injectable()
 export class UsersOrganizationsRepository
@@ -151,14 +153,23 @@ export class UsersOrganizationsRepository
           );
         }
 
-        await entityManager.insert(DbUserOrganization, {
-          user: { id: invitedUserId },
-          organization: org,
-          name: userToInvite.name,
-          role: userToInvite.role,
-          status: 'INVITED',
-          invitedBy: adminAddress,
-        });
+        try {
+          await entityManager.insert(DbUserOrganization, {
+            user: { id: invitedUserId },
+            organization: org,
+            name: userToInvite.name,
+            role: userToInvite.role,
+            status: 'INVITED',
+            invitedBy: adminAddress,
+          });
+        } catch (err) {
+          if (isUniqueConstraintError(err)) {
+            throw new UniqueConstraintError(
+              `${userToInvite.address} is already in this space or has a pending invite.`,
+            );
+          }
+          throw err;
+        }
 
         invitations.push({
           userId: invitedUserId,
