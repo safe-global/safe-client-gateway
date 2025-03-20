@@ -26,7 +26,7 @@ import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
-import { SpaceSafesController } from '@/routes/spaces/space-safes.controller';
+import { OrganizationSafesController } from '@/routes/organizations/organization-safes.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
@@ -34,7 +34,7 @@ import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 
-describe('SpaceSafesController', () => {
+describe('OrganizationSafeController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
 
@@ -88,32 +88,32 @@ describe('SpaceSafesController', () => {
 
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(
-      SpaceSafesController.prototype,
+      OrganizationSafesController.prototype,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     ) as Array<Function>;
 
     endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
   });
 
-  describe('POST /v1/spaces/:spaceId/safes', () => {
-    it('Should create a new space safe', async () => {
+  describe('POST /v1/organizations/:organizationId/safes', () => {
+    it('Should create a new organization safe', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -126,10 +126,10 @@ describe('SpaceSafesController', () => {
         .expect(201);
     });
 
-    it('Should create multiple new space safes', async () => {
+    it('Should create multiple new organization safes', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
       const chain3 = chainBuilder().build();
@@ -138,14 +138,14 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -166,10 +166,10 @@ describe('SpaceSafesController', () => {
         .expect(201);
     });
 
-    it('Should fail on duplicate space safes', async () => {
+    it('Should fail on duplicate organization safes', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
 
@@ -177,44 +177,43 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
-      const spaceSafe1 = {
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
+      const orgSafe1 = {
         chainId: chain1.chainId,
         address: getAddress(faker.finance.ethereumAddress()),
       };
-      const spaceSafe2 = {
+      const orgSafe2 = {
         chainId: chain2.chainId,
         address: getAddress(faker.finance.ethereumAddress()),
       };
-      const duplicatedSpaceSafe = {
-        chainId: spaceSafe1.chainId,
-        address: spaceSafe1.address,
+      const duplicatedOrgSafe = {
+        chainId: orgSafe1.chainId,
+        address: orgSafe1.address,
       };
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
-          safes: [spaceSafe1, spaceSafe2, duplicatedSpaceSafe],
+          safes: [orgSafe1, orgSafe2, duplicatedOrgSafe],
         })
         .expect(409)
         .expect({
-          // TODO: (compatibility) change OrganizationSafe by SpaceSafe
-          message: `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address, organization_id)=(${duplicatedSpaceSafe.chainId}, ${duplicatedSpaceSafe.address}, ${spaceId}) already exists.`,
+          message: `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address, organization_id)=(${duplicatedOrgSafe.chainId}, ${duplicatedOrgSafe.address}, ${orgId}) already exists.`,
           error: 'Conflict',
           statusCode: 409,
         });
     });
 
-    it('Should allow multiple spaces to add the same Safe', async () => {
+    it('Should allow multiple organizations to add the same Safe', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
-      const space2Name = faker.company.name();
+      const orgName = faker.company.name();
+      const org2Name = faker.company.name();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
 
@@ -222,41 +221,41 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const createSpace2Response = await request(app.getHttpServer())
-        .post('/v1/spaces')
+        .send({ name: orgName });
+      const createOrganization2Response = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: space2Name });
-      const spaceId = createSpaceResponse.body.id;
-      const space2Id = createSpace2Response.body.id;
-      const spaceSafe1 = {
+        .send({ name: org2Name });
+      const orgId = createOrganizationResponse.body.id;
+      const org2Id = createOrganization2Response.body.id;
+      const orgSafe1 = {
         chainId: chain1.chainId,
         address: getAddress(faker.finance.ethereumAddress()),
       };
-      const spaceSafe2 = {
+      const orgSafe2 = {
         chainId: chain2.chainId,
         address: getAddress(faker.finance.ethereumAddress()),
       };
-      const spaceSafe3 = {
+      const orgSafe3 = {
         chainId: chain2.chainId,
         address: getAddress(faker.finance.ethereumAddress()),
       };
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
-          safes: [spaceSafe1, spaceSafe2],
+          safes: [orgSafe1, orgSafe2],
         })
         .expect(201);
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${space2Id}/safes`)
+        .post(`/v1/organizations/${org2Id}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
-          safes: [spaceSafe2, spaceSafe3], // spaceSafe2 is shared between space1 and space2
+          safes: [orgSafe2, orgSafe3], // orgSafe2 is shared between org1 and org2
         })
         .expect(201);
     });
@@ -266,7 +265,7 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const userAuthPayloadDto = authPayloadDtoBuilder().build();
       const userAccessToken = jwtService.sign(userAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
@@ -277,14 +276,14 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${userAccessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${userAccessToken}`])
         .send({
           safes: [
@@ -311,21 +310,21 @@ describe('SpaceSafesController', () => {
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayload,
       );
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({
           users: [
@@ -338,7 +337,7 @@ describe('SpaceSafesController', () => {
         });
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${inactiveAdminAccessToken}`])
         .send({
           safes: [
@@ -358,45 +357,45 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 401 for a MEMBER of a space', async () => {
+    it('Should return a 401 for a MEMBER of an organization', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const spaceName = faker.company.name();
-      const memberName = faker.person.firstName();
+      const orgName = faker.company.name();
+      const orgMemberName = faker.person.firstName();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${adminAccessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({
           users: [
             {
               address: getAddress(memberAuthPayloadDto.signer_address),
-              name: memberName,
+              name: orgMemberName,
               role: 'MEMBER',
             },
           ],
         });
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/accept`)
+        .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .send();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .send({
           safes: [
@@ -417,9 +416,9 @@ describe('SpaceSafesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .expect(403)
         .expect({
           statusCode: 403,
@@ -433,10 +432,10 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -450,10 +449,10 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -474,10 +473,10 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if body is an empty array', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ safes: [] })
         .expect(422)
@@ -497,10 +496,10 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -530,10 +529,10 @@ describe('SpaceSafesController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -556,7 +555,7 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 422 if space id is bigger than the max limit', async () => {
+    it('Should return a 422 if organization id is bigger than the max limit', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chainIdMinLength = 79;
@@ -566,10 +565,10 @@ describe('SpaceSafesController', () => {
         .with('chainId', faker.number.bigInt({ min, max }).toString())
         .build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.string.alpha();
+      const orgId = faker.string.alpha();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -592,15 +591,15 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 400 if space id is invalid', async () => {
+    it('Should return a 400 if organization id is invalid', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.string.alpha();
+      const orgId = faker.string.alpha();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -623,18 +622,18 @@ describe('SpaceSafesController', () => {
     });
   });
 
-  describe('GET /spaces/:spaceId/safes', () => {
-    it('Should return a list of space safes if the user is an admin', async () => {
+  describe('GET /organizations/:organizationId/safes', () => {
+    it('Should return a list of organization safes if the user is an admin', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain1 = chainBuilder()
         .with('chainId', faker.string.numeric({ length: { min: 1, max: 2 } }))
         .build();
       const chain2 = chainBuilder()
         .with('chainId', faker.string.numeric({ length: { min: 3, max: 4 } }))
         .build();
-      const createSpaceSafePayload = {
+      const createOrgSafePayload = {
         safes: [
           {
             chainId: chain1.chainId,
@@ -655,45 +654,45 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(createSpaceSafePayload);
+        .send(createOrgSafePayload);
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/safes`)
+        .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({
           safes: {
-            [chain1.chainId]: [createSpaceSafePayload.safes[0].address],
+            [chain1.chainId]: [createOrgSafePayload.safes[0].address],
             [chain2.chainId]: [
-              createSpaceSafePayload.safes[1].address,
-              createSpaceSafePayload.safes[2].address,
+              createOrgSafePayload.safes[1].address,
+              createOrgSafePayload.safes[2].address,
             ],
           },
         });
     });
 
-    it('Should return a list of space safes if the user is a member', async () => {
+    it('Should return a list of organization safes if the user is a member', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain1 = chainBuilder()
         .with('chainId', faker.string.numeric({ length: { min: 1, max: 2 } }))
         .build();
       const chain2 = chainBuilder()
         .with('chainId', faker.string.numeric({ length: { min: 3, max: 4 } }))
         .build();
-      const createSpaceSafePayload = {
+      const createOrgSafePayload = {
         safes: [
           {
             chainId: chain1.chainId,
@@ -715,12 +714,12 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${adminAccessToken}`]);
 
-      // Create the space
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      // Create the organization
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       // Create the member user and the wallet
       await request(app.getHttpServer())
@@ -735,7 +734,7 @@ describe('SpaceSafesController', () => {
 
       // Invite the member user
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({
           users: [
@@ -749,7 +748,7 @@ describe('SpaceSafesController', () => {
 
       // Accept the invite
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/accept`)
+        .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .send({
           name: faker.person.firstName(),
@@ -757,21 +756,21 @@ describe('SpaceSafesController', () => {
 
       // Create the safes
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send(createSpaceSafePayload);
+        .send(createOrgSafePayload);
 
       // Get the safes as a member
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/safes`)
+        .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .expect(200)
         .expect({
           safes: {
-            [chain1.chainId]: [createSpaceSafePayload.safes[0].address],
+            [chain1.chainId]: [createOrgSafePayload.safes[0].address],
             [chain2.chainId]: [
-              createSpaceSafePayload.safes[1].address,
-              createSpaceSafePayload.safes[2].address,
+              createOrgSafePayload.safes[1].address,
+              createOrgSafePayload.safes[2].address,
             ],
           },
         });
@@ -782,7 +781,7 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const userAuthPayloadDto = authPayloadDtoBuilder().build();
       const userAccessToken = jwtService.sign(userAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -792,14 +791,14 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${userAccessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/safes`)
+        .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${userAccessToken}`])
         .expect(401)
         .expect({
@@ -816,7 +815,7 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -826,14 +825,14 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${memberAccessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({
           users: [
@@ -846,7 +845,7 @@ describe('SpaceSafesController', () => {
         });
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/safes`)
+        .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .expect(401)
         .expect({
@@ -859,9 +858,9 @@ describe('SpaceSafesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .expect(403)
         .expect({
           statusCode: 403,
@@ -875,10 +874,10 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/safes`)
+        .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -891,10 +890,10 @@ describe('SpaceSafesController', () => {
     it('Should return a 404 if user is not found', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/safes`)
+        .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
@@ -904,13 +903,13 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 400 if space id is invalid', async () => {
+    it('Should return a 400 if organization id is invalid', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.string.alpha();
+      const orgId = faker.string.alpha();
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/safes`)
+        .get(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(400)
         .expect({
@@ -921,13 +920,13 @@ describe('SpaceSafesController', () => {
     });
   });
 
-  describe('DELETE /v1/spaces/:spaceId/safes', () => {
-    it('Should delete a space safe', async () => {
+  describe('DELETE /v1/organizations/:organizationId/safes', () => {
+    it('Should delete an organization safe', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain = chainBuilder().build();
-      const spaceSafes = {
+      const orgSafes = {
         safes: [
           {
             chainId: chain.chainId,
@@ -940,32 +939,32 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(spaceSafes);
+        .send(orgSafes);
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(spaceSafes)
+        .send(orgSafes)
         .expect(204);
     });
 
-    it('Should delete multiple space safes', async () => {
+    it('Should delete multiple organization safes', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
       const chain3 = chainBuilder().build();
-      const spaceSafes = {
+      const orgSafes = {
         safes: [
           {
             chainId: chain1.chainId,
@@ -986,21 +985,21 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(spaceSafes);
+        .send(orgSafes);
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(spaceSafes)
+        .send(orgSafes)
         .expect(204);
     });
 
@@ -1009,11 +1008,11 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const userAuthPayloadDto = authPayloadDtoBuilder().build();
       const userAccessToken = jwtService.sign(userAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
       const chain3 = chainBuilder().build();
-      const spaceSafes = {
+      const orgSafes = {
         safes: [
           {
             chainId: chain1.chainId,
@@ -1038,21 +1037,21 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${userAccessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send(spaceSafes);
+        .send(orgSafes);
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${userAccessToken}`])
-        .send(spaceSafes)
+        .send(orgSafes)
         .expect(401)
         .expect({
           error: 'Unauthorized',
@@ -1066,9 +1065,9 @@ describe('SpaceSafesController', () => {
     it('should fail if the user is not an admin', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain = chainBuilder().build();
-      const spaceSafes = {
+      const orgSafes = {
         safes: [
           {
             chainId: chain.chainId,
@@ -1083,15 +1082,15 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       // Invite the member user
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
@@ -1104,7 +1103,7 @@ describe('SpaceSafesController', () => {
         });
       // Accept the invite
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/accept`)
+        .post(`/v1/organizations/${orgId}/members/accept`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .send({
           name: faker.person.firstName(),
@@ -1112,15 +1111,15 @@ describe('SpaceSafesController', () => {
 
       // Create the Safe with the admin
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send(spaceSafes);
+        .send(orgSafes);
 
       // Try to delete the Safe with the member
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
-        .send(spaceSafes)
+        .send(orgSafes)
         .expect(401)
         .expect({
           message: `User is unauthorized. signer_address= ${memberAuthPayloadDto.signer_address}`,
@@ -1136,9 +1135,9 @@ describe('SpaceSafesController', () => {
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayload,
       );
-      const spaceName = faker.company.name();
+      const orgName = faker.company.name();
       const chain = chainBuilder().build();
-      const spaceSafes = {
+      const orgSafes = {
         safes: [
           {
             chainId: chain.chainId,
@@ -1151,14 +1150,14 @@ describe('SpaceSafesController', () => {
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`]);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
+      const createOrganizationResponse = await request(app.getHttpServer())
+        .post('/v1/organizations')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+        .send({ name: orgName });
+      const orgId = createOrganizationResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .post(`/v1/organizations/${orgId}/members/invite`)
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({
           users: [
@@ -1170,18 +1169,18 @@ describe('SpaceSafesController', () => {
           ],
         });
 
-      // Create the space Safes with the active admin
+      // Create the organization Safes with the active admin
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
+        .post(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
-        .send(spaceSafes)
+        .send(orgSafes)
         .expect(201);
 
-      // Try to delete the space Safes with the inactive admin
+      // Try to delete the organizations Safes with the inactive admin
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${inactiveAdminAccessToken}`])
-        .send(spaceSafes)
+        .send(orgSafes)
         .expect(401)
         .expect({
           message: `User is unauthorized. signer_address= ${inactiveAdminAuthPayload.signer_address}`,
@@ -1191,9 +1190,9 @@ describe('SpaceSafesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .expect(403)
         .expect({
           statusCode: 403,
@@ -1207,10 +1206,10 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as `0x${string}`)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(403)
         .expect({
@@ -1224,10 +1223,10 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -1248,10 +1247,10 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if body is an empty array', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ safes: [] })
         .expect(422)
@@ -1271,10 +1270,10 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -1304,10 +1303,10 @@ describe('SpaceSafesController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const orgId = faker.number.int();
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -1330,7 +1329,7 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 422 if space id is bigger than the max limit', async () => {
+    it('Should return a 422 if organization id is bigger than the max limit', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chainIdMinLength = 79;
@@ -1340,10 +1339,10 @@ describe('SpaceSafesController', () => {
         .with('chainId', faker.number.bigInt({ min, max }).toString())
         .build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.string.alpha();
+      const orgId = faker.string.alpha();
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [
@@ -1366,15 +1365,15 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 400 if space id is invalid', async () => {
+    it('Should return a 400 if organization id is invalid', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.string.alpha();
+      const orgId = faker.string.alpha();
 
       await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/safes`)
+        .delete(`/v1/organizations/${orgId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           safes: [

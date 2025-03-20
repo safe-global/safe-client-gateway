@@ -112,6 +112,7 @@ export class SpaceSafesService {
     const member = await this.membersRepository.findOne({
       user: { id: userId },
       organization: { id: spaceId },
+      status: 'ACTIVE',
     });
 
     if (!member) {
