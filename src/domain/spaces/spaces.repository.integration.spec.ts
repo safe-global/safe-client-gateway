@@ -25,11 +25,11 @@ const mockLoggingService = {
 } as jest.MockedObjectDeep<ILoggingService>;
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
-const OrgStatusKeys = getStringEnumKeys(SpaceStatus);
+const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
 
-describe('OrganizationsRepository', () => {
+describe('SpacesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
-  let orgRepo: SpacesRepository;
+  let spacesRepository: SpacesRepository;
 
   const testDatabaseName = faker.string.alpha({
     length: 10,
@@ -48,8 +48,8 @@ describe('OrganizationsRepository', () => {
   });
 
   const dbUserRepo = dataSource.getRepository(User);
-  const dbUserOrgRepo = dataSource.getRepository(Member);
-  const dbOrgRepo = dataSource.getRepository(Space);
+  const dbMembersRepository = dataSource.getRepository(Member);
+  const dbSpacesRepository = dataSource.getRepository(Space);
 
   beforeAll(async () => {
     // Create database
@@ -95,7 +95,7 @@ describe('OrganizationsRepository', () => {
     );
     await migrator.migrate();
 
-    orgRepo = new SpacesRepository(postgresDatabaseService);
+    spacesRepository = new SpacesRepository(postgresDatabaseService);
   });
 
   afterEach(async () => {
@@ -120,18 +120,18 @@ describe('OrganizationsRepository', () => {
 
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
-    it('should set createdAt and updatedAt when creating an Organization', async () => {
+    it('should set createdAt and updatedAt when creating an Space', async () => {
       const before = new Date().getTime();
 
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpacesRepository.insert({
         name: faker.word.noun(),
         status: 'ACTIVE',
       });
 
       const after = new Date().getTime();
 
-      const createdAt = org.generatedMaps[0].createdAt;
-      const updatedAt = org.generatedMaps[0].updatedAt;
+      const createdAt = space.generatedMaps[0].createdAt;
+      const updatedAt = space.generatedMaps[0].updatedAt;
 
       if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
         throw new Error('createdAt and/or updatedAt is not a Date');
@@ -146,61 +146,61 @@ describe('OrganizationsRepository', () => {
       expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
-    it('should update updatedAt when updating an Organization', async () => {
-      const prevOrg = await dbOrgRepo.insert({
+    it('should update updatedAt when updating an Space', async () => {
+      const prevSpace = await dbSpacesRepository.insert({
         name: faker.word.noun(),
         status: 'ACTIVE',
       });
-      const spaceId = prevOrg.identifiers[0].id as User['id'];
-      await dbOrgRepo.update(spaceId, {
+      const spaceId = prevSpace.identifiers[0].id as User['id'];
+      await dbSpacesRepository.update(spaceId, {
         name: faker.word.noun(),
       });
-      const updatedOrg = await dbOrgRepo.findOneOrFail({
+      const updatedSpace = await dbSpacesRepository.findOneOrFail({
         where: { id: spaceId },
       });
 
-      const prevUpdatedAt = prevOrg.generatedMaps[0].updatedAt;
+      const prevUpdatedAt = prevSpace.generatedMaps[0].updatedAt;
 
       if (!(prevUpdatedAt instanceof Date)) {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
       expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
-        updatedOrg.updatedAt.getTime(),
+        updatedSpace.updatedAt.getTime(),
       );
     });
   });
 
   describe('create', () => {
-    it('should create an organization with an ACTIVE ADMIN user', async () => {
+    it('should create an space with an ACTIVE ADMIN user', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
 
-      const org = await orgRepo.create({
+      const space = await spacesRepository.create({
         userId,
         name: name,
-        status: orgStatus,
+        status: spaceStatus,
       });
 
-      expect(org).toEqual({
+      expect(space).toEqual({
         id: expect.any(Number),
         name,
       });
 
-      const dbUserOrg = await dbUserOrgRepo.findOneOrFail({
+      const dbMember = await dbMembersRepository.findOneOrFail({
         where: { user: { id: userId } },
         relations: {
           user: true,
-          organization: true,
+          space: true,
         },
       });
 
-      expect(dbUserOrg).toEqual({
+      expect(dbMember).toEqual({
         id: expect.any(Number),
         role: 'ADMIN',
         status: 'ACTIVE',
@@ -214,49 +214,49 @@ describe('OrganizationsRepository', () => {
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
-        organization: {
+        space: {
           id: expect.any(Number),
           name,
-          status: orgStatus,
+          status: spaceStatus,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
       });
     });
 
-    it('should set the name of the organization', async () => {
+    it('should set the name of the space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const organizationName = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
 
-      const org = await orgRepo.create({
+      const space = await spacesRepository.create({
         userId,
-        name: organizationName,
-        status: orgStatus,
+        name: spaceName,
+        status: spaceStatus,
       });
 
-      expect(org).toEqual({
+      expect(space).toEqual({
         id: expect.any(Number),
-        name: organizationName,
+        name: spaceName,
       });
 
-      const dbUserOrg = await dbUserOrgRepo.findOneOrFail({
+      const dbMember = await dbMembersRepository.findOneOrFail({
         where: { user: { id: userId } },
         relations: {
           user: true,
-          organization: true,
+          space: true,
         },
       });
 
-      expect(dbUserOrg).toEqual({
+      expect(dbMember).toEqual({
         id: expect.any(Number),
         role: 'ADMIN',
         status: 'ACTIVE',
-        name: `${organizationName} creator`,
+        name: `${spaceName} creator`,
         invitedBy: null,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
@@ -266,10 +266,10 @@ describe('OrganizationsRepository', () => {
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
-        organization: {
+        space: {
           id: expect.any(Number),
-          name: organizationName,
-          status: orgStatus,
+          name: spaceName,
+          status: spaceStatus,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
@@ -277,431 +277,439 @@ describe('OrganizationsRepository', () => {
     });
 
     it('should throw if the user does not exist', async () => {
-      const orgName = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
       await expect(
-        orgRepo.create({
+        spacesRepository.create({
           userId,
-          name: orgName,
-          status: orgStatus,
+          name: spaceName,
+          status: spaceStatus,
         }),
       ).rejects.toThrow('Invalid enum key: undefined');
     });
 
     it('should not create any entries when an error occurs', async () => {
-      const orgName = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      await orgRepo
+      await spacesRepository
         .create({
           userId,
-          name: orgName,
-          status: orgStatus,
+          name: spaceName,
+          status: spaceStatus,
         })
         .catch(() => {});
 
       await expect(dbUserRepo.find()).resolves.toEqual([]);
-      await expect(dbUserOrgRepo.find()).resolves.toEqual([]);
-      await expect(dbOrgRepo.find()).resolves.toEqual([]);
+      await expect(dbMembersRepository.find()).resolves.toEqual([]);
+      await expect(dbSpacesRepository.find()).resolves.toEqual([]);
     });
   });
 
   describe('findOneOrFail', () => {
-    it('should find an organization', async () => {
+    it('should find an space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
-      const org = await orgRepo.create({
+      const space = await spacesRepository.create({
         userId,
         name: name,
-        status: orgStatus,
+        status: spaceStatus,
       });
 
       await expect(
-        orgRepo.findOneOrFail({ where: { id: org.id } }),
+        spacesRepository.findOneOrFail({ where: { id: space.id } }),
       ).resolves.toEqual({
-        id: org.id,
+        id: space.id,
         name,
-        status: orgStatus,
+        status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
       });
     });
 
-    it('should throw an error if the organization does not exist', async () => {
+    it('should throw an error if the space does not exist', async () => {
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
       await expect(
-        orgRepo.findOneOrFail({ where: { id: spaceId } }),
-      ).rejects.toThrow('Organization not found.');
+        spacesRepository.findOneOrFail({ where: { id: spaceId } }),
+      ).rejects.toThrow('Space not found.');
     });
   });
 
   describe('findOne', () => {
-    it('should find an organization', async () => {
+    it('should find an space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
-      const org = await orgRepo.create({
+      const space = await spacesRepository.create({
         userId,
         name: name,
-        status: orgStatus,
+        status: spaceStatus,
       });
 
-      await expect(orgRepo.findOne({ where: { id: org.id } })).resolves.toEqual(
-        {
-          id: org.id,
-          name,
-          status: orgStatus,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      );
+      await expect(
+        spacesRepository.findOne({ where: { id: space.id } }),
+      ).resolves.toEqual({
+        id: space.id,
+        name,
+        status: spaceStatus,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
     });
 
-    it('should return null if the organization does not exist', async () => {
+    it('should return null if the space does not exist', async () => {
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
       await expect(
-        orgRepo.findOne({ where: { id: spaceId } }),
+        spacesRepository.findOne({ where: { id: spaceId } }),
       ).resolves.toBeNull();
     });
   });
 
   describe('findOrFail', () => {
-    it('should find organizations', async () => {
+    it('should find spaces', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const orgName1 = faker.word.noun();
-      const orgStatus1 = faker.helpers.arrayElement(OrgStatusKeys);
-      const orgName2 = faker.word.noun();
-      const orgStatus2 = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName1 = faker.word.noun();
+      const spaceStatus1 = faker.helpers.arrayElement(SpaceStatusKeys);
+      const spaceName2 = faker.word.noun();
+      const spaceStatus2 = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
-      const org1 = await orgRepo.create({
+      const space1 = await spacesRepository.create({
         userId,
-        name: orgName1,
-        status: orgStatus1,
+        name: spaceName1,
+        status: spaceStatus1,
       });
-      const org2 = await orgRepo.create({
+      const space2 = await spacesRepository.create({
         userId,
-        name: orgName2,
-        status: orgStatus2,
+        name: spaceName2,
+        status: spaceStatus2,
       });
 
       await expect(
-        orgRepo.findOrFail({ where: { id: In([org1.id, org2.id]) } }),
+        spacesRepository.findOrFail({
+          where: { id: In([space1.id, space2.id]) },
+        }),
       ).resolves.toEqual([
         {
-          id: org1.id,
-          name: orgName1,
-          status: orgStatus1,
+          id: space1.id,
+          name: spaceName1,
+          status: spaceStatus1,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
         {
-          id: org2.id,
-          name: orgName2,
-          status: orgStatus2,
+          id: space2.id,
+          name: spaceName2,
+          status: spaceStatus2,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
       ]);
     });
 
-    it('should throw an error if organizations do not exist', async () => {
+    it('should throw an error if spaces do not exist', async () => {
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
       await expect(
-        orgRepo.findOrFail({ where: { id: spaceId } }),
-      ).rejects.toThrow('Organizations not found.');
+        spacesRepository.findOrFail({ where: { id: spaceId } }),
+      ).rejects.toThrow('Spaces not found.');
     });
   });
 
   describe('find', () => {
-    it('should find organizations', async () => {
+    it('should find spaces', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const orgName1 = faker.word.noun();
-      const orgStatus1 = faker.helpers.arrayElement(OrgStatusKeys);
-      const orgName2 = faker.word.noun();
-      const orgStatus2 = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName1 = faker.word.noun();
+      const spaceStatus1 = faker.helpers.arrayElement(SpaceStatusKeys);
+      const spaceName2 = faker.word.noun();
+      const spaceStatus2 = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
-      const org1 = await orgRepo.create({
+      const space1 = await spacesRepository.create({
         userId,
-        name: orgName1,
-        status: orgStatus1,
+        name: spaceName1,
+        status: spaceStatus1,
       });
-      const org2 = await orgRepo.create({
+      const space2 = await spacesRepository.create({
         userId,
-        name: orgName2,
-        status: orgStatus2,
+        name: spaceName2,
+        status: spaceStatus2,
       });
 
       await expect(
-        orgRepo.find({
+        spacesRepository.find({
           where: {
-            id: In([org1.id, org2.id]),
+            id: In([space1.id, space2.id]),
           },
         }),
       ).resolves.toEqual([
         {
-          id: org1.id,
-          name: orgName1,
-          status: orgStatus1,
+          id: space1.id,
+          name: spaceName1,
+          status: spaceStatus1,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
         {
-          id: org2.id,
-          name: orgName2,
-          status: orgStatus2,
+          id: space2.id,
+          name: spaceName2,
+          status: spaceStatus2,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
       ]);
     });
 
-    it('should return an empty array if organizations do not exist', async () => {
+    it('should return an empty array if spaces do not exist', async () => {
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      await expect(orgRepo.find({ where: { id: spaceId } })).resolves.toEqual(
+      await expect(
+        spacesRepository.find({ where: { id: spaceId } }),
+      ).resolves.toEqual([]);
+    });
+  });
+
+  describe('findByUserIdOrFail', () => {
+    it('should find spaces by user id', async () => {
+      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const name = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
+      const user = await dbUserRepo.insert({
+        status: userStatus,
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      const space = await spacesRepository.create({
+        userId,
+        name: name,
+        status: spaceStatus,
+      });
+
+      await expect(
+        spacesRepository.findByUserIdOrFail({ userId }),
+      ).resolves.toEqual([
+        {
+          id: space.id,
+          name,
+          status: spaceStatus,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
+      ]);
+    });
+
+    it('should throw an error if spaces do not exist', async () => {
+      const userId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await expect(
+        spacesRepository.findByUserIdOrFail({ userId }),
+      ).rejects.toThrow(`Spaces not found. UserId = ${userId}`);
+    });
+  });
+
+  describe('findByUserId', () => {
+    it('should find spaces by user id', async () => {
+      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const spaceName1 = faker.word.noun();
+      const spaceStatus1 = faker.helpers.arrayElement(SpaceStatusKeys);
+      const spaceName2 = faker.word.noun();
+      const spaceStatus2 = faker.helpers.arrayElement(SpaceStatusKeys);
+      const user = await dbUserRepo.insert({
+        status: userStatus,
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      const space1 = await spacesRepository.create({
+        userId,
+        name: spaceName1,
+        status: spaceStatus1,
+      });
+      const space2 = await spacesRepository.create({
+        userId,
+        name: spaceName2,
+        status: spaceStatus2,
+      });
+
+      await expect(
+        spacesRepository.findByUserId({
+          userId,
+        }),
+      ).resolves.toEqual([
+        {
+          id: space1.id,
+          name: spaceName1,
+          status: spaceStatus1,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
+        {
+          id: space2.id,
+          name: spaceName2,
+          status: spaceStatus2,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
+      ]);
+    });
+
+    it('should return an empty array if spaces do not exist', async () => {
+      const userId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await expect(spacesRepository.findByUserId({ userId })).resolves.toEqual(
         [],
       );
     });
   });
 
-  describe('findByUserIdOrFail', () => {
-    it('should find organizations by user id', async () => {
-      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const name = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
-      const user = await dbUserRepo.insert({
-        status: userStatus,
-      });
-      const userId = user.identifiers[0].id as User['id'];
-      const org = await orgRepo.create({
-        userId,
-        name: name,
-        status: orgStatus,
-      });
-
-      await expect(orgRepo.findByUserIdOrFail({ userId })).resolves.toEqual([
-        {
-          id: org.id,
-          name,
-          status: orgStatus,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ]);
-    });
-
-    it('should throw an error if organizations do not exist', async () => {
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await expect(orgRepo.findByUserIdOrFail({ userId })).rejects.toThrow(
-        `Organizations not found. UserId = ${userId}`,
-      );
-    });
-  });
-
-  describe('findByUserId', () => {
-    it('should find organizations by user id', async () => {
-      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const orgName1 = faker.word.noun();
-      const orgStatus1 = faker.helpers.arrayElement(OrgStatusKeys);
-      const orgName2 = faker.word.noun();
-      const orgStatus2 = faker.helpers.arrayElement(OrgStatusKeys);
-      const user = await dbUserRepo.insert({
-        status: userStatus,
-      });
-      const userId = user.identifiers[0].id as User['id'];
-      const org1 = await orgRepo.create({
-        userId,
-        name: orgName1,
-        status: orgStatus1,
-      });
-      const org2 = await orgRepo.create({
-        userId,
-        name: orgName2,
-        status: orgStatus2,
-      });
-
-      await expect(
-        orgRepo.findByUserId({
-          userId,
-        }),
-      ).resolves.toEqual([
-        {
-          id: org1.id,
-          name: orgName1,
-          status: orgStatus1,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-        {
-          id: org2.id,
-          name: orgName2,
-          status: orgStatus2,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      ]);
-    });
-
-    it('should return an empty array if organizations do not exist', async () => {
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await expect(orgRepo.findByUserId({ userId })).resolves.toEqual([]);
-    });
-  });
-
   describe('findOneByUserIdOrFail', () => {
-    it('should find an organization by user id', async () => {
+    it('should find an space by user id', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const orgName = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
-      const org = await orgRepo.create({
+      const space = await spacesRepository.create({
         userId,
-        name: orgName,
-        status: orgStatus,
+        name: spaceName,
+        status: spaceStatus,
       });
 
       await expect(
-        orgRepo.findOneByUserIdOrFail({
+        spacesRepository.findOneByUserIdOrFail({
           userId,
         }),
       ).resolves.toEqual({
-        id: org.id,
-        name: orgName,
-        status: orgStatus,
+        id: space.id,
+        name: spaceName,
+        status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
       });
     });
 
-    it('should throw an error if the organization does not exist', async () => {
+    it('should throw an error if the space does not exist', async () => {
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      await expect(orgRepo.findOneByUserIdOrFail({ userId })).rejects.toThrow(
-        `Organization not found. UserId = ${userId}`,
-      );
+      await expect(
+        spacesRepository.findOneByUserIdOrFail({ userId }),
+      ).rejects.toThrow(`Space not found. UserId = ${userId}`);
     });
   });
 
   describe('findOneByUserId', () => {
-    it('should find an organization by user id', async () => {
+    it('should find an space by user id', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const orgName = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
-      const org = await orgRepo.create({
+      const space = await spacesRepository.create({
         userId,
-        name: orgName,
-        status: orgStatus,
+        name: spaceName,
+        status: spaceStatus,
       });
 
       await expect(
-        orgRepo.findOneByUserId({
+        spacesRepository.findOneByUserId({
           userId,
         }),
       ).resolves.toEqual({
-        id: org.id,
-        name: orgName,
-        status: orgStatus,
+        id: space.id,
+        name: spaceName,
+        status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
       });
     });
 
-    it('should return null if the organization does not exist', async () => {
+    it('should return null if the space does not exist', async () => {
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      await expect(orgRepo.findOneByUserId({ userId })).resolves.toBeNull();
+      await expect(
+        spacesRepository.findOneByUserId({ userId }),
+      ).resolves.toBeNull();
     });
   });
 
   describe('update', () => {
-    it('should update an organization', async () => {
+    it('should update an space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const orgName = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
-      const org = await orgRepo.create({
+      const space = await spacesRepository.create({
         userId,
-        name: orgName,
-        status: orgStatus,
+        name: spaceName,
+        status: spaceStatus,
       });
 
       const newName = faker.word.noun();
-      const newStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const newStatus = faker.helpers.arrayElement(SpaceStatusKeys);
 
-      await orgRepo.update({
-        id: org.id,
+      await spacesRepository.update({
+        id: space.id,
         updatePayload: { name: newName, status: newStatus },
       });
 
-      const dbOrg = await dbOrgRepo.findOneOrFail({
-        where: { id: org.id },
+      const dbSpace = await dbSpacesRepository.findOneOrFail({
+        where: { id: space.id },
       });
 
-      expect(dbOrg).toEqual({
-        id: org.id,
+      expect(dbSpace).toEqual({
+        id: space.id,
         name: newName,
         status: newStatus,
         createdAt: expect.any(Date),
@@ -711,24 +719,24 @@ describe('OrganizationsRepository', () => {
   });
 
   describe('delete', () => {
-    it('should delete an organization', async () => {
+    it('should delete an space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const orgName = faker.word.noun();
-      const orgStatus = faker.helpers.arrayElement(OrgStatusKeys);
+      const spaceName = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
       const userId = user.identifiers[0].id as User['id'];
-      const org = await orgRepo.create({
+      const space = await spacesRepository.create({
         userId,
-        name: orgName,
-        status: orgStatus,
+        name: spaceName,
+        status: spaceStatus,
       });
 
-      await orgRepo.delete(org.id);
+      await spacesRepository.delete(space.id);
 
       await expect(
-        dbOrgRepo.findOneOrFail({ where: { id: org.id } }),
+        dbSpacesRepository.findOneOrFail({ where: { id: space.id } }),
       ).rejects.toBeInstanceOf(EntityNotFoundError);
     });
   });

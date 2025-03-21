@@ -77,10 +77,10 @@ export class MembersRepository implements IMembersRepository {
   public async find(
     args?: FindManyOptions<DbMember>,
   ): Promise<Array<DbMember>> {
-    const organizationRepository =
+    const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
 
-    return await organizationRepository.find(args);
+    return await membersRepository.find(args);
   }
 
   public async inviteUsers(args: {
@@ -97,12 +97,12 @@ export class MembersRepository implements IMembersRepository {
 
     const admin =
       await this.usersRepository.findByWalletAddressOrFail(adminAddress);
-    const org = await this.spacesRepository.findOneOrFail({
+    const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
     });
-    const userOrganizationsRepository =
+    const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
-    const activeAdmin = await userOrganizationsRepository.findOne({
+    const activeAdmin = await membersRepository.findOne({
       where: { user: { id: admin.id }, status: 'ACTIVE', role: 'ADMIN' },
     });
     if (!activeAdmin) {
@@ -147,7 +147,7 @@ export class MembersRepository implements IMembersRepository {
 
         await entityManager.insert(DbMember, {
           user: { id: invitedUserId },
-          space: org,
+          space: space,
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
@@ -156,7 +156,7 @@ export class MembersRepository implements IMembersRepository {
 
         invitations.push({
           userId: invitedUserId,
-          spaceId: org.id,
+          spaceId: space.id,
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
@@ -178,14 +178,14 @@ export class MembersRepository implements IMembersRepository {
     const user = await this.usersRepository.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
-    const org = await this.spacesRepository.findOneOrFail({
+    const space = await this.spacesRepository.findOneOrFail({
       where: {
         id: args.spaceId,
         members: { user: { id: user.id }, status: 'INVITED' },
       },
       relations: { members: { user: true } },
     });
-    const member = org.members[0];
+    const member = space.members[0];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
@@ -210,14 +210,14 @@ export class MembersRepository implements IMembersRepository {
     const user = await this.usersRepository.findByWalletAddressOrFail(
       args.authPayload.signer_address,
     );
-    const org = await this.spacesRepository.findOneOrFail({
+    const space = await this.spacesRepository.findOneOrFail({
       where: {
         id: args.spaceId,
         members: { user: { id: user.id }, status: 'INVITED' },
       },
       relations: { members: { user: true } },
     });
-    const member = org.members[0];
+    const member = space.members[0];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
@@ -249,12 +249,12 @@ export class MembersRepository implements IMembersRepository {
         'The user is not an active member of the space.',
       );
     }
-    const org = await this.spacesRepository.findOneOrFail({
+    const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
       relations: { members: { user: true } },
     });
 
-    return org.members;
+    return space.members;
   }
 
   private findActiveAdminsOrFail(spaceId: Space['id']): Promise<Array<Member>> {
@@ -278,10 +278,10 @@ export class MembersRepository implements IMembersRepository {
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 
-    this.assertIsActiveAdmin({ userOrgs: activeAdmins, userId: user.id });
+    this.assertIsActiveAdmin({ members: activeAdmins, userId: user.id });
     const isSelf = user.id === args.userId;
     if (isSelf && args.role !== 'ADMIN') {
-      this.assertIsNotLastAdmin({ userOrgs: activeAdmins, userId: user.id });
+      this.assertIsNotLastAdmin({ members: activeAdmins, userId: user.id });
     }
 
     const membersRepository =
@@ -292,7 +292,7 @@ export class MembersRepository implements IMembersRepository {
     );
 
     if (updateResult.affected === 0) {
-      throw new NotFoundException('User space not found.');
+      throw new NotFoundException('Member not found.');
     }
   }
 
@@ -309,10 +309,10 @@ export class MembersRepository implements IMembersRepository {
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 
-    this.assertIsActiveAdmin({ userOrgs: activeAdmins, userId: user.id });
+    this.assertIsActiveAdmin({ members: activeAdmins, userId: user.id });
     const isSelf = user.id === args.userId;
     if (isSelf) {
-      this.assertIsNotLastAdmin({ userOrgs: activeAdmins, userId: user.id });
+      this.assertIsNotLastAdmin({ members: activeAdmins, userId: user.id });
     }
 
     const membersRepository =
@@ -323,7 +323,7 @@ export class MembersRepository implements IMembersRepository {
     });
 
     if (deleteResult.affected === 0) {
-      throw new NotFoundException('User space not found.');
+      throw new NotFoundException('Member not found.');
     }
   }
 
@@ -336,11 +336,11 @@ export class MembersRepository implements IMembersRepository {
   }
 
   private assertIsActiveAdmin(args: {
-    userOrgs: Array<DbMember>;
+    members: Array<DbMember>;
     userId: User['id'];
   }): void {
     if (
-      !args.userOrgs.some((member) => {
+      !args.members.some((member) => {
         return this.isActiveAdmin(member) && member.user.id === args.userId;
       })
     ) {
@@ -349,13 +349,13 @@ export class MembersRepository implements IMembersRepository {
   }
 
   private assertIsNotLastAdmin(args: {
-    userOrgs: Array<DbMember>;
+    members: Array<DbMember>;
     userId: User['id'];
   }): void {
     if (
-      args.userOrgs.length === 1 &&
-      args.userOrgs[0].user.id === args.userId &&
-      this.isActiveAdmin(args.userOrgs[0])
+      args.members.length === 1 &&
+      args.members[0].user.id === args.userId &&
+      this.isActiveAdmin(args.members[0])
     ) {
       throw new ConflictException('Cannot remove last admin.');
     }

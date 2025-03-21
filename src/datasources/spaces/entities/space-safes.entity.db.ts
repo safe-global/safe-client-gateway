@@ -12,10 +12,10 @@ import {
 } from 'typeorm';
 
 @Entity('space_safes')
-@Unique('UQ_OS_chainId_address_space', ['chainId', 'address', 'space'])
+@Unique('UQ_SS_chainId_address_space', ['chainId', 'address', 'space'])
 export class SpaceSafe implements DomainSpaceSafe {
   @PrimaryGeneratedColumn({
-    primaryKeyConstraintName: 'PK_OS_id',
+    primaryKeyConstraintName: 'PK_SS_id',
   })
   public readonly id!: number;
 
@@ -55,7 +55,7 @@ export class SpaceSafe implements DomainSpaceSafe {
   })
   @JoinColumn({
     name: 'space_id',
-    foreignKeyConstraintName: 'FK_OS_space_id',
+    foreignKeyConstraintName: 'FK_SS_space_id',
   })
   public readonly space?: Space;
 }

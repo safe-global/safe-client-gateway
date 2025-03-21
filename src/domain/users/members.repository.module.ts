@@ -26,4 +26,4 @@ import { WalletsRepositoryModule } from '@/domain/wallets/wallets.repository.mod
   ],
   exports: [IMembersRepository],
 })
-export class UsersOrganizationsRepositoryModule {}
+export class MembersRepositoryModule {}

@@ -27,17 +27,17 @@ const mockLoggingService = {
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
-const OrganizationStatusKeys = getStringEnumKeys(SpaceStatus);
+const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
 
-describe('OrganizationSafesRepository', () => {
+describe('SpaceSafesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let spaceSafesRepo: SpaceSafesRepository;
 
   let dbWalletRepo: Repository<Wallet>;
   let dbUserRepo: Repository<User>;
-  let dbOrgRepo: Repository<Space>;
-  let dbUserOrgRepo: Repository<Member>;
-  let dbOrgSafeRepo: Repository<SpaceSafe>;
+  let dbSpaceRepository: Repository<Space>;
+  let dbMembersRepository: Repository<Member>;
+  let dbSpaceSafesRepository: Repository<SpaceSafe>;
 
   const testDatabaseName = faker.string.alpha({
     length: 10,
@@ -103,20 +103,24 @@ describe('OrganizationSafesRepository', () => {
 
     dbWalletRepo = dataSource.getRepository(Wallet);
     dbUserRepo = dataSource.getRepository(User);
-    dbOrgRepo = dataSource.getRepository(Space);
-    dbUserOrgRepo = dataSource.getRepository(Member);
-    dbOrgSafeRepo = dataSource.getRepository(SpaceSafe);
+    dbSpaceRepository = dataSource.getRepository(Space);
+    dbMembersRepository = dataSource.getRepository(Member);
+    dbSpaceSafesRepository = dataSource.getRepository(SpaceSafe);
   });
 
   afterEach(async () => {
     jest.resetAllMocks();
 
     await Promise.all(
-      [dbWalletRepo, dbUserRepo, dbOrgRepo, dbUserOrgRepo, dbOrgSafeRepo].map(
-        async (repo) => {
-          await repo.createQueryBuilder().delete().where('1=1').execute();
-        },
-      ),
+      [
+        dbWalletRepo,
+        dbUserRepo,
+        dbSpaceRepository,
+        dbMembersRepository,
+        dbSpaceSafesRepository,
+      ].map(async (repo) => {
+        await repo.createQueryBuilder().delete().where('1=1').execute();
+      }),
     );
   });
 
@@ -129,11 +133,11 @@ describe('OrganizationSafesRepository', () => {
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a SpaceSafe', async () => {
       const before = new Date().getTime();
-      const space = await dbOrgRepo.insert({
-        status: faker.helpers.arrayElement(OrganizationStatusKeys),
+      const space = await dbSpaceRepository.insert({
+        status: faker.helpers.arrayElement(SpaceStatusKeys),
         name: faker.word.noun(),
       });
-      const spaceSafe = await dbOrgSafeRepo.insert({
+      const spaceSafe = await dbSpaceSafesRepository.insert({
         chainId: faker.string.numeric(),
         address: getAddress(faker.finance.ethereumAddress()),
         space: space.identifiers[0].id,
@@ -158,43 +162,43 @@ describe('OrganizationSafesRepository', () => {
     });
 
     it('should update updatedAt when updating a SpaceSafe', async () => {
-      const space = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const prevOrgSafe = await dbOrgSafeRepo.insert({
+      const prevSpaceSafe = await dbSpaceSafesRepository.insert({
         chainId: faker.string.numeric(),
         address: getAddress(faker.finance.ethereumAddress()),
         space: space.identifiers[0].id,
       });
-      const spaceSafeId = prevOrgSafe.identifiers[0].id as SpaceSafe['id'];
-      await dbOrgSafeRepo.update(spaceSafeId, {
+      const spaceSafeId = prevSpaceSafe.identifiers[0].id as SpaceSafe['id'];
+      await dbSpaceSafesRepository.update(spaceSafeId, {
         address: getAddress(faker.finance.ethereumAddress()),
       });
-      const updatedOrgSafe = await dbOrgSafeRepo.findOneOrFail({
+      const updatedSpaceSafe = await dbSpaceSafesRepository.findOneOrFail({
         where: { id: spaceSafeId },
       });
 
-      const prevUpdatedAt = prevOrgSafe.generatedMaps[0].updatedAt;
+      const prevUpdatedAt = prevSpaceSafe.generatedMaps[0].updatedAt;
 
       if (!(prevUpdatedAt instanceof Date)) {
         throw new Error('prevUpdatedAt is not a Date');
       }
 
       expect(prevUpdatedAt.getTime()).toBeLessThanOrEqual(
-        updatedOrgSafe.updatedAt.getTime(),
+        updatedSpaceSafe.updatedAt.getTime(),
       );
     });
   });
 
   describe('chain_id', () => {
     it('should not allow a chain_id to be longer than uint256 (78 chars)', async () => {
-      const space = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
       await expect(
-        dbOrgSafeRepo.insert({
+        dbSpaceSafesRepository.insert({
           chainId: (maxUint256 * BigInt(10)).toString(), // 79 chars
           address: getAddress(faker.finance.ethereumAddress()),
           space: space.identifiers[0].id,
@@ -210,18 +214,18 @@ describe('OrganizationSafesRepository', () => {
         .toLowerCase();
       const checksummedAddress = getAddress(nonChecksummedAddress);
 
-      const space = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const insertOrgSafeResult = await dbOrgSafeRepo.insert({
+      const insertSpaceSafeResult = await dbSpaceSafesRepository.insert({
         chainId: faker.string.numeric(),
         address: nonChecksummedAddress as SpaceSafe['address'],
         space: space.identifiers[0].id,
       });
-      const spaceSafe = await dbOrgSafeRepo.findOneOrFail({
+      const spaceSafe = await dbSpaceSafesRepository.findOneOrFail({
         where: {
-          id: insertOrgSafeResult.identifiers[0].id as SpaceSafe['id'],
+          id: insertSpaceSafeResult.identifiers[0].id as SpaceSafe['id'],
         },
       });
 
@@ -234,25 +238,25 @@ describe('OrganizationSafesRepository', () => {
         .toLowerCase();
       const checksummedAddress = getAddress(nonChecksummedAddress);
 
-      const space = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const insertOrgSafeResult = await dbOrgSafeRepo.insert({
+      const insertSpaceSafeResult = await dbSpaceSafesRepository.insert({
         chainId: faker.string.numeric(),
         address: checksummedAddress,
         space: space.identifiers[0].id,
       });
-      const insertedOrgSafeId = insertOrgSafeResult.identifiers[0]
+      const insertedSpaceSafeId = insertSpaceSafeResult.identifiers[0]
         .id as SpaceSafe['id'];
 
-      await dbOrgSafeRepo.update(insertedOrgSafeId, {
+      await dbSpaceSafesRepository.update(insertedSpaceSafeId, {
         address: nonChecksummedAddress as SpaceSafe['address'],
       });
 
-      const spaceSafe = await dbOrgSafeRepo.findOneOrFail({
+      const spaceSafe = await dbSpaceSafesRepository.findOneOrFail({
         where: {
-          id: insertedOrgSafeId,
+          id: insertedSpaceSafeId,
         },
       });
 
@@ -272,12 +276,12 @@ describe('OrganizationSafesRepository', () => {
         user: { id: userId },
         address: getAddress(faker.finance.ethereumAddress()),
       });
-      const space = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
       const spaceId = space.identifiers[0].id as Space['id'];
-      await dbUserOrgRepo.insert({
+      await dbMembersRepository.insert({
         user: { id: userId },
         role: 'ADMIN',
         status: 'ACTIVE',
@@ -296,7 +300,7 @@ describe('OrganizationSafesRepository', () => {
       });
 
       await expect(
-        dbOrgSafeRepo.find({
+        dbSpaceSafesRepository.find({
           where: { chainId, address },
         }),
       ).resolves.toEqual([
@@ -310,7 +314,7 @@ describe('OrganizationSafesRepository', () => {
       ]);
     });
 
-    it('should create multiple OrganizationSafes', async () => {
+    it('should create multiple SpaceSafes', async () => {
       const payload = faker.helpers.multiple(
         () => ({
           chainId: faker.string.numeric(),
@@ -326,12 +330,12 @@ describe('OrganizationSafesRepository', () => {
         user: { id: userId },
         address: getAddress(faker.finance.ethereumAddress()),
       });
-      const space = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
       const spaceId = space.identifiers[0].id as Space['id'];
-      await dbUserOrgRepo.insert({
+      await dbMembersRepository.insert({
         user: { id: userId },
         role: 'ADMIN',
         status: 'ACTIVE',
@@ -344,7 +348,7 @@ describe('OrganizationSafesRepository', () => {
         payload,
       });
 
-      await expect(dbOrgSafeRepo.find()).resolves.toEqual(
+      await expect(dbSpaceSafesRepository.find()).resolves.toEqual(
         payload.map(({ chainId, address }) => ({
           id: expect.any(Number),
           chainId,
@@ -366,12 +370,12 @@ describe('OrganizationSafesRepository', () => {
         user: { id: userId },
         address: getAddress(faker.finance.ethereumAddress()),
       });
-      const space = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
       const spaceId = space.identifiers[0].id as Space['id'];
-      await dbUserOrgRepo.insert({
+      await dbMembersRepository.insert({
         user: { id: userId },
         role: 'ADMIN',
         status: 'ACTIVE',
@@ -404,7 +408,7 @@ describe('OrganizationSafesRepository', () => {
     });
   });
 
-  describe('findByOrganizationId', () => {
+  describe('findBySpaceId', () => {
     it('should return found space Safes', async () => {
       const spaceSafes = faker.helpers.multiple(
         () => ({
@@ -413,14 +417,14 @@ describe('OrganizationSafesRepository', () => {
         }),
         { count: { min: 2, max: 5 } },
       );
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
       await Promise.all(
         spaceSafes.map(({ chainId, address }) => {
-          return dbOrgSafeRepo.insert({
+          return dbSpaceSafesRepository.insert({
             chainId,
             address,
             space: { id: spaceId },
@@ -451,14 +455,14 @@ describe('OrganizationSafesRepository', () => {
         }),
         { count: { min: 2, max: 5 } },
       );
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
       await Promise.all(
         spaceSafes.map(({ chainId, address }) => {
-          return dbOrgSafeRepo.insert({
+          return dbSpaceSafesRepository.insert({
             chainId,
             address,
             space: { id: spaceId },
@@ -484,17 +488,17 @@ describe('OrganizationSafesRepository', () => {
     });
 
     it('should throw NotFoundException if no spaces Safes found', async () => {
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
 
       await expect(
         spaceSafesRepo.findOrFail({
           where: { space: { id: spaceId } },
         }),
-      ).rejects.toThrow(new NotFoundException('Organization has no Safes.'));
+      ).rejects.toThrow(new NotFoundException('Space has no Safes.'));
     });
   });
 
@@ -507,11 +511,11 @@ describe('OrganizationSafesRepository', () => {
         }),
         { count: { min: 2, max: 5 } },
       );
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
       await spaceSafesRepo.create({
         spaceId: spaceId,
         payload: spaceSafes,
@@ -533,11 +537,11 @@ describe('OrganizationSafesRepository', () => {
     });
 
     it('should return empty array if no space Safes found', async () => {
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
 
       expect(
         await spaceSafesRepo.find({
@@ -549,35 +553,35 @@ describe('OrganizationSafesRepository', () => {
 
   describe('delete', () => {
     it('should delete an SpaceSafe', async () => {
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
-      const orgSafe = await dbOrgSafeRepo.insert({
+      const spaceId = space.identifiers[0].id as Space['id'];
+      const spaceSafe = await dbSpaceSafesRepository.insert({
         chainId: faker.string.numeric(),
         address: getAddress(faker.finance.ethereumAddress()),
         space: {
           id: spaceId,
         },
       });
-      const orgSafeId = orgSafe.identifiers[0].id as SpaceSafe['id'];
+      const spaceSafeId = spaceSafe.identifiers[0].id as SpaceSafe['id'];
 
-      const orgSafeBefore = await spaceSafesRepo.findOrFail({
-        where: { id: orgSafeId },
+      const spaceSafeBefore = await spaceSafesRepo.findOrFail({
+        where: { id: spaceSafeId },
       });
 
       await spaceSafesRepo.delete({
         spaceId: spaceId,
         payload: [
           {
-            chainId: orgSafeBefore[0].chainId,
-            address: orgSafeBefore[0].address,
+            chainId: spaceSafeBefore[0].chainId,
+            address: spaceSafeBefore[0].address,
           },
         ],
       });
 
-      expect(orgSafeBefore).toHaveLength(1);
+      expect(spaceSafeBefore).toHaveLength(1);
       await expect(
         spaceSafesRepo.findOrFail({
           where: { space: { id: spaceId } },
@@ -593,23 +597,23 @@ describe('OrganizationSafesRepository', () => {
         }),
         { count: { min: 2, max: 5 } },
       );
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
       await spaceSafesRepo.create({
         spaceId: spaceId,
         payload: spaceSafes,
       });
-      const orgSafeBefore = await spaceSafesRepo.findBySpaceId(spaceId);
+      const spaceSafeBefore = await spaceSafesRepo.findBySpaceId(spaceId);
 
       await spaceSafesRepo.delete({
         spaceId: spaceId,
         payload: spaceSafes,
       });
 
-      expect(orgSafeBefore).toHaveLength(spaceSafes.length);
+      expect(spaceSafeBefore).toHaveLength(spaceSafes.length);
       await expect(
         spaceSafesRepo.findOrFail({
           where: { space: { id: spaceId } },
@@ -618,13 +622,13 @@ describe('OrganizationSafesRepository', () => {
     });
 
     it('should throw NotFoundException if provided SpaceSafe is not found', async () => {
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
       const chainId = faker.string.numeric();
-      await dbOrgSafeRepo.insert({
+      await dbSpaceSafesRepository.insert({
         chainId,
         address: getAddress(faker.finance.ethereumAddress()),
         space: {
@@ -653,18 +657,18 @@ describe('OrganizationSafesRepository', () => {
         }),
         { count: { min: 2, max: 5 } },
       );
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
       await spaceSafesRepo.create({
         spaceId: spaceId,
         payload: spaceSafes,
       });
 
-      const orgSafeBefore = await spaceSafesRepo.findBySpaceId(spaceId);
-      expect(orgSafeBefore).toHaveLength(spaceSafes.length);
+      const spaceSafeBefore = await spaceSafesRepo.findBySpaceId(spaceId);
+      expect(spaceSafeBefore).toHaveLength(spaceSafes.length);
 
       // None is found
       await expect(
@@ -688,11 +692,11 @@ describe('OrganizationSafesRepository', () => {
         }),
         { count: { min: 2, max: 5 } },
       );
-      const org = await dbOrgRepo.insert({
+      const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),
       });
-      const spaceId = org.identifiers[0].id as Space['id'];
+      const spaceId = space.identifiers[0].id as Space['id'];
       await spaceSafesRepo.create({
         spaceId: spaceId,
         payload: spaceSafes,

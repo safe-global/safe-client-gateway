@@ -19,11 +19,11 @@ import {
 
 @Entity('members')
 @Unique('UQ_members', ['user', 'space'])
-@Index('idx_UO_name', ['name'])
-@Index('idx_UO_role_status', ['role', 'status'])
+@Index('idx_members_name', ['name'])
+@Index('idx_members_role_status', ['role', 'status'])
 export class Member implements DomainMember {
   @PrimaryGeneratedColumn({
-    primaryKeyConstraintName: 'PK_UO_id',
+    primaryKeyConstraintName: 'PK_members_id',
   })
   id!: number;
 
@@ -33,7 +33,7 @@ export class Member implements DomainMember {
   })
   @JoinColumn({
     name: 'user_id',
-    foreignKeyConstraintName: 'FK_UO_user_id',
+    foreignKeyConstraintName: 'FK_members_user_id',
   })
   user!: User;
 
@@ -43,7 +43,7 @@ export class Member implements DomainMember {
   })
   @JoinColumn({
     name: 'space_id',
-    foreignKeyConstraintName: 'FK_UO_space_id',
+    foreignKeyConstraintName: 'FK_members_space_id',
   })
   space!: Space;
 

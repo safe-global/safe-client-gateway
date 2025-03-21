@@ -15,7 +15,7 @@ import { SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 
 @Entity('spaces')
 export class Space implements DomainSpace {
-  @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_space_id' })
+  @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_spaces_id' })
   id!: number;
 
   @Column({ type: 'varchar', length: 255 })

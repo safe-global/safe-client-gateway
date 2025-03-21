@@ -340,7 +340,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -702,13 +702,13 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 404 if the user space does not exist', async () => {
+    it('should throw a 404 if the member does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -756,7 +756,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -813,7 +813,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1002,7 +1002,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1053,7 +1053,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1104,7 +1104,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1302,7 +1302,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401)
         .expect({
-          message: 'The user is not an active member of the organization.', // TODO: (compatibility) change to 'The user is not an active member of the space.'
+          message: 'The user is not an active member of the space.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1350,7 +1350,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .expect(401)
         .expect({
-          message: 'The user is not an active member of the organization.', // TODO: (compatibility) change to 'The user is not an active member of the space.'
+          message: 'The user is not an active member of the space.',
           error: 'Unauthorized',
           statusCode: 401,
         });
@@ -1683,7 +1683,7 @@ describe('MembersController', () => {
         .send({ role: 'ADMIN' })
         .expect(404)
         .expect({
-          message: 'User organization not found.', // TODO: (compatibility) change to 'Member not found.'
+          message: 'Member not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1794,7 +1794,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'No user organizations found.', // TODO: (compatibility) change to 'No members found.'
+          message: 'No members found.',
           error: 'Not Found',
           statusCode: 404,
         });

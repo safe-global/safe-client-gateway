@@ -451,7 +451,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
         });
     });
