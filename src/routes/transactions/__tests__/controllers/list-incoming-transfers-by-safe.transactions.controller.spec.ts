@@ -570,4 +570,160 @@ describe('List incoming transfers by Safe - Transactions Controller (Unit)', () 
         });
       });
   });
+
+  it('should parse native coin values as Ether', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const value = faker.number.int({ min: 1, max: 100 });
+    const nativeTokenTransfer = nativeTokenTransferBuilder()
+      .with('executionDate', new Date('2022-08-04T12:44:22Z'))
+      .with('to', safe.address)
+      .with('value', BigInt(value * 10 ** 18).toString())
+      .build();
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getIncomingTransfersUrl) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder()
+              .with('results', [nativeTokenTransferToJson(nativeTokenTransfer)])
+              .build(),
+          ),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url.includes(getContractUrlPattern)) {
+        return Promise.reject({ detail: 'Not found', status: 404 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers/?value=${value}`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toMatchObject({
+          results: [
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `transfer_${safe.address}_${nativeTokenTransfer.transferId}`,
+                txHash: nativeTokenTransfer.transactionHash,
+                timestamp: nativeTokenTransfer.executionDate.getTime(),
+                txStatus: 'SUCCESS',
+                txInfo: {
+                  type: 'Transfer',
+                  sender: { value: nativeTokenTransfer.from },
+                  recipient: { value: nativeTokenTransfer.to },
+                  direction: 'INCOMING',
+                  transferInfo: {
+                    type: 'NATIVE_COIN',
+                    value: nativeTokenTransfer.value,
+                  },
+                },
+              },
+              conflictType: 'None',
+            },
+          ],
+        });
+      });
+  });
+
+  it("should parse tokens value according to it's decimals", async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const value = faker.number.int({ min: 1, max: 100 });
+    const decimals = faker.number.int({ min: 1, max: 18 });
+    const erc20Transfer = erc20TransferBuilder()
+      .with('executionDate', new Date('2022-11-07T09:03:48Z'))
+      .with('to', safe.address)
+      .with('from', safe.address)
+      .with('value', BigInt(value * 10 ** decimals).toString())
+      .build();
+    const token = erc20TokenBuilder()
+      .with('address', getAddress(erc20Transfer.tokenAddress))
+      .with('trusted', true)
+      .with('decimals', decimals)
+      .build();
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getIncomingTransfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/incoming-transfers/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${erc20Transfer.tokenAddress}`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getIncomingTransfersUrl) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder()
+              .with('results', [erc20TransferToJson(erc20Transfer)])
+              .build(),
+          ),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url.includes(getContractUrlPattern)) {
+        return Promise.reject({ detail: 'Not found' });
+      }
+      if (url === getTokenUrlPattern) {
+        return Promise.resolve({ data: rawify(token), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/incoming-transfers/?tokenAddress=${erc20Transfer.tokenAddress}&value=${value}`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toMatchObject({
+          results: [
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `transfer_${safe.address}_${erc20Transfer.transferId}`,
+                txHash: erc20Transfer.transactionHash,
+                executionInfo: null,
+                safeAppInfo: null,
+                timestamp: erc20Transfer.executionDate.getTime(),
+                txStatus: 'SUCCESS',
+                txInfo: {
+                  type: 'Transfer',
+                  sender: { value: safe.address },
+                  recipient: { value: safe.address },
+                  direction: 'OUTGOING',
+                  transferInfo: {
+                    type: 'ERC20',
+                    tokenAddress: erc20Transfer.tokenAddress,
+                    tokenName: token.name,
+                    tokenSymbol: token.symbol,
+                    logoUri: token.logoUri,
+                    decimals: token.decimals,
+                    value: erc20Transfer.value,
+                  },
+                },
+              },
+              conflictType: 'None',
+            },
+          ],
+        });
+      });
+  });
 });
