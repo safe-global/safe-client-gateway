@@ -183,6 +183,12 @@ export class TransactionsService {
     const domainTransactions =
       await this.safeRepository.getMultisigTransactions({
         ...args,
+        ...(args.value && {
+          value: await this.parseTokenValue({
+            ...args,
+            value: args.value,
+          }),
+        }),
         limit: args.paginationData.limit,
         offset: args.paginationData.offset,
       });
@@ -377,21 +383,6 @@ export class TransactionsService {
     };
   }
 
-  private async parseTokenValue(args: {
-    chainId: string;
-    value: string;
-    tokenAddress?: `0x${string}`;
-  }): Promise<string | undefined> {
-    if (!args.tokenAddress) {
-      return parseEther(args.value).toString();
-    }
-    const token = await this.tokenRepository.getToken({
-      chainId: args.chainId,
-      address: args.tokenAddress,
-    });
-    return parseUnits(args.value, token.decimals).toString();
-  }
-
   async previewTransaction(args: {
     chainId: string;
     safeAddress: `0x${string}`;
@@ -582,6 +573,21 @@ export class TransactionsService {
         paginationData.offset - 1,
       );
     }
+  }
+
+  private async parseTokenValue(args: {
+    chainId: string;
+    value: string;
+    tokenAddress?: `0x${string}`;
+  }): Promise<string> {
+    if (!args.tokenAddress) {
+      return parseEther(args.value).toString();
+    }
+    const token = await this.tokenRepository.getToken({
+      chainId: args.chainId,
+      address: args.tokenAddress,
+    });
+    return parseUnits(args.value, token.decimals).toString();
   }
 
   private getNextPageFirstNonce(

@@ -45,6 +45,7 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 
 describe('List multisig transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -560,6 +561,109 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
                   name: safeAppsResponse[0].name,
                   url: safeAppsResponse[0].url,
                 },
+              },
+              conflictType: 'None',
+            },
+          ],
+        });
+      });
+  });
+
+  // Note: endpoint only supports native coin
+  it('should parse values as Ether', async () => {
+    const chain = chainBuilder().build();
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const value = faker.number.int({ min: 1, max: 100 });
+    const nativeTokenTransfer = nativeTokenTransferBuilder()
+      .with('executionDate', new Date('2022-08-04T12:44:22Z'))
+      .with('value', BigInt(value * 10 ** 18).toString())
+      .build();
+    const multisigTransaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('value', nativeTokenTransfer.value)
+      .with('operation', 0)
+      .with('executionDate', nativeTokenTransfer.executionDate)
+      .with('isExecuted', true)
+      .with('isSuccessful', true)
+      .with('origin', null)
+      .with('to', nativeTokenTransfer.to)
+      .with('confirmationsRequired', 2)
+      .buildWithConfirmations({
+        chainId: chain.chainId,
+        safe,
+        signers,
+      });
+    networkService.get.mockImplementation(({ url }) => {
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder()
+              .with('results', [multisigTransactionToJson(multisigTransaction)])
+              .build(),
+          ),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (url.includes(getContractUrlPattern)) {
+        return Promise.reject({ detail: 'Not found', status: 404 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/multisig-transactions/?value=${value}`,
+      )
+      .expect(200)
+      .then(({ body }) => {
+        expect(body).toMatchObject({
+          results: [
+            {
+              type: 'TRANSACTION',
+              transaction: {
+                id: `multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+                txHash: multisigTransaction.transactionHash,
+                timestamp: multisigTransaction.executionDate?.getTime(),
+                txStatus: 'SUCCESS',
+                txInfo: {
+                  type: 'Transfer',
+                  sender: { value: safe.address },
+                  recipient: {
+                    value: multisigTransaction.to,
+                  },
+                  direction: 'OUTGOING',
+                  transferInfo: {
+                    type: 'NATIVE_COIN',
+                    value: multisigTransaction.value,
+                  },
+                },
+                executionInfo: {
+                  type: 'MULTISIG',
+                  nonce: multisigTransaction.nonce,
+                  confirmationsRequired: 2,
+                  confirmationsSubmitted: 2,
+                  missingSigners: null,
+                },
+                safeAppInfo: null,
               },
               conflictType: 'None',
             },
