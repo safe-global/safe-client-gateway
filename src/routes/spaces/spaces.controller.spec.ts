@@ -435,6 +435,50 @@ describe('SpacesController', () => {
         });
     });
 
+    it('Should return a 404 if the user is not an active member of the space', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const spaceName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              name: faker.person.firstName(),
+              address: memberAuthPayloadDto.signer_address,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          error: 'Not Found',
+        });
+    });
+
     it('Should return a 404 if a space id does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);

@@ -310,6 +310,8 @@ describe('OrganizationController', () => {
               id: expect.any(Number),
               name: firstOrganizationName,
               status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
               userOrganizations: [
                 {
                   id: expect.any(Number),
@@ -328,6 +330,8 @@ describe('OrganizationController', () => {
                   user: {
                     id: expect.any(Number),
                     status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                    createdAt: expect.any(String),
+                    updatedAt: expect.any(String),
                   },
                 },
               ],
@@ -336,6 +340,8 @@ describe('OrganizationController', () => {
               id: expect.any(Number),
               name: secondOrganizationName,
               status: getEnumKey(OrganizationStatus, OrganizationStatus.ACTIVE),
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
               userOrganizations: [
                 {
                   id: expect.any(Number),
@@ -354,6 +360,8 @@ describe('OrganizationController', () => {
                   user: {
                     id: expect.any(Number),
                     status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                    createdAt: expect.any(String),
+                    updatedAt: expect.any(String),
                   },
                 },
               ],

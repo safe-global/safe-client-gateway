@@ -13,7 +13,6 @@ import {
   FindOptionsWhere,
   FindOptionsSelect,
   FindOptionsRelations,
-  In,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { getEnumKey } from '@/domain/common/utils/enum';
@@ -113,62 +112,6 @@ export class OrganizationsRepository implements IOrganizationsRepository {
       await this.postgresDatabaseService.getRepository(Organization);
 
     return await organizationRepository.find(args);
-  }
-
-  public async findByUserIdOrFail(
-    args: Parameters<OrganizationsRepository['findByUserId']>[0],
-  ): Promise<Array<Organization>> {
-    const organizations = await this.findByUserId(args);
-
-    if (organizations.length === 0) {
-      throw new NotFoundException(
-        'Organizations not found. UserId = ' + args.userId,
-      );
-    }
-
-    return organizations;
-  }
-
-  public async findByUserId(args: {
-    userId: number;
-    select?: FindOptionsSelect<Organization>;
-    relations?: FindOptionsRelations<Organization>;
-  }): Promise<Array<Organization>> {
-    const organizationRepository =
-      await this.postgresDatabaseService.getRepository(Organization);
-
-    const userOrganizationRepository =
-      await this.postgresDatabaseService.getRepository(UserOrganization);
-
-    const userOrganizations = await userOrganizationRepository.find({
-      where: { user: { id: args.userId } },
-      relations: ['organization'],
-    });
-    const userOrganizationsIds = userOrganizations.map(
-      (userOrganization) => userOrganization.organization.id,
-    );
-
-    return await organizationRepository.find({
-      select: args.select,
-      where: {
-        id: In(userOrganizationsIds),
-      },
-      relations: args.relations,
-    });
-  }
-
-  public async findOneByUserIdOrFail(
-    args: Parameters<OrganizationsRepository['findByUserId']>[0],
-  ): Promise<Organization> {
-    const organization = await this.findOneByUserId(args);
-
-    if (!organization) {
-      throw new NotFoundException(
-        'Organization not found. UserId = ' + args.userId,
-      );
-    }
-
-    return organization;
   }
 
   public async findOneByUserId(args: {
