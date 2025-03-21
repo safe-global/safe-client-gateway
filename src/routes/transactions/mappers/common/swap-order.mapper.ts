@@ -72,7 +72,6 @@ export class SwapOrderMapper {
         trusted: buyToken.trusted,
       }),
       explorerUrl: this.swapOrderHelper.getOrderExplorerUrl(order).toString(),
-      executedSurplusFee: order.executedSurplusFee.toString(),
       executedFee: order.executedFee.toString(),
       executedFeeToken: new TokenInfo({
         address: sellToken.address,

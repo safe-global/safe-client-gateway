@@ -24,7 +24,7 @@ export function proposeTransactionDtoBuilder(): IBuilder<ProposeTransactionDto> 
     .with('sender', getAddress(faker.finance.ethereumAddress()))
     .with(
       'signature',
-      faker.string.hexadecimal({ length: 32 }) as `0x${string}`,
+      faker.string.hexadecimal({ length: 130 }) as `0x${string}`,
     )
     .with('origin', faker.word.sample());
 }

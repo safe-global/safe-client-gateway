@@ -15,6 +15,8 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MultisigConfirmationDetails } from '@/routes/transactions/entities/transaction-details/multisig-execution-details.entity';
 import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
 import { getAddress } from 'viem';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -37,6 +39,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,
       tokenRepository,
@@ -52,6 +55,11 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       .with('safe', safe.address)
       .with('confirmations', [])
       .build();
+    transaction.safeTxHash = getSafeTxHash({
+      chainId,
+      transaction,
+      safe,
+    });
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     safeRepository.getMultisigTransactions.mockResolvedValue(
@@ -92,16 +100,24 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   it('should return a MultisigExecutionDetails object with NULL_ADDRESS gasToken, confirmations and rejections', async () => {
     const chainId = faker.string.numeric();
-    const transactionConfirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
-    ];
-    const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const transaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('gasToken', NULL_ADDRESS)
-      .with('confirmations', transactionConfirmations)
-      .build();
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers,
+      });
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     const rejectionTxConfirmation = confirmationBuilder().build();
@@ -113,14 +129,14 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     );
     const expectedConfirmationsDetails = [
       new MultisigConfirmationDetails(
-        new AddressInfo(transactionConfirmations[0].owner),
-        transactionConfirmations[0].signature,
-        transactionConfirmations[0].submissionDate.getTime(),
+        new AddressInfo(transaction.confirmations![0].owner),
+        transaction.confirmations![0].signature,
+        transaction.confirmations![0].submissionDate.getTime(),
       ),
       new MultisigConfirmationDetails(
-        new AddressInfo(transactionConfirmations[1].owner),
-        transactionConfirmations[1].signature,
-        transactionConfirmations[1].submissionDate.getTime(),
+        new AddressInfo(transaction.confirmations![1].owner),
+        transaction.confirmations![1].signature,
+        transaction.confirmations![1].submissionDate.getTime(),
       ),
     ];
     const expectedRejectors = [new AddressInfo(rejectionTxConfirmation.owner)];
@@ -157,22 +173,31 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
 
   it('should return a MultisigExecutionDetails object with rejectors from rejection transaction only', async () => {
     const chainId = faker.string.numeric();
-    const transactionConfirmations = [
-      confirmationBuilder().build(),
-      confirmationBuilder().build(),
-    ];
-    const safe = safeBuilder().build();
-    const transaction = multisigTransactionBuilder()
+    const signers = Array.from({ length: 2 }, () => {
+      const privateKey = generatePrivateKey();
+      return privateKeyToAccount(privateKey);
+    });
+    const safe = safeBuilder()
+      .with(
+        'owners',
+        signers.map((signer) => signer.address),
+      )
+      .build();
+    const transaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('gasToken', NULL_ADDRESS)
-      .with('confirmations', transactionConfirmations)
-      .build();
+      .buildWithConfirmations({
+        chainId,
+        safe,
+        signers,
+      });
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    const rejectionTxConfirmation = confirmationBuilder().build();
     const rejectionTx = multisigTransactionBuilder()
-      .with('confirmations', [rejectionTxConfirmation])
+      .with('safe', safe.address)
+      .with('confirmations', [confirmationBuilder().build()])
       .build();
+
     safeRepository.getMultisigTransactions.mockResolvedValue(
       pageBuilder<MultisigTransaction>()
         .with('results', [transaction, rejectionTx]) // returns both rejected and rejection txs
@@ -180,17 +205,19 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     );
     const expectedConfirmationsDetails = [
       new MultisigConfirmationDetails(
-        new AddressInfo(transactionConfirmations[0].owner),
-        transactionConfirmations[0].signature,
-        transactionConfirmations[0].submissionDate.getTime(),
+        new AddressInfo(transaction.confirmations![0].owner),
+        transaction.confirmations![0].signature,
+        transaction.confirmations![0].submissionDate.getTime(),
       ),
       new MultisigConfirmationDetails(
-        new AddressInfo(transactionConfirmations[1].owner),
-        transactionConfirmations[1].signature,
-        transactionConfirmations[1].submissionDate.getTime(),
+        new AddressInfo(transaction.confirmations![1].owner),
+        transaction.confirmations![1].signature,
+        transaction.confirmations![1].submissionDate.getTime(),
       ),
     ];
-    const expectedRejectors = [new AddressInfo(rejectionTxConfirmation.owner)];
+    const expectedRejectors = [
+      new AddressInfo(rejectionTx.confirmations![0].owner),
+    ];
 
     const actual = await mapper.mapMultisigExecutionDetails(
       chainId,
@@ -228,7 +255,13 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     const transaction = multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('proposer', null)
+      .with('confirmations', [])
       .build();
+    transaction.safeTxHash = getSafeTxHash({
+      chainId,
+      transaction,
+      safe,
+    });
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     safeRepository.getMultisigTransactions.mockResolvedValue(
@@ -259,7 +292,13 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       .with('safe', safe.address)
       .with('proposer', delegate)
       .with('proposedByDelegate', delegate)
+      .with('confirmations', [])
       .build();
+    transaction.safeTxHash = getSafeTxHash({
+      chainId,
+      transaction,
+      safe,
+    });
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
     safeRepository.getMultisigTransactions.mockResolvedValue(

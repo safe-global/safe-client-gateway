@@ -5,7 +5,7 @@ import type { AddConfirmationDto } from '@/routes/transactions/entities/add-conf
 
 export function addConfirmationDtoBuilder(): IBuilder<AddConfirmationDto> {
   return new Builder<AddConfirmationDto>().with(
-    'signedSafeTxHash',
-    faker.string.hexadecimal({ length: 32 }),
+    'signature',
+    faker.string.hexadecimal({ length: 130 }) as `0x${string}`,
   );
 }

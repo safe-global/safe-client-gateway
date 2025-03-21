@@ -1,6 +1,15 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import { Token } from '@/routes/balances/entities/token.entity';
+import {
+  Erc20Token,
+  Erc721Token,
+  NativeToken,
+} from '@/routes/balances/entities/token.entity';
 import {
   ExecutionDetails,
   ExecutionDetailsType,
@@ -9,7 +18,7 @@ import {
 export class MultisigConfirmationDetails {
   @ApiProperty()
   signer: AddressInfo;
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: String, nullable: true })
   signature: string | null;
   @ApiProperty()
   submittedAt: number;
@@ -25,6 +34,7 @@ export class MultisigConfirmationDetails {
   }
 }
 
+@ApiExtraModels(NativeToken, Erc20Token, Erc721Token)
 export class MultisigExecutionDetails extends ExecutionDetails {
   @ApiProperty({ enum: [ExecutionDetailsType.Multisig] })
   override type = ExecutionDetailsType.Multisig;
@@ -46,16 +56,23 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   safeTxHash: string;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
   executor: AddressInfo | null;
-  @ApiProperty()
+  @ApiProperty({ type: AddressInfo, isArray: true })
   signers: Array<AddressInfo>;
   @ApiProperty()
   confirmationsRequired: number;
-  @ApiProperty()
+  @ApiProperty({ type: MultisigConfirmationDetails, isArray: true })
   confirmations: Array<MultisigConfirmationDetails>;
   @ApiProperty({ type: AddressInfo, isArray: true })
   rejectors: Array<AddressInfo>;
-  @ApiPropertyOptional({ type: Token, nullable: true })
-  gasTokenInfo: Token | null;
+  @ApiPropertyOptional({
+    oneOf: [
+      { $ref: getSchemaPath(NativeToken) },
+      { $ref: getSchemaPath(Erc20Token) },
+      { $ref: getSchemaPath(Erc721Token) },
+    ],
+    nullable: true,
+  })
+  gasTokenInfo: NativeToken | Erc20Token | Erc721Token | null;
   @ApiProperty()
   trusted: boolean;
   @ApiPropertyOptional({ type: AddressInfo, nullable: true })
@@ -77,7 +94,7 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     confirmationsRequired: number,
     confirmations: Array<MultisigConfirmationDetails>,
     rejectors: Array<AddressInfo>,
-    gasTokenInfo: Token | null,
+    gasTokenInfo: NativeToken | Erc20Token | Erc721Token | null,
     trusted: boolean,
     proposer: AddressInfo | null,
     proposedByDelegate: AddressInfo | null,

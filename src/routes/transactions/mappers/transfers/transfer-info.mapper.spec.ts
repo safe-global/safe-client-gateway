@@ -4,7 +4,11 @@ import { erc20TransferBuilder } from '@/domain/safe/entities/__tests__/erc20-tra
 import { erc721TransferBuilder } from '@/domain/safe/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
+import {
+  erc20TokenBuilder,
+  erc721TokenBuilder,
+  tokenBuilder,
+} from '@/domain/tokens/__tests__/token.builder';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
@@ -54,7 +58,7 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc20TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenBuilder()
+    const token = erc20TokenBuilder()
       .with('address', getAddress(transfer.tokenAddress))
       .build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
@@ -85,12 +89,47 @@ describe('Transfer Info mapper (Unit)', () => {
     );
   });
 
+  it('should build an ERC20 TransferTransactionInfo without token info if fetching it fails', async () => {
+    const chainId = faker.string.numeric();
+    const transfer = erc20TransferBuilder().build();
+    const safe = safeBuilder().build();
+    const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
+    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+    tokenRepository.getToken.mockRejectedValue(
+      new Error('Failed to fetch token'),
+    );
+
+    const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
+
+    expect(actual).toBeInstanceOf(TransferTransactionInfo);
+    if (!(actual instanceof TransferTransactionInfo)) {
+      throw new Error('Not a TransferTransactionInfo instance');
+    }
+    expect(actual.transferInfo).toBeInstanceOf(Erc20Transfer);
+    expect(actual).toEqual(
+      expect.objectContaining({
+        sender: addressInfo,
+        recipient: addressInfo,
+        direction: TransferDirection.Unknown,
+        transferInfo: expect.objectContaining({
+          type: 'ERC20',
+          tokenAddress: transfer.tokenAddress,
+          value: transfer.value,
+          tokenName: null,
+          tokenSymbol: null,
+          logoUri: null,
+          decimals: null,
+        }),
+      }),
+    );
+  });
+
   it('should build an ERC721 TransferTransactionInfo', async () => {
     const chainId = faker.string.numeric();
     const transfer = erc721TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    const token = tokenBuilder()
+    const token = erc721TokenBuilder()
       .with('address', getAddress(transfer.tokenAddress))
       .build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
@@ -115,6 +154,40 @@ describe('Transfer Info mapper (Unit)', () => {
           tokenName: token.name,
           tokenSymbol: token.symbol,
           logoUri: token.logoUri,
+        }),
+      }),
+    );
+  });
+
+  it('should build an ERC721 TransferTransactionInfo without token info if fetching it fails', async () => {
+    const chainId = faker.string.numeric();
+    const transfer = erc721TransferBuilder().build();
+    const safe = safeBuilder().build();
+    const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
+    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+    tokenRepository.getToken.mockRejectedValue(
+      new Error('Failed to fetch token'),
+    );
+
+    const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
+
+    expect(actual).toBeInstanceOf(TransferTransactionInfo);
+    if (!(actual instanceof TransferTransactionInfo)) {
+      throw new Error('Not a TransferTransactionInfo instance');
+    }
+    expect(actual.transferInfo).toBeInstanceOf(Erc721Transfer);
+    expect(actual).toEqual(
+      expect.objectContaining({
+        sender: addressInfo,
+        recipient: addressInfo,
+        direction: TransferDirection.Unknown,
+        transferInfo: expect.objectContaining({
+          type: 'ERC721',
+          tokenAddress: transfer.tokenAddress,
+          tokenId: transfer.tokenId,
+          tokenName: null,
+          tokenSymbol: null,
+          logoUri: null,
         }),
       }),
     );

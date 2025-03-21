@@ -523,6 +523,110 @@ describe('TransactionApi', () => {
     });
   });
 
+  describe('getTrustedForDelegateCallContracts', () => {
+    it('should return the trusted for delegate call contracts received', async () => {
+      const contractPage = pageBuilder()
+        .with('results', [
+          contractBuilder().with('trustedForDelegateCall', true).build(),
+          contractBuilder().with('trustedForDelegateCall', true).build(),
+        ])
+        .build();
+      const getTrustedForDelegateCallContractsUrl = `${baseUrl}/api/v1/contracts/`;
+      const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
+      mockDataSource.get.mockResolvedValueOnce(rawify(contractPage));
+
+      const actual = await service.getTrustedForDelegateCallContracts({});
+
+      expect(actual).toBe(contractPage);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        url: getTrustedForDelegateCallContractsUrl,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+        networkRequest: {
+          params: {
+            trusted_for_delegate_call: true,
+          },
+        },
+      });
+    });
+
+    it('should relay pagination', async () => {
+      const contractPage = pageBuilder()
+        .with('results', [
+          contractBuilder().with('trustedForDelegateCall', true).build(),
+          contractBuilder().with('trustedForDelegateCall', true).build(),
+        ])
+        .build();
+      const getTrustedForDelegateCallContractsUrl = `${baseUrl}/api/v1/contracts/`;
+      const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
+      mockDataSource.get.mockResolvedValueOnce(rawify(contractPage));
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+
+      const actual = await service.getTrustedForDelegateCallContracts({
+        limit,
+        offset,
+      });
+
+      expect(actual).toBe(contractPage);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        url: getTrustedForDelegateCallContractsUrl,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+        networkRequest: {
+          params: {
+            trusted_for_delegate_call: true,
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    const errorMessage = faker.word.words();
+    it.each([
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
+      ['standard', new Error(errorMessage)],
+    ])(`should forward a %s error`, async (_, error) => {
+      const getTrustedForDelegateCallContractsUrl = `${baseUrl}/api/v1/contracts/`;
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      const cacheDir = new CacheDir(`${chainId}_trusted_contracts`, '');
+      mockDataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getTrustedForDelegateCallContractsUrl),
+          {
+            status: statusCode,
+          } as Response,
+          error,
+        ),
+      );
+
+      await expect(
+        service.getTrustedForDelegateCallContracts({}),
+      ).rejects.toThrow(expected);
+
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        url: getTrustedForDelegateCallContractsUrl,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+        networkRequest: {
+          params: {
+            trusted_for_delegate_call: true,
+          },
+        },
+      });
+    });
+  });
+
   describe('getContract', () => {
     it('should return retrieved contract', async () => {
       const contract = contractBuilder().build();
@@ -1192,7 +1296,9 @@ describe('TransactionApi', () => {
   describe('postConfirmation', () => {
     it('should post confirmation', async () => {
       const safeTxHash = faker.string.hexadecimal();
-      const signedSafeTxHash = faker.string.hexadecimal();
+      const signature = faker.string.hexadecimal({
+        length: 130,
+      }) as `0x${string}`;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       networkService.post.mockResolvedValueOnce({
         status: 200,
@@ -1201,14 +1307,14 @@ describe('TransactionApi', () => {
 
       await service.postConfirmation({
         safeTxHash,
-        addConfirmationDto: { signedSafeTxHash },
+        addConfirmationDto: { signature },
       });
 
       expect(networkService.post).toHaveBeenCalledTimes(1);
       expect(networkService.post).toHaveBeenCalledWith({
         url: postConfirmationUrl,
         data: {
-          signature: signedSafeTxHash,
+          signature,
         },
       });
     });
@@ -1219,7 +1325,9 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
-      const signedSafeTxHash = faker.string.hexadecimal();
+      const signature = faker.string.hexadecimal({
+        length: 130,
+      }) as `0x${string}`;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
@@ -1238,7 +1346,7 @@ describe('TransactionApi', () => {
       await expect(
         service.postConfirmation({
           safeTxHash,
-          addConfirmationDto: { signedSafeTxHash },
+          addConfirmationDto: { signature },
         }),
       ).rejects.toThrow(expected);
 
@@ -1246,7 +1354,7 @@ describe('TransactionApi', () => {
       expect(networkService.post).toHaveBeenCalledWith({
         url: postConfirmationUrl,
         data: {
-          signature: signedSafeTxHash,
+          signature,
         },
       });
     });
@@ -2191,7 +2299,9 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeTxHash = faker.string.hexadecimal();
-      const signedSafeTxHash = faker.string.hexadecimal();
+      const signature = faker.string.hexadecimal({
+        length: 130,
+      }) as `0x${string}`;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
       const statusCode = faker.internet.httpStatusCode({
         types: ['clientError', 'serverError'],
@@ -2210,7 +2320,7 @@ describe('TransactionApi', () => {
       await expect(
         service.postConfirmation({
           safeTxHash,
-          addConfirmationDto: { signedSafeTxHash },
+          addConfirmationDto: { signature },
         }),
       ).rejects.toThrow(expected);
 
@@ -2218,7 +2328,7 @@ describe('TransactionApi', () => {
       expect(networkService.post).toHaveBeenCalledWith({
         url: postConfirmationUrl,
         data: {
-          signature: signedSafeTxHash,
+          signature,
         },
       });
     });

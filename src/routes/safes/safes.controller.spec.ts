@@ -132,7 +132,7 @@ describe('Safes Controller (Unit)', () => {
       ])
       .build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -597,7 +597,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1022,7 +1022,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1107,7 +1107,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1194,7 +1194,7 @@ describe('Safes Controller (Unit)', () => {
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1278,7 +1278,7 @@ describe('Safes Controller (Unit)', () => {
       .build();
     const messages = pageBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
+    networkService.get.mockImplementation(async ({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
           return Promise.resolve({ data: rawify(chain), status: 200 });

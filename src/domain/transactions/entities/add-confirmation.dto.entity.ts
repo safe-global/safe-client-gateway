@@ -4,5 +4,5 @@ import type { z } from 'zod';
 export class AddConfirmationDto
   implements z.infer<typeof AddConfirmationDtoSchema>
 {
-  signedSafeTxHash!: string;
+  signature!: `0x${string}`;
 }

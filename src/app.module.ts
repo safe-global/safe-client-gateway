@@ -59,13 +59,13 @@ import {
   type ILoggingService,
 } from '@/logging/logging.interface';
 import { UsersModule } from '@/routes/users/users.module';
-import { OrganisationsModule } from '@/routes/organisations/organisations.module';
+import { SpacesModule } from '@/routes/spaces/spaces.module';
+import { MembersModule } from '@/routes/spaces/members.module';
+import { OrganizationsModule } from '@/routes/organizations/organizations.module';
+import { UserOrganizationsModule } from '@/routes/organizations/user-organizations.module';
 
 @Module({})
 export class AppModule implements NestModule {
-  // Important: values read via the config factory do not take the .env file
-  // into account. The .env file loading is done by the ConfigurationModule
-  // which is not available at this stage.
   static register(configFactory = configuration): DynamicModule {
     const {
       auth: isAuthFeatureEnabled,
@@ -104,7 +104,15 @@ export class AppModule implements NestModule {
           : [HooksModule]),
         MessagesModule,
         NotificationsModule,
-        ...(isUsersFeatureEnabled ? [OrganisationsModule] : []),
+        ...(isUsersFeatureEnabled
+          ? [
+              UsersModule,
+              SpacesModule,
+              MembersModule,
+              OrganizationsModule,
+              UserOrganizationsModule,
+            ] // TODO: (compatibility) remove OrganizationsModule and UserOrganizationsModule
+          : []),
         OwnersModule,
         RelayControllerModule,
         RootModule,
@@ -112,7 +120,6 @@ export class AppModule implements NestModule {
         SafesModule,
         TargetedMessagingModule,
         TransactionsModule,
-        ...(isUsersFeatureEnabled ? [UsersModule] : []),
         // common
         CacheModule,
         // Module for storing and reading from the async local storage

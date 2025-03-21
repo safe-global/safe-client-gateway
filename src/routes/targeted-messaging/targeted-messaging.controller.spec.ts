@@ -79,6 +79,45 @@ describe('TargetedMessagingController', () => {
     await app.close();
   });
 
+  describe('GET targeted Safe', () => {
+    it('should get a targeted Safe', async () => {
+      const outreachId = faker.number.int();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const targetedSafe = targetedSafeBuilder()
+        .with('address', safe.address)
+        .build();
+      targetedMessagingDatasource.getTargetedSafe.mockResolvedValue(
+        targetedSafe,
+      );
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/targeted-messaging/outreaches/${outreachId}/chains/${chain.chainId}/safes/${safe.address}`,
+        )
+        .expect(200)
+        .expect({
+          outreachId: targetedSafe.outreachId,
+          address: targetedSafe.address,
+        });
+    });
+
+    it('should return 404 Not Found if the Safe is not targeted', async () => {
+      const outreachId = faker.number.int();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      targetedMessagingDatasource.getTargetedSafe.mockRejectedValue(
+        new TargetedSafeNotFoundError(),
+      );
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/targeted-messaging/outreaches/${outreachId}/chains/${chain.chainId}/safes/${safe.address}`,
+        )
+        .expect(404);
+    });
+  });
+
   describe('GET submissions', () => {
     it('should get a completed submission', async () => {
       const outreachId = faker.number.int();

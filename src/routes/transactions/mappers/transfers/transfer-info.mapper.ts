@@ -103,10 +103,9 @@ export class TransferInfoMapper {
   ): Promise<Transfer> {
     if (domainTransfer.type === 'ERC20_TRANSFER') {
       const { tokenAddress, value } = domainTransfer;
-      const token: Token | null = await this.getToken(
-        chainId,
-        tokenAddress,
-      ).catch(() => null);
+      const token = await this.getToken(chainId, tokenAddress).catch(
+        () => null,
+      );
       return new Erc20Transfer(
         tokenAddress,
         value,

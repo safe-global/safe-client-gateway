@@ -4,10 +4,16 @@ import { User } from '@/datasources/users/entities/users.entity.db';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { UsersRepository } from '@/domain/users/users.repository';
-import { Wallet } from '@/datasources/users/entities/wallets.entity.db';
+import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
+import { WalletsRepositoryModule } from '@/domain/wallets/wallets.repository.module';
+import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
 
 @Module({
-  imports: [PostgresDatabaseModuleV2, TypeOrmModule.forFeature([User, Wallet])],
+  imports: [
+    PostgresDatabaseModuleV2,
+    TypeOrmModule.forFeature([User, Wallet, UserOrganization]),
+    WalletsRepositoryModule,
+  ],
   providers: [
     {
       provide: IUsersRepository,

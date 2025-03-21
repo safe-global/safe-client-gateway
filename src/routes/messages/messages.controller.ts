@@ -28,7 +28,7 @@ export class MessagesController {
   @Get('chains/:chainId/messages/:messageHash')
   async getMessageByHash(
     @Param('chainId') chainId: string,
-    @Param('messageHash') messageHash: string,
+    @Param('messageHash') messageHash: `0x${string}`,
   ): Promise<Message> {
     return this.messagesService.getMessageByHash({ chainId, messageHash });
   }
@@ -71,7 +71,7 @@ export class MessagesController {
   @Post('chains/:chainId/messages/:messageHash/signatures')
   async updateMessageSignature(
     @Param('chainId') chainId: string,
-    @Param('messageHash') messageHash: string,
+    @Param('messageHash') messageHash: `0x${string}`,
     @Body(new ValidationPipe(UpdateMessageSignatureDtoSchema))
     updateMessageSignatureDto: UpdateMessageSignatureDto,
   ): Promise<unknown> {

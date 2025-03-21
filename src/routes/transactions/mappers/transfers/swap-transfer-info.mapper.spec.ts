@@ -119,7 +119,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapsRepository.getOrders.mockResolvedValue([order]);
     mockSwapOrderHelper.getToken.mockResolvedValue({
       ...token,
-      decimals: token.decimals!,
+      decimals: token.decimals,
     });
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
@@ -142,7 +142,6 @@ describe('SwapTransferInfoMapper', () => {
       direction: 'UNKNOWN',
       executedBuyAmount: order.executedBuyAmount.toString(),
       executedSellAmount: order.executedSellAmount.toString(),
-      executedSurplusFee: order.executedSurplusFee.toString(),
       executedFee: order.executedFee.toString(),
       executedFeeToken: token,
       explorerUrl,
@@ -202,7 +201,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapsRepository.getOrders.mockResolvedValue([order]);
     mockSwapOrderHelper.getToken.mockResolvedValue({
       ...token,
-      decimals: token.decimals!,
+      decimals: token.decimals,
     });
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
@@ -225,7 +224,6 @@ describe('SwapTransferInfoMapper', () => {
       direction: 'UNKNOWN',
       executedBuyAmount: order.executedBuyAmount.toString(),
       executedSellAmount: order.executedSellAmount.toString(),
-      executedSurplusFee: order.executedSurplusFee.toString(),
       executedFee: order.executedFee.toString(),
       executedFeeToken: token,
       explorerUrl,
@@ -261,7 +259,6 @@ describe('SwapTransferInfoMapper', () => {
         executedSellAmount: '5555000000',
         executedSellAmountBeforeFees: '5555000000',
         executedFeeAmount: '0',
-        executedSurplusFee: '5012654',
         executedFee: '5012654',
         executedFeeToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
         invalidated: false,
@@ -298,7 +295,6 @@ describe('SwapTransferInfoMapper', () => {
         executedSellAmount: '3000000000',
         executedSellAmountBeforeFees: '3000000000',
         executedFeeAmount: '0',
-        executedSurplusFee: '4290918',
         executedFee: '4290918',
         executedFeeToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
         invalidated: false,
@@ -364,7 +360,7 @@ describe('SwapTransferInfoMapper', () => {
     mockSwapsRepository.getOrders.mockResolvedValue(orders);
     mockSwapOrderHelper.getToken.mockResolvedValue({
       ...token,
-      decimals: token.decimals!,
+      decimals: token.decimals,
     });
     mockSwapOrderHelper.getOrderExplorerUrl.mockReturnValue(
       new URL(explorerUrl),
@@ -387,7 +383,6 @@ describe('SwapTransferInfoMapper', () => {
       direction: 'OUTGOING',
       executedBuyAmount: orders[0].executedBuyAmount.toString(),
       executedSellAmount: orders[0].executedSellAmount.toString(),
-      executedSurplusFee: orders[0].executedSurplusFee.toString(),
       executedFee: orders[0].executedFee.toString(),
       executedFeeToken: token,
       explorerUrl,
@@ -423,7 +418,6 @@ describe('SwapTransferInfoMapper', () => {
         executedSellAmount: '5555000000',
         executedSellAmountBeforeFees: '5555000000',
         executedFeeAmount: '0',
-        executedSurplusFee: '5012654',
         executedFee: '5012654',
         executedFeeToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
         invalidated: false,
@@ -460,7 +454,6 @@ describe('SwapTransferInfoMapper', () => {
         executedSellAmount: '3000000000',
         executedSellAmountBeforeFees: '3000000000',
         executedFeeAmount: '0',
-        executedSurplusFee: '4290918',
         executedFee: '4290918',
         executedFeeToken: '0xdac17f958d2ee523a2206206994597c13d831ec7',
         invalidated: false,

@@ -7,17 +7,23 @@ import {
   MessagePageSchema,
   MessageSchema,
 } from '@/domain/messages/entities/message.entity';
+import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
+import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: ISafeRepository,
+    private readonly messageVerifier: MessageVerifierHelper,
   ) {}
 
   async getMessageByHash(args: {
     chainId: string;
-    messageHash: string;
+    messageHash: `0x${string}`;
   }): Promise<Message> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -47,15 +53,24 @@ export class MessagesRepository implements IMessagesRepository {
   async createMessage(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    message: unknown;
+    message: string | TypedData;
     safeAppId: number | null;
-    signature: string;
+    signature: `0x${string}`;
     origin: string | null;
   }): Promise<unknown> {
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+    this.messageVerifier.verifyCreation({
+      chainId: args.chainId,
+      safe,
+      message: args.message,
+      signature: args.signature,
+    });
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-
     return transactionService.postMessage({
       safeAddress: args.safeAddress,
       message: args.message,
@@ -67,13 +82,25 @@ export class MessagesRepository implements IMessagesRepository {
 
   async updateMessageSignature(args: {
     chainId: string;
-    messageHash: string;
+    messageHash: `0x${string}`;
     signature: `0x${string}`;
   }): Promise<unknown> {
+    const message = await this.getMessageByHash({
+      chainId: args.chainId,
+      messageHash: args.messageHash,
+    });
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: message.safe,
+    });
+    this.messageVerifier.verifyUpdate({
+      ...args,
+      safe,
+      message: message.message,
+    });
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-
     return transactionService.postMessageSignature({
       messageHash: args.messageHash,
       signature: args.signature,
