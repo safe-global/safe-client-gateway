@@ -8,9 +8,8 @@ import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
 import { Message } from '@/domain/messages/entities/message.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { CreateMessageDto } from '@/routes/messages/entities/create-message.dto.entity';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { isAddressEqual, TypedDataDefinition } from 'viem';
+import { isAddressEqual } from 'viem';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate messageHash',
@@ -100,7 +99,7 @@ export class MessageVerifierHelper {
     chainId: string;
     safe: Safe;
     expectedHash: `0x${string}`;
-    message: string | Record<string, unknown>;
+    message: Message['message'];
     source: LogSource;
   }): void {
     const calculatedHash = this.calculateMessageHash(args);
@@ -125,10 +124,7 @@ export class MessageVerifierHelper {
   }): `0x${string}` {
     let calculatedHash: `0x${string}`;
     try {
-      calculatedHash = getSafeMessageMessageHash({
-        ...args,
-        message: args.message as string | TypedDataDefinition,
-      });
+      calculatedHash = getSafeMessageMessageHash(args);
     } catch {
       this.logMalformedMessageHash(args);
       throw new HttpExceptionNoLog(
@@ -193,7 +189,7 @@ export class MessageVerifierHelper {
   private logMalformedMessageHash(args: {
     chainId: string;
     safe: Safe;
-    message: CreateMessageDto['message'];
+    message: Message['message'];
     source: LogSource;
   }): void {
     this.loggingService.error({
@@ -211,7 +207,7 @@ export class MessageVerifierHelper {
     chainId: string;
     safe: Safe;
     messageHash: `0x${string}`;
-    message: CreateMessageDto['message'];
+    message: Message['message'];
     source: LogSource;
   }): void {
     this.loggingService.error({

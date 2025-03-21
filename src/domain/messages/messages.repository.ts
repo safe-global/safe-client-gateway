@@ -9,6 +9,7 @@ import {
 } from '@/domain/messages/entities/message.entity';
 import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
@@ -52,7 +53,7 @@ export class MessagesRepository implements IMessagesRepository {
   async createMessage(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    message: string | Record<string, unknown>;
+    message: string | TypedData;
     safeAppId: number | null;
     signature: `0x${string}`;
     origin: string | null;
