@@ -68,7 +68,9 @@ export class SpacesService {
     });
   }
 
-  public async get(authPayload: AuthPayload): Promise<Array<GetSpaceResponse>> {
+  public async getActiveOrInvitedSpaces(
+    authPayload: AuthPayload,
+  ): Promise<Array<GetSpaceResponse>> {
     this.assertSignerAddress(authPayload);
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       authPayload.signer_address,
@@ -107,7 +109,7 @@ export class SpacesService {
     });
   }
 
-  public async getOne(
+  public async getActiveSpace(
     id: number,
     authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
