@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress, type TypedDataDomain } from 'viem';
+import { getAddress } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
@@ -11,6 +11,7 @@ import {
   getSafeMessageMessageHash,
   getSafeTxHash,
 } from '@/domain/common/utils/safe';
+import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
 import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
 import type { IBuilder } from '@/__tests__/builder';
 
@@ -33,43 +34,6 @@ const TYPES_WITH_BASEGAS_VERSIONS = [
   '1.4.0',
   '1.4.1',
 ];
-
-// Note: the following is not strictly typed
-function buildTypedData(): IBuilder<{
-  domain: TypedDataDomain;
-  primaryType: string;
-  types: Record<string, Array<{ name: string; type: string }>>;
-  message: Record<string, unknown>;
-}> {
-  const domain = {
-    chainId: faker.number.int(),
-    verifyingContract: getAddress(faker.finance.ethereumAddress()),
-  };
-
-  const primaryType = faker.lorem.word();
-
-  const types = {
-    [primaryType]: [
-      { name: 'field1', type: 'uint256' },
-      { name: 'field2', type: 'address' },
-    ],
-  };
-  const message = {
-    field1: BigInt(faker.number.int()),
-    field2: getAddress(faker.finance.ethereumAddress()),
-  };
-
-  return new Builder<{
-    domain: TypedDataDomain;
-    primaryType: string;
-    types: Record<string, Array<{ name: string; type: string }>>;
-    message: Record<string, unknown>;
-  }>()
-    .with('domain', domain)
-    .with('primaryType', primaryType)
-    .with('types', types)
-    .with('message', message);
-}
 
 function safeTxHashMultisigTransactionBuilder(): IBuilder<BaseMultisigTransaction> {
   return new Builder<BaseMultisigTransaction>()
@@ -126,7 +90,7 @@ describe('Safe', () => {
       it('should handle typedData', () => {
         const chainId = faker.string.numeric();
         const safe = safeBuilder().build();
-        const message = buildTypedData().build();
+        const message = typedDataBuilder().build();
 
         expect(() =>
           getSafeMessageMessageHash({
@@ -144,7 +108,7 @@ describe('Safe', () => {
           const safe = safeBuilder().with('version', version).build();
           const message = faker.helpers.arrayElement([
             faker.lorem.sentence(),
-            buildTypedData().build(),
+            typedDataBuilder().build(),
           ]);
 
           expect(() =>
@@ -160,7 +124,7 @@ describe('Safe', () => {
           const safe = safeBuilder().with('version', version).build();
           const message = faker.helpers.arrayElement([
             faker.lorem.sentence(),
-            buildTypedData().build(),
+            typedDataBuilder().build(),
           ]);
 
           expect(() =>
@@ -261,7 +225,7 @@ describe('Safe', () => {
         it('should generate a valid 1.0.0 messageHash', () => {
           const chainId = '';
           const safe = safeBuilder().with('version', '1.0.0').build();
-          const message = {};
+          const message = '';
 
           const result = getSafeMessageMessageHash({
             chainId,
@@ -275,7 +239,7 @@ describe('Safe', () => {
         it('should generate a valid 1.1.0 messageHash', () => {
           const chainId = '';
           const safe = safeBuilder().with('version', '1.1.1').build();
-          const message = {};
+          const message = '';
 
           const result = getSafeMessageMessageHash({
             chainId,
@@ -289,7 +253,7 @@ describe('Safe', () => {
         it('should generate a valid 1.2.0 messageHash', () => {
           const chainId = '';
           const safe = safeBuilder().with('version', '1.2.0').build();
-          const message = {};
+          const message = '';
 
           const result = getSafeMessageMessageHash({
             chainId,
@@ -303,7 +267,7 @@ describe('Safe', () => {
         it('should generate a valid 1.3.0 messageHash', () => {
           const chainId = '';
           const safe = safeBuilder().with('version', '1.3.0').build();
-          const message = {};
+          const message = '';
 
           const result = getSafeMessageMessageHash({
             chainId,
@@ -317,7 +281,7 @@ describe('Safe', () => {
         it('should generate a valid 1.4.0 messageHash', () => {
           const chainId = '';
           const safe = safeBuilder().with('version', '1.4.0').build();
-          const message = {};
+          const message = '';
 
           const result = getSafeMessageMessageHash({
             chainId,
@@ -331,7 +295,7 @@ describe('Safe', () => {
         it('should generate a valid 1.4.1 messageHash', () => {
           const chainId = '';
           const safe = safeBuilder().with('version', '1.4.1').build();
-          const message = {};
+          const message = '';
 
           const result = getSafeMessageMessageHash({
             chainId,

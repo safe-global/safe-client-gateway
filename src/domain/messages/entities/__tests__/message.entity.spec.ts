@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { fakeJson } from '@/__tests__/faker';
+import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { Message } from '@/domain/messages/entities/message.entity';
@@ -85,12 +85,10 @@ describe('MessageSchema', () => {
 
   it.each([
     ['string', faker.string.alphanumeric()],
-    ['record', JSON.parse(fakeJson())],
+    ['typed data', typedDataBuilder().build()],
   ])('should accept a %s message', (_, message) => {
     const result = MessageSchema.safeParse(
-      messageBuilder()
-        .with('message', message as Message['message'])
-        .build(),
+      messageBuilder().with('message', message).build(),
     );
 
     expect(result.success && result.data.message).toStrictEqual(message);

@@ -1,13 +1,9 @@
 import semverSatisfies from 'semver/functions/satisfies';
-import {
-  hashMessage,
-  hashTypedData,
-  zeroAddress,
-  type TypedDataDefinition,
-} from 'viem';
+import { hashMessage, hashTypedData, zeroAddress } from 'viem';
 import { MessageSchema } from '@/domain/messages/entities/message.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import type { Safe } from '@/domain/safe/entities/safe.entity';
+import type { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
 const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';
@@ -17,15 +13,13 @@ const MESSAGE_PRIMARY_TYPE = 'SafeMessage';
 export function getSafeMessageMessageHash(args: {
   chainId: string;
   safe: Safe;
-  message: string | Record<string, unknown>;
+  message: string | TypedData;
 }): `0x${string}` {
   if (!args.safe.version) {
     throw new Error('Safe version is required');
   }
   try {
-    const message = MessageSchema.shape.message.parse(args.message) as
-      | string
-      | TypedDataDefinition;
+    const message = MessageSchema.shape.message.parse(args.message);
 
     return hashTypedData({
       domain: _getSafeDomain({
