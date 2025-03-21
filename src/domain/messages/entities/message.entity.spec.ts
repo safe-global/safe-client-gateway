@@ -1,4 +1,4 @@
-import { fakeJson } from '@/__tests__/faker';
+import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { messageBuilder } from '@/domain/messages/entities/__tests__/message.builder';
 import {
@@ -73,7 +73,7 @@ describe('Message entity schemas', () => {
 
     it.each([
       ['string', faker.lorem.sentence()],
-      ['object', JSON.parse(fakeJson())],
+      ['typed data', typedDataBuilder().build()],
     ])('should allow a %s message', (_, message) => {
       const result = MessageSchema.safeParse({
         ...messageBuilder().build(),

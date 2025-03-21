@@ -858,10 +858,10 @@ describe('Messages controller', () => {
         .expect({
           statusCode: 422,
           code: 'invalid_type',
-          expected: 'object',
+          expected: 'string',
           received: 'number',
           path: ['message'],
-          message: 'Expected object, received number',
+          message: 'Expected string, received number',
         });
     });
 

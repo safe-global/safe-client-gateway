@@ -1,5 +1,6 @@
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { MessageConfirmationSchema } from '@/domain/messages/entities/message-confirmation.entity';
+import { TypedDataSchema } from '@/domain/messages/entities/typed-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { z } from 'zod';
@@ -11,7 +12,7 @@ export const MessageSchema = z.object({
   modified: z.coerce.date(),
   safe: AddressSchema,
   messageHash: HexSchema,
-  message: z.union([z.string(), z.record(z.unknown())]),
+  message: z.union([z.string(), TypedDataSchema]),
   proposedBy: AddressSchema,
   safeAppId: z.number().nullish().default(null),
   confirmations: z.array(MessageConfirmationSchema),

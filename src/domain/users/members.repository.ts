@@ -17,12 +17,15 @@ import type {
   FindOptionsWhere,
   FindOptionsRelations,
   FindManyOptions,
+  EntityManager,
 } from 'typeorm';
 import type { IMembersRepository } from '@/domain/users/members.repository.interface';
 import type { Space } from '@/domain/spaces/entities/space.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import type { Invitation } from '@/domain/users/entities/invitation.entity';
 import { type Member } from '@/domain/users/entities/member.entity';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -111,51 +114,44 @@ export class MembersRepository implements IMembersRepository {
 
     const invitedAddresses = args.users.map((user) => user.address);
     const invitedWallets = await this.walletsRepository.find({
-      where: {
-        address: In(invitedAddresses),
-      },
-      relations: {
-        user: true,
-      },
+      where: { address: In(invitedAddresses) },
+      relations: { user: true },
     });
-
     const invitations: Array<Invitation> = [];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
-        // Find existing User via Wallet
-        const invitedWallet = invitedWallets.find((wallet) => {
+        // Find existing User via Wallet or create new User and Wallet.
+        const wallet = invitedWallets.find((wallet) => {
           return isAddressEqual(wallet.address, userToInvite.address);
         });
-        let invitedUserId = invitedWallet?.user.id;
+        const userIdToInvite = wallet
+          ? wallet.user.id
+          : await this.createUserAndWallet({
+              entityManager,
+              address: userToInvite.address,
+            });
 
-        // Otherwise create User and Wallet
-        if (!invitedUserId) {
-          invitedUserId = await this.usersRepository.create(
-            'PENDING',
-            entityManager,
-          );
-
-          await this.walletsRepository.create(
-            {
-              walletAddress: userToInvite.address,
-              userId: invitedUserId,
-            },
-            entityManager,
-          );
+        try {
+          await entityManager.insert(DbMember, {
+            user: { id: userIdToInvite },
+            space: space,
+            name: userToInvite.name,
+            role: userToInvite.role,
+            status: 'INVITED',
+            invitedBy: adminAddress,
+          });
+        } catch (err) {
+          if (isUniqueConstraintError(err)) {
+            throw new UniqueConstraintError(
+              `${userToInvite.address} is already in this space or has a pending invite.`,
+            );
+          }
+          throw err;
         }
 
-        await entityManager.insert(DbMember, {
-          user: { id: invitedUserId },
-          space: space,
-          name: userToInvite.name,
-          role: userToInvite.role,
-          status: 'INVITED',
-          invitedBy: adminAddress,
-        });
-
         invitations.push({
-          userId: invitedUserId,
+          userId: userIdToInvite,
           spaceId: space.id,
           name: userToInvite.name,
           role: userToInvite.role,
@@ -166,6 +162,19 @@ export class MembersRepository implements IMembersRepository {
     });
 
     return invitations;
+  }
+
+  private async createUserAndWallet(args: {
+    entityManager: EntityManager;
+    address: `0x${string}`;
+  }): Promise<User['id']> {
+    const { address, entityManager } = args;
+    const userId = await this.usersRepository.create('PENDING', entityManager);
+    await this.walletsRepository.create(
+      { walletAddress: address, userId },
+      entityManager,
+    );
+    return userId;
   }
 
   public async acceptInvite(args: {

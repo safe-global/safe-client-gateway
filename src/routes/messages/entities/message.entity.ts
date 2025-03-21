@@ -1,12 +1,19 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { MessageConfirmation } from '@/routes/messages/entities/message-confirmation.entity';
+import { TypedData } from '@/routes/messages/entities/typed-data.entity';
 
 export enum MessageStatus {
   NeedsConfirmation = 'NEEDS_CONFIRMATION',
   Confirmed = 'CONFIRMED',
 }
 
+@ApiExtraModels(TypedData)
 export class Message {
   @ApiProperty()
   messageHash: `0x${string}`;
@@ -16,8 +23,10 @@ export class Message {
   logoUri: string | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   name: string | null;
-  @ApiProperty()
-  message: string | Record<string, unknown>;
+  @ApiProperty({
+    oneOf: [{ type: 'string' }, { $ref: getSchemaPath(TypedData) }],
+  })
+  message: string | TypedData;
   @ApiProperty()
   creationTimestamp: number;
   @ApiProperty()
@@ -40,7 +49,7 @@ export class Message {
     status: MessageStatus,
     logoUri: string | null,
     name: string | null,
-    message: string | Record<string, unknown>,
+    message: string | TypedData,
     creationTimestamp: number,
     modifiedTimestamp: number,
     confirmationsSubmitted: number,
