@@ -1,8 +1,8 @@
-import type { Organization as Space } from '@/datasources/organizations/entities/organizations.entity.db';
+import type { Space as Space } from '@/datasources/spaces/entities/space.entity.db';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
-import { IOrganizationsRepository as ISpacesRepository } from '@/domain/organizations/organizations.repository.interface';
-import { UserOrganizationRole as MemberRole } from '@/domain/users/entities/user-organization.entity';
+import { ISpacesRepository as ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
+import { MemberRole as MemberRole } from '@/domain/users/entities/member.entity';
 import { User } from '@/domain/users/entities/user.entity';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { CreateSpaceResponse } from '@/routes/spaces/entities/create-space.dto.entity';
@@ -77,7 +77,7 @@ export class SpacesService {
         id: true,
         name: true,
         status: true,
-        userOrganizations: {
+        members: {
           id: true,
           role: true,
           name: true,
@@ -92,7 +92,7 @@ export class SpacesService {
         },
       },
       relations: {
-        userOrganizations: {
+        members: {
           user: true,
         },
       },
@@ -104,7 +104,7 @@ export class SpacesService {
         id: space.id,
         name: space.name,
         status: space.status,
-        members: space.userOrganizations.map((member) => {
+        members: space.members.map((member) => {
           return {
             id: member.id,
             role: member.role,
@@ -136,13 +136,13 @@ export class SpacesService {
     const space = await this.spacesRepository.findOneOrFail({
       where: {
         id,
-        userOrganizations: { user: { id: userId } },
+        members: { user: { id: userId } },
       },
       select: {
         id: true,
         name: true,
         status: true,
-        userOrganizations: {
+        members: {
           id: true,
           role: true,
           name: true,
@@ -157,7 +157,7 @@ export class SpacesService {
         },
       },
       relations: {
-        userOrganizations: {
+        members: {
           user: true,
         },
       },
@@ -168,7 +168,7 @@ export class SpacesService {
       id: space.id,
       name: space.name,
       status: space.status,
-      members: space.userOrganizations.map((member) => {
+      members: space.members.map((member) => {
         return {
           id: member.id,
           role: member.role,
@@ -225,7 +225,7 @@ export class SpacesService {
     const space = await this.spacesRepository.findOne({
       where: {
         id: spaceId,
-        userOrganizations: {
+        members: {
           role: getEnumKey(MemberRole, MemberRole.ADMIN),
           status: 'ACTIVE',
           user: {

@@ -1,4 +1,4 @@
-import { OrganizationSafe as SpaceSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import { SpaceSafe as SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 import { ChainIdSchema } from '@/domain/chains/entities/schemas/chain-id.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ApiProperty } from '@nestjs/swagger';

@@ -1,9 +1,9 @@
 import { ConflictException, Inject } from '@nestjs/common';
-import { IUsersOrganizationsRepository as IMembersRepository } from '@/domain/users/user-organizations.repository.interface';
+import { IMembersRepository as IMembersRepository } from '@/domain/users/members.repository.interface';
 import { User } from '@/domain/users/entities/user.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { Organization as Space } from '@/domain/organizations/entities/organization.entity';
+import type { Space as Space } from '@/domain/spaces/entities/space.entity';
 import type { InviteUsersDto } from '@/routes/spaces/entities/invite-users.dto.entity';
 import type { Invitation } from '@/routes/spaces/entities/invitation.entity';
 import type { MembersDto } from '@/routes/spaces/entities/members.dto.entity';
@@ -33,7 +33,7 @@ export class MembersService {
 
     const invitations = await this.membersRepository.inviteUsers({
       authPayload: args.authPayload,
-      orgId: args.spaceId,
+      spaceId: args.spaceId,
       users: args.inviteUsersDto.users,
     });
 
@@ -42,7 +42,7 @@ export class MembersService {
       return {
         userId: invitation.userId,
         name: invitation.name,
-        spaceId: invitation.orgId,
+        spaceId: invitation.spaceId,
         role: invitation.role,
         status: invitation.status,
         invitedBy: invitation.invitedBy,
@@ -57,7 +57,7 @@ export class MembersService {
   }): Promise<void> {
     return await this.membersRepository.acceptInvite({
       authPayload: args.authPayload,
-      orgId: args.spaceId,
+      spaceId: args.spaceId,
       payload: args.acceptInviteDto,
     });
   }
@@ -68,7 +68,7 @@ export class MembersService {
   }): Promise<void> {
     return await this.membersRepository.declineInvite({
       authPayload: args.authPayload,
-      orgId: args.spaceId,
+      spaceId: args.spaceId,
     });
   }
 
@@ -76,9 +76,9 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MembersDto> {
-    const members = await this.membersRepository.findAuthorizedUserOrgsOrFail({
+    const members = await this.membersRepository.findAuthorizedMembersOrFail({
       authPayload: args.authPayload,
-      orgId: args.spaceId,
+      spaceId: args.spaceId,
     });
 
     // TODO: (compatibility) remove this mapping when the Member domain entity is updated.
@@ -109,7 +109,7 @@ export class MembersService {
   }): Promise<void> {
     return await this.membersRepository.updateRole({
       authPayload: args.authPayload,
-      orgId: args.spaceId,
+      spaceId: args.spaceId,
       userId: args.userId,
       role: args.updateRoleDto.role,
     });
@@ -123,7 +123,7 @@ export class MembersService {
     return await this.membersRepository.removeUser({
       authPayload: args.authPayload,
       userId: args.userId,
-      orgId: args.spaceId,
+      spaceId: args.spaceId,
     });
   }
 }

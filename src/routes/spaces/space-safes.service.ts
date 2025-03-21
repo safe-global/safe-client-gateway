@@ -1,15 +1,15 @@
-import { Organization as Space } from '@/datasources/organizations/entities/organizations.entity.db';
-import { OrganizationSafe as SpaceSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import { Space as Space } from '@/datasources/spaces/entities/space.entity.db';
+import { SpaceSafe as SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { IOrganizationsRepository as ISpacesRepository } from '@/domain/organizations/organizations.repository.interface';
+import { ISpacesRepository as ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { CreateSpaceSafeDto } from '@/routes/spaces/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafeDto } from '@/routes/spaces/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/routes/spaces/entities/get-space-safe.dto.entity';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
-import { IOrganizationSafesRepository as ISpaceSafesRepository } from '@/domain/organizations/organizations-safe.repository.interface';
-import { IUsersOrganizationsRepository as IMembersRepository } from '@/domain/users/user-organizations.repository.interface';
+import { ISpaceSafesRepository } from '@/domain/spaces/space-safes.repository.interface';
+import { IMembersRepository as IMembersRepository } from '@/domain/users/members.repository.interface';
 
 @Injectable()
 export class SpaceSafesService {
@@ -33,7 +33,7 @@ export class SpaceSafesService {
     await this.isAdmin(args.spaceId, args.authPayload.signer_address);
 
     return await this.spaceSafesRepository.create({
-      organizationId: args.spaceId,
+      spaceId: args.spaceId,
       payload: args.payload,
     });
   }
@@ -45,8 +45,7 @@ export class SpaceSafesService {
     this.assertSignerAddress(authPayload);
     await this.isMember(spaceId, authPayload.signer_address);
 
-    const spaceSafes =
-      await this.spaceSafesRepository.findByOrganizationId(spaceId);
+    const spaceSafes = await this.spaceSafesRepository.findBySpaceId(spaceId);
 
     return {
       safes: this.transformSpaceSafesResponse(spaceSafes),
@@ -62,7 +61,7 @@ export class SpaceSafesService {
     await this.isAdmin(args.spaceId, args.authPayload.signer_address);
 
     await this.spaceSafesRepository.delete({
-      organizationId: args.spaceId,
+      spaceId: args.spaceId,
       payload: args.payload,
     });
   }
@@ -85,7 +84,7 @@ export class SpaceSafesService {
     const space = await this.spacesRepository.findOne({
       where: {
         id: spaceId,
-        userOrganizations: {
+        members: {
           role: 'ADMIN',
           status: 'ACTIVE',
           user: {
@@ -111,7 +110,7 @@ export class SpaceSafesService {
 
     const member = await this.membersRepository.findOne({
       user: { id: userId },
-      organization: { id: spaceId },
+      space: { id: spaceId },
       status: 'ACTIVE',
     });
 

@@ -31,11 +31,11 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker/.';
-import { OrganizationStatus as SpaceStatus } from '@/domain/organizations/entities/organization.entity';
+import { SpaceStatus as SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import {
-  UserOrganizationRole as MemberRole,
-  UserOrganizationStatus as MemberStatus,
-} from '@/domain/users/entities/user-organization.entity';
+  MemberRole as MemberRole,
+  MemberStatus as MemberStatus,
+} from '@/domain/users/entities/member.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 
@@ -451,7 +451,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
         });
     });

@@ -1,9 +1,9 @@
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import {
-  UserOrganizationRole as MemberRole,
-  UserOrganizationStatus as MemberStatus,
-  type UserOrganization as DomainMember,
-} from '@/domain/users/entities/user-organization.entity';
+  MemberRole as MemberRole,
+  MemberStatus as MemberStatus,
+  type Member as DomainMember,
+} from '@/domain/users/entities/member.entity';
 import { UserStatus, type User } from '@/domain/users/entities/user.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
