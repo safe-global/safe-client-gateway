@@ -10,7 +10,7 @@ import {
   User as DomainUser,
 } from '@/domain/users/entities/user.entity';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
-import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
+import { Member } from '@/datasources/users/entities/member.entity.db';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 
 @Entity('users')
@@ -47,9 +47,6 @@ export class User implements DomainUser {
   })
   updatedAt!: Date;
 
-  @OneToMany(
-    () => UserOrganization,
-    (userOrganization: UserOrganization) => userOrganization.user,
-  )
-  userOrganizations!: Array<UserOrganization>;
+  @OneToMany(() => Member, (member: Member) => member.user)
+  members!: Array<Member>;
 }

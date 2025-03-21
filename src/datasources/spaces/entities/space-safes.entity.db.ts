@@ -1,6 +1,6 @@
-import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
+import { Space } from '@/datasources/spaces/entities/space.entity.db';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
-import { OrganizationSafe as DomainOrganizationSafe } from '@/domain/organizations/entities/organization-safe.entity';
+import { SpaceSafe as DomainSpaceSafe } from '@/domain/spaces/entities/space-safe.entity';
 import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 import {
   Column,
@@ -11,13 +11,9 @@ import {
   Unique,
 } from 'typeorm';
 
-@Entity('organization_safes')
-@Unique('UQ_OS_chainId_address_organization', [
-  'chainId',
-  'address',
-  'organization',
-])
-export class OrganizationSafe implements DomainOrganizationSafe {
+@Entity('space_safes')
+@Unique('UQ_OS_chainId_address_space', ['chainId', 'address', 'space'])
+export class SpaceSafe implements DomainSpaceSafe {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_OS_id',
   })
@@ -53,17 +49,13 @@ export class OrganizationSafe implements DomainOrganizationSafe {
   })
   public readonly updatedAt!: Date;
 
-  @ManyToOne(
-    () => Organization,
-    (organization: Organization) => organization.id,
-    {
-      onDelete: 'CASCADE',
-      nullable: false,
-    },
-  )
-  @JoinColumn({
-    name: 'organization_id',
-    foreignKeyConstraintName: 'FK_OS_organization_id',
+  @ManyToOne(() => Space, (space: Space) => space.id, {
+    onDelete: 'CASCADE',
+    nullable: false,
   })
-  public readonly organization?: Organization;
+  @JoinColumn({
+    name: 'space_id',
+    foreignKeyConstraintName: 'FK_OS_space_id',
+  })
+  public readonly space?: Space;
 }

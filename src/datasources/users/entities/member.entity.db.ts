@@ -1,12 +1,12 @@
-import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
+import { Space } from '@/datasources/spaces/entities/space.entity.db';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import {
-  UserOrganization as DomainUserOrganization,
-  UserOrganizationRole,
-  UserOrganizationStatus,
-} from '@/domain/users/entities/user-organization.entity';
+  Member as DomainMember,
+  MemberRole,
+  MemberStatus,
+} from '@/domain/users/entities/member.entity';
 import {
   Column,
   Entity,
@@ -17,11 +17,11 @@ import {
   Unique,
 } from 'typeorm';
 
-@Entity('user_organizations')
-@Unique('UQ_user_organizations', ['user', 'organization'])
+@Entity('members')
+@Unique('UQ_members', ['user', 'space'])
 @Index('idx_UO_name', ['name'])
 @Index('idx_UO_role_status', ['role', 'status'])
-export class UserOrganization implements DomainUserOrganization {
+export class Member implements DomainMember {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_UO_id',
   })
@@ -37,19 +37,15 @@ export class UserOrganization implements DomainUserOrganization {
   })
   user!: User;
 
-  @ManyToOne(
-    () => Organization,
-    (organization: Organization) => organization.id,
-    {
-      cascade: true,
-      nullable: false,
-    },
-  )
-  @JoinColumn({
-    name: 'organization_id',
-    foreignKeyConstraintName: 'FK_UO_organization_id',
+  @ManyToOne(() => Space, (space: Space) => space.id, {
+    cascade: true,
+    nullable: false,
   })
-  organization!: Organization;
+  @JoinColumn({
+    name: 'space_id',
+    foreignKeyConstraintName: 'FK_UO_space_id',
+  })
+  space!: Space;
 
   @Column({ type: 'varchar', length: 255 })
   name!: string;
@@ -57,16 +53,16 @@ export class UserOrganization implements DomainUserOrganization {
   // Postgres enums are string therefore we use integer
   @Column({
     type: 'integer',
-    transformer: databaseEnumTransformer(UserOrganizationRole),
+    transformer: databaseEnumTransformer(MemberRole),
   })
-  role!: keyof typeof UserOrganizationRole;
+  role!: keyof typeof MemberRole;
 
   // Postgres enums are string therefore we use integer
   @Column({
     type: 'integer',
-    transformer: databaseEnumTransformer(UserOrganizationStatus),
+    transformer: databaseEnumTransformer(MemberStatus),
   })
-  status!: keyof typeof UserOrganizationStatus;
+  status!: keyof typeof MemberStatus;
 
   @Column({
     name: 'invited_by',

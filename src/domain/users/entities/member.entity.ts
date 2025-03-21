@@ -1,40 +1,40 @@
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { OrganizationSchema } from '@/domain/organizations/entities/organization.entity';
+import { SpaceSchema } from '@/domain/spaces/entities/space.entity';
 import { UserSchema } from '@/domain/users/entities/user.entity';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Organization } from '@/domain/organizations/entities/organization.entity';
+import type { Space } from '@/domain/spaces/entities/space.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export enum UserOrganizationRole {
+export enum MemberRole {
   ADMIN = 1,
   MEMBER = 2,
 }
 
-export enum UserOrganizationStatus {
+export enum MemberStatus {
   INVITED = 0,
   ACTIVE = 1,
   DECLINED = 2,
 }
 
 // We need explicitly define ZodType due to recursion
-export const UserOrganizationSchema: z.ZodType<
+export const MemberSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
     user: User;
-    organization: Organization;
+    space: Space;
     name: string;
-    role: keyof typeof UserOrganizationRole;
-    status: keyof typeof UserOrganizationStatus;
+    role: keyof typeof MemberRole;
+    status: keyof typeof MemberStatus;
     invitedBy: `0x${string}` | null;
   }
 > = RowSchema.extend({
   user: z.lazy(() => UserSchema),
-  organization: z.lazy(() => OrganizationSchema),
+  space: z.lazy(() => SpaceSchema),
   name: z.string(),
-  role: z.enum(getStringEnumKeys(UserOrganizationRole)),
-  status: z.enum(getStringEnumKeys(UserOrganizationStatus)),
+  role: z.enum(getStringEnumKeys(MemberRole)),
+  status: z.enum(getStringEnumKeys(MemberStatus)),
   invitedBy: AddressSchema.nullable() as z.ZodType<`0x${string}` | null>,
 });
 
-export type UserOrganization = z.infer<typeof UserOrganizationSchema>;
+export type Member = z.infer<typeof MemberSchema>;

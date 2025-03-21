@@ -8,14 +8,14 @@ import { User } from '@/datasources/users/entities/users.entity.db';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
-import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
-import { OrganizationsRepository } from '@/domain/organizations/organizations.repository';
+import { Member } from '@/datasources/users/entities/member.entity.db';
+import { Space } from '@/datasources/spaces/entities/space.entity.db';
+import { SpacesRepository } from '@/domain/spaces/spaces.repository';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { UserStatus } from '@/domain/users/entities/user.entity';
-import { OrganizationStatus } from '@/domain/organizations/entities/organization.entity';
+import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import { SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -25,11 +25,11 @@ const mockLoggingService = {
 } as jest.MockedObjectDeep<ILoggingService>;
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
-const OrgStatusKeys = getStringEnumKeys(OrganizationStatus);
+const OrgStatusKeys = getStringEnumKeys(SpaceStatus);
 
 describe('OrganizationsRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
-  let orgRepo: OrganizationsRepository;
+  let orgRepo: SpacesRepository;
 
   const testDatabaseName = faker.string.alpha({
     length: 10,
@@ -44,12 +44,12 @@ describe('OrganizationsRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [UserOrganization, Organization, OrganizationSafe, User, Wallet],
+    entities: [Member, Space, SpaceSafe, User, Wallet],
   });
 
   const dbUserRepo = dataSource.getRepository(User);
-  const dbUserOrgRepo = dataSource.getRepository(UserOrganization);
-  const dbOrgRepo = dataSource.getRepository(Organization);
+  const dbUserOrgRepo = dataSource.getRepository(Member);
+  const dbOrgRepo = dataSource.getRepository(Space);
 
   beforeAll(async () => {
     // Create database
@@ -95,14 +95,14 @@ describe('OrganizationsRepository', () => {
     );
     await migrator.migrate();
 
-    orgRepo = new OrganizationsRepository(postgresDatabaseService);
+    orgRepo = new SpacesRepository(postgresDatabaseService);
   });
 
   afterEach(async () => {
     jest.resetAllMocks();
 
     await Promise.all(
-      [UserOrganization, Organization, User, Wallet].map(async (entity) => {
+      [Member, Space, User, Wallet].map(async (entity) => {
         const repository = dataSource.getRepository(entity);
         return await repository
           .createQueryBuilder()
@@ -151,12 +151,12 @@ describe('OrganizationsRepository', () => {
         name: faker.word.noun(),
         status: 'ACTIVE',
       });
-      const orgId = prevOrg.identifiers[0].id as User['id'];
-      await dbOrgRepo.update(orgId, {
+      const spaceId = prevOrg.identifiers[0].id as User['id'];
+      await dbOrgRepo.update(spaceId, {
         name: faker.word.noun(),
       });
       const updatedOrg = await dbOrgRepo.findOneOrFail({
-        where: { id: orgId },
+        where: { id: spaceId },
       });
 
       const prevUpdatedAt = prevOrg.generatedMaps[0].updatedAt;
@@ -342,13 +342,13 @@ describe('OrganizationsRepository', () => {
     });
 
     it('should throw an error if the organization does not exist', async () => {
-      const orgId = faker.number.int({
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
       await expect(
-        orgRepo.findOneOrFail({ where: { id: orgId } }),
+        orgRepo.findOneOrFail({ where: { id: spaceId } }),
       ).rejects.toThrow('Organization not found.');
     });
   });
@@ -380,13 +380,13 @@ describe('OrganizationsRepository', () => {
     });
 
     it('should return null if the organization does not exist', async () => {
-      const orgId = faker.number.int({
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
       await expect(
-        orgRepo.findOne({ where: { id: orgId } }),
+        orgRepo.findOne({ where: { id: spaceId } }),
       ).resolves.toBeNull();
     });
   });
@@ -434,13 +434,13 @@ describe('OrganizationsRepository', () => {
     });
 
     it('should throw an error if organizations do not exist', async () => {
-      const orgId = faker.number.int({
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
       await expect(
-        orgRepo.findOrFail({ where: { id: orgId } }),
+        orgRepo.findOrFail({ where: { id: spaceId } }),
       ).rejects.toThrow('Organizations not found.');
     });
   });
@@ -492,12 +492,14 @@ describe('OrganizationsRepository', () => {
     });
 
     it('should return an empty array if organizations do not exist', async () => {
-      const orgId = faker.number.int({
+      const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
 
-      await expect(orgRepo.find({ where: { id: orgId } })).resolves.toEqual([]);
+      await expect(orgRepo.find({ where: { id: spaceId } })).resolves.toEqual(
+        [],
+      );
     });
   });
 

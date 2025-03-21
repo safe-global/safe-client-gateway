@@ -203,8 +203,8 @@ describe('SpaceSafesController', () => {
         })
         .expect(409)
         .expect({
-          // TODO: (compatibility) change OrganizationSafe by SpaceSafe
-          message: `An OrganizationSafe with the same chainId and address already exists: Key (chain_id, address, organization_id)=(${duplicatedSpaceSafe.chainId}, ${duplicatedSpaceSafe.address}, ${spaceId}) already exists.`,
+          // TODO: (compatibility) change SpaceSafe by SpaceSafe
+          message: `An SpaceSafe with the same chainId and address already exists: Key (chain_id, address, organization_id)=(${duplicatedSpaceSafe.chainId}, ${duplicatedSpaceSafe.address}, ${spaceId}) already exists.`,
           error: 'Conflict',
           statusCode: 409,
         });
