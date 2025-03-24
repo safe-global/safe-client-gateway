@@ -1614,7 +1614,7 @@ describe('MembersRepository', () => {
         space: space.generatedMaps[0],
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
-        status: faker.helpers.arrayElement(['INVITED', 'DECLINED']),
+        status: 'DECLINED',
         invitedBy: authPayloadDto.signer_address,
       });
 

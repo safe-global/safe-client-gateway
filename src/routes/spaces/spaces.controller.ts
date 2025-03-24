@@ -116,7 +116,7 @@ export class SpacesController {
     id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
-    return await this.spacesService.getActiveSpace(id, authPayload);
+    return await this.spacesService.getActiveOrInvitedSpace(id, authPayload);
   }
 
   @Patch('/:id')

@@ -1367,16 +1367,15 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 401 if the user is not an active member of the space', async () => {
+    it('should throw a 404 if the user is not an active member of the space', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const spaceName = faker.word.noun();
-      const memberAddress = getAddress(faker.finance.ethereumAddress());
-      const memberAuthPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', memberAddress)
+      const nonMemberAddress = getAddress(faker.finance.ethereumAddress());
+      const nonMemberAuthPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', nonMemberAddress)
         .build();
-      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const memberName = faker.person.firstName();
+      const memberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1391,27 +1390,13 @@ describe('MembersController', () => {
       const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
-        .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({
-          users: [
-            {
-              role: 'MEMBER',
-              address: memberAddress,
-              name: memberName,
-            },
-          ],
-        })
-        .expect(201);
-
-      await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
-        .expect(401)
+        .expect(404)
         .expect({
-          message: 'The user is not an active member of the space.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
         });
     });
   });

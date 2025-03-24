@@ -12,7 +12,11 @@ import type {
   UpdateSpaceDto,
   UpdateSpaceResponse,
 } from '@/routes/spaces/entities/update-space.dto.entity';
-import { Inject, UnauthorizedException } from '@nestjs/common';
+import {
+  Inject,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { In } from 'typeorm';
 
 export class SpacesService {
@@ -85,18 +89,17 @@ export class SpacesService {
     });
   }
 
-  public async getActiveSpace(
+  public async getActiveOrInvitedSpace(
     id: number,
     authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     this.assertSignerAddress(authPayload);
-    const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
-      authPayload.signer_address,
-    );
-    return await this.spacesRepository.findOneOrFail({
-      where: { id, members: { user: { id: userId, status: 'ACTIVE' } } },
-      relations: { members: { user: true } },
-    });
+    const spaces = await this.getActiveOrInvitedSpaces(authPayload);
+    const space = spaces.find((space) => space.id === id);
+    if (!space) {
+      throw new NotFoundException('Space not found.');
+    }
+    return space;
   }
 
   public async update(args: {
