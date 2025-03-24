@@ -1,7 +1,7 @@
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import {
-  MemberRole as MemberRole,
-  MemberStatus as MemberStatus,
+  MemberRole,
+  MemberStatus,
   type Member as DomainMember,
 } from '@/domain/users/entities/member.entity';
 import { UserStatus, type User } from '@/domain/users/entities/user.entity';

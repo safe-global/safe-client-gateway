@@ -1,7 +1,7 @@
-import { Space as Space } from '@/datasources/spaces/entities/space.entity.db';
-import { SpaceSafe as SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
+import { Space } from '@/datasources/spaces/entities/space.entity.db';
+import { SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { ISpacesRepository as ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
+import { ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { CreateSpaceSafeDto } from '@/routes/spaces/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafeDto } from '@/routes/spaces/entities/delete-space-safe.dto.entity';

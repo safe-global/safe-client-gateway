@@ -265,7 +265,7 @@ describe('SpaceSafesRepository', () => {
   });
 
   describe('create', () => {
-    it('should create an SpaceSafe', async () => {
+    it('should create a SpaceSafe', async () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
       const user = await dbUserRepo.insert({
@@ -359,7 +359,7 @@ describe('SpaceSafesRepository', () => {
       );
     });
 
-    it('should fail if an SpaceSafe with the same address and chainId already exists', async () => {
+    it('should fail if a SpaceSafe with the same address and chainId already exists', async () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
       const user = await dbUserRepo.insert({
@@ -402,7 +402,7 @@ describe('SpaceSafesRepository', () => {
         ]),
       ).rejects.toThrow(
         new UniqueConstraintError(
-          `An SpaceSafe with the same chainId and address already exists: Key (chain_id, address, space_id)=(${chainId}, ${address}, ${spaceId}) already exists.`,
+          `A SpaceSafe with the same chainId and address already exists: Key (chain_id, address, space_id)=(${chainId}, ${address}, ${spaceId}) already exists.`,
         ),
       );
     });
@@ -552,7 +552,7 @@ describe('SpaceSafesRepository', () => {
   });
 
   describe('delete', () => {
-    it('should delete an SpaceSafe', async () => {
+    it('should delete a SpaceSafe', async () => {
       const space = await dbSpaceRepository.insert({
         status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
         name: faker.word.noun(),

@@ -3,7 +3,7 @@ import { IMembersRepository as IMembersRepository } from '@/domain/users/members
 import { User } from '@/domain/users/entities/user.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import type { Space as Space } from '@/domain/spaces/entities/space.entity';
+import type { Space } from '@/domain/spaces/entities/space.entity';
 import type { InviteUsersDto } from '@/routes/spaces/entities/invite-users.dto.entity';
 import type { Invitation } from '@/routes/spaces/entities/invitation.entity';
 import type { MembersDto } from '@/routes/spaces/entities/members.dto.entity';

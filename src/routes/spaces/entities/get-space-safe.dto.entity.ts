@@ -1,4 +1,4 @@
-import type { SpaceSafe as SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
+import type { SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GetSpaceSafeResponse {
