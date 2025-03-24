@@ -810,11 +810,11 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 401 if user is not an active member', async () => {
+    it('Should return a 401 if user is not an active or invited member', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
-      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
       const spaceName = faker.company.name();
 
       await request(app.getHttpServer())
@@ -823,7 +823,7 @@ describe('SpaceSafesController', () => {
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${memberAccessToken}`]);
+        .set('Cookie', [`access_token=${nonMemberAccessToken}`]);
 
       const createSpaceResponse = await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -832,27 +832,14 @@ describe('SpaceSafesController', () => {
       const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
-        .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({
-          users: [
-            {
-              address: memberAuthPayloadDto.signer_address,
-              name: faker.person.firstName(),
-              role: 'MEMBER',
-            },
-          ],
-        });
-
-      await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
-        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .expect(401)
         .expect({
           error: 'Unauthorized',
           message:
             'User is unauthorized. signer_address= ' +
-            memberAuthPayloadDto.signer_address,
+            nonMemberAuthPayloadDto.signer_address,
           statusCode: 401,
         });
     });

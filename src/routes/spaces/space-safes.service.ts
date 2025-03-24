@@ -10,6 +10,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { ISpaceSafesRepository } from '@/domain/spaces/space-safes.repository.interface';
 import { IMembersRepository as IMembersRepository } from '@/domain/users/members.repository.interface';
+import { In } from 'typeorm';
 
 @Injectable()
 export class SpaceSafesService {
@@ -111,7 +112,7 @@ export class SpaceSafesService {
     const member = await this.membersRepository.findOne({
       user: { id: userId },
       space: { id: spaceId },
-      status: 'ACTIVE',
+      status: In(['ACTIVE', 'INVITED']),
     });
 
     if (!member) {

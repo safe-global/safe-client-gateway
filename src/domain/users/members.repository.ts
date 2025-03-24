@@ -250,7 +250,7 @@ export class MembersRepository implements IMembersRepository {
       where: {
         user: { id: user.id },
         space: { id: args.spaceId },
-        status: 'ACTIVE',
+        status: In(['ACTIVE', 'INVITED']),
       },
     });
     if (!member) {
