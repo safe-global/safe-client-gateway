@@ -68,7 +68,7 @@ export class OrganizationsService {
     });
   }
 
-  public async get(
+  public async getActiveOrInvitedOrganizations(
     authPayload: AuthPayload,
   ): Promise<Array<GetOrganizationResponse>> {
     this.assertSignerAddress(authPayload);
@@ -86,7 +86,7 @@ export class OrganizationsService {
     });
   }
 
-  public async getOne(
+  public async getActiveOrganization(
     id: number,
     authPayload: AuthPayload,
   ): Promise<GetOrganizationResponse> {
