@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { DataDecoderApiManager } from '@/datasources/data-decoder-api/data-decoder-api.manager';
+import { DataDecoderApi } from '@/datasources/data-decoder-api/data-decoder-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IDataDecoderApiManager } from '@/domain/interfaces/data-decoder-api.manager.interface';
+import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 
 @Module({
   providers: [
     HttpErrorFactory,
-    { provide: IDataDecoderApiManager, useClass: DataDecoderApiManager },
+    { provide: IDataDecoderApi, useClass: DataDecoderApi },
   ],
-  exports: [IDataDecoderApiManager],
+  exports: [IDataDecoderApi],
 })
 export class DataDecodedApiModule {}

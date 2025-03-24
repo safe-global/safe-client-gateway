@@ -147,7 +147,14 @@ describe('DataDecoded', () => {
     });
 
     it('should validate a BaseDataDecoded', () => {
-      const baseDataDecoded = baseDataDecodedBuilder().build();
+      const baseDataDecoded = baseDataDecodedBuilder()
+        .with(
+          'parameters',
+          faker.helpers.multiple(() => parameterBuilder().build(), {
+            count: { min: 1, max: 5 },
+          }),
+        )
+        .build();
 
       const result = ValueDecodedSchema.safeParse(baseDataDecoded);
 

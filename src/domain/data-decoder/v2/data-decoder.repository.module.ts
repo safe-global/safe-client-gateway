@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { DataDecoderApiManagerModule } from '@/datasources/data-decoder-api/data-decoder-api.manager.module';
+import { DataDecodedApiModule } from '@/datasources/data-decoder-api/data-decoder-api.module';
 import { DataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository';
 import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 
 @Module({
-  imports: [DataDecoderApiManagerModule],
+  imports: [DataDecodedApiModule],
   providers: [
     {
       provide: IDataDecoderRepository,

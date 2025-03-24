@@ -12,7 +12,7 @@ export interface IDataDecoderRepository {
   }): Promise<DataDecoded>;
 
   getContracts(args: {
-    chainId: string;
+    chainIds: Array<string>;
     address: `0x${string}`;
   }): Promise<Page<Contract>>;
 }

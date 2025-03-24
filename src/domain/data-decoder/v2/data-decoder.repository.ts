@@ -4,7 +4,7 @@ import {
   DataDecodedSchema,
 } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
-import { IDataDecoderApiManager } from '@/domain/interfaces/data-decoder-api.manager.interface';
+import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import { Page } from '@/domain/entities/page.entity';
 import {
   Contract,
@@ -14,8 +14,8 @@ import {
 @Injectable()
 export class DataDecoderRepository implements IDataDecoderRepository {
   constructor(
-    @Inject(IDataDecoderApiManager)
-    private readonly dataDecoderApiManager: IDataDecoderApiManager,
+    @Inject(IDataDecoderApi)
+    private readonly dataDecoderApi: IDataDecoderApi,
   ) {}
 
   public async getDecodedData(args: {
@@ -23,17 +23,15 @@ export class DataDecoderRepository implements IDataDecoderRepository {
     data: `0x${string}`;
     to: `0x${string}`;
   }): Promise<DataDecoded> {
-    const api = await this.dataDecoderApiManager.getApi(args.chainId);
-    const dataDecoded = await api.getDecodedData(args);
+    const dataDecoded = await this.dataDecoderApi.getDecodedData(args);
     return DataDecodedSchema.parse(dataDecoded);
   }
 
   public async getContracts(args: {
-    chainId: string;
+    chainIds: Array<string>;
     address: `0x${string}`;
   }): Promise<Page<Contract>> {
-    const api = await this.dataDecoderApiManager.getApi(args.chainId);
-    const contracts = await api.getContracts(args);
+    const contracts = await this.dataDecoderApi.getContracts(args);
     return ContractPageSchema.parse(contracts);
   }
 }
