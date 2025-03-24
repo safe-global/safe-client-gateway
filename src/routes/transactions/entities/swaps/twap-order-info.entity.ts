@@ -25,38 +25,42 @@ export enum StartTimeValue {
   AtEpoch = 'AT_EPOCH',
 }
 
-export type DurationOfPart =
-  | { durationType: DurationType.Auto }
-  | { durationType: DurationType.LimitDuration; duration: string };
-
-export type StartTime =
-  | { startType: StartTimeValue.AtMiningTime }
-  | { startType: StartTimeValue.AtEpoch; epoch: number };
+type DurationOfPart = DurationAuto | DurationLimit;
 
 export class DurationAuto {
   @ApiProperty({ enum: [DurationType.Auto] })
-  durationType!: DurationType.Auto;
+  durationType = DurationType.Auto;
 }
 
 export class DurationLimit {
   @ApiProperty({ enum: [DurationType.LimitDuration] })
-  durationType!: DurationType.LimitDuration;
+  durationType = DurationType.LimitDuration;
 
   @ApiProperty()
-  duration!: string;
+  duration: string;
+
+  constructor(duration: string) {
+    this.duration = duration;
+  }
 }
+
+type StartTime = StartTimeAtMining | StartTimeAtEpoch;
 
 export class StartTimeAtMining {
   @ApiProperty({ enum: [StartTimeValue.AtMiningTime] })
-  startType!: StartTimeValue.AtMiningTime;
+  startType = StartTimeValue.AtMiningTime;
 }
 
 export class StartTimeAtEpoch {
   @ApiProperty({ enum: [StartTimeValue.AtEpoch] })
-  startType!: StartTimeValue.AtEpoch;
+  startType = StartTimeValue.AtEpoch;
 
   @ApiProperty()
-  epoch!: number;
+  epoch: number;
+
+  constructor(epoch: number) {
+    this.epoch = epoch;
+  }
 }
 
 export type TwapOrderInfo = {

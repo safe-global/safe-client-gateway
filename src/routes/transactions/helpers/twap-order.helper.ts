@@ -13,10 +13,10 @@ import {
   SellTokenBalance,
 } from '@/domain/swaps/entities/order.entity';
 import {
-  DurationType,
-  StartTimeValue,
-  DurationOfPart,
-  StartTime,
+  DurationAuto,
+  DurationLimit,
+  StartTimeAtEpoch,
+  StartTimeAtMining,
   TwapOrderInfo,
 } from '@/routes/transactions/entities/swaps/twap-order-info.entity';
 import { GPv2OrderParameters } from '@/domain/swaps/contracts/decoders/gp-v2-decoder.helper';
@@ -99,13 +99,13 @@ export class TwapOrderHelper {
     const buyAmount = minPartLimit * numberOfParts;
 
     const isSpanZero = Number(span) === 0;
-    const durationOfPart: DurationOfPart = isSpanZero
-      ? { durationType: DurationType.Auto }
-      : { durationType: DurationType.LimitDuration, duration: span.toString() };
+    const durationOfPart = isSpanZero
+      ? new DurationAuto()
+      : new DurationLimit(span.toString());
 
-    const startTime: StartTime = isSpanZero
-      ? { startType: StartTimeValue.AtMiningTime }
-      : { startType: StartTimeValue.AtEpoch, epoch: Number(startEpoch) };
+    const startTime = isSpanZero
+      ? new StartTimeAtMining()
+      : new StartTimeAtEpoch(Number(startEpoch));
 
     return {
       kind: OrderKind.Sell,
