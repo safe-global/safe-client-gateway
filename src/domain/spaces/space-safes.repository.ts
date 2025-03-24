@@ -40,7 +40,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     } catch (err) {
       if (isUniqueConstraintError(err)) {
         throw new UniqueConstraintError(
-          `An SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
+          `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
         );
       }
       throw err;
