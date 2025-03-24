@@ -4,14 +4,16 @@ import {
   TypedDataParameter as TypedDataParameterSchema,
 } from 'abitype/zod';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-// Overwrite chainId and salt for strictness
-const _TypedDataDomainSchema = TypedDataDomainSchema.merge(
-  z.object({
-    chainId: z.coerce.number().optional(),
-    salt: HexSchema.optional(),
-  }),
-);
+export const _TypedDataDomainSchema = z.object({
+  name: TypedDataDomainSchema.shape.name,
+  version: TypedDataDomainSchema.shape.version,
+  // Overwrite chainId, salt and address for strictness/checksumming
+  chainId: z.coerce.number().optional(),
+  salt: HexSchema.optional(),
+  verifyingContract: AddressSchema.optional(),
+});
 
 export const TypedDataSchema = z.object({
   domain: _TypedDataDomainSchema,
