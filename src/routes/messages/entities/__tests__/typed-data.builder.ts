@@ -34,3 +34,12 @@ export function typedDataBuilder(): IBuilder<TypedData> {
       [field2]: getAddress(faker.finance.ethereumAddress()),
     });
 }
+
+export function typedDataDomainBuilder(): IBuilder<TypedData['domain']> {
+  return new Builder<TypedData['domain']>()
+    .with('chainId', faker.number.int())
+    .with('name', faker.lorem.word())
+    .with('salt', faker.string.hexadecimal({ length: 64 }) as `0x${string}`)
+    .with('verifyingContract', getAddress(faker.finance.ethereumAddress()))
+    .with('version', faker.system.semver());
+}
