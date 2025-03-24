@@ -192,13 +192,13 @@ export class MessageVerifierHelper {
     message: Message['message'];
     source: LogSource;
   }): void {
+    // We do not include the type as it is not a validity error
     this.loggingService.error({
       message: 'Could not calculate messageHash',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
       safeMessage: args.message,
-      type: LogType.MessageValidity,
       source: args.source,
     });
   }

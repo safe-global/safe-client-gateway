@@ -673,7 +673,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           refundReceiver: nonce1.refundReceiver,
           nonce: nonce1.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });

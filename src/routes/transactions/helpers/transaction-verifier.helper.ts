@@ -502,6 +502,7 @@ export class TransactionVerifierHelper {
     transaction: BaseMultisigTransaction;
     source: LogSource;
   }): void {
+    // We do not include the type as it is not a validity error
     this.loggingService.error({
       message: 'Could not calculate safeTxHash',
       chainId: args.chainId,
@@ -509,7 +510,6 @@ export class TransactionVerifierHelper {
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       transaction: getBaseMultisigTransaction(args.transaction),
-      type: LogType.TransactionValidity,
       source: args.source,
     });
   }

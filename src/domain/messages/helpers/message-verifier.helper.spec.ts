@@ -123,7 +123,6 @@ describe('MessageVerifierHelper', () => {
         safeAddress: safe.address,
         safeVersion: safe.version,
         safeMessage: message.message,
-        type: 'MESSAGE_VALIDITY',
         source: 'PROPOSAL',
       });
     });
@@ -431,7 +430,6 @@ describe('MessageVerifierHelper', () => {
         safeAddress: safe.address,
         safeVersion: safe.version,
         safeMessage: message.message,
-        type: 'MESSAGE_VALIDITY',
         source: 'CONFIRMATION',
       });
     });

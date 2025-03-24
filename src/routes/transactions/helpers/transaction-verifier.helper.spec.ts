@@ -237,7 +237,6 @@ describe('TransactionVerifierHelper', () => {
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });
@@ -1201,7 +1200,6 @@ describe('TransactionVerifierHelper', () => {
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'PROPOSAL',
       });
     });
@@ -2012,7 +2010,6 @@ describe('TransactionVerifierHelper', () => {
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });
