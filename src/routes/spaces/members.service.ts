@@ -1,5 +1,5 @@
 import { ConflictException, Inject } from '@nestjs/common';
-import { IMembersRepository as IMembersRepository } from '@/domain/users/members.repository.interface';
+import { IMembersRepository } from '@/domain/users/members.repository.interface';
 import { User } from '@/domain/users/entities/user.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
