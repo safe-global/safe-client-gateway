@@ -23,7 +23,7 @@ export function contractBuilder(): IBuilder<Contract> {
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('name', faker.word.noun())
     .with('displayName', faker.word.noun())
-    .with('chainId', faker.string.numeric())
+    .with('chainId', faker.number.int() as unknown as string)
     .with('project', projectBuilder().build())
     .with('abi', abiBuilder().build())
     .with('modified', faker.date.past());
