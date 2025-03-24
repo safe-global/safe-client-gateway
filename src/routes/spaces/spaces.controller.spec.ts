@@ -31,10 +31,10 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker/.';
-import { SpaceStatus as SpaceStatus } from '@/domain/spaces/entities/space.entity';
+import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import {
-  MemberRole as MemberRole,
-  MemberStatus as MemberStatus,
+  MemberRole,
+  MemberStatus,
 } from '@/domain/users/entities/member.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';

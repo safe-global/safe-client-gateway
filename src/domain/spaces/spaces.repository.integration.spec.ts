@@ -120,7 +120,7 @@ describe('SpacesRepository', () => {
 
   // As the triggers are set on the database level, Jest's fake timers are not accurate
   describe('createdAt/updatedAt', () => {
-    it('should set createdAt and updatedAt when creating an Space', async () => {
+    it('should set createdAt and updatedAt when creating a Space', async () => {
       const before = new Date().getTime();
 
       const space = await dbSpacesRepository.insert({
@@ -146,7 +146,7 @@ describe('SpacesRepository', () => {
       expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
-    it('should update updatedAt when updating an Space', async () => {
+    it('should update updatedAt when updating a Space', async () => {
       const prevSpace = await dbSpacesRepository.insert({
         name: faker.word.noun(),
         status: 'ACTIVE',
@@ -172,7 +172,7 @@ describe('SpacesRepository', () => {
   });
 
   describe('create', () => {
-    it('should create an space with an ACTIVE ADMIN user', async () => {
+    it('should create a space with an ACTIVE ADMIN user', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
@@ -316,7 +316,7 @@ describe('SpacesRepository', () => {
   });
 
   describe('findOneOrFail', () => {
-    it('should find an space', async () => {
+    it('should find a space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
@@ -354,7 +354,7 @@ describe('SpacesRepository', () => {
   });
 
   describe('findOne', () => {
-    it('should find an space', async () => {
+    it('should find a space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
@@ -506,7 +506,7 @@ describe('SpacesRepository', () => {
   });
 
   describe('findOneByUserId', () => {
-    it('should find an space by user id', async () => {
+    it('should find a space by user id', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const spaceName = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
@@ -546,7 +546,7 @@ describe('SpacesRepository', () => {
   });
 
   describe('findOneByUserId', () => {
-    it('should find an space by user id', async () => {
+    it('should find a space by user id', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const spaceName = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
@@ -586,7 +586,7 @@ describe('SpacesRepository', () => {
   });
 
   describe('update', () => {
-    it('should update an space', async () => {
+    it('should update a space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const spaceName = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
@@ -623,7 +623,7 @@ describe('SpacesRepository', () => {
   });
 
   describe('delete', () => {
-    it('should delete an space', async () => {
+    it('should delete a space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const spaceName = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);

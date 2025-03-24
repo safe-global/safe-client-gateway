@@ -203,7 +203,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(409)
         .expect({
-          message: `An SpaceSafe with the same chainId and address already exists: Key (chain_id, address, space_id)=(${duplicatedSpaceSafe.chainId}, ${duplicatedSpaceSafe.address}, ${spaceId}) already exists.`,
+          message: `A SpaceSafe with the same chainId and address already exists: Key (chain_id, address, space_id)=(${duplicatedSpaceSafe.chainId}, ${duplicatedSpaceSafe.address}, ${spaceId}) already exists.`,
           error: 'Conflict',
           statusCode: 409,
         });

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MemberRole as MemberRole } from '@/domain/users/entities/member.entity';
+import { MemberRole } from '@/domain/users/entities/member.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { ApiProperty } from '@nestjs/swagger';

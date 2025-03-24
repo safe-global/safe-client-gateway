@@ -1,11 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  Member as Member,
-  MemberRole as MemberRole,
-  MemberStatus as MemberStatus,
+  Member,
+  MemberRole,
+  MemberStatus,
 } from '@/domain/users/entities/member.entity';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Space as Space } from '@/domain/spaces/entities/space.entity';
+import type { Space } from '@/domain/spaces/entities/space.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 
 export class Invitation {

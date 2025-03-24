@@ -1,8 +1,8 @@
-import type { Space as Space } from '@/datasources/spaces/entities/space.entity.db';
+import type { Space } from '@/datasources/spaces/entities/space.entity.db';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
-import { ISpacesRepository as ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
-import { MemberRole as MemberRole } from '@/domain/users/entities/member.entity';
+import { ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
+import { MemberRole } from '@/domain/users/entities/member.entity';
 import { User } from '@/domain/users/entities/user.entity';
 import { IMembersRepository } from '@/domain/users/members.repository.interface';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';

@@ -1,11 +1,11 @@
-import { Space as Space } from '@/datasources/spaces/entities/space.entity.db';
-import { Member as Member } from '@/datasources/users/entities/member.entity.db';
+import { Space } from '@/datasources/spaces/entities/space.entity.db';
+import { Member } from '@/datasources/users/entities/member.entity.db';
 import { User } from '@/datasources/users/entities/users.entity.db';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { SpaceStatus as SpaceStatus } from '@/domain/spaces/entities/space.entity';
+import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import {
-  MemberRole as MemberRole,
-  MemberStatus as MemberStatus,
+  MemberRole,
+  MemberStatus,
 } from '@/domain/users/entities/member.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
