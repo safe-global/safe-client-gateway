@@ -4,6 +4,7 @@ import { getEnumKey } from '@/domain/common/utils/enum';
 import { IOrganizationsRepository } from '@/domain/organizations/organizations.repository.interface';
 import { UserOrganizationRole } from '@/domain/users/entities/user-organization.entity';
 import { User } from '@/domain/users/entities/user.entity';
+import { IUsersOrganizationsRepository } from '@/domain/users/user-organizations.repository.interface';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { CreateOrganizationResponse } from '@/routes/organizations/entities/create-organization.dto.entity';
 import type { GetOrganizationResponse } from '@/routes/organizations/entities/get-organization.dto.entity';
@@ -12,6 +13,7 @@ import type {
   UpdateOrganizationResponse,
 } from '@/routes/organizations/entities/update-organization.dto.entity';
 import { Inject, UnauthorizedException } from '@nestjs/common';
+import { In } from 'typeorm';
 
 export class OrganizationsService {
   public constructor(
@@ -19,6 +21,8 @@ export class OrganizationsService {
     private readonly userRepository: IUsersRepository,
     @Inject(IOrganizationsRepository)
     private readonly organizationsRepository: IOrganizationsRepository,
+    @Inject(IUsersOrganizationsRepository)
+    private readonly userOrganizationsRepository: IUsersOrganizationsRepository,
   ) {}
 
   public async create(args: {
@@ -64,44 +68,25 @@ export class OrganizationsService {
     });
   }
 
-  public async get(
+  public async getActiveOrInvitedOrganizations(
     authPayload: AuthPayload,
   ): Promise<Array<GetOrganizationResponse>> {
     this.assertSignerAddress(authPayload);
-
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       authPayload.signer_address,
     );
+    const members = await this.userOrganizationsRepository.find({
+      where: { user: { id: userId }, status: In(['ACTIVE', 'INVITED']) },
+      relations: ['organization'],
+    });
 
-    return await this.organizationsRepository.findByUserId({
-      userId,
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        userOrganizations: {
-          id: true,
-          role: true,
-          name: true,
-          invitedBy: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-          user: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-      relations: {
-        userOrganizations: {
-          user: true,
-        },
-      },
+    return await this.organizationsRepository.find({
+      where: { id: In(members.map((member) => member.organization.id)) },
+      relations: { userOrganizations: { user: true } },
     });
   }
 
-  public async getOne(
+  public async getActiveOrganization(
     id: number,
     authPayload: AuthPayload,
   ): Promise<GetOrganizationResponse> {
@@ -114,7 +99,7 @@ export class OrganizationsService {
     return await this.organizationsRepository.findOneOrFail({
       where: {
         id,
-        userOrganizations: { user: { id: userId } },
+        userOrganizations: { user: { id: userId, status: 'ACTIVE' } },
       },
       select: {
         id: true,

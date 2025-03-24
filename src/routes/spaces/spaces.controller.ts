@@ -98,7 +98,7 @@ export class SpacesController {
   public async get(
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<GetSpaceResponse>> {
-    return await this.spacesService.get(authPayload);
+    return await this.spacesService.getActiveOrInvitedSpaces(authPayload);
   }
 
   @Get('/:id')
@@ -116,7 +116,7 @@ export class SpacesController {
     id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
-    return await this.spacesService.getOne(id, authPayload);
+    return await this.spacesService.getActiveSpace(id, authPayload);
   }
 
   @Patch('/:id')

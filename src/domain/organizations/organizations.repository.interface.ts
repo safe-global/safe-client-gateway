@@ -41,20 +41,6 @@ export interface IOrganizationsRepository {
     relations?: FindOptionsRelations<Organization>;
   }): Promise<Array<Organization>>;
 
-  findByUserIdOrFail(
-    args: Parameters<OrganizationsRepository['findByUserId']>[0],
-  ): Promise<Array<Organization>>;
-
-  findByUserId(args: {
-    userId: User['id'];
-    select?: FindOptionsSelect<Organization>;
-    relations?: FindOptionsRelations<Organization>;
-  }): Promise<Array<Organization>>;
-
-  findOneByUserIdOrFail(
-    args: Parameters<OrganizationsRepository['findByUserId']>[0],
-  ): Promise<Organization>;
-
   findOneByUserId(args: {
     userId: User['id'];
     select?: FindOptionsSelect<Organization>;

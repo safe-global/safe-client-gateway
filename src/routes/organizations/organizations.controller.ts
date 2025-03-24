@@ -102,7 +102,9 @@ export class OrganizationsController {
   public async get(
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<GetOrganizationResponse>> {
-    return await this.organizationsService.get(authPayload);
+    return await this.organizationsService.getActiveOrInvitedOrganizations(
+      authPayload,
+    );
   }
 
   @Get('/:id')
@@ -120,7 +122,10 @@ export class OrganizationsController {
     id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetOrganizationResponse> {
-    return await this.organizationsService.getOne(id, authPayload);
+    return await this.organizationsService.getActiveOrganization(
+      id,
+      authPayload,
+    );
   }
 
   @Patch('/:id')
