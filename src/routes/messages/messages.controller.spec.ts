@@ -964,7 +964,6 @@ describe('Messages controller', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeMessage: message.message,
-          type: 'MESSAGE_VALIDITY',
           source: 'PROPOSAL',
         });
       });
@@ -1424,7 +1423,6 @@ describe('Messages controller', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeMessage: message.message,
-          type: 'MESSAGE_VALIDITY',
           source: 'CONFIRMATION',
         });
       });
