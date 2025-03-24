@@ -19,11 +19,11 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { SpacesService as SpacesService } from '@/routes/spaces/spaces.service';
+import { SpacesService } from '@/routes/spaces/spaces.service';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
-import { OrganizationStatus as SpaceStatus } from '@/domain/organizations/entities/organization.entity';
+import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import {
   CreateSpaceDto,
   CreateSpaceResponse,

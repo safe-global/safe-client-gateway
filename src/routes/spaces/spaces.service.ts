@@ -1,10 +1,10 @@
-import type { Organization as Space } from '@/datasources/organizations/entities/organizations.entity.db';
+import type { Space } from '@/datasources/spaces/entities/space.entity.db';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
-import { IOrganizationsRepository as ISpacesRepository } from '@/domain/organizations/organizations.repository.interface';
-import { UserOrganizationRole as MemberRole } from '@/domain/users/entities/user-organization.entity';
+import { ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
+import { MemberRole } from '@/domain/users/entities/member.entity';
 import { User } from '@/domain/users/entities/user.entity';
-import { IUsersOrganizationsRepository as IMembersRepository } from '@/domain/users/user-organizations.repository.interface';
+import { IMembersRepository } from '@/domain/users/members.repository.interface';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { CreateSpaceResponse } from '@/routes/spaces/entities/create-space.dto.entity';
 import type { GetSpaceResponse } from '@/routes/spaces/entities/get-space.dto.entity';
@@ -77,35 +77,11 @@ export class SpacesService {
     );
     const members = await this.membersRepository.find({
       where: { user: { id: userId }, status: In(['ACTIVE', 'INVITED']) },
-      relations: ['organization'],
+      relations: ['space'],
     });
-    const spaces = await this.spacesRepository.find({
-      where: { id: In(members.map((member) => member.organization.id)) },
-      relations: { userOrganizations: { user: true } },
-    });
-
-    // TODO: (compatibility) remove this mapping and return findByUserId result directly after the rename.
-    return spaces.map((space) => {
-      return {
-        id: space.id,
-        name: space.name,
-        status: space.status,
-        members: space.userOrganizations.map((member) => {
-          return {
-            id: member.id,
-            role: member.role,
-            name: member.name,
-            invitedBy: member.invitedBy,
-            status: member.status,
-            createdAt: member.createdAt,
-            updatedAt: member.updatedAt,
-            user: {
-              id: member.user.id,
-              status: member.user.status,
-            },
-          };
-        }),
-      };
+    return await this.spacesRepository.find({
+      where: { id: In(members.map((member) => member.space.id)) },
+      relations: { members: { user: true } },
     });
   }
 
@@ -114,62 +90,13 @@ export class SpacesService {
     authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     this.assertSignerAddress(authPayload);
-
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       authPayload.signer_address,
     );
-
-    const space = await this.spacesRepository.findOneOrFail({
-      where: {
-        id,
-        userOrganizations: { user: { id: userId, status: 'ACTIVE' } },
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        userOrganizations: {
-          id: true,
-          role: true,
-          name: true,
-          invitedBy: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-          user: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-      relations: {
-        userOrganizations: {
-          user: true,
-        },
-      },
+    return await this.spacesRepository.findOneOrFail({
+      where: { id, members: { user: { id: userId, status: 'ACTIVE' } } },
+      relations: { members: { user: true } },
     });
-
-    // TODO: (compatibility) remove this mapping and return findOneOrFail result directly after the rename.
-    return {
-      id: space.id,
-      name: space.name,
-      status: space.status,
-      members: space.userOrganizations.map((member) => {
-        return {
-          id: member.id,
-          role: member.role,
-          name: member.name,
-          invitedBy: member.invitedBy,
-          status: member.status,
-          createdAt: member.createdAt,
-          updatedAt: member.updatedAt,
-          user: {
-            id: member.user.id,
-            status: member.user.status,
-          },
-        };
-      }),
-    };
   }
 
   public async update(args: {
@@ -211,7 +138,7 @@ export class SpacesService {
     const space = await this.spacesRepository.findOne({
       where: {
         id: spaceId,
-        userOrganizations: {
+        members: {
           role: getEnumKey(MemberRole, MemberRole.ADMIN),
           status: 'ACTIVE',
           user: {

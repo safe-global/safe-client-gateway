@@ -31,11 +31,11 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker/.';
-import { OrganizationStatus as SpaceStatus } from '@/domain/organizations/entities/organization.entity';
+import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import {
-  UserOrganizationRole as MemberRole,
-  UserOrganizationStatus as MemberStatus,
-} from '@/domain/users/entities/user-organization.entity';
+  MemberRole,
+  MemberStatus,
+} from '@/domain/users/entities/member.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 
@@ -307,6 +307,8 @@ describe('SpacesController', () => {
               id: expect.any(Number),
               name: firstSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
               members: [
                 {
                   id: expect.any(Number),
@@ -319,6 +321,8 @@ describe('SpacesController', () => {
                   user: {
                     id: expect.any(Number),
                     status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                    createdAt: expect.any(String),
+                    updatedAt: expect.any(String),
                   },
                 },
               ],
@@ -327,6 +331,8 @@ describe('SpacesController', () => {
               id: expect.any(Number),
               name: secondSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
               members: [
                 {
                   id: expect.any(Number),
@@ -339,6 +345,8 @@ describe('SpacesController', () => {
                   user: {
                     id: expect.any(Number),
                     status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                    createdAt: expect.any(String),
+                    updatedAt: expect.any(String),
                   },
                 },
               ],
@@ -416,6 +424,8 @@ describe('SpacesController', () => {
             id: spaceId,
             name: spaceName,
             status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+            createdAt: expect.any(String),
+            updatedAt: expect.any(String),
             members: [
               {
                 id: expect.any(Number),
@@ -428,6 +438,8 @@ describe('SpacesController', () => {
                 user: {
                   id: userId,
                   status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                 },
               },
             ],
@@ -474,7 +486,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
         });
     });
@@ -495,7 +507,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
         });
     });

@@ -1,27 +1,28 @@
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { WalletSchema } from '@/domain/wallets/entities/wallet.entity';
 import { MemberSchema } from '@/domain/users/entities/member.entity';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Wallet } from '@/domain/wallets/entities/wallet.entity';
 import type { Member } from '@/domain/users/entities/member.entity';
+import { SpaceSafeSchema } from '@/domain/spaces/entities/space-safe.entity';
+import type { Space as DbSpace } from '@/datasources/spaces/entities/space.entity.db';
 
-export enum UserStatus {
-  PENDING = 0,
+export enum SpaceStatus {
   ACTIVE = 1,
 }
 
-export type User = z.infer<typeof UserSchema>;
+export type Space = z.infer<typeof SpaceSchema>;
 
 // We need explicitly define ZodType due to recursion
-export const UserSchema: z.ZodType<
+export const SpaceSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
-    status: keyof typeof UserStatus;
-    wallets: Array<Wallet>;
+    name: string;
+    status: keyof typeof SpaceStatus;
     members: Array<Member>;
+    safes?: DbSpace['safes'];
   }
 > = RowSchema.extend({
-  status: z.enum(getStringEnumKeys(UserStatus)),
-  wallets: z.array(WalletSchema),
+  name: z.string().max(255),
+  status: z.enum(getStringEnumKeys(SpaceStatus)),
   members: z.array(z.lazy(() => MemberSchema)),
+  safes: z.array(z.lazy(() => SpaceSafeSchema)).optional(),
 });
