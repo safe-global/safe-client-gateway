@@ -9,7 +9,7 @@ import { GetSpaceSafeResponse } from '@/routes/spaces/entities/get-space-safe.dt
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { ISpaceSafesRepository } from '@/domain/spaces/space-safes.repository.interface';
-import { IMembersRepository as IMembersRepository } from '@/domain/users/members.repository.interface';
+import { IMembersRepository } from '@/domain/users/members.repository.interface';
 import { In } from 'typeorm';
 
 @Injectable()
