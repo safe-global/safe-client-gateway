@@ -1223,6 +1223,8 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'ACTIVE',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                 },
               },
               {
@@ -1236,6 +1238,8 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                 },
               },
               {
@@ -1249,6 +1253,8 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                 },
               },
             ],

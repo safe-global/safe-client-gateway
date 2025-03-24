@@ -30,23 +30,10 @@ export class MembersService {
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
-
-    const invitations = await this.membersRepository.inviteUsers({
+    return await this.membersRepository.inviteUsers({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
       users: args.inviteUsersDto.users,
-    });
-
-    // TODO: (compatibility) remove this mapping when the Invitation domain entity is updated.
-    return invitations.map((invitation) => {
-      return {
-        userId: invitation.userId,
-        name: invitation.name,
-        spaceId: invitation.spaceId,
-        role: invitation.role,
-        status: invitation.status,
-        invitedBy: invitation.invitedBy,
-      };
     });
   }
 
@@ -76,27 +63,10 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MembersDto> {
-    const members = await this.membersRepository.findAuthorizedMembersOrFail({
-      authPayload: args.authPayload,
-      spaceId: args.spaceId,
-    });
-
-    // TODO: (compatibility) remove this mapping when the Member domain entity is updated.
     return {
-      members: members.map((member) => {
-        return {
-          id: member.id,
-          role: member.role,
-          status: member.status,
-          name: member.name,
-          invitedBy: member.invitedBy,
-          createdAt: member.createdAt,
-          updatedAt: member.updatedAt,
-          user: {
-            id: member.user.id,
-            status: member.user.status,
-          },
-        };
+      members: await this.membersRepository.findAuthorizedMembersOrFail({
+        authPayload: args.authPayload,
+        spaceId: args.spaceId,
       }),
     };
   }

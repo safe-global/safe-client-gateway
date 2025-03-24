@@ -4,6 +4,7 @@ import { getEnumKey } from '@/domain/common/utils/enum';
 import { ISpacesRepository as ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
 import { MemberRole as MemberRole } from '@/domain/users/entities/member.entity';
 import { User } from '@/domain/users/entities/user.entity';
+import { IMembersRepository } from '@/domain/users/members.repository.interface';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { CreateSpaceResponse } from '@/routes/spaces/entities/create-space.dto.entity';
 import type { GetSpaceResponse } from '@/routes/spaces/entities/get-space.dto.entity';
@@ -12,6 +13,7 @@ import type {
   UpdateSpaceResponse,
 } from '@/routes/spaces/entities/update-space.dto.entity';
 import { Inject, UnauthorizedException } from '@nestjs/common';
+import { In } from 'typeorm';
 
 export class SpacesService {
   public constructor(
@@ -19,6 +21,8 @@ export class SpacesService {
     private readonly userRepository: IUsersRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
+    @Inject(IMembersRepository)
+    private readonly membersRepository: IMembersRepository,
   ) {}
 
   public async create(args: {
@@ -64,126 +68,35 @@ export class SpacesService {
     });
   }
 
-  public async get(authPayload: AuthPayload): Promise<Array<GetSpaceResponse>> {
+  public async getActiveOrInvitedSpaces(
+    authPayload: AuthPayload,
+  ): Promise<Array<GetSpaceResponse>> {
     this.assertSignerAddress(authPayload);
-
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       authPayload.signer_address,
     );
-
-    const spaces = await this.spacesRepository.findByUserId({
-      userId,
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        members: {
-          id: true,
-          role: true,
-          name: true,
-          invitedBy: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-          user: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-      relations: {
-        members: {
-          user: true,
-        },
-      },
+    const members = await this.membersRepository.find({
+      where: { user: { id: userId }, status: In(['ACTIVE', 'INVITED']) },
+      relations: ['space'],
     });
-
-    // TODO: (compatibility) remove this mapping and return findByUserId result directly after the rename.
-    return spaces.map((space) => {
-      return {
-        id: space.id,
-        name: space.name,
-        status: space.status,
-        members: space.members.map((member) => {
-          return {
-            id: member.id,
-            role: member.role,
-            name: member.name,
-            invitedBy: member.invitedBy,
-            status: member.status,
-            createdAt: member.createdAt,
-            updatedAt: member.updatedAt,
-            user: {
-              id: member.user.id,
-              status: member.user.status,
-            },
-          };
-        }),
-      };
+    return await this.spacesRepository.find({
+      where: { id: In(members.map((member) => member.space.id)) },
+      relations: { members: { user: true } },
     });
   }
 
-  public async getOne(
+  public async getActiveSpace(
     id: number,
     authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     this.assertSignerAddress(authPayload);
-
     const { id: userId } = await this.userRepository.findByWalletAddressOrFail(
       authPayload.signer_address,
     );
-
-    const space = await this.spacesRepository.findOneOrFail({
-      where: {
-        id,
-        members: { user: { id: userId } },
-      },
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        members: {
-          id: true,
-          role: true,
-          name: true,
-          invitedBy: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-          user: {
-            id: true,
-            status: true,
-          },
-        },
-      },
-      relations: {
-        members: {
-          user: true,
-        },
-      },
+    return await this.spacesRepository.findOneOrFail({
+      where: { id, members: { user: { id: userId, status: 'ACTIVE' } } },
+      relations: { members: { user: true } },
     });
-
-    // TODO: (compatibility) remove this mapping and return findOneOrFail result directly after the rename.
-    return {
-      id: space.id,
-      name: space.name,
-      status: space.status,
-      members: space.members.map((member) => {
-        return {
-          id: member.id,
-          role: member.role,
-          name: member.name,
-          invitedBy: member.invitedBy,
-          status: member.status,
-          createdAt: member.createdAt,
-          updatedAt: member.updatedAt,
-          user: {
-            id: member.user.id,
-            status: member.user.status,
-          },
-        };
-      }),
-    };
   }
 
   public async update(args: {
