@@ -125,7 +125,7 @@ describe('DataDecoderApi', () => {
         url: getContractsUrl,
         networkRequest: {
           params: {
-            chain_ids: contract.chainId,
+            chain_ids: contract.chainId.toString(),
             limit: undefined,
             offset: undefined,
           },
@@ -203,7 +203,7 @@ describe('DataDecoderApi', () => {
         url: getContractsUrl,
         networkRequest: {
           params: {
-            chain_ids: contract.chainId,
+            chain_ids: contract.chainId.toString(),
             limit: undefined,
             offset: undefined,
           },
