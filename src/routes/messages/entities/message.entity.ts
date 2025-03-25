@@ -37,7 +37,7 @@ export class Message {
   confirmationsRequired: number;
   @ApiProperty()
   proposedBy: AddressInfo;
-  @ApiProperty({ type: [MessageConfirmation] })
+  @ApiProperty({ type: MessageConfirmation, isArray: true })
   confirmations: Array<MessageConfirmation>;
   @ApiPropertyOptional({ type: String, nullable: true })
   preparedSignature: `0x${string}` | null;
