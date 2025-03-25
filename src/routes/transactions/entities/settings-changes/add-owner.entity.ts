@@ -6,6 +6,9 @@ import {
 } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 
 export class AddOwner extends SettingsChange {
+  @ApiProperty({ enum: [SettingsChangeType.AddOwner] })
+  readonly type!: SettingsChangeType.AddOwner;
+
   @ApiProperty()
   owner: AddressInfo;
   @ApiProperty()
