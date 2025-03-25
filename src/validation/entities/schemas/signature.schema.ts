@@ -1,9 +1,9 @@
 import { parseSignaturesByType } from '@/domain/common/utils/signatures';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
 
-function isSignature(vlaue: `0x${string}`): boolean {
+function isSignature(value: `0x${string}`): boolean {
   try {
-    parseSignaturesByType(vlaue);
+    parseSignaturesByType(value);
     return true;
   } catch {
     return false;

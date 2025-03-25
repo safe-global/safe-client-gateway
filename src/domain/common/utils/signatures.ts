@@ -3,7 +3,7 @@ export const SIGNATURE_HEX_LENGTH = 65 * 2; // 65 bytes in hex
 export const DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH = 64; // 32 bytes in hex
 
 /**
- * Parses a (concatenated) signature string into inidividual signature types
+ * Parses a (concatenated) signature string into individual signature types
  *
  * @param signature - A 0x-prefixed hex string of a (concatenated) signature
  * @returns An array of 0x-prefixed signature type signatures
