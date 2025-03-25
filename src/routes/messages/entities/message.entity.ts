@@ -17,7 +17,7 @@ export enum MessageStatus {
 export class Message {
   @ApiProperty()
   messageHash: `0x${string}`;
-  @ApiProperty()
+  @ApiProperty({ enum: MessageStatus })
   status: MessageStatus;
   @ApiPropertyOptional({ type: String, nullable: true })
   logoUri: string | null;
