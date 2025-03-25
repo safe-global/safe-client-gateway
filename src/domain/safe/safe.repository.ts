@@ -621,15 +621,29 @@ export class SafeRepository implements ISafeRepository {
     safeAddress: `0x${string}`;
     proposeTransactionDto: ProposeTransactionDto;
   }): Promise<unknown> {
-    const safe = await this.getSafe({
-      chainId: args.chainId,
-      address: args.safeAddress,
-    });
+    const [safe, transaction] = await Promise.all([
+      this.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+      this.getMultiSigTransaction({
+        chainId: args.chainId,
+        safeTransactionHash: args.proposeTransactionDto.safeTxHash,
+      }).catch(async () => {
+        // If the transaction is not found, clear it from cache to avoid caching its absence.
+        await this.clearMultisigTransaction({
+          chainId: args.chainId,
+          safeTransactionHash: args.proposeTransactionDto.safeTxHash,
+        });
+        return null;
+      }),
+    ]);
 
     await this.transactionVerifier.verifyProposal({
       chainId: args.chainId,
       safe,
       proposal: args.proposeTransactionDto,
+      transaction,
     });
 
     const transactionService = await this.transactionApiManager.getApi(

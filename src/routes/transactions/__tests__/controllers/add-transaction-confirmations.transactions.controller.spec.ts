@@ -371,7 +371,6 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });

@@ -9,7 +9,7 @@ import {
   TokenRepositoryModule,
 } from '@/domain/tokens/token.repository.interface';
 import { ISwapsRepository } from '@/domain/swaps/swaps.repository';
-import { Token, TokenType } from '@/domain/tokens/entities/token.entity';
+import { Token } from '@/domain/tokens/entities/token.entity';
 import {
   KnownOrder,
   Order,
@@ -110,6 +110,8 @@ export class SwapOrderHelper {
   }
 
   /**
+   * TODO: Investigate if needed after token-specific entities. This was required for decimals.
+   *
    * Retrieves a token object based on the provided Ethereum chain ID and token address.
    * If the specified address is the placeholder for the native currency of the chain,
    * it fetches the chain's native currency details from the {@link IChainsRepository}.
@@ -142,7 +144,7 @@ export class SwapOrderHelper {
         logoUri: nativeCurrency.logoUri,
         name: nativeCurrency.name,
         symbol: nativeCurrency.symbol,
-        type: TokenType.NativeToken,
+        type: 'NATIVE_TOKEN',
         trusted: true,
       };
     } else {

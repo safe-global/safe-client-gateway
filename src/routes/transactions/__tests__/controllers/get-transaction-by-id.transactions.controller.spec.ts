@@ -1103,7 +1103,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           refundReceiver: multisigTransaction.refundReceiver,
           nonce: multisigTransaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });
@@ -1388,7 +1387,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           signers,
           safe,
         });
-      multisigTransaction.confirmations![0].signature = `0xdeadbeef`;
+      multisigTransaction.confirmations![0].signature = `0xdeadbee`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;

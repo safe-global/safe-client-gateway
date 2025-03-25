@@ -240,7 +240,7 @@ describe('SafeSignature', () => {
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
       const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
-      // Recovered via encodeAbiParameters
+      // Recovered via getAddress
       const signatureType = faker.helpers.arrayElement([
         SignatureType.ApprovedHash,
         SignatureType.ContractSignature,

@@ -6,6 +6,9 @@ import {
 } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 
 export class DisableModule extends SettingsChange {
+  @ApiProperty({ enum: [SettingsChangeType.DisableModule] })
+  override type!: SettingsChangeType.DisableModule;
+
   @ApiProperty()
   module: AddressInfo;
 

@@ -12,6 +12,7 @@ import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
+  getSchemaPath,
 } from '@nestjs/swagger';
 
 export enum DurationType {
@@ -24,13 +25,43 @@ export enum StartTimeValue {
   AtEpoch = 'AT_EPOCH',
 }
 
-export type DurationOfPart =
-  | { durationType: DurationType.Auto }
-  | { durationType: DurationType.LimitDuration; duration: string };
+type DurationOfPart = DurationAuto | DurationLimit;
 
-export type StartTime =
-  | { startType: StartTimeValue.AtMiningTime }
-  | { startType: StartTimeValue.AtEpoch; epoch: number };
+export class DurationAuto {
+  @ApiProperty({ enum: [DurationType.Auto] })
+  durationType = DurationType.Auto;
+}
+
+export class DurationLimit {
+  @ApiProperty({ enum: [DurationType.LimitDuration] })
+  durationType = DurationType.LimitDuration;
+
+  @ApiProperty()
+  duration: string;
+
+  constructor(duration: string) {
+    this.duration = duration;
+  }
+}
+
+type StartTime = StartTimeAtMining | StartTimeAtEpoch;
+
+export class StartTimeAtMining {
+  @ApiProperty({ enum: [StartTimeValue.AtMiningTime] })
+  startType = StartTimeValue.AtMiningTime;
+}
+
+export class StartTimeAtEpoch {
+  @ApiProperty({ enum: [StartTimeValue.AtEpoch] })
+  startType = StartTimeValue.AtEpoch;
+
+  @ApiProperty()
+  epoch: number;
+
+  constructor(epoch: number) {
+    this.epoch = epoch;
+  }
+}
 
 export type TwapOrderInfo = {
   status: OrderStatus;
@@ -58,7 +89,13 @@ export type TwapOrderInfo = {
   startTime: StartTime;
 };
 
-@ApiExtraModels(TokenInfo)
+@ApiExtraModels(
+  TokenInfo,
+  DurationAuto,
+  DurationLimit,
+  StartTimeAtMining,
+  StartTimeAtEpoch,
+)
 export class TwapOrderTransactionInfo
   extends TransactionInfo
   implements TwapOrderInfo
@@ -175,11 +212,19 @@ export class TwapOrderTransactionInfo
 
   @ApiProperty({
     description: 'Whether the TWAP is valid for the entire interval or not',
+    oneOf: [
+      { $ref: getSchemaPath(DurationAuto) },
+      { $ref: getSchemaPath(DurationLimit) },
+    ],
   })
   durationOfPart: DurationOfPart;
 
   @ApiProperty({
     description: 'The start time of the TWAP',
+    oneOf: [
+      { $ref: getSchemaPath(StartTimeAtMining) },
+      { $ref: getSchemaPath(StartTimeAtEpoch) },
+    ],
   })
   startTime: StartTime;
 

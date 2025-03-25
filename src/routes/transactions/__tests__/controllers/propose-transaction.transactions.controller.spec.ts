@@ -49,6 +49,8 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -586,6 +588,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
             .build(),
           contractBuilder().with('trustedForDelegateCall', true).build(),
         ])
+        .with('next', null)
         .build();
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
@@ -773,6 +776,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           contractBuilder().with('trustedForDelegateCall', true).build(),
           contractBuilder().with('trustedForDelegateCall', true).build(),
         ])
+        .with('next', null)
         .build();
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
@@ -1019,7 +1023,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'PROPOSAL',
       });
     });
@@ -1390,6 +1393,7 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
         .with('sender', transaction.confirmations![0].owner)
         .with('signature', transaction.confirmations![0].signature)
         .build();
+      transaction.confirmations = [];
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -1420,6 +1424,150 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
         });
 
       expect(loggingService.error).not.toHaveBeenCalled();
+    });
+
+    it('should not throw if the eth_sign signature is an existing signature', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          ethSign: false,
+        },
+      });
+      await initApp(testConfiguration);
+      const chain = chainBuilder().build();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 2, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const safeApps = [safeAppBuilder().build()];
+      const contract = contractBuilder().build();
+      const transaction = multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .with('confirmations', [])
+        .build();
+      transaction.safeTxHash = getSafeTxHash({
+        chainId: chain.chainId,
+        safe,
+        transaction,
+      });
+      const ethSignSignature = await getSignature({
+        signer: signers[0],
+        hash: transaction.safeTxHash,
+        signatureType: SignatureType.EthSign,
+      });
+      // First confirmation is eth_sign
+      transaction.confirmations?.push(
+        confirmationBuilder()
+          .with('owner', signers[0].address)
+          .with('signature', ethSignSignature)
+          .with('signatureType', SignatureType.EthSign)
+          .build(),
+      );
+      for (const signer of signers.slice(1)) {
+        const signatureType = faker.helpers.arrayElement([
+          SignatureType.ApprovedHash,
+          SignatureType.ContractSignature,
+          SignatureType.Eoa,
+        ]);
+        const signature = await getSignature({
+          signer,
+          hash: transaction.safeTxHash,
+          signatureType,
+        });
+        transaction.confirmations?.push(
+          confirmationBuilder()
+            .with('owner', signer.address)
+            .with('signature', signature)
+            .with('signatureType', signatureType)
+            .build(),
+        );
+      }
+      const proposeTransactionDto = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        // Sender is the last signer
+        .with('sender', transaction.confirmations!.at(-1)!.owner)
+        .with(
+          'signature',
+          // eth_sign is included in concatenated proposal
+          concat(
+            transaction.confirmations!.map(
+              (confirmation) => confirmation.signature!,
+            ),
+          ),
+        )
+        .build();
+      const transactions = pageBuilder().build();
+      const token = tokenBuilder().build();
+      const gasToken = tokenBuilder().build();
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${proposeTransactionDto.safeTxHash}/`;
+      const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+      const getContractUrl = `${chain.transactionService}/api/v1/contracts/${transaction.to}`;
+      const getTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.to}`;
+      const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getMultisigTransactionUrl:
+            return Promise.resolve({
+              data: rawify(multisigToJson(transaction)),
+              status: 200,
+            });
+          case getMultisigTransactionsUrl:
+            return Promise.resolve({ data: rawify(transactions), status: 200 });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          case getSafeAppsUrl:
+            return Promise.resolve({ data: rawify(safeApps), status: 200 });
+          case getContractUrl:
+            return Promise.resolve({ data: rawify(contract), status: 200 });
+          case getTokenUrl:
+            return Promise.resolve({ data: rawify(token), status: 200 });
+          case getGasTokenContractUrl:
+            return Promise.resolve({ data: rawify(gasToken), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/transactions/${safe.address}/propose`,
+        )
+        .send(proposeTransactionDto)
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual(
+            expect.objectContaining({
+              txId: `multisig_${safe.address}_${transaction.safeTxHash}`,
+            }),
+          ),
+        );
     });
 
     it('should throw and log if the signer is not the sender', async () => {

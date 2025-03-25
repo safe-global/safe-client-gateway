@@ -101,6 +101,11 @@ export default (): ReturnType<typeof configuration> => ({
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
   },
+  contracts: {
+    trustedForDelegateCall: {
+      maxSequentialPages: faker.number.int({ min: 1, max: 5 }),
+    },
+  },
   db: {
     migrator: {
       executeMigrations: true,
@@ -232,7 +237,6 @@ export default (): ReturnType<typeof configuration> => ({
     pass: process.env.REDIS_PASS,
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
-    timeout: process.env.REDIS_TIMEOUT || 1 * 1_000, // Milliseconds
     disableOfflineQueue:
       process.env.REDIS_DISABLE_OFFLINE_QUEUE?.toString() === 'true',
   },

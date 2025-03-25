@@ -1,4 +1,4 @@
-import { fakeJson } from '@/__tests__/faker';
+import { typedDataBuilder } from '@/routes/messages/entities/__tests__/typed-data.builder';
 import { createMessageDtoBuilder } from '@/routes/messages/entities/__tests__/create-message.dto.builder';
 import { CreateMessageDtoSchema } from '@/routes/messages/entities/schemas/create-message.dto.schema';
 import { faker } from '@faker-js/faker';
@@ -6,8 +6,8 @@ import { ZodError } from 'zod';
 
 describe('CreateMessageDtoSchema', () => {
   describe('message', () => {
-    it('should validate a valid record message', () => {
-      const message = JSON.parse(fakeJson()) as Record<string, unknown>;
+    it('should validate a valid typed data message', () => {
+      const message = typedDataBuilder().build();
       const createMessageDto = createMessageDtoBuilder()
         .with('message', message)
         .build();
@@ -34,43 +34,33 @@ describe('CreateMessageDtoSchema', () => {
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error).toStrictEqual(
-        new ZodError([
-          {
-            code: 'invalid_union',
-            unionErrors: [
-              // @ts-expect-error - inferred type doesn't allow optional properties
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'invalid_union',
+          message: 'Invalid input',
+          path: ['message'],
+          unionErrors: [
+            new ZodError([
               {
-                issues: [
-                  {
-                    code: 'invalid_type',
-                    expected: 'object',
-                    received: 'undefined',
-                    path: ['message'],
-                    message: 'Required',
-                  },
-                ],
-                name: 'ZodError',
+                code: 'invalid_type',
+                expected: 'string',
+                received: 'undefined',
+                path: ['message'],
+                message: 'Required',
               },
-              // @ts-expect-error - inferred type doesn't allow optional properties
+            ]),
+            new ZodError([
               {
-                issues: [
-                  {
-                    code: 'invalid_type',
-                    expected: 'string',
-                    received: 'undefined',
-                    path: ['message'],
-                    message: 'Required',
-                  },
-                ],
-                name: 'ZodError',
+                code: 'invalid_type',
+                expected: 'object',
+                received: 'undefined',
+                path: ['message'],
+                message: 'Required',
               },
-            ],
-            path: ['message'],
-            message: 'Invalid input',
-          },
-        ]),
-      );
+            ]),
+          ],
+        },
+      ]);
     });
   });
 

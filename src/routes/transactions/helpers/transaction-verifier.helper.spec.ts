@@ -18,6 +18,8 @@ import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.re
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import type { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
+import { getSafeTxHash } from '@/domain/common/utils/safe';
+import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
@@ -235,7 +237,6 @@ describe('TransactionVerifierHelper', () => {
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });
@@ -724,7 +725,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
 
         await expect(
-          target.verifyProposal({ chainId, safe, proposal }),
+          target.verifyProposal({ chainId, safe, proposal, transaction }),
         ).resolves.not.toThrow();
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
@@ -782,7 +783,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).resolves.not.toThrow();
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
@@ -844,7 +845,7 @@ describe('TransactionVerifierHelper', () => {
       );
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).resolves.not.toThrow();
     });
 
@@ -892,7 +893,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(new HttpExceptionNoLog('Invalid nonce', 422));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
@@ -954,7 +955,7 @@ describe('TransactionVerifierHelper', () => {
       mockContractsRepository.isTrustedForDelegateCall.mockResolvedValue(true);
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).resolves.not.toThrow();
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
@@ -1016,7 +1017,7 @@ describe('TransactionVerifierHelper', () => {
       mockContractsRepository.isTrustedForDelegateCall.mockResolvedValue(true);
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(
         new HttpExceptionNoLog('Delegate call is disabled', 422),
       );
@@ -1080,7 +1081,7 @@ describe('TransactionVerifierHelper', () => {
       mockContractsRepository.isTrustedForDelegateCall.mockResolvedValue(false);
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(
         new HttpExceptionNoLog('Delegate call is disabled', 422),
       );
@@ -1146,7 +1147,7 @@ describe('TransactionVerifierHelper', () => {
       );
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(
         new HttpExceptionNoLog('Delegate call is disabled', 422),
       );
@@ -1200,7 +1201,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(
         new HttpExceptionNoLog('Could not calculate safeTxHash', 422),
       );
@@ -1224,7 +1225,6 @@ describe('TransactionVerifierHelper', () => {
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'PROPOSAL',
       });
     });
@@ -1276,7 +1276,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(new HttpExceptionNoLog('Invalid safeTxHash', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1349,7 +1349,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(new Error('Invalid hex bytes length'));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
@@ -1401,7 +1401,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(new Error('Invalid signature length'));
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
@@ -1455,7 +1455,7 @@ describe('TransactionVerifierHelper', () => {
           .build();
 
         await expect(
-          target.verifyProposal({ chainId, safe, proposal }),
+          target.verifyProposal({ chainId, safe, proposal, transaction }),
         ).rejects.toThrow(new Error('Could not recover address'));
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
@@ -1514,7 +1514,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1584,10 +1584,112 @@ describe('TransactionVerifierHelper', () => {
         .with('sender', transaction.confirmations![0].owner)
         .with('signature', transaction.confirmations![0].signature)
         .build();
+      transaction.confirmations = [];
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(new HttpExceptionNoLog('eth_sign is disabled', 422));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
+    it('should not throw if the eth_sign signature is an existing signature', async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): ReturnType<typeof configuration> => {
+        return {
+          ...defaultConfiguration,
+          features: {
+            ...defaultConfiguration.features,
+            ethSign: false,
+          },
+        };
+      };
+      initTarget(testConfiguration);
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 2, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .with('confirmations', [])
+        .build();
+      transaction.safeTxHash = getSafeTxHash({
+        chainId,
+        safe,
+        transaction,
+      });
+      const ethSignSignature = await getSignature({
+        signer: signers[0],
+        hash: transaction.safeTxHash,
+        signatureType: SignatureType.EthSign,
+      });
+      // First confirmation is eth_sign
+      transaction.confirmations?.push(
+        confirmationBuilder()
+          .with('owner', signers[0].address)
+          .with('signature', ethSignSignature)
+          .with('signatureType', SignatureType.EthSign)
+          .build(),
+      );
+      for (const signer of signers.slice(1)) {
+        const signatureType = faker.helpers.arrayElement([
+          SignatureType.ApprovedHash,
+          SignatureType.ContractSignature,
+          SignatureType.Eoa,
+        ]);
+        const signature = await getSignature({
+          signer,
+          hash: transaction.safeTxHash,
+          signatureType,
+        });
+        transaction.confirmations?.push(
+          confirmationBuilder()
+            .with('owner', signer.address)
+            .with('signature', signature)
+            .with('signatureType', signatureType)
+            .build(),
+        );
+      }
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        // Sender is the last signer
+        .with('sender', transaction.confirmations!.at(-1)!.owner)
+        .with(
+          'signature',
+          // eth_sign is included in concatenated proposal
+          concat(
+            transaction.confirmations!.map(
+              (confirmation) => confirmation.signature!,
+            ),
+          ),
+        )
+        .build();
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
+      ).resolves.not.toThrow();
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -1642,7 +1744,7 @@ describe('TransactionVerifierHelper', () => {
         .build();
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1707,7 +1809,7 @@ describe('TransactionVerifierHelper', () => {
       );
 
       await expect(
-        target.verifyProposal({ chainId, safe, proposal }),
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
       ).rejects.toThrow(new HttpExceptionNoLog('Invalid signature', 422));
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
@@ -1983,7 +2085,6 @@ describe('TransactionVerifierHelper', () => {
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });

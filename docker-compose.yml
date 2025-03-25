@@ -77,6 +77,17 @@ services:
       - redis
       - db
 
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - '8888:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${POSTGRES_ADMIN_USER:-admin@test.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_ADMIN_PASS:-admin}
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
   nginx:
     image: nginx:1.25-alpine
     ports:
@@ -88,3 +99,6 @@ services:
       APPLICATION_PORT: ${APPLICATION_PORT-3000}
     depends_on:
       - web
+
+volumes:
+  pgadmin-data:

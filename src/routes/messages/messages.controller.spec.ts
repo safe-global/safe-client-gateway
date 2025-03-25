@@ -858,10 +858,10 @@ describe('Messages controller', () => {
         .expect({
           statusCode: 422,
           code: 'invalid_type',
-          expected: 'object',
+          expected: 'string',
           received: 'number',
           path: ['message'],
-          message: 'Expected object, received number',
+          message: 'Expected string, received number',
         });
     });
 
@@ -964,7 +964,7 @@ describe('Messages controller', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeMessage: message.message,
-          type: 'MESSAGE_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
 
@@ -1142,6 +1142,7 @@ describe('Messages controller', () => {
           signature: message.confirmations[0].signature,
           blockedAddress: signer.address,
           type: 'MESSAGE_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
 
@@ -1250,6 +1251,7 @@ describe('Messages controller', () => {
           signerAddress: signer.address,
           signature: message.confirmations[0].signature,
           type: 'MESSAGE_VALIDITY',
+          source: 'PROPOSAL',
         });
       });
     });
@@ -1453,7 +1455,7 @@ describe('Messages controller', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           safeMessage: message.message,
-          type: 'MESSAGE_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
 
@@ -1516,6 +1518,7 @@ describe('Messages controller', () => {
           messageHash: message.messageHash,
           safeMessage: message.message,
           type: 'MESSAGE_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
 
@@ -1715,6 +1718,7 @@ describe('Messages controller', () => {
           signature: message.confirmations[0].signature,
           blockedAddress: signer.address,
           type: 'MESSAGE_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
 
@@ -1839,6 +1843,7 @@ describe('Messages controller', () => {
           signerAddress: signer.address,
           signature: message.confirmations[0].signature,
           type: 'MESSAGE_VALIDITY',
+          source: 'CONFIRMATION',
         });
       });
     });
