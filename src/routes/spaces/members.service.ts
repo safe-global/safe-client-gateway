@@ -12,6 +12,7 @@ import { AcceptInviteDto } from '@/routes/spaces/entities/accept-invite.dto.enti
 
 export class MembersService {
   private readonly maxInvites: number;
+
   public constructor(
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
@@ -19,7 +20,7 @@ export class MembersService {
     private readonly configurationService: IConfigurationService,
   ) {
     this.maxInvites =
-      this.configurationService.getOrThrow<number>('users.maxInvites');
+      this.configurationService.getOrThrow<number>('spaces.maxInvites');
   }
 
   public async inviteUser(args: {
