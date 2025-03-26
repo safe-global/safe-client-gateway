@@ -1,4 +1,5 @@
 import {
+  ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
@@ -37,6 +38,7 @@ class MultiSend implements DomainMultiSend {
   data!: `0x${string}` | null;
 }
 
+@ApiExtraModels(MultiSend, BaseDataDecoded)
 export class DataDecodedParameter implements DomainDataDecodedParameter {
   @ApiProperty()
   name!: string;
@@ -49,8 +51,9 @@ export class DataDecodedParameter implements DomainDataDecodedParameter {
 
   @ApiPropertyOptional({
     oneOf: [
-      { type: 'array', items: { $ref: getSchemaPath(MultiSend) } },
       { $ref: getSchemaPath(BaseDataDecoded) },
+      { type: 'array', items: { $ref: getSchemaPath(MultiSend) } },
+      { type: 'null' },
     ],
   })
   valueDecoded?: Array<DomainMultiSend> | DomainBaseDataDecoded | null;
