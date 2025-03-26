@@ -5,16 +5,16 @@ import {
   baseDataDecodedBuilder,
   dataDecodedBuilder,
   multisendBuilder,
-  parameterBuilder,
+  dataDecodedParameterBuilder,
 } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import {
   BaseDataDecodedSchema,
   DataDecodedSchema,
   MultisendSchema,
-  ParameterSchema,
+  DataDecodedParameterSchema,
   ValueDecodedSchema,
 } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
-import type { Accuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import type { DataDecodedAccuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import type { Operation } from '@/domain/safe/entities/operation.entity';
 
 describe('DataDecoded', () => {
@@ -33,7 +33,7 @@ describe('DataDecoded', () => {
           'dataDecoded',
           baseDataDecodedBuilder()
             .with('parameters', [
-              parameterBuilder()
+              dataDecodedParameterBuilder()
                 .with('valueDecoded', [multisendBuilder().build()])
                 .build(),
             ])
@@ -171,7 +171,7 @@ describe('DataDecoded', () => {
           'dataDecoded',
           baseDataDecodedBuilder()
             .with('parameters', [
-              parameterBuilder()
+              dataDecodedParameterBuilder()
                 .with('valueDecoded', [multisendBuilder().build()])
                 .build(),
             ])
@@ -188,7 +188,7 @@ describe('DataDecoded', () => {
       const baseDataDecoded = baseDataDecodedBuilder()
         .with(
           'parameters',
-          faker.helpers.multiple(() => parameterBuilder().build(), {
+          faker.helpers.multiple(() => dataDecodedParameterBuilder().build(), {
             count: { min: 1, max: 5 },
           }),
         )
@@ -235,41 +235,34 @@ describe('DataDecoded', () => {
                 message: 'Required',
               },
             ]),
+            new ZodError([
+              {
+                code: 'invalid_type',
+                expected: 'null',
+                received: 'object',
+                path: [],
+                message: 'Expected null, received object',
+              },
+            ]),
           ],
         },
       ]);
     });
   });
 
-  describe('ParameterSchema', () => {
-    it('should validate a Parameter', () => {
-      const parameter = parameterBuilder().build();
+  describe('DataDecodedParameterSchema', () => {
+    it('should validate a DataDecodedParameter', () => {
+      const parameter = dataDecodedParameterBuilder().build();
 
-      const result = ParameterSchema.safeParse(parameter);
+      const result = DataDecodedParameterSchema.safeParse(parameter);
 
       expect(result.success).toBe(true);
     });
 
-    it('should expect hex value', () => {
-      const parameter = parameterBuilder()
-        .with('value', faker.string.alpha() as `0x${string}`)
-        .build();
+    it('should not validate an invalid DataDecodedParameter', () => {
+      const parameter = { invalid: 'dataDecodedParameter' };
 
-      const result = ParameterSchema.safeParse(parameter);
-
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'custom',
-          message: 'Invalid "0x" notated hex string',
-          path: ['value'],
-        },
-      ]);
-    });
-
-    it('should not validate an invalid Parameter', () => {
-      const parameter = { invalid: 'parameter' };
-
-      const result = ParameterSchema.safeParse(parameter);
+      const result = DataDecodedParameterSchema.safeParse(parameter);
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
@@ -285,38 +278,6 @@ describe('DataDecoded', () => {
           message: 'Required',
           path: ['type'],
           received: 'undefined',
-        },
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Required',
-          path: ['value'],
-          received: 'undefined',
-        },
-        {
-          code: 'invalid_union',
-          message: 'Invalid input',
-          path: ['valueDecoded'],
-          unionErrors: [
-            new ZodError([
-              {
-                code: 'invalid_type',
-                expected: 'array',
-                received: 'undefined',
-                path: ['valueDecoded'],
-                message: 'Required',
-              },
-            ]),
-            new ZodError([
-              {
-                code: 'invalid_type',
-                expected: 'object',
-                received: 'undefined',
-                path: ['valueDecoded'],
-                message: 'Required',
-              },
-            ]),
-          ],
         },
       ]);
     });
@@ -366,7 +327,7 @@ describe('DataDecoded', () => {
 
     it('should catch invalid accuracy, assigning it as UNKNOWN', () => {
       const dataDecoded = dataDecodedBuilder()
-        .with('accuracy', 'invalid' as (typeof Accuracy)[number])
+        .with('accuracy', 'invalid' as (typeof DataDecodedAccuracy)[number])
         .build();
 
       const result = DataDecodedSchema.safeParse(dataDecoded);

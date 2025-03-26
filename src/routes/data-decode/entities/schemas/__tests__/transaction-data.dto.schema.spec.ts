@@ -88,6 +88,13 @@ describe('TransactionDataDtoSchema', () => {
           path: ['data'],
           message: 'Required',
         },
+        {
+          code: 'invalid_type',
+          expected: 'string',
+          received: 'undefined',
+          path: ['to'],
+          message: 'Required',
+        },
       ]),
     );
   });

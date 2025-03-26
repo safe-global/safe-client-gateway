@@ -1,19 +1,75 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DataDecodedParameter } from '@/routes/data-decode/entities/data-decoded-parameter.entity';
-import { DataDecoded as DomainDataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
+import {
+  BaseDataDecoded as DomainBaseDataDecoded,
+  MultiSend as DomainMultiSend,
+  DataDecoded as DomainDataDecoded,
+  DataDecodedParameter as DomainDataDecodedParameter,
+  DataDecodedAccuracy,
+} from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { Operation } from '@/domain/safe/entities/operation.entity';
+
+class BaseDataDecoded implements DomainBaseDataDecoded {
+  @ApiProperty()
+  method!: string;
+
+  @ApiPropertyOptional({ type: () => DataDecodedParameter, isArray: true })
+  parameters!: Array<DataDecodedParameter> | null;
+}
+
+class MultiSend implements DomainMultiSend {
+  @ApiProperty({ enum: Operation })
+  operation!: Operation;
+
+  @ApiProperty()
+  value!: string;
+
+  @ApiPropertyOptional({ type: () => BaseDataDecoded })
+  dataDecoded!: BaseDataDecoded;
+
+  @ApiProperty()
+  to!: `0x${string}`;
+
+  @ApiPropertyOptional()
+  data!: `0x${string}` | null;
+}
+
+export class DataDecodedParameter implements DomainDataDecodedParameter {
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiProperty()
+  value!: Required<unknown>;
+
+  @ApiPropertyOptional({
+    oneOf: [
+      { type: 'array', items: { $ref: getSchemaPath(MultiSend) } },
+      { $ref: getSchemaPath(BaseDataDecoded) },
+    ],
+  })
+  valueDecoded?: Array<DomainMultiSend> | DomainBaseDataDecoded | null;
+}
 
 export class DataDecoded implements DomainDataDecoded {
   @ApiProperty()
-  method: string;
+  method!: string;
+
   @ApiPropertyOptional({
     type: DataDecodedParameter,
     isArray: true,
     nullable: true,
   })
-  parameters: Array<DataDecodedParameter> | null;
+  parameters!: Array<DataDecodedParameter> | null;
 
-  constructor(method: string, parameters: Array<DataDecodedParameter> | null) {
-    this.method = method;
-    this.parameters = parameters;
-  }
+  @ApiPropertyOptional({
+    enum: [...DataDecodedAccuracy, 'UNKNOWN'],
+    default: 'UNKNOWN',
+  })
+  accuracy!: (typeof DataDecodedAccuracy)[number] | 'UNKNOWN';
 }
