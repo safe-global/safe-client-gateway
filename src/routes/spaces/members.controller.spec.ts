@@ -82,7 +82,7 @@ describe('MembersController', () => {
     const configService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
-    maxInvites = configService.getOrThrow('users.maxInvites');
+    maxInvites = configService.getOrThrow('spaces.maxInvites');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();

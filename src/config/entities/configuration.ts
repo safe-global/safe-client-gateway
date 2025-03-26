@@ -398,6 +398,12 @@ export default () => ({
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
+  spaces: {
+    maxSafesPerSpace: parseInt(
+      process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
+    ),
+    maxInvites: parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`),
+  },
   staking: {
     testnet: {
       baseUri:
@@ -458,8 +464,5 @@ export default () => ({
           'assets/targeted-messaging',
       },
     },
-  },
-  users: {
-    maxInvites: 50,
   },
 });

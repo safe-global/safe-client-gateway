@@ -270,6 +270,10 @@ export default (): ReturnType<typeof configuration> => ({
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
+  spaces: {
+    maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
+    maxInvites: faker.number.int({ min: 5, max: 10 }),
+  },
   staking: {
     testnet: {
       baseUri: faker.internet.url({ appendSlash: false }),
@@ -304,8 +308,5 @@ export default (): ReturnType<typeof configuration> => ({
         baseDir: 'assets/targeted-messaging',
       },
     },
-  },
-  users: {
-    maxInvites: faker.number.int({ min: 5, max: 10 }),
   },
 });
