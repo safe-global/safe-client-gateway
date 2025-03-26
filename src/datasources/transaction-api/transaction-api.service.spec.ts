@@ -10,7 +10,7 @@ import { backboneBuilder } from '@/domain/backbone/entities/__tests__/backbone.b
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
 import { singletonBuilder } from '@/domain/chains/entities/__tests__/singleton.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
