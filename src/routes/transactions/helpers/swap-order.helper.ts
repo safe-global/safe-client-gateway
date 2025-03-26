@@ -110,8 +110,6 @@ export class SwapOrderHelper {
   }
 
   /**
-   * TODO: Investigate if needed after token-specific entities. This was required for decimals.
-   *
    * Retrieves a token object based on the provided Ethereum chain ID and token address.
    * If the specified address is the placeholder for the native currency of the chain,
    * it fetches the chain's native currency details from the {@link IChainsRepository}.
@@ -128,7 +126,7 @@ export class SwapOrderHelper {
   public async getToken(args: {
     chainId: string;
     address: `0x${string}`;
-  }): Promise<Token & { decimals: NonNullable<Token['decimals']> }> {
+  }): Promise<Token> {
     // We perform lower case comparison because the provided address (3rd party service)
     // might not be checksummed.
     if (
@@ -148,16 +146,10 @@ export class SwapOrderHelper {
         trusted: true,
       };
     } else {
-      const token = await this.tokenRepository.getToken({
+      return await this.tokenRepository.getToken({
         chainId: args.chainId,
         address: args.address,
       });
-
-      if (token.decimals === null) {
-        throw new Error('Invalid token decimals');
-      }
-
-      return { ...token, decimals: token.decimals };
     }
   }
 }
