@@ -27,6 +27,25 @@ describe('DataDecoded', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should validate a nested MultiSend', () => {
+      const nestedMultisend = multisendBuilder()
+        .with(
+          'dataDecoded',
+          baseDataDecodedBuilder()
+            .with('parameters', [
+              parameterBuilder()
+                .with('valueDecoded', [multisendBuilder().build()])
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+
+      const result = MultisendSchema.safeParse(nestedMultisend);
+
+      expect(result.success).toBe(true);
+    });
+
     it('should expect a valid operation', () => {
       const multisend = multisendBuilder()
         .with('operation', faker.number.int({ min: 2 }) as Operation)
@@ -142,6 +161,25 @@ describe('DataDecoded', () => {
       const multisend = multisendBuilder().build();
 
       const result = ValueDecodedSchema.safeParse([multisend]);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should validate a nested MultiSend', () => {
+      const nestedMultisend = multisendBuilder()
+        .with(
+          'dataDecoded',
+          baseDataDecodedBuilder()
+            .with('parameters', [
+              parameterBuilder()
+                .with('valueDecoded', [multisendBuilder().build()])
+                .build(),
+            ])
+            .build(),
+        )
+        .build();
+
+      const result = ValueDecodedSchema.safeParse([nestedMultisend]);
 
       expect(result.success).toBe(true);
     });
