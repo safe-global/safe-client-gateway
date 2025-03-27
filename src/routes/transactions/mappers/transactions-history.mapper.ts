@@ -60,7 +60,7 @@ export class TransactionsHistoryMapper {
     }
 
     // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
-    await this.prefetchAddresses({
+    await this.prefetchAddressInfos({
       chainId,
       transactions: transactionsDomain,
     });
@@ -118,7 +118,7 @@ export class TransactionsHistoryMapper {
     );
   }
 
-  private async prefetchAddresses(args: {
+  private async prefetchAddressInfos(args: {
     chainId: string;
     transactions: Array<TransactionDomain>;
   }): Promise<void> {
