@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { join } from 'path';
 import { ChainsModule } from '@/routes/chains/chains.module';
@@ -123,6 +124,7 @@ export class AppModule implements NestModule {
           },
         }),
         ConfigurationModule.register(configFactory),
+        InMemoryCacheModule.register({ isGlobal: true }),
         NetworkModule,
         RequestScopedLoggingModule,
         ScheduleModule.forRoot(),

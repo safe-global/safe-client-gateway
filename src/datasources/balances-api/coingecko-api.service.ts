@@ -25,6 +25,9 @@ import { asError } from '@/logging/utils';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { z } from 'zod';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
@@ -69,6 +72,7 @@ export class CoingeckoApi implements IPricesApi {
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(CACHE_MANAGER) private readonly inMemoryCache: Cache,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.safe.prices.apiKey',
@@ -130,28 +134,46 @@ export class CoingeckoApi implements IPricesApi {
         nativeCoinId,
         fiatCode: lowerCaseFiatCode,
       });
-      const url = `${this.baseUrl}/simple/price`;
-      const result = await this.dataSource
-        .get<AssetPrice>({
-          cacheDir,
-          url,
-          networkRequest: {
-            params: {
-              vs_currencies: lowerCaseFiatCode,
-              ids: nativeCoinId,
-            },
-            ...(this.apiKey && {
-              headers: {
-                [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+      const inMemoryCached = await this.inMemoryCache.get<number>(
+        this.getMemoryKey(cacheDir),
+      );
+      if (inMemoryCached != null) {
+        this.loggingService.debug({
+          type: 'in_memory_cache_hit',
+          key: cacheDir.key,
+        });
+        return inMemoryCached;
+      } else {
+        const url = `${this.baseUrl}/simple/price`;
+        const result = await this.dataSource
+          .get<AssetPrice>({
+            cacheDir,
+            url,
+            networkRequest: {
+              params: {
+                vs_currencies: lowerCaseFiatCode,
+                ids: nativeCoinId,
               },
-            }),
-          },
-          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
-          expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
-        })
-        .then(AssetPriceSchema.parse);
-      // TODO: Change to Raw when cache service is migrated
-      return result?.[nativeCoinId]?.[lowerCaseFiatCode];
+              ...(this.apiKey && {
+                headers: {
+                  [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+                },
+              }),
+            },
+            notFoundExpireTimeSeconds:
+              this.defaultNotFoundExpirationTimeSeconds,
+            expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
+          })
+          .then(AssetPriceSchema.parse);
+        // TODO: Change to Raw when cache service is migrated
+        const nativeCoinPrice = result?.[nativeCoinId]?.[lowerCaseFiatCode];
+        await this.inMemoryCache.set(
+          this.getMemoryKey(cacheDir),
+          nativeCoinPrice,
+          this.nativeCoinPricesTtlSeconds * 1_000,
+        );
+        return nativeCoinPrice;
+      }
     } catch (error) {
       // Error at this level are logged out, but not thrown to the upper layers.
       // The service won't throw an error if a single coin price retrieval fails.
@@ -262,14 +284,37 @@ export class CoingeckoApi implements IPricesApi {
         ...args,
         tokenAddress,
       });
-      const cached = await this.cacheService.hGet(cacheDir);
-      const { key, field } = cacheDir;
-      if (cached != null) {
-        this.loggingService.debug({ type: 'cache_hit', key, field });
-        const cachedAssetPrice = AssetPriceSchema.parse(JSON.parse(cached));
+      const inMemoryCached = await this.inMemoryCache.get<string>(
+        this.getMemoryKey(cacheDir),
+      );
+      if (inMemoryCached != null) {
+        this.loggingService.debug({
+          type: 'in_memory_cache_hit',
+          key: cacheDir.key,
+        });
+        const cachedAssetPrice = AssetPriceSchema.parse(
+          JSON.parse(inMemoryCached),
+        );
         result.push(cachedAssetPrice);
       } else {
-        this.loggingService.debug({ type: 'cache_miss', key, field });
+        this.loggingService.debug({
+          type: 'in_memory_cache_miss',
+          key: cacheDir.key,
+        });
+        const cached = await this.cacheService.hGet(cacheDir);
+        const { key, field } = cacheDir;
+        if (cached != null) {
+          await this.inMemoryCache.set(
+            this.getMemoryKey(cacheDir),
+            cached,
+            this.pricesTtlSeconds * 1_000,
+          );
+          this.loggingService.debug({ type: 'cache_hit', key, field });
+          const cachedAssetPrice = AssetPriceSchema.parse(JSON.parse(cached));
+          result.push(cachedAssetPrice);
+        } else {
+          this.loggingService.debug({ type: 'cache_miss', key, field });
+        }
       }
     }
     return result;
@@ -295,8 +340,17 @@ export class CoingeckoApi implements IPricesApi {
         const price: AssetPrice = validPrice
           ? { [tokenAddress]: { [args.fiatCode]: validPrice } }
           : { [tokenAddress]: { [args.fiatCode]: null } };
+        const cacheDir = CacheRouter.getTokenPriceCacheDir({
+          ...args,
+          tokenAddress,
+        });
         await this.cacheService.hSet(
-          CacheRouter.getTokenPriceCacheDir({ ...args, tokenAddress }),
+          cacheDir,
+          JSON.stringify(price),
+          this._getTtl(validPrice, tokenAddress),
+        );
+        await this.inMemoryCache.set(
+          this.getMemoryKey(cacheDir),
           JSON.stringify(price),
           this._getTtl(validPrice, tokenAddress),
         );
@@ -368,5 +422,12 @@ export class CoingeckoApi implements IPricesApi {
       this.notFoundPriceTtlSeconds,
       this.notFoundPriceTtlSeconds + CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS,
     );
+  }
+
+  /**
+   * Gets the in-memory cache key for the given cacheDir.
+   */
+  private getMemoryKey(cacheDir: CacheDir): string {
+    return `${cacheDir.key}:${cacheDir.field}`;
   }
 }
