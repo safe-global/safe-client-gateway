@@ -55,8 +55,19 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   beforeEach(async () => {
     jest.resetAllMocks();
 
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): ReturnType<typeof configuration> => {
+      return {
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          filterValueParsing: true,
+        },
+      };
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)

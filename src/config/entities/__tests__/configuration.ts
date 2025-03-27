@@ -181,6 +181,7 @@ export default (): ReturnType<typeof configuration> => ({
     ethSign: true,
     trustedDelegateCall: false,
     trustedForDelegateCallContractsList: false,
+    filterValueParsing: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
