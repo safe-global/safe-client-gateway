@@ -12,6 +12,7 @@ import {
   LabelQueuedItem,
 } from '@/routes/transactions/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '@/routes/transactions/entities/queued-items/transaction-queued-item.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 class TransactionGroup {
   nonce!: number;
@@ -20,7 +21,10 @@ class TransactionGroup {
 
 @Injectable()
 export class QueuedItemsMapper {
-  constructor(private readonly mapper: MultisigTransactionMapper) {}
+  constructor(
+    private readonly mapper: MultisigTransactionMapper,
+    private readonly addressInfoHelper: AddressInfoHelper,
+  ) {}
 
   async getQueuedItems(
     transactions: Page<MultisigTransaction>,
@@ -74,6 +78,12 @@ export class QueuedItemsMapper {
     isEdgeGroup: boolean,
     transactionGroup: TransactionGroup,
   ): Promise<Array<TransactionQueuedItem>> {
+    // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
+    await this.prefetchAddresses({
+      chainId: chainId,
+      transactions: transactionGroup.transactions,
+    });
+
     return Promise.all(
       transactionGroup.transactions.map(async (transaction, idx) => {
         const isFirstInGroup = idx === 0;
@@ -90,6 +100,17 @@ export class QueuedItemsMapper {
         );
       }),
     );
+  }
+
+  private async prefetchAddresses(args: {
+    chainId: string;
+    transactions: Array<MultisigTransaction>;
+  }): Promise<void> {
+    const addresses = Array.from(new Set(args.transactions.map((tx) => tx.to)));
+    await this.addressInfoHelper.getCollection(args.chainId, addresses, [
+      'TOKEN',
+      'CONTRACT',
+    ]);
   }
 
   private getConflictType(
