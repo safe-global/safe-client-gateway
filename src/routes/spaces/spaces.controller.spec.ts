@@ -770,7 +770,7 @@ describe('SpacesController', () => {
             memberAuthPayloadDto.signer_address,
         });
     });
-    it('Should throw a 401 if a an inactive admin tries to update the space', async () => {
+    it('Should throw a 401 if an inactive admin tries to update the space', async () => {
       const activeAdminAuthPayloadDto = authPayloadDtoBuilder().build();
       const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
       const inactiveAdminAuthPayloadDto = authPayloadDtoBuilder().build();

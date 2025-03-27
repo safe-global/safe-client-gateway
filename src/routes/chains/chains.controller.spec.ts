@@ -370,7 +370,7 @@ describe('Chains Controller (Unit)', () => {
         .expect(expectedResult);
     });
 
-    it('Should return not Not found', async () => {
+    it('Should return Not found', async () => {
       const chainId = faker.string.numeric();
       const error = new NetworkResponseError(
         new URL(`${chainResponse.transactionService}/v1/chains`),
@@ -792,7 +792,7 @@ describe('Chains Controller (Unit)', () => {
         .expect(expectedResult);
     });
 
-    it('Should return not Not found', async () => {
+    it('Should return Not found', async () => {
       const chainId = faker.string.numeric();
       const error = new NetworkResponseError(
         new URL(`${chainResponse.transactionService}/v1/chains`),

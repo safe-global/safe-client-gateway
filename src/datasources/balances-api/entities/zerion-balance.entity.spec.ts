@@ -163,7 +163,7 @@ describe('Zerion Balance Entity schemas', () => {
       );
     });
 
-    it('should not allow an invalid value value', () => {
+    it('should not allow an invalid value', () => {
       const zerionAttributes = zerionAttributesBuilder().build();
       // @ts-expect-error - value is expected to be a number
       zerionAttributes.value = faker.string.sample();

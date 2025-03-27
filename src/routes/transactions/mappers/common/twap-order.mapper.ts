@@ -291,7 +291,7 @@ export class TwapOrderMapper {
       order: finalPart,
     });
 
-    // Check active or final order order
+    // Check active or final order
     const orderUidToCheck = args.activeOrderUid ?? finalOrderUid;
 
     try {
