@@ -25,6 +25,10 @@ export class AddressInfoHelper {
    * The promise can be rejected if the address info cannot be retrieved for
    * any specified {@link source}
    *
+   * The function will try to get the address info from the provided sources
+   * in the order they are provided. If the address info cannot be retrieved
+   * from a source, the next source will be tried.
+   *
    * @param chainId - the chain id where the source exists
    * @param address - the address of the source to which we want to retrieve its metadata
    * @param sources - a collection of {@link Source} to which we want to retrieve its metadata

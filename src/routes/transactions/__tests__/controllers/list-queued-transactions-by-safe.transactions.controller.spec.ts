@@ -29,6 +29,7 @@ import {
 } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { erc20TokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import {
   type ILoggingService,
@@ -189,13 +190,14 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       multisigToJson(nonce3) as MultisigTransaction,
       multisigToJson(nonce4) as MultisigTransaction,
     ];
-
+    const tokenResponse = erc20TokenBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -218,6 +220,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.resolve({ data: rawify(contractResponse), status: 200 });
+      }
+      if (url.startsWith(getTokenUrlPattern)) {
+        return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -349,12 +354,14 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       multisigToJson(nonce3) as MultisigTransaction,
       multisigToJson(nonce3) as MultisigTransaction,
     ];
+    const tokenResponse = erc20TokenBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -381,6 +388,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.resolve({ data: rawify(contractResponse), status: 200 });
+      }
+      if (url.startsWith(getTokenUrlPattern)) {
+        return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -502,12 +512,14 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       multisigToJson(nonce1) as MultisigTransaction,
       multisigToJson(nonce2) as MultisigTransaction,
     ];
+    const tokenResponse = erc20TokenBuilder().build();
     networkService.get.mockImplementation(({ url, networkRequest }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
       const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -535,6 +547,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.resolve({ data: rawify(contractResponse), status: 200 });
+      }
+      if (url.startsWith(getTokenUrlPattern)) {
+        return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -617,10 +632,11 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         multisigToJson(nonce1) as MultisigTransaction,
         multisigToJson(nonce2) as MultisigTransaction,
       ];
-
+      const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -641,6 +657,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         }
         if (url === getSafeUrl) {
           return Promise.resolve({ data: rawify(safeResponse), status: 200 });
+        }
+        if (url.startsWith(getTokenUrlPattern)) {
+          return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -716,10 +735,11 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         multisigToJson(nonce1) as MultisigTransaction,
         multisigToJson(nonce2) as MultisigTransaction,
       ];
-
+      const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -743,6 +763,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             data: rawify(safeResponse),
             status: 200,
           });
+        }
+        if (url.startsWith(getTokenUrlPattern)) {
+          return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -810,10 +833,11 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         multisigToJson(nonce1) as MultisigTransaction,
         multisigToJson(nonce2) as MultisigTransaction,
       ];
-
+      const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -837,6 +861,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             data: rawify(safeResponse),
             status: 200,
           });
+        }
+        if (url.startsWith(getTokenUrlPattern)) {
+          return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -899,10 +926,11 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         multisigToJson(nonce1) as MultisigTransaction,
         multisigToJson(nonce2) as MultisigTransaction,
       ];
-
+      const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -926,6 +954,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             data: rawify(safeResponse),
             status: 200,
           });
+        }
+        if (url.startsWith(getTokenUrlPattern)) {
+          return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -1172,10 +1203,11 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         multisigToJson(nonce1) as MultisigTransaction,
         multisigToJson(nonce2) as MultisigTransaction,
       ];
-
+      const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -1199,6 +1231,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             data: rawify(safeResponse),
             status: 200,
           });
+        }
+        if (url.startsWith(getTokenUrlPattern)) {
+          return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -1258,10 +1293,11 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         multisigToJson(nonce1) as MultisigTransaction,
         multisigToJson(nonce2) as MultisigTransaction,
       ];
-
+      const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -1285,6 +1321,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             data: rawify(safeResponse),
             status: 200,
           });
+        }
+        if (url.startsWith(getTokenUrlPattern)) {
+          return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -1343,10 +1382,11 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         multisigToJson(nonce2) as MultisigTransaction,
       ];
       safeResponse.owners = [getAddress(faker.finance.ethereumAddress())];
-
+      const tokenResponse = erc20TokenBuilder().build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
       const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
       networkService.get.mockImplementation(({ url }) => {
         if (url === getChainUrl) {
           return Promise.resolve({
@@ -1370,6 +1410,9 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             data: rawify(safeResponse),
             status: 200,
           });
+        }
+        if (url.startsWith(getTokenUrlPattern)) {
+          return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
