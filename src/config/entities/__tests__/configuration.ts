@@ -309,4 +309,7 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  totp: {
+    secret: faker.string.alphanumeric({ length: 16 }),
+  },
 });

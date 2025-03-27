@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   BaseMultisigTransaction,
@@ -18,6 +18,7 @@ import { LogSource } from '@/domain/common/entities/log-source.entity';
 import { isAddressEqual } from 'viem';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import { deriveTotpKey } from '@/routes/transactions/helpers/totp';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -40,6 +41,7 @@ export class TransactionVerifierHelper {
   private readonly isProposalHashVerificationEnabled: boolean;
   private readonly isProposalSignatureVerificationEnabled: boolean;
   private readonly blocklist: Array<`0x${string}`>;
+  private readonly totpSecret: string;
 
   constructor(
     @Inject(IConfigurationService)
@@ -74,6 +76,7 @@ export class TransactionVerifierHelper {
     this.blocklist = this.configurationService.getOrThrow(
       'blockchain.blocklist',
     );
+    this.totpSecret = this.configurationService.getOrThrow('totp.secret');
   }
 
   public verifyApiTransaction(args: {
@@ -116,6 +119,32 @@ export class TransactionVerifierHelper {
     }
     if (this.isProposalSignatureVerificationEnabled) {
       await this.verifyProposalSignature({ ...args, code });
+    }
+
+    if (args.proposal.totp) {
+      const safeTxHash = getSafeTxHash({
+        ...args,
+        transaction: {
+          ...args.proposal,
+          nonce: Number(args.proposal.nonce),
+          safeTxGas: Number(args.proposal.safeTxGas),
+          baseGas: Number(args.proposal.baseGas),
+        },
+      });
+
+      const [key, { TOTP }] = await Promise.all([
+        deriveTotpKey({
+          secret: this.totpSecret,
+          hash: safeTxHash,
+        }),
+        import('totp-generator'),
+      ]);
+
+      const { otp } = TOTP.generate(key, { timestamp: Date.now() });
+
+      if (otp !== args.proposal.totp) {
+        throw new HttpException('Invalid TOTP', HttpStatus.FORBIDDEN);
+      }
     }
   }
 

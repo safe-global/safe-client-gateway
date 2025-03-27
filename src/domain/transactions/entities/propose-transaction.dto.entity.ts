@@ -19,4 +19,5 @@ export class ProposeTransactionDto
   sender!: `0x${string}`;
   signature!: `0x${string}` | null;
   origin!: string | null;
+  totp!: string | null;
 }

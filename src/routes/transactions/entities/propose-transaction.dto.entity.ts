@@ -31,4 +31,6 @@ export class ProposeTransactionDto implements DomainProposeTransactionDto {
   signature!: `0x${string}` | null;
   @ApiPropertyOptional({ type: String, nullable: true })
   origin!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  totp!: string | null;
 }

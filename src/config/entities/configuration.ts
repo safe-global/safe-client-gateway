@@ -465,4 +465,7 @@ export default () => ({
       },
     },
   },
+  totp: {
+    secret: process.env.TOTP_SECRET,
+  },
 });

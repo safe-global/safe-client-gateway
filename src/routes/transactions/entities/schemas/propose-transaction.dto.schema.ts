@@ -20,4 +20,5 @@ export const ProposeTransactionDtoSchema = z.object({
   sender: AddressSchema,
   signature: SignatureSchema.nullish().default(null),
   origin: z.string().nullish().default(null),
+  totp: z.string().nullish().default(null),
 });
