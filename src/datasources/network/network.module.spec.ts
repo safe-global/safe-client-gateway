@@ -108,4 +108,89 @@ describe('NetworkModule', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('caches GET requests based on URL and options', async () => {
+    const json = fakeJson();
+    const response = {
+      ok: true,
+      json: () => Promise.resolve(json),
+    } as Response;
+    fetchMock.mockResolvedValue(response);
+
+    const url = faker.internet.url({ appendSlash: false });
+    const options = { method: 'GET' };
+
+    void fetchClient(url, options);
+    await fetchClient(url, options);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['POST', 'DELETE'])(
+    'caches %s requests based on URL and options',
+    async (method) => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const options = {
+        method,
+        body: JSON.stringify({ example: 'data' }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      void fetchClient(url, options);
+      await fetchClient(url, options);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('clears the cache after successful request', async () => {
+    const json = fakeJson();
+    const response = {
+      ok: true,
+      json: () => Promise.resolve(json),
+    } as Response;
+    fetchMock.mockResolvedValue(response);
+
+    const url = faker.internet.url({ appendSlash: false });
+    const options = { method: 'GET' };
+
+    await fetchClient(url, options);
+    await fetchClient(url, options);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears the cache after failed request', async () => {
+    const json = fakeJson();
+    const response = {
+      ok: false,
+      json: () => Promise.resolve(json),
+    } as Response;
+    fetchMock.mockResolvedValue(response);
+
+    const url = faker.internet.url({ appendSlash: false });
+    const options = { method: 'GET' };
+
+    try {
+      await fetchClient(url, options);
+    } catch {
+      //
+    }
+    try {
+      await fetchClient(url, options);
+    } catch {
+      //
+    }
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
