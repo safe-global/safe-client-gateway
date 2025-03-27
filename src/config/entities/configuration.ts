@@ -274,6 +274,8 @@ export default () => ({
     trustedForDelegateCallContractsList:
       process.env.FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST?.toLowerCase() ===
       'true',
+    filterValueParsing:
+      process.env.FF_FILTER_VALUE_PARSING?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
