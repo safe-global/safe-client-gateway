@@ -2,7 +2,7 @@
  * Faker v8.0.2
  * https://fakerjs.dev/
  *
- * Copyright 2022-2023 Faker and other contributors
+ * Copyright 2022-2025 Faker and other contributors
  *
  * Released under the MIT license
  * https://github.com/faker-js/faker/blob/bbda1d7e2ce0b0bd33a3cc78458a73cd79e3eca0/LICENSE
