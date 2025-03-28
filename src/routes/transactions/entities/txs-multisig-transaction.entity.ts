@@ -1,4 +1,4 @@
-import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import {
   Confirmation,
   MultisigTransaction as DomainMultisigTransaction,

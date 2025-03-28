@@ -1,7 +1,7 @@
 import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import type { Singleton } from '@/domain/chains/entities/singleton.entity';
 import type { Contract } from '@/domain/contracts/entities/contract.entity';
-import type { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
+import type { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Estimation } from '@/domain/estimations/entities/estimation.entity';

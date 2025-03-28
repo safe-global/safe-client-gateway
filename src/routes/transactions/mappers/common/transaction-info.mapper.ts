@@ -4,8 +4,6 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { DataDecodedParameter } from '@/routes/data-decode/entities/data-decoded-parameter.entity';
-import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
 import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
@@ -150,19 +148,8 @@ export class MultisigTransactionInfoMapper {
         );
       }
 
-      const dataDecodedParameters: Array<DataDecodedParameter> | null =
-        transaction.dataDecoded.parameters?.map(
-          (parameter) =>
-            new DataDecodedParameter(
-              parameter.name,
-              parameter.type,
-              parameter.value,
-              parameter.valueDecoded,
-            ),
-        ) ?? null;
-
       return new SettingsChangeTransaction(
-        new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
+        transaction.dataDecoded,
         settingsInfo,
         humanDescription,
       );

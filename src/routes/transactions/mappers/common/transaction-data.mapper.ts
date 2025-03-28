@@ -3,7 +3,7 @@ import isEmpty from 'lodash/isEmpty';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import {

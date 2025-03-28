@@ -1,10 +1,11 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { Accuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { DataDecodedAccuracy } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
 import type {
   DataDecoded,
+  DataDecodedParameter,
   MultisendSchema,
 } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import type { z } from 'zod';
@@ -21,18 +22,16 @@ export function multisendBuilder(): IBuilder<z.infer<typeof MultisendSchema>> {
   );
 }
 
-export function parameterBuilder(): IBuilder<
-  DataDecoded['parameters'][number]
-> {
+export function dataDecodedParameterBuilder(): IBuilder<DataDecodedParameter> {
   const valueDecoded = faker.datatype.boolean()
     ? faker.helpers.multiple(() => multisendBuilder().build(), {
         count: { min: 1, max: 3 },
       })
     : baseDataDecodedBuilder().build();
-  return new Builder<DataDecoded['parameters'][number]>()
+  return new Builder<DataDecodedParameter>()
     .with('name', faker.word.noun())
     .with('type', faker.word.noun())
-    .with('value', faker.string.hexadecimal() as `0x${string}`)
+    .with('value', faker.string.numeric())
     .with('valueDecoded', valueDecoded);
 }
 
@@ -42,7 +41,7 @@ export function baseDataDecodedBuilder(): IBuilder<
   return new Builder<DataDecoded>().with('method', faker.word.noun()).with(
     'parameters',
     // One parameter to prevent call stack exceeded
-    [parameterBuilder().build()],
+    [dataDecodedParameterBuilder().build()],
   );
 }
 
@@ -51,5 +50,5 @@ export function dataDecodedBuilder(): IBuilder<DataDecoded> {
   return new Builder<DataDecoded>()
     .with('method', baseDataDecoded.method)
     .with('parameters', baseDataDecoded.parameters)
-    .with('accuracy', faker.helpers.arrayElement(Accuracy));
+    .with('accuracy', faker.helpers.arrayElement(DataDecodedAccuracy));
 }

@@ -9,7 +9,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { AppModule } from '@/app.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -44,6 +44,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
+  let dataDecoderUrl: string;
   let swapsChainId: string;
   let swapsApiUrl: string;
   let swapsExplorerUrl: string;
@@ -84,6 +85,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    dataDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     const swapApiConfig =
       configurationService.getOrThrow<Record<string, string>>('swaps.api');
     swapsChainId = faker.helpers.objectKey(swapApiConfig);
@@ -153,7 +155,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -299,7 +301,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -414,7 +416,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -484,7 +486,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -554,7 +556,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -626,7 +628,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -724,7 +726,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -868,7 +870,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -991,7 +993,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -1053,7 +1055,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,
@@ -1122,7 +1124,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url }) => {
-        if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+        if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
           return Promise.resolve({
             data: rawify(dataDecoded),
             status: 200,

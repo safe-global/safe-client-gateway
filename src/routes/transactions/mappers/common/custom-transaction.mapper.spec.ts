@@ -3,7 +3,8 @@ import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/mul
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
+  multisendBuilder,
+} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
@@ -124,7 +125,11 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
                 faker.string.alphanumeric(),
                 faker.string.alphanumeric(),
               ])
-              .with('valueDecoded', [{ one: 1 }, { two: 2 }, { three: 3 }])
+              .with('valueDecoded', [
+                multisendBuilder().build(),
+                multisendBuilder().build(),
+                multisendBuilder().build(),
+              ])
               .build(),
           ])
           .build(),

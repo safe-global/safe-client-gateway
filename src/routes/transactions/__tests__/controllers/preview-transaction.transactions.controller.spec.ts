@@ -12,7 +12,8 @@ import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
+  multisendBuilder,
+} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -39,6 +40,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Preview transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let dataDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -67,6 +69,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    dataDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -121,7 +124,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       return Promise.reject(new Error(`Could not match ${url}`));
     });
     networkService.post.mockImplementation(({ url }) => {
-      const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
+      const getDataDecodedUrl = `${dataDecoderUrl}/api/v1/data-decoder`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({
           data: rawify(dataDecodedResponse),
@@ -190,7 +193,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       return Promise.reject(new Error(`Could not match ${url}`));
     });
     networkService.post.mockImplementation(({ url }) => {
-      const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
+      const getDataDecodedUrl = `${dataDecoderUrl}/api/v1/data-decoder`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({
           data: rawify(dataDecodedResponse),
@@ -258,7 +261,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       return Promise.reject(new Error(`Could not match ${url}`));
     });
     networkService.post.mockImplementation(({ url }) => {
-      const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
+      const getDataDecodedUrl = `${dataDecoderUrl}/api/v1/data-decoder`;
       if (url === getDataDecodedUrl) {
         return Promise.reject({ error: 'Data cannot be decoded' });
       }
@@ -311,10 +314,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       .with('parameters', [
         dataDecodedParameterBuilder()
           .with('valueDecoded', [
-            {
-              operation: 0,
-              data: faker.string.hexadecimal({ length: 32 }),
-            },
+            multisendBuilder().with('operation', 0).build(),
           ])
           .build(),
       ])
@@ -338,7 +338,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
       return Promise.reject(new Error(`Could not match ${url}`));
     });
     networkService.post.mockImplementation(({ url }) => {
-      const getDataDecodedUrl = `${chainResponse.transactionService}/api/v1/data-decoder/`;
+      const getDataDecodedUrl = `${dataDecoderUrl}/api/v1/data-decoder`;
       if (url === getDataDecodedUrl) {
         return Promise.resolve({
           data: rawify(dataDecodedResponse),

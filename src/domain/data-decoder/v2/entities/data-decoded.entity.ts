@@ -19,27 +19,29 @@ export const MultisendSchema = z.object({
 export const ValueDecodedSchema = z.union([
   z.array(z.lazy(() => MultisendSchema)),
   z.lazy(() => BaseDataDecodedSchema),
+  z.null(),
 ]);
 
-export const ParameterSchema = z.object({
+export const DataDecodedParameterSchema = z.object({
   name: z.string(),
   type: z.string(),
-  value: HexSchema,
-  valueDecoded: ValueDecodedSchema.nullable(),
+  // z.unknown() makes the property optional but it should be defined
+  value: z.custom<Required<unknown>>(),
+  valueDecoded: ValueDecodedSchema.optional(),
 });
 
 export const BaseDataDecodedSchemaShape = {
   method: z.string(),
-  parameters: z.array(z.lazy(() => ParameterSchema)),
+  parameters: z.array(z.lazy(() => DataDecodedParameterSchema)).nullable(),
 };
 
 // We need explicitly define ZodType due to recursion
 export const BaseDataDecodedSchema: z.ZodType<{
   method: string;
-  parameters: Array<z.infer<typeof ParameterSchema>>;
+  parameters: Array<z.infer<typeof DataDecodedParameterSchema>> | null;
 }> = z.lazy(() => z.object(BaseDataDecodedSchemaShape));
 
-export const Accuracy = [
+export const DataDecodedAccuracy = [
   'FULL_MATCH', // Matched contract and chain ID
   'PARTIAL_MATCH', // Matched contract
   'ONLY_FUNCTION_MATCH', // Matched function from another contract
@@ -48,8 +50,14 @@ export const Accuracy = [
 
 export const DataDecodedSchema = z.lazy(() =>
   z.object(BaseDataDecodedSchemaShape).extend({
-    accuracy: z.enum([...Accuracy, 'UNKNOWN']).catch('UNKNOWN'),
+    accuracy: z.enum([...DataDecodedAccuracy, 'UNKNOWN']).catch('UNKNOWN'),
   }),
 );
+
+export type MultiSend = z.infer<typeof MultisendSchema>;
+
+export type DataDecodedParameter = z.infer<typeof DataDecodedParameterSchema>;
+
+export type BaseDataDecoded = z.infer<typeof BaseDataDecodedSchema>;
 
 export type DataDecoded = z.infer<typeof DataDecodedSchema>;

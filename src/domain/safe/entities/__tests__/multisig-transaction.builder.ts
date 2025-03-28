@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Builder } from '@/__tests__/builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import {
   confirmationBuilder,
   toJson as confirmationToJson,
