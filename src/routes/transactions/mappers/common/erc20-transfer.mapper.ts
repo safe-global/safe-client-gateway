@@ -20,7 +20,10 @@ export class Erc20TransferMapper {
   async mapErc20Transfer(
     token: Erc20Token,
     chainId: string,
-    transaction: MultisigTransaction | ModuleTransaction,
+    transaction: Pick<
+      MultisigTransaction | ModuleTransaction,
+      'safe' | 'dataDecoded'
+    >,
     humanDescription: string | null,
   ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;

@@ -20,7 +20,10 @@ export class Erc721TransferMapper {
   async mapErc721Transfer(
     token: Erc721Token,
     chainId: string,
-    transaction: MultisigTransaction | ModuleTransaction,
+    transaction: Pick<
+      MultisigTransaction | ModuleTransaction,
+      'safe' | 'dataDecoded'
+    >,
     humanDescription: string | null,
   ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;

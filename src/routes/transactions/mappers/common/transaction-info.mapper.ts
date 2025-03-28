@@ -155,7 +155,7 @@ export class MultisigTransactionInfoMapper {
       );
     }
 
-    if (this.isValidTokenTransfer(transaction)) {
+    if (this.isValidTokenTransfer(transaction.safe, transaction.dataDecoded)) {
       const token = await this.tokenRepository
         .getToken({ chainId, address: transaction.to })
         .catch(() => null);
@@ -397,45 +397,42 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
-  private isValidTokenTransfer(
-    transaction: MultisigTransaction | ModuleTransaction,
+  public isValidTokenTransfer(
+    safe: `0x${string}`,
+    dataDecoded: (MultisigTransaction | ModuleTransaction)['dataDecoded'],
   ): boolean {
     return (
-      (this.isErc20Transfer(transaction) ||
-        this.isErc721Transfer(transaction)) &&
-      this.isSafeSenderOrReceiver(transaction)
+      (this.isErc20Transfer(dataDecoded) ||
+        this.isErc721Transfer(dataDecoded)) &&
+      this.isSafeSenderOrReceiver(safe, dataDecoded)
     );
   }
 
   private isErc20Transfer(
-    transaction: MultisigTransaction | ModuleTransaction,
+    dataDecoded: (MultisigTransaction | ModuleTransaction)['dataDecoded'],
   ): boolean {
-    const { dataDecoded } = transaction;
     return this.ERC20_TRANSFER_METHODS.some(
       (method) => method === dataDecoded?.method,
     );
   }
 
   private isErc721Transfer(
-    transaction: MultisigTransaction | ModuleTransaction,
+    dataDecoded: (MultisigTransaction | ModuleTransaction)['dataDecoded'],
   ): boolean {
-    const { dataDecoded } = transaction;
     return this.ERC721_TRANSFER_METHODS.some(
       (method) => method === dataDecoded?.method,
     );
   }
 
   private isSafeSenderOrReceiver(
-    transaction: MultisigTransaction | ModuleTransaction,
+    safe: `0x${string}`,
+    dataDecoded: (MultisigTransaction | ModuleTransaction)['dataDecoded'],
   ): boolean {
-    const { dataDecoded } = transaction;
     if (!dataDecoded) return false;
     return (
       this.TRANSFER_METHOD == dataDecoded.method ||
-      this.dataDecodedParamHelper.getFromParam(dataDecoded, '') ===
-        transaction.safe ||
-      this.dataDecodedParamHelper.getToParam(dataDecoded, '') ===
-        transaction.safe
+      this.dataDecodedParamHelper.getFromParam(dataDecoded, '') === safe ||
+      this.dataDecodedParamHelper.getToParam(dataDecoded, '') === safe
     );
   }
 }

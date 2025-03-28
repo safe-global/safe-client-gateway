@@ -15,7 +15,10 @@ export class NativeCoinTransferMapper {
 
   async mapNativeCoinTransfer(
     chainId: string,
-    transaction: MultisigTransaction | ModuleTransaction,
+    transaction: Pick<
+      MultisigTransaction | ModuleTransaction,
+      'to' | 'safe' | 'value'
+    >,
     humanDescription: string | null,
   ): Promise<TransferTransactionInfo> {
     const recipient = await this.addressInfoHelper.getOrDefault(
