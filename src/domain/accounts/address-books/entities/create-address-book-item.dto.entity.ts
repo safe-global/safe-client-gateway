@@ -1,9 +1,9 @@
-import { AddressBookItemNameSchema } from '@/domain/accounts/address-books/entities/schemas/address-book-item-name.schema';
+import { NameSchema } from '@/domain/common/entities/name.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 
 export const CreateAddressBookItemDtoSchema = z.object({
-  name: AddressBookItemNameSchema,
+  name: NameSchema,
   address: AddressSchema,
 });
 

@@ -6,6 +6,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Space } from '@/domain/spaces/entities/space.entity';
 import type { User } from '@/domain/users/entities/user.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NameSchema } from '@/domain/common/entities/name.schema';
 
 export enum MemberRole {
   ADMIN = 1,
@@ -31,7 +32,7 @@ export const MemberSchema: z.ZodType<
 > = RowSchema.extend({
   user: z.lazy(() => UserSchema),
   space: z.lazy(() => SpaceSchema),
-  name: z.string(),
+  name: NameSchema,
   role: z.enum(getStringEnumKeys(MemberRole)),
   status: z.enum(getStringEnumKeys(MemberStatus)),
   invitedBy: AddressSchema.nullable() as z.ZodType<`0x${string}` | null>,
