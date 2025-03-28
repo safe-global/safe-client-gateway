@@ -82,20 +82,9 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
   let safeConfigUrl: string;
   let queuesApiService: jest.MockedObjectDeep<IQueuesApiService>;
 
-  const defaultConfiguration = configuration();
-  const testConfiguration = (): ReturnType<typeof configuration> => {
-    return {
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        pushNotifications: true,
-      },
-    };
-  };
-
   async function initApp(): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
+      imports: [AppModule.register(configuration)],
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
@@ -2226,20 +2215,9 @@ describe('Hook Events for Notifications (Unit) pt. 2', () => {
   let safeConfigUrl: string;
   let queuesApiService: jest.MockedObjectDeep<IQueuesApiService>;
 
-  const defaultConfiguration = configuration();
-  const testConfiguration = (): ReturnType<typeof configuration> => {
-    return {
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        pushNotifications: true,
-      },
-    };
-  };
-
   async function initApp(): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
+      imports: [AppModule.register(configuration)],
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)

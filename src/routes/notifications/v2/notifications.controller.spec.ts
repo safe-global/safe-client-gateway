@@ -66,7 +66,6 @@ describe('Notifications Controller V2 (Unit)', () => {
         ...defaultConfiguration.features,
         auth: true,
         accounts: true,
-        pushNotifications: true,
       },
     });
 
