@@ -141,37 +141,36 @@ export class CoingeckoApi implements IPricesApi {
       if (memoryItem != null) {
         this.logMemoryHit(cacheDir.key);
         return memoryItem;
-      } else {
-        const url = `${this.baseUrl}/simple/price`;
-        const result = await this.dataSource
-          .get<AssetPrice>({
-            cacheDir,
-            url,
-            networkRequest: {
-              params: {
-                vs_currencies: lowerCaseFiatCode,
-                ids: nativeCoinId,
-              },
-              ...(this.apiKey && {
-                headers: {
-                  [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
-                },
-              }),
-            },
-            notFoundExpireTimeSeconds:
-              this.defaultNotFoundExpirationTimeSeconds,
-            expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
-          })
-          .then(AssetPriceSchema.parse);
-        // TODO: Change to Raw when cache service is migrated
-        const nativeCoinPrice = result?.[nativeCoinId]?.[lowerCaseFiatCode];
-        await this.inMemoryCache.set(
-          this.getMemoryKey(cacheDir),
-          nativeCoinPrice,
-          this.nativeCoinPricesTtlSeconds * 1_000,
-        );
-        return nativeCoinPrice;
       }
+      this.logMemoryMiss(cacheDir.key);
+      const url = `${this.baseUrl}/simple/price`;
+      const result = await this.dataSource
+        .get<AssetPrice>({
+          cacheDir,
+          url,
+          networkRequest: {
+            params: {
+              vs_currencies: lowerCaseFiatCode,
+              ids: nativeCoinId,
+            },
+            ...(this.apiKey && {
+              headers: {
+                [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+              },
+            }),
+          },
+          notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+          expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
+        })
+        .then(AssetPriceSchema.parse);
+      // TODO: Change to Raw when cache service is migrated
+      const nativeCoinPrice = result?.[nativeCoinId]?.[lowerCaseFiatCode];
+      await this.inMemoryCache.set(
+        this.getMemoryKey(cacheDir),
+        nativeCoinPrice,
+        this.nativeCoinPricesTtlSeconds * 1_000,
+      );
+      return nativeCoinPrice;
     } catch (error) {
       // Error at this level are logged out, but not thrown to the upper layers.
       // The service won't throw an error if a single coin price retrieval fails.
