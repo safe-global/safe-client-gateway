@@ -5,6 +5,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Member } from '@/domain/users/entities/member.entity';
 import { SpaceSafeSchema } from '@/domain/spaces/entities/space-safe.entity';
 import type { Space as DbSpace } from '@/datasources/spaces/entities/space.entity.db';
+import { NameSchema } from '@/domain/common/entities/name.schema';
 
 export enum SpaceStatus {
   ACTIVE = 1,
@@ -21,7 +22,7 @@ export const SpaceSchema: z.ZodType<
     safes?: DbSpace['safes'];
   }
 > = RowSchema.extend({
-  name: z.string().max(255),
+  name: NameSchema,
   status: z.enum(getStringEnumKeys(SpaceStatus)),
   members: z.array(z.lazy(() => MemberSchema)),
   safes: z.array(z.lazy(() => SpaceSafeSchema)).optional(),

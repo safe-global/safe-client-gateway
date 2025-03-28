@@ -28,7 +28,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
         code: 'too_small',
         inclusive: true,
         exact: false,
-        message: 'Address book entry names must be at least 3 characters long',
+        message: 'Names must be at least 3 characters long',
         minimum: 3,
         path: ['name'],
         type: 'string',
@@ -71,8 +71,8 @@ describe('CreateAddressBookItemDtoSchema', () => {
         code: 'too_big',
         inclusive: true,
         exact: false,
-        message: 'Address book entry names must be at most 50 characters long',
-        maximum: 50,
+        message: 'Names must be at most 20 characters long',
+        maximum: 20,
         path: ['name'],
         type: 'string',
       },
@@ -92,7 +92,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
       {
         code: 'invalid_string',
         message:
-          'Address book entry names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
+          'Names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
         path: ['name'],
         validation: 'regex',
       },
