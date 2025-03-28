@@ -1963,6 +1963,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@keyv/serialize@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "@keyv/serialize@npm:1.0.3"
+  dependencies:
+    buffer: "npm:^6.0.3"
+  checksum: 10/d6a9194dd781bc26cc4d55f392d843810c1fdc0da81e69203e633cb289fc0a8edc8bc6466f66c4cbb55da0a5b405e89f14a68b48d6e73919ae82f8249fb5e444
+  languageName: node
+  linkType: hard
+
 "@lukeed/csprng@npm:^1.0.0":
   version: 1.1.0
   resolution: "@lukeed/csprng@npm:1.1.0"
@@ -1974,6 +1983,19 @@ __metadata:
   version: 0.15.1
   resolution: "@microsoft/tsdoc@npm:0.15.1"
   checksum: 10/1a92612883088fe184dba596e7ba7a0daef0e6981caeca22bad6ad551d2247294f12e368537d0d8192525cf5743f7f15fcc2ad7b3b849f26a09a15ffdd89fd0c
+  languageName: node
+  linkType: hard
+
+"@nestjs/cache-manager@npm:3.0.1":
+  version: 3.0.1
+  resolution: "@nestjs/cache-manager@npm:3.0.1"
+  peerDependencies:
+    "@nestjs/common": ^9.0.0 || ^10.0.0 || ^11.0.0
+    "@nestjs/core": ^9.0.0 || ^10.0.0 || ^11.0.0
+    cache-manager: ">=6"
+    keyv: ">=5"
+    rxjs: ^7.8.1
+  checksum: 10/4e34d187f749f6c1068eb85966d17304cea1129f2f9edb176511096dc93e42bb45ea4921eb999ebd5c0db3212f4c49b34d1c762e84e3e356495fdae7dd063cac
   languageName: node
   linkType: hard
 
@@ -4430,6 +4452,15 @@ __metadata:
     tar: "npm:^6.1.11"
     unique-filename: "npm:^3.0.0"
   checksum: 10/ca2f7b2d3003f84d362da9580b5561058ccaecd46cba661cbcff0375c90734b610520d46b472a339fd032d91597ad6ed12dde8af81571197f3c9772b5d35b104
+  languageName: node
+  linkType: hard
+
+"cache-manager@npm:6.4.1":
+  version: 6.4.1
+  resolution: "cache-manager@npm:6.4.1"
+  dependencies:
+    keyv: "npm:^5.3.1"
+  checksum: 10/430e77aa1e5dd9f64c06cead05cf2ee5c9e9633401c1b57571a90d686a72b42d766d0ed867235fa5d2c7b0b03a993c955fa733d50e24c3ebdb9ac50f8f4cc795
   languageName: node
   linkType: hard
 
@@ -7175,6 +7206,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"keyv@npm:^5.3.1":
+  version: 5.3.2
+  resolution: "keyv@npm:5.3.2"
+  dependencies:
+    "@keyv/serialize": "npm:^1.0.3"
+  checksum: 10/2f48a2dea4bb82bfedede30697d1fca290d046a3cd5399446f2dd2965e0d09f8d2407670650325199f44d356872367603728ae3c1206e0ed7cd1967cb72e34ee
+  languageName: node
+  linkType: hard
+
 "kleur@npm:^3.0.3":
   version: 3.0.3
   resolution: "kleur@npm:3.0.3"
@@ -8683,6 +8723,7 @@ __metadata:
     "@aws-sdk/client-s3": "npm:3.758.0"
     "@faker-js/faker": "npm:9.3.0"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.2.0"
+    "@nestjs/cache-manager": "npm:3.0.1"
     "@nestjs/cli": "npm:11.0.5"
     "@nestjs/common": "npm:11.0.11"
     "@nestjs/config": "npm:4.0.0"
@@ -8709,6 +8750,7 @@ __metadata:
     amqp-connection-manager: "npm:4.1.14"
     amqplib: "npm:0.10.5"
     aws-sdk-client-mock: "npm:4.1.0"
+    cache-manager: "npm:6.4.1"
     cookie-parser: "npm:1.4.7"
     eslint: "npm:9.22.0"
     eslint-config-prettier: "npm:10.0.1"

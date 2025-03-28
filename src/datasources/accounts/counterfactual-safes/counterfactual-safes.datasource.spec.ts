@@ -9,6 +9,7 @@ import { createCounterfactualSafeDtoBuilder } from '@/domain/accounts/counterfac
 import { accountBuilder } from '@/domain/accounts/entities/__tests__/account.builder';
 import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/create-account.dto.builder';
 import type { Account } from '@/domain/accounts/entities/account.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
@@ -284,12 +285,12 @@ describe('CounterfactualSafesDatasource tests', () => {
       expect(JSON.parse(cacheContent as string)).toHaveLength(1);
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: `${counterfactualSafe.chain_id}_counterfactual_safe_${counterfactualSafe.predicted_address}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: `${counterfactualSafe.chain_id}_counterfactual_safe_${counterfactualSafe.predicted_address}`,
         field: '',
       });
@@ -322,12 +323,12 @@ describe('CounterfactualSafesDatasource tests', () => {
       expect(await fakeCacheService.hGet(cacheDir)).toBeUndefined();
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: `${counterfactualSafe.chainId}_counterfactual_safe_${counterfactualSafe.predictedAddress}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: `${counterfactualSafe.chainId}_counterfactual_safe_${counterfactualSafe.predictedAddress}`,
         field: '',
       });
@@ -396,12 +397,12 @@ describe('CounterfactualSafesDatasource tests', () => {
       expect(JSON.parse(cacheContent as string)).toHaveLength(2);
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: `counterfactual_safes_${account.address}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: `counterfactual_safes_${account.address}`,
         field: '',
       });

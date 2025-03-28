@@ -1,5 +1,6 @@
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { InternalServerErrorException } from '@nestjs/common';
@@ -30,10 +31,10 @@ export async function getFromCacheOrExecuteAndCache<
   const { key, field } = cacheDir;
   const cached = await cacheService.hGet(cacheDir);
   if (cached != null) {
-    loggingService.debug({ type: 'cache_hit', key, field });
+    loggingService.debug({ type: LogType.CacheHit, key, field });
     return JSON.parse(cached);
   }
-  loggingService.debug({ type: 'cache_miss', key, field });
+  loggingService.debug({ type: LogType.CacheMiss, key, field });
 
   // log & hide database errors
   const result = await query.catch((e) => {

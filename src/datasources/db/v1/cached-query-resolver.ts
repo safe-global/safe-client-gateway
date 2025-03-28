@@ -4,6 +4,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import {
@@ -38,10 +39,10 @@ export class CachedQueryResolver implements ICachedQueryResolver {
     const { key, field } = args.cacheDir;
     const cached = await this.cacheService.hGet(args.cacheDir);
     if (cached != null) {
-      this.loggingService.debug({ type: 'cache_hit', key, field });
+      this.loggingService.debug({ type: LogType.CacheHit, key, field });
       return JSON.parse(cached);
     }
-    this.loggingService.debug({ type: 'cache_miss', key, field });
+    this.loggingService.debug({ type: LogType.CacheMiss, key, field });
 
     try {
       const result = await args.query.execute();
