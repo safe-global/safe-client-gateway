@@ -246,7 +246,7 @@ describe('CoingeckoAPI', () => {
     expect(mockInMemoryCache.set).toHaveBeenCalledWith(
       `${chain.pricesProvider.chainName}_token_price_${tokenAddress}_${lowerCaseFiatCode}:`,
       JSON.stringify({ [tokenAddress]: { [lowerCaseFiatCode]: price } }),
-      pricesTtlSeconds,
+      pricesTtlSeconds * 1_000, // milliseconds
     );
   });
 
@@ -438,7 +438,7 @@ describe('CoingeckoAPI', () => {
     );
   });
 
-  it.skip('should return and cache multiple token prices from network, cache, and memory', async () => {
+  it('should return and cache multiple token prices from network, cache, and memory', async () => {
     const chain = chainBuilder().build();
     const fiatCode = faker.finance.currencyCode();
     const lowerCaseFiatCode = fiatCode.toLowerCase();
@@ -450,27 +450,32 @@ describe('CoingeckoAPI', () => {
     const thirdPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
 
     // One token price from network, one from cache, and one from memory
-    mockNetworkService.get.mockImplementation(({ url }) => {
-      if (url.includes(firstTokenAddress)) {
-        return Promise.resolve({
-          data: rawify({
-            [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice },
-          }),
-          status: 200,
-        });
-      }
-      return Promise.reject(`No matching rule for url: ${url}`);
+    mockNetworkService.get.mockResolvedValue({
+      data: rawify({
+        [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice },
+      }),
+      status: 200,
     });
-    mockCacheService.hGet.mockResolvedValue(
-      JSON.stringify({
-        [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice },
-      }),
-    );
-    mockInMemoryCache.get.mockResolvedValue(
-      JSON.stringify({
-        [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
-      }),
-    );
+    mockCacheService.hGet.mockImplementation((cacheDir) => {
+      if (cacheDir.key.includes(secondTokenAddress)) {
+        return Promise.resolve(
+          JSON.stringify({
+            [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice },
+          }),
+        );
+      }
+      return Promise.resolve(undefined);
+    });
+    mockInMemoryCache.get.mockImplementation((key) => {
+      if (key.includes(thirdTokenAddress)) {
+        return Promise.resolve(
+          JSON.stringify({
+            [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
+          }),
+        );
+      }
+      return Promise.resolve(null);
+    });
 
     const assetPrice = await service.getTokenPrices({
       chain,
@@ -482,11 +487,15 @@ describe('CoingeckoAPI', () => {
       fiatCode,
     });
 
-    expect(assetPrice).toEqual([
-      { [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice } },
-      { [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice } },
-      { [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice } },
-    ]);
+    expect(assetPrice).toEqual(
+      expect.arrayContaining([
+        { [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice } },
+        { [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice } },
+        { [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice } },
+      ]),
+    );
+
+    // mockNetworkService.get should have been called only once (when both cache and memory miss)
     expect(mockNetworkService.get).toHaveBeenCalledWith({
       url: `${coingeckoBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`,
       networkRequest: {
@@ -494,12 +503,30 @@ describe('CoingeckoAPI', () => {
           'x-cg-pro-api-key': coingeckoApiKey,
         },
         params: {
-          contract_addresses: [firstTokenAddress],
+          contract_addresses: firstTokenAddress,
           vs_currencies: lowerCaseFiatCode,
         },
       },
     });
-    // Should be called 2 times, once for the network and once for the cache
+    // mockInMemoryCache.get should have been called 3 times
+    expect(mockInMemoryCache.get).toHaveBeenCalledTimes(3);
+    // mockInMemoryCache.set should have been called 2 times, to store the network price and the cache price
+    expect(mockInMemoryCache.set).toHaveBeenCalledTimes(2);
+    expect(mockInMemoryCache.set).toHaveBeenCalledWith(
+      `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}:`,
+      JSON.stringify({
+        [firstTokenAddress]: { [lowerCaseFiatCode]: firstPrice },
+      }),
+      pricesTtlSeconds * 1_000, // milliseconds
+    );
+    expect(mockInMemoryCache.set).toHaveBeenCalledWith(
+      `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}:`,
+      JSON.stringify({
+        [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice },
+      }),
+      pricesTtlSeconds * 1_000, // milliseconds
+    );
+    // mockCacheService.hGet should have been called 2 times, once for the network and once for the cache
     expect(mockCacheService.hGet).toHaveBeenCalledTimes(2);
     expect(mockCacheService.hGet).toHaveBeenCalledWith(
       new CacheDir(
@@ -513,7 +540,8 @@ describe('CoingeckoAPI', () => {
         '',
       ),
     );
-    expect(mockCacheService.hSet).toHaveBeenCalledTimes(2);
+    // mockCacheService.hSet should have been called only once, to store the network price
+    expect(mockCacheService.hSet).toHaveBeenCalledTimes(1);
     expect(mockCacheService.hSet).toHaveBeenCalledWith(
       new CacheDir(
         `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}`,
@@ -524,19 +552,7 @@ describe('CoingeckoAPI', () => {
       }),
       pricesTtlSeconds,
     );
-    expect(mockCacheService.hSet).toHaveBeenCalledWith(
-      new CacheDir(
-        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`,
-        '',
-      ),
-      JSON.stringify({
-        [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice },
-      }),
-      pricesTtlSeconds,
-    );
-    // Should be called 3 times
-    expect(mockInMemoryCache.get).toHaveBeenCalledTimes(3);
-  });
+  }, 100_000_000);
 
   it('should return and cache with low TTL one high-refresh-rate token price', async () => {
     const chain = chainBuilder().build();

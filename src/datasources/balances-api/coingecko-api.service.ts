@@ -352,7 +352,7 @@ export class CoingeckoApi implements IPricesApi {
         await this.inMemoryCache.set(
           this.getMemoryKey(cacheDir),
           JSON.stringify(price),
-          this._getTtl(validPrice, tokenAddress),
+          this._getTtl(validPrice, tokenAddress) * 1_000,
         );
         return price;
       }),
