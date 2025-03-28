@@ -82,7 +82,7 @@ describe('MembersController', () => {
     const configService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
-    maxInvites = configService.getOrThrow('users.maxInvites');
+    maxInvites = configService.getOrThrow('spaces.maxInvites');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -340,7 +340,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -755,13 +755,13 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
     });
 
-    it('should throw a 404 if the user space does not exist', async () => {
+    it('should throw a 404 if the member does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
@@ -809,7 +809,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -866,7 +866,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1055,7 +1055,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1106,7 +1106,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1157,7 +1157,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(404)
         .expect({
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1223,6 +1223,8 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'ACTIVE',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                 },
               },
               {
@@ -1236,6 +1238,8 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                 },
               },
               {
@@ -1249,6 +1253,8 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                 },
               },
             ],
@@ -1355,22 +1361,21 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401)
         .expect({
-          message: 'The user is not an active member of the organization.', // TODO: (compatibility) change to 'The user is not an active member of the space.'
+          message: 'The user is not an active member of the space.',
           error: 'Unauthorized',
           statusCode: 401,
         });
     });
 
-    it('should throw a 401 if the user is not an active member of the space', async () => {
+    it('should throw a 404 if the user is not an active member of the space', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const spaceName = faker.word.noun();
-      const memberAddress = getAddress(faker.finance.ethereumAddress());
-      const memberAuthPayloadDto = authPayloadDtoBuilder()
-        .with('signer_address', memberAddress)
+      const nonMemberAddress = getAddress(faker.finance.ethereumAddress());
+      const nonMemberAuthPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', nonMemberAddress)
         .build();
-      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const memberName = faker.person.firstName();
+      const memberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1385,27 +1390,13 @@ describe('MembersController', () => {
       const spaceId = createSpaceResponse.body.id;
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
-        .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({
-          users: [
-            {
-              role: 'MEMBER',
-              address: memberAddress,
-              name: memberName,
-            },
-          ],
-        })
-        .expect(201);
-
-      await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
-        .expect(401)
+        .expect(404)
         .expect({
-          message: 'The user is not an active member of the organization.', // TODO: (compatibility) change to 'The user is not an active member of the space.'
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User not found.',
+          error: 'Not Found',
+          statusCode: 404,
         });
     });
   });
@@ -1736,7 +1727,7 @@ describe('MembersController', () => {
         .send({ role: 'ADMIN' })
         .expect(404)
         .expect({
-          message: 'User organization not found.', // TODO: (compatibility) change to 'Member not found.'
+          message: 'Member not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1847,7 +1838,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'No user organizations found.', // TODO: (compatibility) change to 'No members found.'
+          message: 'No members found.',
           error: 'Not Found',
           statusCode: 404,
         });

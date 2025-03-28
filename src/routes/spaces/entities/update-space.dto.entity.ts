@@ -1,6 +1,6 @@
-import { Organization as Space } from '@/datasources/organizations/entities/organizations.entity.db';
+import { Space } from '@/datasources/spaces/entities/space.entity.db';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { OrganizationStatus as SpaceStatus } from '@/domain/organizations/entities/organization.entity';
+import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
 

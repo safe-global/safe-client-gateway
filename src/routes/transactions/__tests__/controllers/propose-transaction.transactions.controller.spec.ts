@@ -1023,7 +1023,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           refundReceiver: transaction.refundReceiver,
           nonce: transaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'PROPOSAL',
       });
     });

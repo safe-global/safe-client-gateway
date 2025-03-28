@@ -6,6 +6,9 @@ import {
 } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 
 export class ChangeMasterCopy extends SettingsChange {
+  @ApiProperty({ enum: [SettingsChangeType.ChangeMasterCopy] })
+  override type!: SettingsChangeType.ChangeMasterCopy;
+
   @ApiProperty()
   implementation: AddressInfo;
 

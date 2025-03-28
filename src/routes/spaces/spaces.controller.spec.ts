@@ -31,11 +31,11 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { faker } from '@faker-js/faker/.';
-import { OrganizationStatus as SpaceStatus } from '@/domain/organizations/entities/organization.entity';
+import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import {
-  UserOrganizationRole as MemberRole,
-  UserOrganizationStatus as MemberStatus,
-} from '@/domain/users/entities/user-organization.entity';
+  MemberRole,
+  MemberStatus,
+} from '@/domain/users/entities/member.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 
@@ -307,6 +307,8 @@ describe('SpacesController', () => {
               id: expect.any(Number),
               name: firstSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
               members: [
                 {
                   id: expect.any(Number),
@@ -319,6 +321,8 @@ describe('SpacesController', () => {
                   user: {
                     id: expect.any(Number),
                     status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                    createdAt: expect.any(String),
+                    updatedAt: expect.any(String),
                   },
                 },
               ],
@@ -327,6 +331,8 @@ describe('SpacesController', () => {
               id: expect.any(Number),
               name: secondSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+              createdAt: expect.any(String),
+              updatedAt: expect.any(String),
               members: [
                 {
                   id: expect.any(Number),
@@ -339,6 +345,8 @@ describe('SpacesController', () => {
                   user: {
                     id: expect.any(Number),
                     status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                    createdAt: expect.any(String),
+                    updatedAt: expect.any(String),
                   },
                 },
               ],
@@ -416,6 +424,8 @@ describe('SpacesController', () => {
             id: spaceId,
             name: spaceName,
             status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+            createdAt: expect.any(String),
+            updatedAt: expect.any(String),
             members: [
               {
                 id: expect.any(Number),
@@ -428,10 +438,130 @@ describe('SpacesController', () => {
                 user: {
                   id: userId,
                   status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                  createdAt: expect.any(String),
+                  updatedAt: expect.any(String),
                 },
               },
             ],
           });
+        });
+    });
+
+    it('Should return a space by its id for an invited member', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const spaceName = faker.company.name();
+
+      const createUserResponse = await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(201);
+      const userId = createUserResponse.body.id;
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              name: faker.person.firstName(),
+              address: memberAuthPayloadDto.signer_address,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual(
+            expect.objectContaining({
+              id: spaceId,
+              name: spaceName,
+              status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+              members: expect.arrayContaining([
+                expect.objectContaining({
+                  invitedBy: null,
+                  status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
+                  role: getEnumKey(MemberRole, MemberRole.ADMIN),
+                  user: expect.objectContaining({
+                    id: userId,
+                    status: getEnumKey(UserStatus, UserStatus.ACTIVE),
+                  }),
+                }),
+                expect.objectContaining({
+                  invitedBy: adminAuthPayloadDto.signer_address,
+                  status: getEnumKey(MemberStatus, MemberStatus.INVITED),
+                  role: getEnumKey(MemberRole, MemberRole.MEMBER),
+                  user: expect.objectContaining({
+                    status: getEnumKey(UserStatus, UserStatus.PENDING),
+                  }),
+                }),
+              ]),
+            }),
+          );
+        });
+    });
+
+    it('Should return a 404 if the user declined the membership', async () => {
+      const adminAuthPayloadDto = authPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const memberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+      const spaceName = faker.company.name();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              name: faker.person.firstName(),
+              address: memberAuthPayloadDto.signer_address,
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/decline`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(201)
+        .expect({});
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'Space not found.',
+          error: 'Not Found',
         });
     });
 
@@ -451,7 +581,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Organization not found.', // TODO: (compatibility) change to 'Space not found.'
+          message: 'Space not found.',
           error: 'Not Found',
         });
     });

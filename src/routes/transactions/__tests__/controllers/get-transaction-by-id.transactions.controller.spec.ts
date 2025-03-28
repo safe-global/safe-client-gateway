@@ -1103,7 +1103,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           refundReceiver: multisigTransaction.refundReceiver,
           nonce: multisigTransaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });

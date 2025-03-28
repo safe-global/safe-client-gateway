@@ -12,6 +12,7 @@ const fetchClientMock: jest.MockedFunction<FetchClient> =
 
 const loggingService = {
   debug: jest.fn(),
+  info: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 
 const loggingServiceMock = jest.mocked(loggingService);
@@ -30,9 +31,16 @@ describe('FetchNetworkService', () => {
 
       await target.get({ url });
 
+      const expectedUrl = `${url}/`;
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
         method: 'GET',
+      });
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'GET',
+        url: expectedUrl,
       });
     });
 
@@ -47,16 +55,20 @@ describe('FetchNetworkService', () => {
 
       await target.get({ url, networkRequest });
 
+      const expectedUrl = `${url}/?some_query_param=query_param`;
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(
-        `${url}/?some_query_param=query_param`,
-        {
-          method: 'GET',
-          headers: {
-            test: 'value',
-          },
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
+        method: 'GET',
+        headers: {
+          test: 'value',
         },
-      );
+      });
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'GET',
+        url: expectedUrl,
+      });
     });
 
     it(`get should remove empty strings, null and undefined query params from the request`, async () => {
@@ -77,13 +89,17 @@ describe('FetchNetworkService', () => {
 
       await target.get({ url, networkRequest });
 
+      const expectedUrl = `${url}/?boolean=true&falsy_boolean=false&integer=1&falsy_integer=0&string=string`;
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(
-        `${url}/?boolean=true&falsy_boolean=false&integer=1&falsy_integer=0&string=string`,
-        {
-          method: 'GET',
-        },
-      );
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
+        method: 'GET',
+      });
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'GET',
+        url: expectedUrl,
+      });
     });
 
     it(`get logs response error`, async () => {
@@ -100,9 +116,15 @@ describe('FetchNetworkService', () => {
 
       await expect(target.get({ url })).rejects.toThrow(error);
 
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'GET',
+        url: `${url}/`,
+      });
       expect(loggingService.debug).toHaveBeenCalledTimes(1);
       expect(loggingService.debug).toHaveBeenCalledWith({
-        type: 'external_request',
+        type: 'EXTERNAL_REQUEST',
         protocol: error.url.protocol,
         target_host: error.url.host,
         path: error.url.pathname,
@@ -120,13 +142,20 @@ describe('FetchNetworkService', () => {
 
       await target.post({ url, data });
 
+      const expectedUrl = `${url}/`;
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
         method: 'POST',
         body: JSON.stringify(data),
         headers: {
           'Content-Type': 'application/json',
         },
+      });
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'POST',
+        url: expectedUrl,
       });
     });
 
@@ -142,18 +171,22 @@ describe('FetchNetworkService', () => {
 
       await target.post({ url, data, networkRequest });
 
+      const expectedUrl = `${url}/?some_query_param=query_param`;
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(
-        `${url}/?some_query_param=query_param`,
-        {
-          method: 'POST',
-          headers: {
-            test: 'value',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
+        method: 'POST',
+        headers: {
+          test: 'value',
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(data),
+      });
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'POST',
+        url: expectedUrl,
+      });
     });
 
     it(`post logs response error`, async () => {
@@ -170,9 +203,15 @@ describe('FetchNetworkService', () => {
 
       await expect(target.post({ url, data: {} })).rejects.toThrow(error);
 
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'POST',
+        url: `${url}/`,
+      });
       expect(loggingService.debug).toHaveBeenCalledTimes(1);
       expect(loggingService.debug).toHaveBeenCalledWith({
-        type: 'external_request',
+        type: 'EXTERNAL_REQUEST',
         protocol: error.url.protocol,
         target_host: error.url.host,
         path: error.url.pathname,
@@ -193,6 +232,12 @@ describe('FetchNetworkService', () => {
       expect(fetchClientMock).toHaveBeenCalledWith(`${url}/`, {
         method: 'DELETE',
       });
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'DELETE',
+        url: `${url}/`,
+      });
     });
 
     it(`delete calls fetch with request`, async () => {
@@ -207,18 +252,22 @@ describe('FetchNetworkService', () => {
 
       await target.delete({ url, data, networkRequest });
 
+      const expectedUrl = `${url}/?some_query_param=query_param`;
       expect(fetchClientMock).toHaveBeenCalledTimes(1);
-      expect(fetchClientMock).toHaveBeenCalledWith(
-        `${url}/?some_query_param=query_param`,
-        {
-          method: 'DELETE',
-          headers: {
-            test: 'value',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
+      expect(fetchClientMock).toHaveBeenCalledWith(expectedUrl, {
+        method: 'DELETE',
+        headers: {
+          test: 'value',
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(data),
+      });
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'DELETE',
+        url: expectedUrl,
+      });
     });
 
     it(`delete logs response error`, async () => {
@@ -237,13 +286,19 @@ describe('FetchNetworkService', () => {
 
       expect(loggingService.debug).toHaveBeenCalledTimes(1);
       expect(loggingService.debug).toHaveBeenCalledWith({
-        type: 'external_request',
+        type: 'EXTERNAL_REQUEST',
         protocol: error.url.protocol,
         target_host: error.url.host,
         path: error.url.pathname,
         request_status: error.response.status,
         detail: error.response.statusText,
         response_time_ms: expect.any(Number),
+      });
+      expect(loggingService.info).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'DELETE',
+        url: `${url}/`,
       });
     });
   });
