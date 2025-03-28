@@ -3,14 +3,21 @@ import { memoize } from 'lodash';
 import { getAddress, hashMessage } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { parseSignaturesByType } from '@/domain/common/utils/signatures';
 
 export class SafeSignature {
   public signature: `0x${string}`;
   public hash: `0x${string}`;
 
   constructor(args: { signature: `0x${string}`; hash: `0x${string}` }) {
-    if (args.signature.length !== 132) {
-      throw new Error('Invalid signature length');
+    const signatures = parseSignaturesByType(args.signature);
+
+    if (signatures.length !== 1) {
+      throw new Error('Concatenated signatures are not supported');
+    }
+
+    if (!signatures.includes(args.signature)) {
+      throw new Error('Invalid signature');
     }
 
     this.signature = args.signature;
@@ -26,7 +33,7 @@ export class SafeSignature {
   }
 
   get v(): number {
-    return parseInt(this.signature.slice(-2), 16);
+    return parseInt(this.signature.slice(130, 132), 16);
   }
 
   get signatureType(): SignatureType {

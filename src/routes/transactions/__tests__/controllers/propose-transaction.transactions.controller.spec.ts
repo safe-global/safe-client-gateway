@@ -1111,6 +1111,54 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       });
     });
 
+    it('should throw if a signature is not a valid hex bytes string', async () => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
+      transaction.confirmations![0].signature =
+        transaction.confirmations![0].signature!.slice(0, 129) as `0x${string}`;
+      const proposeTransactionDto = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', transaction.confirmations![0].signature)
+        .build();
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/transactions/${safe.address}/propose`,
+        )
+        .send(proposeTransactionDto)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid hex bytes',
+          path: ['signature'],
+        });
+
+      expect(loggingService.error).not.toHaveBeenCalled();
+    });
+
     it('should throw if the signature length is invalid', async () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
@@ -1125,6 +1173,8 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           safe,
           signers: [signer],
         });
+      transaction.confirmations![0].signature =
+        transaction.confirmations![0].signature!.slice(0, 128) as `0x${string}`;
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
