@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
+import { getAddress } from 'viem';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import {
+  MULTI_SEND_METHOD_NAME,
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
 } from '@/routes/transactions/constants';
@@ -17,6 +19,13 @@ import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions
 import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { DataDecodedSchema } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { TokenRepository } from '@/domain/tokens/token.repository';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { Erc20TransferMapper } from '@/routes/transactions/mappers/common/erc20-transfer.mapper';
+import { Erc721TransferMapper } from '@/routes/transactions/mappers/common/erc721-transfer.mapper';
+import { NativeCoinTransferMapper } from '@/routes/transactions/mappers/common/native-coin-transfer.mapper';
+import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 
 @Injectable()
 export class MultisigTransactionDetailsMapper {
@@ -29,6 +38,11 @@ export class MultisigTransactionDetailsMapper {
     private readonly multisigTransactionExecutionDetailsMapper: MultisigTransactionExecutionDetailsMapper,
     private readonly noteMapper: MultisigTransactionNoteMapper,
     private readonly transactionVerifier: TransactionVerifierHelper,
+    private readonly nativeCoinTransferMapper: NativeCoinTransferMapper,
+    private readonly erc20TransferMapper: Erc20TransferMapper,
+    private readonly erc721TransferMapper: Erc721TransferMapper,
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: TokenRepository,
   ) {}
 
   async mapDetails(
@@ -52,6 +66,7 @@ export class MultisigTransactionDetailsMapper {
       txInfo,
       detailedExecutionInfo,
       recipientAddressInfo,
+      transfers,
     ] = await Promise.all([
       this.transactionDataMapper.isTrustedDelegateCall(
         chainId,
@@ -71,6 +86,11 @@ export class MultisigTransactionDetailsMapper {
         safe,
       ),
       this._getRecipientAddressInfo(chainId, transaction.to),
+      this._mapTransfers({
+        chainId,
+        safe,
+        dataDecoded: transaction.dataDecoded,
+      }),
     ]);
 
     return {
@@ -92,7 +112,104 @@ export class MultisigTransactionDetailsMapper {
       detailedExecutionInfo,
       safeAppInfo,
       note,
+      // @ts-expect-error - TODO: Decide on data structure
+      transfers,
     };
+  }
+
+  // TODO: Make recursive for nested MultiSend calls
+  private async _mapTransfers(args: {
+    chainId: string;
+    safe: Safe;
+    dataDecoded: MultisigTransaction['dataDecoded'];
+  }): Promise<Array<TransferTransactionInfo>> {
+    if (
+      !args.dataDecoded?.parameters ||
+      args.dataDecoded.method !== MULTI_SEND_METHOD_NAME
+    ) {
+      return [];
+    }
+
+    const transfers: Array<Promise<TransferTransactionInfo>> = [];
+
+    for (const parameter of args.dataDecoded.parameters) {
+      const isMultiSend =
+        parameter.name === 'transactions' && parameter.type === 'bytes';
+
+      if (!isMultiSend || !Array.isArray(parameter.valueDecoded)) {
+        continue;
+      }
+
+      for (const dataDecoded of parameter.valueDecoded) {
+        const isNativeCoin = dataDecoded.value && dataDecoded.value !== '0';
+        if (isNativeCoin) {
+          transfers.push(
+            this.nativeCoinTransferMapper.mapNativeCoinTransfer(
+              args.chainId,
+              {
+                safe: args.safe.address,
+                to: getAddress(dataDecoded.to),
+                value: dataDecoded.value,
+              },
+              null,
+            ),
+          );
+          continue;
+        }
+
+        // TODO: Remove `accuracy` requirements below so as to not parse
+        const result = DataDecodedSchema.safeParse(dataDecoded);
+        if (!result.success) {
+          continue;
+        }
+
+        const nestedDecoded = result.data;
+
+        if (
+          !this.transactionInfoMapper.isValidTokenTransfer(
+            args.safe.address,
+            nestedDecoded,
+          )
+        ) {
+          continue;
+        }
+
+        const token = await this.tokenRepository
+          .getToken({
+            chainId: args.chainId,
+            address: dataDecoded.to,
+          })
+          .catch(() => null);
+
+        if (token?.type === 'ERC20') {
+          transfers.push(
+            this.erc20TransferMapper.mapErc20Transfer(
+              token,
+              args.chainId,
+              {
+                safe: args.safe.address,
+                dataDecoded: nestedDecoded,
+              },
+              null,
+            ),
+          );
+        } else if (token?.type === 'ERC721') {
+          transfers.push(
+            this.erc721TransferMapper.mapErc721Transfer(
+              token,
+              args.chainId,
+              {
+                safe: args.safe.address,
+                dataDecoded: nestedDecoded,
+              },
+              null,
+            ),
+          );
+        }
+      }
+    }
+
+    return await Promise.all(transfers);
   }
 
   /**
