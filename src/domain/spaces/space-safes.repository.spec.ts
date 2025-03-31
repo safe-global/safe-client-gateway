@@ -414,7 +414,7 @@ describe('SpaceSafesRepository', () => {
         }),
       ).rejects.toThrow(
         new BadRequestException(
-          `Safes limit (${maxSafesPerSpace}) reached for Space ${spaceId}. Existing safes: ${maxSafesPerSpace - 1}. Safes to add: 2`,
+          `This space allows a maximum of ${maxSafesPerSpace} Safe accounts. You can add up to 1 more`,
         ),
       );
 
