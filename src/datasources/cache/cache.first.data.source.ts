@@ -22,6 +22,7 @@ import {
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { Raw } from '@/validation/entities/raw.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -98,7 +99,7 @@ export class CacheFirstDataSource {
     { key, field }: CacheDir,
     cached: string,
   ): Promise<T> {
-    this.loggingService.debug({ type: 'cache_hit', key, field });
+    this.loggingService.debug({ type: LogType.CacheHit, key, field });
     const cachedData = JSON.parse(cached);
     if (cachedData?.response?.status === 404) {
       // TODO: create a CachedData type with guard to avoid these type assertions.
@@ -119,7 +120,7 @@ export class CacheFirstDataSource {
     expireTimeSeconds?: number;
   }): Promise<Raw<T>> {
     const { key, field } = args.cacheDir;
-    this.loggingService.debug({ type: 'cache_miss', key, field });
+    this.loggingService.debug({ type: LogType.CacheMiss, key, field });
     const startTimeMs = Date.now();
     const { data } = await this.networkService.get<T>({
       url: args.url,

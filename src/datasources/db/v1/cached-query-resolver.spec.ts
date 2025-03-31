@@ -1,6 +1,7 @@
 import { fakeJson } from '@/__tests__/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker';
 import { InternalServerErrorException } from '@nestjs/common';
@@ -45,7 +46,7 @@ describe('CachedQueryResolver', () => {
 
       expect(actual).toBe(value);
       expect(mockLoggingService.debug).toHaveBeenCalledWith({
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: 'key',
         field: 'field',
       });
@@ -65,7 +66,7 @@ describe('CachedQueryResolver', () => {
 
       expect(actual).toBe(dbResult);
       expect(mockLoggingService.debug).toHaveBeenCalledWith({
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: 'key',
         field: 'field',
       });
