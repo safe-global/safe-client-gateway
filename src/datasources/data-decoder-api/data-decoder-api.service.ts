@@ -1,4 +1,4 @@
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   NetworkService,
   type INetworkService,
@@ -8,9 +8,10 @@ import type { Contract } from '@/domain/data-decoder/v2/entities/contract.entity
 import type { Page } from '@/domain/entities/page.entity';
 import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
-import { Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
+@Injectable()
 export class DataDecoderApi implements IDataDecoderApi {
   private readonly baseUrl: string;
 
