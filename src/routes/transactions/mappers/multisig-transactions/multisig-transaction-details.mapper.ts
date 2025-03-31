@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { getAddress } from 'viem';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
@@ -19,8 +18,6 @@ import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions
 import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
-import { DataDecodedSchema } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
-import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { Erc20TransferMapper } from '@/routes/transactions/mappers/common/erc20-transfer.mapper';
 import { Erc721TransferMapper } from '@/routes/transactions/mappers/common/erc721-transfer.mapper';
@@ -42,7 +39,7 @@ export class MultisigTransactionDetailsMapper {
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
     @Inject(ITokenRepository)
-    private readonly tokenRepository: TokenRepository,
+    private readonly tokenRepository: ITokenRepository,
   ) {}
 
   async mapDetails(
@@ -86,7 +83,7 @@ export class MultisigTransactionDetailsMapper {
         safe,
       ),
       this._getRecipientAddressInfo(chainId, transaction.to),
-      this._mapTransfers({
+      this._mapMultiSendTransfers({
         chainId,
         safe,
         dataDecoded: transaction.dataDecoded,
@@ -118,7 +115,7 @@ export class MultisigTransactionDetailsMapper {
   }
 
   // TODO: Make recursive for nested MultiSend calls
-  private async _mapTransfers(args: {
+  private async _mapMultiSendTransfers(args: {
     chainId: string;
     safe: Safe;
     dataDecoded: MultisigTransaction['dataDecoded'];
@@ -140,16 +137,17 @@ export class MultisigTransactionDetailsMapper {
         continue;
       }
 
-      for (const dataDecoded of parameter.valueDecoded) {
-        const isNativeCoin = dataDecoded.value && dataDecoded.value !== '0';
+      for (const batchedTransaction of parameter.valueDecoded) {
+        const isNativeCoin =
+          batchedTransaction.value && batchedTransaction.value !== '0';
         if (isNativeCoin) {
           transfers.push(
             this.nativeCoinTransferMapper.mapNativeCoinTransfer(
               args.chainId,
               {
                 safe: args.safe.address,
-                to: getAddress(dataDecoded.to),
-                value: dataDecoded.value,
+                to: batchedTransaction.to,
+                value: batchedTransaction.value,
               },
               null,
             ),
@@ -157,18 +155,10 @@ export class MultisigTransactionDetailsMapper {
           continue;
         }
 
-        // TODO: Remove `accuracy` requirements below so as to not parse
-        const result = DataDecodedSchema.safeParse(dataDecoded);
-        if (!result.success) {
-          continue;
-        }
-
-        const nestedDecoded = result.data;
-
         if (
           !this.transactionInfoMapper.isValidTokenTransfer(
             args.safe.address,
-            nestedDecoded,
+            batchedTransaction.dataDecoded,
           )
         ) {
           continue;
@@ -177,30 +167,36 @@ export class MultisigTransactionDetailsMapper {
         const token = await this.tokenRepository
           .getToken({
             chainId: args.chainId,
-            address: dataDecoded.to,
+            address: batchedTransaction.to,
           })
           .catch(() => null);
 
-        if (token?.type === 'ERC20') {
+        if (!token) {
+          continue;
+        }
+
+        if (token.type === 'ERC20') {
           transfers.push(
             this.erc20TransferMapper.mapErc20Transfer(
               token,
               args.chainId,
               {
                 safe: args.safe.address,
-                dataDecoded: nestedDecoded,
+                dataDecoded: batchedTransaction.dataDecoded,
               },
               null,
             ),
           );
-        } else if (token?.type === 'ERC721') {
+        }
+
+        if (token.type === 'ERC721') {
           transfers.push(
             this.erc721TransferMapper.mapErc721Transfer(
               token,
               args.chainId,
               {
                 safe: args.safe.address,
-                dataDecoded: nestedDecoded,
+                dataDecoded: batchedTransaction.dataDecoded,
               },
               null,
             ),

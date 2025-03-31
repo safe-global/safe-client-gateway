@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
+import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { Erc20Token } from '@/domain/tokens/entities/token.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -20,10 +19,10 @@ export class Erc20TransferMapper {
   async mapErc20Transfer(
     token: Erc20Token,
     chainId: string,
-    transaction: Pick<
-      MultisigTransaction | ModuleTransaction,
-      'safe' | 'dataDecoded'
-    >,
+    transaction: {
+      safe: `0x${string}`;
+      dataDecoded: BaseDataDecoded | null;
+    },
     humanDescription: string | null,
   ): Promise<TransferTransactionInfo> {
     const { dataDecoded } = transaction;

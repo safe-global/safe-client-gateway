@@ -26,6 +26,7 @@ import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-nati
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -399,7 +400,7 @@ export class MultisigTransactionInfoMapper {
 
   public isValidTokenTransfer(
     safe: `0x${string}`,
-    dataDecoded: (MultisigTransaction | ModuleTransaction)['dataDecoded'],
+    dataDecoded: BaseDataDecoded | null,
   ): boolean {
     return (
       (this.isErc20Transfer(dataDecoded) ||
@@ -408,17 +409,13 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
-  private isErc20Transfer(
-    dataDecoded: (MultisigTransaction | ModuleTransaction)['dataDecoded'],
-  ): boolean {
+  private isErc20Transfer(dataDecoded: BaseDataDecoded | null): boolean {
     return this.ERC20_TRANSFER_METHODS.some(
       (method) => method === dataDecoded?.method,
     );
   }
 
-  private isErc721Transfer(
-    dataDecoded: (MultisigTransaction | ModuleTransaction)['dataDecoded'],
-  ): boolean {
+  private isErc721Transfer(dataDecoded: BaseDataDecoded | null): boolean {
     return this.ERC721_TRANSFER_METHODS.some(
       (method) => method === dataDecoded?.method,
     );
@@ -426,7 +423,7 @@ export class MultisigTransactionInfoMapper {
 
   private isSafeSenderOrReceiver(
     safe: `0x${string}`,
-    dataDecoded: (MultisigTransaction | ModuleTransaction)['dataDecoded'],
+    dataDecoded: BaseDataDecoded | null,
   ): boolean {
     if (!dataDecoded) return false;
     return (
