@@ -30,6 +30,7 @@ import {
 } from '@/domain/balances/entities/balance.entity';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { Collectible } from '@/domain/collectibles/entities/collectible.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -114,7 +115,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
-      this.loggingService.debug({ type: 'cache_hit', key, field });
+      this.loggingService.debug({ type: LogType.CacheHit, key, field });
       const zerionBalances = z
         .array(ZerionBalanceSchema)
         .parse(JSON.parse(cached));
@@ -124,7 +125,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     try {
       await this._checkRateLimit();
       const { key, field } = cacheDir;
-      this.loggingService.debug({ type: 'cache_miss', key, field });
+      this.loggingService.debug({ type: LogType.CacheMiss, key, field });
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
       const networkRequest = {
         headers: { Authorization: `Basic ${this.apiKey}` },
@@ -176,7 +177,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
-      this.loggingService.debug({ type: 'cache_hit', key, field });
+      this.loggingService.debug({ type: LogType.CacheHit, key, field });
       const data = ZerionCollectiblesSchema.parse(JSON.parse(cached));
       return this._buildCollectiblesPage(data.links.next, data.data);
     } else {

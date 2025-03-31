@@ -8,6 +8,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import type { Singleton } from '@/domain/chains/entities/singleton.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Contract } from '@/domain/contracts/entities/contract.entity';
 import type { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
@@ -200,14 +201,14 @@ export class TransactionApi implements ITransactionApi {
 
     if (cached != null) {
       this.loggingService.debug({
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         ...cacheDir,
       });
 
       return cached === 'true';
     } else {
       this.loggingService.debug({
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         ...cacheDir,
       });
     }
