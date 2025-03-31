@@ -1,10 +1,10 @@
-import { AccountNameSchema } from '@/domain/accounts/entities/schemas/account-name.schema';
+import { NameSchema } from '@/domain/common/entities/name.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { z } from 'zod';
 
 export const CreateAccountDtoSchema = z.object({
   address: AddressSchema,
-  name: AccountNameSchema,
+  name: NameSchema,
 });
 
 export class CreateAccountDto

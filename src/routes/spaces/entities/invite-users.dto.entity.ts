@@ -3,6 +3,10 @@ import { MemberRole } from '@/domain/users/entities/member.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { ApiProperty } from '@nestjs/swagger';
+import {
+  NAME_MAX_LENGTH,
+  NAME_MIN_LENGTH,
+} from '@/domain/common/entities/name.schema';
 
 const InviteUserDtoSchema = z
   .array(
@@ -22,7 +26,11 @@ export class InviteUserDto {
   @ApiProperty()
   public readonly address!: `0x${string}`;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({
+    type: String,
+    minLength: NAME_MIN_LENGTH,
+    maxLength: NAME_MAX_LENGTH,
+  })
   public readonly name!: string;
 
   @ApiProperty({

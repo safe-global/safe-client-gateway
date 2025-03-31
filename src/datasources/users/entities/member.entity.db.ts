@@ -1,5 +1,6 @@
 import { Space } from '@/datasources/spaces/entities/space.entity.db';
 import { User } from '@/datasources/users/entities/users.entity.db';
+import { NAME_MAX_LENGTH } from '@/domain/common/entities/name.schema';
 import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import {
@@ -47,7 +48,7 @@ export class Member implements DomainMember {
   })
   space!: Space;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
   name!: string;
 
   // Postgres enums are string therefore we use integer
