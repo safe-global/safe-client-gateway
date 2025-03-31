@@ -1,20 +1,20 @@
-import { AddressBookItemNameSchema } from '@/domain/accounts/address-books/entities/schemas/address-book-item-name.schema';
+import { NameSchema } from '@/domain/common/entities/name.schema';
 import { faker } from '@faker-js/faker/.';
 import { ZodError } from 'zod';
 
-describe('AddressBookItemNameSchema', () => {
-  it('should validate a valid address book item name', () => {
-    const addressBookItemName = 'a-valid_AddressBookItem.name';
+describe('NameSchema', () => {
+  it('should validate a valid name', () => {
+    const accountName = 'a-valid_Account.name';
 
-    const result = AddressBookItemNameSchema.safeParse(addressBookItemName);
+    const result = NameSchema.safeParse(accountName);
 
-    expect(result.success && result.data).toBe(addressBookItemName);
+    expect(result.success && result.data).toBe(accountName);
   });
 
   it('should not validate an non-string name', () => {
     const name = 123;
 
-    const result = AddressBookItemNameSchema.safeParse(name);
+    const result = NameSchema.safeParse(name);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
@@ -30,7 +30,7 @@ describe('AddressBookItemNameSchema', () => {
   });
 
   it('should not validate null name', () => {
-    const result = AddressBookItemNameSchema.safeParse(null);
+    const result = NameSchema.safeParse(null);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
@@ -45,10 +45,10 @@ describe('AddressBookItemNameSchema', () => {
     );
   });
 
-  it('should not validate an account name shorter than 3 characters', () => {
+  it('should not validate an name shorter than 3 characters', () => {
     const accountName = faker.string.alphanumeric(2);
 
-    const result = AddressBookItemNameSchema.safeParse(accountName);
+    const result = NameSchema.safeParse(accountName);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
@@ -58,40 +58,38 @@ describe('AddressBookItemNameSchema', () => {
           type: 'string',
           inclusive: true,
           exact: false,
-          message:
-            'Address book entry names must be at least 3 characters long',
+          message: 'Names must be at least 3 characters long',
           path: [],
         },
       ]),
     );
   });
 
-  it('should not validate an account name larger than 50 characters', () => {
-    const accountName = faker.string.alphanumeric(51);
+  it('should not validate an name larger than 30 characters', () => {
+    const accountName = faker.string.alphanumeric(31);
 
-    const result = AddressBookItemNameSchema.safeParse(accountName);
+    const result = NameSchema.safeParse(accountName);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
         {
           code: 'too_big',
-          maximum: 50,
+          maximum: 30,
           type: 'string',
           inclusive: true,
           exact: false,
-          message:
-            'Address book entry names must be at most 50 characters long',
+          message: 'Names must be at most 30 characters long',
           path: [],
         },
       ]),
     );
   });
 
-  it('should not validate an account name containing not allowed characters', () => {
+  it('should not validate an name containing not allowed characters', () => {
     const forbiddenCharsString = '!@#$%^&*()';
     const accountName = `${faker.string.alphanumeric(2)}${faker.string.fromCharacters(forbiddenCharsString)}${faker.string.alphanumeric(2)}`;
 
-    const result = AddressBookItemNameSchema.safeParse(accountName);
+    const result = NameSchema.safeParse(accountName);
 
     expect(!result.success && result.error).toStrictEqual(
       new ZodError([
@@ -99,7 +97,7 @@ describe('AddressBookItemNameSchema', () => {
           validation: 'regex',
           code: 'invalid_string',
           message:
-            'Address book entry names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
+            'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
           path: [],
         },
       ]),
