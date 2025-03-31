@@ -276,6 +276,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   spaces: {
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
+    maxSpaceCreationsPerUser: faker.number.int({ min: 1000, max: 2000 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
   },
   staking: {

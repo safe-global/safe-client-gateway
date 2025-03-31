@@ -1,3 +1,4 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { Space } from '@/datasources/spaces/entities/space.entity.db';
 import { Member } from '@/datasources/users/entities/member.entity.db';
@@ -9,22 +10,37 @@ import {
   MemberRole,
   MemberStatus,
 } from '@/domain/users/entities/member.entity';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
   In,
+  IsNull,
 } from 'typeorm';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 // TODO: Add tests
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {
+  private readonly maxSpaceCreationsPerUser: number;
+
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxSpaceCreationsPerUser =
+      this.configurationService.getOrThrow<number>(
+        'spaces.maxSpaceCreationsPerUser',
+      );
+  }
 
   public async create(args: {
     userId: number;
@@ -33,6 +49,13 @@ export class SpacesRepository implements ISpacesRepository {
   }): Promise<Pick<Space, 'id' | 'name'>> {
     const spaceRepository =
       await this.postgresDatabaseService.getRepository(Space);
+
+    const isLimited = await this.isLimited(args.userId);
+    if (isLimited) {
+      throw new ForbiddenException(
+        'User has reached the maximum number of spaces.',
+      );
+    }
 
     const user = new User();
     user.id = args.userId;
@@ -191,5 +214,18 @@ export class SpacesRepository implements ISpacesRepository {
     });
 
     await spaceRepository.delete(space.id);
+  }
+
+  /**
+   * Determines if a user has reached the maximum number of spaces they can create.
+   * If the user is member of a space that was not invited by anyone, they are considered to have created that space.
+   */
+  private async isLimited(userId: number): Promise<boolean> {
+    const memberRepository =
+      await this.postgresDatabaseService.getRepository(Member);
+    const unInvitedMemberships = await memberRepository.find({
+      where: { user: { id: userId }, invitedBy: IsNull() },
+    });
+    return unInvitedMemberships.length >= this.maxSpaceCreationsPerUser;
   }
 }

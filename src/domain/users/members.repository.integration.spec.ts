@@ -1,3 +1,4 @@
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
@@ -35,6 +36,9 @@ const mockLoggingService = {
   info: jest.fn(),
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
+const mockConfigurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
 const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
@@ -65,6 +69,21 @@ describe('MembersRepository', () => {
   const dbUserRepo = dataSource.getRepository(User);
   const dbMembersRepository = dataSource.getRepository(Member);
   const dbSpacesRepository = dataSource.getRepository(Space);
+
+  function initTarget(): void {
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'spaces.maxSpaceCreationsPerUser')
+        return testConfiguration.spaces.maxSpaceCreationsPerUser;
+    });
+
+    const walletsRepo = new WalletsRepository(postgresDatabaseService);
+    membersRepository = new MembersRepository(
+      postgresDatabaseService,
+      new UsersRepository(postgresDatabaseService, walletsRepo),
+      new SpacesRepository(postgresDatabaseService, mockConfigurationService),
+      walletsRepo,
+    );
+  }
 
   beforeAll(async () => {
     // Create database
@@ -109,14 +128,10 @@ describe('MembersRepository', () => {
       mockConfigService,
     );
     await migrator.migrate();
+  });
 
-    const walletsRepo = new WalletsRepository(postgresDatabaseService);
-    membersRepository = new MembersRepository(
-      postgresDatabaseService,
-      new UsersRepository(postgresDatabaseService, walletsRepo),
-      new SpacesRepository(postgresDatabaseService),
-      walletsRepo,
-    );
+  beforeEach(() => {
+    initTarget();
   });
 
   afterEach(async () => {

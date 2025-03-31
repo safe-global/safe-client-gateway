@@ -44,19 +44,22 @@ describe('SpacesController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
 
-  beforeAll(async () => {
-    jest.resetAllMocks();
-
+  async function initApp(args: {
+    maxSpaceCreationsPerUser: number;
+  }): Promise<void> {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      spaces: {
+        ...defaultConfiguration.spaces,
+        maxSpaceCreationsPerUser: args.maxSpaceCreationsPerUser,
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,
         users: true,
       },
     });
-
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
@@ -86,6 +89,11 @@ describe('SpacesController', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+  }
+
+  beforeEach(async () => {
+    jest.resetAllMocks();
+    await initApp({ maxSpaceCreationsPerUser: 100 });
   });
 
   afterEach(async () => {
@@ -146,6 +154,40 @@ describe('SpacesController', () => {
           statusCode: 403,
           message: 'Forbidden resource',
           error: 'Forbidden',
+        });
+    });
+
+    it('Should return a 403 if the MAX_SPACE_CREATIONS_PER_USER limit is reached', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      await initApp({ maxSpaceCreationsPerUser: 1 });
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      // maxSpaceCreationsPerUser = 1
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+            name: expect.any(String),
+          }),
+        );
+
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(403)
+        .expect({
+          message: 'User has reached the maximum number of spaces.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
