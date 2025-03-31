@@ -414,7 +414,7 @@ describe('SpaceSafesRepository', () => {
         }),
       ).rejects.toThrow(
         new BadRequestException(
-          `This space allows a maximum of ${maxSafesPerSpace} Safe accounts. You can add up to 1 more`,
+          `This Space only allows a maximum of ${maxSafesPerSpace} Safe Accounts. You can only add up to 1 more.`,
         ),
       );
 
