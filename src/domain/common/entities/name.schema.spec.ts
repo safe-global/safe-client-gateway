@@ -65,8 +65,8 @@ describe('NameSchema', () => {
     );
   });
 
-  it('should not validate an name larger than 20 characters', () => {
-    const accountName = faker.string.alphanumeric(21);
+  it('should not validate an name larger than 30 characters', () => {
+    const accountName = faker.string.alphanumeric(31);
 
     const result = NameSchema.safeParse(accountName);
 
@@ -74,11 +74,11 @@ describe('NameSchema', () => {
       new ZodError([
         {
           code: 'too_big',
-          maximum: 20,
+          maximum: 30,
           type: 'string',
           inclusive: true,
           exact: false,
-          message: 'Names must be at most 20 characters long',
+          message: 'Names must be at most 30 characters long',
           path: [],
         },
       ]),
@@ -97,7 +97,7 @@ describe('NameSchema', () => {
           validation: 'regex',
           code: 'invalid_string',
           message:
-            'Names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
+            'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
           path: [],
         },
       ]),

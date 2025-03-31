@@ -1,5 +1,9 @@
 import { createAddressBookItemDtoBuilder } from '@/domain/accounts/address-books/entities/__tests__/create-address-book-item.dto.builder';
 import { CreateAddressBookItemDtoSchema } from '@/domain/accounts/address-books/entities/create-address-book-item.dto.entity';
+import {
+  NAME_MAX_LENGTH,
+  NAME_MIN_LENGTH,
+} from '@/domain/common/entities/name.schema';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 
@@ -16,7 +20,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
 
   it('should not verify a CreateAddressBookItemDto with a shorter name', () => {
     const createAddressBookItemDto = createAddressBookItemDtoBuilder()
-      .with('name', faker.string.alphanumeric({ length: 2 }))
+      .with('name', faker.string.alphanumeric({ length: NAME_MIN_LENGTH - 1 }))
       .build();
 
     const result = CreateAddressBookItemDtoSchema.safeParse(
@@ -28,8 +32,8 @@ describe('CreateAddressBookItemDtoSchema', () => {
         code: 'too_small',
         inclusive: true,
         exact: false,
-        message: 'Names must be at least 3 characters long',
-        minimum: 3,
+        message: `Names must be at least ${NAME_MIN_LENGTH} characters long`,
+        minimum: NAME_MIN_LENGTH,
         path: ['name'],
         type: 'string',
       },
@@ -59,7 +63,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
 
   it('should not verify a CreateAddressBookItemDto with a longer name', () => {
     const createAddressBookItemDto = createAddressBookItemDtoBuilder()
-      .with('name', faker.string.alphanumeric({ length: 51 }))
+      .with('name', faker.string.alphanumeric({ length: NAME_MAX_LENGTH + 1 }))
       .build();
 
     const result = CreateAddressBookItemDtoSchema.safeParse(
@@ -71,8 +75,8 @@ describe('CreateAddressBookItemDtoSchema', () => {
         code: 'too_big',
         inclusive: true,
         exact: false,
-        message: 'Names must be at most 20 characters long',
-        maximum: 20,
+        message: `Names must be at most ${NAME_MAX_LENGTH} characters long`,
+        maximum: NAME_MAX_LENGTH,
         path: ['name'],
         type: 'string',
       },
@@ -92,7 +96,7 @@ describe('CreateAddressBookItemDtoSchema', () => {
       {
         code: 'invalid_string',
         message:
-          'Names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
+          'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
         path: ['name'],
         validation: 'regex',
       },

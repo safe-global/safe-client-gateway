@@ -1,6 +1,7 @@
 import { addressBookBuilder } from '@/domain/accounts/address-books/entities/__tests__/address-book.builder';
 import { AddressBookSchema } from '@/domain/accounts/address-books/entities/address-book.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { NAME_MAX_LENGTH } from '@/domain/common/entities/name.schema';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 
@@ -128,7 +129,7 @@ describe('AddressBookSchema', () => {
 
   it('should not verify an AddressBookItem with a longer name', () => {
     const addressBook = addressBookBuilder().build();
-    addressBook.data[0].name = 'e'.repeat(21); // max length is 20
+    addressBook.data[0].name = 'e'.repeat(NAME_MAX_LENGTH + 1);
 
     const result = AddressBookSchema.safeParse(addressBook);
 
@@ -137,8 +138,8 @@ describe('AddressBookSchema', () => {
         code: 'too_big',
         exact: false,
         inclusive: true,
-        message: 'Names must be at most 20 characters long',
-        maximum: 20,
+        message: `Names must be at most ${NAME_MAX_LENGTH} characters long`,
+        maximum: NAME_MAX_LENGTH,
         path: ['data', 0, 'name'],
         type: 'string',
       },
@@ -155,7 +156,7 @@ describe('AddressBookSchema', () => {
       {
         code: 'invalid_string',
         message:
-          'Names must start with a letter or number and can contain alphanumeric characters, periods, underscores, or hyphens',
+          'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
         path: ['data', 0, 'name'],
         validation: 'regex',
       },
