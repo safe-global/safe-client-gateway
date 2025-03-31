@@ -45,7 +45,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     const existingSafes = await this.findBySpaceId(args.spaceId);
     if (existingSafes.length + safesToInsert.length > this.maxSafesPerSpace) {
       throw new BadRequestException(
-        `This space allows a maximum of ${this.maxSafesPerSpace} Safe accounts. You can add up to ${this.maxSafesPerSpace - existingSafes.length} more`,
+        `This Space only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${this.maxSafesPerSpace - existingSafes.length} more.`,
       );
     }
 
