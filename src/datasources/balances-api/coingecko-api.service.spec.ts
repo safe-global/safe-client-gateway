@@ -457,7 +457,10 @@ describe('CoingeckoAPI', () => {
       status: 200,
     });
     mockCacheService.hGet.mockImplementation((cacheDir) => {
-      if (cacheDir.key.includes(secondTokenAddress)) {
+      if (
+        cacheDir.key ===
+        `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}`
+      ) {
         return Promise.resolve(
           JSON.stringify({
             [secondTokenAddress]: { [lowerCaseFiatCode]: secondPrice },
@@ -467,7 +470,10 @@ describe('CoingeckoAPI', () => {
       return Promise.resolve(undefined);
     });
     mockInMemoryCache.get.mockImplementation((key) => {
-      if (key.includes(thirdTokenAddress)) {
+      if (
+        key ===
+        `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}:`
+      ) {
         return Promise.resolve(
           JSON.stringify({
             [thirdTokenAddress]: { [lowerCaseFiatCode]: thirdPrice },
@@ -510,6 +516,15 @@ describe('CoingeckoAPI', () => {
     });
     // mockInMemoryCache.get should have been called 3 times
     expect(mockInMemoryCache.get).toHaveBeenCalledTimes(3);
+    expect(mockInMemoryCache.get).toHaveBeenCalledWith(
+      `${chain.pricesProvider.chainName}_token_price_${firstTokenAddress}_${lowerCaseFiatCode}:`,
+    );
+    expect(mockInMemoryCache.get).toHaveBeenCalledWith(
+      `${chain.pricesProvider.chainName}_token_price_${secondTokenAddress}_${lowerCaseFiatCode}:`,
+    );
+    expect(mockInMemoryCache.get).toHaveBeenCalledWith(
+      `${chain.pricesProvider.chainName}_token_price_${thirdTokenAddress}_${lowerCaseFiatCode}:`,
+    );
     // mockInMemoryCache.set should have been called 2 times, to store the network price and the cache price
     expect(mockInMemoryCache.set).toHaveBeenCalledTimes(2);
     expect(mockInMemoryCache.set).toHaveBeenCalledWith(

@@ -136,7 +136,7 @@ export class CoingeckoApi implements IPricesApi {
         fiatCode: lowerCaseFiatCode,
       });
       const memoryItem = await this.inMemoryCache.get<number>(
-        this.getMemoryKey(cacheDir),
+        CacheRouter.getMemoryKey(cacheDir),
       );
       if (memoryItem != null) {
         this.logMemoryHit(cacheDir.key);
@@ -166,7 +166,7 @@ export class CoingeckoApi implements IPricesApi {
       // TODO: Change to Raw when cache service is migrated
       const nativeCoinPrice = result?.[nativeCoinId]?.[lowerCaseFiatCode];
       await this.inMemoryCache.set(
-        this.getMemoryKey(cacheDir),
+        CacheRouter.getMemoryKey(cacheDir),
         nativeCoinPrice,
         this.nativeCoinPricesTtlSeconds * 1_000,
       );
@@ -287,7 +287,7 @@ export class CoingeckoApi implements IPricesApi {
         tokenAddress,
       });
       const memoryItem = await this.inMemoryCache.get<string>(
-        this.getMemoryKey(cacheDir),
+        CacheRouter.getMemoryKey(cacheDir),
       );
       if (memoryItem != null) {
         this.logMemoryHit(cacheDir.key);
@@ -298,9 +298,9 @@ export class CoingeckoApi implements IPricesApi {
         if (cacheItem != null) {
           this.logCacheHit(cacheDir);
           await this.inMemoryCache.set(
-            this.getMemoryKey(cacheDir),
+            CacheRouter.getMemoryKey(cacheDir),
             cacheItem,
-            this.pricesTtlSeconds * 1_000,
+            this.pricesTtlSeconds * 1_000, // Milliseconds
           );
           result.push(AssetPriceSchema.parse(JSON.parse(cacheItem)));
         } else {
@@ -341,7 +341,7 @@ export class CoingeckoApi implements IPricesApi {
           this._getTtl(validPrice, tokenAddress),
         );
         await this.inMemoryCache.set(
-          this.getMemoryKey(cacheDir),
+          CacheRouter.getMemoryKey(cacheDir),
           JSON.stringify(price),
           this._getTtl(validPrice, tokenAddress) * 1_000,
         );
@@ -413,13 +413,6 @@ export class CoingeckoApi implements IPricesApi {
       this.notFoundPriceTtlSeconds,
       this.notFoundPriceTtlSeconds + CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS,
     );
-  }
-
-  /**
-   * Gets the in-memory cache key for the given cacheDir.
-   */
-  private getMemoryKey(cacheDir: CacheDir): string {
-    return `${cacheDir.key}:${cacheDir.field}`;
   }
 
   private logCacheHit(cacheDir: CacheDir): void {
