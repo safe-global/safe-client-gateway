@@ -181,6 +181,7 @@ export default (): ReturnType<typeof configuration> => ({
     ethSign: true,
     trustedDelegateCall: false,
     trustedForDelegateCallContractsList: false,
+    filterValueParsing: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
@@ -237,7 +238,6 @@ export default (): ReturnType<typeof configuration> => ({
     pass: process.env.REDIS_PASS,
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
-    timeout: process.env.REDIS_TIMEOUT || 1 * 1_000, // Milliseconds
     disableOfflineQueue:
       process.env.REDIS_DISABLE_OFFLINE_QUEUE?.toString() === 'true',
   },
@@ -274,6 +274,10 @@ export default (): ReturnType<typeof configuration> => ({
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
+  spaces: {
+    maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
+    maxInvites: faker.number.int({ min: 5, max: 10 }),
+  },
   staking: {
     testnet: {
       baseUri: faker.internet.url({ appendSlash: false }),
@@ -308,8 +312,5 @@ export default (): ReturnType<typeof configuration> => ({
         baseDir: 'assets/targeted-messaging',
       },
     },
-  },
-  users: {
-    maxInvites: faker.number.int({ min: 5, max: 10 }),
   },
 });

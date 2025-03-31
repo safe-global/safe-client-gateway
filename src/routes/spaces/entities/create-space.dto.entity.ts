@@ -1,4 +1,4 @@
-import { Organization as Space } from '@/datasources/organizations/entities/organizations.entity.db';
+import { Space } from '@/datasources/spaces/entities/space.entity.db';
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 

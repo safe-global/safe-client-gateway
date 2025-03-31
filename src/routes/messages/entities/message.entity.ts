@@ -17,7 +17,7 @@ export enum MessageStatus {
 export class Message {
   @ApiProperty()
   messageHash: `0x${string}`;
-  @ApiProperty()
+  @ApiProperty({ enum: MessageStatus })
   status: MessageStatus;
   @ApiPropertyOptional({ type: String, nullable: true })
   logoUri: string | null;
@@ -37,7 +37,7 @@ export class Message {
   confirmationsRequired: number;
   @ApiProperty()
   proposedBy: AddressInfo;
-  @ApiProperty()
+  @ApiProperty({ type: MessageConfirmation, isArray: true })
   confirmations: Array<MessageConfirmation>;
   @ApiPropertyOptional({ type: String, nullable: true })
   preparedSignature: `0x${string}` | null;

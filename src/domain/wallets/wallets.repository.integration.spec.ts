@@ -12,9 +12,9 @@ import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
-import { Organization } from '@/datasources/organizations/entities/organizations.entity.db';
-import { OrganizationSafe } from '@/datasources/organizations/entities/organization-safes.entity.db';
+import { Member } from '@/datasources/users/entities/member.entity.db';
+import { Space } from '@/datasources/spaces/entities/space.entity.db';
+import { SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -42,7 +42,7 @@ describe('WalletsRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [UserOrganization, Organization, OrganizationSafe, User, Wallet],
+    entities: [Member, Space, SpaceSafe, User, Wallet],
   });
 
   beforeAll(async () => {

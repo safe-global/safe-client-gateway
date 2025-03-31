@@ -274,6 +274,8 @@ export default () => ({
     trustedForDelegateCallContractsList:
       process.env.FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST?.toLowerCase() ===
       'true',
+    filterValueParsing:
+      process.env.FF_FILTER_VALUE_PARSING?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -348,7 +350,6 @@ export default () => ({
     pass: process.env.REDIS_PASS,
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || '6379',
-    timeout: process.env.REDIS_TIMEOUT || 2 * 1_000, // Milliseconds
     disableOfflineQueue:
       process.env.REDIS_DISABLE_OFFLINE_QUEUE?.toString() === 'true',
   },
@@ -403,6 +404,12 @@ export default () => ({
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
+  },
+  spaces: {
+    maxSafesPerSpace: parseInt(
+      process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
+    ),
+    maxInvites: parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`),
   },
   staking: {
     testnet: {
@@ -464,8 +471,5 @@ export default () => ({
           'assets/targeted-messaging',
       },
     },
-  },
-  users: {
-    maxInvites: 50,
   },
 });

@@ -1,6 +1,6 @@
 import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
-import { OrganizationsRepositoryModule as SpacesRepositoryModule } from '@/domain/organizations/organizations.repository.module';
-import { UsersOrganizationsRepositoryModule as MembersRepositoryModule } from '@/domain/users/user-organizations.repository.module';
+import { SpacesRepositoryModule } from '@/domain/spaces/spaces.repository.module';
+import { MembersRepositoryModule } from '@/domain/users/members.repository.module';
 import { UserRepositoryModule } from '@/domain/users/users.repository.module';
 import { SpaceSafesController } from '@/routes/spaces/space-safes.controller';
 import { SpaceSafesService } from '@/routes/spaces/space-safes.service';

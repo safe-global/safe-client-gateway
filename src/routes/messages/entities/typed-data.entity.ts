@@ -55,7 +55,8 @@ export class TypedData implements DomainTypedData {
   types!: Record<string, Array<TypedDataParameter>>;
 
   @ApiProperty({
-    type: Object,
+    type: 'object',
+    additionalProperties: true,
   })
   message!: Record<string, unknown>;
 }

@@ -6,6 +6,9 @@ import {
 } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 
 export class EnableModule extends SettingsChange {
+  @ApiProperty({ enum: [SettingsChangeType.EnableModule] })
+  override type!: SettingsChangeType.EnableModule;
+
   @ApiProperty()
   module: AddressInfo;
 

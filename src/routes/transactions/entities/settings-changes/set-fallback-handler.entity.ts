@@ -6,6 +6,9 @@ import {
 } from '@/routes/transactions/entities/settings-changes/settings-change.entity';
 
 export class SetFallbackHandler extends SettingsChange {
+  @ApiProperty({ enum: [SettingsChangeType.SetFallbackHandler] })
+  override type!: SettingsChangeType.SetFallbackHandler;
+
   @ApiProperty()
   handler: AddressInfo;
 

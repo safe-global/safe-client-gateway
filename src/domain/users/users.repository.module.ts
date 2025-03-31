@@ -6,12 +6,12 @@ import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { UsersRepository } from '@/domain/users/users.repository';
 import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { WalletsRepositoryModule } from '@/domain/wallets/wallets.repository.module';
-import { UserOrganization } from '@/datasources/users/entities/user-organizations.entity.db';
+import { Member } from '@/datasources/users/entities/member.entity.db';
 
 @Module({
   imports: [
     PostgresDatabaseModuleV2,
-    TypeOrmModule.forFeature([User, Wallet, UserOrganization]),
+    TypeOrmModule.forFeature([User, Wallet, Member]),
     WalletsRepositoryModule,
   ],
   providers: [

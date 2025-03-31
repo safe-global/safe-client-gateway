@@ -42,8 +42,6 @@ describe('RedisCacheService', () => {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
-      } else if (key === 'redis.timeout') {
-        return defaultExpirationTimeInSeconds * 1_000;
       }
       throw Error(`Unexpected key: ${key}`);
     });

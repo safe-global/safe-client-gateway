@@ -1103,7 +1103,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           refundReceiver: multisigTransaction.refundReceiver,
           nonce: multisigTransaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
     });
@@ -1185,125 +1184,6 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           refundReceiver: multisigTransaction.refundReceiver,
           nonce: multisigTransaction.nonce,
         },
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
-
-    it('should throw and log if confirmations contain duplicate owners', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const multisigTransaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('isExecuted', false)
-        .with('nonce', safe.nonce)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          signers: [signer, signer],
-          safe,
-        });
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case getChainUrl:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case getMultisigTransactionUrl:
-            return Promise.resolve({
-              data: rawify(multisigToJson(multisigTransaction)),
-              status: 200,
-            });
-          case getSafeUrl:
-            return Promise.resolve({ data: rawify(safe), status: 200 });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
-        )
-        .expect(502)
-        .expect({
-          message: 'Duplicate owners in confirmations',
-          statusCode: 502,
-        });
-
-      expect(loggingService.error).toHaveBeenCalledWith({
-        message: 'Duplicate owners in confirmations',
-        chainId: chain.chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: multisigTransaction.safeTxHash,
-        confirmations: multisigTransaction.confirmations,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
-
-    it('should throw and log if confirmations contain duplicate signatures', async () => {
-      const chain = chainBuilder().build();
-      const signers = Array.from({ length: 2 }, () => {
-        const privateKey = generatePrivateKey();
-        return privateKeyToAccount(privateKey);
-      });
-      const safe = safeBuilder()
-        .with(
-          'owners',
-          signers.map((signer) => signer.address),
-        )
-        .build();
-      const multisigTransaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('isExecuted', false)
-        .with('nonce', safe.nonce)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          signers,
-          safe,
-        });
-      multisigTransaction.confirmations![1].signature =
-        multisigTransaction.confirmations![0].signature;
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case getChainUrl:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case getMultisigTransactionUrl:
-            return Promise.resolve({
-              data: rawify(multisigToJson(multisigTransaction)),
-              status: 200,
-            });
-          case getSafeUrl:
-            return Promise.resolve({ data: rawify(safe), status: 200 });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
-        )
-        .expect(502)
-        .expect({
-          message: 'Duplicate signatures in confirmations',
-          statusCode: 502,
-        });
-
-      expect(loggingService.error).toHaveBeenCalledWith({
-        message: 'Duplicate signatures in confirmations',
-        chainId: chain.chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: multisigTransaction.safeTxHash,
-        confirmations: multisigTransaction.confirmations,
         type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });

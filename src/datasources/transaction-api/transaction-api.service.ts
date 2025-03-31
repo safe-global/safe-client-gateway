@@ -811,7 +811,7 @@ export class TransactionApi implements ITransactionApi {
     safeTransactionHash: string,
   ): Promise<Raw<MultisigTransaction>> {
     try {
-      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}`;
+      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
       const { data } = await this.networkService.get<Raw<MultisigTransaction>>({
         url,
       });
