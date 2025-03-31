@@ -32,6 +32,7 @@ import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creati
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { SafeSignatureHelper } from '@/domain/common/helpers/safe-signature.helper';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -41,6 +42,7 @@ export class SafeRepository implements ISafeRepository {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    private readonly safeSignatureHelper: SafeSignatureHelper,
     private readonly transactionVerifier: TransactionVerifierHelper,
   ) {}
 
@@ -170,16 +172,13 @@ export class SafeRepository implements ISafeRepository {
       safeTransactionHash: args.safeTxHash,
     });
 
-    const safe = await this.getSafe({
+    await this.transactionVerifier.verifyTransaction({
       chainId: args.chainId,
       address: transaction.safe,
-    });
-
-    this.transactionVerifier.verifyConfirmation({
-      chainId: args.chainId,
-      safe,
       transaction,
-      signature: args.addConfirmationDto.signature,
+      signatures: this.safeSignatureHelper.splitConcatenatedSignatures(
+        args.addConfirmationDto.signature,
+      ),
     });
 
     await transactionService.postConfirmation(args);
@@ -372,15 +371,17 @@ export class SafeRepository implements ISafeRepository {
       .getMultisigTransactionWithNoCache(args.safeTransactionHash)
       .then(MultisigTransactionSchema.parse);
 
-    const safe = await this.getSafe({
-      chainId: args.chainId,
-      address: multisigTransaction.safe,
-    });
-
-    this.transactionVerifier.verifyApiTransaction({
+    await this.transactionVerifier.verifyTransaction({
       chainId: args.chainId,
       transaction: multisigTransaction,
-      safe: safe,
+      address: multisigTransaction.safe,
+      signatures:
+        multisigTransaction.confirmations
+          ?.map((confirmation) => confirmation.signature)
+          .filter(
+            <T>(signature: T): signature is NonNullable<T> =>
+              signature !== null,
+          ) ?? [],
     });
 
     return multisigTransaction;
@@ -455,18 +456,22 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const [multisigTransactions, safe] = await Promise.all([
-      transactionService
-        .getMultisigTransactionsWithNoCache(args)
-        .then(MultisigTransactionPageSchema.parse),
-      this.getSafe({ chainId: args.chainId, address: args.safeAddress }),
-    ]);
+    const multisigTransactions = await transactionService
+      .getMultisigTransactionsWithNoCache(args)
+      .then(MultisigTransactionPageSchema.parse);
 
     for (const transaction of multisigTransactions.results) {
-      this.transactionVerifier.verifyApiTransaction({
+      await this.transactionVerifier.verifyTransaction({
         chainId: args.chainId,
         transaction,
-        safe,
+        address: args.safeAddress,
+        signatures:
+          transaction.confirmations
+            ?.map((confirmation) => confirmation.signature)
+            .filter(
+              <T>(signature: T): signature is NonNullable<T> =>
+                signature !== null,
+            ) ?? [],
       });
     }
 
@@ -624,24 +629,21 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const [safe, transaction] = await Promise.all([
-      this.getSafe({
-        chainId: args.chainId,
-        address: args.safeAddress,
-      }),
-      transactionService
-        .getMultisigTransactionWithNoCache(
-          args.proposeTransactionDto.safeTxHash,
-        )
-        .then(MultisigTransactionSchema.parse)
-        .catch(() => null),
-    ]);
 
-    await this.transactionVerifier.verifyProposal({
+    await this.transactionVerifier.verifyTransaction({
       chainId: args.chainId,
-      safe,
-      proposal: args.proposeTransactionDto,
-      transaction,
+      address: args.safeAddress,
+      transaction: {
+        ...args.proposeTransactionDto,
+        nonce: Number(args.proposeTransactionDto.nonce),
+        baseGas: Number(args.proposeTransactionDto.baseGas),
+        safeTxGas: Number(args.proposeTransactionDto.safeTxGas),
+      },
+      signatures: args.proposeTransactionDto.signature
+        ? this.safeSignatureHelper.splitConcatenatedSignatures(
+            args.proposeTransactionDto.signature,
+          )
+        : [],
     });
 
     return transactionService.postMultisigTransaction({

@@ -7,8 +7,7 @@ import {
   MessagePageSchema,
   MessageSchema,
 } from '@/domain/messages/entities/message.entity';
-import { MessageVerifierHelper } from '@/domain/messages/helpers/message-verifier.helper';
-import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
+import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { TypedData } from '@/domain/messages/entities/typed-data.entity';
 
 @Injectable()
@@ -16,9 +15,7 @@ export class MessagesRepository implements IMessagesRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    @Inject(ISafeRepository)
-    private readonly safeRepository: ISafeRepository,
-    private readonly messageVerifier: MessageVerifierHelper,
+    private readonly transactionVerifier: TransactionVerifierHelper,
   ) {}
 
   async getMessageByHash(args: {
@@ -28,8 +25,21 @@ export class MessagesRepository implements IMessagesRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const message = await transactionService.getMessageByHash(args.messageHash);
-    return MessageSchema.parse(message);
+    const message = await transactionService
+      .getMessageByHash(args.messageHash)
+      .then(MessageSchema.parse);
+
+    // TODO: Add tests
+    await this.transactionVerifier.verifyMessage({
+      ...args,
+      address: message.safe,
+      message: message.message,
+      messageHash: message.messageHash,
+      // TODO: Is there a prepared signature when awaiting confirmations
+      signature: message.preparedSignature,
+    });
+
+    return message;
   }
 
   async getMessagesBySafe(args: {
@@ -41,13 +51,27 @@ export class MessagesRepository implements IMessagesRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page = await transactionService.getMessagesBySafe({
-      safeAddress: args.safeAddress,
-      limit: args.limit,
-      offset: args.offset,
-    });
+    const page = await transactionService
+      .getMessagesBySafe({
+        safeAddress: args.safeAddress,
+        limit: args.limit,
+        offset: args.offset,
+      })
+      .then(MessagePageSchema.parse);
 
-    return MessagePageSchema.parse(page);
+    // TODO: Add tests
+    for (const message of page.results) {
+      await this.transactionVerifier.verifyMessage({
+        ...args,
+        address: message.safe,
+        message: message.message,
+        messageHash: message.messageHash,
+        // TODO: Is there a prepared signature when awaiting confirmations
+        signature: message.preparedSignature,
+      });
+    }
+
+    return page;
   }
 
   async createMessage(args: {
@@ -58,15 +82,9 @@ export class MessagesRepository implements IMessagesRepository {
     signature: `0x${string}`;
     origin: string | null;
   }): Promise<unknown> {
-    const safe = await this.safeRepository.getSafe({
-      chainId: args.chainId,
+    await this.transactionVerifier.verifyMessage({
+      ...args,
       address: args.safeAddress,
-    });
-    this.messageVerifier.verifyCreation({
-      chainId: args.chainId,
-      safe,
-      message: args.message,
-      signature: args.signature,
     });
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -89,13 +107,9 @@ export class MessagesRepository implements IMessagesRepository {
       chainId: args.chainId,
       messageHash: args.messageHash,
     });
-    const safe = await this.safeRepository.getSafe({
-      chainId: args.chainId,
-      address: message.safe,
-    });
-    this.messageVerifier.verifyUpdate({
+    await this.transactionVerifier.verifyMessage({
       ...args,
-      safe,
+      address: message.safe,
       message: message.message,
     });
     const transactionService = await this.transactionApiManager.getApi(

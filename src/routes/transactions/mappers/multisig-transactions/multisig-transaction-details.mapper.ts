@@ -37,10 +37,17 @@ export class MultisigTransactionDetailsMapper {
     safe: Safe,
   ): Promise<TransactionDetails> {
     // TODO: This should be located on the domain layer but only route layer exists
-    this.transactionVerifier.verifyApiTransaction({
+    await this.transactionVerifier.verifyTransaction({
       chainId,
-      safe,
+      address: safe.address,
       transaction,
+      signatures:
+        transaction.confirmations
+          ?.map((confirmation) => confirmation.signature)
+          .filter(
+            <T>(signature: T): signature is NonNullable<T> =>
+              signature !== null,
+          ) ?? [],
     });
 
     const txStatus = this.statusMapper.mapTransactionStatus(transaction, safe);
