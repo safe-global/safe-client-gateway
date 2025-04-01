@@ -39,6 +39,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { UserStatus } from '@/domain/users/entities/user.entity';
+import { SpacesRateLimitGuard } from '@/routes/spaces/guards/spaces-rate-limit.guard';
 
 @ApiTags('spaces')
 @UseGuards(AuthGuard)
@@ -47,6 +48,7 @@ export class SpacesController {
   public constructor(private readonly spacesService: SpacesService) {}
 
   @Post()
+  @UseGuards(SpacesRateLimitGuard)
   @ApiOkResponse({
     description: 'Space created',
     type: CreateSpaceResponse,
@@ -67,6 +69,7 @@ export class SpacesController {
   }
 
   @Post('/create-with-user')
+  @UseGuards(SpacesRateLimitGuard)
   @ApiOkResponse({
     description: 'Space created',
     type: CreateSpaceResponse,
@@ -120,6 +123,7 @@ export class SpacesController {
   }
 
   @Patch('/:id')
+  @UseGuards(SpacesRateLimitGuard)
   @ApiOkResponse({
     description: 'Space updated',
     type: UpdateSpaceResponse,

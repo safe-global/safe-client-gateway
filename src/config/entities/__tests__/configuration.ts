@@ -278,6 +278,10 @@ export default (): ReturnType<typeof configuration> => ({
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
   },
   staking: {
     testnet: {

@@ -4,10 +4,12 @@ export enum LogType {
   CacheHit = 'CACHE_HIT',
   CacheMiss = 'CACHE_MISS',
   ExternalRequest = 'EXTERNAL_REQUEST',
+  InvalidIp = 'INVALID_IP',
   MemoryHit = 'MEMORY_HIT',
   MemoryMiss = 'MEMORY_MISS',
   MessagePropose = 'MESSAGE_PROPOSE',
   MessageValidity = 'MESSAGE_VALIDITY',
+  RateLimit = 'RATE_LIMIT',
   TransactionPropose = 'TRANSACTION_PROPOSE',
   TransactionValidity = 'TRANSACTION_VALIDITY',
 }

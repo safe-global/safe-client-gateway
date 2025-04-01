@@ -413,6 +413,12 @@ export default () => ({
       process.env.MAX_SPACE_CREATIONS_PER_USER ?? `${3}`,
     ),
     maxInvites: parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`),
+    rateLimit: {
+      max: parseInt(process.env.SPACES_RATE_LIMIT_MAX ?? `${10}`),
+      windowSeconds: parseInt(
+        process.env.SPACES_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
+      ),
+    },
   },
   staking: {
     testnet: {
