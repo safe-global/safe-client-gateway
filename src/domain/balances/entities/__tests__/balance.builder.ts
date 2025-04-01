@@ -6,15 +6,11 @@ import type { Balance } from '@/domain/balances/entities/balance.entity';
 import { getAddress } from 'viem';
 
 export function balanceBuilder(): IBuilder<Balance> {
-  return (
-    new Builder<Balance>()
-      .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
-      .with('token', balanceTokenBuilder().build())
-      .with('balance', faker.string.numeric())
-      .with('fiatBalance', null)
-      .with('fiatConversion', null)
-      // TODO: Separate entity into base and extended to avoid doing this
-      // Transaction Service does not return this field and it will default to null
-      .with('fiatBalance24hChange', null)
-  );
+  return new Builder<Balance>()
+    .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('token', balanceTokenBuilder().build())
+    .with('balance', faker.string.numeric())
+    .with('fiatBalance', null)
+    .with('fiatConversion', null)
+    .with('fiatBalance24hChange', null);
 }
