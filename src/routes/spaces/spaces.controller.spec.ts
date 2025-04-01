@@ -45,7 +45,8 @@ describe('SpacesController', () => {
   let jwtService: IJwtService;
 
   async function initApp(args?: {
-    maxSpaceCreationsPerUser: number;
+    maxSpaceCreationsPerUser?: number;
+    rateLimit?: { max: number; windowSeconds: number };
   }): Promise<INestApplication<Server>> {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -55,6 +56,7 @@ describe('SpacesController', () => {
         maxSpaceCreationsPerUser:
           args?.maxSpaceCreationsPerUser ??
           defaultConfiguration.spaces.maxSpaceCreationsPerUser,
+        rateLimit: args?.rateLimit ?? defaultConfiguration.spaces.rateLimit,
       },
       features: {
         ...defaultConfiguration.features,
@@ -133,6 +135,29 @@ describe('SpacesController', () => {
             name: spaceName,
           }),
         );
+    });
+
+    it('Should rate limit creations', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const app = await initApp({ rateLimit: { max: 1, windowSeconds: 60 } });
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(429)
+        .expect('Rate limit reached');
     });
 
     it('should return a 403 if not authenticated', async () => {
