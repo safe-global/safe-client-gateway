@@ -1167,7 +1167,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         });
 
       expect(loggingService.error).toHaveBeenCalledWith({
-        message: 'safeTxHash does not match',
+        event: 'safeTxHash does not match',
         chainId: chain.chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1366,7 +1366,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         });
 
       expect(loggingService.error).toHaveBeenCalledWith({
-        message: 'Unauthorized address',
+        event: 'Unauthorized address',
         chainId: chain.chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1424,7 +1424,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         });
 
       expect(loggingService.error).toHaveBeenCalledWith({
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId: chain.chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,

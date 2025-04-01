@@ -62,7 +62,7 @@ export class RedisCacheService
       this.loggingService.error({
         type: LogType.CacheError,
         source: 'RedisCacheService',
-        message: `Error setting/expiring ${key}:${cacheDir.field}`,
+        event: `Error setting/expiring ${key}:${cacheDir.field}`,
       });
       await this.client.unlink(key);
       throw error;
@@ -134,7 +134,7 @@ export class RedisCacheService
     this.loggingService.warn({
       type: LogType.CacheEvent,
       source: 'RedisCacheService',
-      message: 'Closing Redis connection',
+      event: 'Closing Redis connection',
     });
     const forceQuitTimeout = setTimeout(() => {
       this.forceQuit.bind(this);
@@ -150,7 +150,7 @@ export class RedisCacheService
     this.loggingService.warn({
       type: LogType.CacheEvent,
       source: 'RedisCacheService',
-      message: 'Forcing Redis connection close',
+      event: 'Forcing Redis connection close',
     });
     await this.client.disconnect();
   }

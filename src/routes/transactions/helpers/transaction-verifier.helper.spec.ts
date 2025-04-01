@@ -278,7 +278,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'safeTxHash does not match',
+        event: 'safeTxHash does not match',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -455,7 +455,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Unauthorized address',
+        event: 'Unauthorized address',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -490,7 +490,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1179,7 +1179,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'safeTxHash does not match',
+        event: 'safeTxHash does not match',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1367,7 +1367,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Unauthorized address',
+        event: 'Unauthorized address',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1597,7 +1597,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1662,7 +1662,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1924,7 +1924,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'safeTxHash does not match',
+        event: 'safeTxHash does not match',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -2086,7 +2086,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Unauthorized address',
+        event: 'Unauthorized address',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -2184,7 +2184,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
