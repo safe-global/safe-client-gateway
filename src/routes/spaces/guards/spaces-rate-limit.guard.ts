@@ -15,11 +15,12 @@ export class SpacesRateLimitGuard extends RateLimitGuard {
     @Inject(CacheService) cacheService: ICacheService,
     @Inject(LoggingService) loggingService: ILoggingService,
   ) {
-    super(cacheService, loggingService, {
+    const rateLimits = {
       max: configurationService.getOrThrow<number>('spaces.rateLimit.max'),
       windowSeconds: configurationService.getOrThrow<number>(
         'spaces.rateLimit.windowSeconds',
       ),
-    });
+    };
+    super(cacheService, loggingService, rateLimits);
   }
 }

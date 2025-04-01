@@ -152,6 +152,7 @@ describe('SpacesController', () => {
         .send({ name: nameBuilder() })
         .expect(201);
 
+      // Second request, but rateLimit.max = 1
       await request(app.getHttpServer())
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
