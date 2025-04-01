@@ -1,7 +1,7 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CoingeckoApi } from '@/datasources/balances-api/coingecko-api.service';
-import { fa, faker } from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
 import type { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import {
   getAssetPricesSchema,
