@@ -492,7 +492,7 @@ export class TransactionVerifierHelper {
     source: LogSource;
   }): void {
     this.loggingService.error({
-      message: 'safeTxHash does not match',
+      event: 'safeTxHash does not match',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
@@ -511,7 +511,7 @@ export class TransactionVerifierHelper {
     source: LogSource;
   }): void {
     this.loggingService.error({
-      message: 'Unauthorized address',
+      event: 'Unauthorized address',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
@@ -531,7 +531,7 @@ export class TransactionVerifierHelper {
     source: LogSource;
   }): void {
     this.loggingService.error({
-      message: 'Recovered address does not match signer',
+      event: 'Recovered address does not match signer',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
