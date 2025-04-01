@@ -53,7 +53,7 @@ export class SpacesRepository implements ISpacesRepository {
     const isLimited = await this.isLimited(args.userId);
     if (isLimited) {
       throw new ForbiddenException(
-        'User has reached the maximum number of spaces.',
+        'User has reached the maximum number of Spaces.',
       );
     }
 
