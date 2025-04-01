@@ -8,7 +8,7 @@ export interface IPricesApi {
   getNativeCoinPrice(args: {
     chain: Chain;
     fiatCode: string;
-  }): Promise<number | null>;
+  }): Promise<AssetPrice[string] | null>;
 
   getTokenPrices(args: {
     chain: Chain;

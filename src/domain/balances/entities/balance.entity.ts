@@ -23,6 +23,11 @@ export const Erc20BalanceSchema = z.object({
 
 const FiatSchema = z.object({
   fiatBalance: z.string().nullish().default(null),
+  fiatBalance24hChange: z.coerce
+    .string()
+    .nullable()
+    // Transaction Service does not return this field
+    .catch(() => null),
   fiatConversion: z.string().nullish().default(null),
 });
 
