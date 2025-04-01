@@ -188,7 +188,7 @@ describe('SpacesController', () => {
         .send({ name: nameBuilder() })
         .expect(403)
         .expect({
-          message: 'User has reached the maximum number of spaces.',
+          message: 'User has reached the maximum number of Spaces.',
           error: 'Forbidden',
           statusCode: 403,
         });
