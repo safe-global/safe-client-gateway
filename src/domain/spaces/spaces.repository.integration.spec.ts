@@ -56,18 +56,6 @@ describe('SpacesRepository', () => {
   const dbMembersRepository = dataSource.getRepository(Member);
   const dbSpacesRepository = dataSource.getRepository(Space);
 
-  function initTarget(args: { maxSpaceCreationsPerUser: number }): void {
-    mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'spaces.maxSpaceCreationsPerUser')
-        return args.maxSpaceCreationsPerUser;
-    });
-
-    spacesRepository = new SpacesRepository(
-      postgresDatabaseService,
-      mockConfigurationService,
-    );
-  }
-
   beforeAll(async () => {
     // Create database
     const testDataSource = new DataSource({
@@ -110,14 +98,16 @@ describe('SpacesRepository', () => {
       postgresDatabaseService,
       mockConfigService,
     );
-    await migrator.migrate();
-  });
-
-  beforeEach(() => {
-    initTarget({
-      maxSpaceCreationsPerUser:
-        testConfiguration.spaces.maxSpaceCreationsPerUser,
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'spaces.maxSpaceCreationsPerUser') {
+        return testConfiguration.spaces.maxSpaceCreationsPerUser;
+      }
     });
+    await migrator.migrate();
+    spacesRepository = new SpacesRepository(
+      postgresDatabaseService,
+      mockConfigurationService,
+    );
   });
 
   afterEach(async () => {
@@ -247,7 +237,13 @@ describe('SpacesRepository', () => {
     });
 
     it('should fail if the MAX_SPACE_CREATIONS_PER_USER limit is reached', async () => {
-      initTarget({ maxSpaceCreationsPerUser: 1 });
+      const config = jest.mocked({
+        getOrThrow: jest.fn(),
+      } as jest.MockedObjectDeep<IConfigurationService>);
+      config.getOrThrow.mockImplementation((key) => {
+        if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
+      });
+      const target = new SpacesRepository(postgresDatabaseService, config);
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
@@ -257,7 +253,7 @@ describe('SpacesRepository', () => {
       const userId = user.identifiers[0].id as User['id'];
 
       await expect(
-        spacesRepository.create({
+        target.create({
           userId,
           name: name,
           status: spaceStatus,
@@ -269,7 +265,7 @@ describe('SpacesRepository', () => {
 
       // maxSpaceCreationsPerUser = 1
       await expect(
-        spacesRepository.create({
+        target.create({
           userId,
           name: name,
           status: spaceStatus,

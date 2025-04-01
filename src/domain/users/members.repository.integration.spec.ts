@@ -70,21 +70,6 @@ describe('MembersRepository', () => {
   const dbMembersRepository = dataSource.getRepository(Member);
   const dbSpacesRepository = dataSource.getRepository(Space);
 
-  function initTarget(): void {
-    mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'spaces.maxSpaceCreationsPerUser')
-        return testConfiguration.spaces.maxSpaceCreationsPerUser;
-    });
-
-    const walletsRepo = new WalletsRepository(postgresDatabaseService);
-    membersRepository = new MembersRepository(
-      postgresDatabaseService,
-      new UsersRepository(postgresDatabaseService, walletsRepo),
-      new SpacesRepository(postgresDatabaseService, mockConfigurationService),
-      walletsRepo,
-    );
-  }
-
   beforeAll(async () => {
     // Create database
     const testDataSource = new DataSource({
@@ -128,10 +113,18 @@ describe('MembersRepository', () => {
       mockConfigService,
     );
     await migrator.migrate();
-  });
-
-  beforeEach(() => {
-    initTarget();
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'spaces.maxSpaceCreationsPerUser') {
+        return testConfiguration.spaces.maxSpaceCreationsPerUser;
+      }
+    });
+    const walletsRepo = new WalletsRepository(postgresDatabaseService);
+    membersRepository = new MembersRepository(
+      postgresDatabaseService,
+      new UsersRepository(postgresDatabaseService, walletsRepo),
+      new SpacesRepository(postgresDatabaseService, mockConfigurationService),
+      walletsRepo,
+    );
   });
 
   afterEach(async () => {

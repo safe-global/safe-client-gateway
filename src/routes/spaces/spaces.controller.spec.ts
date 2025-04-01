@@ -44,15 +44,17 @@ describe('SpacesController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
 
-  async function initApp(args: {
+  async function initApp(args?: {
     maxSpaceCreationsPerUser: number;
-  }): Promise<void> {
+  }): Promise<INestApplication<Server>> {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
       spaces: {
         ...defaultConfiguration.spaces,
-        maxSpaceCreationsPerUser: args.maxSpaceCreationsPerUser,
+        maxSpaceCreationsPerUser:
+          args?.maxSpaceCreationsPerUser ??
+          defaultConfiguration.spaces.maxSpaceCreationsPerUser,
       },
       features: {
         ...defaultConfiguration.features,
@@ -87,13 +89,14 @@ describe('SpacesController', () => {
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
 
-    app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    const application = await new TestAppProvider().provide(moduleFixture);
+    await application.init();
+    return application;
   }
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     jest.resetAllMocks();
-    await initApp({ maxSpaceCreationsPerUser: 100 });
+    app = await initApp();
   });
 
   afterEach(async () => {
@@ -160,7 +163,7 @@ describe('SpacesController', () => {
     it('Should return a 403 if the MAX_SPACE_CREATIONS_PER_USER limit is reached', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      await initApp({ maxSpaceCreationsPerUser: 1 });
+      const app = await initApp({ maxSpaceCreationsPerUser: 1 });
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
