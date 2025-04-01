@@ -31,7 +31,7 @@ export class RateLimitGuard implements CanActivate {
     }
     const currentRequest = await this.cacheService.increment(
       CacheRouter.getRateLimitCacheKey(
-        `${req.route.path}:${req.method}:${req.ip}`,
+        `${req.route.path}_${req.method}_${req.ip}`,
       ),
       this.rateLimit.windowSeconds,
     );

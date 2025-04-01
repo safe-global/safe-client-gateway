@@ -37,7 +37,7 @@ describe('RateLimitGuard', () => {
 
     expect(result).toBe(true);
     expect(mockCacheService.increment).toHaveBeenCalledWith(
-      `${path}:POST:${ip}_rate_limit`,
+      `${path}_POST_${ip}_rate_limit`,
       windowSeconds,
     );
   });
@@ -67,7 +67,7 @@ describe('RateLimitGuard', () => {
     );
 
     expect(mockCacheService.increment).toHaveBeenCalledWith(
-      `${path}:PATCH:${ip}_rate_limit`,
+      `${path}_PATCH_${ip}_rate_limit`,
       windowSeconds,
     );
     expect(mockLoggingService.warn).toHaveBeenCalledWith(
