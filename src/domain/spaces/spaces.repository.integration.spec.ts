@@ -17,6 +17,7 @@ import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -24,6 +25,9 @@ const mockLoggingService = {
   info: jest.fn(),
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
+const mockConfigurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
 const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
@@ -94,9 +98,16 @@ describe('SpacesRepository', () => {
       postgresDatabaseService,
       mockConfigService,
     );
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'spaces.maxSpaceCreationsPerUser') {
+        return testConfiguration.spaces.maxSpaceCreationsPerUser;
+      }
+    });
     await migrator.migrate();
-
-    spacesRepository = new SpacesRepository(postgresDatabaseService);
+    spacesRepository = new SpacesRepository(
+      postgresDatabaseService,
+      mockConfigurationService,
+    );
   });
 
   afterEach(async () => {
@@ -223,6 +234,43 @@ describe('SpacesRepository', () => {
           updatedAt: expect.any(Date),
         },
       });
+    });
+
+    it('should fail if the MAX_SPACE_CREATIONS_PER_USER limit is reached', async () => {
+      const config = jest.mocked({
+        getOrThrow: jest.fn(),
+      } as jest.MockedObjectDeep<IConfigurationService>);
+      config.getOrThrow.mockImplementation((key) => {
+        if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
+      });
+      const target = new SpacesRepository(postgresDatabaseService, config);
+      const userStatus = faker.helpers.arrayElement(UserStatusKeys);
+      const name = faker.word.noun();
+      const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
+      const user = await dbUserRepo.insert({
+        status: userStatus,
+      });
+      const userId = user.identifiers[0].id as User['id'];
+
+      await expect(
+        target.create({
+          userId,
+          name: name,
+          status: spaceStatus,
+        }),
+      ).resolves.toEqual({
+        id: expect.any(Number),
+        name,
+      });
+
+      // maxSpaceCreationsPerUser = 1
+      await expect(
+        target.create({
+          userId,
+          name: name,
+          status: spaceStatus,
+        }),
+      ).rejects.toThrow();
     });
 
     it('should set the name of the space', async () => {

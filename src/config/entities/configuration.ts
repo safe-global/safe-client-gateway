@@ -409,6 +409,9 @@ export default () => ({
     maxSafesPerSpace: parseInt(
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
     ),
+    maxSpaceCreationsPerUser: parseInt(
+      process.env.MAX_SPACE_CREATIONS_PER_USER ?? `${3}`,
+    ),
     maxInvites: parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`),
   },
   staking: {
