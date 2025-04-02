@@ -233,7 +233,7 @@ export class ZerionBalancesApi implements IBalancesApi {
   ): Raw<Array<Balance>> {
     const balances = zerionBalances
       .filter((zb) => zb.attributes.flags.displayable)
-      .map((zb) => {
+      .map((zb): Balance => {
         const implementation = zb.attributes.fungible_info.implementations.find(
           (implementation) => implementation.chain_id === chainName,
         );
@@ -250,6 +250,7 @@ export class ZerionBalancesApi implements IBalancesApi {
             ? this._mapNativeBalance(zb.attributes)
             : this._mapErc20Balance(zb.attributes, implementation.address)),
           fiatBalance,
+          fiatBalance24hChange: null,
           fiatConversion,
         };
       });

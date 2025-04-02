@@ -3,7 +3,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import {
   AssetPrice,
-  AssetPriceSchema,
+  getAssetPriceSchema,
 } from '@/datasources/balances-api/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
@@ -30,6 +30,14 @@ import { Cache } from 'cache-manager';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
+/**
+ * TODO: Refactor away the return of currency codes from public methods, e.g.
+ *
+ * {                                  {
+ *   usd: number;                       price: number;
+ *   usd_24h_change: number;    =>      price_24h_change: number;
+ * }                                  }
+ */
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
   /**
@@ -113,18 +121,19 @@ export class CoingeckoApi implements IPricesApi {
   }
 
   /**
-   * Retrieves the price of a chain's native coin, prioritizing memory cache, followed by persistent cache.
-   * If the price is unavailable in both, it fetches the data from the Coingecko API.
+   * Retrieves the price/change of a chain's native coin, prioritizing memory cache,
+   * followed by persistent cache. If the price is unavailable in both, it fetches
+   * the data from the Coingecko API.
    *
    * @param args.chain The chain entity containing chain-specific configuration.
    * @param args.fiatCode The fiat currency code for the price conversion.
-   * @returns A number representing the native coin price, or null if unavailable.
+   * @returns A numerical price/change of the native coin price, or null if unavailable.
    */
   async getNativeCoinPrice(args: {
     chain: Chain;
     fiatCode: string;
     // TODO: Change to Raw when cache service is migrated
-  }): Promise<number | null> {
+  }): Promise<AssetPrice[string] | null> {
     try {
       const nativeCoinId = args.chain.pricesProvider.nativeCoin;
       if (nativeCoinId == null) {
@@ -135,7 +144,7 @@ export class CoingeckoApi implements IPricesApi {
         nativeCoinId,
         fiatCode: lowerCaseFiatCode,
       });
-      const memoryItem = await this.inMemoryCache.get<number>(
+      const memoryItem = await this.inMemoryCache.get<AssetPrice[string]>(
         CacheRouter.getMemoryKey(cacheDir),
       );
       if (memoryItem != null) {
@@ -152,6 +161,7 @@ export class CoingeckoApi implements IPricesApi {
             params: {
               vs_currencies: lowerCaseFiatCode,
               ids: nativeCoinId,
+              include_24hr_change: true,
             },
             ...(this.apiKey && {
               headers: {
@@ -162,9 +172,9 @@ export class CoingeckoApi implements IPricesApi {
           notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
           expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
         })
-        .then(AssetPriceSchema.parse);
+        .then(getAssetPriceSchema(lowerCaseFiatCode).parse);
       // TODO: Change to Raw when cache service is migrated
-      const nativeCoinPrice = result?.[nativeCoinId]?.[lowerCaseFiatCode];
+      const nativeCoinPrice = result?.[nativeCoinId];
       await this.inMemoryCache.set(
         CacheRouter.getMemoryKey(cacheDir),
         nativeCoinPrice,
@@ -281,6 +291,7 @@ export class CoingeckoApi implements IPricesApi {
     fiatCode: string;
   }): Promise<Array<AssetPrice>> {
     const result: Array<AssetPrice> = [];
+    const AssetPriceSchema = getAssetPriceSchema(args.fiatCode.toLowerCase());
     for (const tokenAddress of args.tokenAddresses) {
       const cacheDir = CacheRouter.getTokenPriceCacheDir({
         ...args,
@@ -320,32 +331,47 @@ export class CoingeckoApi implements IPricesApi {
     tokenAddresses: Array<string>;
     fiatCode: string;
   }): Promise<Array<AssetPrice>> {
+    const lowerCaseFiatCode = args.fiatCode.toLowerCase();
     const prices = await this._requestPricesFromNetwork({
       ...args,
       tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
-    }).then(AssetPriceSchema.parse);
+    }).then(getAssetPriceSchema(lowerCaseFiatCode).parse);
 
     return Promise.all(
       args.tokenAddresses.map(async (tokenAddress) => {
-        const validPrice = prices[tokenAddress]?.[args.fiatCode];
-        const price: AssetPrice = validPrice
-          ? { [tokenAddress]: { [args.fiatCode]: validPrice } }
-          : { [tokenAddress]: { [args.fiatCode]: null } };
+        const price = prices[tokenAddress]?.[lowerCaseFiatCode];
+        const change =
+          prices[tokenAddress]?.[`${lowerCaseFiatCode}_24h_change`];
+
+        // change is excluded if we don't have a price
+        const assetPrice: AssetPrice = price
+          ? {
+              [tokenAddress]: {
+                [lowerCaseFiatCode]: price,
+                [`${lowerCaseFiatCode}_24h_change`]: change,
+              },
+            }
+          : {
+              [tokenAddress]: {
+                [lowerCaseFiatCode]: null,
+                [`${lowerCaseFiatCode}_24h_change`]: null,
+              },
+            };
         const cacheDir = CacheRouter.getTokenPriceCacheDir({
           ...args,
           tokenAddress,
         });
         await this.cacheService.hSet(
           cacheDir,
-          JSON.stringify(price),
-          this._getTtl(validPrice, tokenAddress),
+          JSON.stringify(assetPrice),
+          this._getTtl(price, tokenAddress),
         );
         await this.inMemoryCache.set(
           CacheRouter.getMemoryKey(cacheDir),
-          JSON.stringify(price),
-          this._getTtl(validPrice, tokenAddress) * 1_000,
+          JSON.stringify(assetPrice),
+          this._getTtl(price, tokenAddress) * 1_000,
         );
-        return price;
+        return assetPrice;
       }),
     );
   }
@@ -384,8 +410,9 @@ export class CoingeckoApi implements IPricesApi {
         url,
         networkRequest: {
           params: {
-            vs_currencies: args.fiatCode,
+            vs_currencies: args.fiatCode.toLowerCase(),
             contract_addresses: args.tokenAddresses.join(','),
+            include_24hr_change: true,
           },
           ...(this.apiKey && {
             headers: {

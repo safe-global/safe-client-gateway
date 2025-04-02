@@ -245,6 +245,7 @@ describe('Safes Controller Overview (Unit)', () => {
             tokenAddress.toLowerCase(),
             secondTokenAddress.toLowerCase(),
           ].join(','),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[5][0].url).toBe(
@@ -255,6 +256,7 @@ describe('Safes Controller Overview (Unit)', () => {
         params: {
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[6][0].url).toBe(
@@ -413,6 +415,7 @@ describe('Safes Controller Overview (Unit)', () => {
             tokenAddress.toLowerCase(),
             secondTokenAddress.toLowerCase(),
           ].join(','),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[5][0].url).toBe(
@@ -423,6 +426,7 @@ describe('Safes Controller Overview (Unit)', () => {
         params: {
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[6][0].url).toBe(
@@ -1008,6 +1012,7 @@ describe('Safes Controller Overview (Unit)', () => {
             tokenAddress.toLowerCase(),
             secondTokenAddress.toLowerCase(),
           ].join(','),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[5][0].url).toBe(
@@ -1018,6 +1023,7 @@ describe('Safes Controller Overview (Unit)', () => {
         params: {
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[6][0].url).toBe(
@@ -1159,6 +1165,7 @@ describe('Safes Controller Overview (Unit)', () => {
             tokenAddress.toLowerCase(),
             secondTokenAddress.toLowerCase(),
           ].join(','),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[5][0].url).toBe(
@@ -1169,6 +1176,7 @@ describe('Safes Controller Overview (Unit)', () => {
         params: {
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[6][0].url).toBe(

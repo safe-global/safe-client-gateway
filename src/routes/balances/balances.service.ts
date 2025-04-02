@@ -79,6 +79,7 @@ export class BalancesService {
       },
       balance: balance.balance,
       fiatBalance: balance.fiatBalance ?? '0',
+      fiatBalance24hChange: balance.fiatBalance24hChange,
       fiatConversion: balance.fiatConversion ?? '0',
     };
   }
