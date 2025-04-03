@@ -5,14 +5,14 @@ import { TypedDataDomain, encodePacked, hashTypedData } from 'viem';
 @Injectable()
 export class GPv2OrderHelper {
   public static readonly SettlementContractAddress =
-    '0x9008D19f58AAbD9eD0D60971565AA8510560ab41' as const;
+    '0x9008D19f58AAbD9eD0D60971565AA8510560ab41';
 
   // Domain
-  private static readonly DomainName = 'Gnosis Protocol' as const;
-  private static readonly DomainVersion = 'v2' as const;
+  private static readonly DomainName = 'Gnosis Protocol';
+  private static readonly DomainVersion = 'v2';
 
   // Typed data
-  private static readonly TypedDataPrimaryType = 'Order' as const;
+  private static readonly TypedDataPrimaryType = 'Order';
   private static readonly TypedDataTypes = {
     [GPv2OrderHelper.TypedDataPrimaryType]: [
       { name: 'sellToken', type: 'address' },
