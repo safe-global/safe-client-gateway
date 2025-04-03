@@ -1,3 +1,4 @@
+import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -8,7 +9,7 @@ export class VaultTransactionMapper {
     value: string;
     data: `0x${string}`;
     // TODO: return type
-  }): Promise<unknown> {
-    return Promise.resolve(args);
+  }): Promise<VaultDepositTransactionInfo> {
+    return Promise.resolve(new VaultDepositTransactionInfo(args)); // TODO: mapping
   }
 }
