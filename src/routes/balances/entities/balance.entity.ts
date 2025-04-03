@@ -26,6 +26,6 @@ export class Balance {
     ],
   })
   tokenInfo!: NativeToken | Erc20Token | Erc721Token;
-  @ApiPropertyOptional({ nullable: true })
-  fiatBalance24hChange!: string | null;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  fiatBalance24hChange!: number | null;
 }

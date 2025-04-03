@@ -23,7 +23,7 @@ export const Erc20BalanceSchema = z.object({
 
 const FiatSchema = z.object({
   fiatBalance: z.string().nullish().default(null),
-  fiatBalance24hChange: z.coerce.string().nullish().default(null),
+  fiatBalance24hChange: z.number().nullish().default(null),
   fiatConversion: z.string().nullish().default(null),
 });
 
