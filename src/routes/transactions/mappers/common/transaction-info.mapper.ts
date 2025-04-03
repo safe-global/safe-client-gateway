@@ -26,6 +26,8 @@ import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-nati
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+import { KilnVaultHelper } from '@/routes/transactions/helpers/kiln-vault.helper';
+import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -59,7 +61,9 @@ export class MultisigTransactionInfoMapper {
     private readonly twapOrderMapper: TwapOrderMapper,
     private readonly twapOrderHelper: TwapOrderHelper,
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
+    private readonly kilnVaultHelper: KilnVaultHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
+    private readonly vaultTransactionMapper: VaultTransactionMapper,
     private readonly kilnDecoder: KilnDecoder,
   ) {}
 
@@ -118,6 +122,12 @@ export class MultisigTransactionInfoMapper {
     if (nativeStakingWithdraw) {
       return nativeStakingWithdraw;
     }
+
+    this.mapVaultDeposit({
+      chainId,
+      transaction,
+    });
+    // TODO: if (kilnVaultDeposit) return kilnVaultDeposit;
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
@@ -326,6 +336,40 @@ export class MultisigTransactionInfoMapper {
         safeAddress: transaction.safe,
         to: nativeStakingValidatorsExitTransaction.to,
         data: nativeStakingValidatorsExitTransaction.data,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapVaultDeposit(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+    // TODO: return type.
+  }): Promise<unknown> {
+    if (!args.transaction?.data || !args.transaction.value) {
+      return null;
+    }
+
+    const vaultDepositTransaction = this.kilnVaultHelper.findDepositTransaction(
+      {
+        to: args.transaction.to,
+        data: args.transaction.data,
+        value: args.transaction.value,
+      },
+    );
+
+    if (!vaultDepositTransaction?.to) {
+      return null;
+    }
+
+    try {
+      return await this.vaultTransactionMapper.mapDepositInfo({
+        chainId: args.chainId,
+        to: vaultDepositTransaction.to,
+        value: vaultDepositTransaction.value,
+        data: vaultDepositTransaction.data,
       });
     } catch (error) {
       this.loggingService.warn(error);
