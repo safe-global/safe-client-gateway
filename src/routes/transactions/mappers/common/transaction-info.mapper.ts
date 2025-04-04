@@ -28,6 +28,7 @@ import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/enti
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
 import { KilnVaultHelper } from '@/routes/transactions/helpers/kiln-vault.helper';
 import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
+import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -123,11 +124,13 @@ export class MultisigTransactionInfoMapper {
       return nativeStakingWithdraw;
     }
 
-    this.mapVaultDeposit({
+    const vaultDeposit = await this.mapVaultDeposit({
       chainId,
       transaction,
     });
-    // TODO: if (kilnVaultDeposit) return kilnVaultDeposit;
+    if (vaultDeposit) {
+      return vaultDeposit;
+    }
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
@@ -346,19 +349,17 @@ export class MultisigTransactionInfoMapper {
   private async mapVaultDeposit(args: {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
-    // TODO: return type.
-  }): Promise<unknown> {
+  }): Promise<VaultDepositTransactionInfo | null> {
     if (!args.transaction?.data || !args.transaction.value) {
       return null;
     }
 
-    const vaultDepositTransaction = this.kilnVaultHelper.findDepositTransaction(
-      {
+    const vaultDepositTransaction =
+      this.kilnVaultHelper.getVaultDepositTransaction({
         to: args.transaction.to,
         data: args.transaction.data,
         value: args.transaction.value,
-      },
-    );
+      });
 
     if (!vaultDepositTransaction?.to) {
       return null;
@@ -368,7 +369,7 @@ export class MultisigTransactionInfoMapper {
       return await this.vaultTransactionMapper.mapDepositInfo({
         chainId: args.chainId,
         to: vaultDepositTransaction.to,
-        value: vaultDepositTransaction.value,
+        assets: vaultDepositTransaction.assets,
         data: vaultDepositTransaction.data,
       });
     } catch (error) {

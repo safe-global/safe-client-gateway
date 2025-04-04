@@ -4,11 +4,15 @@ import {
   TransactionFinderModule,
 } from '@/routes/transactions/helpers/transaction-finder.helper';
 import { Injectable, Module } from '@nestjs/common';
-import { getAbiItem, parseAbi, toFunctionSelector } from 'viem';
+import {
+  decodeFunctionData,
+  getAbiItem,
+  parseAbi,
+  toFunctionSelector,
+} from 'viem';
 
 export const KilnVaultAbi = parseAbi([
   'function deposit(uint256 assets, address receiver)',
-  'function approve(address spender, uint256 value)',
 ]);
 
 @Injectable()
@@ -20,7 +24,33 @@ export class KilnVaultHelper {
 
   constructor(private readonly transactionFinder: TransactionFinder) {}
 
-  public findDepositTransaction(args: {
+  public getVaultDepositTransaction(args: {
+    to?: `0x${string}`;
+    data: `0x${string}`;
+    value: string;
+  }): {
+    to?: `0x${string}`;
+    data: `0x${string}`;
+    assets: number;
+  } | null {
+    const transaction = this.findVaultDepositTransaction(args);
+    if (!transaction) {
+      return null;
+    }
+
+    const decoded = decodeFunctionData({
+      abi: KilnVaultAbi,
+      data: transaction.data,
+    });
+
+    return {
+      to: transaction.to,
+      data: transaction.data,
+      assets: Number(decoded.args[0]),
+    };
+  }
+
+  private findVaultDepositTransaction(args: {
     to?: `0x${string}`;
     data: `0x${string}`;
     value: string;

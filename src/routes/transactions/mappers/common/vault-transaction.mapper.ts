@@ -18,7 +18,7 @@ export class VaultTransactionMapper {
   public async mapDepositInfo(args: {
     chainId: string;
     to: `0x${string}`;
-    value: string;
+    assets: number;
     data: `0x${string}`;
   }): Promise<VaultDepositTransactionInfo> {
     const deployment = await this.stakingRepository.getDeployment({
@@ -34,7 +34,7 @@ export class VaultTransactionMapper {
       chainId: args.chainId,
       address: defiStats.asset,
     });
-    const value = args.value ? Number(args.value) : 0;
+    const value = (args.assets ?? 0) / 10 ** underlyingToken.decimals;
     const fee = deployment.product_fee ? Number(deployment.product_fee) : 0;
     const nrr = defiStats.nrr * (1 - fee);
     const expectedAnnualReward = (nrr / 100) * value;
@@ -43,6 +43,7 @@ export class VaultTransactionMapper {
       chainId: args.chainId,
       expectedMonthlyReward,
       expectedAnnualReward,
+      value,
       tokenInfo: new TokenInfo({
         address: underlyingToken.address,
         decimals: underlyingToken.decimals,

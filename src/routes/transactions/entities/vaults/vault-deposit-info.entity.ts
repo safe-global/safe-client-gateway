@@ -22,6 +22,9 @@ export class VaultDepositTransactionInfo extends TransactionInfo {
   tokenInfo: TokenInfo;
 
   @ApiProperty()
+  value: number;
+
+  @ApiProperty()
   returnRate: number;
 
   @ApiProperty()
@@ -48,6 +51,7 @@ export class VaultDepositTransactionInfo extends TransactionInfo {
     expectedMonthlyReward: number;
     returnRate: number;
     tokenInfo: TokenInfo;
+    value: number;
     vaultAddress: `0x${string}`;
     vaultDashboardURL: string | null;
     vaultDescription: string;
@@ -61,6 +65,7 @@ export class VaultDepositTransactionInfo extends TransactionInfo {
     this.expectedMonthlyReward = args.expectedMonthlyReward;
     this.returnRate = args.returnRate;
     this.tokenInfo = args.tokenInfo;
+    this.value = args.value;
     this.vaultAddress = args.vaultAddress;
     this.vaultDashboardURL = args.vaultDashboardURL;
     this.vaultDescription = args.vaultDescription;
