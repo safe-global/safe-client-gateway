@@ -1,3 +1,4 @@
+import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
@@ -12,24 +13,59 @@ export class VaultDepositTransactionInfo extends TransactionInfo {
   chainId: string;
 
   @ApiProperty()
-  to: `0x${string}`;
+  expectedMonthlyReward: number;
 
   @ApiProperty()
-  value: string;
+  expectedAnnualReward: number;
 
   @ApiProperty()
-  data: `0x${string}`;
+  tokenInfo: TokenInfo;
+
+  @ApiProperty()
+  returnRate: number;
+
+  @ApiProperty()
+  vaultAddress: `0x${string}`;
+
+  @ApiProperty()
+  vaultName: string;
+
+  @ApiProperty()
+  vaultDisplayName: string;
+
+  @ApiProperty()
+  vaultDescription: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  vaultDashboardURL: string | null;
+
+  @ApiProperty()
+  vaultTVL: number;
 
   constructor(args: {
     chainId: string;
-    to: `0x${string}`;
-    value: string;
-    data: `0x${string}`;
+    expectedAnnualReward: number;
+    expectedMonthlyReward: number;
+    returnRate: number;
+    tokenInfo: TokenInfo;
+    vaultAddress: `0x${string}`;
+    vaultDashboardURL: string | null;
+    vaultDescription: string;
+    vaultDisplayName: string;
+    vaultName: string;
+    vaultTVL: number;
   }) {
     super(TransactionInfoType.VaultDeposit, null);
     this.chainId = args.chainId;
-    this.to = args.to;
-    this.value = args.value;
-    this.data = args.data;
+    this.expectedAnnualReward = args.expectedAnnualReward;
+    this.expectedMonthlyReward = args.expectedMonthlyReward;
+    this.returnRate = args.returnRate;
+    this.tokenInfo = args.tokenInfo;
+    this.vaultAddress = args.vaultAddress;
+    this.vaultDashboardURL = args.vaultDashboardURL;
+    this.vaultDescription = args.vaultDescription;
+    this.vaultDisplayName = args.vaultDisplayName;
+    this.vaultName = args.vaultName;
+    this.vaultTVL = args.vaultTVL;
   }
 }

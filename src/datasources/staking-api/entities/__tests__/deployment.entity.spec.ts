@@ -103,14 +103,44 @@ describe('DeploymentSchema', () => {
     });
   });
 
-  it('should default product_fee to null', () => {
+  it.each(['product_fee' as const, 'external_links' as const])(
+    'should default %s to null',
+    (key) => {
+      const deployment = deploymentBuilder().build();
+      delete deployment[key];
+      const result = DeploymentSchema.safeParse(deployment);
+      expect(result.success && result.data[key]).toBe(null);
+    },
+  );
+
+  it('should default external_links.deposit_url to null', () => {
     const deployment = deploymentBuilder().build();
     // @ts-expect-error - inferred type does not allow undefined
-    delete deployment.product_fee;
+    delete deployment.external_links?.deposit_url;
 
     const result = DeploymentSchema.safeParse(deployment);
 
-    expect(result.success && result.data.product_fee).toBe(null);
+    expect(result.success && result.data.external_links?.deposit_url).toBe(
+      null,
+    );
+  });
+
+  it('should not allow a non-URL external_links.deposit_url', () => {
+    const deployment = deploymentBuilder()
+      .with('external_links', {
+        deposit_url: faker.string.numeric(),
+      })
+      .build();
+
+    const result = DeploymentSchema.safeParse(deployment);
+
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'invalid_string',
+      message: 'Invalid url',
+      path: ['external_links', 'deposit_url'],
+      validation: 'url',
+    });
   });
 
   it.each([
