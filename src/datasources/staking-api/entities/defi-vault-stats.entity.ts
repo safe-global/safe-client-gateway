@@ -14,6 +14,7 @@ export const DefiVaultStatsChains = [
   'bsc',
   'matic',
   'op',
+  'base',
 ] as const;
 
 export const DefiVaultStatsSchema = z.object({
