@@ -26,6 +26,7 @@ import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-nati
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -155,7 +156,7 @@ export class MultisigTransactionInfoMapper {
       );
     }
 
-    if (this.isValidTokenTransfer(transaction)) {
+    if (this.isValidTokenTransfer(transaction.safe, transaction.dataDecoded)) {
       const token = await this.tokenRepository
         .getToken({ chainId, address: transaction.to })
         .catch(() => null);
@@ -397,45 +398,38 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
-  private isValidTokenTransfer(
-    transaction: MultisigTransaction | ModuleTransaction,
+  public isValidTokenTransfer(
+    safe: `0x${string}`,
+    dataDecoded: BaseDataDecoded | null,
   ): boolean {
     return (
-      (this.isErc20Transfer(transaction) ||
-        this.isErc721Transfer(transaction)) &&
-      this.isSafeSenderOrReceiver(transaction)
+      (this.isErc20Transfer(dataDecoded) ||
+        this.isErc721Transfer(dataDecoded)) &&
+      this.isSafeSenderOrReceiver(safe, dataDecoded)
     );
   }
 
-  private isErc20Transfer(
-    transaction: MultisigTransaction | ModuleTransaction,
-  ): boolean {
-    const { dataDecoded } = transaction;
+  private isErc20Transfer(dataDecoded: BaseDataDecoded | null): boolean {
     return this.ERC20_TRANSFER_METHODS.some(
       (method) => method === dataDecoded?.method,
     );
   }
 
-  private isErc721Transfer(
-    transaction: MultisigTransaction | ModuleTransaction,
-  ): boolean {
-    const { dataDecoded } = transaction;
+  private isErc721Transfer(dataDecoded: BaseDataDecoded | null): boolean {
     return this.ERC721_TRANSFER_METHODS.some(
       (method) => method === dataDecoded?.method,
     );
   }
 
   private isSafeSenderOrReceiver(
-    transaction: MultisigTransaction | ModuleTransaction,
+    safe: `0x${string}`,
+    dataDecoded: BaseDataDecoded | null,
   ): boolean {
-    const { dataDecoded } = transaction;
     if (!dataDecoded) return false;
     return (
       this.TRANSFER_METHOD == dataDecoded.method ||
-      this.dataDecodedParamHelper.getFromParam(dataDecoded, '') ===
-        transaction.safe ||
-      this.dataDecodedParamHelper.getToParam(dataDecoded, '') ===
-        transaction.safe
+      this.dataDecodedParamHelper.getFromParam(dataDecoded, '') === safe ||
+      this.dataDecodedParamHelper.getToParam(dataDecoded, '') === safe
     );
   }
 }
