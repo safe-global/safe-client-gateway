@@ -3,14 +3,15 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export enum TransactionInfoType {
   Creation = 'Creation',
   Custom = 'Custom',
-  SettingsChange = 'SettingsChange',
-  Transfer = 'Transfer',
-  SwapOrder = 'SwapOrder',
-  SwapTransfer = 'SwapTransfer',
-  TwapOrder = 'TwapOrder',
   NativeStakingDeposit = 'NativeStakingDeposit',
   NativeStakingValidatorsExit = 'NativeStakingValidatorsExit',
   NativeStakingWithdraw = 'NativeStakingWithdraw',
+  SettingsChange = 'SettingsChange',
+  SwapOrder = 'SwapOrder',
+  SwapTransfer = 'SwapTransfer',
+  Transfer = 'Transfer',
+  TwapOrder = 'TwapOrder',
+  VaultDeposit = 'VaultDeposit',
 }
 
 export class TransactionInfo {

@@ -2281,4 +2281,28 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
       });
     });
   });
+
+  describe('Lending Vaults', () => {
+    describe('deposit', () => {
+      it.todo('should preview a transaction');
+      it.todo(
+        'should return a "standard" transaction preview if the deployment is unavailable',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the deployment product type is not defi',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the deployment is not active',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the deployment is on a different chain',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the vault stats are not available',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the underlying token is unknown',
+      );
+    });
+  });
 });
