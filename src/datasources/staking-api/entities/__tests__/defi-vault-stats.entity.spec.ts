@@ -1,5 +1,11 @@
-import { defiVaultStatsBuilder } from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
-import { DefiVaultStatsSchema } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
+import {
+  defiVaultAdditionalRewardBuilder,
+  defiVaultStatsBuilder,
+} from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
+import {
+  DefiVaultStatsAdditionalRewardSchema,
+  DefiVaultStatsSchema,
+} from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 
@@ -214,5 +220,83 @@ describe('DefiVaultStatsSchema', () => {
         received: 'undefined',
       },
     ]);
+  });
+
+  it('should not validate an invalid DefiVaultStatsAdditionalRewardSchema object', () => {
+    const defiVaultStatsAdditionalReward = {
+      invalid: 'defiVaultStatsAdditionalRewards',
+    };
+
+    const result = DefiVaultStatsAdditionalRewardSchema.safeParse(
+      defiVaultStatsAdditionalReward,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'invalid_type',
+        expected: 'string',
+        message: 'Required',
+        path: ['asset'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Required',
+        path: ['nrr'],
+        received: 'undefined',
+      },
+    ]);
+  });
+
+  it.each(['asset' as const, 'nrr' as const])(
+    'should not allow missing %s values',
+    (key) => {
+      const defiVaultStatsAdditionalReward =
+        defiVaultAdditionalRewardBuilder().build();
+      delete defiVaultStatsAdditionalReward[key];
+
+      const result = DefiVaultStatsAdditionalRewardSchema.safeParse(
+        defiVaultStatsAdditionalReward,
+      );
+
+      expect(!result.success && result.error.issues.length).toBe(1);
+      expect(!result.success && result.error.issues[0].path[0]).toBe(key);
+    },
+  );
+
+  it('should checksum an asset address', () => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
+    const defiVaultStatsAdditionalReward = defiVaultAdditionalRewardBuilder()
+      .with('asset', nonChecksummedAddress as `0x${string}`)
+      .build();
+
+    const result = DefiVaultStatsAdditionalRewardSchema.safeParse(
+      defiVaultStatsAdditionalReward,
+    );
+
+    expect(result.success && result.data['asset']).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
+
+  it('should not allow non numeric nrr values', () => {
+    const defiVaultStatsAdditionalReward = defiVaultAdditionalRewardBuilder()
+      // @ts-expect-error nrr is expected to be a number
+      .with('nrr', faker.string.numeric())
+      .build();
+
+    const result = DefiVaultStatsAdditionalRewardSchema.safeParse(
+      defiVaultStatsAdditionalReward,
+    );
+
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'invalid_type',
+      expected: 'number',
+      message: 'Expected number, received string',
+      path: ['nrr'],
+      received: 'string',
+    });
   });
 });

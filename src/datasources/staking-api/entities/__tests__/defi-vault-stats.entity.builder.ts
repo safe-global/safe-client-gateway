@@ -1,12 +1,21 @@
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
+import type {
+  DefiVaultStats,
+  DefiVaultStatsAdditionalReward,
+} from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import {
   DefiVaultStatsChains,
   DefiVaultStatsProtocols,
 } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+
+export function defiVaultAdditionalRewardBuilder(): IBuilder<DefiVaultStatsAdditionalReward> {
+  return new Builder<DefiVaultStatsAdditionalReward>()
+    .with('asset', getAddress(faker.finance.ethereumAddress()))
+    .with('nrr', faker.number.float());
+}
 
 export function defiVaultStatsBuilder(): IBuilder<DefiVaultStats> {
   return new Builder<DefiVaultStats>()
@@ -25,5 +34,11 @@ export function defiVaultStatsBuilder(): IBuilder<DefiVaultStats> {
     .with('chain', faker.helpers.arrayElement(DefiVaultStatsChains))
     .with('chain_id', faker.number.int())
     .with('asset_decimals', faker.number.int())
-    .with('updated_at_block', faker.number.int());
+    .with('updated_at_block', faker.number.int())
+    .with(
+      'additional_rewards',
+      faker.helpers.multiple(() => defiVaultAdditionalRewardBuilder().build(), {
+        count: faker.number.int({ min: 0, max: 5 }),
+      }),
+    );
 }
