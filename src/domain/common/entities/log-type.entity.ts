@@ -9,6 +9,8 @@ export enum LogType {
   MemoryMiss = 'MEMORY_MISS',
   MessagePropose = 'MESSAGE_PROPOSE',
   MessageValidity = 'MESSAGE_VALIDITY',
+  NotificationError = 'NOTIFICATION_ERROR',
+  NotificationSent = 'NOTIFICATION_SENT',
   RateLimit = 'RATE_LIMIT',
   TransactionPropose = 'TRANSACTION_PROPOSE',
   TransactionValidity = 'TRANSACTION_VALIDITY',
