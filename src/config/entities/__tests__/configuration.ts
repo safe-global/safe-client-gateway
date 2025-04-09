@@ -166,7 +166,6 @@ export default (): ReturnType<typeof configuration> => ({
     counterfactualBalances: false,
     accounts: false,
     users: false,
-    pushNotifications: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
     signatureVerification: {
