@@ -30,7 +30,7 @@ import { isAddressEqual } from 'viem';
 @Injectable()
 export class TwapOrderHelper {
   private static readonly ComposableCowAddress =
-    '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74' as const;
+    '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74';
 
   constructor(
     private readonly transactionFinder: TransactionFinder,
