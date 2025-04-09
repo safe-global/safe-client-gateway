@@ -276,6 +276,8 @@ export default () => ({
       'true',
     filterValueParsing:
       process.env.FF_FILTER_VALUE_PARSING?.toLowerCase() === 'true',
+    vaultTransactionsMapping:
+      process.env.FF_VAULT_TRANSACTIONS_MAPPING?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.

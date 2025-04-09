@@ -28,9 +28,11 @@ import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/enti
 import { KilnVaultHelper } from '@/routes/transactions/helpers/kiln-vault.helper';
 import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
 import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
+  private readonly isVaultTransactionsMappingEnabled: boolean;
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
@@ -49,6 +51,8 @@ export class MultisigTransactionInfoMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
     private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
@@ -64,7 +68,10 @@ export class MultisigTransactionInfoMapper {
     private readonly kilnVaultHelper: KilnVaultHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
     private readonly vaultTransactionMapper: VaultTransactionMapper,
-  ) {}
+  ) {
+    this.isVaultTransactionsMappingEnabled =
+      this.configurationService.getOrThrow('features.vaultTransactionsMapping');
+  }
 
   async mapTransactionInfo(
     chainId: string,
@@ -122,13 +129,15 @@ export class MultisigTransactionInfoMapper {
       return nativeStakingWithdraw;
     }
 
-    const vaultDeposit = await this.mapVaultDeposit({
-      chainId,
-      transaction,
-    });
-    // If the transaction is a vault deposit, we return it immediately
-    if (vaultDeposit) {
-      return vaultDeposit;
+    if (this.isVaultTransactionsMappingEnabled) {
+      const vaultDeposit = await this.mapVaultDeposit({
+        chainId,
+        transaction,
+      });
+      // If the transaction is a vault deposit, we return it immediately
+      if (vaultDeposit) {
+        return vaultDeposit;
+      }
     }
 
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
