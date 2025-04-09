@@ -153,6 +153,33 @@ describe('HooksRepository (Unit)', () => {
     expect(mockSafeRepository.clearIncomingTransfers).toHaveBeenCalledTimes(3);
   });
 
+  it('should process CHAIN_UPDATE events for unsupported chains', async () => {
+    const chain = chainBuilder().build();
+    const event = chainUpdateEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(false);
+    mockChainsRepository.clearChain.mockResolvedValue();
+
+    // same event 3 times
+    await hooksRepository.onEvent(event);
+    await hooksRepository.onEvent(event);
+    await hooksRepository.onEvent(event);
+
+    // 3 calls to isSupportedChain
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledTimes(3);
+    expect(mockChainsRepository.isSupportedChain).toHaveBeenCalledWith(
+      event.chainId,
+    );
+
+    // 3 calls to repositories
+    expect(mockChainsRepository.clearChain).toHaveBeenCalledTimes(3);
+    expect(mockBlockchainRepository.clearApi).toHaveBeenCalledTimes(3);
+    expect(mockStakingRepository.clearApi).toHaveBeenCalledTimes(3);
+    expect(mockTransactionsRepository.clearApi).toHaveBeenCalledTimes(3);
+    expect(mockBalancesRepository.clearApi).toHaveBeenCalledTimes(3);
+  });
+
   it('should clear the chain lookup cache on a CHAIN_UPDATE event', async () => {
     const chain = chainBuilder().build();
     const event = incomingTokenEventBuilder()

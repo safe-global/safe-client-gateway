@@ -8,6 +8,7 @@ import { EventSchema } from '@/routes/hooks/entities/schemas/event.schema';
 import { IHooksRepository } from '@/domain/hooks/hooks.repository.interface';
 import { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
 import { EventCacheHelper } from '@/domain/hooks/helpers/event-cache.helper';
+import { ConfigEventType } from '@/routes/hooks/entities/event-type.entity';
 
 @Injectable()
 export class HooksRepository implements IHooksRepository, OnModuleInit {
@@ -47,7 +48,7 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     const isSupportedChainId = await this.eventCacheHelper.isSupportedChainMemo(
       event.chainId,
     );
-    if (isSupportedChainId) {
+    if (isSupportedChainId || event.type === ConfigEventType.CHAIN_UPDATE) {
       return Promise.allSettled([
         this.eventCacheHelper.onEventClearCache(event),
         this.eventNotificationsHelper.onEventEnqueueNotifications(event),
