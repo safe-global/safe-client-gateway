@@ -25,7 +25,7 @@ function fetchClientFactory(
     'httpClient.requestTimeout',
   );
 
-  return async <T>(
+  const request = async <T>(
     url: string,
     options: RequestInit,
   ): Promise<NetworkResponse<T>> => {
@@ -54,6 +54,27 @@ function fetchClientFactory(
       status: response.status,
       data,
     };
+  };
+
+  /**
+   * A cache to prevent multiple in-flight requests for the same data.
+   */
+  const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
+
+  return async <T>(
+    url: string,
+    options: RequestInit,
+  ): Promise<NetworkResponse<T>> => {
+    // Naive key for simplicity but JSON.stringify is not stable
+    const key = JSON.stringify({ url, ...options });
+
+    if (!(key in cache)) {
+      cache[key] = request(url, options).finally(() => {
+        delete cache[key];
+      });
+    }
+
+    return cache[key];
   };
 }
 
