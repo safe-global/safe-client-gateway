@@ -78,19 +78,19 @@ export class MultisigTransactionMapper {
       addresses.add(transaction.safe);
       addresses.add(transaction.to);
       if (transaction.dataDecoded) {
-        const toAddress = this.dataDecodedParamHelper.getFromParam(
-          transaction.dataDecoded,
-          transaction.safe,
-        );
-        if (isAddress(toAddress)) {
-          addresses.add(getAddress(toAddress));
-        }
-        const fromAddress = this.dataDecodedParamHelper.getToParam(
+        const fromAddress = this.dataDecodedParamHelper.getFromParam(
           transaction.dataDecoded,
           transaction.safe,
         );
         if (isAddress(fromAddress)) {
           addresses.add(getAddress(fromAddress));
+        }
+        const toAddress = this.dataDecodedParamHelper.getToParam(
+          transaction.dataDecoded,
+          transaction.safe,
+        );
+        if (isAddress(toAddress)) {
+          addresses.add(getAddress(toAddress));
         }
       }
     }
