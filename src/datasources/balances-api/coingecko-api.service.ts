@@ -418,9 +418,9 @@ export class CoingeckoApi implements IPricesApi {
 
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const data = await Promise.all(
-        tokenAddressBatches.map(async (tokenAddresses) => {
-          const { data } = await this.networkService.get<AssetPrice>({
+      const data = await Promise.allSettled(
+        tokenAddressBatches.map((tokenAddresses) => {
+          return this.networkService.get<AssetPrice>({
             url,
             networkRequest: {
               params: {
@@ -435,10 +435,12 @@ export class CoingeckoApi implements IPricesApi {
               }),
             },
           });
-
-          return data;
         }),
-      );
+      ).then((res) => {
+        return res
+          .filter((res) => res.status === 'fulfilled')
+          .map((res) => res.value.data);
+      });
 
       return merge({}, ...data);
     } catch (error) {
