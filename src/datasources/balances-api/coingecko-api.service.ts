@@ -49,7 +49,7 @@ export class CoingeckoApi implements IPricesApi {
   /**
    * Coingecko API maximum amount of token addresses being requested in the same call.
    */
-  private static readonly MAX_BATCH_SIZE: number = 100;
+  static readonly MAX_BATCH_SIZE: number = 100;
   /**
    * Time range in seconds used to get a random value when calculating a TTL for not-found token prices.
    */
@@ -75,10 +75,6 @@ export class CoingeckoApi implements IPricesApi {
    * TTL in seconds for high-rate refresh token prices.
    */
   private readonly highRefreshRateTokensTtlSeconds: number;
-  /**
-   * Maximum number of token addresses that can be requested in a single API call.
-   */
-  private readonly tokenPriceRequestBatchSize: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -123,10 +119,6 @@ export class CoingeckoApi implements IPricesApi {
     this.highRefreshRateTokensTtlSeconds =
       this.configurationService.getOrThrow<number>(
         'balances.providers.safe.prices.highRefreshRateTokensTtlSeconds',
-      );
-    this.tokenPriceRequestBatchSize =
-      this.configurationService.getOrThrow<number>(
-        'balances.providers.safe.prices.tokenPriceRequestBatchSize',
       );
   }
 
@@ -344,7 +336,7 @@ export class CoingeckoApi implements IPricesApi {
     const lowerCaseFiatCode = args.fiatCode.toLowerCase();
     const prices = await this._requestPricesFromNetwork({
       ...args,
-      tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
+      tokenAddresses: args.tokenAddresses,
     }).then(getAssetPriceSchema(lowerCaseFiatCode).parse);
 
     return Promise.all(
@@ -421,7 +413,7 @@ export class CoingeckoApi implements IPricesApi {
     // CoinGecko limits the number of token addresses that can be queried at once
     const tokenAddressBatches = chunk(
       uniqueTokenAddresses,
-      this.tokenPriceRequestBatchSize,
+      CoingeckoApi.MAX_BATCH_SIZE,
     );
 
     try {

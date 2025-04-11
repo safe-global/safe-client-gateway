@@ -98,11 +98,6 @@ export default () => ({
           highRefreshRateTokensTtlSeconds: parseInt(
             process.env.HIGH_REFRESH_RATE_TOKENS_TTL_SECONDS ?? `${30}`,
           ),
-          // Public API has no explicit limit but can be rate limited/timeout
-          // Pro API has a limit of 100 addresses per request
-          tokenPriceRequestBatchSize: parseInt(
-            process.env.TOKEN_PRICE_REQUEST_BATCH_SIZE ?? `${100}`,
-          ),
         },
       },
       zerion: {

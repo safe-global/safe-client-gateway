@@ -51,7 +51,6 @@ describe('CoingeckoAPI', () => {
   const notFoundPriceTtlSeconds = faker.number.int();
   const defaultExpirationTimeInSeconds = faker.number.int();
   const notFoundExpirationTimeInSeconds = faker.number.int();
-  const tokenPriceRequestBatchSize = faker.number.int({ min: 10, max: 50 });
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -91,10 +90,6 @@ describe('CoingeckoAPI', () => {
     fakeConfigurationService.set(
       'expirationTimeInSeconds.notFound.default',
       notFoundExpirationTimeInSeconds,
-    );
-    fakeConfigurationService.set(
-      'balances.providers.safe.prices.tokenPriceRequestBatchSize',
-      tokenPriceRequestBatchSize,
     );
     service = new CoingeckoApi(
       fakeConfigurationService,
@@ -1220,7 +1215,7 @@ describe('CoingeckoAPI', () => {
         {
           count: {
             min: 1,
-            max: tokenPriceRequestBatchSize,
+            max: CoingeckoApi.MAX_BATCH_SIZE,
           },
         },
       );
@@ -1260,7 +1255,7 @@ describe('CoingeckoAPI', () => {
       const tokenAddresses = faker.helpers.multiple(() => tokenAddress, {
         count: {
           min: 2,
-          max: tokenPriceRequestBatchSize,
+          max: CoingeckoApi.MAX_BATCH_SIZE,
         },
       });
       const fiatCode = faker.finance.currencyCode();
@@ -1299,19 +1294,19 @@ describe('CoingeckoAPI', () => {
         () => faker.finance.ethereumAddress(),
         {
           count: {
-            min: tokenPriceRequestBatchSize + 1,
-            max: tokenPriceRequestBatchSize * 2,
+            min: CoingeckoApi.MAX_BATCH_SIZE + 1,
+            max: CoingeckoApi.MAX_BATCH_SIZE * 2,
           },
         },
       );
       const fiatCode = faker.finance.currencyCode();
       const lowerCaseFiatCode = fiatCode.toLowerCase();
       const coingeckoPriceBatch1 = buildCoinGeckoResponse(
-        tokenAddresses.slice(0, tokenPriceRequestBatchSize),
+        tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
         fiatCode,
       );
       const coingeckoPriceBatch2 = buildCoinGeckoResponse(
-        tokenAddresses.slice(tokenPriceRequestBatchSize),
+        tokenAddresses.slice(CoingeckoApi.MAX_BATCH_SIZE),
         fiatCode,
       );
       mockNetworkService.get.mockResolvedValueOnce({
