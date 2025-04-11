@@ -1,7 +1,6 @@
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { firebaseNotificationBuilder } from '@/datasources/push-notifications-api/__tests__/firebase-notification.builder';
@@ -17,10 +16,6 @@ const mockNetworkService = jest.mocked({
 const mockJwtService = jest.mocked({
   sign: jest.fn(),
 } as jest.MockedObjectDeep<IJwtService>);
-
-const mockHttpErrorFactory = jest.mocked({
-  from: jest.fn(),
-} as jest.MockedObjectDeep<HttpErrorFactory>);
 
 describe('FirebaseCloudMessagingApiService', () => {
   let target: FirebaseCloudMessagingApiService;
@@ -63,7 +58,6 @@ describe('FirebaseCloudMessagingApiService', () => {
       fakeConfigurationService,
       fakeCacheService,
       mockJwtService,
-      mockHttpErrorFactory,
     );
   });
 
