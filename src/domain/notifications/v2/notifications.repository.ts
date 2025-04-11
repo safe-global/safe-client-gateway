@@ -77,8 +77,9 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
           // No need to log as datasource does
           .catch(() => null);
       } else {
-        this.loggingService.info(`Failed to enqueue notification: ${e}`);
-        throw new UnprocessableEntityException();
+        throw new UnprocessableEntityException(
+          `Failed to enqueue notification, ${e}`,
+        );
       }
     }
   }
