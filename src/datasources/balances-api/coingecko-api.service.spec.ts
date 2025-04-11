@@ -1333,7 +1333,7 @@ describe('CoingeckoAPI', () => {
           },
           params: {
             contract_addresses: tokenAddresses
-              .slice(0, tokenPriceRequestBatchSize)
+              .slice(0, CoingeckoApi.MAX_BATCH_SIZE)
               .join(','),
             vs_currencies: lowerCaseFiatCode,
             include_24hr_change: true,
@@ -1348,7 +1348,7 @@ describe('CoingeckoAPI', () => {
           },
           params: {
             contract_addresses: tokenAddresses
-              .slice(tokenPriceRequestBatchSize)
+              .slice(CoingeckoApi.MAX_BATCH_SIZE)
               .join(','),
             vs_currencies: lowerCaseFiatCode,
             include_24hr_change: true,
