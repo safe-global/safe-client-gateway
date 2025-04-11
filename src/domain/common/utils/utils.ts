@@ -2,13 +2,14 @@
 // @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat#maximumfractiondigits
 const MAX_MAXIMUM_FRACTION_DIGITS = 100;
 
-export function getNumberString(value: number): string {
+const formatter = new Intl.NumberFormat('en-US', {
   // Prevent scientific notation
-  const formatter = new Intl.NumberFormat('en-US', {
-    notation: 'standard',
-    useGrouping: false,
-    maximumFractionDigits: MAX_MAXIMUM_FRACTION_DIGITS,
-  });
+  notation: 'standard',
+  useGrouping: false,
+  maximumFractionDigits: MAX_MAXIMUM_FRACTION_DIGITS,
+});
+
+export function getNumberString(value: number): string {
   return formatter.format(value);
 }
 
