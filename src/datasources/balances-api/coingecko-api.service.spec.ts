@@ -15,6 +15,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { Cache } from 'cache-manager';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
@@ -1190,5 +1191,267 @@ describe('CoingeckoAPI', () => {
     expect(mockLoggingService.error).toHaveBeenCalledWith(
       `Error getting native coin price: Error: pricesProvider.nativeCoinId is not defined `,
     );
+  });
+
+  describe('batching price requests', () => {
+    function buildCoinGeckoResponse(
+      tokenAddresses: Array<string>,
+      fiatCode: string,
+    ): AssetPrice {
+      const lowerCaseFiatCode = fiatCode.toLowerCase();
+      return tokenAddresses.reduce<AssetPrice>((acc, tokenAddress) => {
+        const price = faker.number.float({ min: 0.01, multipleOf: 0.01 });
+        const change = faker.number.float({ min: -1, max: 1 });
+        acc[tokenAddress] = {
+          [lowerCaseFiatCode]: price,
+          [`${lowerCaseFiatCode}_24h_change`]: change,
+        };
+        return acc;
+      }, {});
+    }
+    it('should request prices from network', async () => {
+      const chainName = faker.company.name();
+      const tokenAddresses = faker.helpers.multiple(
+        () => faker.finance.ethereumAddress(),
+        {
+          count: {
+            min: 1,
+            max: CoingeckoApi.MAX_BATCH_SIZE,
+          },
+        },
+      );
+      const fiatCode = faker.finance.currencyCode();
+      const lowerCaseFiatCode = fiatCode.toLowerCase();
+      const coingeckoPrice = buildCoinGeckoResponse(tokenAddresses, fiatCode);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(coingeckoPrice),
+        status: 200,
+      });
+
+      const result = await service._requestPricesFromNetwork({
+        chainName,
+        tokenAddresses,
+        fiatCode,
+      });
+
+      expect(result).toStrictEqual(coingeckoPrice);
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(1, {
+        url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
+        networkRequest: {
+          headers: {
+            'x-cg-pro-api-key': coingeckoApiKey,
+          },
+          params: {
+            contract_addresses: tokenAddresses.join(','),
+            vs_currencies: lowerCaseFiatCode,
+            include_24hr_change: true,
+          },
+        },
+      });
+    });
+
+    it('should deduplicate token addresses', async () => {
+      const chainName = faker.company.name();
+      const tokenAddress = faker.finance.ethereumAddress();
+      const tokenAddresses = faker.helpers.multiple(() => tokenAddress, {
+        count: {
+          min: 2,
+          max: CoingeckoApi.MAX_BATCH_SIZE,
+        },
+      });
+      const fiatCode = faker.finance.currencyCode();
+      const lowerCaseFiatCode = fiatCode.toLowerCase();
+      const coingeckoPrice = buildCoinGeckoResponse(tokenAddresses, fiatCode);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(coingeckoPrice),
+        status: 200,
+      });
+
+      const result = await service._requestPricesFromNetwork({
+        chainName,
+        tokenAddresses,
+        fiatCode,
+      });
+
+      expect(result).toStrictEqual(coingeckoPrice);
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(1, {
+        url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
+        networkRequest: {
+          headers: {
+            'x-cg-pro-api-key': coingeckoApiKey,
+          },
+          params: {
+            contract_addresses: tokenAddress,
+            vs_currencies: lowerCaseFiatCode,
+            include_24hr_change: true,
+          },
+        },
+      });
+    });
+
+    it('should batch request prices from network', async () => {
+      const chainName = faker.company.name();
+      const tokenAddresses = faker.helpers.multiple(
+        () => faker.finance.ethereumAddress(),
+        {
+          count: {
+            min: CoingeckoApi.MAX_BATCH_SIZE + 1,
+            max: CoingeckoApi.MAX_BATCH_SIZE * 2,
+          },
+        },
+      );
+      const fiatCode = faker.finance.currencyCode();
+      const lowerCaseFiatCode = fiatCode.toLowerCase();
+      const coingeckoPriceBatch1 = buildCoinGeckoResponse(
+        tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
+        fiatCode,
+      );
+      const coingeckoPriceBatch2 = buildCoinGeckoResponse(
+        tokenAddresses.slice(CoingeckoApi.MAX_BATCH_SIZE),
+        fiatCode,
+      );
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: rawify(coingeckoPriceBatch1),
+        status: 200,
+      });
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: rawify(coingeckoPriceBatch2),
+        status: 200,
+      });
+
+      const result = await service._requestPricesFromNetwork({
+        chainName,
+        tokenAddresses,
+        fiatCode,
+      });
+
+      expect(result).toStrictEqual({
+        ...coingeckoPriceBatch1,
+        ...coingeckoPriceBatch2,
+      });
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(2);
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(1, {
+        url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
+        networkRequest: {
+          headers: {
+            'x-cg-pro-api-key': coingeckoApiKey,
+          },
+          params: {
+            contract_addresses: tokenAddresses
+              .slice(0, CoingeckoApi.MAX_BATCH_SIZE)
+              .join(','),
+            vs_currencies: lowerCaseFiatCode,
+            include_24hr_change: true,
+          },
+        },
+      });
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(2, {
+        url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
+        networkRequest: {
+          headers: {
+            'x-cg-pro-api-key': coingeckoApiKey,
+          },
+          params: {
+            contract_addresses: tokenAddresses
+              .slice(CoingeckoApi.MAX_BATCH_SIZE)
+              .join(','),
+            vs_currencies: lowerCaseFiatCode,
+            include_24hr_change: true,
+          },
+        },
+      });
+    });
+
+    it('should filter failed batch requests', async () => {
+      const chainName = faker.company.name();
+      const tokenAddresses = faker.helpers.multiple(
+        () => faker.finance.ethereumAddress(),
+        {
+          count: {
+            min: CoingeckoApi.MAX_BATCH_SIZE + 1,
+            max: CoingeckoApi.MAX_BATCH_SIZE * 2,
+          },
+        },
+      );
+      const fiatCode = faker.finance.currencyCode();
+      const lowerCaseFiatCode = fiatCode.toLowerCase();
+      const coingeckoPrice = buildCoinGeckoResponse(
+        tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
+        fiatCode,
+      );
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: rawify(coingeckoPrice),
+        status: 200,
+      });
+      mockNetworkService.get.mockRejectedValue(new Error('Network error'));
+
+      const result = await service._requestPricesFromNetwork({
+        chainName,
+        tokenAddresses,
+        fiatCode,
+      });
+
+      expect(result).toStrictEqual(coingeckoPrice);
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(2);
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(1, {
+        url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
+        networkRequest: {
+          headers: {
+            'x-cg-pro-api-key': coingeckoApiKey,
+          },
+          params: {
+            contract_addresses: tokenAddresses
+              .slice(0, CoingeckoApi.MAX_BATCH_SIZE)
+              .join(','),
+            vs_currencies: lowerCaseFiatCode,
+            include_24hr_change: true,
+          },
+        },
+      });
+      expect(mockNetworkService.get).toHaveBeenNthCalledWith(2, {
+        url: `${coingeckoBaseUri}/simple/token_price/${chainName}`,
+        networkRequest: {
+          headers: {
+            'x-cg-pro-api-key': coingeckoApiKey,
+          },
+          params: {
+            contract_addresses: tokenAddresses
+              .slice(CoingeckoApi.MAX_BATCH_SIZE)
+              .join(','),
+            vs_currencies: lowerCaseFiatCode,
+            include_24hr_change: true,
+          },
+        },
+      });
+    });
+
+    it('should throw if all batches fail', async () => {
+      const chainName = faker.company.name();
+      const tokenAddresses = faker.helpers.multiple(
+        () => faker.finance.ethereumAddress(),
+        {
+          count: {
+            min: CoingeckoApi.MAX_BATCH_SIZE + 1,
+            max: CoingeckoApi.MAX_BATCH_SIZE * 2,
+          },
+        },
+      );
+      const fiatCode = faker.finance.currencyCode();
+      mockNetworkService.get.mockRejectedValue(new Error('Network error'));
+
+      await expect(
+        service._requestPricesFromNetwork({
+          chainName,
+          tokenAddresses,
+          fiatCode,
+        }),
+      ).rejects.toThrow(
+        new DataSourceError(
+          `Error getting ${tokenAddresses.join(',')} price from provider`,
+        ),
+      );
+    });
   });
 });
