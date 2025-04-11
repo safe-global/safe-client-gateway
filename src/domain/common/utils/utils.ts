@@ -1,9 +1,15 @@
+// We use the maximum value in order to preserve all decimals
+// @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat#maximumfractiondigits
+const MAX_MAXIMUM_FRACTION_DIGITS = 100;
+
 export function getNumberString(value: number): string {
   // Prevent scientific notation
-  return value.toLocaleString('en-US', {
+  const formatter = new Intl.NumberFormat('en-US', {
     notation: 'standard',
     useGrouping: false,
+    maximumFractionDigits: MAX_MAXIMUM_FRACTION_DIGITS,
   });
+  return formatter.format(value);
 }
 
 /**
