@@ -93,10 +93,6 @@ describe('CoingeckoAPI', () => {
       notFoundExpirationTimeInSeconds,
     );
     fakeConfigurationService.set(
-      'expirationTimeInSeconds.notFound.price',
-      notFoundExpirationTimeInSeconds,
-    );
-    fakeConfigurationService.set(
       'balances.providers.safe.prices.tokenPriceRequestBatchSize',
       tokenPriceRequestBatchSize,
     );
