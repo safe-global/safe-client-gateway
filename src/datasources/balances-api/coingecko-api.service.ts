@@ -418,7 +418,7 @@ export class CoingeckoApi implements IPricesApi {
 
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const data = await Promise.allSettled(
+      const res = await Promise.allSettled(
         tokenAddressBatches.map((tokenAddresses) => {
           return this.networkService.get<AssetPrice>({
             url,
@@ -436,13 +436,17 @@ export class CoingeckoApi implements IPricesApi {
             },
           });
         }),
-      ).then((res) => {
-        return res
-          .filter((res) => res.status === 'fulfilled')
-          .map((res) => res.value.data);
-      });
+      );
 
-      return merge({}, ...data);
+      if (res.every((item) => item.status === 'rejected')) {
+        throw res[0].reason;
+      }
+
+      const fulfilled = res
+        .filter((item) => item.status === 'fulfilled')
+        .map((item) => item.value.data);
+
+      return merge({}, ...fulfilled);
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${

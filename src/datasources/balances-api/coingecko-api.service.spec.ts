@@ -15,6 +15,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { pricesProviderBuilder } from '@/domain/chains/entities/__tests__/prices-provider.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { Cache } from 'cache-manager';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
@@ -1424,6 +1425,33 @@ describe('CoingeckoAPI', () => {
           },
         },
       });
+    });
+
+    it('should throw if all batches fail', async () => {
+      const chainName = faker.company.name();
+      const tokenAddresses = faker.helpers.multiple(
+        () => faker.finance.ethereumAddress(),
+        {
+          count: {
+            min: CoingeckoApi.MAX_BATCH_SIZE + 1,
+            max: CoingeckoApi.MAX_BATCH_SIZE * 2,
+          },
+        },
+      );
+      const fiatCode = faker.finance.currencyCode();
+      mockNetworkService.get.mockRejectedValue(new Error('Network error'));
+
+      await expect(
+        service._requestPricesFromNetwork({
+          chainName,
+          tokenAddresses,
+          fiatCode,
+        }),
+      ).rejects.toThrow(
+        new DataSourceError(
+          `Error getting ${tokenAddresses.join(',')} price from provider`,
+        ),
+      );
     });
   });
 });
