@@ -55,6 +55,7 @@ export default (): ReturnType<typeof configuration> => ({
           notFoundPriceTtlSeconds: faker.number.int(),
           highRefreshRateTokens: [],
           highRefreshRateTokensTtlSeconds: faker.number.int(),
+          tokenPriceRequestBatchSize: faker.number.int(),
         },
       },
       zerion: {
