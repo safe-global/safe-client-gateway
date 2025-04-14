@@ -226,7 +226,7 @@ export class TransactionDataMapper {
       this.maxTokenInfoIndexSize,
     );
     return (
-      await Promise.all(
+      await Promise.allSettled(
         tokenAddresses.map(async (tokenAddress) => {
           const isNativeCoin = tokenAddress === NULL_ADDRESS;
           if (isNativeCoin) {
@@ -243,16 +243,16 @@ export class TransactionDataMapper {
               trusted: true,
             };
           } else {
-            return await this.tokenRepository
-              .getToken({
-                chainId: args.chainId,
-                address: tokenAddress,
-              })
-              .catch(() => null);
+            return await this.tokenRepository.getToken({
+              chainId: args.chainId,
+              address: tokenAddress,
+            });
           }
         }),
       )
-    ).filter((token) => token !== null);
+    )
+      .filter((result) => result.status === 'fulfilled')
+      .map((result) => result.value);
   }
 
   /**
