@@ -3,6 +3,8 @@ import { AddressBookItemsRepositoryModule } from '@/domain/spaces/address-books/
 import { SpacesRepositoryModule } from '@/domain/spaces/spaces.repository.module';
 import { MembersRepositoryModule } from '@/domain/users/members.repository.module';
 import { UserRepositoryModule } from '@/domain/users/users.repository.module';
+import { AddressBooksController } from '@/routes/spaces/address-books.controller';
+import { AddressBooksService } from '@/routes/spaces/address-books.service';
 import { SpaceSafesController } from '@/routes/spaces/space-safes.controller';
 import { SpaceSafesService } from '@/routes/spaces/space-safes.service';
 import { SpacesController } from '@/routes/spaces/spaces.controller';
@@ -17,7 +19,7 @@ import { Module } from '@nestjs/common';
     SpacesRepositoryModule,
     UserRepositoryModule,
   ],
-  controllers: [SpacesController, SpaceSafesController],
-  providers: [SpacesService, SpaceSafesService],
+  controllers: [SpacesController, SpaceSafesController, AddressBooksController],
+  providers: [SpacesService, SpaceSafesService, AddressBooksService],
 })
 export class SpacesModule {}

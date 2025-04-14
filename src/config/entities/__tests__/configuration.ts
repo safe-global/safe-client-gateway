@@ -275,6 +275,9 @@ export default (): ReturnType<typeof configuration> => ({
     baseUri: faker.internet.url({ appendSlash: false }),
   },
   spaces: {
+    addressBooks: {
+      maxAddressBookItems: faker.number.int({ min: 100, max: 200 }),
+    },
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
