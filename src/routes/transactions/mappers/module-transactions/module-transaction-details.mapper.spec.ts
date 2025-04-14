@@ -30,6 +30,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
   const transactionDataMapper = jest.mocked({
     isTrustedDelegateCall: jest.fn(),
     buildAddressInfoIndex: jest.fn(),
+    buildTokenInfoIndex: jest.fn(),
   } as jest.MockedObjectDeep<TransactionDataMapper>);
 
   beforeEach(() => {
@@ -76,6 +77,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
         operation: transaction.operation,
         trustedDelegateCallTarget,
         addressInfoIndex: null,
+        tokenInfoIndex: null,
       }),
       txHash: transaction.transactionHash,
       detailedExecutionInfo: new ModuleExecutionDetails(addressInfo),

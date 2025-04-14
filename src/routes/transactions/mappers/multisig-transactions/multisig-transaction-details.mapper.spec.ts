@@ -36,6 +36,7 @@ const transactionInfoMapper = jest.mocked({
 const transactionDataMapper = jest.mocked({
   isTrustedDelegateCall: jest.fn(),
   buildAddressInfoIndex: jest.fn(),
+  buildTokenInfoIndex: jest.fn(),
 } as jest.MockedObjectDeep<TransactionDataMapper>);
 
 const safeAppInfoMapper = jest.mocked({
@@ -152,6 +153,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         operation: transaction.operation,
         trustedDelegateCallTarget: true,
         addressInfoIndex: null,
+        tokenInfoIndex: null,
       }),
       txHash: transaction.transactionHash,
       detailedExecutionInfo: multisigExecutionDetails,

@@ -295,6 +295,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             dataDecoded: moduleTransaction.dataDecoded,
             operation: Operation.CALL,
             addressInfoIndex: null,
+            tokenInfoIndex: null,
             trustedDelegateCallTarget: null,
           },
           detailedExecutionInfo: {
@@ -577,6 +578,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             operation: tx.operation,
             trustedDelegateCallTarget: null,
             addressInfoIndex: null,
+            tokenInfoIndex: null,
           },
           detailedExecutionInfo: {
             type: 'MULTISIG',
@@ -758,6 +760,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             operation: tx.operation,
             trustedDelegateCallTarget: null,
             addressInfoIndex: null,
+            tokenInfoIndex: null,
           },
           detailedExecutionInfo: {
             type: 'MULTISIG',
@@ -937,6 +940,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             operation: tx.operation,
             trustedDelegateCallTarget: null,
             addressInfoIndex: null,
+            tokenInfoIndex: null,
           },
           detailedExecutionInfo: {
             submittedAt: tx.submissionDate.getTime(),

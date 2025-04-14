@@ -3,7 +3,10 @@ import isEmpty from 'lodash/isEmpty';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import {
+  BaseDataDecoded,
+  DataDecoded,
+} from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import {
@@ -16,36 +19,62 @@ import { TransactionData } from '@/routes/transactions/entities/transaction-data
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { getAddress } from 'viem';
+import {
+  Erc20Token,
+  Erc721Token,
+  NativeToken,
+} from '@/domain/tokens/entities/token.entity';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class TransactionDataMapper {
+  private readonly maxTokenInfoIndexSize: number;
+
   constructor(
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(IContractsRepository)
     private readonly contractRepository: ContractsRepository,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
-  ) {}
+    private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: ITokenRepository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxTokenInfoIndexSize = this.configurationService.getOrThrow<number>(
+      'mappings.transactionData.maxTokenInfoIndexSize',
+    );
+  }
 
   async mapTransactionData(
     chainId: string,
     previewTransactionDto: PreviewTransactionDto,
     dataDecoded: DataDecoded | null,
+    safeAddress: `0x${string}`,
   ): Promise<TransactionData> {
-    const toAddress = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      previewTransactionDto.to,
-      ['CONTRACT'],
-    );
-    const isTrustedDelegateCall = await this.isTrustedDelegateCall(
-      chainId,
-      previewTransactionDto.operation,
-      previewTransactionDto.to,
-      dataDecoded,
-    );
-    const addressInfoIndex = await this.buildAddressInfoIndex(
-      chainId,
-      dataDecoded,
-    );
+    const [toAddress, isTrustedDelegateCall, addressInfoIndex, tokenInfoIndex] =
+      await Promise.all([
+        this.addressInfoHelper.getOrDefault(chainId, previewTransactionDto.to, [
+          'CONTRACT',
+        ]),
+        this.isTrustedDelegateCall(
+          chainId,
+          previewTransactionDto.operation,
+          previewTransactionDto.to,
+          dataDecoded,
+        ),
+        this.buildAddressInfoIndex(chainId, dataDecoded),
+        this.buildTokenInfoIndex({
+          chainId,
+          safeAddress,
+          dataDecoded,
+        }),
+      ]);
 
     return new TransactionData(
       previewTransactionDto.data,
@@ -55,6 +84,7 @@ export class TransactionDataMapper {
       previewTransactionDto.operation,
       isTrustedDelegateCall ?? null,
       isEmpty(addressInfoIndex) ? null : addressInfoIndex,
+      isEmpty(tokenInfoIndex) ? null : tokenInfoIndex,
     );
   }
 
@@ -94,6 +124,85 @@ export class TransactionDataMapper {
       : false;
 
     return isTrustedForDelegateCall && !hasNestedDelegate;
+  }
+
+  async buildTokenInfoIndex(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    dataDecoded: BaseDataDecoded | null;
+  }): Promise<Record<`0x${string}`, Erc20Token | Erc721Token | NativeToken>> {
+    if (
+      !args.dataDecoded?.parameters ||
+      args.dataDecoded.method !== MULTI_SEND_METHOD_NAME
+    ) {
+      return {};
+    }
+
+    const tokens = new Set<`0x${string}`>();
+
+    for (const parameter of args.dataDecoded.parameters) {
+      const isMultiSend =
+        parameter.name === TRANSACTIONS_PARAMETER_NAME &&
+        parameter.type === 'bytes';
+
+      if (!isMultiSend || !Array.isArray(parameter.valueDecoded)) {
+        continue;
+      }
+
+      for (const batchedTransaction of parameter.valueDecoded) {
+        const isNativeCoin = batchedTransaction.value !== '0';
+
+        if (isNativeCoin) {
+          tokens.add(NULL_ADDRESS);
+          continue;
+        }
+
+        const isValidTokenTransfer =
+          this.transactionInfoMapper.isValidTokenTransfer(
+            args.safeAddress,
+            batchedTransaction.dataDecoded,
+          );
+
+        if (isValidTokenTransfer) {
+          tokens.add(batchedTransaction.to);
+        }
+      }
+    }
+
+    const tokenInfo = await Promise.all(
+      Array.from(tokens)
+        .slice(0, this.maxTokenInfoIndexSize)
+        .map(async (address) => {
+          const isNativeCoin = address === NULL_ADDRESS;
+          if (isNativeCoin) {
+            const { nativeCurrency } = await this.chainsRepository.getChain(
+              args.chainId,
+            );
+            return {
+              type: 'NATIVE_TOKEN' as const,
+              address: NULL_ADDRESS as `0x${string}`,
+              decimals: nativeCurrency.decimals,
+              logoUri: nativeCurrency.logoUri,
+              name: nativeCurrency.name,
+              symbol: nativeCurrency.symbol,
+              trusted: true,
+            };
+          } else {
+            return await this.tokenRepository
+              .getToken({
+                chainId: args.chainId,
+                address,
+              })
+              .catch(() => null);
+          }
+        }),
+    );
+
+    return Object.fromEntries(
+      tokenInfo
+        .filter((token) => token !== null)
+        .map((token) => [token.address, token]),
+    );
   }
 
   /**
