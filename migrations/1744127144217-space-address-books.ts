@@ -10,6 +10,7 @@ export class SpaceAddressBooks1744127144217 implements MigrationInterface {
         address VARCHAR(42) NOT NULL,
         name VARCHAR(30) NOT NULL,
         created_by VARCHAR(42) NOT NULL,
+        last_updated_by VARCHAR(42) NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         CONSTRAINT PK_SABI_id PRIMARY KEY (id),
