@@ -1,4 +1,5 @@
 import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
+import { AddressBookItemsRepositoryModule } from '@/domain/spaces/address-books/address-book-items.repository.module';
 import { SpacesRepositoryModule } from '@/domain/spaces/spaces.repository.module';
 import { MembersRepositoryModule } from '@/domain/users/members.repository.module';
 import { UserRepositoryModule } from '@/domain/users/users.repository.module';
@@ -10,10 +11,11 @@ import { Module } from '@nestjs/common';
 
 @Module({
   imports: [
+    AddressBookItemsRepositoryModule,
     AuthRepositoryModule,
+    MembersRepositoryModule,
     SpacesRepositoryModule,
     UserRepositoryModule,
-    MembersRepositoryModule,
   ],
   controllers: [SpacesController, SpaceSafesController],
   providers: [SpacesService, SpaceSafesService],
