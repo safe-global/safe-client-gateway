@@ -49,7 +49,7 @@ export class CoingeckoApi implements IPricesApi {
   /**
    * Coingecko API maximum amount of token addresses being requested in the same call.
    */
-  static readonly MAX_BATCH_SIZE: number = 100;
+  private static readonly MAX_BATCH_SIZE: number = 100;
   /**
    * Time range in seconds used to get a random value when calculating a TTL for not-found token prices.
    */

@@ -17,6 +17,8 @@ import { rawify } from '@/validation/entities/raw.entity';
 import type { Cache } from 'cache-manager';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
+const MAX_BATCH_SIZE = 100;
+
 const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
 } as jest.MockedObjectDeep<CacheFirstDataSource>);
@@ -1216,7 +1218,7 @@ describe('CoingeckoAPI', () => {
         {
           count: {
             min: 1,
-            max: CoingeckoApi.MAX_BATCH_SIZE,
+            max: MAX_BATCH_SIZE,
           },
         },
       );
@@ -1257,7 +1259,7 @@ describe('CoingeckoAPI', () => {
       const tokenAddresses = faker.helpers.multiple(() => tokenAddress, {
         count: {
           min: 2,
-          max: CoingeckoApi.MAX_BATCH_SIZE,
+          max: MAX_BATCH_SIZE,
         },
       });
       const fiatCode = faker.finance.currencyCode();
@@ -1297,19 +1299,19 @@ describe('CoingeckoAPI', () => {
         () => faker.finance.ethereumAddress(),
         {
           count: {
-            min: CoingeckoApi.MAX_BATCH_SIZE + 1,
-            max: CoingeckoApi.MAX_BATCH_SIZE * 2,
+            min: MAX_BATCH_SIZE + 1,
+            max: MAX_BATCH_SIZE * 2,
           },
         },
       );
       const fiatCode = faker.finance.currencyCode();
       const lowerCaseFiatCode = fiatCode.toLowerCase();
       const coingeckoPriceBatch1 = buildCoinGeckoResponse(
-        tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
+        tokenAddresses.slice(0, MAX_BATCH_SIZE),
         fiatCode,
       );
       const coingeckoPriceBatch2 = buildCoinGeckoResponse(
-        tokenAddresses.slice(CoingeckoApi.MAX_BATCH_SIZE),
+        tokenAddresses.slice(MAX_BATCH_SIZE),
         fiatCode,
       );
       mockNetworkService.get.mockResolvedValueOnce({
@@ -1340,7 +1342,7 @@ describe('CoingeckoAPI', () => {
           },
           params: {
             contract_addresses: tokenAddresses
-              .slice(0, CoingeckoApi.MAX_BATCH_SIZE)
+              .slice(0, MAX_BATCH_SIZE)
               .join(','),
             vs_currencies: lowerCaseFiatCode,
             include_24hr_change: true,
@@ -1354,9 +1356,7 @@ describe('CoingeckoAPI', () => {
             'x-cg-pro-api-key': coingeckoApiKey,
           },
           params: {
-            contract_addresses: tokenAddresses
-              .slice(CoingeckoApi.MAX_BATCH_SIZE)
-              .join(','),
+            contract_addresses: tokenAddresses.slice(MAX_BATCH_SIZE).join(','),
             vs_currencies: lowerCaseFiatCode,
             include_24hr_change: true,
           },
@@ -1370,15 +1370,15 @@ describe('CoingeckoAPI', () => {
         () => faker.finance.ethereumAddress(),
         {
           count: {
-            min: CoingeckoApi.MAX_BATCH_SIZE + 1,
-            max: CoingeckoApi.MAX_BATCH_SIZE * 2,
+            min: MAX_BATCH_SIZE + 1,
+            max: MAX_BATCH_SIZE * 2,
           },
         },
       );
       const fiatCode = faker.finance.currencyCode();
       const lowerCaseFiatCode = fiatCode.toLowerCase();
       const coingeckoPrice = buildCoinGeckoResponse(
-        tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
+        tokenAddresses.slice(0, MAX_BATCH_SIZE),
         fiatCode,
       );
       mockNetworkService.get.mockResolvedValueOnce({
@@ -1403,7 +1403,7 @@ describe('CoingeckoAPI', () => {
           },
           params: {
             contract_addresses: tokenAddresses
-              .slice(0, CoingeckoApi.MAX_BATCH_SIZE)
+              .slice(0, MAX_BATCH_SIZE)
               .join(','),
             vs_currencies: lowerCaseFiatCode,
             include_24hr_change: true,
@@ -1417,9 +1417,7 @@ describe('CoingeckoAPI', () => {
             'x-cg-pro-api-key': coingeckoApiKey,
           },
           params: {
-            contract_addresses: tokenAddresses
-              .slice(CoingeckoApi.MAX_BATCH_SIZE)
-              .join(','),
+            contract_addresses: tokenAddresses.slice(MAX_BATCH_SIZE).join(','),
             vs_currencies: lowerCaseFiatCode,
             include_24hr_change: true,
           },
@@ -1433,8 +1431,8 @@ describe('CoingeckoAPI', () => {
         () => faker.finance.ethereumAddress(),
         {
           count: {
-            min: CoingeckoApi.MAX_BATCH_SIZE + 1,
-            max: CoingeckoApi.MAX_BATCH_SIZE * 2,
+            min: MAX_BATCH_SIZE + 1,
+            max: MAX_BATCH_SIZE * 2,
           },
         },
       );
