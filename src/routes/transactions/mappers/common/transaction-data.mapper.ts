@@ -6,6 +6,7 @@ import { Operation } from '@/domain/safe/entities/operation.entity';
 import {
   BaseDataDecoded,
   DataDecoded,
+  DataDecodedParameter,
 } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -126,6 +127,15 @@ export class TransactionDataMapper {
     return isTrustedForDelegateCall && !hasNestedDelegate;
   }
 
+  /**
+   * Builds a {@link Record<string, TokenInfo>} which contains all the tokens
+   * extracted from {@link DataDecoded} as keys, and their related {@link TokenInfo}
+   * as value.
+   * @param args.chainId - chain ID to use
+   * @param args.safeAddress - Safe address to use
+   * @param args.dataDecoded - decoded data to traverse
+   * @returns {@link Record<string, TokenInfo>} - hashmap of tokens <> their info.
+   */
   async buildTokenInfoIndex(args: {
     chainId: string;
     safeAddress: `0x${string}`;
@@ -138,9 +148,38 @@ export class TransactionDataMapper {
       return {};
     }
 
+    const tokenAddresses = this._getBatchTransferredTokenAddresses({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      parameters: args.dataDecoded.parameters,
+    });
+
+    const tokenInfos = await this._getTokenInfos({
+      tokenAddresses,
+      chainId: args.chainId,
+    });
+
+    return Object.fromEntries(
+      tokenInfos.map((token) => [token.address, token]),
+    );
+  }
+
+  /**
+   * Extracts the addresses of the tokens transferred in a batch from the given
+   * {@link DataDecodedParameter} array.
+   * @param args.chainId - chain ID to use
+   * @param args.safeAddress - Safe address to use
+   * @param args.parameters - array of {@link DataDecodedParameter}
+   * @returns {@link Array<`0x${string}`>} - array of token addresses
+   */
+  private _getBatchTransferredTokenAddresses(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    parameters: Array<DataDecodedParameter>;
+  }): Array<`0x${string}`> {
     const tokens = new Set<`0x${string}`>();
 
-    for (const parameter of args.dataDecoded.parameters) {
+    for (const parameter of args.parameters) {
       const isMultiSend =
         parameter.name === TRANSACTIONS_PARAMETER_NAME &&
         parameter.type === 'bytes';
@@ -169,11 +208,27 @@ export class TransactionDataMapper {
       }
     }
 
-    const tokenInfo = await Promise.all(
-      Array.from(tokens)
-        .slice(0, this.maxTokenInfoIndexSize)
-        .map(async (address) => {
-          const isNativeCoin = address === NULL_ADDRESS;
+    return Array.from(tokens);
+  }
+
+  /**
+   * Gets the token info for the passed token addresses.
+   * @param args.tokenAddresses - array of token addresses
+   * @param args.chainId - chain ID to use
+   * @returns {@link Array<TokenInfo>} - array of token info
+   */
+  private async _getTokenInfos(args: {
+    tokenAddresses: Array<`0x${string}`>;
+    chainId: string;
+  }): Promise<Array<Erc20Token | Erc721Token | NativeToken>> {
+    const tokenAddresses = args.tokenAddresses.slice(
+      0,
+      this.maxTokenInfoIndexSize,
+    );
+    return (
+      await Promise.all(
+        tokenAddresses.map(async (tokenAddress) => {
+          const isNativeCoin = tokenAddress === NULL_ADDRESS;
           if (isNativeCoin) {
             const { nativeCurrency } = await this.chainsRepository.getChain(
               args.chainId,
@@ -191,18 +246,13 @@ export class TransactionDataMapper {
             return await this.tokenRepository
               .getToken({
                 chainId: args.chainId,
-                address,
+                address: tokenAddress,
               })
               .catch(() => null);
           }
         }),
-    );
-
-    return Object.fromEntries(
-      tokenInfo
-        .filter((token) => token !== null)
-        .map((token) => [token.address, token]),
-    );
+      )
+    ).filter((token) => token !== null);
   }
 
   /**
