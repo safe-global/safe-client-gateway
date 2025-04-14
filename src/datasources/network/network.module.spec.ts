@@ -25,7 +25,16 @@ describe('NetworkModule', () => {
   const fetchMock = jest.fn();
   jest.spyOn(global, 'fetch').mockImplementation(fetchMock);
 
-  beforeAll(async () => {
+  async function initApp(cacheInFlightRequests: boolean): Promise<void> {
+    const baseConfiguration = configuration();
+    const testConfiguration: typeof configuration = () => ({
+      ...baseConfiguration,
+      features: {
+        ...baseConfiguration.features,
+        cacheInFlightRequests,
+      },
+    });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         NetworkModule,
@@ -33,7 +42,7 @@ describe('NetworkModule', () => {
         // and should be provided in the production app for it to work
         ClsModule.forRoot({ global: true }),
         RequestScopedLoggingModule,
-        ConfigurationModule.register(configuration),
+        ConfigurationModule.register(testConfiguration),
       ],
     }).compile();
 
@@ -47,7 +56,7 @@ describe('NetworkModule', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
-  });
+  }
 
   afterAll(async () => {
     await app.close();
@@ -57,78 +66,70 @@ describe('NetworkModule', () => {
     jest.clearAllMocks();
   });
 
-  it(`fetch client is created with timeout and is kept alive`, async () => {
-    const url = faker.internet.url({ appendSlash: false });
+  describe('without caching', () => {
+    beforeAll(async () => {
+      await initApp(false);
+    });
 
-    await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+    it(`fetch client is created with timeout and is kept alive`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(url, {
-      method: 'GET',
-      signal: AbortSignal.timeout(httpClientTimeout), // timeout is set
-      keepalive: true,
+      await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(httpClientTimeout), // timeout is set
+        keepalive: true,
+      });
+    });
+
+    it('throws NetworkRequestError when URL is malformed', async () => {
+      // Malformed URL will throw so we need not mock fetch
+      await expect(
+        fetchClient('malformedUrl', { method: 'GET' }),
+      ).rejects.toThrow(new NetworkRequestError(null, expect.any(Error)));
+
+      expect(fetchMock).toHaveBeenCalledTimes(0);
+    });
+
+    it('throws NetworkRequestError when fetch fails', async () => {
+      const error = new Error('Fetch failed');
+      fetchMock.mockRejectedValue(error);
+
+      const url = faker.internet.url({ appendSlash: false });
+
+      await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
+        new NetworkRequestError(new URL(url), error),
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws NetworkResponseError when response is not OK', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: false,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+
+      await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
+        new NetworkResponseError(new URL(url), response, json),
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('throws NetworkRequestError when URL is malformed', async () => {
-    // Malformed URL will throw so we need not mock fetch
-    await expect(
-      fetchClient('malformedUrl', { method: 'GET' }),
-    ).rejects.toThrow(new NetworkRequestError(null, expect.any(Error)));
+  describe('with caching', () => {
+    beforeAll(async () => {
+      await initApp(true);
+    });
 
-    expect(fetchMock).toHaveBeenCalledTimes(0);
-  });
-
-  it('throws NetworkRequestError when fetch fails', async () => {
-    const error = new Error('Fetch failed');
-    fetchMock.mockRejectedValue(error);
-
-    const url = faker.internet.url({ appendSlash: false });
-
-    await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
-      new NetworkRequestError(new URL(url), error),
-    );
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('throws NetworkResponseError when response is not OK', async () => {
-    const json = fakeJson();
-    const response = {
-      ok: false,
-      json: () => Promise.resolve(json),
-    } as Response;
-    fetchMock.mockResolvedValue(response);
-
-    const url = faker.internet.url({ appendSlash: false });
-
-    await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
-      new NetworkResponseError(new URL(url), response, json),
-    );
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('caches GET requests based on URL and options', async () => {
-    const json = fakeJson();
-    const response = {
-      ok: true,
-      json: () => Promise.resolve(json),
-    } as Response;
-    fetchMock.mockResolvedValue(response);
-
-    const url = faker.internet.url({ appendSlash: false });
-    const options = { method: 'GET' };
-
-    void fetchClient(url, options);
-    await fetchClient(url, options);
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(['POST', 'DELETE'])(
-    'caches %s requests based on URL and options',
-    async (method) => {
+    it('caches GET requests based on URL and options', async () => {
       const json = fakeJson();
       const response = {
         ok: true,
@@ -137,60 +138,80 @@ describe('NetworkModule', () => {
       fetchMock.mockResolvedValue(response);
 
       const url = faker.internet.url({ appendSlash: false });
-      const options = {
-        method,
-        body: JSON.stringify({ example: 'data' }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
+      const options = { method: 'GET' };
 
       void fetchClient(url, options);
       await fetchClient(url, options);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
-    },
-  );
+    });
 
-  it('clears the cache after successful request', async () => {
-    const json = fakeJson();
-    const response = {
-      ok: true,
-      json: () => Promise.resolve(json),
-    } as Response;
-    fetchMock.mockResolvedValue(response);
+    it.each(['POST', 'DELETE'])(
+      'caches %s requests based on URL and options',
+      async (method) => {
+        const json = fakeJson();
+        const response = {
+          ok: true,
+          json: () => Promise.resolve(json),
+        } as Response;
+        fetchMock.mockResolvedValue(response);
 
-    const url = faker.internet.url({ appendSlash: false });
-    const options = { method: 'GET' };
+        const url = faker.internet.url({ appendSlash: false });
+        const options = {
+          method,
+          body: JSON.stringify({ example: 'data' }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        };
 
-    await fetchClient(url, options);
-    await fetchClient(url, options);
+        void fetchClient(url, options);
+        await fetchClient(url, options);
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      },
+    );
 
-  it('clears the cache after failed request', async () => {
-    const json = fakeJson();
-    const response = {
-      ok: false,
-      json: () => Promise.resolve(json),
-    } as Response;
-    fetchMock.mockResolvedValue(response);
+    it('clears the cache after successful request', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
 
-    const url = faker.internet.url({ appendSlash: false });
-    const options = { method: 'GET' };
+      const url = faker.internet.url({ appendSlash: false });
+      const options = { method: 'GET' };
 
-    try {
       await fetchClient(url, options);
-    } catch {
-      //
-    }
-    try {
       await fetchClient(url, options);
-    } catch {
-      //
-    }
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('clears the cache after failed request', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: false,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const options = { method: 'GET' };
+
+      try {
+        await fetchClient(url, options);
+      } catch {
+        //
+      }
+      try {
+        await fetchClient(url, options);
+      } catch {
+        //
+      }
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
   });
 });

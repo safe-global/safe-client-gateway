@@ -21,6 +21,9 @@ export type FetchClient = <T>(
 function fetchClientFactory(
   configurationService: IConfigurationService,
 ): FetchClient {
+  const cacheInFlightRequests = configurationService.getOrThrow<boolean>(
+    'features.cacheInFlightRequests',
+  );
   const requestTimeout = configurationService.getOrThrow<number>(
     'httpClient.requestTimeout',
   );
@@ -55,6 +58,10 @@ function fetchClientFactory(
       data,
     };
   };
+
+  if (!cacheInFlightRequests) {
+    return request;
+  }
 
   /**
    * A cache to prevent multiple in-flight requests for the same data.

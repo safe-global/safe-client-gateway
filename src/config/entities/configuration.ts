@@ -274,6 +274,9 @@ export default () => ({
     trustedForDelegateCallContractsList:
       process.env.FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST?.toLowerCase() ===
       'true',
+    cacheInFlightRequests:
+      process.env.HTTP_CLIENT_CACHE_IN_FLIGHT_REQUESTS?.toLowerCase() ===
+      'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
