@@ -26,6 +26,7 @@ export class KilnApi implements IStakingApi {
     bsc: '56',
     matic: '137',
     op: '10',
+    base: '8453',
   };
 
   private readonly stakingExpirationTimeInSeconds: number;

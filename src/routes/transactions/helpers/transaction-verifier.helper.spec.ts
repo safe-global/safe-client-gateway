@@ -278,7 +278,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'safeTxHash does not match',
+        event: 'safeTxHash does not match',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -372,83 +372,6 @@ describe('TransactionVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    it('should throw and log if confirmations contain duplicate owners', async () => {
-      const chainId = faker.string.numeric();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const transaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('isExecuted', false)
-        .with('nonce', safe.nonce)
-        .buildWithConfirmations({
-          chainId,
-          signers: [signer, signer],
-          safe,
-        });
-
-      expect(() => {
-        return target.verifyApiTransaction({ chainId, safe, transaction });
-      }).toThrow(
-        new HttpExceptionNoLog('Duplicate owners in confirmations', 502),
-      );
-
-      expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-      expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Duplicate owners in confirmations',
-        chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: transaction.safeTxHash,
-        confirmations: transaction.confirmations,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
-
-    it('should throw and log if confirmations contain duplicate signatures', async () => {
-      const chainId = faker.string.numeric();
-      const signers = Array.from({ length: 2 }, () => {
-        const privateKey = generatePrivateKey();
-        return privateKeyToAccount(privateKey);
-      });
-      const safe = safeBuilder()
-        .with(
-          'owners',
-          signers.map((signer) => signer.address),
-        )
-        .build();
-      const transaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('isExecuted', false)
-        .with('nonce', safe.nonce)
-        .buildWithConfirmations({
-          chainId,
-          signers,
-          safe,
-        });
-      transaction.confirmations![1].signature =
-        transaction.confirmations![0].signature;
-
-      expect(() => {
-        return target.verifyApiTransaction({ chainId, safe, transaction });
-      }).toThrow(
-        new HttpExceptionNoLog('Duplicate signatures in confirmations', 502),
-      );
-
-      expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-      expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Duplicate signatures in confirmations',
-        chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: transaction.safeTxHash,
-        confirmations: transaction.confirmations,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
-
     it('should throw if a signature length is invalid', async () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
@@ -532,7 +455,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Unauthorized address',
+        event: 'Unauthorized address',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -567,7 +490,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1256,7 +1179,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'safeTxHash does not match',
+        event: 'safeTxHash does not match',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1444,7 +1367,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Unauthorized address',
+        event: 'Unauthorized address',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1674,7 +1597,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1739,7 +1662,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -1889,65 +1812,6 @@ describe('TransactionVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
-    // Note: we do not need to cover all test cases here as it internally calls verifyApiTransaction, tested above
-    it('should throw if the API transaction is invalid', async () => {
-      const chainId = faker.string.numeric();
-      const signers = Array.from(
-        { length: faker.number.int({ min: 1, max: 5 }) },
-        () => {
-          const privateKey = generatePrivateKey();
-          return privateKeyToAccount(privateKey);
-        },
-      );
-      const safe = safeBuilder()
-        .with(
-          'owners',
-          signers.map((s) => s.address),
-        )
-        .build();
-      const transaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('isExecuted', false)
-        .with('nonce', safe.nonce)
-        .buildWithConfirmations({
-          chainId,
-          signers: faker.helpers.arrayElements(signers, {
-            min: 1,
-            max: signers.length,
-          }),
-          safe,
-        });
-      // Confirmation duplication is only checked in verifyApiTransaction
-      transaction.confirmations?.push(transaction.confirmations[0]);
-
-      expect(() => {
-        return target.verifyConfirmation({
-          chainId,
-          safe,
-          transaction,
-          signature: faker.helpers.arrayElement(
-            transaction.confirmations!.map((confirmation) => {
-              return confirmation.signature!;
-            }),
-          ),
-        });
-      }).toThrow(
-        new HttpExceptionNoLog('Duplicate owners in confirmations', 502),
-      );
-
-      expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-      expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Duplicate owners in confirmations',
-        chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: transaction.safeTxHash,
-        confirmations: transaction.confirmations,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
-
     it('should throw and log if the safeTxHash could not be calculated', async () => {
       const chainId = faker.string.numeric();
       const signers = Array.from(
@@ -2060,7 +1924,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'safeTxHash does not match',
+        event: 'safeTxHash does not match',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -2222,7 +2086,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Unauthorized address',
+        event: 'Unauthorized address',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
@@ -2320,7 +2184,7 @@ describe('TransactionVerifierHelper', () => {
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        message: 'Recovered address does not match signer',
+        event: 'Recovered address does not match signer',
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,

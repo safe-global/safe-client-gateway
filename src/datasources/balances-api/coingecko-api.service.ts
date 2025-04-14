@@ -3,7 +3,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import {
   AssetPrice,
-  AssetPriceSchema,
+  getAssetPriceSchema,
 } from '@/datasources/balances-api/entities/asset-price.entity';
 import { CacheFirstDataSource } from '../cache/cache.first.data.source';
 import { CacheRouter } from '../cache/cache.router';
@@ -25,7 +25,19 @@ import { asError } from '@/logging/utils';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { z } from 'zod';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
+/**
+ * TODO: Refactor away the return of currency codes from public methods, e.g.
+ *
+ * {                                  {
+ *   usd: number;                       price: number;
+ *   usd_24h_change: number;    =>      price_24h_change: number;
+ * }                                  }
+ */
 @Injectable()
 export class CoingeckoApi implements IPricesApi {
   /**
@@ -69,6 +81,7 @@ export class CoingeckoApi implements IPricesApi {
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(CACHE_MANAGER) private readonly inMemoryCache: Cache,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.safe.prices.apiKey',
@@ -108,18 +121,19 @@ export class CoingeckoApi implements IPricesApi {
   }
 
   /**
-   * Gets prices for a chain's native coin, trying to get it from cache first.
-   * If it's not found in the cache, it tries to retrieve it from the Coingecko API.
+   * Retrieves the price/change of a chain's native coin, prioritizing memory cache,
+   * followed by persistent cache. If the price is unavailable in both, it fetches
+   * the data from the Coingecko API.
    *
-   * @param args.chain Chain entity containing the chain-specific configuration
-   * @param args.fiatCode
-   * @returns number representing the native coin price, or null if not found.
+   * @param args.chain The chain entity containing chain-specific configuration.
+   * @param args.fiatCode The fiat currency code for the price conversion.
+   * @returns A numerical price/change of the native coin price, or null if unavailable.
    */
   async getNativeCoinPrice(args: {
     chain: Chain;
     fiatCode: string;
     // TODO: Change to Raw when cache service is migrated
-  }): Promise<number | null> {
+  }): Promise<AssetPrice[string] | null> {
     try {
       const nativeCoinId = args.chain.pricesProvider.nativeCoin;
       if (nativeCoinId == null) {
@@ -130,6 +144,14 @@ export class CoingeckoApi implements IPricesApi {
         nativeCoinId,
         fiatCode: lowerCaseFiatCode,
       });
+      const memoryItem = await this.inMemoryCache.get<AssetPrice[string]>(
+        CacheRouter.getMemoryKey(cacheDir),
+      );
+      if (memoryItem != null) {
+        this.logMemoryHit(cacheDir.key);
+        return memoryItem;
+      }
+      this.logMemoryMiss(cacheDir.key);
       const url = `${this.baseUrl}/simple/price`;
       const result = await this.dataSource
         .get<AssetPrice>({
@@ -139,6 +161,7 @@ export class CoingeckoApi implements IPricesApi {
             params: {
               vs_currencies: lowerCaseFiatCode,
               ids: nativeCoinId,
+              include_24hr_change: true,
             },
             ...(this.apiKey && {
               headers: {
@@ -149,9 +172,15 @@ export class CoingeckoApi implements IPricesApi {
           notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
           expireTimeSeconds: this.nativeCoinPricesTtlSeconds,
         })
-        .then(AssetPriceSchema.parse);
+        .then(getAssetPriceSchema(lowerCaseFiatCode).parse);
       // TODO: Change to Raw when cache service is migrated
-      return result?.[nativeCoinId]?.[lowerCaseFiatCode];
+      const nativeCoinPrice = result?.[nativeCoinId];
+      await this.inMemoryCache.set(
+        CacheRouter.getMemoryKey(cacheDir),
+        nativeCoinPrice,
+        this.nativeCoinPricesTtlSeconds * 1_000,
+      );
+      return nativeCoinPrice;
     } catch (error) {
       // Error at this level are logged out, but not thrown to the upper layers.
       // The service won't throw an error if a single coin price retrieval fails.
@@ -249,7 +278,12 @@ export class CoingeckoApi implements IPricesApi {
   }
 
   /**
-   * For an array of token addresses, gets the prices available from cache.
+   * For an array of token addresses, gets the prices available from memory or cache.
+   * For each item:
+   *  - If found in memory, the value is added to the result.
+   *  - Else if not found in memory:
+   *    - If found in cache, the value is added to the result and stored in memory.
+   *    - Else if not found in cache, no value is added to the result.
    */
   private async _getTokenPricesFromCache(args: {
     chainName: string;
@@ -257,19 +291,32 @@ export class CoingeckoApi implements IPricesApi {
     fiatCode: string;
   }): Promise<Array<AssetPrice>> {
     const result: Array<AssetPrice> = [];
+    const AssetPriceSchema = getAssetPriceSchema(args.fiatCode.toLowerCase());
     for (const tokenAddress of args.tokenAddresses) {
       const cacheDir = CacheRouter.getTokenPriceCacheDir({
         ...args,
         tokenAddress,
       });
-      const cached = await this.cacheService.hGet(cacheDir);
-      const { key, field } = cacheDir;
-      if (cached != null) {
-        this.loggingService.debug({ type: 'cache_hit', key, field });
-        const cachedAssetPrice = AssetPriceSchema.parse(JSON.parse(cached));
-        result.push(cachedAssetPrice);
+      const memoryItem = await this.inMemoryCache.get<string>(
+        CacheRouter.getMemoryKey(cacheDir),
+      );
+      if (memoryItem != null) {
+        this.logMemoryHit(cacheDir.key);
+        result.push(AssetPriceSchema.parse(JSON.parse(memoryItem)));
       } else {
-        this.loggingService.debug({ type: 'cache_miss', key, field });
+        this.logMemoryMiss(cacheDir.key);
+        const cacheItem = await this.cacheService.hGet(cacheDir);
+        if (cacheItem != null) {
+          this.logCacheHit(cacheDir);
+          await this.inMemoryCache.set(
+            CacheRouter.getMemoryKey(cacheDir),
+            cacheItem,
+            this.pricesTtlSeconds * 1_000, // Milliseconds
+          );
+          result.push(AssetPriceSchema.parse(JSON.parse(cacheItem)));
+        } else {
+          this.logCacheMiss(cacheDir);
+        }
       }
     }
     return result;
@@ -284,23 +331,47 @@ export class CoingeckoApi implements IPricesApi {
     tokenAddresses: Array<string>;
     fiatCode: string;
   }): Promise<Array<AssetPrice>> {
+    const lowerCaseFiatCode = args.fiatCode.toLowerCase();
     const prices = await this._requestPricesFromNetwork({
       ...args,
       tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
-    }).then(AssetPriceSchema.parse);
+    }).then(getAssetPriceSchema(lowerCaseFiatCode).parse);
 
     return Promise.all(
       args.tokenAddresses.map(async (tokenAddress) => {
-        const validPrice = prices[tokenAddress]?.[args.fiatCode];
-        const price: AssetPrice = validPrice
-          ? { [tokenAddress]: { [args.fiatCode]: validPrice } }
-          : { [tokenAddress]: { [args.fiatCode]: null } };
+        const price = prices[tokenAddress]?.[lowerCaseFiatCode];
+        const change =
+          prices[tokenAddress]?.[`${lowerCaseFiatCode}_24h_change`];
+
+        // change is excluded if we don't have a price
+        const assetPrice: AssetPrice = price
+          ? {
+              [tokenAddress]: {
+                [lowerCaseFiatCode]: price,
+                [`${lowerCaseFiatCode}_24h_change`]: change,
+              },
+            }
+          : {
+              [tokenAddress]: {
+                [lowerCaseFiatCode]: null,
+                [`${lowerCaseFiatCode}_24h_change`]: null,
+              },
+            };
+        const cacheDir = CacheRouter.getTokenPriceCacheDir({
+          ...args,
+          tokenAddress,
+        });
         await this.cacheService.hSet(
-          CacheRouter.getTokenPriceCacheDir({ ...args, tokenAddress }),
-          JSON.stringify(price),
-          this._getTtl(validPrice, tokenAddress),
+          cacheDir,
+          JSON.stringify(assetPrice),
+          this._getTtl(price, tokenAddress),
         );
-        return price;
+        await this.inMemoryCache.set(
+          CacheRouter.getMemoryKey(cacheDir),
+          JSON.stringify(assetPrice),
+          this._getTtl(price, tokenAddress) * 1_000,
+        );
+        return assetPrice;
       }),
     );
   }
@@ -339,8 +410,9 @@ export class CoingeckoApi implements IPricesApi {
         url,
         networkRequest: {
           params: {
-            vs_currencies: args.fiatCode,
+            vs_currencies: args.fiatCode.toLowerCase(),
             contract_addresses: args.tokenAddresses.join(','),
+            include_24hr_change: true,
           },
           ...(this.apiKey && {
             headers: {
@@ -368,5 +440,35 @@ export class CoingeckoApi implements IPricesApi {
       this.notFoundPriceTtlSeconds,
       this.notFoundPriceTtlSeconds + CoingeckoApi.NOT_FOUND_TTL_RANGE_SECONDS,
     );
+  }
+
+  private logCacheHit(cacheDir: CacheDir): void {
+    this.loggingService.debug({
+      type: LogType.CacheHit,
+      key: cacheDir.key,
+      field: cacheDir.field,
+    });
+  }
+
+  private logCacheMiss(cacheDir: CacheDir): void {
+    this.loggingService.debug({
+      type: LogType.CacheMiss,
+      key: cacheDir.key,
+      field: cacheDir.field,
+    });
+  }
+
+  private logMemoryHit(key: string): void {
+    this.loggingService.debug({
+      type: LogType.MemoryHit,
+      key,
+    });
+  }
+
+  private logMemoryMiss(key: string): void {
+    this.loggingService.debug({
+      type: LogType.MemoryMiss,
+      key,
+    });
   }
 }

@@ -118,11 +118,18 @@ describe('Balances Controller (Unit)', () => {
       const nativeCoinPriceProviderResponse = {
         [chain.pricesProvider.nativeCoin!]: {
           [currency.toLowerCase()]: 1536.75,
+          [`${currency.toLowerCase()}_24h_change`]: 1.6942,
         },
       };
       const tokenPriceProviderResponse = {
-        [tokenAddress]: { [currency.toLowerCase()]: 12.5 },
-        [secondTokenAddress]: { [currency.toLowerCase()]: 10 },
+        [tokenAddress]: {
+          [currency.toLowerCase()]: 12.5,
+          [`${currency.toLowerCase()}_24h_change`]: null,
+        },
+        [secondTokenAddress]: {
+          [currency.toLowerCase()]: 10,
+          [`${currency.toLowerCase()}_24h_change`]: 1.42069,
+        },
       };
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -174,6 +181,7 @@ describe('Balances Controller (Unit)', () => {
               },
               balance: '3000000000000000000',
               fiatBalance: '4610.25',
+              fiatBalance24hChange: '1.6942',
               fiatConversion: '1536.75',
             },
             {
@@ -189,6 +197,7 @@ describe('Balances Controller (Unit)', () => {
               },
               balance: '4000000000000000000',
               fiatBalance: '500',
+              fiatBalance24hChange: null,
               fiatConversion: '12.5',
             },
             {
@@ -204,6 +213,7 @@ describe('Balances Controller (Unit)', () => {
               },
               balance: '3000000000000000000',
               fiatBalance: '300',
+              fiatBalance24hChange: '1.42069',
               fiatConversion: '10',
             },
           ],
@@ -235,6 +245,7 @@ describe('Balances Controller (Unit)', () => {
             tokenAddress.toLowerCase(),
             secondTokenAddress.toLowerCase(),
           ].join(','),
+          include_24hr_change: true,
         },
       });
       expect(networkService.get.mock.calls[4][0].url).toBe(
@@ -245,6 +256,7 @@ describe('Balances Controller (Unit)', () => {
         params: {
           ids: chain.pricesProvider.nativeCoin,
           vs_currencies: currency.toLowerCase(),
+          include_24hr_change: true,
         },
       });
     });
@@ -264,7 +276,10 @@ describe('Balances Controller (Unit)', () => {
       const trusted = true;
       const currency = faker.finance.currencyCode();
       const tokenPriceProviderResponse = {
-        [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
+        [tokenAddress]: {
+          [currency.toLowerCase()]: 2.5,
+          [`${currency.toLowerCase()}_24h_change`]: 1.6942,
+        },
       };
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -319,6 +334,7 @@ describe('Balances Controller (Unit)', () => {
       const nativeCoinPriceProviderResponse = {
         [chain.pricesProvider.nativeCoin!]: {
           [currency.toLowerCase()]: 1536.75,
+          [`${currency.toLowerCase()}_24h_change`]: 1.6942,
         },
       };
       networkService.get.mockImplementation(({ url }) => {
@@ -366,6 +382,7 @@ describe('Balances Controller (Unit)', () => {
               },
               balance: '3000000000000000000',
               fiatBalance: '4610.25',
+              fiatBalance24hChange: '1.6942',
               fiatConversion: '1536.75',
             },
           ],
@@ -429,6 +446,7 @@ describe('Balances Controller (Unit)', () => {
               },
               balance: '3000000000000000000',
               fiatBalance: '0',
+              fiatBalance24hChange: null,
               fiatConversion: '0',
             },
           ],
@@ -499,6 +517,7 @@ describe('Balances Controller (Unit)', () => {
               },
               balance: '3000000000000000000',
               fiatBalance: '0',
+              fiatBalance24hChange: null,
               fiatConversion: '0',
             },
             {
@@ -514,6 +533,7 @@ describe('Balances Controller (Unit)', () => {
               },
               balance: '3000000000000000000',
               fiatBalance: '0',
+              fiatBalance24hChange: null,
               fiatConversion: '0',
             },
           ],
@@ -533,7 +553,10 @@ describe('Balances Controller (Unit)', () => {
       ];
       const currency = faker.finance.currencyCode();
       const tokenPriceProviderResponse = {
-        [tokenAddress]: { [currency.toLowerCase()]: 2.5 },
+        [tokenAddress]: {
+          [currency.toLowerCase()]: 2.5,
+          [`${currency.toLowerCase()}_24h_change`]: 1.6942,
+        },
       };
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -580,6 +603,7 @@ describe('Balances Controller (Unit)', () => {
               },
               balance: '40000000000000000000000000000000000',
               fiatBalance: '1000000000000000000',
+              fiatBalance24hChange: '1.6942',
               fiatConversion: '2.5',
             },
           ],
@@ -687,6 +711,7 @@ describe('Balances Controller (Unit)', () => {
                 },
                 balance: '40000000000000000000000000000000000',
                 fiatBalance: '0',
+                fiatBalance24hChange: null,
                 fiatConversion: '0',
               },
             ],
@@ -754,6 +779,7 @@ describe('Balances Controller (Unit)', () => {
                 },
                 balance: '40000000000000000000000000000000000',
                 fiatBalance: '0',
+                fiatBalance24hChange: null,
                 fiatConversion: '0',
               },
             ],

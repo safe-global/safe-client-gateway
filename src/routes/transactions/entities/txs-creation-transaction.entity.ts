@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
+import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { CreationTransaction as DomainCreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 
 export class TXSCreationTransaction implements DomainCreationTransaction {

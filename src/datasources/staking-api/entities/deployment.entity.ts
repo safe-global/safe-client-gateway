@@ -4,7 +4,14 @@ import { z } from 'zod';
 
 export const DeploymentProductTypes = ['defi', 'pooling', 'dedicated'] as const;
 
-export const DeploymentChains = ['eth', 'arb', 'bsc', 'matic', 'op'] as const;
+export const DeploymentChains = [
+  'eth',
+  'arb',
+  'bsc',
+  'matic',
+  'op',
+  'base',
+] as const;
 
 export const DeploymentStatuses = [
   'active',
@@ -12,6 +19,10 @@ export const DeploymentStatuses = [
   'pending',
   'disabled',
 ] as const;
+
+export const DeploymentExternalLinksSchema = z.object({
+  deposit_url: z.string().url().nullish().default(null),
+});
 
 export const DeploymentSchema = z.object({
   id: z.string().uuid(),
@@ -25,6 +36,7 @@ export const DeploymentSchema = z.object({
   address: AddressSchema,
   status: z.enum([...DeploymentStatuses, 'unknown']).catch('unknown'),
   product_fee: NumericStringSchema.nullish().default(null),
+  external_links: DeploymentExternalLinksSchema.nullish().default(null),
 });
 
 export const DeploymentsSchema = z.array(DeploymentSchema);

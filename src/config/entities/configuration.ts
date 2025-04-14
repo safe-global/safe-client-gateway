@@ -247,9 +247,6 @@ export default () => ({
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     accounts: process.env.FF_ACCOUNTS?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
-    // TODO: When enabled, we must add `db` as a requirement alongside `redis`
-    pushNotifications:
-      process.env.FF_PUSH_NOTIFICATIONS?.toLowerCase() === 'true',
     hookHttpPostEvent:
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
@@ -274,6 +271,10 @@ export default () => ({
     trustedForDelegateCallContractsList:
       process.env.FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST?.toLowerCase() ===
       'true',
+    filterValueParsing:
+      process.env.FF_FILTER_VALUE_PARSING?.toLowerCase() === 'true',
+    vaultTransactionsMapping:
+      process.env.FF_VAULT_TRANSACTIONS_MAPPING?.toLowerCase() === 'true',
     cacheInFlightRequests:
       process.env.HTTP_CLIENT_CACHE_IN_FLIGHT_REQUESTS?.toLowerCase() ===
       'true',
@@ -395,6 +396,11 @@ export default () => ({
       ),
     },
   },
+  safeDataDecoder: {
+    baseUri:
+      process.env.SAFE_DATA_DECODER_BASE_URI ||
+      'https://safe-decoder.safe.global',
+  },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
   },
@@ -405,7 +411,16 @@ export default () => ({
     maxSafesPerSpace: parseInt(
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
     ),
+    maxSpaceCreationsPerUser: parseInt(
+      process.env.MAX_SPACE_CREATIONS_PER_USER ?? `${3}`,
+    ),
     maxInvites: parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`),
+    rateLimit: {
+      max: parseInt(process.env.SPACES_RATE_LIMIT_MAX ?? `${10}`),
+      windowSeconds: parseInt(
+        process.env.SPACES_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
+      ),
+    },
   },
   staking: {
     testnet: {
@@ -418,6 +433,9 @@ export default () => ({
       baseUri: process.env.STAKING_API_BASE_URI || 'https://api.kiln.fi',
       apiKey: process.env.STAKING_API_KEY,
     },
+    // TODO: activate this to point Base vault deployments to Kiln mainnet API.
+    isBaseProductionActive:
+      process.env.STAKING_BASE_PRODUCTION_ACTIVE?.toLowerCase() === 'true',
   },
   swaps: {
     api: {

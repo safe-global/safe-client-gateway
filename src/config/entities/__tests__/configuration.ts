@@ -166,7 +166,6 @@ export default (): ReturnType<typeof configuration> => ({
     counterfactualBalances: false,
     accounts: false,
     users: false,
-    pushNotifications: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
     signatureVerification: {
@@ -181,6 +180,8 @@ export default (): ReturnType<typeof configuration> => ({
     ethSign: true,
     trustedDelegateCall: false,
     trustedForDelegateCallContractsList: false,
+    filterValueParsing: false,
+    vaultTransactionsMapping: false,
     cacheInFlightRequests: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
@@ -265,6 +266,9 @@ export default (): ReturnType<typeof configuration> => ({
       maxSequentialPages: faker.number.int(),
     },
   },
+  safeDataDecoder: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   safeTransaction: {
     useVpcUrl: false,
   },
@@ -273,7 +277,12 @@ export default (): ReturnType<typeof configuration> => ({
   },
   spaces: {
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
+    maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
   },
   staking: {
     testnet: {
@@ -284,6 +293,7 @@ export default (): ReturnType<typeof configuration> => ({
       baseUri: faker.internet.url({ appendSlash: false }),
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
+    isBaseProductionActive: faker.datatype.boolean(),
   },
   swaps: {
     api: {

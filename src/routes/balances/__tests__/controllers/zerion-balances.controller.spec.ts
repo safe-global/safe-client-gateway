@@ -224,6 +224,7 @@ describe('Balances Controller (Unit)', () => {
                   },
                   balance: '25000000000000000',
                   fiatBalance: '100.001',
+                  fiatBalance24hChange: null,
                   fiatConversion: '5.05',
                 },
                 {
@@ -241,6 +242,7 @@ describe('Balances Controller (Unit)', () => {
                   },
                   balance: '12000000000000000',
                   fiatBalance: '20.002',
+                  fiatBalance24hChange: null,
                   fiatConversion: '10.1',
                 },
               ],
@@ -375,6 +377,7 @@ describe('Balances Controller (Unit)', () => {
                   },
                   balance: '25000000000000000',
                   fiatBalance: '100000000000000000',
+                  fiatBalance24hChange: null,
                   fiatConversion: '5.05',
                 },
                 {
@@ -392,6 +395,7 @@ describe('Balances Controller (Unit)', () => {
                   },
                   balance: '12000000000000000',
                   fiatBalance: '20000000000000000',
+                  fiatBalance24hChange: null,
                   fiatConversion: '10.1',
                 },
               ],

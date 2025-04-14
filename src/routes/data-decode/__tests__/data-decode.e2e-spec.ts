@@ -4,7 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import type { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
+import type { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { transactionDataDtoBuilder } from '@/routes/data-decode/entities/__tests__/transaction-data.dto.builder';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import type { Server } from 'net';
@@ -65,6 +65,7 @@ describe('Data decode e2e tests', () => {
         },
         { name: '_threshold', type: 'uint256', value: '1', valueDecoded: null },
       ],
+      accuracy: 'FULL_MATCH',
     };
 
     await request(app.getHttpServer())

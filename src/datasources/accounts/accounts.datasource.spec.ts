@@ -10,6 +10,7 @@ import { accountDataTypeBuilder } from '@/domain/accounts/entities/__tests__/acc
 import { createAccountDtoBuilder } from '@/domain/accounts/entities/__tests__/create-account.dto.builder';
 import { upsertAccountDataSettingsDtoBuilder } from '@/domain/accounts/entities/__tests__/upsert-account-data-settings.dto.entity.builder';
 import type { AccountDataType } from '@/domain/accounts/entities/account-data-type.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { IEncryptionApi } from '@/domain/interfaces/encryption-api.interface';
 import type { IEncryptionApiManager } from '@/domain/interfaces/encryption-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -304,7 +305,7 @@ describe('AccountsDatasource tests', () => {
       );
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(1);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: `account_${createAccountDto.address}`,
         field: '',
       });
@@ -323,12 +324,12 @@ describe('AccountsDatasource tests', () => {
 
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: `account_${address}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: `account_${address}`,
         field: '',
       });
@@ -422,12 +423,12 @@ describe('AccountsDatasource tests', () => {
 
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: `account_${createAccountDto.address}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: `account_${createAccountDto.address}`,
         field: '',
       });
@@ -500,12 +501,12 @@ describe('AccountsDatasource tests', () => {
       );
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(2);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: 'account_data_types',
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: 'account_data_types',
         field: '',
       });
@@ -593,22 +594,22 @@ describe('AccountsDatasource tests', () => {
       );
       expect(mockLoggingService.debug).toHaveBeenCalledTimes(4);
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(1, {
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: `account_${createAccountDto.address}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(2, {
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         key: `account_data_settings_${createAccountDto.address}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(3, {
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: `account_${createAccountDto.address}`,
         field: '',
       });
       expect(mockLoggingService.debug).toHaveBeenNthCalledWith(4, {
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         key: `account_data_settings_${createAccountDto.address}`,
         field: '',
       });

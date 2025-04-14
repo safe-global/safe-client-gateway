@@ -38,6 +38,8 @@ import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notif
 import uniqBy from 'lodash/uniqBy';
 import { Confirmation } from '@/domain/safe/entities/multisig-transaction.entity';
 import { MessageConfirmation } from '@/domain/messages/entities/message-confirmation.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { asError } from '@/logging/utils';
 
 type EventToNotify =
   | DeletedMultisigTransactionEvent
@@ -96,12 +98,25 @@ export class EventNotificationsHelper {
             },
           })
           .then(() => {
-            this.loggingService.info('Notification sent successfully');
+            this.loggingService.info({
+              chainId: data.chainId,
+              safeAddress: data.address,
+              notificationType: data.type,
+              type: LogType.NotificationSent,
+              deviceUuid: subscription.deviceUuid,
+              token: subscription.cloudMessagingToken,
+            });
           })
           .catch((e) => {
-            this.loggingService.error(
-              `Failed to send notification: ${e.reason}`,
-            );
+            this.loggingService.error({
+              error: asError(e).message,
+              chainId: data.chainId,
+              safeAddress: data.address,
+              notificationType: data.type,
+              type: LogType.NotificationError,
+              deviceUuid: subscription.deviceUuid,
+              token: subscription.cloudMessagingToken,
+            });
           });
       }),
     );

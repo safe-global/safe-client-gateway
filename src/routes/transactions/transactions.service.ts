@@ -50,9 +50,12 @@ import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multi
 import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-multisig-transaction-page.entity';
 import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creation-transaction.entity';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class TransactionsService {
+  private readonly isFilterValueParsingEnabled: boolean;
+
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
@@ -68,7 +71,13 @@ export class TransactionsService {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
+      'features.filterValueParsing',
+    );
+  }
 
   async getById(args: {
     chainId: string;
@@ -183,12 +192,13 @@ export class TransactionsService {
     const domainTransactions =
       await this.safeRepository.getMultisigTransactions({
         ...args,
-        ...(args.value && {
-          value: await this.parseTokenValue({
-            ...args,
-            value: args.value,
+        ...(this.isFilterValueParsingEnabled &&
+          args.value && {
+            value: await this.parseTokenValue({
+              ...args,
+              value: args.value,
+            }),
           }),
-        }),
         limit: args.paginationData.limit,
         offset: args.paginationData.offset,
       });
@@ -196,6 +206,10 @@ export class TransactionsService {
     const safeInfo = await this.safeRepository.getSafe({
       chainId: args.chainId,
       address: args.safeAddress,
+    });
+    await this.multisigTransactionMapper.prefetchAddressInfos({
+      chainId: args.chainId,
+      transactions: domainTransactions.results,
     });
     const results = await Promise.all(
       domainTransactions.results.map(
@@ -347,12 +361,13 @@ export class TransactionsService {
   }): Promise<Partial<Page<IncomingTransfer>>> {
     const transfers = await this.safeRepository.getIncomingTransfers({
       ...args,
-      ...(args.value && {
-        value: await this.parseTokenValue({
-          ...args,
-          value: args.value,
+      ...(this.isFilterValueParsingEnabled &&
+        args.value && {
+          value: await this.parseTokenValue({
+            ...args,
+            value: args.value,
+          }),
         }),
-      }),
       limit: args.paginationData?.limit,
       offset: args.paginationData?.offset,
     });

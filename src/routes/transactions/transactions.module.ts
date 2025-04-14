@@ -1,6 +1,6 @@
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
-import { DataDecodedRepositoryModule } from '@/domain/data-decoder/v1/data-decoded.repository.interface';
+import { DataDecoderRepositoryModule } from '@/domain/data-decoder/v2/data-decoder.repository.module';
 import { HumanDescriptionRepositoryModule } from '@/domain/human-description/human-description.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
@@ -50,6 +50,8 @@ import { TransactionsService } from '@/routes/transactions/transactions.service'
 import { Module } from '@nestjs/common';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
+import { KilnVaultHelperModule } from '@/routes/transactions/helpers/kiln-vault.helper';
+import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
 
 @Module({
   controllers: [TransactionsController],
@@ -57,21 +59,22 @@ import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.r
     AddressInfoModule,
     ChainsRepositoryModule,
     ContractsRepositoryModule,
-    DataDecodedRepositoryModule,
+    DataDecoderRepositoryModule,
     DelegatesV2RepositoryModule,
-    HumanDescriptionRepositoryModule,
-    SafeRepositoryModule,
-    SafeAppsRepositoryModule,
     GPv2DecoderModule,
+    HumanDescriptionRepositoryModule,
     KilnNativeStakingHelperModule,
+    KilnVaultHelperModule,
+    SafeAppsRepositoryModule,
+    SafeRepositoryModule,
     StakingRepositoryModule,
     SwapAppsHelperModule,
-    SwapOrderMapperModule,
     SwapOrderHelperModule,
+    SwapOrderMapperModule,
     SwapsRepositoryModule,
     TokenRepositoryModule,
-    TwapOrderMapperModule,
     TwapOrderHelperModule,
+    TwapOrderMapperModule,
   ],
   providers: [
     CreationTransactionMapper,
@@ -80,7 +83,7 @@ import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.r
     Erc20TransferMapper,
     Erc721TransferMapper,
     GPv2OrderHelper,
-    TransferMapper,
+    HumanDescriptionMapper,
     ModuleTransactionDetailsMapper,
     ModuleTransactionMapper,
     ModuleTransactionStatusMapper,
@@ -89,8 +92,8 @@ import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.r
     MultisigTransactionExecutionInfoMapper,
     MultisigTransactionInfoMapper,
     MultisigTransactionMapper,
-    MultisigTransactionStatusMapper,
     MultisigTransactionNoteMapper,
+    MultisigTransactionStatusMapper,
     NativeCoinTransferMapper,
     NativeStakingMapper,
     QueuedItemsMapper,
@@ -101,11 +104,12 @@ import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.r
     TransactionPreviewMapper,
     TransactionsHistoryMapper,
     TransactionsService,
-    TransferDetailsMapper,
-    TransferInfoMapper,
-    TransferImitationMapper,
     TransactionVerifierHelper,
-    HumanDescriptionMapper,
+    TransferDetailsMapper,
+    TransferImitationMapper,
+    TransferInfoMapper,
+    TransferMapper,
+    VaultTransactionMapper,
   ],
 })
 export class TransactionsModule {}

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { join } from 'path';
 import { ChainsModule } from '@/routes/chains/chains.module';
@@ -19,10 +20,7 @@ import { CommunityModule } from '@/routes/community/community.module';
 import { ContractsModule } from '@/routes/contracts/contracts.module';
 import { DataDecodedModule } from '@/routes/data-decode/data-decoded.module';
 import { DelegatesModule } from '@/routes/delegates/delegates.module';
-import {
-  HooksModule,
-  HooksModuleWithNotifications,
-} from '@/routes/hooks/hooks.module';
+import { HooksModule } from '@/routes/hooks/hooks.module';
 import { SafeAppsModule } from '@/routes/safe-apps/safe-apps.module';
 import { HealthModule } from '@/routes/health/health.module';
 import { OwnersModule } from '@/routes/owners/owners.module';
@@ -71,7 +69,6 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       delegatesV2: isDelegatesV2Enabled,
-      pushNotifications: isPushNotificationsEnabled,
     } = configFactory()['features'];
 
     return {
@@ -97,9 +94,8 @@ export class AppModule implements NestModule {
           : []),
         EstimationsModule,
         HealthModule,
-        ...(isPushNotificationsEnabled
-          ? [HooksModuleWithNotifications, NotificationsModuleV2]
-          : [HooksModule]),
+        HooksModule,
+        NotificationsModuleV2,
         MessagesModule,
         NotificationsModule,
         ...(isUsersFeatureEnabled
@@ -123,6 +119,7 @@ export class AppModule implements NestModule {
           },
         }),
         ConfigurationModule.register(configFactory),
+        InMemoryCacheModule.register({ isGlobal: true }),
         NetworkModule,
         RequestScopedLoggingModule,
         ScheduleModule.forRoot(),

@@ -21,6 +21,8 @@ import {
   calculateTimezoneOffset,
   convertToTimezone,
 } from '@/routes/transactions/helpers/timezone.helper';
+import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 @Injectable()
 export class TransactionsHistoryMapper {
@@ -34,6 +36,7 @@ export class TransactionsHistoryMapper {
     private readonly transferMapper: TransferMapper,
     private readonly transferImitationMapper: TransferImitationMapper,
     private readonly creationTransactionMapper: CreationTransactionMapper,
+    private readonly addressInfoHelper: AddressInfoHelper,
   ) {
     this.maxNestedTransfers = this.configurationService.getOrThrow(
       'mappings.history.maxNestedTransfers',
@@ -53,6 +56,12 @@ export class TransactionsHistoryMapper {
     if (transactionsDomain.length == 0) {
       return [];
     }
+
+    // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
+    await this.prefetchAddressInfos({
+      chainId,
+      transactions: transactionsDomain,
+    });
 
     let previousTransaction: TransactionItem | undefined;
 
@@ -104,6 +113,45 @@ export class TransactionsHistoryMapper {
         return transactionList.concat(transactionsOnDay);
       },
       [],
+    );
+  }
+
+  private async prefetchAddressInfos(args: {
+    chainId: string;
+    transactions: Array<TransactionDomain>;
+  }): Promise<void> {
+    // Prefetch tokens and contracts AddressInfos for transactions
+    const transactions = args.transactions.filter(
+      isMultisigTransaction || isModuleTransaction,
+    );
+    await this.multisigTransactionMapper.prefetchAddressInfos({
+      chainId: args.chainId,
+      transactions,
+    });
+    // Prefetch tokens and contracts AddressInfos for native Ethereum transfers
+    const transfers = args.transactions.filter(isEthereumTransaction);
+    const addressesFromTransfers = Array.from(
+      new Set(this.getAddressesFromTransfers(transfers)),
+    );
+    await this.addressInfoHelper.getCollection(
+      args.chainId,
+      addressesFromTransfers,
+      ['TOKEN', 'CONTRACT'],
+    );
+  }
+
+  private getAddressesFromTransfers(
+    transferTransactions: Array<EthereumTransaction>,
+  ): Array<`0x${string}`> {
+    return transferTransactions.flatMap((tx) =>
+      [
+        tx.from,
+        ...(tx.transfers?.flatMap((transfer) => [
+          transfer.to,
+          transfer.from,
+          'tokenAddress' in transfer ? transfer.tokenAddress : undefined,
+        ]) ?? []),
+      ].filter((address): address is `0x${string}` => !!address),
     );
   }
 

@@ -33,6 +33,7 @@ import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-pay
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 
 describe('SpaceSafesController', () => {
   let app: INestApplication<Server>;
@@ -99,7 +100,7 @@ describe('SpaceSafesController', () => {
     it('Should create a new space safe', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
@@ -129,7 +130,7 @@ describe('SpaceSafesController', () => {
     it('Should create multiple new space safes', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
       const chain3 = chainBuilder().build();
@@ -169,7 +170,7 @@ describe('SpaceSafesController', () => {
     it('Should fail on duplicate space safes', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
 
@@ -212,7 +213,7 @@ describe('SpaceSafesController', () => {
     it('Should allow multiple spaces to add the same Safe', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const space2Name = faker.company.name();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
@@ -265,7 +266,7 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const userAuthPayloadDto = authPayloadDtoBuilder().build();
       const userAccessToken = jwtService.sign(userAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
@@ -310,7 +311,7 @@ describe('SpaceSafesController', () => {
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayload,
       );
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
@@ -362,8 +363,8 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const spaceName = faker.company.name();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
       const chain = chainBuilder().build();
 
       await request(app.getHttpServer())
@@ -626,7 +627,7 @@ describe('SpaceSafesController', () => {
     it('Should return a list of space safes if the user is an admin', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain1 = chainBuilder()
         .with('chainId', faker.string.numeric({ length: { min: 1, max: 2 } }))
         .build();
@@ -685,7 +686,7 @@ describe('SpaceSafesController', () => {
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain1 = chainBuilder()
         .with('chainId', faker.string.numeric({ length: { min: 1, max: 2 } }))
         .build();
@@ -781,7 +782,7 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const userAuthPayloadDto = authPayloadDtoBuilder().build();
       const userAccessToken = jwtService.sign(userAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -815,7 +816,7 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -911,7 +912,7 @@ describe('SpaceSafesController', () => {
     it('Should delete a space safe', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain = chainBuilder().build();
       const spaceSafes = {
         safes: [
@@ -947,7 +948,7 @@ describe('SpaceSafesController', () => {
     it('Should delete multiple space safes', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
       const chain3 = chainBuilder().build();
@@ -995,7 +996,7 @@ describe('SpaceSafesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const userAuthPayloadDto = authPayloadDtoBuilder().build();
       const userAccessToken = jwtService.sign(userAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
       const chain3 = chainBuilder().build();
@@ -1052,7 +1053,7 @@ describe('SpaceSafesController', () => {
     it('should fail if the user is not an admin', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain = chainBuilder().build();
       const spaceSafes = {
         safes: [
@@ -1122,7 +1123,7 @@ describe('SpaceSafesController', () => {
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayload,
       );
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const chain = chainBuilder().build();
       const spaceSafes = {
         safes: [

@@ -15,7 +15,10 @@ import { IPricesApi } from '@/datasources/balances-api/prices-api.interface';
 import { Injectable } from '@nestjs/common';
 import { Chain } from '@/domain/chains/entities/chain.entity';
 import { rawify, type Raw } from '@/validation/entities/raw.entity';
-import { AssetPricesSchema } from '@/datasources/balances-api/entities/asset-price.entity';
+import {
+  AssetPrice,
+  getAssetPricesSchema,
+} from '@/datasources/balances-api/entities/asset-price.entity';
 import { ZodError } from 'zod';
 
 @Injectable()
@@ -151,10 +154,12 @@ export class SafeBalancesApi implements IBalancesApi {
    * Gets the USD price of the native coin of the chain associated with {@link chainId}.
    */
   async getNativeCoinPrice(chain: Chain): Promise<number | null> {
-    return this.coingeckoApi.getNativeCoinPrice({
+    const fiatCode = 'USD';
+    const asset = await this.coingeckoApi.getNativeCoinPrice({
       chain,
-      fiatCode: 'USD',
+      fiatCode,
     });
+    return asset?.[fiatCode.toLowerCase()] ?? null;
   }
 
   private async _mapBalances(args: {
@@ -166,13 +171,14 @@ export class SafeBalancesApi implements IBalancesApi {
       .map((balance) => balance.tokenAddress)
       .filter((address): address is `0x${string}` => address !== null);
 
+    const lowerCaseFiatCode = args.fiatCode.toLowerCase();
     const assetPrices = await this.coingeckoApi
       .getTokenPrices({
         chain: args.chain,
         fiatCode: args.fiatCode,
         tokenAddresses,
       })
-      .then(AssetPricesSchema.parse);
+      .then(getAssetPricesSchema(lowerCaseFiatCode).parse);
 
     const lowerCaseAssetPrices = assetPrices.map((assetPrice) =>
       Object.fromEntries(
@@ -183,9 +189,9 @@ export class SafeBalancesApi implements IBalancesApi {
     const balances = await Promise.all(
       args.balances.map(async (balance) => {
         const tokenAddress = balance.tokenAddress?.toLowerCase() ?? null;
-        let price: number | null;
+        let asset: AssetPrice[string] | null;
         if (tokenAddress === null) {
-          price = await this.coingeckoApi.getNativeCoinPrice({
+          asset = await this.coingeckoApi.getNativeCoinPrice({
             chain: args.chain,
             fiatCode: args.fiatCode,
           });
@@ -193,12 +199,17 @@ export class SafeBalancesApi implements IBalancesApi {
           const found = lowerCaseAssetPrices.find(
             (assetPrice) => assetPrice[tokenAddress],
           );
-          price = found?.[tokenAddress]?.[args.fiatCode.toLowerCase()] ?? null;
+          asset = found?.[tokenAddress] ?? null;
         }
+
+        const price = asset?.[lowerCaseFiatCode] ?? null;
         const fiatBalance = this._getFiatBalance(price, balance);
+        const fiatBalance24hChange =
+          asset?.[`${lowerCaseFiatCode}_24h_change`] ?? null;
         return {
           ...balance,
           fiatBalance: fiatBalance ? getNumberString(fiatBalance) : null,
+          fiatBalance24hChange,
           fiatConversion: price ? getNumberString(price) : null,
         };
       }),

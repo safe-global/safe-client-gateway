@@ -38,24 +38,32 @@ import {
 } from '@/domain/users/entities/member.entity';
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 
 describe('SpacesController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
 
-  beforeAll(async () => {
-    jest.resetAllMocks();
-
+  async function initApp(args?: {
+    maxSpaceCreationsPerUser?: number;
+    rateLimit?: { max: number; windowSeconds: number };
+  }): Promise<INestApplication<Server>> {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      spaces: {
+        ...defaultConfiguration.spaces,
+        maxSpaceCreationsPerUser:
+          args?.maxSpaceCreationsPerUser ??
+          defaultConfiguration.spaces.maxSpaceCreationsPerUser,
+        rateLimit: args?.rateLimit ?? defaultConfiguration.spaces.rateLimit,
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,
         users: true,
       },
     });
-
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule.register(testConfiguration)],
     })
@@ -83,8 +91,14 @@ describe('SpacesController', () => {
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
 
-    app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    const application = await new TestAppProvider().provide(moduleFixture);
+    await application.init();
+    return application;
+  }
+
+  beforeAll(async () => {
+    jest.resetAllMocks();
+    app = await initApp();
   });
 
   afterEach(async () => {
@@ -104,7 +118,7 @@ describe('SpacesController', () => {
     it('Should create a space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -121,6 +135,30 @@ describe('SpacesController', () => {
             name: spaceName,
           }),
         );
+    });
+
+    it('Should rate limit creations', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const app = await initApp({ rateLimit: { max: 1, windowSeconds: 60 } });
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201);
+
+      // Second request, but rateLimit.max = 1
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(429)
+        .expect('Rate limit reached');
     });
 
     it('should return a 403 if not authenticated', async () => {
@@ -148,10 +186,44 @@ describe('SpacesController', () => {
         });
     });
 
+    it('Should return a 403 if the MAX_SPACE_CREATIONS_PER_USER limit is reached', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const app = await initApp({ maxSpaceCreationsPerUser: 1 });
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      // maxSpaceCreationsPerUser = 1
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            id: expect.any(Number),
+            name: expect.any(String),
+          }),
+        );
+
+      await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(403)
+        .expect({
+          message: 'User has reached the maximum number of Spaces.',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
     it('Should return a 404 if user is not found', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -189,7 +261,7 @@ describe('SpacesController', () => {
     it('Should create a space when user exists', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -211,7 +283,7 @@ describe('SpacesController', () => {
     it('Should create a space with user does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/spaces/create-with-user')
@@ -278,8 +350,8 @@ describe('SpacesController', () => {
     it('Should return a list of spaces', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const firstSpaceName = faker.company.name();
-      const secondSpaceName = faker.company.name();
+      const firstSpaceName = nameBuilder();
+      const secondSpaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -400,7 +472,7 @@ describe('SpacesController', () => {
     it('Should return a space by its id', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -452,7 +524,7 @@ describe('SpacesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -520,7 +592,7 @@ describe('SpacesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -632,8 +704,8 @@ describe('SpacesController', () => {
     it('Should update a space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const previousSpaceName = faker.company.name();
-      const newSpaceName = faker.company.name();
+      const previousSpaceName = nameBuilder();
+      const newSpaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -695,7 +767,7 @@ describe('SpacesController', () => {
     it('Should throw a 401 if user can not update a space because the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const spaceId = faker.number.int({ min: 900000, max: 990000 });
 
       await request(app.getHttpServer())
@@ -726,9 +798,9 @@ describe('SpacesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const previousSpaceName = faker.company.name();
-      const newSpaceName = faker.company.name();
-      const memberName = faker.person.firstName();
+      const previousSpaceName = nameBuilder();
+      const newSpaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -777,9 +849,9 @@ describe('SpacesController', () => {
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayloadDto,
       );
-      const previousSpaceName = faker.company.name();
-      const newSpaceName = faker.company.name();
-      const memberName = faker.person.firstName();
+      const previousSpaceName = nameBuilder();
+      const newSpaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -827,8 +899,8 @@ describe('SpacesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
-      const previousSpaceName = faker.company.name();
-      const newSpaceName = faker.company.name();
+      const previousSpaceName = nameBuilder();
+      const newSpaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -865,7 +937,7 @@ describe('SpacesController', () => {
     it('Should delete a space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -887,7 +959,7 @@ describe('SpacesController', () => {
     it('Should throw a 401 if user can not update a space because the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
       const spaceId = faker.number.int({ min: 900000, max: 990000 });
 
       await request(app.getHttpServer())
@@ -918,8 +990,8 @@ describe('SpacesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
       const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-      const spaceName = faker.company.name();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -965,8 +1037,8 @@ describe('SpacesController', () => {
       const inactiveAdminAccessToken = jwtService.sign(
         inactiveAdminAuthPayloadDto,
       );
-      const spaceName = faker.company.name();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1010,7 +1082,7 @@ describe('SpacesController', () => {
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
-      const spaceName = faker.company.name();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')

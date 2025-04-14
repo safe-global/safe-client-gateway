@@ -13,7 +13,8 @@ import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
+  multisendBuilder,
+} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import {
@@ -55,8 +56,19 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
   beforeEach(async () => {
     jest.resetAllMocks();
 
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): ReturnType<typeof configuration> => {
+      return {
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          filterValueParsing: true,
+        },
+      };
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
+      imports: [AppModule.register(testConfiguration)],
     })
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
@@ -478,7 +490,11 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
           .with('parameters', [
             dataDecodedParameterBuilder()
               .with('name', 'transactions')
-              .with('valueDecoded', [{}, {}, {}])
+              .with('valueDecoded', [
+                multisendBuilder().build(),
+                multisendBuilder().build(),
+                multisendBuilder().build(),
+              ])
               .build(),
           ])
           .build(),

@@ -715,4 +715,11 @@ export class CacheRouter {
   static getOutreachFileProcessorCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.getOutreachFileProcessorCacheKey(), '');
   }
+
+  /**
+   * Gets the in-memory cache key for the given cacheDir.
+   */
+  static getMemoryKey(cacheDir: CacheDir): string {
+    return `${cacheDir.key}:${cacheDir.field}`;
+  }
 }

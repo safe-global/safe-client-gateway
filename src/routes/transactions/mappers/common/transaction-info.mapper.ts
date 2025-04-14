@@ -4,8 +4,6 @@ import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { TokenRepository } from '@/domain/tokens/token.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
-import { DataDecodedParameter } from '@/routes/data-decode/entities/data-decoded-parameter.entity';
-import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 import { SettingsChangeTransaction } from '@/routes/transactions/entities/settings-change-transaction.entity';
 import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { CustomTransactionMapper } from '@/routes/transactions/mappers/common/custom-transaction.mapper';
@@ -27,10 +25,14 @@ import { NativeStakingMapper } from '@/routes/transactions/mappers/common/native
 import { KilnNativeStakingHelper } from '@/routes/transactions/helpers/kiln-native-staking.helper';
 import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-validators-exit-info.entity';
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
-import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
+import { KilnVaultHelper } from '@/routes/transactions/helpers/kiln-vault.helper';
+import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
+import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
+  private readonly isVaultTransactionsMappingEnabled: boolean;
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
@@ -49,6 +51,8 @@ export class MultisigTransactionInfoMapper {
   constructor(
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
     private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
@@ -61,9 +65,13 @@ export class MultisigTransactionInfoMapper {
     private readonly twapOrderMapper: TwapOrderMapper,
     private readonly twapOrderHelper: TwapOrderHelper,
     private readonly kilnNativeStakingHelper: KilnNativeStakingHelper,
+    private readonly kilnVaultHelper: KilnVaultHelper,
     private readonly nativeStakingMapper: NativeStakingMapper,
-    private readonly kilnDecoder: KilnDecoder,
-  ) {}
+    private readonly vaultTransactionMapper: VaultTransactionMapper,
+  ) {
+    this.isVaultTransactionsMappingEnabled =
+      this.configurationService.getOrThrow('features.vaultTransactionsMapping');
+  }
 
   async mapTransactionInfo(
     chainId: string,
@@ -121,6 +129,17 @@ export class MultisigTransactionInfoMapper {
       return nativeStakingWithdraw;
     }
 
+    if (this.isVaultTransactionsMappingEnabled) {
+      const vaultDeposit = await this.mapVaultDeposit({
+        chainId,
+        transaction,
+      });
+      // If the transaction is a vault deposit, we return it immediately
+      if (vaultDeposit) {
+        return vaultDeposit;
+      }
+    }
+
     if (this.isCustomTransaction(value, dataSize, transaction.operation)) {
       return await this.customTransactionMapper.mapCustomTransaction(
         transaction,
@@ -150,19 +169,8 @@ export class MultisigTransactionInfoMapper {
         );
       }
 
-      const dataDecodedParameters: Array<DataDecodedParameter> | null =
-        transaction.dataDecoded.parameters?.map(
-          (parameter) =>
-            new DataDecodedParameter(
-              parameter.name,
-              parameter.type,
-              parameter.value,
-              parameter.valueDecoded,
-            ),
-        ) ?? null;
-
       return new SettingsChangeTransaction(
-        new DataDecoded(transaction.dataDecoded.method, dataDecodedParameters),
+        transaction.dataDecoded,
         settingsInfo,
         humanDescription,
       );
@@ -339,6 +347,38 @@ export class MultisigTransactionInfoMapper {
         safeAddress: transaction.safe,
         to: nativeStakingValidatorsExitTransaction.to,
         data: nativeStakingValidatorsExitTransaction.data,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapVaultDeposit(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+  }): Promise<VaultDepositTransactionInfo | null> {
+    if (!args.transaction?.data || !args.transaction.value) {
+      return null;
+    }
+
+    const vaultDepositTransaction =
+      this.kilnVaultHelper.getVaultDepositTransaction({
+        to: args.transaction.to,
+        data: args.transaction.data,
+        value: args.transaction.value,
+      });
+
+    if (!vaultDepositTransaction?.to) {
+      return null;
+    }
+
+    try {
+      return await this.vaultTransactionMapper.mapDepositInfo({
+        chainId: args.chainId,
+        to: vaultDepositTransaction.to,
+        assets: vaultDepositTransaction.assets,
+        data: vaultDepositTransaction.data,
       });
     } catch (error) {
       this.loggingService.warn(error);

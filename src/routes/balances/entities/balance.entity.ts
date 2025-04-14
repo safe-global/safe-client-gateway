@@ -1,4 +1,9 @@
-import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import {
   NativeToken,
   Erc20Token,
@@ -21,4 +26,6 @@ export class Balance {
     ],
   })
   tokenInfo!: NativeToken | Erc20Token | Erc721Token;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  fiatBalance24hChange!: string | null;
 }

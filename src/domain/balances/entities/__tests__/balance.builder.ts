@@ -11,5 +11,6 @@ export function balanceBuilder(): IBuilder<Balance> {
     .with('token', balanceTokenBuilder().build())
     .with('balance', faker.string.numeric())
     .with('fiatBalance', null)
-    .with('fiatConversion', null);
+    .with('fiatConversion', null)
+    .with('fiatBalance24hChange', null);
 }
