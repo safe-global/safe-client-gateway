@@ -1,5 +1,6 @@
-import type { AddressBookItem as DbAddressBookItem } from '@/datasources/spaces/entities/address-book-item.entity.db';
+import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import type { AddressBookItem } from '@/domain/spaces/address-books/entities/address-book-item.entity';
+import type { Space } from '@/domain/spaces/entities/space.entity';
 
 export const IAddressBookItemsRepository = Symbol(
   'IAddressBookItemsRepository',
@@ -8,12 +9,17 @@ export const IAddressBookItemsRepository = Symbol(
 export interface IAddressBookItemsRepository {
   /**
    * Finds AddressBookItems by Space ID.
+   * @param args.authPayload - The authentication payload.
    * @param spaceId - The ID of the Space.
    */
-  findABySpaceId(spaceId: string): Promise<Array<DbAddressBookItem>>;
+  findAllBySpaceId(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<Array<AddressBookItem>>;
 
   /**
    * Upserts AddressBookItems.
+   * @param args.authPayload - The authentication payload.
    * @param args.spaceId - The ID of the Space.
    * @param args.addressBookItems - The AddressBookItems to upsert.
    *
@@ -23,17 +29,20 @@ export interface IAddressBookItemsRepository {
    * Otherwise, a new AddressBookItem is created.
    */
   upsertMany(args: {
-    spaceId: string;
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
     addressBookItems: Array<AddressBookItem>;
-  }): Promise<Array<DbAddressBookItem>>;
+  }): Promise<Array<AddressBookItem>>;
 
   /**
    * Deletes an array of AddressBookItems by their IDs.
+   * @param args.authPayload - The authentication payload.
    * @param args.spaceId - The ID of the Space.
    * @param args.addressBookItemIds - The IDs of the AddressBookItems to delete.
    */
   deleteMany(args: {
-    spaceId: string;
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
     addressBookItemIds: Array<string>;
   }): Promise<void>;
 }
