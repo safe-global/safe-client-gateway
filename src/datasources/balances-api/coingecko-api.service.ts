@@ -29,6 +29,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import chunk from 'lodash/chunk';
+import merge from 'lodash/merge';
 
 /**
  * TODO: Refactor away the return of currency codes from public methods, e.g.
@@ -334,7 +336,7 @@ export class CoingeckoApi implements IPricesApi {
     const lowerCaseFiatCode = args.fiatCode.toLowerCase();
     const prices = await this._requestPricesFromNetwork({
       ...args,
-      tokenAddresses: args.tokenAddresses.slice(0, CoingeckoApi.MAX_BATCH_SIZE),
+      tokenAddresses: args.tokenAddresses,
     }).then(getAssetPriceSchema(lowerCaseFiatCode).parse);
 
     return Promise.all(
@@ -399,29 +401,52 @@ export class CoingeckoApi implements IPricesApi {
   /**
    * Requests the token prices provided by the CoinGecko API, using the {@link NetworkService}.
    */
-  private async _requestPricesFromNetwork(args: {
+  async _requestPricesFromNetwork(args: {
     chainName: string;
     tokenAddresses: Array<string>;
     fiatCode: string;
   }): Promise<Raw<AssetPrice>> {
+    const uniqueTokenAddresses = Array.from(
+      new Set(args.tokenAddresses.map((address) => address.toLowerCase())),
+    );
+
+    // CoinGecko limits the number of token addresses that can be queried at once
+    const tokenAddressBatches = chunk(
+      uniqueTokenAddresses,
+      CoingeckoApi.MAX_BATCH_SIZE,
+    );
+
     try {
       const url = `${this.baseUrl}/simple/token_price/${args.chainName}`;
-      const { data } = await this.networkService.get<AssetPrice>({
-        url,
-        networkRequest: {
-          params: {
-            vs_currencies: args.fiatCode.toLowerCase(),
-            contract_addresses: args.tokenAddresses.join(','),
-            include_24hr_change: true,
-          },
-          ...(this.apiKey && {
-            headers: {
-              [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+      const res = await Promise.allSettled(
+        tokenAddressBatches.map((tokenAddresses) => {
+          return this.networkService.get<AssetPrice>({
+            url,
+            networkRequest: {
+              params: {
+                vs_currencies: args.fiatCode.toLowerCase(),
+                contract_addresses: tokenAddresses.join(','),
+                include_24hr_change: true,
+              },
+              ...(this.apiKey && {
+                headers: {
+                  [CoingeckoApi.COINGECKO_API_HEADER]: this.apiKey,
+                },
+              }),
             },
-          }),
-        },
-      });
-      return data;
+          });
+        }),
+      );
+
+      if (res.every((item) => item.status === 'rejected')) {
+        throw res[0].reason;
+      }
+
+      const fulfilled = res
+        .filter((item) => item.status === 'fulfilled')
+        .map((item) => item.value.data);
+
+      return merge({}, ...fulfilled);
     } catch (error) {
       throw new DataSourceError(
         `Error getting ${
