@@ -19,7 +19,7 @@ import { Module } from '@nestjs/common';
     SpacesRepositoryModule,
     UserRepositoryModule,
   ],
-  controllers: [SpacesController, SpaceSafesController, AddressBooksController],
-  providers: [SpacesService, SpaceSafesService, AddressBooksService],
+  controllers: [AddressBooksController, SpacesController, SpaceSafesController],
+  providers: [AddressBooksService, SpacesService, SpaceSafesService],
 })
 export class SpacesModule {}

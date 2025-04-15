@@ -7,6 +7,7 @@ import { Space } from '@/domain/spaces/entities/space.entity';
 import { ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { In } from 'typeorm';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -58,7 +59,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     return this.spacesRepository.findOneOrFail({
       where: {
         id: args.spaceId,
-        members: { status: 'ACTIVE', user: { id: userId } },
+        members: { status: In(['ACTIVE', 'INVITED']), user: { id: userId } },
       },
     });
   }
