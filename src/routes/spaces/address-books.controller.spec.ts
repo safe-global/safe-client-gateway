@@ -113,6 +113,10 @@ describe('AddressBooksController', () => {
         });
     });
 
+    it.todo('should get a Space Address Book with items as admin');
+
+    it.todo('should get a Space Address Book with items as member');
+
     it('should return a 404 if the user declined the membership', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { memberAccessToken } = await inviteMember({
@@ -179,7 +183,7 @@ describe('AddressBooksController', () => {
         });
     });
 
-    it('should return a 403 is the AuthPayload is empty', async () => {
+    it('should return a 403 if the AuthPayload is empty', async () => {
       const { spaceId } = await createSpace();
       const authPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', undefined as unknown as `0x${string}`)
@@ -196,6 +200,24 @@ describe('AddressBooksController', () => {
           error: 'Forbidden',
         });
     });
+  });
+
+  describe('PUT /spaces/:spaceId/address-book', () => {
+    it.todo('should add Space Address Book Items');
+
+    it.todo('should update Space Address Book Items');
+
+    it.todo('should add and update Space Address Book Items');
+
+    it.todo('should return a 404 if a space id does not exist');
+
+    it.todo('should return a 404 if the user does not exist');
+
+    it.todo('should return a 403 if not authenticated');
+
+    it.todo('should return a 403 if the member is not an admin');
+
+    it.todo('should return a 403 if the AuthPayload is empty');
   });
 
   // Utility functions
