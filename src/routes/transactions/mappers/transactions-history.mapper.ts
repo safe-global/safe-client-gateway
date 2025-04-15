@@ -22,8 +22,6 @@ import {
   convertToTimezone,
 } from '@/routes/transactions/helpers/timezone.helper';
 import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
-import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 @Injectable()
@@ -122,26 +120,24 @@ export class TransactionsHistoryMapper {
     chainId: string;
     transactions: Array<TransactionDomain>;
   }): Promise<void> {
+    // Prefetch tokens and contracts AddressInfos for transactions
     const transactions = args.transactions.filter(
       isMultisigTransaction || isModuleTransaction,
     );
+    await this.multisigTransactionMapper.prefetchAddressInfos({
+      chainId: args.chainId,
+      transactions,
+    });
+    // Prefetch tokens and contracts AddressInfos for native Ethereum transfers
     const transfers = args.transactions.filter(isEthereumTransaction);
-    const addresses = Array.from(
-      new Set([
-        ...this.getAddressesFromTransactions(transactions),
-        ...this.getAddressesFromTransfers(transfers),
-      ]),
+    const addressesFromTransfers = Array.from(
+      new Set(this.getAddressesFromTransfers(transfers)),
     );
-    await this.addressInfoHelper.getCollection(args.chainId, addresses, [
-      'TOKEN',
-      'CONTRACT',
-    ]);
-  }
-
-  private getAddressesFromTransactions(
-    transactions: Array<MultisigTransaction | ModuleTransaction>,
-  ): Array<`0x${string}`> {
-    return transactions.map((tx) => tx.to);
+    await this.addressInfoHelper.getCollection(
+      args.chainId,
+      addressesFromTransfers,
+      ['TOKEN', 'CONTRACT'],
+    );
   }
 
   private getAddressesFromTransfers(

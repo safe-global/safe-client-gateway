@@ -207,6 +207,10 @@ export class TransactionsService {
       chainId: args.chainId,
       address: args.safeAddress,
     });
+    await this.multisigTransactionMapper.prefetchAddressInfos({
+      chainId: args.chainId,
+      transactions: domainTransactions.results,
+    });
     const results = await Promise.all(
       domainTransactions.results.map(
         async (domainTransaction) =>

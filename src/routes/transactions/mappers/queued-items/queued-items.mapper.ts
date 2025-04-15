@@ -79,7 +79,7 @@ export class QueuedItemsMapper {
     transactionGroup: TransactionGroup,
   ): Promise<Array<TransactionQueuedItem>> {
     // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
-    await this.prefetchAddressInfos({
+    await this.mapper.prefetchAddressInfos({
       chainId: chainId,
       transactions: transactionGroup.transactions,
     });
@@ -100,17 +100,6 @@ export class QueuedItemsMapper {
         );
       }),
     );
-  }
-
-  private async prefetchAddressInfos(args: {
-    chainId: string;
-    transactions: Array<MultisigTransaction>;
-  }): Promise<void> {
-    const addresses = Array.from(new Set(args.transactions.map((tx) => tx.to)));
-    await this.addressInfoHelper.getCollection(args.chainId, addresses, [
-      'TOKEN',
-      'CONTRACT',
-    ]);
   }
 
   private getConflictType(

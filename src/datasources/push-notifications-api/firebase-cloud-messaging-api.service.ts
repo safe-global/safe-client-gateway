@@ -21,6 +21,7 @@ import {
   FirebaseOauth2Token,
   FirebaseOauth2TokenSchema,
 } from '@/datasources/push-notifications-api/entities/firebase-oauth2-token.entity';
+import { asError } from '@/logging/utils';
 
 @Injectable()
 export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
@@ -128,12 +129,12 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
       });
     } catch (error) {
       /**
-       * TODO: Error handling based on `error.details[i].reason`, e.g.
-       * - expired OAuth2 token
-       * - stale FCM token
-       * - don't expose the error to clients, logging on domain level
+       * @todo Handle error properly
+       * We should consider NotificationRespository when handling errors because the logic is parially handled there.
        */
-      throw this.httpErrorFactory.from(error);
+      const errorMessage = asError(error).message;
+
+      throw new Error(errorMessage);
     }
   }
 

@@ -166,7 +166,6 @@ export default (): ReturnType<typeof configuration> => ({
     counterfactualBalances: false,
     accounts: false,
     users: false,
-    pushNotifications: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
     signatureVerification: {
@@ -182,6 +181,7 @@ export default (): ReturnType<typeof configuration> => ({
     trustedDelegateCall: false,
     trustedForDelegateCallContractsList: false,
     filterValueParsing: false,
+    vaultTransactionsMapping: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
