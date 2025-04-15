@@ -58,7 +58,7 @@ export class TransactionDataMapper {
     dataDecoded: DataDecoded | null,
     safeAddress: `0x${string}`,
   ): Promise<TransactionData> {
-    const [toAddress, isTrustedDelegateCall, addressInfoIndex, tokenInfoIndex] =
+    const [toAddress, isTrustedDelegateCall, addressInfoIndex] =
       await Promise.all([
         this.addressInfoHelper.getOrDefault(chainId, previewTransactionDto.to, [
           'CONTRACT',
@@ -70,12 +70,14 @@ export class TransactionDataMapper {
           dataDecoded,
         ),
         this.buildAddressInfoIndex(chainId, dataDecoded),
-        this.buildTokenInfoIndex({
-          chainId,
-          safeAddress,
-          dataDecoded,
-        }),
       ]);
+
+    // We call this after as addressInfoIndex may warm the cache of some tokens
+    const tokenInfoIndex = await this.buildTokenInfoIndex({
+      chainId,
+      safeAddress,
+      dataDecoded,
+    });
 
     return new TransactionData(
       previewTransactionDto.data,
