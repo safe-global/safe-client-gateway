@@ -52,6 +52,7 @@ export class MultisigTransactionDetailsMapper {
       txInfo,
       detailedExecutionInfo,
       recipientAddressInfo,
+      tokenInfoIndex,
     ] = await Promise.all([
       this.transactionDataMapper.isTrustedDelegateCall(
         chainId,
@@ -71,6 +72,11 @@ export class MultisigTransactionDetailsMapper {
         safe,
       ),
       this._getRecipientAddressInfo(chainId, transaction.to),
+      this.transactionDataMapper.buildTokenInfoIndex({
+        chainId,
+        safeAddress: transaction.safe,
+        dataDecoded: transaction.dataDecoded,
+      }),
     ]);
 
     return {
@@ -87,6 +93,7 @@ export class MultisigTransactionDetailsMapper {
         transaction.operation,
         isTrustedDelegateCall,
         isEmpty(addressInfoIndex) ? null : addressInfoIndex,
+        isEmpty(tokenInfoIndex) ? null : tokenInfoIndex,
       ),
       txHash: transaction.transactionHash,
       detailedExecutionInfo,

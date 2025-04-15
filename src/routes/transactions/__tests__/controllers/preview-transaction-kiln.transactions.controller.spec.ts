@@ -227,6 +227,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -383,6 +384,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -985,6 +987,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -1136,6 +1139,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -1732,6 +1736,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -1882,6 +1887,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });

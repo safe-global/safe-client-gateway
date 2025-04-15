@@ -6,8 +6,13 @@ import {
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
+import {
+  Erc20Token,
+  Erc721Token,
+  NativeToken,
+} from '@/routes/balances/entities/token.entity';
 
-@ApiExtraModels(AddressInfo, DataDecoded)
+@ApiExtraModels(AddressInfo, DataDecoded, Erc20Token, Erc721Token, NativeToken)
 export class TransactionData {
   @ApiPropertyOptional({ type: String, nullable: true })
   hexData: string | null;
@@ -23,6 +28,11 @@ export class TransactionData {
   trustedDelegateCallTarget: boolean | null;
   @ApiPropertyOptional({ type: Object, nullable: true })
   addressInfoIndex: Record<string, AddressInfo> | null;
+  @ApiPropertyOptional({ type: Object, nullable: true })
+  tokenInfoIndex: Record<
+    `0x${string}`,
+    Erc20Token | Erc721Token | NativeToken
+  > | null;
 
   constructor(
     hexData: string | null,
@@ -32,6 +42,10 @@ export class TransactionData {
     operation: Operation,
     trustedDelegateCallTarget: boolean | null,
     addressInfoIndex: Record<string, AddressInfo> | null,
+    tokenInfoIndex: Record<
+      `0x${string}`,
+      Erc20Token | Erc721Token | NativeToken
+    > | null,
   ) {
     this.hexData = hexData;
     this.dataDecoded = dataDecoded;
@@ -40,5 +54,6 @@ export class TransactionData {
     this.operation = operation;
     this.trustedDelegateCallTarget = trustedDelegateCallTarget;
     this.addressInfoIndex = addressInfoIndex;
+    this.tokenInfoIndex = tokenInfoIndex;
   }
 }

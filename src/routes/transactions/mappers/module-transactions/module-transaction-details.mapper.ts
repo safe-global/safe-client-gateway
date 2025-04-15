@@ -52,23 +52,32 @@ export class ModuleTransactionDetailsMapper {
     chainId: string,
     transaction: ModuleTransaction,
   ): Promise<TransactionData> {
-    const [addressInfoIndex, trustedDelegateCallTarget, toAddress] =
-      await Promise.all([
-        this.transactionDataMapper.buildAddressInfoIndex(
-          chainId,
-          transaction.dataDecoded,
-        ),
-        this.transactionDataMapper.isTrustedDelegateCall(
-          chainId,
-          transaction.operation,
-          transaction.to,
-          transaction.dataDecoded,
-        ),
-        this.addressInfoHelper.getOrDefault(chainId, transaction.to, [
-          'TOKEN',
-          'CONTRACT',
-        ]),
-      ]);
+    const [
+      addressInfoIndex,
+      trustedDelegateCallTarget,
+      toAddress,
+      tokenInfoIndex,
+    ] = await Promise.all([
+      this.transactionDataMapper.buildAddressInfoIndex(
+        chainId,
+        transaction.dataDecoded,
+      ),
+      this.transactionDataMapper.isTrustedDelegateCall(
+        chainId,
+        transaction.operation,
+        transaction.to,
+        transaction.dataDecoded,
+      ),
+      this.addressInfoHelper.getOrDefault(chainId, transaction.to, [
+        'TOKEN',
+        'CONTRACT',
+      ]),
+      this.transactionDataMapper.buildTokenInfoIndex({
+        chainId,
+        safeAddress: transaction.safe,
+        dataDecoded: transaction.dataDecoded,
+      }),
+    ]);
 
     return {
       to: toAddress,
@@ -78,6 +87,7 @@ export class ModuleTransactionDetailsMapper {
       operation: transaction.operation,
       addressInfoIndex: isEmpty(addressInfoIndex) ? null : addressInfoIndex,
       trustedDelegateCallTarget,
+      tokenInfoIndex: isEmpty(tokenInfoIndex) ? null : tokenInfoIndex,
     };
   }
 }

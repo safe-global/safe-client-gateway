@@ -56,6 +56,7 @@ export class TransactionPreviewMapper {
       chainId,
       previewTransactionDto,
       dataDecoded,
+      safe.address,
     );
     return Promise.resolve(new TransactionPreview(txInfo, txData));
   }
