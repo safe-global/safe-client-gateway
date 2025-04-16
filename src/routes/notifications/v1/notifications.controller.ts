@@ -192,6 +192,7 @@ export class NotificationsController {
 
   @Delete('chains/:chainId/notifications/devices/:uuid')
   async unregisterDevice(
+    @Param('chainId') _: string, // We need to keep this parameter for the swagger documentation
     @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
   ): Promise<void> {
     await this.notificationServiceV2.deleteDevice(uuid);
