@@ -54,6 +54,8 @@ export class Chain {
   @ApiProperty()
   isTestnet: boolean;
   @ApiProperty()
+  zk: boolean;
+  @ApiProperty()
   nativeCurrency: ApiNativeCurrency;
   @ApiProperty()
   transactionService: string;
@@ -102,6 +104,7 @@ export class Chain {
     chainName: string;
     description: string;
     l2: boolean;
+    zk: boolean;
     nativeCurrency: NativeCurrency;
     transactionService: string;
     blockExplorerUriTemplate: BlockExplorerUriTemplate;
@@ -127,6 +130,7 @@ export class Chain {
     this.chainLogoUri = args.chainLogoUri;
     this.l2 = args.l2;
     this.isTestnet = args.isTestnet;
+    this.zk = args.zk;
     this.nativeCurrency = args.nativeCurrency;
     this.transactionService = args.transactionService;
     this.blockExplorerUriTemplate = args.blockExplorerUriTemplate;

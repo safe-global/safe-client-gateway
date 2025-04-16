@@ -91,6 +91,11 @@ export const ChainSchema = z.object({
   chainLogoUri: z.string().url().nullish().default(null),
   l2: z.boolean(),
   isTestnet: z.boolean(),
+  zk: z
+    .boolean()
+    // TODO: Remove after Config Service is deployed
+    // @see https://github.com/safe-global/safe-config-service/pull/1339
+    .catch(false),
   shortName: z.string(),
   rpcUri: RpcUriSchema,
   safeAppsRpcUri: RpcUriSchema,

@@ -551,6 +551,18 @@ describe('Chain schemas', () => {
       expect(result.success).toBe(true);
     });
 
+    // TODO: Remove after Config Service is deployed
+    // @see https://github.com/safe-global/safe-config-service/pull/1339
+    it('should default zk to false', () => {
+      const chain = chainBuilder().build();
+      // @ts-expect-error - zk is expected to be a boolean
+      delete chain.zk;
+
+      const result = ChainSchema.safeParse(chain);
+
+      expect(result.success && result.data.zk).toBe(false);
+    });
+
     it.each([['chainLogoUri' as const], ['ensRegistryAddress' as const]])(
       'should allow undefined %s and default to null',
       (field) => {
@@ -625,6 +637,9 @@ describe('Chain schemas', () => {
       ['pricesProvider' as const],
       ['balancesProvider' as const],
       ['theme' as const],
+      // TODO: Include after Config Service is deployed
+      // @see https://github.com/safe-global/safe-config-service/pull/1339
+      // ['zk' as const]
     ])('should not validate a chain without %s', (field) => {
       const chain = chainBuilder().build();
       delete chain[field];
