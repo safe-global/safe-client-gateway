@@ -9,8 +9,8 @@ export const IAddressBookItemsRepository = Symbol(
 export interface IAddressBookItemsRepository {
   /**
    * Finds AddressBookItems by Space ID.
-   * @param args.authPayload - The authentication payload.
-   * @param spaceId - The ID of the Space.
+   * @param {AuthPayload} args.authPayload - The authentication payload.
+   * @param {number} args.spaceId - The ID of the Space.
    */
   findAllBySpaceId(args: {
     authPayload: AuthPayload;
@@ -19,14 +19,17 @@ export interface IAddressBookItemsRepository {
 
   /**
    * Upserts AddressBookItems.
-   * @param args.authPayload - The authentication payload.
-   * @param args.spaceId - The ID of the Space.
-   * @param args.addressBookItems - The AddressBookItems to upsert.
+   *
+   * @param {AuthPayload} args.authPayload - The authentication payload.
+   * @param {number} args.spaceId - The ID of the Space.
+   * @param {Array<AddressBookItem>} args.addressBookItems - The AddressBookItems to upsert.
    *
    * For each AddressBookItem in {@link args.addressBookItems},
    * the address is compared against the existing AddressBookItems in the database.
    * If an AddressBookItem with the same address exists, it is updated.
    * Otherwise, a new AddressBookItem is created.
+   *
+   * @returns {Array<AddressBookItem>} Returns an array of updated address book items
    */
   upsertMany(args: {
     authPayload: AuthPayload;
@@ -36,9 +39,9 @@ export interface IAddressBookItemsRepository {
 
   /**
    * Deletes an array of AddressBookItems by their IDs.
-   * @param args.authPayload - The authentication payload.
-   * @param args.spaceId - The ID of the Space.
-   * @param args.addressBookItemIds - The IDs of the AddressBookItems to delete.
+   * @param {AuthPayload} args.authPayload - The authentication payload.
+   * @param {number} args.spaceId - The ID of the Space.
+   * @param {Array<AddressBookItem>} args.addressBookItemIds - The IDs of the AddressBookItems to delete.
    */
   deleteMany(args: {
     authPayload: AuthPayload;

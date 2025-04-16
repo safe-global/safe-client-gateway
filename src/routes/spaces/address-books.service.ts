@@ -6,7 +6,7 @@ import { SpaceAddressBookDto } from '@/routes/spaces/entities/space-address-book
 import { Inject } from '@nestjs/common';
 
 export class AddressBooksService {
-  private readonly maxAddressBookItems: number;
+  private readonly maxItems: number;
 
   constructor(
     @Inject(IAddressBookItemsRepository)
@@ -14,8 +14,8 @@ export class AddressBooksService {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.maxAddressBookItems = this.configurationService.getOrThrow<number>(
-      'spaces.addressBooks.maxAddressBookItems',
+    this.maxItems = this.configurationService.getOrThrow<number>(
+      'spaces.addressBooks.maxItems',
     );
   }
 
