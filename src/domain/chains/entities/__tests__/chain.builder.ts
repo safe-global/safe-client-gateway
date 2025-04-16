@@ -22,6 +22,7 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('chainLogoUri', faker.internet.url({ appendSlash: false }))
     .with('l2', faker.datatype.boolean())
     .with('isTestnet', faker.datatype.boolean())
+    .with('zk', faker.datatype.boolean())
     .with('shortName', faker.company.name())
     .with('rpcUri', rpcUriBuilder().build())
     .with('safeAppsRpcUri', rpcUriBuilder().build())
