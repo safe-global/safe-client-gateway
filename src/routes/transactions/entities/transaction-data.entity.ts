@@ -2,6 +2,7 @@ import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
@@ -26,9 +27,25 @@ export class TransactionData {
   operation: Operation;
   @ApiPropertyOptional({ type: Boolean, nullable: true })
   trustedDelegateCallTarget: boolean | null;
-  @ApiPropertyOptional({ type: Object, nullable: true })
+  @ApiPropertyOptional({
+    type: Object,
+    additionalProperties: {
+      $ref: getSchemaPath(AddressInfo),
+    },
+    nullable: true,
+  })
   addressInfoIndex: Record<string, AddressInfo> | null;
-  @ApiPropertyOptional({ type: Object, nullable: true })
+  @ApiPropertyOptional({
+    type: Object,
+    additionalProperties: {
+      oneOf: [
+        { $ref: getSchemaPath(NativeToken) },
+        { $ref: getSchemaPath(Erc20Token) },
+        { $ref: getSchemaPath(Erc721Token) },
+      ],
+    },
+    nullable: true,
+  })
   tokenInfoIndex: Record<
     `0x${string}`,
     Erc20Token | Erc721Token | NativeToken
