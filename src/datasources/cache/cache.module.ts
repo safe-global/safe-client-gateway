@@ -34,21 +34,21 @@ async function redisClientFactory(
     loggingService.error({
       type: LogType.CacheError,
       source: 'CacheModule',
-      message: err.code ?? err.message,
+      event: err.code ?? err.message,
     }),
   );
   client.on('reconnecting', () =>
     loggingService.warn({
       type: LogType.CacheEvent,
       source: 'CacheModule',
-      message: 'Reconnecting to Redis',
+      event: 'Reconnecting to Redis',
     }),
   );
   client.on('end', () =>
     loggingService.warn({
       type: LogType.CacheEvent,
       source: 'CacheModule',
-      message: 'Redis connection closed',
+      event: 'Redis connection closed',
     }),
   );
   await client.connect();

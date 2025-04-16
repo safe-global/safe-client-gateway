@@ -1,3 +1,4 @@
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
@@ -10,6 +11,7 @@ import { Wallet } from '@/datasources/wallets/entities/wallets.entity.db';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { SpaceStatus } from '@/domain/spaces/entities/space.entity';
 import { SpacesRepository } from '@/domain/spaces/spaces.repository';
@@ -34,6 +36,9 @@ const mockLoggingService = {
   info: jest.fn(),
   warn: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
+const mockConfigurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
 const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
@@ -108,12 +113,16 @@ describe('MembersRepository', () => {
       mockConfigService,
     );
     await migrator.migrate();
-
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'spaces.maxSpaceCreationsPerUser') {
+        return testConfiguration.spaces.maxSpaceCreationsPerUser;
+      }
+    });
     const walletsRepo = new WalletsRepository(postgresDatabaseService);
     membersRepository = new MembersRepository(
       postgresDatabaseService,
       new UsersRepository(postgresDatabaseService, walletsRepo),
-      new SpacesRepository(postgresDatabaseService),
+      new SpacesRepository(postgresDatabaseService, mockConfigurationService),
       walletsRepo,
     );
   });
@@ -223,9 +232,9 @@ describe('MembersRepository', () => {
   describe('findOneOrFail', () => {
     it('should find a member', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
-      const memberName = faker.word.noun();
+      const memberName = nameBuilder();
       const memberStatus = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
@@ -274,9 +283,9 @@ describe('MembersRepository', () => {
   describe('findOne', () => {
     it('should find a member', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
-      const memberName = faker.word.noun();
+      const memberName = nameBuilder();
       const memberStatus = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
@@ -326,7 +335,7 @@ describe('MembersRepository', () => {
     it('should find members', async () => {
       const userStatus1 = faker.helpers.arrayElement(UserStatusKeys);
       const userStatus2 = faker.helpers.arrayElement(UserStatusKeys);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const memberName1 = faker.word.noun();
       const memberName2 = faker.word.noun();
@@ -407,7 +416,7 @@ describe('MembersRepository', () => {
     it('should find members', async () => {
       const userStatus1 = faker.helpers.arrayElement(UserStatusKeys);
       const userStatus2 = faker.helpers.arrayElement(UserStatusKeys);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
       const memberName1 = faker.word.noun();
       const memberName2 = faker.word.noun();
@@ -485,8 +494,8 @@ describe('MembersRepository', () => {
   describe('inviteUsers', () => {
     it('should invite users to a space and return the members', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -540,8 +549,8 @@ describe('MembersRepository', () => {
 
     it('should not create PENDING users for existing ones', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -571,7 +580,7 @@ describe('MembersRepository', () => {
         address: memberWallet,
       });
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
-      const memberName = faker.person.firstName();
+      const memberName = nameBuilder();
 
       await membersRepository.inviteUsers({
         authPayload: new AuthPayload(authPayloadDto),
@@ -654,8 +663,8 @@ describe('MembersRepository', () => {
 
     it('should not allow inviting users if the user is not an ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -700,8 +709,8 @@ describe('MembersRepository', () => {
 
     it('should not allow inviting users if the user is a NON-ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -775,8 +784,8 @@ describe('MembersRepository', () => {
     it('should throw an error if the signer_address member is not ACTIVE', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const pendingAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -834,9 +843,9 @@ describe('MembersRepository', () => {
     it('should accept an invite to a space, setting the member and user to ACTIVE', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -912,9 +921,9 @@ describe('MembersRepository', () => {
     it('should accept an invite to a space and override the name', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -953,7 +962,7 @@ describe('MembersRepository', () => {
         invitedBy: memberInvitedBy,
       });
       const memberId = member.identifiers[0].id as Member['id'];
-      const updatedName = faker.person.firstName();
+      const updatedName = nameBuilder();
 
       await membersRepository.acceptInvite({
         authPayload: new AuthPayload(authPayloadDto),
@@ -991,8 +1000,8 @@ describe('MembersRepository', () => {
     it('should not accept the invite if the user was not invited', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1041,7 +1050,7 @@ describe('MembersRepository', () => {
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
-      const memberName = faker.person.firstName();
+      const memberName = nameBuilder();
 
       await expect(
         membersRepository.acceptInvite({
@@ -1060,7 +1069,7 @@ describe('MembersRepository', () => {
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
-      const memberName = faker.person.firstName();
+      const memberName = nameBuilder();
 
       await expect(
         membersRepository.acceptInvite({
@@ -1075,7 +1084,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the space does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const memberName = faker.person.firstName();
+      const memberName = nameBuilder();
       const user = await dbUserRepo.insert({
         status: 'PENDING',
       });
@@ -1102,9 +1111,9 @@ describe('MembersRepository', () => {
     it('should throw an error if the user is already a member of the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1153,9 +1162,9 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the user is not INVITED to the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1209,9 +1218,9 @@ describe('MembersRepository', () => {
     it('should accept an invite to a space, setting the member to DECLINED', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1284,8 +1293,8 @@ describe('MembersRepository', () => {
     it('should not decline the invite if the user was not invited', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1380,9 +1389,9 @@ describe('MembersRepository', () => {
     it('should throw an error if the user is already a member of the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1430,9 +1439,9 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the user is not INVITED to the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1482,8 +1491,8 @@ describe('MembersRepository', () => {
   describe('findAuthorizedMembersOrFail', () => {
     it('should find members by space id', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
       const user = await dbUserRepo.insert({
@@ -1568,7 +1577,7 @@ describe('MembersRepository', () => {
     it('should throw an error if the user is not a member of the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -1596,7 +1605,7 @@ describe('MembersRepository', () => {
 
     it('should throw an error if the user is not an active member of the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1634,9 +1643,9 @@ describe('MembersRepository', () => {
   describe('updateRole', () => {
     it('should update the role of a member', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1687,11 +1696,11 @@ describe('MembersRepository', () => {
     it('should update the role of a member within the space only', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayloadDto2 = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const space2Name = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
-      const member2Name = faker.person.firstName();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
+      const member2Name = nameBuilder();
       const adminUser = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1799,9 +1808,9 @@ describe('MembersRepository', () => {
     it('should not allow updating MEMBERs if the signer is not an ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
-      const memberName2 = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const memberName2 = nameBuilder();
       const userToUpdate = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1852,9 +1861,9 @@ describe('MembersRepository', () => {
     it('should not allow updating ADMINs if the signer is not an ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
-      const memberName2 = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const memberName2 = nameBuilder();
       const userToUpdate = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -1948,9 +1957,9 @@ describe('MembersRepository', () => {
 
     it('should throw an error if user does not have access to upgrade to ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
-      const memberName2 = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const memberName2 = nameBuilder();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2000,8 +2009,8 @@ describe('MembersRepository', () => {
 
     it('should throw an error if downgrading the last ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2038,9 +2047,9 @@ describe('MembersRepository', () => {
   describe('removeUser', () => {
     it('should remove the user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
-      const memberName2 = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const memberName2 = nameBuilder();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2094,12 +2103,12 @@ describe('MembersRepository', () => {
 
     it('should keep the user as a member of other spaces', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const space2Name = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
-      const admin2Name = faker.person.firstName();
-      const member2Name = faker.person.firstName();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
+      const admin2Name = nameBuilder();
+      const member2Name = nameBuilder();
       const owner = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2193,9 +2202,9 @@ describe('MembersRepository', () => {
     it('should not allow removing a user if the user is not an ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const memberAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
       const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
@@ -2286,8 +2295,8 @@ describe('MembersRepository', () => {
 
     it('should throw an error if removing the last ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
       });

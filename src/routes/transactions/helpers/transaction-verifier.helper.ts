@@ -23,8 +23,6 @@ import { parseSignaturesByType } from '@/domain/common/utils/signatures';
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
   HashMismatch = 'Invalid safeTxHash',
-  DuplicateOwners = 'Duplicate owners in confirmations',
-  DuplicateSignatures = 'Duplicate signatures in confirmations',
   InvalidSignature = 'Invalid signature',
   BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
@@ -284,34 +282,6 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    const uniqueOwners = new Set(
-      args.transaction.confirmations.map((c) => c.owner),
-    );
-    if (uniqueOwners.size !== args.transaction.confirmations.length) {
-      this.logDuplicates({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
-        confirmations: args.transaction.confirmations,
-        type: 'owners',
-        source: LogSource.Api,
-      });
-      throw new HttpExceptionNoLog(ErrorMessage.DuplicateOwners, args.code);
-    }
-
-    const uniqueSignatures = new Set(
-      args.transaction.confirmations.map((c) => c.signature),
-    );
-    if (uniqueSignatures.size !== args.transaction.confirmations.length) {
-      this.logDuplicates({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
-        confirmations: args.transaction.confirmations,
-        type: 'signatures',
-        source: LogSource.Api,
-      });
-      throw new HttpExceptionNoLog(ErrorMessage.DuplicateSignatures, args.code);
-    }
-
     for (const confirmation of args.transaction.confirmations) {
       if (!confirmation.signature) {
         continue;
@@ -524,37 +494,12 @@ export class TransactionVerifierHelper {
     source: LogSource;
   }): void {
     this.loggingService.error({
-      message: 'safeTxHash does not match',
+      event: 'safeTxHash does not match',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       transaction: getBaseMultisigTransaction(args.transaction),
-      type: LogType.TransactionValidity,
-      source: args.source,
-    });
-  }
-
-  private logDuplicates(args: {
-    type: 'owners' | 'signatures';
-    chainId: string;
-    safe: Safe;
-    safeTxHash: `0x${string}`;
-    confirmations: NonNullable<MultisigTransaction['confirmations']>;
-    source: LogSource;
-  }): void {
-    const message =
-      args.type === 'owners'
-        ? 'Duplicate owners in confirmations'
-        : 'Duplicate signatures in confirmations';
-
-    this.loggingService.error({
-      message,
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      safeVersion: args.safe.version,
-      safeTxHash: args.safeTxHash,
-      confirmations: args.confirmations,
       type: LogType.TransactionValidity,
       source: args.source,
     });
@@ -568,7 +513,7 @@ export class TransactionVerifierHelper {
     source: LogSource;
   }): void {
     this.loggingService.error({
-      message: 'Unauthorized address',
+      event: 'Unauthorized address',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
@@ -588,7 +533,7 @@ export class TransactionVerifierHelper {
     source: LogSource;
   }): void {
     this.loggingService.error({
-      message: 'Recovered address does not match signer',
+      event: 'Recovered address does not match signer',
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,

@@ -4,7 +4,6 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   NetworkService,
   INetworkService,
@@ -21,6 +20,8 @@ import {
   FirebaseOauth2Token,
   FirebaseOauth2TokenSchema,
 } from '@/datasources/push-notifications-api/entities/firebase-oauth2-token.entity';
+import { get } from 'lodash';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 
 @Injectable()
 export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
@@ -33,6 +34,8 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
   private static readonly DefaultIosNotificationTitle = 'New Activity';
   private static readonly DefaultIosNotificationBody =
     'New Activity with your Safe';
+
+  private static readonly ERROR_ARRAY_PATH = 'data.error_description';
 
   private readonly baseUrl: string;
   private readonly project: string;
@@ -48,7 +51,6 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
     private readonly cacheService: ICacheService,
     @Inject(IJwtService)
     private readonly jwtService: IJwtService,
-    private readonly httpErrorFactory: HttpErrorFactory,
   ) {
     this.baseUrl = this.configurationService.getOrThrow<string>(
       'pushNotifications.baseUri',
@@ -128,12 +130,11 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
       });
     } catch (error) {
       /**
-       * TODO: Error handling based on `error.details[i].reason`, e.g.
-       * - expired OAuth2 token
-       * - stale FCM token
-       * - don't expose the error to clients, logging on domain level
+       * @todo Handle error properly
+       *
+       * We should consider NotificationRespository when handling errors because the logic is parially handled there.
        */
-      throw this.httpErrorFactory.from(error);
+      throw this.mapError(error);
     }
   }
 
@@ -194,5 +195,20 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
       secretOrPrivateKey: this.privateKey,
       algorithm: 'RS256',
     });
+  }
+
+  private mapError(error: unknown): unknown {
+    if (error instanceof NetworkResponseError) {
+      const errorMessage = get(
+        error,
+        FirebaseCloudMessagingApiService.ERROR_ARRAY_PATH,
+      );
+
+      if (errorMessage) {
+        return new Error(errorMessage);
+      }
+    }
+
+    return error;
   }
 }

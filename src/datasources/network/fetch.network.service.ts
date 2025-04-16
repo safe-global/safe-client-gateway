@@ -5,6 +5,7 @@ import { NetworkResponse } from '@/datasources/network/entities/network.response
 import { INetworkService } from '@/datasources/network/network.service.interface';
 import { FetchClient } from '@/datasources/network/network.module';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 
 /**
  * A {@link INetworkService} which uses fetch as the main HTTP client
@@ -23,6 +24,7 @@ export class FetchNetworkService implements INetworkService {
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
     const url = this.buildUrl(args.url, args.networkRequest?.params);
+    this.logRequest(url, 'GET');
     const startTimeMs = performance.now();
     try {
       return await this.client<T>(url, {
@@ -41,6 +43,7 @@ export class FetchNetworkService implements INetworkService {
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
     const url = this.buildUrl(args.url, args.networkRequest?.params);
+    this.logRequest(url, 'POST');
     const startTimeMs = performance.now();
     try {
       return await this.client<T>(url, {
@@ -63,6 +66,7 @@ export class FetchNetworkService implements INetworkService {
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
     const url = this.buildUrl(args.url, args.networkRequest?.params);
+    this.logRequest(url, 'DELETE');
     const startTimeMs = performance.now();
 
     let headers = args.networkRequest?.headers;
@@ -101,13 +105,27 @@ export class FetchNetworkService implements INetworkService {
     return urlObject.toString();
   }
 
+  /**
+   * Logs the request properties. This is useful for debugging and monitoring purposes.
+   * TODO: remove this method when the Safe Transaction Service implements the request_id header.
+   * @param url
+   * @param method
+   */
+  private logRequest(url: string, method: string): void {
+    this.loggingService.info({
+      type: LogType.ExternalRequest,
+      method,
+      url,
+    });
+  }
+
   private logErrorResponse(error: unknown, responseTimeMs: number): void {
     if (!(error instanceof NetworkResponseError)) {
       return;
     }
 
     this.loggingService.debug({
-      type: 'external_request',
+      type: LogType.ExternalRequest,
       protocol: error.url.protocol,
       target_host: error.url.host,
       path: error.url.pathname,

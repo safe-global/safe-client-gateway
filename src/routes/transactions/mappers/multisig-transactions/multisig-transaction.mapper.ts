@@ -11,6 +11,9 @@ import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/com
 import { MultisigTransactionExecutionInfoMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
+import { getAddress, isAddress } from 'viem';
 
 @Injectable()
 export class MultisigTransactionMapper {
@@ -20,6 +23,8 @@ export class MultisigTransactionMapper {
     private readonly executionInfoMapper: MultisigTransactionExecutionInfoMapper,
     private readonly safeAppInfoMapper: SafeAppInfoMapper,
     private readonly transactionVerifier: TransactionVerifierHelper,
+    private readonly addressInfoHelper: AddressInfoHelper,
+    private readonly dataDecodedParamHelper: DataDecodedParamHelper,
   ) {}
 
   async mapTransaction(
@@ -56,6 +61,43 @@ export class MultisigTransactionMapper {
       executionInfo,
       safeAppInfo,
       transaction.transactionHash,
+    );
+  }
+
+  /**
+   * Prefetches the AddressInfo for the given transactions.
+   * This method collects all unique addresses from the transactions and fetches their AddressInfo,
+   * to prevent multiple parallel requests for the same addresses.
+   */
+  public async prefetchAddressInfos(args: {
+    chainId: string;
+    transactions: Array<MultisigTransaction>;
+  }): Promise<void> {
+    const addresses: Set<`0x${string}`> = new Set();
+    for (const transaction of args.transactions) {
+      addresses.add(transaction.safe);
+      addresses.add(transaction.to);
+      if (transaction.dataDecoded) {
+        const fromAddress = this.dataDecodedParamHelper.getFromParam(
+          transaction.dataDecoded,
+          transaction.safe,
+        );
+        if (isAddress(fromAddress)) {
+          addresses.add(getAddress(fromAddress));
+        }
+        const toAddress = this.dataDecodedParamHelper.getToParam(
+          transaction.dataDecoded,
+          transaction.safe,
+        );
+        if (isAddress(toAddress)) {
+          addresses.add(getAddress(toAddress));
+        }
+      }
+    }
+    await this.addressInfoHelper.getCollection(
+      args.chainId,
+      Array.from(addresses),
+      ['TOKEN', 'CONTRACT'],
     );
   }
 }

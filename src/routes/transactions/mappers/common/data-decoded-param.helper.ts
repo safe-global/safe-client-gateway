@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
+import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class DataDecodedParamHelper {
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
 
-  getFromParam(dataDecoded: DataDecoded | null, fallback: string): string {
+  getFromParam(dataDecoded: BaseDataDecoded | null, fallback: string): string {
     if (!dataDecoded || !dataDecoded.parameters) return fallback;
 
     switch (dataDecoded.method) {
@@ -23,7 +23,7 @@ export class DataDecodedParamHelper {
     }
   }
 
-  getToParam(dataDecoded: DataDecoded | null, fallback: string): string {
+  getToParam(dataDecoded: BaseDataDecoded | null, fallback: string): string {
     if (!dataDecoded || !dataDecoded.parameters) return fallback;
 
     switch (dataDecoded.method) {
@@ -41,7 +41,7 @@ export class DataDecodedParamHelper {
     }
   }
 
-  getValueParam(dataDecoded: DataDecoded | null, fallback: string): string {
+  getValueParam(dataDecoded: BaseDataDecoded | null, fallback: string): string {
     if (!dataDecoded || !dataDecoded.parameters) return fallback;
 
     switch (dataDecoded.method) {
@@ -60,14 +60,14 @@ export class DataDecodedParamHelper {
   }
 
   getValueAtPosition(
-    dataDecoded: DataDecoded | null,
+    dataDecoded: BaseDataDecoded | null,
     position: number,
   ): unknown {
     if (!dataDecoded || !dataDecoded.parameters?.length) return null;
     return dataDecoded.parameters[position]?.value ?? null;
   }
 
-  hasNestedDelegate(dataDecoded: DataDecoded): boolean {
+  hasNestedDelegate(dataDecoded: BaseDataDecoded): boolean {
     if (!dataDecoded.parameters) return false;
     return dataDecoded.parameters.some(
       (param) =>

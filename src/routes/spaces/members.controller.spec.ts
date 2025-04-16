@@ -34,6 +34,7 @@ import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 
 describe('MembersController', () => {
   let app: INestApplication<Server>;
@@ -82,7 +83,7 @@ describe('MembersController', () => {
     const configService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
-    maxInvites = configService.getOrThrow('users.maxInvites');
+    maxInvites = configService.getOrThrow('spaces.maxInvites');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -105,7 +106,7 @@ describe('MembersController', () => {
     it('should invite users', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -190,7 +191,7 @@ describe('MembersController', () => {
     it('should throw a 403 if the user is not authenticated', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -235,7 +236,7 @@ describe('MembersController', () => {
     it('should throw a 422 if no addresses are provided', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -261,7 +262,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -351,7 +352,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -404,7 +405,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
       const userName = faker.person.firstName();
 
@@ -459,7 +460,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
       const userName = faker.person.firstName();
 
@@ -513,7 +514,7 @@ describe('MembersController', () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAddress = getAddress(faker.finance.ethereumAddress());
-      const memberName = faker.person.firstName();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -569,8 +570,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -613,7 +614,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const invitedMemberName = faker.person.firstName();
       const acceptedMemberName = faker.person.firstName();
 
@@ -657,8 +658,8 @@ describe('MembersController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -704,8 +705,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -740,7 +741,7 @@ describe('MembersController', () => {
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
-      const memberName = faker.person.firstName();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -766,9 +767,9 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
-      const memberName = faker.person.firstName();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -820,8 +821,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -877,8 +878,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -928,8 +929,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -968,8 +969,8 @@ describe('MembersController', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1012,7 +1013,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1066,8 +1067,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
 
       await request(app.getHttpServer())
@@ -1117,8 +1118,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1168,7 +1169,7 @@ describe('MembersController', () => {
     it('should return a list of members of a space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -1265,7 +1266,7 @@ describe('MembersController', () => {
     it('should throw a 403 if the user is not authenticated', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -1317,7 +1318,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1370,7 +1371,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the user is not an active member of the space', async () => {
       const adminAuthPayloadDto = authPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const nonMemberAddress = getAddress(faker.finance.ethereumAddress());
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder()
         .with('signer_address', nonMemberAddress)
@@ -1407,8 +1408,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1458,8 +1459,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1514,8 +1515,8 @@ describe('MembersController', () => {
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1569,8 +1570,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1616,8 +1617,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1669,7 +1670,7 @@ describe('MembersController', () => {
     it('should throw a 409 if downgrading the last ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1701,7 +1702,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1740,8 +1741,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1790,7 +1791,7 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const nonUserAuthPayloadDto = authPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const userId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
@@ -1850,9 +1851,9 @@ describe('MembersController', () => {
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const member = getAddress(faker.finance.ethereumAddress());
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
       const adminName = faker.person.firstName();
-      const memberName = faker.person.firstName();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1902,8 +1903,8 @@ describe('MembersController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const spaceName = faker.word.noun();
-      const memberName = faker.person.firstName();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1954,7 +1955,7 @@ describe('MembersController', () => {
     it('should throw a 409 if removing the last ACTIVE ADMIN', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = faker.word.noun();
+      const spaceName = nameBuilder();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')

@@ -9,7 +9,7 @@ import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.
 import { AppModule } from '@/app.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -57,6 +57,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
   let safeConfigUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let stakingApiUrl: string;
+  let dataDecoderUrl: string;
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -85,6 +86,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     stakingApiUrl = configurationService.getOrThrow('staking.mainnet.baseUri');
+    dataDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -160,7 +162,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -225,6 +227,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -316,7 +319,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -381,6 +384,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -430,7 +434,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -497,7 +501,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -565,7 +569,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -631,7 +635,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -698,7 +702,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -775,7 +779,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -852,7 +856,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -938,7 +942,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -983,6 +987,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -1089,7 +1094,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1134,6 +1139,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -1193,7 +1199,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1269,7 +1275,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1347,7 +1353,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1423,7 +1429,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1513,7 +1519,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1600,7 +1606,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1688,7 +1694,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1730,6 +1736,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -1838,7 +1845,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -1880,6 +1887,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               operation: previewTransactionDto.operation,
               trustedDelegateCallTarget: null,
               addressInfoIndex: null,
+              tokenInfoIndex: null,
             },
           });
       });
@@ -1943,7 +1951,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -2024,7 +2032,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -2106,7 +2114,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -2186,7 +2194,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -2263,7 +2271,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           }
         });
         networkService.post.mockImplementation(({ url }) => {
-          if (url === `${chain.transactionService}/api/v1/data-decoder/`) {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
             return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           }
           return Promise.reject(new Error(`Could not match ${url}`));
@@ -2277,6 +2285,30 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           .expect(200)
           .expect(({ body }) => expect(body.txInfo.type).toBe('Custom'));
       });
+    });
+  });
+
+  describe('Lending Vaults', () => {
+    describe('deposit', () => {
+      it.todo('should preview a transaction');
+      it.todo(
+        'should return a "standard" transaction preview if the deployment is unavailable',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the deployment product type is not defi',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the deployment is not active',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the deployment is on a different chain',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the vault stats are not available',
+      );
+      it.todo(
+        'should return a "standard" transaction preview if the underlying token is unknown',
+      );
     });
   });
 });

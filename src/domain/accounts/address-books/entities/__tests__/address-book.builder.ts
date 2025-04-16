@@ -1,10 +1,10 @@
 import { type IBuilder, Builder } from '@/__tests__/builder';
-import { addressBookItemNameBuilder } from '@/domain/accounts/address-books/entities/__tests__/address-book-item-name.builder';
 import type {
   AddressBook,
   AddressBookItem,
 } from '@/domain/accounts/address-books/entities/address-book.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 
@@ -12,7 +12,7 @@ export function addressBookItemBuilder(): IBuilder<AddressBookItem> {
   return new Builder<AddressBookItem>()
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('id', faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }))
-    .with('name', addressBookItemNameBuilder());
+    .with('name', nameBuilder());
 }
 
 export function addressBookBuilder(): IBuilder<AddressBook> {

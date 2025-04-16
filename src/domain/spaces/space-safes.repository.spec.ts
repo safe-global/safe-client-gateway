@@ -17,7 +17,7 @@ import type { Repository } from 'typeorm';
 import type { ConfigService } from '@nestjs/config';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 
 const mockLoggingService = {
@@ -32,7 +32,6 @@ const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
 describe('SpaceSafesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let spaceSafesRepo: SpaceSafesRepository;
-
   let dbWalletRepo: Repository<Wallet>;
   let dbUserRepo: Repository<User>;
   let dbSpaceRepository: Repository<Space>;
@@ -54,6 +53,8 @@ describe('SpaceSafesRepository', () => {
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
     entities: [Member, Space, SpaceSafe, User, Wallet],
   });
+
+  const maxSafesPerSpace = 5;
 
   beforeAll(async () => {
     // Create database
@@ -90,6 +91,9 @@ describe('SpaceSafesRepository', () => {
         if (key === 'db.migrator.retryAfterMs') {
           return testConfiguration.db.migrator.retryAfterMs;
         }
+        if (key === 'spaces.maxSafesPerSpace') {
+          return maxSafesPerSpace;
+        }
       }),
     } as jest.MockedObjectDeep<ConfigService>;
     const migrator = new DatabaseMigrator(
@@ -99,7 +103,10 @@ describe('SpaceSafesRepository', () => {
     );
     await migrator.migrate();
 
-    spaceSafesRepo = new SpaceSafesRepository(postgresDatabaseService);
+    spaceSafesRepo = new SpaceSafesRepository(
+      postgresDatabaseService,
+      mockConfigService,
+    );
 
     dbWalletRepo = dataSource.getRepository(Wallet);
     dbUserRepo = dataSource.getRepository(User);
@@ -320,7 +327,7 @@ describe('SpaceSafesRepository', () => {
           chainId: faker.string.numeric(),
           address: getAddress(faker.finance.ethereumAddress()),
         }),
-        { count: { min: 2, max: 5 } },
+        { count: { min: 2, max: maxSafesPerSpace } },
       );
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -356,6 +363,64 @@ describe('SpaceSafesRepository', () => {
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         })),
+      );
+    });
+
+    it('should fail if the number of SpaceSafes surpasses the limit', async () => {
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      await dbWalletRepo.insert({
+        user: { id: userId },
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const space = await dbSpaceRepository.insert({
+        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+        name: faker.word.noun(),
+      });
+      const spaceId = space.identifiers[0].id as Space['id'];
+      await dbMembersRepository.insert({
+        user: { id: userId },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        name: faker.word.noun(),
+        space: { id: spaceId },
+      });
+
+      // Create (maxSafesPerSpace - 1) Safes
+      await spaceSafesRepo.create({
+        spaceId: spaceId,
+        payload: faker.helpers.multiple(
+          () => ({
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+          }),
+          { count: maxSafesPerSpace - 1 },
+        ),
+      });
+
+      // Create 2 Safes more to surpass the limit
+      await expect(
+        spaceSafesRepo.create({
+          spaceId: spaceId,
+          payload: faker.helpers.multiple(
+            () => ({
+              chainId: faker.string.numeric(),
+              address: getAddress(faker.finance.ethereumAddress()),
+            }),
+            { count: 2 },
+          ),
+        }),
+      ).rejects.toThrow(
+        new BadRequestException(
+          `This Space only allows a maximum of ${maxSafesPerSpace} Safe Accounts. You can only add up to 1 more.`,
+        ),
+      );
+
+      // The Space should still have (maxSafesPerSpace - 1) Safes
+      await expect(spaceSafesRepo.findBySpaceId(spaceId)).resolves.toHaveLength(
+        maxSafesPerSpace - 1,
       );
     });
 

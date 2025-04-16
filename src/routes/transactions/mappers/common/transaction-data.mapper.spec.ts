@@ -1,9 +1,11 @@
 import { faker } from '@faker-js/faker';
 import type { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import {
+  baseDataDecodedBuilder,
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/domain/data-decoder/v1/entities/__tests__/data-decoded.builder';
+  multisendBuilder,
+} from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -12,6 +14,16 @@ import { MULTI_SEND_METHOD_NAME } from '@/routes/transactions/constants';
 import type { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { TransactionDataMapper } from '@/routes/transactions/mappers/common/transaction-data.mapper';
 import { getAddress } from 'viem';
+import type { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
+import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import type { TokenRepository } from '@/domain/tokens/token.repository';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
+import {
+  erc20TransferEncoder,
+  erc20TransferFromEncoder,
+} from '@/domain/relay/contracts/__tests__/encoders/erc20-encoder.builder';
+import { erc20TokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 
 const addressInfoHelper = jest.mocked({
   get: jest.fn(),
@@ -25,15 +37,44 @@ const dataDecodedParamHelper = jest.mocked({
   hasNestedDelegate: jest.fn(),
 } as jest.MockedObjectDeep<DataDecodedParamHelper>);
 
+const transactionInfoMapper = jest.mocked({
+  isValidTokenTransfer: jest.fn(),
+} as jest.MockedObjectDeep<MultisigTransactionInfoMapper>);
+
+const chainsRepository = jest.mocked({
+  getChain: jest.fn(),
+} as jest.MockedObjectDeep<IChainsRepository>);
+
+const tokenRepository = jest.mocked({
+  getToken: jest.fn(),
+} as jest.MockedObjectDeep<TokenRepository>);
+
+const configurationService = jest.mocked({
+  getOrThrow: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
+
 describe('Transaction Data Mapper (Unit)', () => {
   let mapper: TransactionDataMapper;
+  const maxTokenInfoIndexSize = 2;
 
   beforeEach(() => {
     jest.resetAllMocks();
+
+    configurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'mappings.transactionData.maxTokenInfoIndexSize') {
+        return maxTokenInfoIndexSize;
+      }
+      throw new Error(`Unknown config key: ${key}`);
+    });
+
     mapper = new TransactionDataMapper(
       addressInfoHelper,
       contractsRepository,
       dataDecodedParamHelper,
+      transactionInfoMapper,
+      chainsRepository,
+      tokenRepository,
+      configurationService,
     );
   });
 
@@ -272,8 +313,9 @@ describe('Transaction Data Mapper (Unit)', () => {
             .with('valueDecoded', [
               {
                 operation: 0,
-                to: faker.finance.ethereumAddress(),
-                data: faker.string.hexadecimal(),
+                to: getAddress(faker.finance.ethereumAddress()),
+                value: faker.string.numeric(),
+                data: faker.string.hexadecimal() as `0x${string}`,
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -324,8 +366,9 @@ describe('Transaction Data Mapper (Unit)', () => {
             .with('valueDecoded', [
               {
                 operation: 0,
-                to: faker.finance.ethereumAddress(),
-                data: faker.string.hexadecimal(),
+                to: getAddress(faker.finance.ethereumAddress()),
+                data: faker.string.hexadecimal() as `0x${string}`,
+                value: faker.string.numeric(),
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -342,7 +385,8 @@ describe('Transaction Data Mapper (Unit)', () => {
               {
                 operation: 0,
                 to: contractAddress,
-                data: faker.string.hexadecimal(),
+                value: faker.string.numeric(),
+                data: faker.string.hexadecimal() as `0x${string}`,
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -359,7 +403,8 @@ describe('Transaction Data Mapper (Unit)', () => {
               {
                 operation: 0,
                 to: contractAddress,
-                data: faker.string.hexadecimal(),
+                data: faker.string.hexadecimal() as `0x${string}`,
+                value: faker.string.numeric(),
                 dataDecoded: dataDecodedBuilder()
                   .with('method', 'swap')
                   .with('parameters', [
@@ -396,6 +441,687 @@ describe('Transaction Data Mapper (Unit)', () => {
         },
       });
       expect(addressInfoHelper.get).toHaveBeenCalledTimes(6);
+    });
+  });
+
+  describe('Build TokenInfo index', () => {
+    it('should return an empty TokenInfo index if there are no dataDecoded parameters', async () => {
+      const chainId = faker.number.int({ min: 1 }).toString();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('parameters', null)
+        .build();
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({});
+    });
+
+    it('should return an empty TokenInfo index if the method is not multiSend', async () => {
+      const chainId = faker.number.int({ min: 1 }).toString();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', faker.word.noun())
+        .build();
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({});
+    });
+
+    it('should return an empty TokenInfo index if the multiSend parameter name is not transactions', async () => {
+      const chainId = faker.number.int({ min: 1 }).toString();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', faker.word.noun())
+            .with('type', 'bytes')
+            .with('valueDecoded', [multisendBuilder().build()])
+            .build(),
+        ])
+        .build();
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({});
+    });
+
+    it('should return an empty TokenInfo index if the multiSend parameter type is not bytes', async () => {
+      const chainId = faker.number.int({ min: 1 }).toString();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'transactions')
+            .with('type', faker.word.noun())
+            .with('valueDecoded', [multisendBuilder().build()])
+            .build(),
+        ])
+        .build();
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({});
+    });
+
+    it('should build a deduped TokenInfo index for a multiSend transaction with multiple native transfers', async () => {
+      const chain = chainBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'transactions')
+            .with('type', 'bytes')
+            .with(
+              'valueDecoded',
+              faker.helpers.multiple(
+                () =>
+                  multisendBuilder()
+                    // Native transfer
+                    .with('value', faker.number.int({ min: 1 }).toString())
+                    .build(),
+                {
+                  count: {
+                    // Should be deduped
+                    min: 2,
+                    max: 5,
+                  },
+                },
+              ),
+            )
+            .build(),
+        ])
+        .build();
+      chainsRepository.getChain.mockResolvedValue(chain);
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId: chain.chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({
+        [NULL_ADDRESS]: {
+          address: NULL_ADDRESS,
+          decimals: chain.nativeCurrency.decimals,
+          logoUri: chain.nativeCurrency.logoUri,
+          name: chain.nativeCurrency.name,
+          symbol: chain.nativeCurrency.symbol,
+          trusted: true,
+          type: 'NATIVE_TOKEN',
+        },
+      });
+    });
+
+    it('should build a deduped TokenInfo index for a multiSend transaction with multiple token transfers', async () => {
+      const chain = chainBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const erc20Token = erc20TokenBuilder().build();
+      const firstRecipient = getAddress(faker.finance.ethereumAddress());
+      const firstValue = faker.number.int({ min: 1 }).toString();
+      const secondRecipient = getAddress(faker.finance.ethereumAddress());
+      const secondValue = faker.number.int({ min: 1 }).toString();
+      const thirdRecipient = getAddress(faker.finance.ethereumAddress());
+      const thirdValue = faker.number.int({ min: 1 }).toString();
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'transactions')
+            .with('type', 'bytes')
+            .with('valueDecoded', [
+              multisendBuilder()
+                .with('value', '0')
+                .with('to', erc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferEncoder()
+                    .with('to', firstRecipient)
+                    .with('value', BigInt(firstValue))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'to')
+                        .with('type', 'address')
+                        .with('value', firstRecipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'value')
+                        .with('type', 'uint256')
+                        .with('value', firstValue)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+              multisendBuilder()
+                .with('value', '0')
+                // Same address, should be deduped
+                .with('to', erc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferEncoder()
+                    .with('to', secondRecipient)
+                    .with('value', BigInt(secondValue))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'to')
+                        .with('type', 'address')
+                        .with('value', secondRecipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'value')
+                        .with('type', 'uint256')
+                        .with('value', secondValue)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+              multisendBuilder()
+                .with('value', '0')
+                // Same address, should be deduped
+                .with('to', erc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferFromEncoder()
+                    .with('sender', safeAddress)
+                    .with('recipient', thirdRecipient)
+                    .with('amount', BigInt(thirdValue))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'sender')
+                        .with('type', 'address')
+                        .with('value', safeAddress)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'recipient')
+                        .with('type', 'address')
+                        .with('value', thirdRecipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'amount')
+                        .with('type', 'uint256')
+                        .with('value', thirdValue)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+            ])
+            .build(),
+        ])
+        .build();
+      chainsRepository.getChain.mockResolvedValue(chain);
+      transactionInfoMapper.isValidTokenTransfer.mockReturnValue(true);
+      tokenRepository.getToken.mockImplementation(({ address }) => {
+        if (address === erc20Token.address) {
+          return Promise.resolve(erc20Token);
+        }
+        throw new Error('Token not found');
+      });
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId: chain.chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({
+        [erc20Token.address]: {
+          address: erc20Token.address,
+          decimals: erc20Token.decimals,
+          logoUri: erc20Token.logoUri,
+          name: erc20Token.name,
+          symbol: erc20Token.symbol,
+          trusted: erc20Token.trusted,
+          type: 'ERC20',
+        },
+      });
+    });
+
+    it('should build a deduped TokenInfo index for a multiSend transaction with multiple native/token transfers', async () => {
+      const chain = chainBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const erc20Token = erc20TokenBuilder().build();
+      const firstErc20Recipient = getAddress(faker.finance.ethereumAddress());
+      const firstErc20Value = faker.number.int({ min: 1 }).toString();
+      const secondErc20Recipient = getAddress(faker.finance.ethereumAddress());
+      const secondErc20Value = faker.number.int({ min: 1 }).toString();
+      const thirdErc20Recipient = getAddress(faker.finance.ethereumAddress());
+      const thirdErc20Value = faker.number.int({ min: 1 }).toString();
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'transactions')
+            .with('type', 'bytes')
+            .with('valueDecoded', [
+              ...faker.helpers.multiple(
+                () =>
+                  multisendBuilder()
+                    // Native transfer
+                    .with('value', faker.number.int({ min: 1 }).toString())
+                    .build(),
+                {
+                  count: {
+                    // Should be deduped
+                    min: 2,
+                    max: 5,
+                  },
+                },
+              ),
+              multisendBuilder()
+                .with('value', '0')
+                .with('to', erc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferEncoder()
+                    .with('to', firstErc20Recipient)
+                    .with('value', BigInt(firstErc20Value))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'to')
+                        .with('type', 'address')
+                        .with('value', firstErc20Recipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'value')
+                        .with('type', 'uint256')
+                        .with('value', firstErc20Value)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+              multisendBuilder()
+                .with('value', '0')
+                // Same address, should be deduped
+                .with('to', erc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferEncoder()
+                    .with('to', secondErc20Recipient)
+                    .with('value', BigInt(secondErc20Value))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'to')
+                        .with('type', 'address')
+                        .with('value', secondErc20Recipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'value')
+                        .with('type', 'uint256')
+                        .with('value', secondErc20Value)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+              multisendBuilder()
+                .with('value', '0')
+                // Same address, should be deduped
+                .with('to', erc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferFromEncoder()
+                    .with('sender', safeAddress)
+                    .with('recipient', thirdErc20Recipient)
+                    .with('amount', BigInt(thirdErc20Value))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'sender')
+                        .with('type', 'address')
+                        .with('value', safeAddress)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'recipient')
+                        .with('type', 'address')
+                        .with('value', thirdErc20Recipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'amount')
+                        .with('type', 'uint256')
+                        .with('value', thirdErc20Value)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+            ])
+            .build(),
+        ])
+        .build();
+      chainsRepository.getChain.mockResolvedValue(chain);
+      transactionInfoMapper.isValidTokenTransfer.mockReturnValue(true);
+      tokenRepository.getToken.mockImplementation(({ address }) => {
+        if (address === erc20Token.address) {
+          return Promise.resolve(erc20Token);
+        }
+        throw new Error('Token not found');
+      });
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId: chain.chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({
+        [NULL_ADDRESS]: {
+          address: NULL_ADDRESS,
+          decimals: chain.nativeCurrency.decimals,
+          logoUri: chain.nativeCurrency.logoUri,
+          name: chain.nativeCurrency.name,
+          symbol: chain.nativeCurrency.symbol,
+          trusted: true,
+          type: 'NATIVE_TOKEN',
+        },
+        [erc20Token.address]: {
+          address: erc20Token.address,
+          decimals: erc20Token.decimals,
+          logoUri: erc20Token.logoUri,
+          name: erc20Token.name,
+          symbol: erc20Token.symbol,
+          trusted: erc20Token.trusted,
+          type: 'ERC20',
+        },
+      });
+    });
+
+    it('should limit the size of the TokenInfo index', async () => {
+      const chain = chainBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const firstErc20Token = erc20TokenBuilder().build();
+      const firstErc20Recipient = getAddress(faker.finance.ethereumAddress());
+      const firstErc20Value = faker.number.int({ min: 1 }).toString();
+      const secondErc20Token = erc20TokenBuilder().build();
+      const secondErc20Recipient = getAddress(faker.finance.ethereumAddress());
+      const secondErc20Value = faker.number.int({ min: 1 }).toString();
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'transactions')
+            .with('type', 'bytes')
+            .with('valueDecoded', [
+              multisendBuilder()
+                // Native transfer
+                .with('value', faker.number.int({ min: 1 }).toString())
+                .build(),
+              multisendBuilder()
+                .with('value', '0')
+                .with('to', firstErc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferEncoder()
+                    .with('to', firstErc20Recipient)
+                    .with('value', BigInt(firstErc20Value))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'to')
+                        .with('type', 'address')
+                        .with('value', firstErc20Recipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'value')
+                        .with('type', 'uint256')
+                        .with('value', firstErc20Value)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+              multisendBuilder()
+                .with('value', '0')
+                .with('to', secondErc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferEncoder()
+                    .with('to', secondErc20Recipient)
+                    .with('value', BigInt(secondErc20Value))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'to')
+                        .with('type', 'address')
+                        .with('value', secondErc20Recipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'value')
+                        .with('type', 'uint256')
+                        .with('value', secondErc20Value)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+            ])
+            .build(),
+        ])
+        .build();
+      chainsRepository.getChain.mockResolvedValue(chain);
+      transactionInfoMapper.isValidTokenTransfer.mockReturnValue(true);
+      tokenRepository.getToken.mockImplementation(({ address }) => {
+        if (address === firstErc20Token.address) {
+          return Promise.resolve(firstErc20Token);
+        }
+        if (address === secondErc20Token.address) {
+          return Promise.resolve(secondErc20Token);
+        }
+        throw new Error('Token not found');
+      });
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId: chain.chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      // secondErc20Token goes beyond limit
+      expect(actual).toStrictEqual({
+        [NULL_ADDRESS]: {
+          address: NULL_ADDRESS,
+          decimals: chain.nativeCurrency.decimals,
+          logoUri: chain.nativeCurrency.logoUri,
+          name: chain.nativeCurrency.name,
+          symbol: chain.nativeCurrency.symbol,
+          trusted: true,
+          type: 'NATIVE_TOKEN',
+        },
+        [firstErc20Token.address]: {
+          address: firstErc20Token.address,
+          decimals: firstErc20Token.decimals,
+          logoUri: firstErc20Token.logoUri,
+          name: firstErc20Token.name,
+          symbol: firstErc20Token.symbol,
+          trusted: firstErc20Token.trusted,
+          type: 'ERC20',
+        },
+      });
+    });
+
+    it('should not include token transfers of invalid token transfers', async () => {
+      const chain = chainBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const erc20Token = erc20TokenBuilder().build();
+      const recipient = getAddress(faker.finance.ethereumAddress());
+      const value = faker.number.int({ min: 1 }).toString();
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'transactions')
+            .with('type', 'bytes')
+            .with('valueDecoded', [
+              multisendBuilder()
+                .with('value', '0')
+                .with('to', erc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferEncoder()
+                    .with('to', recipient)
+                    .with('value', BigInt(value))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'to')
+                        .with('type', 'address')
+                        .with('value', recipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'value')
+                        .with('type', 'uint256')
+                        .with('value', value)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+            ])
+            .build(),
+        ])
+        .build();
+      chainsRepository.getChain.mockResolvedValue(chain);
+      transactionInfoMapper.isValidTokenTransfer.mockReturnValue(false);
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId: chain.chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({});
+    });
+
+    it('should not include tokens that cannot be found', async () => {
+      const chain = chainBuilder().build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const erc20Token = erc20TokenBuilder().build();
+      const recipient = getAddress(faker.finance.ethereumAddress());
+      const value = faker.number.int({ min: 1 }).toString();
+      const dataDecoded = baseDataDecodedBuilder()
+        .with('method', 'multiSend')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'transactions')
+            .with('type', 'bytes')
+            .with('valueDecoded', [
+              multisendBuilder()
+                .with('value', '0')
+                .with('to', erc20Token.address)
+                .with(
+                  'data',
+                  erc20TransferEncoder()
+                    .with('to', recipient)
+                    .with('value', BigInt(value))
+                    .encode(),
+                )
+                .with(
+                  'dataDecoded',
+                  baseDataDecodedBuilder()
+                    .with('method', 'transfer')
+                    .with('parameters', [
+                      dataDecodedParameterBuilder()
+                        .with('name', 'to')
+                        .with('type', 'address')
+                        .with('value', recipient)
+                        .build(),
+                      dataDecodedParameterBuilder()
+                        .with('name', 'value')
+                        .with('type', 'uint256')
+                        .with('value', value)
+                        .build(),
+                    ])
+                    .build(),
+                )
+                .build(),
+            ])
+            .build(),
+        ])
+        .build();
+      chainsRepository.getChain.mockResolvedValue(chain);
+      transactionInfoMapper.isValidTokenTransfer.mockReturnValue(true);
+      tokenRepository.getToken.mockRejectedValue(new Error('Token not found'));
+
+      const actual = await mapper.buildTokenInfoIndex({
+        chainId: chain.chainId,
+        safeAddress,
+        dataDecoded,
+      });
+
+      expect(actual).toStrictEqual({});
     });
   });
 });

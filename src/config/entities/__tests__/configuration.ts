@@ -166,7 +166,6 @@ export default (): ReturnType<typeof configuration> => ({
     counterfactualBalances: false,
     accounts: false,
     users: false,
-    pushNotifications: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
     signatureVerification: {
@@ -181,6 +180,8 @@ export default (): ReturnType<typeof configuration> => ({
     ethSign: true,
     trustedDelegateCall: false,
     trustedForDelegateCallContractsList: false,
+    filterValueParsing: false,
+    vaultTransactionsMapping: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
@@ -213,16 +214,15 @@ export default (): ReturnType<typeof configuration> => ({
     history: {
       maxNestedTransfers: faker.number.int({ min: 1, max: 5 }),
     },
+    transactionData: {
+      maxTokenInfoIndexSize: faker.number.int({ min: 1, max: 5 }),
+    },
     safe: {
       maxOverviews: faker.number.int({ min: 1, max: 5 }),
     },
   },
   owners: {
     ownersTtlSeconds: faker.number.int(),
-  },
-  portfolio: {
-    baseUri: faker.internet.url({ appendSlash: false }),
-    apiKey: faker.string.hexadecimal({ length: 32 }),
   },
   pushNotifications: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -264,11 +264,23 @@ export default (): ReturnType<typeof configuration> => ({
       maxSequentialPages: faker.number.int(),
     },
   },
+  safeDataDecoder: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+  },
   safeTransaction: {
     useVpcUrl: false,
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
+  },
+  spaces: {
+    maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
+    maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
+    maxInvites: faker.number.int({ min: 5, max: 10 }),
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
   },
   staking: {
     testnet: {
@@ -279,6 +291,7 @@ export default (): ReturnType<typeof configuration> => ({
       baseUri: faker.internet.url({ appendSlash: false }),
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
+    isBaseProductionActive: faker.datatype.boolean(),
   },
   swaps: {
     api: {
@@ -304,8 +317,5 @@ export default (): ReturnType<typeof configuration> => ({
         baseDir: 'assets/targeted-messaging',
       },
     },
-  },
-  users: {
-    maxInvites: faker.number.int({ min: 5, max: 10 }),
   },
 });

@@ -1134,7 +1134,7 @@ describe('Messages controller', () => {
           });
 
         expect(loggingService.error).toHaveBeenCalledWith({
-          message: 'Unauthorized address',
+          event: 'Unauthorized address',
           chainId: chain.chainId,
           safeAddress: safe.address,
           safeVersion: safe.version,
@@ -1243,7 +1243,7 @@ describe('Messages controller', () => {
           });
 
         expect(loggingService.error).toHaveBeenCalledWith({
-          message: 'Recovered address does not match signer',
+          event: 'Recovered address does not match signer',
           chainId: chain.chainId,
           safeAddress: safe.address,
           safeVersion: safe.version,
@@ -1710,7 +1710,7 @@ describe('Messages controller', () => {
           });
 
         expect(loggingService.error).toHaveBeenCalledWith({
-          message: 'Unauthorized address',
+          event: 'Unauthorized address',
           chainId: chain.chainId,
           safeAddress: safe.address,
           safeVersion: safe.version,
@@ -1835,7 +1835,7 @@ describe('Messages controller', () => {
           });
 
         expect(loggingService.error).toHaveBeenCalledWith({
-          message: 'Recovered address does not match signer',
+          event: 'Recovered address does not match signer',
           chainId: chain.chainId,
           safeAddress: safe.address,
           safeVersion: safe.version,

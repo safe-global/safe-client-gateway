@@ -36,16 +36,26 @@ import { TransactionPreviewMapper } from '@/routes/transactions/mappers/transact
 import { TransactionsHistoryMapper } from '@/routes/transactions/mappers/transactions-history.mapper';
 import { TransferDetailsMapper } from '@/routes/transactions/mappers/transfers/transfer-details.mapper';
 import { TransferMapper } from '@/routes/transactions/mappers/transfers/transfer.mapper';
-import { getAddress, isAddress, isAddressEqual } from 'viem';
+import {
+  getAddress,
+  isAddress,
+  isAddressEqual,
+  parseEther,
+  parseUnits,
+} from 'viem';
 import { LoggingService, ILoggingService } from '@/logging/logging.interface';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { TXSMultisigTransaction } from '@/routes/transactions/entities/txs-multisig-transaction.entity';
 import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-multisig-transaction-page.entity';
 import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creation-transaction.entity';
+import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class TransactionsService {
+  private readonly isFilterValueParsingEnabled: boolean;
+
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
@@ -59,7 +69,15 @@ export class TransactionsService {
     private readonly multisigTransactionNoteMapper: MultisigTransactionNoteMapper,
     private readonly transferDetailsMapper: TransferDetailsMapper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: ITokenRepository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
+      'features.filterValueParsing',
+    );
+  }
 
   async getById(args: {
     chainId: string;
@@ -174,6 +192,13 @@ export class TransactionsService {
     const domainTransactions =
       await this.safeRepository.getMultisigTransactions({
         ...args,
+        ...(this.isFilterValueParsingEnabled &&
+          args.value && {
+            value: await this.parseTokenValue({
+              ...args,
+              value: args.value,
+            }),
+          }),
         limit: args.paginationData.limit,
         offset: args.paginationData.offset,
       });
@@ -181,6 +206,10 @@ export class TransactionsService {
     const safeInfo = await this.safeRepository.getSafe({
       chainId: args.chainId,
       address: args.safeAddress,
+    });
+    await this.multisigTransactionMapper.prefetchAddressInfos({
+      chainId: args.chainId,
+      transactions: domainTransactions.results,
     });
     const results = await Promise.all(
       domainTransactions.results.map(
@@ -332,6 +361,13 @@ export class TransactionsService {
   }): Promise<Partial<Page<IncomingTransfer>>> {
     const transfers = await this.safeRepository.getIncomingTransfers({
       ...args,
+      ...(this.isFilterValueParsingEnabled &&
+        args.value && {
+          value: await this.parseTokenValue({
+            ...args,
+            value: args.value,
+          }),
+        }),
       limit: args.paginationData?.limit,
       offset: args.paginationData?.offset,
     });
@@ -552,6 +588,21 @@ export class TransactionsService {
         paginationData.offset - 1,
       );
     }
+  }
+
+  private async parseTokenValue(args: {
+    chainId: string;
+    value: string;
+    tokenAddress?: `0x${string}`;
+  }): Promise<string> {
+    if (!args.tokenAddress) {
+      return parseEther(args.value).toString();
+    }
+    const token = await this.tokenRepository.getToken({
+      chainId: args.chainId,
+      address: args.tokenAddress,
+    });
+    return parseUnits(args.value, token.decimals).toString();
   }
 
   private getNextPageFirstNonce(

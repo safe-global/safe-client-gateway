@@ -8,6 +8,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { Backbone } from '@/domain/backbone/entities/backbone.entity';
 import type { Singleton } from '@/domain/chains/entities/singleton.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Contract } from '@/domain/contracts/entities/contract.entity';
 import type { DataDecoded } from '@/domain/data-decoder/v1/entities/data-decoded.entity';
 import type { Delegate } from '@/domain/delegate/entities/delegate.entity';
@@ -17,7 +18,6 @@ import type { GetEstimationDto } from '@/domain/estimations/entities/get-estimat
 import type { IndexingStatus } from '@/domain/indexing/entities/indexing-status.entity';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { Message } from '@/domain/messages/entities/message.entity';
-import type { Device } from '@/domain/notifications/v1/entities/device.entity';
 import type { CreationTransaction } from '@/domain/safe/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
@@ -200,14 +200,14 @@ export class TransactionApi implements ITransactionApi {
 
     if (cached != null) {
       this.loggingService.debug({
-        type: 'cache_hit',
+        type: LogType.CacheHit,
         ...cacheDir,
       });
 
       return cached === 'true';
     } else {
       this.loggingService.debug({
-        type: 'cache_miss',
+        type: LogType.CacheMiss,
         ...cacheDir,
       });
     }
@@ -811,7 +811,7 @@ export class TransactionApi implements ITransactionApi {
     safeTransactionHash: string,
   ): Promise<Raw<MultisigTransaction>> {
     try {
-      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}`;
+      const url = `${this.baseUrl}/api/v1/multisig-transactions/${safeTransactionHash}/`;
       const { data } = await this.networkService.get<Raw<MultisigTransaction>>({
         url,
       });
@@ -989,53 +989,6 @@ export class TransactionApi implements ITransactionApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.ownersExpirationTimeSeconds,
       });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async postDeviceRegistration(args: {
-    device: Device;
-    safes: Array<string>;
-    signatures: Array<string>;
-  }): Promise<void> {
-    try {
-      const url = `${this.baseUrl}/api/v1/notifications/devices/`;
-      await this.networkService.post({
-        url,
-        data: {
-          uuid: args.device.uuid,
-          cloudMessagingToken: args.device.cloudMessagingToken,
-          buildNumber: args.device.buildNumber,
-          bundle: args.device.bundle,
-          deviceType: args.device.deviceType,
-          version: args.device.version,
-          timestamp: args.device.timestamp,
-          safes: args.safes,
-          signatures: args.signatures,
-        },
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async deleteDeviceRegistration(uuid: string): Promise<void> {
-    try {
-      const url = `${this.baseUrl}/api/v1/notifications/devices/${uuid}`;
-      await this.networkService.delete({ url });
-    } catch (error) {
-      throw this.httpErrorFactory.from(this.mapError(error));
-    }
-  }
-
-  async deleteSafeRegistration(args: {
-    uuid: string;
-    safeAddress: `0x${string}`;
-  }): Promise<void> {
-    try {
-      const url = `${this.baseUrl}/api/v1/notifications/devices/${args.uuid}/safes/${args.safeAddress}`;
-      await this.networkService.delete({ url });
     } catch (error) {
       throw this.httpErrorFactory.from(this.mapError(error));
     }

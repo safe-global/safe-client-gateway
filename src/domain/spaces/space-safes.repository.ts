@@ -1,10 +1,11 @@
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { SpaceSafe } from '@/datasources/spaces/entities/space-safes.entity.db';
 import { Space } from '@/datasources/spaces/entities/space.entity.db';
 import type { ISpaceSafesRepository } from '@/domain/spaces/space-safes.repository.interface';
-import { Inject, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import {
   FindOptionsRelations,
   FindOptionsSelect,
@@ -12,10 +13,18 @@ import {
 } from 'typeorm';
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
+  private readonly maxSafesPerSpace: number;
+
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
+      'spaces.maxSafesPerSpace',
+    );
+  }
 
   public async create(args: {
     spaceId: Space['id'];
@@ -28,12 +37,17 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       await this.postgresDatabaseService.getRepository(SpaceSafe);
 
     const safesToInsert = args.payload.map((safe) => ({
-      space: {
-        id: args.spaceId,
-      },
+      space: { id: args.spaceId },
       chainId: safe.chainId,
       address: safe.address,
     }));
+
+    const existingSafes = await this.findBySpaceId(args.spaceId);
+    if (existingSafes.length + safesToInsert.length > this.maxSafesPerSpace) {
+      throw new BadRequestException(
+        `This Space only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${this.maxSafesPerSpace - existingSafes.length} more.`,
+      );
+    }
 
     try {
       await spaceSafeRepository.insert(safesToInsert);
@@ -55,11 +69,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
 
     return await spaceSafeRepository.find({
       select: { chainId: true, address: true },
-      where: {
-        space: {
-          id: spaceId,
-        },
-      },
+      where: { space: { id: spaceId } },
     });
   }
 
@@ -99,9 +109,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     const findSpaceSafesWhereClause: Array<FindOptionsWhere<SpaceSafe>> =
       args.payload.map((safe) => {
         return {
-          space: {
-            id: args.spaceId,
-          },
+          space: { id: args.spaceId },
           chainId: safe.chainId,
           address: safe.address,
         };
