@@ -64,11 +64,8 @@ export function getContractSignature(verifier: `0x${string}`): `0x${string}` {
     .toString(16)
     .padStart(DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH, '0');
 
-  // Dynamic data must be padded to 32 bytes
-  const paddedDynamicBytes = Math.ceil(byteLength / 32) * 32;
-
   const dynamicPartHex = faker.string
-    .hexadecimal({ length: paddedDynamicBytes * 2 })
+    .hexadecimal({ length: byteLength * 2 })
     .slice(2);
 
   const dynamicPart = lengthFieldHex + dynamicPartHex;

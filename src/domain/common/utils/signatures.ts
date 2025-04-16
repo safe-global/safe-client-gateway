@@ -61,12 +61,8 @@ export function parseSignaturesByType(
       DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
     );
     const byteLength = parseInt(lengthFieldHex, 16);
-
-    // Dynamic data must be padded to 32 bytes
-    const paddedByteLength = Math.ceil(byteLength / 32) * 32;
-
     const dynamicPartHexLength =
-      DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH + paddedByteLength * 2;
+      DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH + byteLength * 2;
 
     // Verify entire dynamic part is present
     if (signature.length - i < SIGNATURE_HEX_LENGTH + dynamicPartHexLength) {
