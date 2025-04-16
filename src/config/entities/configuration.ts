@@ -403,6 +403,11 @@ export default () => ({
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
   spaces: {
+    addressBooks: {
+      maxItems: parseInt(
+        process.env.SPACES_MAX_ADDRESS_BOOK_ITEMS_PER_SPACE ?? `${500}`,
+      ),
+    },
     maxSafesPerSpace: parseInt(
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
     ),
