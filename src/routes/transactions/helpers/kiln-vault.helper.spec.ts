@@ -1,10 +1,10 @@
 import { faker } from '@faker-js/faker';
+import { shuffle } from 'lodash';
 import { getAddress } from 'viem';
 
 import { MultiSendDecoder } from '@/domain/contracts/decoders/multi-send-decoder.helper';
 import { KilnVaultHelper } from '@/routes/transactions/helpers/kiln-vault.helper';
 import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
-import type { ILoggingService } from '@/logging/logging.interface';
 import {
   erc4262DepositEncoder,
   erc4262WithdrawEncoder,
@@ -13,7 +13,8 @@ import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
-import { shuffle } from 'lodash';
+import { execTransactionEncoder } from '@/domain/contracts/__tests__/encoders/safe-encoder.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockLoggingService = {
   warn: jest.fn(),
@@ -65,7 +66,7 @@ describe('KilnVaultHelper', () => {
               operation: faker.number.int({ min: 0, max: 1 }),
               to: getAddress(faker.finance.ethereumAddress()),
               value: faker.number.bigInt(),
-              data: faker.string.hexadecimal() as `0x${string}`,
+              data: execTransactionEncoder().encode(),
             };
           },
           { count: { min: 1, max: 5 } },
@@ -79,7 +80,7 @@ describe('KilnVaultHelper', () => {
       ];
       const multiSend = multiSendEncoder().with(
         'transactions',
-        multiSendTransactionsEncoder(shuffle(transactions)),
+        multiSendTransactionsEncoder(transactions),
       );
 
       const transaction = target.getVaultDepositTransaction({
@@ -129,7 +130,7 @@ describe('KilnVaultHelper', () => {
             operation: faker.number.int({ min: 0, max: 1 }),
             to: getAddress(faker.finance.ethereumAddress()),
             value: faker.number.bigInt(),
-            data: faker.string.hexadecimal() as `0x${string}`,
+            data: execTransactionEncoder().encode(),
           };
         },
         { count: { min: 1, max: 5 } },
@@ -160,7 +161,7 @@ describe('KilnVaultHelper', () => {
               operation: faker.number.int({ min: 0, max: 1 }),
               to: getAddress(faker.finance.ethereumAddress()),
               value: faker.number.bigInt(),
-              data: faker.string.hexadecimal() as `0x${string}`,
+              data: execTransactionEncoder().encode(),
             };
           },
           { count: { min: 1, max: 5 } },
