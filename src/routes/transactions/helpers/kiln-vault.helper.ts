@@ -68,15 +68,17 @@ export class KilnVaultHelper extends Erc4262Decoder {
       return null;
     }
 
-    // ContractFunctionName does not match AbiItemName - handle (impossible) array case
+    // On a type level, functionName can be a union {@link ContractFunctionName},
+    // whereas the value is always a string. For type-safety, we extract the first
+    // value of the union to use as the name instead of casting
     const name = Array.isArray(args.functionName)
       ? args.functionName[0]
       : args.functionName;
+
     const item = getAbiItem({
       abi: erc4626Abi,
       name,
     });
-
     const selector = toFunctionSelector(item);
     const transaction = this.transactionFinder.findTransaction(
       (transaction) => transaction.data.startsWith(selector),
