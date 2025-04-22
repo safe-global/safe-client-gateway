@@ -2046,9 +2046,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/common@npm:11.0.12":
-  version: 11.0.12
-  resolution: "@nestjs/common@npm:11.0.12"
+"@nestjs/common@npm:11.0.16":
+  version: 11.0.16
+  resolution: "@nestjs/common@npm:11.0.16"
   dependencies:
     iterare: "npm:1.2.1"
     tslib: "npm:2.8.1"
@@ -2056,6 +2056,7 @@ __metadata:
   peerDependencies:
     class-transformer: "*"
     class-validator: "*"
+    file-type: ^20.4.1
     reflect-metadata: ^0.1.12 || ^0.2.0
     rxjs: ^7.1.0
   peerDependenciesMeta:
@@ -2063,7 +2064,7 @@ __metadata:
       optional: true
     class-validator:
       optional: true
-  checksum: 10/37fe0214894c21c8790f020027a0c03fd715dfeff3386d7109bf9694335687dcb63a380c881817eba718b403103addbdc6b916748fc1ecac49a3df90994a82e8
+  checksum: 10/e212da5be940b3cee4ec802263672313c55c55851382facd69d650e1afd6e16fe08829e00e4384fa80e3d724292e5e998fe3da6be04e6710034cd99f1ad791f8
   languageName: node
   linkType: hard
 
@@ -8817,7 +8818,7 @@ __metadata:
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.2.0"
     "@nestjs/cache-manager": "npm:3.0.1"
     "@nestjs/cli": "npm:11.0.5"
-    "@nestjs/common": "npm:11.0.12"
+    "@nestjs/common": "npm:11.0.16"
     "@nestjs/config": "npm:4.0.0"
     "@nestjs/core": "npm:11.0.12"
     "@nestjs/platform-express": "npm:11.0.12"
