@@ -7,7 +7,7 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const _TypedDataDomainSchema = z.object({
-  name: TypedDataDomainSchema.shape.name,
+  name: TypedDataDomainSchema.shape.name.or(z.literal('')),
   version: TypedDataDomainSchema.shape.version,
   // Overwrite chainId, salt and address for strictness/checksumming
   chainId: z.coerce.number().optional(),
