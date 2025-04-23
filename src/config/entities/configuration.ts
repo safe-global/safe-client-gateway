@@ -406,7 +406,7 @@ export default () => ({
   },
   spaces: {
     addressBooks: {
-      maxAddressBookItems: parseInt(
+      maxItems: parseInt(
         process.env.SPACES_MAX_ADDRESS_BOOK_ITEMS_PER_SPACE ?? `${500}`,
       ),
     },

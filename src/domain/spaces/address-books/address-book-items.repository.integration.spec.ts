@@ -225,7 +225,7 @@ describe('AddressBookItemsRepository', () => {
       ).rejects.toThrow(new NotFoundException('Space not found.'));
     });
 
-    it('should throw an NotFoundException if the user is not a member', async () => {
+    it('should throw a NotFoundException if the user is not a member', async () => {
       const { spaceId } = await createSpaceAsAdmin();
       const { authPayload } = await createUser();
       await expect(
@@ -236,7 +236,7 @@ describe('AddressBookItemsRepository', () => {
       ).rejects.toThrow(new NotFoundException('Space not found.'));
     });
 
-    it('should throw an NotFoundException if the user declined the membership', async () => {
+    it('should throw a NotFoundException if the user declined the membership', async () => {
       const { spaceId } = await createSpaceAsAdmin();
       const authPayload = await addMemberToSpaceWithStatus(spaceId, 'DECLINED');
       await expect(
