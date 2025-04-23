@@ -112,9 +112,12 @@ describe('parseSignaturesByType', () => {
         return getSignature({ signer, hash, signatureType });
       }),
     );
+    const concatenatedSignature = concat(signatures);
 
     expect(() =>
-      parseSignaturesByType(concat(signatures).slice(0, -2) as `0x${string}`),
+      parseSignaturesByType(
+        concatenatedSignature.slice(0, -2) as `0x${string}`,
+      ),
     ).toThrow('Insufficient length for static part');
   });
 

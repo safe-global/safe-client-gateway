@@ -336,7 +336,6 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    // Clients may propose concatenated signatures so we need to split them
     const signaturesByType = parseSignaturesByType(args.proposal.signature);
     const signatures: Array<SafeSignature> = [];
 

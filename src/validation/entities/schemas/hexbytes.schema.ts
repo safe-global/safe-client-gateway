@@ -1,6 +1,6 @@
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
-function isHexBytes(value: `0x${string}`): boolean {
+export function isHexBytes(value: `0x${string}`): boolean {
   return value.length % 2 === 0;
 }
 
