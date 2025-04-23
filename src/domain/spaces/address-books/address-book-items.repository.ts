@@ -17,7 +17,7 @@ import { EntityManager, In } from 'typeorm';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
-  private readonly maxAddressBookItems: number;
+  private readonly maxItems: number;
 
   constructor(
     private readonly db: PostgresDatabaseService,
@@ -28,8 +28,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.maxAddressBookItems = this.configurationService.getOrThrow<number>(
-      'spaces.addressBooks.maxAddressBookItems',
+    this.maxItems = this.configurationService.getOrThrow<number>(
+      'spaces.addressBooks.maxItems',
     );
   }
 
@@ -162,9 +162,9 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     });
     const totalAddressBookItemsCount =
       existingAddressBookItems + args.addressBookItems.length;
-    if (totalAddressBookItemsCount > this.maxAddressBookItems) {
+    if (totalAddressBookItemsCount > this.maxItems) {
       throw new BadRequestException(
-        `This Space only allows a maximum of ${this.maxAddressBookItems} Address Book Items. You can only add up to ${this.maxAddressBookItems - existingAddressBookItems} more.`,
+        `This Space only allows a maximum of ${this.maxItems} Address Book Items. You can only add up to ${this.maxItems - existingAddressBookItems} more.`,
       );
     }
   }

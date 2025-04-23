@@ -99,8 +99,8 @@ describe('AddressBookItemsRepository', () => {
         if (key === 'db.migrator.retryAfterMs') {
           return testConfiguration.db.migrator.retryAfterMs;
         }
-        if (key === 'spaces.addressBooks.maxAddressBookItems') {
-          return testConfiguration.spaces.addressBooks.maxAddressBookItems;
+        if (key === 'spaces.addressBooks.maxItems') {
+          return testConfiguration.spaces.addressBooks.maxItems;
         }
       }),
     } as jest.MockedObjectDeep<ConfigService>;
@@ -316,7 +316,7 @@ describe('AddressBookItemsRepository', () => {
 
     it('should throw BadRequestException if the amount of items in the Space surpasses the limit', async () => {
       const { spaceId, authPayload } = await createSpaceAsAdmin();
-      const limit = testConfiguration.spaces.addressBooks.maxAddressBookItems;
+      const limit = testConfiguration.spaces.addressBooks.maxItems;
       const existingAddressBookItems = faker.helpers.multiple(
         () =>
           addressBookItemBuilder()
