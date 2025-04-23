@@ -3,14 +3,29 @@ import { memoize } from 'lodash';
 import { getAddress, hashMessage } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import {
+  parseSignaturesByType,
+  R_OR_S_HEX_LENGTH,
+  SIGNATURE_HEX_LENGTH,
+  V_HEX_LENGTH,
+} from '@/domain/common/utils/signatures';
+import { ADDRESS_LENGTH, HEX_PREFIX_LENGTH } from '@/routes/common/constants';
+
+const ETH_SIGN_V_OFFSET = 4;
 
 export class SafeSignature {
   public signature: `0x${string}`;
   public hash: `0x${string}`;
 
   constructor(args: { signature: `0x${string}`; hash: `0x${string}` }) {
-    if (args.signature.length !== 132) {
-      throw new Error('Invalid signature length');
+    const signatures = parseSignaturesByType(args.signature);
+
+    if (signatures.length !== 1) {
+      throw new Error('Concatenated signatures are not supported');
+    }
+
+    if (signatures[0] !== args.signature) {
+      throw new Error('Invalid signature');
     }
 
     this.signature = args.signature;
@@ -18,15 +33,17 @@ export class SafeSignature {
   }
 
   get r(): `0x${string}` {
-    return `0x${this.signature.slice(2, 66)}`;
+    return `0x${this.signature.slice(HEX_PREFIX_LENGTH, HEX_PREFIX_LENGTH + R_OR_S_HEX_LENGTH)}`;
   }
 
   get s(): `0x${string}` {
-    return `0x${this.signature.slice(66, 130)}`;
+    const rOffset = HEX_PREFIX_LENGTH + R_OR_S_HEX_LENGTH;
+    return `0x${this.signature.slice(rOffset, rOffset + R_OR_S_HEX_LENGTH)}`;
   }
 
   get v(): number {
-    return parseInt(this.signature.slice(-2), 16);
+    const vOffset = HEX_PREFIX_LENGTH + SIGNATURE_HEX_LENGTH - V_HEX_LENGTH;
+    return parseInt(this.signature.slice(vOffset, vOffset + V_HEX_LENGTH), 16);
   }
 
   get signatureType(): SignatureType {
@@ -52,12 +69,12 @@ export class SafeSignature {
         switch (this.signatureType) {
           case SignatureType.ContractSignature:
           case SignatureType.ApprovedHash: {
-            return getAddress(`0x${this.r.slice(-40)}`);
+            return getAddress(`0x${this.r.slice(ADDRESS_LENGTH * -1)}`);
           }
           case SignatureType.EthSign: {
             // To differentiate signature types, eth_sign signatures have v value increased by 4
             // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
-            const normalizedSignature: `0x${string}` = `${this.r}${this.s.slice(2)}${(this.v - 4).toString(16)}`;
+            const normalizedSignature: `0x${string}` = `${this.r}${this.s.slice(HEX_PREFIX_LENGTH)}${(this.v - ETH_SIGN_V_OFFSET).toString(16)}`;
             return recoverAddress({
               hash: hashMessage({ raw: this.hash }),
               signature: normalizedSignature,
@@ -94,18 +111,18 @@ function recoverPublicKey(args: {
 }): `0x${string}` {
   const recoveryBit = toRecoveryBit(args.signature);
   const signature = secp256k1.Signature.fromCompact(
-    args.signature.substring(2, 130),
+    args.signature.substring(HEX_PREFIX_LENGTH, SIGNATURE_HEX_LENGTH),
   ).addRecoveryBit(recoveryBit);
 
   const publicKey = signature
-    .recoverPublicKey(args.hash.substring(2))
+    .recoverPublicKey(args.hash.substring(HEX_PREFIX_LENGTH))
     .toHex(false);
 
   return `0x${publicKey}`;
 }
 
 function toRecoveryBit(signature: `0x${string}`): number {
-  const v = parseInt(signature.slice(-2), 16);
+  const v = parseInt(signature.slice(V_HEX_LENGTH * -1), 16);
   if (v === 0 || v === 1) {
     return v;
   }

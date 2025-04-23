@@ -447,6 +447,44 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       });
     });
 
+    it('should throw if a signature is not a valid hex bytes string', async () => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const transaction = multisigToJson(
+        await multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce - 1)
+          .with('isExecuted', false)
+          .buildWithConfirmations({
+            signers: [signer],
+            chainId: chain.chainId,
+            safe,
+          }),
+      ) as MultisigTransaction;
+      transaction.confirmations![0].signature =
+        transaction.confirmations![0].signature!.slice(0, 129) as `0x${string}`;
+      const addConfirmationDto = addConfirmationDtoBuilder()
+        .with('signature', transaction.confirmations![0].signature)
+        .build();
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/transactions/${transaction.safeTxHash}/confirmations`,
+        )
+        .send(addConfirmationDto)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid hex bytes',
+          path: ['signature'],
+        });
+
+      expect(loggingService.error).not.toHaveBeenCalled();
+    });
+
     it('should throw if the signature length is invalid', async () => {
       const chain = chainBuilder().build();
       const privateKey = generatePrivateKey();
@@ -463,12 +501,10 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
             safe,
           }),
       ) as MultisigTransaction;
+      transaction.confirmations![0].signature =
+        transaction.confirmations![0].signature!.slice(0, 128) as `0x${string}`;
       const addConfirmationDto = addConfirmationDtoBuilder()
-        .with(
-          'signature',
-          (transaction.confirmations![0].signature +
-            'deadbeef') as `0x${string}`,
-        )
+        .with('signature', transaction.confirmations![0].signature)
         .build();
 
       await request(app.getHttpServer())
