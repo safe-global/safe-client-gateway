@@ -65,6 +65,14 @@ describe('TypedDataSchema', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should accept an empty string as a domain name', () => {
+      const domain = typedDataDomainBuilder().with('name', '').build();
+
+      const result = _TypedDataDomainSchema.safeParse(domain);
+
+      expect(result.success).toBe(true);
+    });
+
     it.each([
       ['string', faker.string.numeric()],
       ['number', faker.number.int()],
