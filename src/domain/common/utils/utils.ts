@@ -25,3 +25,26 @@ export function truncateAddress(
 ): `0x${string}` {
   return `${address.slice(0, length + 2)}...${address.slice(-length)}` as `0x${string}`;
 }
+
+/**
+ * Sorts an object by its keys and recursively sorts its values.
+ * Useful for ensuring order of keys in an object is consistent,
+ * which can be important for caching or comparison purposes.
+ * @param value {unknown} object to sort
+ * @returns {unknown} sorted object
+ */
+export function sortObject<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map(sortObject) as T;
+  }
+  if (typeof value !== 'object' || value === null) {
+    return value;
+  }
+  const keySortedEntries = Object.entries(value).sort(([a], [b]) => {
+    return a.localeCompare(b);
+  });
+  const valueSortedEntries = keySortedEntries.map(([key, val]) => {
+    return [key, sortObject(val)];
+  });
+  return Object.fromEntries(valueSortedEntries);
+}

@@ -8,6 +8,9 @@ import {
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { sortObject } from '@/domain/common/utils/utils';
 
 export type FetchClient = <T>(
   url: string,
@@ -20,6 +23,7 @@ export type FetchClient = <T>(
  */
 function fetchClientFactory(
   configurationService: IConfigurationService,
+  loggingService: ILoggingService,
 ): FetchClient {
   const cacheInFlightRequests = configurationService.getOrThrow<boolean>(
     'features.cacheInFlightRequests',
@@ -28,7 +32,17 @@ function fetchClientFactory(
     'httpClient.requestTimeout',
   );
 
-  const request = async <T>(
+  const request = createRequestFunction(requestTimeout);
+
+  if (!cacheInFlightRequests) {
+    return request;
+  }
+
+  return createCachedRequestFunction(request, loggingService);
+}
+
+function createRequestFunction(requestTimeout: number) {
+  return async <T>(
     url: string,
     options: RequestInit,
   ): Promise<NetworkResponse<T>> => {
@@ -58,31 +72,72 @@ function fetchClientFactory(
       data,
     };
   };
+}
 
-  if (!cacheInFlightRequests) {
-    return request;
-  }
-
-  /**
-   * A cache to prevent multiple in-flight requests for the same data.
-   */
+function createCachedRequestFunction(
+  request: <T>(
+    url: string,
+    options: RequestInit,
+  ) => Promise<NetworkResponse<T>>,
+  loggingService: ILoggingService,
+) {
   const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
 
   return async <T>(
     url: string,
     options: RequestInit,
   ): Promise<NetworkResponse<T>> => {
-    // Naive key for simplicity but JSON.stringify is not stable
-    const key = JSON.stringify({ url, ...options });
-
-    if (!(key in cache)) {
-      cache[key] = request(url, options).finally(() => {
-        delete cache[key];
+    const key = getCacheKey(url, options);
+    if (key in cache) {
+      loggingService.debug({
+        type: LogType.ExternalRequestCacheHit,
+        url,
+        key,
       });
+    } else {
+      loggingService.debug({
+        type: LogType.ExternalRequestCacheMiss,
+        url,
+        key,
+      });
+
+      cache[key] = request(url, options)
+        .catch((err) => {
+          loggingService.debug({
+            type: LogType.ExternalRequestCacheError,
+            url,
+            key,
+          });
+          return err;
+        })
+        .finally(() => {
+          delete cache[key];
+        });
     }
 
     return cache[key];
   };
+}
+
+function getCacheKey(url: string, requestInit?: RequestInit): string {
+  if (!requestInit) {
+    return url;
+  }
+
+  const sortedInit = sortRequestInit(requestInit);
+  return `${url}_${JSON.stringify(sortedInit)}`;
+}
+
+function sortRequestInit(requestInit: RequestInit): RequestInit {
+  if (typeof requestInit.body !== 'string') {
+    return sortObject(requestInit);
+  }
+
+  const sortedBody = sortObject(JSON.parse(requestInit.body));
+  return sortObject({
+    ...requestInit,
+    body: JSON.stringify(sortedBody),
+  });
 }
 
 /**
@@ -98,7 +153,7 @@ function fetchClientFactory(
     {
       provide: 'FetchClient',
       useFactory: fetchClientFactory,
-      inject: [IConfigurationService],
+      inject: [IConfigurationService, LoggingService],
     },
     { provide: NetworkService, useClass: FetchNetworkService },
   ],

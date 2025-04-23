@@ -15,11 +15,16 @@ import {
 } from '@/datasources/network/entities/network.error.entity';
 import { fakeJson } from '@/__tests__/faker';
 import type { Server } from 'net';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
   let fetchClient: FetchClient;
   let httpClientTimeout: number;
+  let loggingService: ILoggingService;
 
   // fetch response is not mocked but we are only concerned with RequestInit options
   const fetchMock = jest.fn();
@@ -53,6 +58,8 @@ describe('NetworkModule', () => {
     httpClientTimeout = configurationService.getOrThrow(
       'httpClient.requestTimeout',
     );
+    loggingService = moduleFixture.get<ILoggingService>(LoggingService);
+    jest.spyOn(loggingService, 'debug');
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -144,6 +151,18 @@ describe('NetworkModule', () => {
       await fetchClient(url, options);
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'EXTERNAL_REQUEST_CACHE_MISS',
+        url,
+        key: `${url}_${JSON.stringify(options)}`,
+      });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'EXTERNAL_REQUEST_CACHE_HIT',
+        url,
+        key: `${url}_${JSON.stringify(options)}`,
+      });
     });
 
     it.each(['POST', 'DELETE'])(
@@ -159,7 +178,11 @@ describe('NetworkModule', () => {
         const url = faker.internet.url({ appendSlash: false });
         const options = {
           method,
-          body: JSON.stringify({ example: 'data' }),
+          body: JSON.stringify({
+            z: 1,
+            a: [1, { b: 2, a: 1 }],
+            m: { c: 3, b: 2 },
+          }),
           headers: {
             'Content-Type': 'application/json',
           },
@@ -169,6 +192,38 @@ describe('NetworkModule', () => {
         await fetchClient(url, options);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        expect(loggingService.debug).toHaveBeenCalledTimes(2);
+        expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
+          type: 'EXTERNAL_REQUEST_CACHE_MISS',
+          url,
+          key: `${url}_${JSON.stringify({
+            body: JSON.stringify({
+              a: [1, { a: 1, b: 2 }],
+              m: { b: 2, c: 3 },
+              z: 1,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            method,
+          })}`,
+        });
+        expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
+          type: 'EXTERNAL_REQUEST_CACHE_HIT',
+          url,
+          key: `${url}_${JSON.stringify({
+            body: JSON.stringify({
+              a: [1, { a: 1, b: 2 }],
+              m: { b: 2, c: 3 },
+              z: 1,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            method,
+          })}`,
+        });
       },
     );
 
@@ -187,6 +242,18 @@ describe('NetworkModule', () => {
       await fetchClient(url, options);
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'EXTERNAL_REQUEST_CACHE_MISS',
+        url,
+        key: `${url}_${JSON.stringify(options)}`,
+      });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'EXTERNAL_REQUEST_CACHE_MISS',
+        url,
+        key: `${url}_${JSON.stringify(options)}`,
+      });
     });
 
     it('clears the cache after failed request', async () => {
@@ -212,6 +279,28 @@ describe('NetworkModule', () => {
       }
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      expect(loggingService.debug).toHaveBeenCalledTimes(4);
+      expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
+        type: 'EXTERNAL_REQUEST_CACHE_MISS',
+        url,
+        key: `${url}_${JSON.stringify(options)}`,
+      });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'EXTERNAL_REQUEST_CACHE_ERROR',
+        url,
+        key: `${url}_${JSON.stringify(options)}`,
+      });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(3, {
+        type: 'EXTERNAL_REQUEST_CACHE_MISS',
+        url,
+        key: `${url}_${JSON.stringify(options)}`,
+      });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(4, {
+        type: 'EXTERNAL_REQUEST_CACHE_ERROR',
+        url,
+        key: `${url}_${JSON.stringify(options)}`,
+      });
     });
   });
 });
