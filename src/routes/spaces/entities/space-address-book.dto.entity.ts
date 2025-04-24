@@ -3,9 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class SpaceAddressBookItemDto {
   @ApiProperty({ type: String })
-  public id!: AddressBookDbItem['id'];
-
-  @ApiProperty({ type: String })
   public name!: AddressBookDbItem['name'];
 
   @ApiProperty({ type: String })
@@ -13,6 +10,12 @@ export class SpaceAddressBookItemDto {
 
   @ApiProperty({ type: String, isArray: true })
   public chainIds!: AddressBookDbItem['chainIds'];
+
+  @ApiProperty({ type: String })
+  public createdBy!: AddressBookDbItem['createdBy'];
+
+  @ApiProperty({ type: String })
+  public lastUpdatedBy!: AddressBookDbItem['lastUpdatedBy'];
 }
 
 export class SpaceAddressBookDto {

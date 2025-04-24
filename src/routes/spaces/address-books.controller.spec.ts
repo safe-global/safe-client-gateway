@@ -29,6 +29,7 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { Server } from 'net';
 import request from 'supertest';
+import { getAddress } from 'viem';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
@@ -113,9 +114,65 @@ describe('AddressBooksController', () => {
         });
     });
 
-    it.todo('should get a Space Address Book with items as admin');
+    it('should get a Space Address Book with items as admin', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { mockName, mockAddress, mockChainIds } =
+        await createAddressBookItems({
+          spaceId,
+          adminAccessToken: accessToken,
+        });
 
-    it.todo('should get a Space Address Book with items as member');
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceId: spaceId.toString(),
+            data: [
+              {
+                chainIds: mockChainIds,
+                address: mockAddress,
+                name: mockName,
+                createdBy: expect.any(String),
+                lastUpdatedBy: expect.any(String),
+              },
+            ],
+          }),
+        );
+    });
+
+    it('should get a Space Address Book with items as member', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { memberAccessToken } = await inviteMember({
+        spaceId,
+        adminAccessToken: accessToken,
+      });
+      const { mockName, mockAddress, mockChainIds } =
+        await createAddressBookItems({
+          spaceId,
+          adminAccessToken: accessToken,
+        });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceId: spaceId.toString(),
+            data: [
+              {
+                chainIds: mockChainIds,
+                address: mockAddress,
+                name: mockName,
+                createdBy: expect.any(String),
+                lastUpdatedBy: expect.any(String),
+              },
+            ],
+          }),
+        );
+    });
 
     it('should return a 404 if the user declined the membership', async () => {
       const { spaceId, accessToken } = await createSpace();
@@ -259,5 +316,36 @@ describe('AddressBooksController', () => {
       .send({ users: [member] })
       .expect(201);
     return { memberAccessToken };
+  };
+
+  const createAddressBookItems = async (args: {
+    spaceId: string;
+    adminAccessToken: string;
+  }): Promise<{
+    mockName: string;
+    mockAddress: string;
+    mockChainIds: Array<string>;
+  }> => {
+    const mockAddress = getAddress(faker.finance.ethereumAddress());
+    const mockName = nameBuilder();
+    const mockChainIds = faker.helpers.multiple(() => faker.string.numeric(), {
+      count: { min: 1, max: 5 },
+    });
+
+    await request(app.getHttpServer())
+      .put(`/v1/spaces/${args.spaceId}/address-book`)
+      .set('Cookie', [`access_token=${args.adminAccessToken}`])
+      .send({
+        items: [
+          {
+            name: mockName,
+            address: mockAddress,
+            chainIds: mockChainIds,
+          },
+        ],
+      })
+      .expect(200);
+
+    return { mockName, mockAddress, mockChainIds };
   };
 });

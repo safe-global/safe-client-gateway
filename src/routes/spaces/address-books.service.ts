@@ -5,6 +5,7 @@ import { IAddressBookItemsRepository } from '@/domain/spaces/address-books/addre
 import { SpaceAddressBookDto } from '@/routes/spaces/entities/space-address-book.dto.entity';
 import { Inject } from '@nestjs/common';
 import { UpsertAddressBookItemsDto } from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
+import type { AddressBookDbItem } from '@/domain/spaces/address-books/entities/address-book-item.db.entity';
 
 export class AddressBooksService {
   // TODO: Investigate and implement usage of this
@@ -30,10 +31,7 @@ export class AddressBooksService {
       spaceId,
     });
 
-    return {
-      spaceId: spaceId.toString(),
-      data: addressBookItems,
-    };
+    return this.mapAddressBookItems(spaceId, addressBookItems);
   }
 
   public async upsertMany(
@@ -47,9 +45,24 @@ export class AddressBooksService {
       addressBookItems: addressBookItems.items,
     });
 
+    return this.mapAddressBookItems(spaceId, updatedItems);
+  }
+
+  private mapAddressBookItems(
+    spaceId: Space['id'],
+    items: Array<AddressBookDbItem>,
+  ): SpaceAddressBookDto {
+    const data = items.map((item) => ({
+      name: item.name,
+      address: item.address,
+      chainIds: item.chainIds,
+      createdBy: item.createdBy,
+      lastUpdatedBy: item.lastUpdatedBy,
+    }));
+
     return {
       spaceId: spaceId.toString(),
-      data: updatedItems,
+      data,
     };
   }
 }
