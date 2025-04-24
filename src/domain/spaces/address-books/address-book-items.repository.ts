@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
 import { UpsertAddressBookItemsDto } from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
+import { MemberRole } from '@/domain/users/entities/member.entity';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -88,7 +89,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   private async getSpaceAs(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    memberRoleIn: Array<string>;
+    memberRoleIn: Array<keyof typeof MemberRole>;
   }): Promise<Space> {
     if (!args.authPayload.signer_address) {
       throw new UnauthorizedException('Signer address not provided.');
@@ -123,9 +124,12 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       const patch = args.addressBookItems.find(
         (addressBookItem) => addressBookItem.address === item.address,
       );
+      if (!patch) {
+        continue;
+      }
       await repository.update(item.id, {
-        name: patch!.name,
-        chainIds: patch!.chainIds,
+        name: patch.name,
+        chainIds: patch.chainIds,
         lastUpdatedBy: args.authPayload.signer_address,
       });
     }

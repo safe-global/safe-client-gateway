@@ -7,6 +7,7 @@ import { Inject } from '@nestjs/common';
 import { UpsertAddressBookItemsDto } from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
 
 export class AddressBooksService {
+  // TODO: Investigate and implement usage of this
   private readonly maxItems: number;
 
   constructor(

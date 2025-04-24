@@ -26,6 +26,6 @@ export const UpsertAddressBookItemsSchema = z.object({
 export class UpsertAddressBookItemsDto
   implements z.infer<typeof UpsertAddressBookItemsSchema>
 {
-  @ApiProperty()
+  @ApiProperty({ type: AddressBookItem, isArray: true })
   public readonly items!: Array<AddressBookItem>;
 }
