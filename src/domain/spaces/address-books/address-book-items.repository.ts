@@ -3,7 +3,8 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { AddressBookItem as DbAddressBookItem } from '@/datasources/spaces/entities/address-book-item.entity.db';
 import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { IAddressBookItemsRepository } from '@/domain/spaces/address-books/address-book-items.repository.interface';
-import type { AddressBookItem } from '@/domain/spaces/address-books/entities/address-book-item.entity';
+import type { AddressBookDbItem } from '@/domain/spaces/address-books/entities/address-book-item.db.entity';
+import { AddressBookItem } from '@/domain/spaces/address-books/entities/address-book-item.entity';
 import { Space } from '@/domain/spaces/entities/space.entity';
 import { ISpacesRepository } from '@/domain/spaces/spaces.repository.interface';
 import { IUsersRepository } from '@/domain/users/users.repository.interface';
@@ -14,6 +15,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
+import { UpsertAddressBookItemsDto } from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -36,7 +38,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   public async findAllBySpaceId(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-  }): Promise<Array<AddressBookItem>> {
+  }): Promise<Array<AddressBookDbItem>> {
     const space = await this.getSpaceAs({
       ...args,
       memberRoleIn: ['ADMIN', 'MEMBER'],
@@ -48,8 +50,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   public async upsertMany(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    addressBookItems: Array<AddressBookItem>;
-  }): Promise<Array<AddressBookItem>> {
+    addressBookItems: UpsertAddressBookItemsDto['items'];
+  }): Promise<Array<AddressBookDbItem>> {
     const space = await this.getSpaceAs({
       ...args,
       memberRoleIn: ['ADMIN'],

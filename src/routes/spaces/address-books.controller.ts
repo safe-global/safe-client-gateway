@@ -4,11 +4,13 @@ import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressBooksService } from '@/routes/spaces/address-books.service';
 import { SpaceAddressBookDto } from '@/routes/spaces/entities/space-address-book.dto.entity';
 import {
+  Body,
   Controller,
   Get,
   Inject,
   Param,
   ParseIntPipe,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,6 +22,10 @@ import {
 } from '@nestjs/swagger';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
+import {
+  UpsertAddressBookItemsDto,
+  UpsertAddressBookItemsSchema,
+} from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -43,5 +49,20 @@ export class AddressBooksController {
     spaceId: number,
   ): Promise<SpaceAddressBookDto> {
     return this.service.findAllBySpaceId(authPayload, spaceId);
+  }
+
+  @ApiNotFoundResponse({ description: 'User, member or space not found' })
+  @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
+  @ApiForbiddenResponse({ description: 'Signer not authorized.' })
+  @Put('/:spaceId/address-book')
+  @UseGuards(AuthGuard)
+  public async upsertAddressBookItems(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+    @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
+    addressBookItems: UpsertAddressBookItemsDto,
+  ): Promise<SpaceAddressBookDto> {
+    return this.service.upsertMany(authPayload, spaceId, addressBookItems);
   }
 }

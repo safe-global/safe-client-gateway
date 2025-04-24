@@ -1,7 +1,7 @@
 import { Space } from '@/datasources/spaces/entities/space.entity.db';
 import { NAME_MAX_LENGTH } from '@/domain/common/entities/name.schema';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
-import { AddressBookItem as DomainAddressBookItem } from '@/domain/spaces/address-books/entities/address-book-item.entity';
+import { AddressBookDbItem as DomainAddressBookItem } from '@/domain/spaces/address-books/entities/address-book-item.db.entity';
 import {
   Column,
   Entity,

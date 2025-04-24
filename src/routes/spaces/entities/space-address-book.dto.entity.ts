@@ -1,18 +1,18 @@
-import { AddressBookItem } from '@/domain/spaces/address-books/entities/address-book-item.entity';
+import { AddressBookDbItem } from '@/domain/spaces/address-books/entities/address-book-item.db.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SpaceAddressBookItemDto {
   @ApiProperty({ type: String })
-  public id!: AddressBookItem['id'];
+  public id!: AddressBookDbItem['id'];
 
   @ApiProperty({ type: String })
-  public name!: AddressBookItem['name'];
+  public name!: AddressBookDbItem['name'];
 
   @ApiProperty({ type: String })
-  public address!: AddressBookItem['address'];
+  public address!: AddressBookDbItem['address'];
 
   @ApiProperty({ type: String, isArray: true })
-  public chainIds!: AddressBookItem['chainIds'];
+  public chainIds!: AddressBookDbItem['chainIds'];
 }
 
 export class SpaceAddressBookDto {
