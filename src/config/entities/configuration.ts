@@ -323,14 +323,12 @@ export default () => ({
         process.env.MAX_NESTED_TRANSFERS ?? `${100}`,
       ),
     },
+    transactionData: {
+      maxTokenInfoIndexSize: parseInt(process.env.MAX_TOKEN_INFO ?? `${100}`),
+    },
     safe: {
       maxOverviews: parseInt(process.env.MAX_SAFE_OVERVIEWS ?? `${10}`),
     },
-  },
-  portfolio: {
-    baseUri:
-      process.env.PORTFOLIO_API_BASE_URI || 'https://octav-api.hasura.app',
-    apiKey: process.env.PORTFOLIO_API_KEY || 'TODO',
   },
   pushNotifications: {
     baseUri:

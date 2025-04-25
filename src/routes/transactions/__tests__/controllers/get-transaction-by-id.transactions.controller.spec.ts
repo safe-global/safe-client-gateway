@@ -295,6 +295,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             dataDecoded: moduleTransaction.dataDecoded,
             operation: Operation.CALL,
             addressInfoIndex: null,
+            tokenInfoIndex: null,
             trustedDelegateCallTarget: null,
           },
           detailedExecutionInfo: {
@@ -577,6 +578,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             operation: tx.operation,
             trustedDelegateCallTarget: null,
             addressInfoIndex: null,
+            tokenInfoIndex: null,
           },
           detailedExecutionInfo: {
             type: 'MULTISIG',
@@ -758,6 +760,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             operation: tx.operation,
             trustedDelegateCallTarget: null,
             addressInfoIndex: null,
+            tokenInfoIndex: null,
           },
           detailedExecutionInfo: {
             type: 'MULTISIG',
@@ -937,6 +940,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             operation: tx.operation,
             trustedDelegateCallTarget: null,
             addressInfoIndex: null,
+            tokenInfoIndex: null,
           },
           detailedExecutionInfo: {
             submittedAt: tx.submissionDate.getTime(),
@@ -1187,6 +1191,64 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });
+    });
+
+    it('should throw if a signature is not a valid hex bytes string', async () => {
+      const chain = chainBuilder().build();
+      const signers = Array.from({ length: 2 }, () => {
+        const privateKey = generatePrivateKey();
+        return privateKeyToAccount(privateKey);
+      });
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((signer) => signer.address),
+        )
+        .build();
+      const multisigTransaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          signers,
+          safe,
+        });
+      multisigTransaction.confirmations![0].signature = `0xdeadbee`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getMultisigTransactionUrl:
+            return Promise.resolve({
+              data: rawify(multisigToJson(multisigTransaction)),
+              status: 200,
+            });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Bad gateway',
+          statusCode: 502,
+        });
+
+      expect(loggingService.error).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'TRANSACTION_VALIDITY',
+        }),
+      );
     });
 
     it('should throw if a signature length is invalid', async () => {

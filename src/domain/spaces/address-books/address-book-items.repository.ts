@@ -91,6 +91,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     spaceId: Space['id'];
     memberRoleIn: Array<keyof typeof MemberRole>;
   }): Promise<Space> {
+    // TODO: Move this assertion to the service
     if (!args.authPayload.signer_address) {
       throw new UnauthorizedException('Signer address not provided.');
     }

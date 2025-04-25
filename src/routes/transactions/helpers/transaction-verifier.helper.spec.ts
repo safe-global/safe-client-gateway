@@ -372,6 +372,30 @@ describe('TransactionVerifierHelper', () => {
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
 
+    it('should throw if a signature is not a valid hex bytes string', async () => {
+      const chainId = faker.string.numeric();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId,
+          signers: [signer],
+          safe,
+        });
+      transaction.confirmations![0].signature =
+        transaction.confirmations![0].signature!.slice(0, 129) as `0x${string}`;
+
+      expect(() => {
+        return target.verifyApiTransaction({ chainId, safe, transaction });
+      }).toThrow(new Error('Invalid hex bytes length'));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
     it('should throw if a signature length is invalid', async () => {
       const chainId = faker.string.numeric();
       const privateKey = generatePrivateKey();
@@ -386,7 +410,8 @@ describe('TransactionVerifierHelper', () => {
           signers: [signer],
           safe,
         });
-      transaction.confirmations![0].signature += 'invalid';
+      transaction.confirmations![0].signature =
+        transaction.confirmations![0].signature!.slice(0, 128) as `0x${string}`;
 
       expect(() => {
         return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -1201,6 +1226,58 @@ describe('TransactionVerifierHelper', () => {
       });
     });
 
+    it('should throw if a signature is not a valid hex bytes string', async () => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('nonce', safe.nonce)
+        .with('operation', Operation.CALL)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+      transaction.confirmations![0].signature =
+        transaction.confirmations![0].signature!.slice(0, 129) as `0x${string}`;
+      const proposal = proposeTransactionDtoBuilder()
+        .with('to', transaction.to)
+        .with('value', transaction.value)
+        .with('data', transaction.data)
+        .with('nonce', transaction.nonce.toString())
+        .with('operation', transaction.operation)
+        .with('safeTxGas', transaction.safeTxGas!.toString())
+        .with('baseGas', transaction.baseGas!.toString())
+        .with('gasPrice', transaction.gasPrice!)
+        .with('gasToken', transaction.gasToken!)
+        .with('refundReceiver', transaction.refundReceiver)
+        .with('safeTxHash', transaction.safeTxHash)
+        .with('sender', transaction.confirmations![0].owner)
+        .with('signature', transaction.confirmations![0].signature)
+        .build();
+
+      await expect(
+        target.verifyProposal({ chainId, safe, proposal, transaction }),
+      ).rejects.toThrow(new Error('Invalid hex bytes length'));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
     it('should throw if the signature length is invalid', async () => {
       const chainId = faker.string.numeric();
       const signers = Array.from(
@@ -1228,6 +1305,8 @@ describe('TransactionVerifierHelper', () => {
           }),
           safe,
         });
+      transaction.confirmations![0].signature =
+        transaction.confirmations![0].signature!.slice(0, 128) as `0x${string}`;
       const proposal = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -1241,11 +1320,7 @@ describe('TransactionVerifierHelper', () => {
         .with('refundReceiver', transaction.refundReceiver)
         .with('safeTxHash', transaction.safeTxHash)
         .with('sender', transaction.confirmations![0].owner)
-        .with(
-          'signature',
-          (transaction.confirmations![0].signature +
-            'deadbeef') as `0x${string}`,
-        )
+        .with('signature', transaction.confirmations![0].signature)
         .build();
 
       await expect(
@@ -1946,6 +2021,50 @@ describe('TransactionVerifierHelper', () => {
       });
     });
 
+    it('should throw if a signature is not a valid hex bytes string', async () => {
+      const chainId = faker.string.numeric();
+      const signers = Array.from(
+        { length: faker.number.int({ min: 1, max: 5 }) },
+        () => {
+          const privateKey = generatePrivateKey();
+          return privateKeyToAccount(privateKey);
+        },
+      );
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((s) => s.address),
+        )
+        .build();
+      const transaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId,
+          signers: faker.helpers.arrayElements(signers, {
+            min: 1,
+            max: signers.length,
+          }),
+          safe,
+        });
+
+      expect(() => {
+        return target.verifyConfirmation({
+          chainId,
+          safe,
+          transaction,
+          signature: faker.helpers.arrayElement(
+            transaction.confirmations!.map((confirmation) => {
+              return confirmation.signature!.slice(0, 129) as `0x${string}`;
+            }),
+          ),
+        });
+      }).toThrow(new Error('Invalid hex bytes length'));
+
+      expect(mockLoggingRepository.error).not.toHaveBeenCalled();
+    });
+
     it('should throw if the signature length is invalid', async () => {
       const chainId = faker.string.numeric();
       const signers = Array.from(
@@ -1981,7 +2100,7 @@ describe('TransactionVerifierHelper', () => {
           transaction,
           signature: faker.helpers.arrayElement(
             transaction.confirmations!.map((confirmation) => {
-              return (confirmation.signature! + 'deadbeef') as `0x${string}`;
+              return confirmation.signature!.slice(0, 128) as `0x${string}`;
             }),
           ),
         });

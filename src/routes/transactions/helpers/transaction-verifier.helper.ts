@@ -18,6 +18,7 @@ import { LogSource } from '@/domain/common/entities/log-source.entity';
 import { isAddressEqual } from 'viem';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import { parseSignaturesByType } from '@/domain/common/utils/signatures';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
@@ -335,13 +336,13 @@ export class TransactionVerifierHelper {
       return;
     }
 
+    const signaturesByType = parseSignaturesByType(args.proposal.signature);
     const signatures: Array<SafeSignature> = [];
 
-    // Clients may propose concatenated signatures so we need to split them
-    for (let i = 2; i < args.proposal.signature.length; i += 130) {
+    for (const signatureByType of signaturesByType) {
       const signature = new SafeSignature({
         hash: args.proposal.safeTxHash,
-        signature: `0x${args.proposal.signature.slice(i, i + 130)}`,
+        signature: signatureByType,
       });
 
       const isBlocked = this.blocklist.some((blockedAddress) => {

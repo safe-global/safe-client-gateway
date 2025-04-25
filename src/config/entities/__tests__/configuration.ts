@@ -214,16 +214,15 @@ export default (): ReturnType<typeof configuration> => ({
     history: {
       maxNestedTransfers: faker.number.int({ min: 1, max: 5 }),
     },
+    transactionData: {
+      maxTokenInfoIndexSize: faker.number.int({ min: 1, max: 5 }),
+    },
     safe: {
       maxOverviews: faker.number.int({ min: 1, max: 5 }),
     },
   },
   owners: {
     ownersTtlSeconds: faker.number.int(),
-  },
-  portfolio: {
-    baseUri: faker.internet.url({ appendSlash: false }),
-    apiKey: faker.string.hexadecimal({ length: 32 }),
   },
   pushNotifications: {
     baseUri: faker.internet.url({ appendSlash: false }),
