@@ -30,6 +30,7 @@ import { Test } from '@nestjs/testing';
 import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
@@ -117,7 +118,7 @@ describe('AddressBooksController', () => {
     it('should get a Space Address Book with items as admin', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { mockName, mockAddress, mockChainIds } =
-        await createAddressBookItems({
+        await createAddressBookItem({
           spaceId,
           adminAccessToken: accessToken,
         });
@@ -149,7 +150,7 @@ describe('AddressBooksController', () => {
         adminAccessToken: accessToken,
       });
       const { mockName, mockAddress, mockChainIds } =
-        await createAddressBookItems({
+        await createAddressBookItem({
           spaceId,
           adminAccessToken: accessToken,
         });
@@ -260,21 +261,241 @@ describe('AddressBooksController', () => {
   });
 
   describe('PUT /spaces/:spaceId/address-book', () => {
-    it.todo('should add Space Address Book Items');
+    it('should add Space Address Book Items', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const mockAddress = getAddress(faker.finance.ethereumAddress());
+      const mockName = nameBuilder();
+      const mockChainIds = faker.helpers.multiple(
+        () => faker.string.numeric(),
+        {
+          count: { min: 1, max: 5 },
+        },
+      );
 
-    it.todo('should update Space Address Book Items');
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: mockName,
+              address: mockAddress,
+              chainIds: mockChainIds,
+            },
+          ],
+        })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceId: spaceId.toString(),
+            data: [
+              {
+                chainIds: mockChainIds,
+                address: mockAddress,
+                name: mockName,
+                createdBy: expect.any(String),
+                lastUpdatedBy: expect.any(String),
+              },
+            ],
+          }),
+        );
+    });
 
-    it.todo('should add and update Space Address Book Items');
+    it('should update Space Address Book Items', async () => {
+      const { spaceId, accessToken } = await createSpace();
 
-    it.todo('should return a 404 if a space id does not exist');
+      const mockAddress = getAddress(faker.finance.ethereumAddress());
+      const mockName = nameBuilder();
+      const mockChainIds = faker.helpers.multiple(
+        () => faker.string.numeric(),
+        {
+          count: { min: 1, max: 5 },
+        },
+      );
 
-    it.todo('should return a 404 if the user does not exist');
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: mockName,
+              address: mockAddress,
+              chainIds: mockChainIds,
+            },
+          ],
+        })
+        .expect(200);
 
-    it.todo('should return a 403 if not authenticated');
+      const getAddressBookResponse = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceId: spaceId.toString(),
+            data: [
+              {
+                chainIds: mockChainIds,
+                address: mockAddress,
+                name: mockName,
+                createdBy: expect.any(String),
+                lastUpdatedBy: expect.any(String),
+              },
+            ],
+          }),
+        );
 
-    it.todo('should return a 403 if the member is not an admin');
+      expect(getAddressBookResponse.body.data.length).toEqual(1);
 
-    it.todo('should return a 403 if the AuthPayload is empty');
+      const mockNewName = nameBuilder();
+      const getAddressBookResponseAfterUpdate = await request(
+        app.getHttpServer(),
+      )
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: mockNewName,
+              address: mockAddress,
+              chainIds: mockChainIds,
+            },
+          ],
+        })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceId: spaceId.toString(),
+            data: [
+              {
+                chainIds: mockChainIds,
+                address: mockAddress,
+                name: mockNewName,
+                createdBy: expect.any(String),
+                lastUpdatedBy: expect.any(String),
+              },
+            ],
+          }),
+        );
+
+      expect(getAddressBookResponseAfterUpdate.body.data.length).toEqual(1);
+    });
+
+    it('should add and update Space Address Book Items', async () => {
+      const { spaceId, accessToken } = await createSpace();
+
+      const firstItem = {
+        name: nameBuilder(),
+        address: getAddress(faker.finance.ethereumAddress()),
+        chainIds: faker.helpers.multiple(() => faker.string.numeric(), {
+          count: { min: 1, max: 5 },
+        }),
+      };
+
+      const secondItem = {
+        name: nameBuilder(),
+        address: getAddress(faker.finance.ethereumAddress()),
+        chainIds: faker.helpers.multiple(() => faker.string.numeric(), {
+          count: { min: 1, max: 5 },
+        }),
+      };
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ items: [firstItem, secondItem] })
+        .expect(200);
+
+      const updatedFirstItem = {
+        ...firstItem,
+        name: nameBuilder(),
+      };
+
+      const { body: afterUpdateBody } = await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ items: [updatedFirstItem, secondItem] })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceId: spaceId.toString(),
+            data: expect.arrayContaining([
+              {
+                ...updatedFirstItem,
+                createdBy: expect.any(String),
+                lastUpdatedBy: expect.any(String),
+              },
+              {
+                ...secondItem,
+                createdBy: expect.any(String),
+                lastUpdatedBy: expect.any(String),
+              },
+            ]),
+          }),
+        );
+
+      expect(afterUpdateBody.data.length).toBe(2);
+    });
+
+    it('should return a 404 if a space id does not exist', async () => {
+      const { accessToken } = await createSpace();
+      const nonExistingSpaceId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${nonExistingSpaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ items: [] })
+        .expect(404);
+    });
+
+    it('should return a 404 if the user does not exist', async () => {
+      const { spaceId } = await createSpace();
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ items: [] })
+        .expect(404);
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      const { spaceId } = await createSpace();
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .send({ items: [] })
+        .expect(403);
+    });
+
+    it('should return a 404 if the member is not an admin', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { memberAccessToken } = await inviteMember({
+        spaceId,
+        adminAccessToken: accessToken,
+      });
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({ items: [] })
+        .expect(404);
+    });
+
+    it('should return a 403 if the AuthPayload is empty', async () => {
+      const { spaceId } = await createSpace();
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=`])
+        .send({ items: [] })
+        .expect(403);
+    });
   });
 
   // Utility functions
@@ -318,7 +539,7 @@ describe('AddressBooksController', () => {
     return { memberAccessToken };
   };
 
-  const createAddressBookItems = async (args: {
+  const createAddressBookItem = async (args: {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{
