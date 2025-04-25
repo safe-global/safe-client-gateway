@@ -17,6 +17,7 @@ import {
 import { EntityManager, In } from 'typeorm';
 import { UpsertAddressBookItemsDto } from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
 import { MemberRole } from '@/domain/users/entities/member.entity';
+import { isAddressEqual } from 'viem';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -65,11 +66,17 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         space,
         authPayload: args.authPayload,
       });
+
+      const newAddressBookItems = args.addressBookItems.filter(
+        (item) =>
+          !existingAddresses.some((existingItem) =>
+            isAddressEqual(existingItem, item.address),
+          ),
+      );
+
       await this.createNewAddressBookItems({
         entityManager,
-        addressBookItems: args.addressBookItems.filter(
-          (item) => !existingAddresses.includes(item.address),
-        ),
+        addressBookItems: newAddressBookItems,
         space,
         authPayload: args.authPayload,
       });
@@ -122,8 +129,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       address: In(args.addressBookItems.map((item) => item.address)),
     });
     for (const item of existingAddressBookItems) {
-      const patch = args.addressBookItems.find(
-        (addressBookItem) => addressBookItem.address === item.address,
+      const patch = args.addressBookItems.find((addressBookItem) =>
+        isAddressEqual(addressBookItem.address, item.address),
       );
       if (!patch) {
         continue;

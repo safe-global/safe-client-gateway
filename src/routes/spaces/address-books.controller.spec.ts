@@ -303,29 +303,11 @@ describe('AddressBooksController', () => {
 
     it('should update Space Address Book Items', async () => {
       const { spaceId, accessToken } = await createSpace();
-
-      const mockAddress = getAddress(faker.finance.ethereumAddress());
-      const mockName = nameBuilder();
-      const mockChainIds = faker.helpers.multiple(
-        () => faker.string.numeric(),
-        {
-          count: { min: 1, max: 5 },
-        },
-      );
-
-      await request(app.getHttpServer())
-        .put(`/v1/spaces/${spaceId}/address-book`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({
-          items: [
-            {
-              name: mockName,
-              address: mockAddress,
-              chainIds: mockChainIds,
-            },
-          ],
-        })
-        .expect(200);
+      const { mockName, mockAddress, mockChainIds } =
+        await createAddressBookItem({
+          spaceId,
+          adminAccessToken: accessToken,
+        });
 
       const getAddressBookResponse = await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/address-book`)
