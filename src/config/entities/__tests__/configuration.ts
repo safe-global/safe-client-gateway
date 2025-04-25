@@ -275,7 +275,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   spaces: {
     addressBooks: {
-      maxItems: faker.number.int({ min: 100, max: 200 }),
+      maxItems: faker.number.int({ min: 10, max: 20 }),
     },
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),

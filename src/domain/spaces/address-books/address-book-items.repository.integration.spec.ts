@@ -15,12 +15,14 @@ import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { AddressBookItemsRepository } from '@/domain/spaces/address-books/address-book-items.repository';
 import type { IAddressBookItemsRepository } from '@/domain/spaces/address-books/address-book-items.repository.interface';
+import { addressBookItemBuilder } from '@/domain/spaces/address-books/entities/__tests__/address-book-item.db.builder';
+import { spaceBuilder } from '@/domain/spaces/entities/__tests__/space.entity.db.builder';
 import { SpacesRepository } from '@/domain/spaces/spaces.repository';
 import { UsersRepository } from '@/domain/users/users.repository';
 import { WalletsRepository } from '@/domain/wallets/wallets.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { faker } from '@faker-js/faker/.';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { range } from 'lodash';
 import { DataSource } from 'typeorm';
@@ -97,6 +99,9 @@ describe('AddressBookItemsRepository', () => {
         if (key === 'db.migrator.retryAfterMs') {
           return testConfiguration.db.migrator.retryAfterMs;
         }
+        if (key === 'spaces.addressBooks.maxItems') {
+          return testConfiguration.spaces.addressBooks.maxItems;
+        }
       }),
     } as jest.MockedObjectDeep<ConfigService>;
     const migrator = new DatabaseMigrator(
@@ -116,6 +121,7 @@ describe('AddressBookItemsRepository', () => {
       dbService,
       new SpacesRepository(dbService, mockConfigurationService),
       new UsersRepository(dbService, new WalletsRepository(dbService)),
+      mockConfigService,
     );
   });
 
@@ -242,6 +248,138 @@ describe('AddressBookItemsRepository', () => {
     });
   });
 
+  describe('upsertMany', () => {
+    it('should insert new Address Book Items and update existing ones', async () => {
+      const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const existingAddressBookItems = faker.helpers.multiple(
+        () =>
+          addressBookItemBuilder()
+            .with('space', spaceBuilder().with('id', spaceId).build())
+            .with('createdBy', authPayload.signer_address as `0x${string}`)
+            .with('lastUpdatedBy', authPayload.signer_address as `0x${string}`)
+            .build(),
+        { count: { min: 2, max: 5 } },
+      );
+      const newAddressBookItems = faker.helpers.multiple(
+        () =>
+          addressBookItemBuilder()
+            .with('space', spaceBuilder().with('id', spaceId).build())
+            .build(),
+        { count: { min: 2, max: 5 } },
+      );
+      await dbAddressBookItemsRepository.insert(existingAddressBookItems);
+      const newAdminAuthPayload = await addAdminToSpace(spaceId);
+      const newName = nameBuilder();
+      const newChainIds = range(2, 5).map(() => faker.string.numeric());
+      const modifiedAddressBookItems = existingAddressBookItems.map((item) => ({
+        ...item,
+        name: newName,
+        chainIds: newChainIds,
+      }));
+
+      const actual = await addressBookItemsRepository.upsertMany({
+        authPayload: newAdminAuthPayload,
+        spaceId,
+        addressBookItems: modifiedAddressBookItems.concat(newAddressBookItems),
+      });
+
+      expect(actual).toHaveLength(
+        existingAddressBookItems.length + newAddressBookItems.length,
+      );
+      expect(actual).toEqual(
+        expect.arrayContaining(
+          modifiedAddressBookItems.map((item) =>
+            expect.objectContaining({
+              name: newName, // modified name
+              chainIds: newChainIds, // modified chainIds
+              address: item.address, // address remains the same
+              createdBy: authPayload.signer_address, // created by the first admin who created the Space
+              lastUpdatedBy: newAdminAuthPayload.signer_address, // modified by the second admin
+            }),
+          ),
+        ),
+      );
+      expect(actual).toEqual(
+        expect.arrayContaining(
+          newAddressBookItems.map((item) =>
+            expect.objectContaining({
+              name: item.name, // name remains the same
+              chainIds: item.chainIds, // chainIds remains the same
+              address: item.address, // address remains the same
+              createdBy: newAdminAuthPayload.signer_address, // created by the second admin
+              lastUpdatedBy: newAdminAuthPayload.signer_address, // modified by the second admin
+            }),
+          ),
+        ),
+      );
+    });
+
+    it('should throw BadRequestException if the amount of items in the Space surpasses the limit', async () => {
+      const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const limit = testConfiguration.spaces.addressBooks.maxItems;
+      const existingAddressBookItems = faker.helpers.multiple(
+        () =>
+          addressBookItemBuilder()
+            .with('space', spaceBuilder().with('id', spaceId).build())
+            .with('createdBy', authPayload.signer_address as `0x${string}`)
+            .with('lastUpdatedBy', authPayload.signer_address as `0x${string}`)
+            .build(),
+        {
+          count: limit - 1,
+        },
+      );
+      await dbAddressBookItemsRepository.insert(existingAddressBookItems);
+      const newAddressBookItems = faker.helpers.multiple(
+        () =>
+          addressBookItemBuilder()
+            .with('space', spaceBuilder().with('id', spaceId).build())
+            .build(),
+        { count: 2 },
+      );
+
+      await expect(
+        addressBookItemsRepository.upsertMany({
+          authPayload: authPayload,
+          spaceId,
+          addressBookItems: newAddressBookItems,
+        }),
+      ).rejects.toThrow(
+        new BadRequestException(
+          `This Space only allows a maximum of ${limit} Address Book Items. You can only add up to 1 more.`,
+        ),
+      );
+    });
+
+    it('should return a NotFoundException if the space does not exist', async () => {
+      const { authPayload } = await createUser();
+      const addressBookItems = faker.helpers.multiple(() =>
+        addressBookItemBuilder().build(),
+      );
+      await expect(
+        addressBookItemsRepository.upsertMany({
+          authPayload,
+          spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+          addressBookItems,
+        }),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
+
+    it('should throw ForbiddenException if the user is not an admin', async () => {
+      const { spaceId } = await createSpaceAsAdmin();
+      const authPayload = await addMemberToSpaceWithStatus(spaceId, 'ACTIVE');
+      const addressBookItems = faker.helpers.multiple(() =>
+        addressBookItemBuilder().build(),
+      );
+      await expect(
+        addressBookItemsRepository.upsertMany({
+          authPayload,
+          spaceId,
+          addressBookItems,
+        }),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
+  });
+
   // Utility functions
 
   const createSpaceAsAdmin = async (): Promise<{
@@ -262,6 +400,23 @@ describe('AddressBookItemsRepository', () => {
       invitedBy: getAddress(faker.finance.ethereumAddress()),
     });
     return { spaceId: space.generatedMaps[0].id, authPayload: authPayload };
+  };
+
+  const addAdminToSpace = async (
+    spaceId: Space['id'],
+  ): Promise<AuthPayload> => {
+    const { user, authPayload } = await createUser();
+    const space = await dbSpacesRepository.findOneBy({ id: spaceId });
+    if (!space) throw new NotFoundException('Space not found.');
+    await dbMembersRepository.insert({
+      user,
+      space,
+      name: nameBuilder(),
+      status: 'ACTIVE',
+      role: 'ADMIN',
+      invitedBy: getAddress(faker.finance.ethereumAddress()),
+    });
+    return authPayload;
   };
 
   const addMemberToSpaceWithStatus = async (
