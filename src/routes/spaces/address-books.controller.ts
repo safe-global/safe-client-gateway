@@ -35,7 +35,10 @@ export class AddressBooksController {
     private readonly service: AddressBooksService,
   ) {}
 
-  @ApiOkResponse({ description: 'Address Book Items found' })
+  @ApiOkResponse({
+    description: 'Address Book Items found',
+    type: SpaceAddressBookDto,
+  })
   @ApiNotFoundResponse({
     description: 'User, member or space not found',
   })
@@ -51,6 +54,10 @@ export class AddressBooksController {
     return this.service.findAllBySpaceId(authPayload, spaceId);
   }
 
+  @ApiOkResponse({
+    description: 'Address Book updated',
+    type: SpaceAddressBookDto,
+  })
   @ApiNotFoundResponse({ description: 'User, member or space not found' })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   @ApiForbiddenResponse({ description: 'Signer not authorized.' })

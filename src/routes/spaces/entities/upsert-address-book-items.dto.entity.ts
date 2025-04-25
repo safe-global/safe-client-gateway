@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
 const AddressBookItemSchema = z.object({
   name: z.string(),
@@ -23,9 +23,13 @@ export const UpsertAddressBookItemsSchema = z.object({
   items: z.array(AddressBookItemSchema),
 });
 
+@ApiExtraModels(AddressBookItem)
 export class UpsertAddressBookItemsDto
   implements z.infer<typeof UpsertAddressBookItemsSchema>
 {
-  @ApiProperty({ type: AddressBookItem, isArray: true })
+  @ApiProperty({
+    items: { $ref: getSchemaPath(AddressBookItem) },
+    type: 'array',
+  })
   public readonly items!: Array<AddressBookItem>;
 }
