@@ -7,6 +7,7 @@ import {
   VaultDepositAdditionalRewards,
   VaultDepositTransactionInfo,
 } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
+import { VaultWithdrawTransactionInfo } from '@/routes/transactions/entities/vaults/vault-withdraw-info.entity';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
@@ -61,6 +62,20 @@ export class VaultTransactionMapper {
       vaultTVL: Number(defiVaultStats.tvl),
       additionalRewards,
     });
+  }
+
+  public async mapWithdrawInfo(args: {
+    chainId: string;
+    to: `0x${string}`;
+    assets: number;
+    data: `0x${string}`;
+  }): Promise<VaultWithdrawTransactionInfo> {
+    const deployment = await this.stakingRepository.getDeployment({
+      chainId: args.chainId,
+      address: args.to,
+    });
+    this.validateDeployment({ chainId: args.chainId, deployment });
+    return new VaultWithdrawTransactionInfo();
   }
 
   private async mapAdditionalRewards(args: {

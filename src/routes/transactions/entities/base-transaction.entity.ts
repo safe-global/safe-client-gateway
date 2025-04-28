@@ -11,6 +11,7 @@ import { TransactionInfo } from '@/routes/transactions/entities/transaction-info
 import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
 import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
+import { VaultWithdrawTransactionInfo } from '@/routes/transactions/entities/vaults/vault-withdraw-info.entity';
 
 @ApiExtraModels(
   TransactionInfo,
@@ -25,6 +26,7 @@ import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaul
   NativeStakingValidatorsExitTransactionInfo,
   NativeStakingWithdrawTransactionInfo,
   VaultDepositTransactionInfo,
+  VaultWithdrawTransactionInfo,
 )
 export class BaseTransaction {
   @ApiProperty({
@@ -40,6 +42,7 @@ export class BaseTransaction {
       { $ref: getSchemaPath(NativeStakingValidatorsExitTransactionInfo) },
       { $ref: getSchemaPath(NativeStakingWithdrawTransactionInfo) },
       { $ref: getSchemaPath(VaultDepositTransactionInfo) },
+      { $ref: getSchemaPath(VaultWithdrawTransactionInfo) },
     ],
   })
   txInfo: TransactionInfo;

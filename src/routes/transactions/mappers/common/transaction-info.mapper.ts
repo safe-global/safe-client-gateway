@@ -30,6 +30,7 @@ import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vau
 import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { VaultWithdrawTransactionInfo } from '@/routes/transactions/entities/vaults/vault-withdraw-info.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -138,6 +139,15 @@ export class MultisigTransactionInfoMapper {
       // If the transaction is a vault deposit, we return it immediately
       if (vaultDeposit) {
         return vaultDeposit;
+      }
+
+      const vaultWithdraw = await this.mapVaultWithdraw({
+        chainId,
+        transaction,
+      });
+      // If the transaction is a vault withdraw, we return it immediately
+      if (vaultWithdraw) {
+        return vaultWithdraw;
       }
     }
 
@@ -359,6 +369,38 @@ export class MultisigTransactionInfoMapper {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
   }): Promise<VaultDepositTransactionInfo | null> {
+    if (!args.transaction?.data || !args.transaction.value) {
+      return null;
+    }
+
+    const vaultDepositTransaction =
+      this.kilnVaultHelper.getVaultDepositTransaction({
+        to: args.transaction.to,
+        data: args.transaction.data,
+        value: args.transaction.value,
+      });
+
+    if (!vaultDepositTransaction?.to) {
+      return null;
+    }
+
+    try {
+      return await this.vaultTransactionMapper.mapDepositInfo({
+        chainId: args.chainId,
+        to: vaultDepositTransaction.to,
+        assets: vaultDepositTransaction.assets,
+        data: vaultDepositTransaction.data,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapVaultWithdraw(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+  }): Promise<VaultWithdrawTransactionInfo | null> {
     if (!args.transaction?.data || !args.transaction.value) {
       return null;
     }

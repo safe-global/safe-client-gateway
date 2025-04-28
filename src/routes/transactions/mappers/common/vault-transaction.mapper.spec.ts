@@ -172,4 +172,6 @@ describe('VaultTransactionMapper', () => {
       ).rejects.toThrow(new NotFoundException('DeFi deployment not found'));
     });
   });
+
+  it.todo('mapVaultWithdraw');
 });
