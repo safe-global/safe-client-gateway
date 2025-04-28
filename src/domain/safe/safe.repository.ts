@@ -23,7 +23,10 @@ import {
 } from '@/domain/safe/entities/multisig-transaction.entity';
 import { SafeListSchema } from '@/domain/safe/entities/schemas/safe-list.schema';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { TransactionTypePageSchema } from '@/domain/safe/entities/schemas/transaction-type.schema';
+import {
+  TransactionTypePageSchema,
+  TransactionWithType,
+} from '@/domain/safe/entities/schemas/transaction-type.schema';
 import { AddConfirmationDto } from '@/domain/transactions/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/domain/transactions/entities/propose-transaction.dto.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -32,6 +35,7 @@ import { CreationTransactionSchema } from '@/domain/safe/entities/schemas/creati
 import { SafeSchema } from '@/domain/safe/entities/schemas/safe.schema';
 import { z } from 'zod';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
+import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -42,6 +46,8 @@ export class SafeRepository implements ISafeRepository {
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly transactionVerifier: TransactionVerifierHelper,
+    @Inject(IDataDecoderRepository)
+    private readonly dataDecoderRepository: IDataDecoderRepository,
   ) {}
 
   async getSafe(args: {
@@ -192,10 +198,16 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const moduleTransaction = await transactionService.getModuleTransaction(
-      args.moduleTransactionId,
-    );
-    return ModuleTransactionSchema.parse(moduleTransaction);
+    const moduleTransaction = await transactionService
+      .getModuleTransaction(args.moduleTransactionId)
+      .then(ModuleTransactionSchema.parse);
+
+    return await this.withFallbackDataDecoded({
+      transaction: moduleTransaction,
+      chainId: args.chainId,
+      data: moduleTransaction.data,
+      to: moduleTransaction.to,
+    });
   }
 
   async getModuleTransactions(args: {
@@ -210,8 +222,22 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page = await transactionService.getModuleTransactions(args);
-    return ModuleTransactionPageSchema.parse(page);
+    const page = await transactionService
+      .getModuleTransactions(args)
+      .then(ModuleTransactionPageSchema.parse);
+
+    page.results = await Promise.all(
+      page.results.map((transaction) => {
+        return this.withFallbackDataDecoded({
+          transaction,
+          chainId: args.chainId,
+          data: transaction.data,
+          to: transaction.to,
+        });
+      }),
+    );
+
+    return page;
   }
 
   async clearModuleTransactions(args: {
@@ -261,13 +287,27 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page = await transactionService.getMultisigTransactions({
-      ...args,
-      safeAddress: args.safe.address,
-      executed: false,
-      nonceGte: args.safe.nonce,
-    });
-    return MultisigTransactionPageSchema.parse(page);
+    const page = await transactionService
+      .getMultisigTransactions({
+        ...args,
+        safeAddress: args.safe.address,
+        executed: false,
+        nonceGte: args.safe.nonce,
+      })
+      .then(MultisigTransactionPageSchema.parse);
+
+    page.results = await Promise.all(
+      page.results.map((transaction) => {
+        return this.withFallbackDataDecoded({
+          transaction,
+          chainId: args.chainId,
+          data: transaction.data,
+          to: transaction.to,
+        });
+      }),
+    );
+
+    return page;
   }
 
   async getCreationTransaction(args: {
@@ -277,10 +317,16 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const createTransaction = await transactionService.getCreationTransaction(
-      args.safeAddress,
-    );
-    return CreationTransactionSchema.parse(createTransaction);
+    const createTransaction = await transactionService
+      .getCreationTransaction(args.safeAddress)
+      .then(CreationTransactionSchema.parse);
+
+    return await this.withFallbackDataDecoded({
+      transaction: createTransaction,
+      chainId: args.chainId,
+      data: createTransaction.setupData,
+      to: createTransaction.factoryAddress,
+    });
   }
 
   async getCreationTransactionWithNoCache(args: {
@@ -294,6 +340,8 @@ export class SafeRepository implements ISafeRepository {
       await transactionService.getCreationTransactionWithNoCache(
         args.safeAddress,
       );
+    // Note: we do not fallback to the Data Decoder here as it is a direct
+    // proxy of the Transaction Service
     return CreationTransactionSchema.parse(createTransaction);
   }
 
@@ -316,12 +364,29 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page = await transactionService.getAllTransactions({
-      ...args,
-      executed: true,
-      queued: false,
-    });
-    return TransactionTypePageSchema.parse(page);
+    const page = await transactionService
+      .getAllTransactions({
+        ...args,
+        executed: true,
+        queued: false,
+      })
+      .then(TransactionTypePageSchema.parse);
+
+    page.results = await Promise.all(
+      page.results.map((transaction) => {
+        if (!('to' in transaction)) {
+          return transaction;
+        }
+        return this.withFallbackDataDecoded({
+          transaction,
+          chainId: args.chainId,
+          data: transaction.data,
+          to: transaction.to,
+        });
+      }),
+    );
+
+    return page;
   }
 
   async clearAllExecutedTransactions(args: {
@@ -354,11 +419,16 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const multiSigTransaction = await transactionService.getMultisigTransaction(
-      args.safeTransactionHash,
-    );
+    const multiSigTransaction = await transactionService
+      .getMultisigTransaction(args.safeTransactionHash)
+      .then(MultisigTransactionSchema.parse);
 
-    return MultisigTransactionSchema.parse(multiSigTransaction);
+    return await this.withFallbackDataDecoded({
+      transaction: multiSigTransaction,
+      chainId: args.chainId,
+      data: multiSigTransaction.data,
+      to: multiSigTransaction.to,
+    });
   }
 
   async getMultiSigTransactionWithNoCache(args: {
@@ -370,6 +440,8 @@ export class SafeRepository implements ISafeRepository {
     );
     const multisigTransaction = await transactionService
       .getMultisigTransactionWithNoCache(args.safeTransactionHash)
+      // Note: we do not fallback to the Data Decoder here as it is a direct
+      // proxy of the Transaction Service
       .then(MultisigTransactionSchema.parse);
 
     const safe = await this.getSafe({
@@ -458,6 +530,8 @@ export class SafeRepository implements ISafeRepository {
     const [multisigTransactions, safe] = await Promise.all([
       transactionService
         .getMultisigTransactionsWithNoCache(args)
+        // Note: we do not fallback to the Data Decoder here as it is a direct
+        // proxy of the Transaction Service
         .then(MultisigTransactionPageSchema.parse),
       this.getSafe({ chainId: args.chainId, address: args.safeAddress }),
     ]);
@@ -489,12 +563,26 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page = await transactionService.getMultisigTransactions({
-      ...args,
-      ordering: '-nonce',
-      trusted: true,
-    });
-    return MultisigTransactionPageSchema.parse(page);
+    const page = await transactionService
+      .getMultisigTransactions({
+        ...args,
+        ordering: '-nonce',
+        trusted: true,
+      })
+      .then(MultisigTransactionPageSchema.parse);
+
+    page.results = await Promise.all(
+      page.results.map((transaction) => {
+        return this.withFallbackDataDecoded({
+          transaction,
+          chainId: args.chainId,
+          data: transaction.data,
+          to: transaction.to,
+        });
+      }),
+    );
+
+    return page;
   }
 
   async getTransfer(args: {
@@ -613,7 +701,17 @@ export class SafeRepository implements ISafeRepository {
     });
     const { results } = MultisigTransactionPageSchema.parse(page);
 
-    return isEmpty(results) ? null : results[0];
+    if (isEmpty(results)) {
+      return null;
+    }
+
+    const transaction = results[0];
+    return await this.withFallbackDataDecoded({
+      transaction,
+      chainId: args.chainId,
+      data: transaction.data,
+      to: transaction.to,
+    });
   }
 
   async proposeTransaction(args: {
@@ -686,5 +784,36 @@ export class SafeRepository implements ISafeRepository {
     );
 
     return SafeListSchema.parse(safesByModule);
+  }
+
+  private async withFallbackDataDecoded<
+    T extends
+      | ModuleTransaction
+      | MultisigTransaction
+      | CreationTransaction
+      | TransactionWithType,
+  >(args: {
+    transaction: T;
+    chainId: string;
+    data: `0x${string}` | null;
+    to: `0x${string}`;
+  }): Promise<T> {
+    if (
+      !('dataDecoded' in args.transaction) ||
+      args.transaction.dataDecoded ||
+      !args.data
+    ) {
+      return args.transaction;
+    }
+
+    args.transaction.dataDecoded = await this.dataDecoderRepository
+      .getDecodedData({
+        chainId: args.chainId,
+        data: args.data,
+        to: args.to,
+      })
+      .catch(() => null);
+
+    return args.transaction;
   }
 }

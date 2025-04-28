@@ -73,6 +73,7 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string | undefined;
+  let decoderServiceUrl: string | undefined;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
@@ -110,6 +111,7 @@ describe('Transactions History Controller (Unit)', () => {
 
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
+    decoderServiceUrl = configurationService.get('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -1506,5 +1508,87 @@ describe('Transactions History Controller (Unit)', () => {
           },
         });
       });
+  });
+
+  it('should fetch decoded data from the Decoder Service if none is returned by the Transaction Service', async () => {
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const safe = safeBuilder().with('owners', [signer.address]).build();
+    const chain = chainBuilder().build();
+    const moduleTransaction = moduleTransactionBuilder()
+      .with('dataDecoded', null)
+      .with('executionDate', new Date('2022-12-06T23:00:00Z'))
+      .build();
+    const multisigTransaction = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('dataDecoded', null)
+      .with('origin', null)
+      .with('executionDate', new Date('2022-12-25T00:00:00Z'))
+      .buildWithConfirmations({
+        safe,
+        signers: [signer],
+        chainId: chain.chainId,
+      });
+    const dataDecoded = dataDecodedBuilder().build();
+    const transactionHistoryBuilder = {
+      count: 40,
+      next: `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/?executed=false&limit=10&offset=10&queued=true&trusted=true`,
+      previous: null,
+      results: [
+        moduleTransactionToJson(moduleTransaction),
+        multisigTransactionToJson(multisigTransaction),
+      ],
+    };
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+    const getAllTransactions = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getAllTransactions) {
+        return Promise.resolve({
+          data: rawify(transactionHistoryBuilder),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+    const getDecoderUrl = `${decoderServiceUrl}/api/v1/data-decoder`;
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === getDecoderUrl) {
+        return Promise.resolve({
+          data: rawify(dataDecoded),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history/`,
+      )
+      .expect(200);
+    expect(networkService.post).toHaveBeenCalledTimes(2);
+    expect(networkService.post).toHaveBeenNthCalledWith(1, {
+      url: getDecoderUrl,
+      data: {
+        data: moduleTransaction.data,
+        to: moduleTransaction.to,
+        chainId: chain.chainId,
+      },
+    });
+    expect(networkService.post).toHaveBeenNthCalledWith(2, {
+      url: getDecoderUrl,
+      data: {
+        data: multisigTransaction.data,
+        to: multisigTransaction.to,
+        chainId: chain.chainId,
+      },
+    });
   });
 });

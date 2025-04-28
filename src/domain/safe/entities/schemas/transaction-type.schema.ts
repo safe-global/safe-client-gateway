@@ -10,4 +10,6 @@ const TransactionTypeSchema = z.discriminatedUnion('txType', [
   MultisigTransactionTypeSchema,
 ]);
 
+export type TransactionWithType = z.infer<typeof TransactionTypeSchema>;
+
 export const TransactionTypePageSchema = buildPageSchema(TransactionTypeSchema);

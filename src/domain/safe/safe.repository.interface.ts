@@ -15,6 +15,7 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
 import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
+import { DataDecoderRepositoryModule } from '@/domain/data-decoder/v2/data-decoder.repository.module';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -224,6 +225,7 @@ export interface ISafeRepository {
     TransactionApiManagerModule,
     DelegatesV2RepositoryModule,
     ContractsRepositoryModule,
+    DataDecoderRepositoryModule,
   ],
   providers: [
     {

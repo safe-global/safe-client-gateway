@@ -21,6 +21,7 @@ import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messag
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import {
@@ -49,6 +50,7 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 describe('List queued transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let decoderServiceUrl: string | undefined;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
@@ -78,6 +80,7 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    decoderServiceUrl = configurationService.get('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
 
@@ -590,6 +593,102 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           ],
         });
       });
+  });
+
+  it('should fetch decoded data from the Decoder Service if none is returned by the Transaction Service', async () => {
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const chainResponse = chainBuilder().build();
+    const privateKey = generatePrivateKey();
+    const signer = privateKeyToAccount(privateKey);
+    const contractResponse = contractBuilder().build();
+    const safeResponse = safeBuilder()
+      .with('address', safeAddress)
+      .with('nonce', 1)
+      .with('owners', [signer.address])
+      .build();
+    const safeAppsResponse = [
+      safeAppBuilder()
+        .with('url', faker.internet.url({ appendSlash: false }))
+        .with('iconUrl', faker.internet.url({ appendSlash: false }))
+        .with('name', faker.word.words())
+        .build(),
+    ];
+    const multisigTransaction = await multisigTransactionBuilder()
+      .with('safe', safeAddress)
+      .with('isExecuted', false)
+      .with('nonce', safeResponse.nonce)
+      .with('dataDecoded', null)
+      .buildWithConfirmations({
+        safe: safeResponse,
+        chainId: chainResponse.chainId,
+        signers: [signer],
+      });
+    const transactions = [multisigToJson(multisigTransaction)];
+    const dataDecoded = dataDecodedBuilder().build();
+    const tokenResponse = erc20TokenBuilder().build();
+    const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
+    const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
+    const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
+    const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
+    const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+    const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === getChainUrl) {
+        return Promise.resolve({ data: rawify(chainResponse), status: 200 });
+      }
+      if (url === getMultisigTransactionsUrl) {
+        return Promise.resolve({
+          data: rawify({
+            count: 20,
+            next: `${faker.internet.url({
+              appendSlash: false,
+            })}/?limit=10&offset=50`,
+            previous: `${faker.internet.url({
+              appendSlash: false,
+            })}/?limit=10&offset=30`,
+            results: transactions,
+          }),
+          status: 200,
+        });
+      }
+      if (url === getSafeUrl) {
+        return Promise.resolve({ data: rawify(safeResponse), status: 200 });
+      }
+      if (url === getSafeAppsUrl) {
+        return Promise.resolve({ data: rawify(safeAppsResponse), status: 200 });
+      }
+      if (url.includes(getContractUrlPattern)) {
+        return Promise.resolve({ data: rawify(contractResponse), status: 200 });
+      }
+      if (url.startsWith(getTokenUrlPattern)) {
+        return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+    const getDecoderUrl = `${decoderServiceUrl}/api/v1/data-decoder`;
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === getDecoderUrl) {
+        return Promise.resolve({
+          data: rawify(dataDecoded),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .get(
+        `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued/?cursor=limit%3D10%26offset%3D2`,
+      )
+      .expect(200);
+    expect(networkService.post).toHaveBeenNthCalledWith(1, {
+      url: getDecoderUrl,
+      data: {
+        data: multisigTransaction.data,
+        to: multisigTransaction.to,
+        chainId: chainResponse.chainId,
+      },
+    });
   });
 
   describe('Verification', () => {
