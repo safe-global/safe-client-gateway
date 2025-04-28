@@ -15,6 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -64,6 +65,7 @@ export class AddressBooksController {
   @ApiNotFoundResponse({ description: 'User, member or space not found' })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   @ApiForbiddenResponse({ description: 'Signer not authorized.' })
+  @ApiBadRequestResponse({ description: 'Address book items limit exceeded.' })
   @Put('/:spaceId/address-book')
   @UseGuards(SpacesAddressBookRateLimitGuard)
   @UseGuards(AuthGuard)
