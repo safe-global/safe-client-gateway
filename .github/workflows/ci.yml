@@ -6,6 +6,9 @@ on:
   release:
     types: [released]
 
+permissions:
+  contents: read
+
 env:
   DOCKER_IMAGE_REGISTRY: safeglobal
   DOCKER_IMAGE_NAME: safe-client-gateway-nest
