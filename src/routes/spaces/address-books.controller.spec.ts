@@ -32,17 +32,39 @@ import request from 'supertest';
 import { getAddress } from 'viem';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { addressBookItemBuilder } from '@/domain/spaces/address-books/entities/__tests__/address-book-item.db.builder';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
 
-  beforeAll(async () => {
-    jest.resetAllMocks();
+  const defaultConfiguration = configuration();
 
-    const defaultConfiguration = configuration();
+  async function initApp(args?: {
+    maxUpsertionsPerUser?: number;
+    rateLimit?: {
+      max: number;
+      windowSeconds: number;
+    };
+  }): Promise<INestApplication<Server>> {
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      spaces: {
+        ...defaultConfiguration.spaces,
+        addressBooks: {
+          ...defaultConfiguration.spaces.addressBooks,
+          maxItems:
+            args?.maxUpsertionsPerUser ??
+            defaultConfiguration.spaces.addressBooks.maxItems,
+        },
+        rateLimit: {
+          ...defaultConfiguration.spaces.rateLimit,
+          addressBookUpsertion: {
+            ...(args?.rateLimit ??
+              defaultConfiguration.spaces.rateLimit.addressBookUpsertion),
+          },
+        },
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,
@@ -79,6 +101,12 @@ describe('AddressBooksController', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+    return app;
+  }
+
+  beforeAll(async () => {
+    jest.resetAllMocks();
+    app = await initApp();
   });
 
   afterAll(async () => {
@@ -421,6 +449,115 @@ describe('AddressBooksController', () => {
       expect(afterUpdateBody.data.length).toBe(2);
     });
 
+    it('should rate limit upsertions', async () => {
+      const app = await initApp({ rateLimit: { max: 1, windowSeconds: 60 } });
+      const { spaceId, accessToken } = await createSpace();
+      const addressBookItem1 = addressBookItemBuilder().build();
+      const addressBookItem2 = addressBookItemBuilder().build();
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: addressBookItem1.name,
+              address: addressBookItem1.address,
+              chainIds: addressBookItem1.chainIds,
+            },
+          ],
+        })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: addressBookItem2.name,
+              address: addressBookItem2.address,
+              chainIds: addressBookItem2.chainIds,
+            },
+          ],
+        })
+        .expect(429)
+        .expect('Rate limit reached');
+    });
+
+    it('should return a 400 if the limit is reached', async () => {
+      const app = await initApp({ maxUpsertionsPerUser: 1 });
+      const { spaceId, accessToken } = await createSpace();
+      const addressBookItem1 = addressBookItemBuilder().build();
+      const addressBookItem2 = addressBookItemBuilder().build();
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: addressBookItem1.name,
+              address: addressBookItem1.address,
+              chainIds: addressBookItem1.chainIds,
+            },
+          ],
+        })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: addressBookItem2.name,
+              address: addressBookItem2.address,
+              chainIds: addressBookItem2.chainIds,
+            },
+          ],
+        })
+        .expect(400)
+        .expect({
+          message:
+            'This Space only allows a maximum of 1 Address Book Items. You can only add up to 0 more.',
+          error: 'Bad Request',
+          statusCode: 400,
+        });
+    });
+
+    it('should return a 400 if the request has more than the limit', async () => {
+      const app = await initApp({ maxUpsertionsPerUser: 1 });
+      const { spaceId, accessToken } = await createSpace();
+      const addressBookItem1 = addressBookItemBuilder().build();
+      const addressBookItem2 = addressBookItemBuilder().build();
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: addressBookItem1.name,
+              address: addressBookItem1.address,
+              chainIds: addressBookItem1.chainIds,
+            },
+            {
+              name: addressBookItem2.name,
+              address: addressBookItem2.address,
+              chainIds: addressBookItem2.chainIds,
+            },
+          ],
+        })
+        .expect(400)
+        .expect({
+          message:
+            'This Space only allows a maximum of 1 Address Book Items. You can only add up to 1 more.',
+          error: 'Bad Request',
+          statusCode: 400,
+        });
+    });
+
     it('should return a 404 if a space id does not exist', async () => {
       const { accessToken } = await createSpace();
       const nonExistingSpaceId = faker.number.int({
@@ -479,6 +616,8 @@ describe('AddressBooksController', () => {
         .send({ items: [] })
         .expect(403);
     });
+
+    it.todo('should return a 403 is the maximum number of items is reached');
   });
 
   describe('DELETE /spaces/:spaceId/address-book/:address', () => {
