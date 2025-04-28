@@ -84,13 +84,21 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     return repository.findBy({ space: { id: space.id } });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public deleteMany(args: {
+  public async deleteByAddress(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    addressBookItemIds: Array<string>;
+    address: AddressBookDbItem['address'];
   }): Promise<void> {
-    throw new Error('Method not implemented.');
+    const space = await this.getSpaceAs({
+      ...args,
+      memberRoleIn: ['ADMIN'],
+    });
+    const repository = await this.db.getRepository(DbAddressBookItem);
+
+    await repository.delete({
+      address: args.address,
+      space: { id: space.id },
+    });
   }
 
   private async getSpaceAs(args: {

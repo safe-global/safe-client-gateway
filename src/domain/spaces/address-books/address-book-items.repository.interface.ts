@@ -39,14 +39,14 @@ export interface IAddressBookItemsRepository {
   }): Promise<Array<AddressBookDbItem>>;
 
   /**
-   * Deletes an array of AddressBookItems by their IDs.
+   * Deletes an {@link AddressBookDbItem} by address.
    * @param {AuthPayload} args.authPayload - The authentication payload.
    * @param {number} args.spaceId - The ID of the Space.
-   * @param {Array<AddressBookDbItem>} args.addressBookItemIds - The IDs of the AddressBookItems to delete.
+   * @param {AddressBookDbItem['address']} args.address - The address of an AddressBookItem to delete.
    */
-  deleteMany(args: {
+  deleteByAddress(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    addressBookItemIds: Array<string>;
+    address: AddressBookDbItem['address'];
   }): Promise<void>;
 }

@@ -31,6 +31,7 @@ import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
@@ -480,6 +481,157 @@ describe('AddressBooksController', () => {
     });
   });
 
+  describe('DELETE /spaces/:spaceId/address-book/:address', () => {
+    it('should delete a Space address book item', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { mockAddress } = await createAddressBookItem({
+        spaceId,
+        adminAccessToken: accessToken,
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/v1/spaces/${spaceId}/address-book/${mockAddress}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceId: spaceId.toString(),
+            data: [],
+          }),
+        );
+    });
+
+    it('should not delete the same address from a different Space', async () => {
+      const { spaceId: spaceId1, accessToken: accessToken1 } =
+        await createSpace();
+      const { spaceId: spaceId2, accessToken: accessToken2 } =
+        await createSpace();
+      const authPayload2 = jwtService.decode(accessToken2) as AuthPayload;
+      const { mockAddress } = await createAddressBookItem({
+        spaceId: spaceId1,
+        adminAccessToken: accessToken1,
+      });
+      const { mockName, mockChainIds } = await createAddressBookItem({
+        spaceId: spaceId2,
+        adminAccessToken: accessToken2,
+        address: mockAddress,
+      });
+
+      await request(app.getHttpServer())
+        .delete(`/v1/spaces/${spaceId1}/address-book/${mockAddress}`)
+        .set('Cookie', [`access_token=${accessToken1}`])
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId2}/address-book`)
+        .set('Cookie', [`access_token=${accessToken2}`])
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceId: spaceId2.toString(),
+            data: [
+              {
+                address: mockAddress,
+                name: mockName,
+                chainIds: mockChainIds,
+                createdBy: authPayload2.signer_address,
+                lastUpdatedBy: authPayload2.signer_address,
+              },
+            ],
+          }),
+        );
+    });
+
+    it('should return a 404 if a space ID does not exist', async () => {
+      const { accessToken } = await createSpace();
+      const nonExistingSpaceId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .delete(`/v1/spaces/${nonExistingSpaceId}/address-book/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'Space not found.',
+          error: 'Not Found',
+        });
+    });
+
+    it('should return a 404 if the user does not exist', async () => {
+      const { spaceId } = await createSpace();
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .delete(`/v1/spaces/${spaceId}/address-book/${address}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'User not found.',
+          error: 'Not Found',
+        });
+    });
+
+    it('should return a 404 if the member is not an ADMIN', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { memberAccessToken } = await inviteMember({
+        spaceId,
+        adminAccessToken: accessToken,
+      });
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .delete(`/v1/spaces/${spaceId}/address-book/${address}`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(404)
+        .expect({
+          statusCode: 404,
+          message: 'Space not found.',
+          error: 'Not Found',
+        });
+    });
+
+    it('should return a 403 if the AuthPayload is empty', async () => {
+      const { spaceId } = await createSpace();
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .delete(`/v1/spaces/${spaceId}/address-book/${address}`)
+        .set('Cookie', [`access_token=`])
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      const { spaceId } = await createSpace();
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .delete(`/v1/spaces/${spaceId}/address-book/${address}`)
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+  });
+
   // Utility functions
 
   const createSpace = async (): Promise<{
@@ -524,12 +676,14 @@ describe('AddressBooksController', () => {
   const createAddressBookItem = async (args: {
     spaceId: string;
     adminAccessToken: string;
+    address?: `0x${string}`;
   }): Promise<{
     mockName: string;
-    mockAddress: string;
+    mockAddress: `0x${string}`;
     mockChainIds: Array<string>;
   }> => {
-    const mockAddress = getAddress(faker.finance.ethereumAddress());
+    const mockAddress =
+      args?.address ?? getAddress(faker.finance.ethereumAddress());
     const mockName = nameBuilder();
     const mockChainIds = faker.helpers.multiple(() => faker.string.numeric(), {
       count: { min: 1, max: 5 },

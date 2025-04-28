@@ -48,6 +48,14 @@ export class AddressBooksService {
     return this.mapAddressBookItems(spaceId, updatedItems);
   }
 
+  public async deleteByAddress(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    address: AddressBookDbItem['address'];
+  }): Promise<void> {
+    await this.repository.deleteByAddress(args);
+  }
+
   private mapAddressBookItems(
     spaceId: Space['id'],
     items: Array<AddressBookDbItem>,
