@@ -380,6 +380,103 @@ describe('AddressBookItemsRepository', () => {
     });
   });
 
+  describe('deleteByAddress', () => {
+    it('should delete an address book item by address', async () => {
+      const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const addressBookItem = addressBookItemBuilder()
+        .with('space', spaceBuilder().with('id', spaceId).build())
+        .with('createdBy', authPayload.signer_address as `0x${string}`)
+        .with('lastUpdatedBy', authPayload.signer_address as `0x${string}`)
+        .build();
+      await dbAddressBookItemsRepository.insert(addressBookItem);
+
+      await addressBookItemsRepository.deleteByAddress({
+        authPayload,
+        spaceId,
+        address: addressBookItem.address,
+      });
+
+      await expect(
+        dbAddressBookItemsRepository.findOneBy({
+          address: addressBookItem.address,
+        }),
+      ).resolves.toBe(null);
+    });
+
+    it('should not delete the same address from a different Space', async () => {
+      const { spaceId: spaceId1, authPayload: authPayload1 } =
+        await createSpaceAsAdmin();
+      const { spaceId: spaceId2, authPayload: authPayload2 } =
+        await createSpaceAsAdmin();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const addressBookItem1 = addressBookItemBuilder()
+        .with('address', address)
+        .with('space', spaceBuilder().with('id', spaceId1).build())
+        .with('createdBy', authPayload1.signer_address as `0x${string}`)
+        .with('lastUpdatedBy', authPayload1.signer_address as `0x${string}`)
+        .build();
+      const addressBookItem2 = addressBookItemBuilder()
+        .with('address', address)
+        .with('space', spaceBuilder().with('id', spaceId2).build())
+        .with('createdBy', authPayload2.signer_address as `0x${string}`)
+        .with('lastUpdatedBy', authPayload2.signer_address as `0x${string}`)
+        .build();
+      await dbAddressBookItemsRepository.insert(addressBookItem1);
+      await dbAddressBookItemsRepository.insert(addressBookItem2);
+
+      await addressBookItemsRepository.deleteByAddress({
+        authPayload: authPayload1,
+        spaceId: spaceId1,
+        address: addressBookItem1.address,
+      });
+
+      await expect(
+        dbAddressBookItemsRepository.findOneBy({
+          address: addressBookItem1.address,
+          space: { id: spaceId2 },
+        }),
+      ).resolves.toStrictEqual(
+        expect.objectContaining({
+          id: expect.any(Number),
+          address: addressBookItem1.address,
+          name: addressBookItem2.name,
+          chainIds: addressBookItem2.chainIds,
+          createdBy: addressBookItem2.createdBy,
+          lastUpdatedBy: addressBookItem2.lastUpdatedBy,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        }),
+      );
+    });
+
+    it('should throw a NotFoundException if the space does not exist', async () => {
+      const { authPayload } = await createUser();
+      const addressBookItem = addressBookItemBuilder().build();
+
+      await expect(
+        addressBookItemsRepository.deleteByAddress({
+          authPayload,
+          spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+          address: addressBookItem.address,
+        }),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
+
+    it('should throw NotFoundException if the user is not an ADMIN', async () => {
+      const { spaceId } = await createSpaceAsAdmin();
+      const authPayload = await addMemberToSpaceWithStatus(spaceId, 'ACTIVE');
+      const addressBookItem = addressBookItemBuilder().build();
+
+      await expect(
+        addressBookItemsRepository.deleteByAddress({
+          authPayload,
+          spaceId,
+          address: addressBookItem.address,
+        }),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
+  });
+
   // Utility functions
 
   const createSpaceAsAdmin = async (): Promise<{

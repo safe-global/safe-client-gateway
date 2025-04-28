@@ -6,6 +6,7 @@ import { SpaceAddressBookDto } from '@/routes/spaces/entities/space-address-book
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -26,6 +27,7 @@ import {
   UpsertAddressBookItemsDto,
   UpsertAddressBookItemsSchema,
 } from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -71,5 +73,24 @@ export class AddressBooksController {
     addressBookItems: UpsertAddressBookItemsDto,
   ): Promise<SpaceAddressBookDto> {
     return this.service.upsertMany(authPayload, spaceId, addressBookItems);
+  }
+
+  @ApiOkResponse({
+    description: 'Address book item deleted',
+  })
+  @ApiNotFoundResponse({ description: 'User, member or Space not found' })
+  @ApiForbiddenResponse({
+    description: 'Signer address not present or not authorized',
+  })
+  @Delete('/:spaceId/address-book/:address')
+  @UseGuards(AuthGuard)
+  public async deleteByAddress(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+    @Param('address', new ValidationPipe(AddressSchema))
+    address: `0x${string}`,
+  ): Promise<void> {
+    return this.service.deleteByAddress({ authPayload, spaceId, address });
   }
 }
