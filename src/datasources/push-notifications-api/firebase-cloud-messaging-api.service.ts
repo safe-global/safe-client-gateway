@@ -20,8 +20,8 @@ import {
   FirebaseOauth2Token,
   FirebaseOauth2TokenSchema,
 } from '@/datasources/push-notifications-api/entities/firebase-oauth2-token.entity';
-import { get } from 'lodash';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { getFirstAvailable } from '@/domain/common/utils/array';
 
 @Injectable()
 export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
@@ -35,7 +35,10 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
   private static readonly DefaultIosNotificationBody =
     'New Activity with your Safe';
 
-  private static readonly ERROR_ARRAY_PATH = 'data.error_description';
+  private static readonly ERROR_ARRAY_PATH = [
+    'data.error_description',
+    'data.error.message',
+  ];
 
   private readonly baseUrl: string;
   private readonly project: string;
@@ -199,7 +202,7 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
 
   private mapError(error: unknown): unknown {
     if (error instanceof NetworkResponseError) {
-      const errorMessage = get(
+      const errorMessage = getFirstAvailable(
         error,
         FirebaseCloudMessagingApiService.ERROR_ARRAY_PATH,
       );
