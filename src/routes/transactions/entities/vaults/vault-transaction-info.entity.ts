@@ -15,7 +15,7 @@ export class VaultRedeemTransactionInfo extends TransactionInfo {
   value: string;
 
   @ApiProperty()
-  nrr: number;
+  baseNrr: number;
 
   @ApiProperty()
   fee: number;
@@ -37,7 +37,7 @@ export class VaultRedeemTransactionInfo extends TransactionInfo {
 
   constructor(args: {
     value: string;
-    nrr: number;
+    baseNrr: number;
     fee: number;
     tokenInfo: TokenInfo;
     vaultInfo: VaultInfo;
@@ -47,7 +47,7 @@ export class VaultRedeemTransactionInfo extends TransactionInfo {
   }) {
     super(TransactionInfoType.VaultRedeem, null);
     this.value = args.value;
-    this.nrr = args.nrr;
+    this.baseNrr = args.baseNrr;
     this.fee = args.fee;
     this.tokenInfo = args.tokenInfo;
     this.vaultInfo = args.vaultInfo;
@@ -69,7 +69,7 @@ export class VaultDepositTransactionInfo extends VaultRedeemTransactionInfo {
 
   constructor(args: {
     value: string;
-    nrr: number;
+    baseNrr: number;
     fee: number;
     tokenInfo: TokenInfo;
     vaultInfo: VaultInfo;

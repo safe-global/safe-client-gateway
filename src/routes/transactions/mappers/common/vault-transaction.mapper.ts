@@ -63,7 +63,7 @@ export class VaultTransactionMapper {
     return new VaultDepositTransactionInfo({
       value: getNumberString(value),
       fee,
-      nrr: defiVaultStats.nrr,
+      baseNrr: defiVaultStats.nrr,
       tokenInfo: new TokenInfo({ ...token, trusted: true }),
       vaultInfo: this.mapVaultInfo({ deployment, defiVaultStats }),
       currentReward: '0',
@@ -122,7 +122,7 @@ export class VaultTransactionMapper {
     return new VaultRedeemTransactionInfo({
       value: getNumberString(value),
       fee,
-      nrr: defiVaultStats.nrr,
+      baseNrr: defiVaultStats.nrr,
       tokenInfo: new TokenInfo({ ...token, trusted: true }),
       vaultInfo: this.mapVaultInfo({ deployment, defiVaultStats }),
       currentReward: getNumberString(currentReward),

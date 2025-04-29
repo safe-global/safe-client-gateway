@@ -109,7 +109,7 @@ describe('VaultTransactionMapper', () => {
         humanDescription: null,
         value: '10000', // 1_000_000 / 10 ** 2
         fee: deployment.product_fee ? Number(deployment.product_fee) : 0,
-        nrr: defiVaultStats.nrr,
+        baseNrr: defiVaultStats.nrr,
         tokenInfo: new TokenInfo({ ...token, trusted: true }),
         vaultInfo: new VaultInfo({
           address: deployment.address,
@@ -293,7 +293,7 @@ describe('VaultTransactionMapper', () => {
         humanDescription: null,
         value: '10000', // 1_000_000 / 10 ** 2
         fee: deployment.product_fee ? Number(deployment.product_fee) : 0,
-        nrr: defiVaultStats.nrr,
+        baseNrr: defiVaultStats.nrr,
         tokenInfo: new TokenInfo({ ...token, trusted: true }),
         vaultInfo: new VaultInfo({
           address: deployment.address,
