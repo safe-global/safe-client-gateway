@@ -223,8 +223,8 @@ describe('VaultTransactionMapper', () => {
     });
   });
 
-  describe('mapVaultWithdraw', () => {
-    it('should map withdraw info correctly', async () => {
+  describe('mapVaultRedeem', () => {
+    it('should map redeem info correctly', async () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as `0x${string}`;
