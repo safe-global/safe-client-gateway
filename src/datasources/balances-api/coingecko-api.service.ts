@@ -310,12 +310,14 @@ export class CoingeckoApi implements IPricesApi {
         const cacheItem = await this.cacheService.hGet(cacheDir);
         if (cacheItem != null) {
           this.logCacheHit(cacheDir);
+          const assetPrice = AssetPriceSchema.parse(JSON.parse(cacheItem));
+          const price = assetPrice[tokenAddress]?.[args.fiatCode];
           await this.inMemoryCache.set(
             CacheRouter.getMemoryKey(cacheDir),
             cacheItem,
-            this.pricesTtlSeconds * 1_000, // Milliseconds
+            this._getTtl(price, tokenAddress) * 1_000, // Milliseconds
           );
-          result.push(AssetPriceSchema.parse(JSON.parse(cacheItem)));
+          result.push(assetPrice);
         } else {
           this.logCacheMiss(cacheDir);
         }
