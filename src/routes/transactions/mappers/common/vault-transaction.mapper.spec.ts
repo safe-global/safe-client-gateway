@@ -117,6 +117,7 @@ describe('VaultTransactionMapper', () => {
         vaultInfo: new VaultInfo({
           address: deployment.address,
           name: deployment.display_name,
+          description: deployment.description,
           dashboardUri: deployment.external_links?.deposit_url ?? null,
           logoUri: defiVaultStats.protocol_icon,
         }),
@@ -303,6 +304,7 @@ describe('VaultTransactionMapper', () => {
         vaultInfo: new VaultInfo({
           address: deployment.address,
           name: deployment.display_name,
+          description: deployment.description,
           dashboardUri: deployment.external_links?.deposit_url ?? null,
           logoUri: defiVaultStats.protocol_icon,
         }),

@@ -7,6 +7,9 @@ export class VaultInfo {
   @ApiProperty()
   name: string;
 
+  @ApiProperty()
+  description: string;
+
   @ApiPropertyOptional({ type: String, nullable: true })
   dashboardUri: string | null;
 
@@ -16,11 +19,13 @@ export class VaultInfo {
   constructor(args: {
     address: `0x${string}`;
     name: string;
+    description: string;
     dashboardUri: string | null;
     logoUri: string;
   }) {
     this.address = args.address;
     this.name = args.name;
+    this.description = args.description;
     this.dashboardUri = args.dashboardUri;
     this.logoUri = args.logoUri;
   }

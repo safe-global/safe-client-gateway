@@ -173,6 +173,7 @@ export class VaultTransactionMapper {
     return new VaultInfo({
       address: args.deployment.address,
       name: args.deployment.display_name,
+      description: args.deployment.description,
       dashboardUri: args.deployment.external_links?.deposit_url ?? null,
       logoUri: args.defiVaultStats.protocol_icon,
     });

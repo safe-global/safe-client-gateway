@@ -6,7 +6,7 @@ export class VaultExtraReward {
   tokenInfo: TokenInfo;
 
   @ApiProperty()
-  nrr: number | null;
+  nrr: number;
 
   @ApiProperty()
   claimable: string;
@@ -16,7 +16,7 @@ export class VaultExtraReward {
 
   constructor(args: {
     tokenInfo: TokenInfo;
-    nrr: number | null;
+    nrr: number;
     claimable: string;
     claimableNext: string;
   }) {
