@@ -10,8 +10,10 @@ import { TwapOrderTransactionInfo } from '@/routes/transactions/entities/swaps/t
 import { TransactionInfo } from '@/routes/transactions/entities/transaction-info.entity';
 import { TransferTransactionInfo } from '@/routes/transactions/entities/transfer-transaction-info.entity';
 import { SwapTransferTransactionInfo } from '@/routes/transactions/swap-transfer-transaction-info.entity';
-import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
-import { VaultWithdrawTransactionInfo } from '@/routes/transactions/entities/vaults/vault-withdraw-info.entity';
+import {
+  VaultDepositTransactionInfo,
+  VaultWithdrawTransactionInfo,
+} from '@/routes/transactions/entities/vaults/vault-transaction-info.entity';
 
 @ApiExtraModels(
   TransactionInfo,

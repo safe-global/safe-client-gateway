@@ -5,6 +5,8 @@ import type { PooledStakingStats } from '@/datasources/staking-api/entities/pool
 import type { DefiVaultStats } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
 import type { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
+import type { DefiVaultStake } from '@/datasources/staking-api/entities/defi-vault-stake.entity';
+import type { DefiMorphoExtraReward } from '@/datasources/staking-api/entities/defi-morpho-extra-reward.entity';
 
 export const IStakingRepository = Symbol('IStakingRepository');
 
@@ -27,6 +29,17 @@ export interface IStakingRepository {
     chainId: string;
     vault: `0x${string}`;
   }): Promise<DefiVaultStats>;
+
+  getDefiVaultStake(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    vault: `0x${string}`;
+  }): Promise<DefiVaultStake>;
+
+  getDefiMorphoExtraRewards(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): Promise<Array<DefiMorphoExtraReward>>;
 
   getStakes(args: {
     chainId: string;

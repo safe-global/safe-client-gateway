@@ -42,6 +42,10 @@ export class CacheRouter {
     'staking_dedicated_staking_stats';
   private static readonly STAKING_DEFI_VAULT_STATS_KEY =
     'staking_defi_vault_stats';
+  private static readonly STAKING_DEFI_VAULT_STAKES_KEY =
+    'staking_defi_vault_stakes';
+  private static readonly STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY =
+    'staking_defi_morpho_extra_rewards';
   private static readonly STAKING_DEPLOYMENTS_KEY = 'staking_deployments';
   private static readonly STAKING_NETWORK_STATS_KEY = 'staking_network_stats';
   private static readonly STAKING_POOLED_STAKING_STATS_KEY =
@@ -618,6 +622,27 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       `${args.chainId}_${this.STAKING_DEFI_VAULT_STATS_KEY}_${args.vault}`,
+      '',
+    );
+  }
+
+  static getStakingDefiVaultStakesCacheDir(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    vault: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${this.STAKING_DEFI_VAULT_STAKES_KEY}_${args.safeAddress}_${args.vault}`,
+      '',
+    );
+  }
+
+  static getStakingDefiMorphoExtraRewardsCacheDir(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${this.STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY}_${args.safeAddress}`,
       '',
     );
   }

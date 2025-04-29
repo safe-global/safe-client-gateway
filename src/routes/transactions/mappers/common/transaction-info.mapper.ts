@@ -27,10 +27,12 @@ import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transaction
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import { KilnVaultHelper } from '@/routes/transactions/helpers/kiln-vault.helper';
 import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
-import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
+import {
+  VaultDepositTransactionInfo,
+  VaultWithdrawTransactionInfo,
+} from '@/routes/transactions/entities/vaults/vault-transaction-info.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
-import { VaultWithdrawTransactionInfo } from '@/routes/transactions/entities/vaults/vault-withdraw-info.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -390,6 +392,7 @@ export class MultisigTransactionInfoMapper {
         to: vaultDepositTransaction.to,
         assets: vaultDepositTransaction.assets,
         data: vaultDepositTransaction.data,
+        safeAddress: args.transaction.safe,
       });
     } catch (error) {
       this.loggingService.warn(error);
@@ -422,6 +425,7 @@ export class MultisigTransactionInfoMapper {
         to: vaultDepositTransaction.to,
         assets: vaultDepositTransaction.assets,
         data: vaultDepositTransaction.data,
+        safeAddress: args.transaction.safe,
       });
     } catch (error) {
       this.loggingService.warn(error);
