@@ -71,7 +71,7 @@ export class HealthRepository implements IHealthRepository {
 
   private logHealthCheckError(error: unknown): void {
     if (error instanceof HealthCheckError) {
-      this.loggingService.warn(error.message);
+      this.loggingService.error(error.message);
     }
   }
 }
