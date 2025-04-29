@@ -280,7 +280,7 @@ describe('VaultTransactionMapper', () => {
         throw new Error('Token not found');
       });
 
-      const actual = await target.mapWithdrawInfo({
+      const actual = await target.mapRedeemInfo({
         chainId: chain.chainId,
         to: deployment.address,
         assets,
@@ -289,7 +289,7 @@ describe('VaultTransactionMapper', () => {
       });
 
       expect(actual).toEqual({
-        type: TransactionInfoType.VaultWithdraw,
+        type: TransactionInfoType.VaultRedeem,
         humanDescription: null,
         value: '10000', // 1_000_000 / 10 ** 2
         fee: deployment.product_fee ? Number(deployment.product_fee) : 0,
@@ -346,7 +346,7 @@ describe('VaultTransactionMapper', () => {
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
-        target.mapWithdrawInfo({
+        target.mapRedeemInfo({
           chainId: chain.chainId,
           to: deployment.address,
           assets,
@@ -370,7 +370,7 @@ describe('VaultTransactionMapper', () => {
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
-        target.mapWithdrawInfo({
+        target.mapRedeemInfo({
           chainId: chain.chainId,
           to: deployment.address,
           assets,
@@ -397,7 +397,7 @@ describe('VaultTransactionMapper', () => {
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
-        target.mapWithdrawInfo({
+        target.mapRedeemInfo({
           chainId: chain.chainId,
           to: deployment.address,
           assets,

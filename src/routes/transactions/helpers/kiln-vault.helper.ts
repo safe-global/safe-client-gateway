@@ -46,6 +46,31 @@ export class KilnVaultHelper extends Erc4262Decoder {
     };
   }
 
+  public getVaultRedeemTransaction(
+    args: Pick<
+      MultisigTransaction | ModuleTransaction,
+      'to' | 'data' | 'value'
+    >,
+  ): {
+    to?: `0x${string}`;
+    data: `0x${string}`;
+    assets: number;
+  } | null {
+    const decoded = this.getDecodedTransaction({
+      functionName: 'redeem',
+      transaction: args,
+    });
+
+    if (!decoded) {
+      return null;
+    }
+
+    return {
+      ...decoded.transaction,
+      assets: Number(decoded.args[0]),
+    };
+  }
+
   // TODO: Move to generic helper as it replaces a majority of ABI methods
   private getDecodedTransaction<
     TAbi extends typeof erc4626Abi,

@@ -12,7 +12,7 @@ export enum TransactionInfoType {
   Transfer = 'Transfer',
   TwapOrder = 'TwapOrder',
   VaultDeposit = 'VaultDeposit',
-  VaultWithdraw = 'VaultWithdraw',
+  VaultRedeem = 'VaultRedeem',
 }
 
 export class TransactionInfo {

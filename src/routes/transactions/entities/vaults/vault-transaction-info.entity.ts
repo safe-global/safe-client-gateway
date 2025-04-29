@@ -7,9 +7,9 @@ import {
 import { VaultInfo } from '@/routes/transactions/entities/vaults/vault-info.entity';
 import { VaultExtraReward } from '@/routes/transactions/entities/vaults/vault-extra-reward.entity';
 
-export class VaultWithdrawTransactionInfo extends TransactionInfo {
-  @ApiProperty({ enum: [TransactionInfoType.VaultWithdraw] })
-  override type = TransactionInfoType.VaultWithdraw;
+export class VaultRedeemTransactionInfo extends TransactionInfo {
+  @ApiProperty({ enum: [TransactionInfoType.VaultRedeem] })
+  override type = TransactionInfoType.VaultRedeem;
 
   @ApiProperty()
   value: string;
@@ -45,7 +45,7 @@ export class VaultWithdrawTransactionInfo extends TransactionInfo {
     additionalRewardsNrr: number;
     additionalRewards: Array<VaultExtraReward>;
   }) {
-    super(TransactionInfoType.VaultWithdraw, null);
+    super(TransactionInfoType.VaultRedeem, null);
     this.value = args.value;
     this.nrr = args.nrr;
     this.fee = args.fee;
@@ -57,7 +57,7 @@ export class VaultWithdrawTransactionInfo extends TransactionInfo {
   }
 }
 
-export class VaultDepositTransactionInfo extends VaultWithdrawTransactionInfo {
+export class VaultDepositTransactionInfo extends VaultRedeemTransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.VaultDeposit] })
   override type = TransactionInfoType.VaultDeposit;
 
