@@ -52,7 +52,7 @@ export class VaultTransactionMapper {
       }),
     ]);
 
-    const { value, fee, nrr, expectedMonthlyReward, expectedAnnualReward } =
+    const { value, fee, expectedMonthlyReward, expectedAnnualReward } =
       this.calculateFeeAndRewards({
         assets: args.assets,
         token,
@@ -63,12 +63,13 @@ export class VaultTransactionMapper {
     return new VaultDepositTransactionInfo({
       value: getNumberString(value),
       fee,
-      nrr,
+      nrr: defiVaultStats.nrr,
       tokenInfo: new TokenInfo({ ...token, trusted: true }),
       vaultInfo: this.mapVaultInfo({ deployment, defiVaultStats }),
       currentReward: '0',
       expectedMonthlyReward: getNumberString(expectedMonthlyReward),
       expectedAnnualReward: getNumberString(expectedAnnualReward),
+      additionalRewardsNrr: defiVaultStats.additional_rewards_nrr,
       additionalRewards,
     });
   }
@@ -106,7 +107,7 @@ export class VaultTransactionMapper {
       }),
     ]);
 
-    const { value, fee, nrr } = this.calculateFeeAndRewards({
+    const { value, fee } = this.calculateFeeAndRewards({
       assets: args.assets,
       token,
       deployment,
@@ -121,10 +122,11 @@ export class VaultTransactionMapper {
     return new VaultWithdrawTransactionInfo({
       value: getNumberString(value),
       fee,
-      nrr,
+      nrr: defiVaultStats.nrr,
       tokenInfo: new TokenInfo({ ...token, trusted: true }),
       vaultInfo: this.mapVaultInfo({ deployment, defiVaultStats }),
       currentReward: getNumberString(currentReward),
+      additionalRewardsNrr: defiVaultStats.additional_rewards_nrr,
       additionalRewards,
     });
   }
@@ -137,7 +139,6 @@ export class VaultTransactionMapper {
   }): {
     value: number;
     fee: number;
-    nrr: number;
     expectedMonthlyReward: number;
     expectedAnnualReward: number;
   } {
@@ -148,15 +149,12 @@ export class VaultTransactionMapper {
     const fee = args.deployment.product_fee
       ? Number(args.deployment.product_fee)
       : 0;
-    // NRR = GRR * (1 - service_fees)
-    const nrr = args.defiVaultStats.nrr * (1 - fee);
-    const expectedAnnualReward = (nrr / 100) * value;
+    const expectedAnnualReward = (args.defiVaultStats.nrr / 100) * value;
     const expectedMonthlyReward = expectedAnnualReward / 12;
 
     return {
       value,
       fee,
-      nrr,
       expectedMonthlyReward,
       expectedAnnualReward,
     };

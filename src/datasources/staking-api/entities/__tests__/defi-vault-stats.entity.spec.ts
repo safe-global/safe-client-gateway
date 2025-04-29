@@ -219,6 +219,13 @@ describe('DefiVaultStatsSchema', () => {
         path: ['updated_at_block'],
         received: 'undefined',
       },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Required',
+        path: ['additional_rewards_nrr'],
+        received: 'undefined',
+      },
     ]);
   });
 

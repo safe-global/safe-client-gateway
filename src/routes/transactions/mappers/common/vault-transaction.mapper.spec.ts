@@ -65,22 +65,19 @@ describe('VaultTransactionMapper', () => {
         },
         { count: { min: 1, max: 5 } },
       );
-      const additionalRewards = additionalTokens.map(
-        (additionalToken, index) => {
-          return defiVaultAdditionalRewardBuilder()
-            .with('asset', additionalToken.address)
-            .with('nrr', index + 1)
-            .build();
-        },
-      );
+      const additionalRewards = additionalTokens.map((additionalToken) => {
+        return defiVaultAdditionalRewardBuilder()
+          .with('asset', additionalToken.address)
+          .build();
+      });
       const defiVaultStats = defiVaultStatsBuilder()
         .with('asset', token.address)
-        .with('nrr', 10)
         .with('additional_rewards', additionalRewards)
         .build();
       const morphoExtraReward = defiMorphoExtraRewardBuilder()
         .with('asset', additionalRewards[0].asset)
         .build();
+      const expectedAnnualReward = (defiVaultStats.nrr / 100) * 10000;
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getDefiVaultStats.mockResolvedValue(defiVaultStats);
       mockStakingRepository.getDefiMorphoExtraRewards.mockResolvedValue([
@@ -112,7 +109,7 @@ describe('VaultTransactionMapper', () => {
         humanDescription: null,
         value: '10000', // 1_000_000 / 10 ** 2
         fee: deployment.product_fee ? Number(deployment.product_fee) : 0,
-        nrr: 9, // 10 * 0.9
+        nrr: defiVaultStats.nrr,
         tokenInfo: new TokenInfo({ ...token, trusted: true }),
         vaultInfo: new VaultInfo({
           address: deployment.address,
@@ -122,8 +119,9 @@ describe('VaultTransactionMapper', () => {
           logoUri: defiVaultStats.protocol_icon,
         }),
         currentReward: '0',
-        expectedAnnualReward: '900', // 10 * 0.9 / 100 * 1_000_000 / 10 ** 2,
-        expectedMonthlyReward: '75', // 900 / 12,
+        expectedAnnualReward: expectedAnnualReward.toString(),
+        expectedMonthlyReward: (expectedAnnualReward / 12).toString(),
+        additionalRewardsNrr: defiVaultStats.additional_rewards_nrr,
         additionalRewards: additionalRewards.map((additionalReward) => {
           const token = additionalTokens.find((token) => {
             return token.address === additionalReward.asset;
@@ -250,17 +248,13 @@ describe('VaultTransactionMapper', () => {
         },
         { count: { min: 1, max: 5 } },
       );
-      const additionalRewards = additionalTokens.map(
-        (additionalToken, index) => {
-          return defiVaultAdditionalRewardBuilder()
-            .with('asset', additionalToken.address)
-            .with('nrr', index + 1)
-            .build();
-        },
-      );
+      const additionalRewards = additionalTokens.map((additionalToken) => {
+        return defiVaultAdditionalRewardBuilder()
+          .with('asset', additionalToken.address)
+          .build();
+      });
       const defiVaultStats = defiVaultStatsBuilder()
         .with('asset', token.address)
-        .with('nrr', 10)
         .with('additional_rewards', additionalRewards)
         .build();
       const defiVaultStake = defiVaultStakeBuilder().build();
@@ -299,7 +293,7 @@ describe('VaultTransactionMapper', () => {
         humanDescription: null,
         value: '10000', // 1_000_000 / 10 ** 2
         fee: deployment.product_fee ? Number(deployment.product_fee) : 0,
-        nrr: 9, // 10 * 0.9
+        nrr: defiVaultStats.nrr,
         tokenInfo: new TokenInfo({ ...token, trusted: true }),
         vaultInfo: new VaultInfo({
           address: deployment.address,
@@ -312,6 +306,7 @@ describe('VaultTransactionMapper', () => {
           Number(defiVaultStake.current_rewards) /
           10 ** token.decimals
         ).toString(),
+        additionalRewardsNrr: defiVaultStats.additional_rewards_nrr,
         additionalRewards: additionalRewards.map((additionalReward) => {
           const token = additionalTokens.find((token) => {
             return token.address === additionalReward.asset;

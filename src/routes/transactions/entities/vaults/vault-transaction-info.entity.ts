@@ -29,6 +29,9 @@ export class VaultWithdrawTransactionInfo extends TransactionInfo {
   @ApiProperty()
   currentReward: string;
 
+  @ApiProperty()
+  additionalRewardsNrr: number;
+
   @ApiProperty({ type: VaultExtraReward, isArray: true })
   additionalRewards: Array<VaultExtraReward>;
 
@@ -39,6 +42,7 @@ export class VaultWithdrawTransactionInfo extends TransactionInfo {
     tokenInfo: TokenInfo;
     vaultInfo: VaultInfo;
     currentReward: string;
+    additionalRewardsNrr: number;
     additionalRewards: Array<VaultExtraReward>;
   }) {
     super(TransactionInfoType.VaultWithdraw, null);
@@ -48,6 +52,7 @@ export class VaultWithdrawTransactionInfo extends TransactionInfo {
     this.tokenInfo = args.tokenInfo;
     this.vaultInfo = args.vaultInfo;
     this.currentReward = args.currentReward;
+    this.additionalRewardsNrr = args.additionalRewardsNrr;
     this.additionalRewards = args.additionalRewards;
   }
 }
@@ -71,6 +76,7 @@ export class VaultDepositTransactionInfo extends VaultWithdrawTransactionInfo {
     currentReward: string;
     expectedMonthlyReward: string;
     expectedAnnualReward: string;
+    additionalRewardsNrr: number;
     additionalRewards: Array<VaultExtraReward>;
   }) {
     super(args);
