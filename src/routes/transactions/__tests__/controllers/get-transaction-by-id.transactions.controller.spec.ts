@@ -54,10 +54,12 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 
 describe('Get by id - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
@@ -92,6 +94,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
 
@@ -292,7 +295,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             to: expect.objectContaining({ value: contract.address }),
             value: moduleTransaction.value,
             hexData: moduleTransaction.data,
-            dataDecoded: moduleTransaction.dataDecoded,
+            dataDecoded: null,
             operation: Operation.CALL,
             addressInfoIndex: null,
             tokenInfoIndex: null,
@@ -482,6 +485,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         safe,
         signers,
       });
+    const dataDecoded = dataDecodedBuilder().build();
     const rejectionTx = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('nonce', tx.nonce)
@@ -541,6 +545,15 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
+        return Promise.resolve({
+          data: rawify(dataDecoded),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
 
     await request(app.getHttpServer())
       .get(
@@ -562,13 +575,13 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             },
             dataSize: '16',
             value: Number(tx.value).toString(),
-            methodName: tx.dataDecoded?.method,
+            methodName: dataDecoded.method,
             actionCount: null,
             isCancellation: false,
           },
           txData: {
             hexData: tx.data,
-            dataDecoded: tx.dataDecoded,
+            dataDecoded,
             to: {
               value: token.address,
               name: token.name,
@@ -665,6 +678,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         chainId: chain.chainId,
         safe,
       });
+    const dataDecoded = dataDecodedBuilder().build();
     const rejectionTx = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .buildWithConfirmations({
@@ -725,6 +739,15 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
+        return Promise.resolve({
+          data: rawify(dataDecoded),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chain.chainId}/transactions/${tx.safeTxHash.slice(2)}`)
@@ -744,13 +767,13 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             },
             dataSize: '16',
             value: Number(tx.value).toString(),
-            methodName: tx.dataDecoded?.method,
+            methodName: dataDecoded.method,
             actionCount: null,
             isCancellation: false,
           },
           txData: {
             hexData: tx.data,
-            dataDecoded: tx.dataDecoded,
+            dataDecoded,
             to: {
               value: token.address,
               name: token.name,
@@ -849,6 +872,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         signers,
         safe,
       });
+    const dataDecoded = dataDecodedBuilder().build();
     const rejectionTx = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .buildWithConfirmations({
@@ -903,6 +927,15 @@ describe('Get by id - Transactions Controller (Unit)', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
+        return Promise.resolve({
+          data: rawify(dataDecoded),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
 
     await request(app.getHttpServer())
       .get(
@@ -924,13 +957,13 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             },
             dataSize: expect.any(String),
             value: expect.any(String),
-            methodName: tx.dataDecoded?.method,
+            methodName: dataDecoded.method,
             actionCount: null,
             isCancellation: false,
           },
           txData: {
             hexData: tx.data,
-            dataDecoded: tx.dataDecoded,
+            dataDecoded,
             to: {
               value: contract.address,
               name: contract.displayName,
