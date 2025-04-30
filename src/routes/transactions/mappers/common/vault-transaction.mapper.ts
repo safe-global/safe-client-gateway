@@ -149,7 +149,9 @@ export class VaultTransactionMapper {
     const fee = args.deployment.product_fee
       ? Number(args.deployment.product_fee)
       : 0;
-    const expectedAnnualReward = (args.defiVaultStats.nrr / 100) * value;
+    const cumulativeNrr =
+      args.defiVaultStats.nrr + args.defiVaultStats.additional_rewards_nrr;
+    const expectedAnnualReward = (cumulativeNrr / 100) * value;
     const expectedMonthlyReward = expectedAnnualReward / 12;
 
     return {

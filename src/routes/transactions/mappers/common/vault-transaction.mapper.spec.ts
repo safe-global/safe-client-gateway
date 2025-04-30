@@ -48,7 +48,6 @@ describe('VaultTransactionMapper', () => {
       const assets = 1_000_000;
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
-        .with('product_fee', '0.1')
         .with('status', 'active')
         .with('chain_id', Number(chain.chainId))
         .build();
@@ -77,7 +76,9 @@ describe('VaultTransactionMapper', () => {
       const morphoExtraReward = defiMorphoExtraRewardBuilder()
         .with('asset', additionalRewards[0].asset)
         .build();
-      const expectedAnnualReward = (defiVaultStats.nrr / 100) * 10000;
+      const cumulativeNrr =
+        defiVaultStats.nrr + defiVaultStats.additional_rewards_nrr;
+      const expectedAnnualReward = (cumulativeNrr / 100) * 10000;
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getDefiVaultStats.mockResolvedValue(defiVaultStats);
       mockStakingRepository.getDefiMorphoExtraRewards.mockResolvedValue([
@@ -154,7 +155,6 @@ describe('VaultTransactionMapper', () => {
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'pooling')
-        .with('product_fee', '0.1')
         .with('status', 'active')
         .with('chain_id', Number(chain.chainId))
         .build();
@@ -178,7 +178,6 @@ describe('VaultTransactionMapper', () => {
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
-        .with('product_fee', '0.1')
         .with('status', 'disabled')
         .with('chain_id', Number(chain.chainId))
         .build();
@@ -202,7 +201,6 @@ describe('VaultTransactionMapper', () => {
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
-        .with('product_fee', '0.1')
         .with('status', 'active')
         .with(
           'chain_id',
@@ -231,7 +229,6 @@ describe('VaultTransactionMapper', () => {
       const assets = 1_000_000;
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
-        .with('product_fee', '0.1')
         .with('status', 'active')
         .with('chain_id', Number(chain.chainId))
         .build();
@@ -339,7 +336,6 @@ describe('VaultTransactionMapper', () => {
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
-        .with('product_fee', '0.1')
         .with('status', 'disabled')
         .with('chain_id', Number(chain.chainId))
         .build();
@@ -363,7 +359,6 @@ describe('VaultTransactionMapper', () => {
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
-        .with('product_fee', '0.1')
         .with('status', 'disabled')
         .with('chain_id', Number(chain.chainId))
         .build();
