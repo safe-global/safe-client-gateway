@@ -2068,9 +2068,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/config@npm:4.0.0":
-  version: 4.0.0
-  resolution: "@nestjs/config@npm:4.0.0"
+"@nestjs/config@npm:4.0.2":
+  version: 4.0.2
+  resolution: "@nestjs/config@npm:4.0.2"
   dependencies:
     dotenv: "npm:16.4.7"
     dotenv-expand: "npm:12.0.1"
@@ -2078,7 +2078,7 @@ __metadata:
   peerDependencies:
     "@nestjs/common": ^10.0.0 || ^11.0.0
     rxjs: ^7.1.0
-  checksum: 10/e48beb631b18631fa79a358e463e4d97e373159728c095fe0c0dacfded82ca6e36b6a88dc9dc602687a676955b4d81f06aa03b5e56956085a6f9981f338d9a6e
+  checksum: 10/ed0234807a0677c301894cbeafe293226ad8d8279659a542e2f23cd3e40adeb38aecabcb5ace46bcee83437943400d03e0c374a3ca63e2d7a77e80f71088740d
   languageName: node
   linkType: hard
 
@@ -8864,7 +8864,7 @@ __metadata:
     "@nestjs/cache-manager": "npm:3.0.1"
     "@nestjs/cli": "npm:11.0.5"
     "@nestjs/common": "npm:11.0.16"
-    "@nestjs/config": "npm:4.0.0"
+    "@nestjs/config": "npm:4.0.2"
     "@nestjs/core": "npm:11.0.16"
     "@nestjs/platform-express": "npm:11.0.16"
     "@nestjs/schedule": "npm:5.0.1"
