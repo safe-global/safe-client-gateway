@@ -109,14 +109,8 @@ export class StakingRepository implements IStakingRepository {
   }): Promise<DefiVaultStake> {
     const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
     const defiStakes = await stakingApi.getDefiVaultStakes(args);
-    // Cannot be >1 contract deployed at the same address so return first element
-    return (
-      DefiVaultStakesSchema.parse(defiStakes)
-        // Should not return non-matching chain_id but just in case
-        .filter((stake) => {
-          return stake.chain_id === Number(args.chainId);
-        })[0]
-    );
+    // Safe can only have one stake per Vault so return first element
+    return DefiVaultStakesSchema.parse(defiStakes)[0];
   }
 
   public async getDefiMorphoExtraRewards(args: {
@@ -127,13 +121,7 @@ export class StakingRepository implements IStakingRepository {
     const defiMorphoExtraRewards = await stakingApi.getDefiMorphoExtraRewards(
       args.safeAddress,
     );
-    return (
-      DefiMorphoExtraRewardsSchema.parse(defiMorphoExtraRewards)
-        // Should not return non-matching chain_id but just in case
-        .filter((reward) => {
-          return reward.chain_id === Number(args.chainId);
-        })
-    );
+    return DefiMorphoExtraRewardsSchema.parse(defiMorphoExtraRewards);
   }
 
   public async getStakes(args: {
