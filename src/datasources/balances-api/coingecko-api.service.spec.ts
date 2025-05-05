@@ -66,6 +66,7 @@ describe('CoingeckoAPI', () => {
   const coingeckoApiKey = faker.string.sample();
   const pricesTtlSeconds = faker.number.int();
   const nativeCoinPricesTtlSeconds = faker.number.int();
+  const highRefreshRateToken = faker.finance.ethereumAddress().toLowerCase();
   const highRefreshRateTokensTtlSeconds = faker.number.int();
   const notFoundPriceTtlSeconds = faker.number.int();
   const defaultExpirationTimeInSeconds = faker.number.int();
@@ -84,7 +85,7 @@ describe('CoingeckoAPI', () => {
     );
     fakeConfigurationService.set(
       `balances.providers.safe.prices.highRefreshRateTokens`,
-      [],
+      [highRefreshRateToken],
     );
     fakeConfigurationService.set(
       'balances.providers.safe.prices.pricesTtlSeconds',
@@ -545,7 +546,7 @@ describe('CoingeckoAPI', () => {
     const firstTokenAddress = faker.finance.ethereumAddress();
     const firstPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const firstChange = faker.number.float({ min: -1, max: 1 });
-    const secondTokenAddress = faker.finance.ethereumAddress();
+    const secondTokenAddress = highRefreshRateToken;
     const secondPrice = faker.number.float({ min: 0.01, multipleOf: 0.01 });
     const secondChange = faker.number.float({ min: -1, max: 1 });
     const thirdTokenAddress = faker.finance.ethereumAddress();
@@ -673,7 +674,7 @@ describe('CoingeckoAPI', () => {
           [`${lowerCaseFiatCode}_24h_change`]: secondChange,
         },
       }),
-      pricesTtlSeconds * 1_000, // milliseconds
+      highRefreshRateTokensTtlSeconds * 1_000, // milliseconds
     );
     // mockCacheService.hGet should have been called 2 times, once for the network and once for the cache
     expect(mockCacheService.hGet).toHaveBeenCalledTimes(2);
