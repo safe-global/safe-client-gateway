@@ -25,8 +25,17 @@ function queueConsumerFactory(
     configurationService.getOrThrow<string>('amqp.exchange.mode');
   const queue = configurationService.getOrThrow<string>('amqp.queue');
   const prefetch = configurationService.getOrThrow<number>('amqp.prefetch');
+  const heartbeatIntervalInSeconds = configurationService.getOrThrow<number>(
+    'amqp.heartbeatIntervalInSeconds',
+  );
+  const reconnectTimeInSeconds = configurationService.getOrThrow<number>(
+    'amqp.reconnectTimeInSeconds',
+  );
 
-  const connection = amqp.connect(amqpUrl);
+  const connection = amqp.connect(amqpUrl, {
+    heartbeatIntervalInSeconds,
+    reconnectTimeInSeconds,
+  });
   const channel = connection.createChannel({
     json: true,
     setup: async (ch: Channel) => {

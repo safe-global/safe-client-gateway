@@ -59,6 +59,10 @@ export default () => ({
       process.env.AMQP_PREFETCH != null
         ? parseInt(process.env.AMQP_PREFETCH)
         : 100,
+    heartbeatIntervalInSeconds: +(
+      process.env.AMQP_HEARBEAT_INTERVAL_SECONDS || 60
+    ),
+    reconnectTimeInSeconds: +(process.env.AMQP_RECONNECT_TIME_SECONDS || 5),
   },
   application: {
     isProduction: process.env.CGW_ENV === 'production',

@@ -33,6 +33,8 @@ export default (): ReturnType<typeof configuration> => ({
     exchange: { name: faker.string.sample(), mode: faker.string.sample() },
     queue: faker.string.sample(),
     prefetch: faker.number.int(),
+    heartbeatIntervalInSeconds: 60,
+    reconnectTimeInSeconds: 5,
   },
   application: {
     isProduction: faker.datatype.boolean(),
