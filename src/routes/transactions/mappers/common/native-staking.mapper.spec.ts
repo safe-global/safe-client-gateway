@@ -509,7 +509,7 @@ describe('NativeStakingMapper', () => {
     });
   });
 
-  describe('mapWithdrawInfo', () => {
+  describe('mapRedeemInfo', () => {
     it('should map a proposed native staking withdraw info', async () => {
       const chain = chainBuilder().build();
       const deployment = deploymentBuilder()

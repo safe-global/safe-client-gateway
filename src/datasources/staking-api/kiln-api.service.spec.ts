@@ -6,6 +6,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { dedicatedStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
+import { defiMorphoExtraRewardBuilder } from '@/datasources/staking-api/entities/__tests__/defi-morpho-extra-reward.entity.builder';
 import { defiVaultStatsBuilder } from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
@@ -469,6 +470,252 @@ describe('KilnApi', () => {
           },
           params: {
             vaults: `${defiVaultStats.chain}_${defiVaultStats.vault}`,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+  });
+
+  describe('getDefiVaultStakes', () => {
+    it('should return the defi vault stakes', async () => {
+      const chainIds = {
+        eth: 1,
+        arb: 42161,
+        bsc: 56,
+        matic: 137,
+        op: 10,
+      };
+      const [chain, chain_id] = faker.helpers.arrayElement(
+        Object.entries(chainIds) as Array<[keyof typeof chainIds, number]>,
+      );
+      // Ensure target is created with supported chain
+      createTarget(chain_id.toString());
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const defiVaultStake = defiVaultStatsBuilder()
+        .with('chain', chain)
+        .with('chain_id', chain_id)
+        .build();
+      dataSource.get.mockResolvedValue(
+        rawify({
+          status: 200,
+          // Note: Kiln always return { data: T }
+          data: [defiVaultStake],
+        }),
+      );
+
+      const actual = await target.getDefiVaultStakes({
+        safeAddress,
+        vault: defiVaultStake.vault,
+      });
+
+      expect(actual).toStrictEqual([defiVaultStake]);
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: new CacheDir(
+          `${defiVaultStake.chain_id}_staking_defi_vault_stakes_${safeAddress}_${defiVaultStake.vault}`,
+          '',
+        ),
+        url: `${baseUrl}/v1/defi/stakes`,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            vaults: `${chain}_${defiVaultStake.vault}`,
+            wallets: safeAddress,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+
+    it('should throw if the chainId is not supported by Kiln', async () => {
+      // Not Ethereum (1) or Optimism (10)
+      const chainId = faker.number.int({ min: 2, max: 9 });
+      // Ensure target is created with unsupported chain
+      createTarget(chainId.toString());
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const defiVaultStake = defiVaultStatsBuilder()
+        .with('chain_id', chainId)
+        .build();
+
+      await expect(
+        target.getDefiVaultStakes({
+          safeAddress,
+          vault: defiVaultStake.vault,
+        }),
+      ).rejects.toThrow();
+
+      expect(dataSource.get).not.toHaveBeenCalled();
+    });
+
+    it('should forward errors', async () => {
+      const chainIds = {
+        eth: 1,
+        arb: 42161,
+        bsc: 56,
+        matic: 137,
+        op: 10,
+      };
+      const [chain, chain_id] = faker.helpers.arrayElement(
+        Object.entries(chainIds) as Array<[keyof typeof chainIds, number]>,
+      );
+      // Ensure target is created with supported chain
+      createTarget(chain_id.toString());
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const defiVaultStake = defiVaultStatsBuilder()
+        .with('chain', chain)
+        .with('chain_id', chain_id)
+        .build();
+      const getDefiVaultsUrl = `${baseUrl}/v1/defi/stakes`;
+      const errorMessage = faker.lorem.sentence();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      dataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getDefiVaultsUrl),
+          {
+            status: statusCode,
+          } as Response,
+          new Error(errorMessage),
+        ),
+      );
+
+      await expect(
+        target.getDefiVaultStakes({
+          safeAddress,
+          vault: defiVaultStake.vault,
+        }),
+      ).rejects.toThrow(expected);
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: new CacheDir(
+          `${defiVaultStake.chain_id}_staking_defi_vault_stakes_${safeAddress}_${defiVaultStake.vault}`,
+          '',
+        ),
+        url: `${baseUrl}/v1/defi/stakes`,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            vaults: `${chain}_${defiVaultStake.vault}`,
+            wallets: safeAddress,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+  });
+
+  describe('getDefiMorphoExtraRewards', () => {
+    it('should return the defi Morpho extra rewards', async () => {
+      const chainIds = {
+        eth: 1,
+        arb: 42161,
+        bsc: 56,
+        matic: 137,
+        op: 10,
+      };
+      const [, chain_id] = faker.helpers.arrayElement(
+        Object.entries(chainIds) as Array<[keyof typeof chainIds, number]>,
+      );
+      // Ensure target is created with supported chain
+      createTarget(chain_id.toString());
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const defiMorphoExtraRewards = faker.helpers.multiple(
+        () => {
+          return defiMorphoExtraRewardBuilder().build();
+        },
+        { count: { min: 1, max: 5 } },
+      );
+      dataSource.get.mockResolvedValue(
+        rawify({
+          status: 200,
+          // Note: Kiln always return { data: T }
+          data: defiMorphoExtraRewards,
+        }),
+      );
+
+      const actual = await target.getDefiMorphoExtraRewards(safeAddress);
+
+      expect(actual).toStrictEqual(defiMorphoExtraRewards);
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: new CacheDir(
+          `${chain_id}_staking_defi_morpho_extra_rewards_${safeAddress}`,
+          '',
+        ),
+        url: `${baseUrl}/v1/defi/extra-rewards/morpho`,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            wallets: safeAddress,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+
+    it('should forward errors', async () => {
+      const chainIds = {
+        eth: 1,
+        arb: 42161,
+        bsc: 56,
+        matic: 137,
+        op: 10,
+      };
+      const [, chain_id] = faker.helpers.arrayElement(
+        Object.entries(chainIds) as Array<[keyof typeof chainIds, number]>,
+      );
+      // Ensure target is created with supported chain
+      createTarget(chain_id.toString());
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const getDefMorphoExtraRewardsUrl = `${baseUrl}/v1/defi/extra-rewards/morpho`;
+      const errorMessage = faker.lorem.sentence();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      dataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getDefMorphoExtraRewardsUrl),
+          {
+            status: statusCode,
+          } as Response,
+          new Error(errorMessage),
+        ),
+      );
+
+      await expect(
+        target.getDefiMorphoExtraRewards(safeAddress),
+      ).rejects.toThrow(expected);
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: new CacheDir(
+          `${chain_id}_staking_defi_morpho_extra_rewards_${safeAddress}`,
+          '',
+        ),
+        url: `${baseUrl}/v1/defi/extra-rewards/morpho`,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            wallets: safeAddress,
           },
         },
         expireTimeSeconds: stakingExpirationTimeInSeconds,

@@ -4,6 +4,8 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { DedicatedStakingStats } from '@/datasources/staking-api/entities/dedicated-staking-stats.entity';
+import type { DefiMorphoExtraReward } from '@/datasources/staking-api/entities/defi-morpho-extra-reward.entity';
+import type { DefiVaultStake } from '@/datasources/staking-api/entities/defi-vault-stake.entity';
 import type {
   DefiVaultStats,
   DefiVaultStatsChains,
@@ -157,6 +159,65 @@ export class KilnApi implements IStakingApi {
         },
         params: {
           vaults: this.getDefiVaultIdentifier(vault),
+        },
+      },
+      notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+      expireTimeSeconds: this.stakingExpirationTimeInSeconds,
+    });
+  }
+
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
+  async getDefiVaultStakes(args: {
+    safeAddress: `0x${string}`;
+    vault: `0x${string}`;
+  }): Promise<Raw<Array<DefiVaultStake>>> {
+    const url = `${this.baseUrl}/v1/defi/stakes`;
+    const cacheDir = CacheRouter.getStakingDefiVaultStakesCacheDir({
+      chainId: this.chainId,
+      safeAddress: args.safeAddress,
+      vault: args.vault,
+    });
+    return await this.get<{
+      data: Array<DefiVaultStake>;
+    }>({
+      cacheDir,
+      url,
+      networkRequest: {
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        params: {
+          vaults: this.getDefiVaultIdentifier(args.vault),
+          wallets: args.safeAddress,
+        },
+      },
+      notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+      expireTimeSeconds: this.stakingExpirationTimeInSeconds,
+    });
+  }
+
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
+  async getDefiMorphoExtraRewards(
+    safeAddress: `0x${string}`,
+  ): Promise<Raw<Array<DefiMorphoExtraReward>>> {
+    const url = `${this.baseUrl}/v1/defi/extra-rewards/morpho`;
+    const cacheDir = CacheRouter.getStakingDefiMorphoExtraRewardsCacheDir({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    return await this.get<{
+      data: Array<DefiMorphoExtraReward>;
+    }>({
+      cacheDir,
+      url,
+      networkRequest: {
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        params: {
+          wallets: safeAddress,
         },
       },
       notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,

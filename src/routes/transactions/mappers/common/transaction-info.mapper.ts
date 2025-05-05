@@ -27,7 +27,10 @@ import { NativeStakingValidatorsExitTransactionInfo } from '@/routes/transaction
 import { NativeStakingWithdrawTransactionInfo } from '@/routes/transactions/entities/staking/native-staking-withdraw-info.entity';
 import { KilnVaultHelper } from '@/routes/transactions/helpers/kiln-vault.helper';
 import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
-import { VaultDepositTransactionInfo } from '@/routes/transactions/entities/vaults/vault-deposit-info.entity';
+import {
+  VaultDepositTransactionInfo,
+  VaultRedeemTransactionInfo,
+} from '@/routes/transactions/entities/vaults/vault-transaction-info.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
@@ -138,6 +141,15 @@ export class MultisigTransactionInfoMapper {
       // If the transaction is a vault deposit, we return it immediately
       if (vaultDeposit) {
         return vaultDeposit;
+      }
+
+      const vaultRedeem = await this.mapVaultRedeem({
+        chainId,
+        transaction,
+      });
+      // If the transaction is a vault redeem, we return it immediately
+      if (vaultRedeem) {
+        return vaultRedeem;
       }
     }
 
@@ -380,6 +392,40 @@ export class MultisigTransactionInfoMapper {
         to: vaultDepositTransaction.to,
         assets: vaultDepositTransaction.assets,
         data: vaultDepositTransaction.data,
+        safeAddress: args.transaction.safe,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapVaultRedeem(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+  }): Promise<VaultRedeemTransactionInfo | null> {
+    if (!args.transaction?.data || !args.transaction.value) {
+      return null;
+    }
+
+    const vaultRedeemTransaction =
+      this.kilnVaultHelper.getVaultRedeemTransaction({
+        to: args.transaction.to,
+        data: args.transaction.data,
+        value: args.transaction.value,
+      });
+
+    if (!vaultRedeemTransaction?.to) {
+      return null;
+    }
+
+    try {
+      return await this.vaultTransactionMapper.mapRedeemInfo({
+        chainId: args.chainId,
+        to: vaultRedeemTransaction.to,
+        assets: vaultRedeemTransaction.assets,
+        data: vaultRedeemTransaction.data,
+        safeAddress: args.transaction.safe,
       });
     } catch (error) {
       this.loggingService.warn(error);

@@ -43,6 +43,7 @@ export const DefiVaultStatsSchema = z.object({
   chain_id: z.number(),
   asset_decimals: z.number(),
   updated_at_block: z.number(),
+  additional_rewards_nrr: z.number(),
   additional_rewards: z
     .array(DefiVaultStatsAdditionalRewardSchema)
     .nullish()
