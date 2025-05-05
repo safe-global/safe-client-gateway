@@ -155,6 +155,10 @@ export default () => ({
       apiKey: process.env.INFURA_API_KEY,
     },
   },
+  bridge: {
+    baseUri: 'https://li.quest',
+    apiKey: process.env.BRIDGE_API_KEY,
+  },
   contracts: {
     trustedForDelegateCall: {
       maxSequentialPages: parseInt(
