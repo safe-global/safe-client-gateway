@@ -10,7 +10,7 @@ import {
 import type { Raw } from '@/validation/entities/raw.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { sortObject } from '@/domain/common/utils/utils';
+import { hashString } from '@/domain/common/utils/utils';
 
 export type FetchClient = <T>(
   url: string,
@@ -124,20 +124,11 @@ function getCacheKey(url: string, requestInit?: RequestInit): string {
     return url;
   }
 
-  const sortedInit = sortRequestInit(requestInit);
-  return `${url}_${JSON.stringify(sortedInit)}`;
-}
-
-function sortRequestInit(requestInit: RequestInit): RequestInit {
-  if (typeof requestInit.body !== 'string') {
-    return sortObject(requestInit);
-  }
-
-  const sortedBody = sortObject(JSON.parse(requestInit.body));
-  return sortObject({
-    ...requestInit,
-    body: JSON.stringify(sortedBody),
-  });
+  // JSON.stringify does not produce a stable key but initially
+  // use a naive implementation for testing the implementation
+  // TODO: Revisit this and use a more stable key
+  const key = JSON.stringify({ url, ...requestInit });
+  return hashString(key);
 }
 
 /**

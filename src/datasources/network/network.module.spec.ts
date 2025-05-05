@@ -19,6 +19,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { hashString } from '@/domain/common/utils/utils';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
@@ -152,16 +153,17 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
+      const key = hashString(JSON.stringify({ url, ...options }));
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
         url,
-        key: `${url}_${JSON.stringify(options)}`,
+        key,
       });
       expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
         type: 'EXTERNAL_REQUEST_CACHE_HIT',
         url,
-        key: `${url}_${JSON.stringify(options)}`,
+        key,
       });
     });
 
@@ -178,11 +180,7 @@ describe('NetworkModule', () => {
         const url = faker.internet.url({ appendSlash: false });
         const options = {
           method,
-          body: JSON.stringify({
-            z: 1,
-            a: [1, { b: 2, a: 1 }],
-            m: { c: 3, b: 2 },
-          }),
+          body: JSON.stringify({ example: 'data' }),
           headers: {
             'Content-Type': 'application/json',
           },
@@ -193,36 +191,17 @@ describe('NetworkModule', () => {
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
 
+        const key = hashString(JSON.stringify({ url, ...options }));
         expect(loggingService.debug).toHaveBeenCalledTimes(2);
         expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
           type: 'EXTERNAL_REQUEST_CACHE_MISS',
           url,
-          key: `${url}_${JSON.stringify({
-            body: JSON.stringify({
-              a: [1, { a: 1, b: 2 }],
-              m: { b: 2, c: 3 },
-              z: 1,
-            }),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            method,
-          })}`,
+          key,
         });
         expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
           type: 'EXTERNAL_REQUEST_CACHE_HIT',
           url,
-          key: `${url}_${JSON.stringify({
-            body: JSON.stringify({
-              a: [1, { a: 1, b: 2 }],
-              m: { b: 2, c: 3 },
-              z: 1,
-            }),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            method,
-          })}`,
+          key,
         });
       },
     );
@@ -243,16 +222,17 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
+      const key = hashString(JSON.stringify({ url, ...options }));
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
         url,
-        key: `${url}_${JSON.stringify(options)}`,
+        key,
       });
       expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
         url,
-        key: `${url}_${JSON.stringify(options)}`,
+        key,
       });
     });
 
@@ -280,26 +260,27 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
+      const key = hashString(JSON.stringify({ url, ...options }));
       expect(loggingService.debug).toHaveBeenCalledTimes(4);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
         url,
-        key: `${url}_${JSON.stringify(options)}`,
+        key,
       });
       expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
         type: 'EXTERNAL_REQUEST_CACHE_ERROR',
         url,
-        key: `${url}_${JSON.stringify(options)}`,
+        key,
       });
       expect(loggingService.debug).toHaveBeenNthCalledWith(3, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
         url,
-        key: `${url}_${JSON.stringify(options)}`,
+        key,
       });
       expect(loggingService.debug).toHaveBeenNthCalledWith(4, {
         type: 'EXTERNAL_REQUEST_CACHE_ERROR',
         url,
-        key: `${url}_${JSON.stringify(options)}`,
+        key,
       });
     });
   });
