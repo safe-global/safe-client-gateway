@@ -15,12 +15,8 @@ export function amqpClientFactory(queue?: string): {
     AMQP_RECONNECT_TIME_SECONDS,
   } = process.env;
 
-  const heartbeatIntervalInSeconds = AMQP_HEARBEAT_INTERVAL_SECONDS
-    ? +AMQP_HEARBEAT_INTERVAL_SECONDS
-    : undefined;
-  const reconnectTimeInSeconds = AMQP_RECONNECT_TIME_SECONDS
-    ? +AMQP_RECONNECT_TIME_SECONDS
-    : undefined;
+  const heartbeatIntervalInSeconds = +(AMQP_HEARBEAT_INTERVAL_SECONDS || 60);
+  const reconnectTimeInSeconds = +(AMQP_RECONNECT_TIME_SECONDS || 5);
 
   if (!AMQP_URL || !AMQP_EXCHANGE_NAME || !AMQP_EXCHANGE_MODE || !AMQP_QUEUE) {
     throw new Error('Invalid amqpClientFactory configuration');
