@@ -99,7 +99,10 @@ describe('KilnApi', () => {
       expect(actual).toBe(deployments);
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_deployments', ''),
+        cacheDir: new CacheDir(
+          `staking_deployments_${baseUrl}/v1/deployments`,
+          '',
+        ),
         url: `${baseUrl}/v1/deployments`,
         networkRequest: {
           headers: {
@@ -132,7 +135,10 @@ describe('KilnApi', () => {
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_deployments', ''),
+        cacheDir: new CacheDir(
+          `staking_deployments_${baseUrl}/v1/deployments`,
+          '',
+        ),
         url: `${baseUrl}/v1/deployments`,
         networkRequest: {
           headers: {
