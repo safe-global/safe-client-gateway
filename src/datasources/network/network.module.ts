@@ -121,7 +121,7 @@ function createCachedRequestFunction(
 
 function getCacheKey(url: string, requestInit?: RequestInit): string {
   if (!requestInit) {
-    return url;
+    return hashString(url);
   }
 
   // JSON.stringify does not produce a stable key but initially
