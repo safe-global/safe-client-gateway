@@ -596,8 +596,10 @@ export class CacheRouter {
     );
   }
 
-  static getStakingDeploymentsCacheDir(): CacheDir {
-    return new CacheDir(this.STAKING_DEPLOYMENTS_KEY, '');
+  // TODO: remove passing url and the associated configuration once Base is
+  // fully migrated to the Kiln mainnet API.
+  static getStakingDeploymentsCacheDir(url: string): CacheDir {
+    return new CacheDir(`${this.STAKING_DEPLOYMENTS_KEY}_${url}`, '');
   }
 
   static getStakingNetworkStatsCacheDir(): CacheDir {

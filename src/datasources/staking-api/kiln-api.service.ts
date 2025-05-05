@@ -55,7 +55,9 @@ export class KilnApi implements IStakingApi {
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getDeployments(): Promise<Raw<Array<Deployment>>> {
     const url = `${this.baseUrl}/v1/deployments`;
-    const cacheDir = CacheRouter.getStakingDeploymentsCacheDir();
+    // TODO: remove passing url and the associated configuration once Base is
+    // fully migrated to the Kiln mainnet API.
+    const cacheDir = CacheRouter.getStakingDeploymentsCacheDir(url);
     return await this.get<{
       data: Array<Deployment>;
     }>({
