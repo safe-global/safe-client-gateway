@@ -19,7 +19,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { hashString } from '@/domain/common/utils/utils';
+import { hashSha1 } from '@/domain/common/utils/utils';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
@@ -153,7 +153,7 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
-      const key = hashString(JSON.stringify({ url, ...options }));
+      const key = hashSha1(JSON.stringify({ url, ...options }));
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -191,7 +191,7 @@ describe('NetworkModule', () => {
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
 
-        const key = hashString(JSON.stringify({ url, ...options }));
+        const key = hashSha1(JSON.stringify({ url, ...options }));
         expect(loggingService.debug).toHaveBeenCalledTimes(2);
         expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
           type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -222,7 +222,7 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
-      const key = hashString(JSON.stringify({ url, ...options }));
+      const key = hashSha1(JSON.stringify({ url, ...options }));
       expect(loggingService.debug).toHaveBeenCalledTimes(2);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',
@@ -260,7 +260,7 @@ describe('NetworkModule', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(2);
 
-      const key = hashString(JSON.stringify({ url, ...options }));
+      const key = hashSha1(JSON.stringify({ url, ...options }));
       expect(loggingService.debug).toHaveBeenCalledTimes(4);
       expect(loggingService.debug).toHaveBeenNthCalledWith(1, {
         type: 'EXTERNAL_REQUEST_CACHE_MISS',

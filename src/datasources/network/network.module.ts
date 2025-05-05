@@ -10,7 +10,7 @@ import {
 import type { Raw } from '@/validation/entities/raw.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
-import { hashString } from '@/domain/common/utils/utils';
+import { hashSha1 } from '@/domain/common/utils/utils';
 
 export type FetchClient = <T>(
   url: string,
@@ -121,14 +121,14 @@ function createCachedRequestFunction(
 
 function getCacheKey(url: string, requestInit?: RequestInit): string {
   if (!requestInit) {
-    return hashString(url);
+    return url;
   }
 
   // JSON.stringify does not produce a stable key but initially
   // use a naive implementation for testing the implementation
   // TODO: Revisit this and use a more stable key
   const key = JSON.stringify({ url, ...requestInit });
-  return hashString(key);
+  return hashSha1(key);
 }
 
 /**
