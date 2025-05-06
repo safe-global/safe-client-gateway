@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { TokenSchema } from '@/domain/bridge/entities/token.entity';
+import { FeeCostSchema } from '@/domain/bridge/entities/fee-cost.entity';
 
 // Adapted from StatusResponse of @lifi/types
 // @see https://github.com/lifinance/types/blob/f87f67730de3aa22e63fe2b4337115d2998c76ea/src/api.ts#L535
@@ -79,19 +81,6 @@ export const BaseTransactionInfoSchema = z.object({
 
 export type BaseTransactionInfo = z.infer<typeof BaseTransactionInfoSchema>;
 
-export const TokenSchema = z.object({
-  chainId: z.coerce.string(),
-  address: AddressSchema,
-  symbol: z.string(),
-  decimals: z.number(),
-  name: z.string(),
-  coinKey: z.string().nullish().default(null),
-  logoURI: z.string().nullish().default(null),
-  priceUSD: z.string(),
-});
-
-export type Token = z.infer<typeof TokenSchema>;
-
 export const SetupToolDetailsSchema = z.object({
   key: z.string(),
   name: z.string(),
@@ -135,18 +124,6 @@ export const ExtendedTransactionInfoSchema = BaseTransactionInfoSchema.extend({
 export type ExtendedTransactionInfo = z.infer<
   typeof ExtendedTransactionInfoSchema
 >;
-
-export const FeeCostSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  percentage: z.string(),
-  token: TokenSchema,
-  amount: z.string(),
-  amountUSD: z.string(),
-  included: z.boolean(),
-});
-
-export type FeeCost = z.infer<typeof FeeCostSchema>;
 
 export const TransferMetadataSchema = z.object({
   integrator: z.string(),

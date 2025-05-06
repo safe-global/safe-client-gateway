@@ -6,13 +6,11 @@ import {
   bridgeStatusBuilder,
   extendedTransactionInfoBuilder,
   failedStatusDataBuilder,
-  feeCostBuilder,
   fullStatusDataBuilder,
   includedStepBuilder,
   pendingReceivingInfoBuilder,
   setupToolDetailsBuilder,
   statusDataBuilder,
-  tokenBuilder,
   transferMetadataBuilder,
 } from '@/domain/bridge/entities/__tests__/bridge-status.builder';
 import {
@@ -21,14 +19,12 @@ import {
   BridgeStatusSchema,
   ExtendedTransactionInfoSchema,
   FailedStatusDataSchema,
-  FeeCostSchema,
   FullStatusDataSchema,
   IncludedStepSchema,
   PendingReceivingInfoSchema,
   SetupToolDetailsSchema,
   StatusDataSchema,
   StatusMessages,
-  TokenSchema,
   TransferMetadataSchema,
 } from '@/domain/bridge/entities/bridge-status.entity';
 
@@ -85,54 +81,6 @@ describe('BridgeStatusSchema', () => {
 
       expect(result.success && result.data.chainId).toBe(String(chainId));
     });
-  });
-
-  describe('TokenSchema', () => {
-    it('should validate a Token', () => {
-      const token = tokenBuilder().build();
-
-      const result = TokenSchema.safeParse(token);
-
-      expect(result.success).toBe(true);
-    });
-
-    it('should coerce chainId to string', () => {
-      const chainId = faker.number.int();
-      const token = tokenBuilder()
-        .with('chainId', chainId as unknown as string)
-        .build();
-
-      const result = TokenSchema.safeParse(token);
-
-      expect(result.success && result.data.chainId).toBe(String(chainId));
-    });
-
-    it('should checksum address', () => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const token = tokenBuilder()
-        .with('address', nonChecksummedAddress as `0x${string}`)
-        .build();
-
-      const result = TokenSchema.safeParse(token);
-
-      expect(result.success && result.data.address).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    });
-
-    it.each(['coinKey' as const, 'logoURI' as const])(
-      '%s should default to null',
-      (key) => {
-        const token = tokenBuilder().build();
-        delete token[key];
-
-        const result = TokenSchema.safeParse(token);
-
-        expect(result.success && result.data[key]).toBe(null);
-      },
-    );
   });
 
   describe('SetupToolDetailsSchema', () => {
@@ -213,16 +161,6 @@ describe('BridgeStatusSchema', () => {
       );
 
       expect(result.success && result.data[key]).toBe(null);
-    });
-  });
-
-  describe('FeeCostSchema', () => {
-    it('should validate a FeeCost', () => {
-      const feeCost = feeCostBuilder().build();
-
-      const result = FeeCostSchema.safeParse(feeCost);
-
-      expect(result.success).toBe(true);
     });
   });
 
