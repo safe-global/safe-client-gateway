@@ -8,7 +8,7 @@ import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
-export class SpacesRateLimitGuard extends RateLimitGuard {
+export class SpacesAddressBookRateLimitGuard extends RateLimitGuard {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
@@ -16,9 +16,11 @@ export class SpacesRateLimitGuard extends RateLimitGuard {
     @Inject(LoggingService) loggingService: ILoggingService,
   ) {
     const rateLimits = {
-      max: configurationService.getOrThrow<number>('spaces.rateLimit.max'),
+      max: configurationService.getOrThrow<number>(
+        'spaces.rateLimit.addressBookUpsertion.max',
+      ),
       windowSeconds: configurationService.getOrThrow<number>(
-        'spaces.rateLimit.windowSeconds',
+        'spaces.rateLimit.addressBookUpsertion.windowSeconds',
       ),
     };
     super(cacheService, loggingService, rateLimits);

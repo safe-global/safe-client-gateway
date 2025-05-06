@@ -15,6 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -28,6 +29,7 @@ import {
   UpsertAddressBookItemsSchema,
 } from '@/routes/spaces/entities/upsert-address-book-items.dto.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { SpacesAddressBookRateLimitGuard } from '@/routes/spaces/guards/spaces-address-book-rate-limit.guard';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -63,7 +65,9 @@ export class AddressBooksController {
   @ApiNotFoundResponse({ description: 'User, member or space not found' })
   @ApiUnauthorizedResponse({ description: 'Signer address not provided' })
   @ApiForbiddenResponse({ description: 'Signer not authorized.' })
+  @ApiBadRequestResponse({ description: 'Address book items limit exceeded.' })
   @Put('/:spaceId/address-book')
+  @UseGuards(SpacesAddressBookRateLimitGuard)
   @UseGuards(AuthGuard)
   public async upsertAddressBookItems(
     @Auth() authPayload: AuthPayload,

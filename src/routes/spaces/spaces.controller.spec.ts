@@ -56,7 +56,13 @@ describe('SpacesController', () => {
         maxSpaceCreationsPerUser:
           args?.maxSpaceCreationsPerUser ??
           defaultConfiguration.spaces.maxSpaceCreationsPerUser,
-        rateLimit: args?.rateLimit ?? defaultConfiguration.spaces.rateLimit,
+        rateLimit: {
+          ...defaultConfiguration.spaces.rateLimit,
+          creation: {
+            ...(args?.rateLimit ??
+              defaultConfiguration.spaces.rateLimit.creation),
+          },
+        },
       },
       features: {
         ...defaultConfiguration.features,
