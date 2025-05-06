@@ -8,6 +8,9 @@ import {
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { hashSha1 } from '@/domain/common/utils/utils';
 
 export type FetchClient = <T>(
   url: string,
@@ -20,11 +23,25 @@ export type FetchClient = <T>(
  */
 function fetchClientFactory(
   configurationService: IConfigurationService,
+  loggingService: ILoggingService,
 ): FetchClient {
+  const cacheInFlightRequests = configurationService.getOrThrow<boolean>(
+    'features.cacheInFlightRequests',
+  );
   const requestTimeout = configurationService.getOrThrow<number>(
     'httpClient.requestTimeout',
   );
 
+  const request = createRequestFunction(requestTimeout);
+
+  if (!cacheInFlightRequests) {
+    return request;
+  }
+
+  return createCachedRequestFunction(request, loggingService);
+}
+
+function createRequestFunction(requestTimeout: number) {
   return async <T>(
     url: string,
     options: RequestInit,
@@ -57,6 +74,63 @@ function fetchClientFactory(
   };
 }
 
+function createCachedRequestFunction(
+  request: <T>(
+    url: string,
+    options: RequestInit,
+  ) => Promise<NetworkResponse<T>>,
+  loggingService: ILoggingService,
+) {
+  const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
+
+  return async <T>(
+    url: string,
+    options: RequestInit,
+  ): Promise<NetworkResponse<T>> => {
+    const key = getCacheKey(url, options);
+    if (key in cache) {
+      loggingService.debug({
+        type: LogType.ExternalRequestCacheHit,
+        url,
+        key,
+      });
+    } else {
+      loggingService.debug({
+        type: LogType.ExternalRequestCacheMiss,
+        url,
+        key,
+      });
+
+      cache[key] = request(url, options)
+        .catch((err) => {
+          loggingService.debug({
+            type: LogType.ExternalRequestCacheError,
+            url,
+            key,
+          });
+          return err;
+        })
+        .finally(() => {
+          delete cache[key];
+        });
+    }
+
+    return cache[key];
+  };
+}
+
+function getCacheKey(url: string, requestInit?: RequestInit): string {
+  if (!requestInit) {
+    return url;
+  }
+
+  // JSON.stringify does not produce a stable key but initially
+  // use a naive implementation for testing the implementation
+  // TODO: Revisit this and use a more stable key
+  const key = JSON.stringify({ url, ...requestInit });
+  return hashSha1(key);
+}
+
 /**
  * A {@link Global} Module which provides HTTP support via {@link NetworkService}
  * Feature Modules don't need to import this module directly in order to inject
@@ -70,7 +144,7 @@ function fetchClientFactory(
     {
       provide: 'FetchClient',
       useFactory: fetchClientFactory,
-      inject: [IConfigurationService],
+      inject: [IConfigurationService, LoggingService],
     },
     { provide: NetworkService, useClass: FetchNetworkService },
   ],
