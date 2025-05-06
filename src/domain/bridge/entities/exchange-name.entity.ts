@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// TODO: Populate list of exchanges, and add tests
+// TODO: Confirm list of supported exchange names
 export const ExchangeNameSchema = z.string();
 
 export type ExchangeName = z.infer<typeof ExchangeNameSchema>;
