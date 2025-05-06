@@ -1,13 +1,14 @@
 import { faker } from '@faker-js/faker';
 import { LifiBridgeApi } from '@/datasources/bridge-api/lifi-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { bridgeCalldataBuilder } from '@/domain/bridge/entities/__tests__/bridge-calldata.entity';
+import { bridgeQuoteBuilder } from '@/domain/bridge/entities/__tests__/bridge-quote.builder';
 import { bridgeStatusBuilder } from '@/domain/bridge/entities/__tests__/bridge-status.builder';
 import { BridgeNames } from '@/domain/bridge/entities/bridge-name.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { getAddress } from 'viem';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
@@ -44,7 +45,7 @@ describe('LifiBridgeApi', () => {
       const bridgeStatus = bridgeStatusBuilder().build();
       const txHash = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
       const bridge = faker.helpers.arrayElement(BridgeNames);
-      const toChainId = faker.string.numeric();
+      const toChain = faker.string.numeric();
       mockNetworkService.get.mockResolvedValueOnce({
         data: rawify(bridgeStatus),
         status: 200,
@@ -53,7 +54,7 @@ describe('LifiBridgeApi', () => {
       const actual = await target.getStatus({
         txHash,
         bridge,
-        toChainId,
+        toChain,
       });
 
       expect(actual).toBe(bridgeStatus);
@@ -62,8 +63,8 @@ describe('LifiBridgeApi', () => {
         networkRequest: {
           params: {
             txHash,
-            fromChainId: chainId,
-            toChainId,
+            fromChain: chainId,
+            toChain,
             bridge,
           },
           headers: {
@@ -76,7 +77,7 @@ describe('LifiBridgeApi', () => {
     it('should forward errors', async () => {
       const txHash = faker.string.hexadecimal({ length: 64 }) as `0x${string}`;
       const bridge = faker.helpers.arrayElement(BridgeNames);
-      const toChainId = faker.string.numeric();
+      const toChain = faker.string.numeric();
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(`${baseUrl}/v1/status`),
@@ -93,7 +94,7 @@ describe('LifiBridgeApi', () => {
         target.getStatus({
           txHash,
           bridge,
-          toChainId,
+          toChain,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
 
@@ -101,23 +102,29 @@ describe('LifiBridgeApi', () => {
     });
   });
 
-  describe('parseCalldata', () => {
-    it('should parse the calldata', async () => {
-      const bridgeCalldata = bridgeCalldataBuilder().build();
-      const data = faker.string.hexadecimal() as `0x${string}`;
+  describe('getQuote', () => {
+    it('should return a quote', async () => {
+      const bridgeQuote = bridgeQuoteBuilder().build();
+      const args = {
+        toChain: faker.string.numeric(),
+        fromToken: getAddress(faker.finance.ethereumAddress()),
+        toToken: getAddress(faker.finance.ethereumAddress()),
+        fromAddress: getAddress(faker.finance.ethereumAddress()),
+        fromAmount: faker.string.numeric(),
+      };
       mockNetworkService.post.mockResolvedValueOnce({
-        data: rawify(bridgeCalldata),
+        data: rawify(bridgeQuote),
         status: 200,
       });
 
-      const actual = await target.parseCalldata(data);
+      const actual = await target.getQuote(args);
 
-      expect(actual).toBe(bridgeCalldata);
+      expect(actual).toBe(bridgeQuote);
       expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUrl}/v1/calldata/parse`,
+        url: `${baseUrl}/v1/quote`,
         data: {
-          chainId,
-          callData: data,
+          fromChain: chainId,
+          ...args,
         },
         networkRequest: {
           headers: {
@@ -128,7 +135,13 @@ describe('LifiBridgeApi', () => {
     });
 
     it('should forward errors', async () => {
-      const data = faker.string.hexadecimal() as `0x${string}`;
+      const args = {
+        toChain: faker.string.numeric(),
+        fromToken: getAddress(faker.finance.ethereumAddress()),
+        toToken: getAddress(faker.finance.ethereumAddress()),
+        fromAddress: getAddress(faker.finance.ethereumAddress()),
+        fromAmount: faker.string.numeric(),
+      };
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(`${baseUrl}/v1/status`),
@@ -141,7 +154,7 @@ describe('LifiBridgeApi', () => {
       );
       mockNetworkService.post.mockRejectedValueOnce(error);
 
-      await expect(target.parseCalldata(data)).rejects.toThrow(
+      await expect(target.getQuote(args)).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
       );
 

@@ -6,10 +6,14 @@ import {
 } from '@/domain/bridge/entities/bridge-status.entity';
 import { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
 import {
-  BridgeCalldata,
-  BridgeCalldataSchema,
-} from '@/domain/bridge/entities/bridge-calldata.entity';
+  BridgeQuote,
+  BridgeQuoteSchema,
+} from '@/domain/bridge/entities/bridge-quote.entity';
 import { BridgeName } from '@/domain/bridge/entities/bridge-name.entity';
+import { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity';
+import { OrderType } from '@/domain/bridge/entities/order-type.entity';
+import { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
+import { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
 
 @Injectable()
 export class BridgeRepository implements IBridgeRepository {
@@ -19,22 +23,44 @@ export class BridgeRepository implements IBridgeRepository {
   ) {}
 
   async getStatus(args: {
-    chainId: string;
     txHash: `0x${string}`;
     bridge?: BridgeName;
-    toChainId?: string;
+    fromChain: string;
+    toChain?: string;
   }): Promise<BridgeStatus> {
-    const api = await this.bridgeApiFactory.getApi(args.chainId);
+    const api = await this.bridgeApiFactory.getApi(args.fromChain);
     const status = await api.getStatus(args);
     return BridgeStatusSchema.parse(status);
   }
 
-  async parseCalldata(args: {
-    chainId: string;
-    data: `0x${string}`;
-  }): Promise<BridgeCalldata> {
-    const api = await this.bridgeApiFactory.getApi(args.chainId);
-    const calldata = await api.parseCalldata(args.data);
-    return BridgeCalldataSchema.parse(calldata);
+  async getQuote(args: {
+    fromChain: string;
+    toChain: string;
+    fromToken: `0x${string}`;
+    toToken: `0x${string}`;
+    fromAddress: `0x${string}`;
+    toAddress?: `0x${string}`;
+    fromAmount: string;
+    order?: OrderType;
+    slippage?: number;
+    integrator?: string;
+    fee?: number;
+    referrer?: string;
+    allowBridges?: Array<RoutePreference<BridgeName>>;
+    allowExchanges?: Array<RoutePreference<ExchangeName>>;
+    denyBridges?: Array<RoutePreference<BridgeName>>;
+    denyExchanges?: Array<RoutePreference<ExchangeName>>;
+    preferBridges?: Array<RoutePreference<BridgeName>>;
+    preferExchanges?: Array<RoutePreference<ExchangeName>>;
+    allowDestinationCall?: boolean;
+    fromAmountForGas?: string;
+    maxPriceImpact?: number;
+    swapStepTimingStrategies?: Array<TimingStrategies>;
+    routeTimingStrategies?: Array<TimingStrategies>;
+    skipSimulation?: boolean;
+  }): Promise<BridgeQuote> {
+    const api = await this.bridgeApiFactory.getApi(args.fromChain);
+    const calldata = await api.getQuote(args);
+    return BridgeQuoteSchema.parse(calldata);
   }
 }

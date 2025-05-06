@@ -13,15 +13,15 @@ import type {
   BridgeStatus,
   ExtendedTransactionInfo,
   FailedStatusData,
-  FeeCost,
   FullStatusData,
   IncludedStep,
   PendingReceivingInfo,
   SetupToolDetails,
   StatusData,
-  Token,
   TransferMetadata,
 } from '@/domain/bridge/entities/bridge-status.entity';
+import { tokenBuilder } from '@/domain/bridge/entities/__tests__/token.builder';
+import { feeCostBuilder } from '@/domain/bridge/entities/__tests__/fee-cost.builder';
 
 export function baseStatusDataBuilder<
   T extends FullStatusData | StatusData | FailedStatusData,
@@ -46,18 +46,6 @@ export function baseTransactionInfoBuilder<
     .with('txHash', faker.string.hexadecimal({ length: 64 }) as `0x${string}`)
     .with('chainId', faker.string.numeric())
     .with('txLink', faker.internet.url({ appendSlash: false }));
-}
-
-export function tokenBuilder(): IBuilder<Token> {
-  return new Builder<Token>()
-    .with('chainId', faker.string.numeric())
-    .with('address', getAddress(faker.finance.ethereumAddress()))
-    .with('symbol', faker.word.sample())
-    .with('decimals', faker.number.int({ min: 1, max: 18 }))
-    .with('name', faker.word.words())
-    .with('coinKey', faker.word.sample())
-    .with('logoURI', faker.internet.url({ appendSlash: false }))
-    .with('priceUSD', faker.number.float({ min: 0, max: 1_000 }).toString());
 }
 
 export function setupToolDetailsBuilder(): IBuilder<SetupToolDetails> {
@@ -108,17 +96,6 @@ export function extendedTransactionInfoBuilder<
         count: { min: 1, max: 5 },
       }),
     );
-}
-
-export function feeCostBuilder(): IBuilder<FeeCost> {
-  return new Builder<FeeCost>()
-    .with('name', faker.word.sample())
-    .with('description', faker.lorem.sentence())
-    .with('percentage', faker.number.float({ min: 0, max: 1 }).toString())
-    .with('token', tokenBuilder().build())
-    .with('amount', faker.number.float({ min: 0, max: 1_000 }).toString())
-    .with('amountUSD', faker.number.float({ min: 0, max: 1_000 }).toString())
-    .with('included', faker.datatype.boolean());
 }
 
 export function transferMetadataBuilder(): IBuilder<TransferMetadata> {
