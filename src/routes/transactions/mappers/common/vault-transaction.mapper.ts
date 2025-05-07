@@ -146,9 +146,6 @@ export class VaultTransactionMapper {
       value: args.assets,
       decimals: args.token.decimals,
     });
-    const fee = args.deployment.product_fee
-      ? Number(args.deployment.product_fee)
-      : 0;
     const cumulativeNrr =
       args.defiVaultStats.nrr + args.defiVaultStats.additional_rewards_nrr;
     const expectedAnnualReward = (cumulativeNrr / 100) * value;
@@ -156,7 +153,7 @@ export class VaultTransactionMapper {
 
     return {
       value,
-      fee,
+      fee: args.defiVaultStats.performance_fee,
       expectedMonthlyReward,
       expectedAnnualReward,
     };
