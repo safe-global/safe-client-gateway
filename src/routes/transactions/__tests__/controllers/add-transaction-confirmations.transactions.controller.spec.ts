@@ -37,10 +37,12 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { getAddress } from 'viem';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 
 describe('Add transaction confirmations - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
@@ -69,6 +71,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
 
@@ -136,6 +139,7 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
             signatureType,
           }),
       ) as MultisigTransaction;
+      const dataDecoder = dataDecodedBuilder().build();
       const addConfirmationDto = addConfirmationDtoBuilder()
         .with('signature', transaction.confirmations![0].signature!)
         .build();
@@ -177,9 +181,12 @@ describe('Add transaction confirmations - Transactions Controller (Unit)', () =>
       });
       networkService.post.mockImplementation(({ url }) => {
         const postConfirmationUrl = `${chain.transactionService}/api/v1/multisig-transactions/${transaction.safeTxHash}/confirmations/`;
+        const getDataDecoderUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
         switch (url) {
           case postConfirmationUrl:
             return Promise.resolve({ data: rawify({}), status: 200 });
+          case getDataDecoderUrl:
+            return Promise.resolve({ data: rawify(dataDecoder), status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }

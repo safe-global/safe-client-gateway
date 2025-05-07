@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
@@ -10,7 +9,6 @@ export function moduleTransactionBuilder(): IBuilder<ModuleTransaction> {
     .with('blockNumber', faker.number.int())
     .with('created', faker.date.recent())
     .with('data', faker.string.hexadecimal() as `0x${string}`)
-    .with('dataDecoded', dataDecodedBuilder().build())
     .with('executionDate', faker.date.recent())
     .with('isSuccessful', faker.datatype.boolean())
     .with('module', getAddress(faker.finance.ethereumAddress()))

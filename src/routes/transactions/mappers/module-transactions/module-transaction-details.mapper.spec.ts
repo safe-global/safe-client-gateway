@@ -11,6 +11,7 @@ import type { MultisigTransactionInfoMapper } from '@/routes/transactions/mapper
 import { ModuleTransactionDetailsMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction-details.mapper';
 import type { ModuleTransactionStatusMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction-status.mapper';
 import { getAddress } from 'viem';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 
 describe('ModuleTransactionDetails mapper (Unit)', () => {
   let mapper: ModuleTransactionDetailsMapper;
@@ -49,6 +50,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     const transaction = moduleTransactionBuilder()
       .with('safe', getAddress(safe.address))
       .build();
+    const dataDecoded = dataDecodedBuilder().build();
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
     const txInfo = transferTransactionInfoBuilder().build();
@@ -61,7 +63,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       trustedDelegateCallTarget,
     );
 
-    const actual = await mapper.mapDetails(chainId, transaction);
+    const actual = await mapper.mapDetails(chainId, transaction, dataDecoded);
 
     expect(actual).toEqual({
       safeAddress: getAddress(safe.address),
@@ -71,7 +73,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       txInfo,
       txData: expect.objectContaining({
         hexData: transaction.data,
-        dataDecoded: transaction.dataDecoded,
+        dataDecoded,
         to: addressInfo,
         value: transaction.value,
         operation: transaction.operation,
@@ -92,6 +94,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     const transaction = moduleTransactionBuilder()
       .with('safe', getAddress(safe.address))
       .build();
+    const dataDecoded = dataDecodedBuilder().build();
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
     const txInfo = transferTransactionInfoBuilder().build();
@@ -110,7 +113,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       trustedDelegateCallTarget,
     );
 
-    const actual = await mapper.mapDetails(chainId, transaction);
+    const actual = await mapper.mapDetails(chainId, transaction, dataDecoded);
 
     expect(actual).toEqual({
       safeAddress: getAddress(safe.address),
@@ -120,7 +123,7 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
       txInfo,
       txData: expect.objectContaining({
         hexData: transaction.data,
-        dataDecoded: transaction.dataDecoded,
+        dataDecoded,
         to: addressInfo,
         value: transaction.value,
         operation: transaction.operation,
