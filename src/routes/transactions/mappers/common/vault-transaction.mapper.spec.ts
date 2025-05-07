@@ -109,7 +109,7 @@ describe('VaultTransactionMapper', () => {
         type: TransactionInfoType.VaultDeposit,
         humanDescription: null,
         value: '10000', // 1_000_000 / 10 ** 2
-        fee: deployment.product_fee ? Number(deployment.product_fee) : 0,
+        fee: defiVaultStats.performance_fee,
         baseNrr: defiVaultStats.nrr,
         tokenInfo: new TokenInfo({ ...token, trusted: true }),
         vaultInfo: new VaultInfo({
@@ -289,7 +289,7 @@ describe('VaultTransactionMapper', () => {
         type: TransactionInfoType.VaultRedeem,
         humanDescription: null,
         value: '10000', // 1_000_000 / 10 ** 2
-        fee: deployment.product_fee ? Number(deployment.product_fee) : 0,
+        fee: defiVaultStats.performance_fee,
         baseNrr: defiVaultStats.nrr,
         tokenInfo: new TokenInfo({ ...token, trusted: true }),
         vaultInfo: new VaultInfo({

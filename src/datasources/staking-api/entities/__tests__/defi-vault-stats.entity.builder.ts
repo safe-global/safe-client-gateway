@@ -35,6 +35,7 @@ export function defiVaultStatsBuilder(): IBuilder<DefiVaultStats> {
     .with('chain_id', faker.number.int())
     .with('asset_decimals', faker.number.int())
     .with('updated_at_block', faker.number.int())
+    .with('performance_fee', faker.number.float())
     .with('additional_rewards_nrr', faker.number.float())
     .with(
       'additional_rewards',
