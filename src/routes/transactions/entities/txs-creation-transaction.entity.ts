@@ -16,8 +16,6 @@ export class TXSCreationTransaction implements DomainCreationTransaction {
   setupData: `0x${string}` | null;
   @ApiProperty()
   saltNonce: string | null;
-  // @ApiProperty()
-  // dataDecoded: DataDecoded | null;
 
   constructor(args: {
     created: Date;

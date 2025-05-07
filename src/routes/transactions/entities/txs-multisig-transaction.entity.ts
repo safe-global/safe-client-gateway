@@ -15,8 +15,6 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
   value: string;
   @ApiProperty()
   data: `0x${string}` | null;
-  // @ApiProperty()
-  // dataDecoded: DataDecoded | null;
   @ApiProperty()
   operation: Operation;
   @ApiProperty()

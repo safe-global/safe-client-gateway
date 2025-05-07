@@ -240,24 +240,29 @@ export class TransactionsService {
       chainId: args.chainId,
       transactions: domainTransactions.results,
     });
-    const results = await Promise.all(
-      domainTransactions.results.map(async (domainTransaction) => {
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId: args.chainId,
-            transaction: domainTransaction,
-          });
-        return new MultisigTransaction(
-          await this.multisigTransactionMapper.mapTransaction(
-            args.chainId,
-            domainTransaction,
-            safeInfo,
-            dataDecoded,
-          ),
-          ConflictType.None,
+
+    const dataDecoded = await Promise.all(
+      domainTransactions.results.map((domainTransaction) => {
+        return this.dataDecoderRepository.getTransactionDataDecoded({
+          chainId: args.chainId,
+          transaction: domainTransaction,
+        });
+      }),
+    );
+    const mappedTransactions = await Promise.all(
+      domainTransactions.results.map((domainTransaction, index) => {
+        return this.multisigTransactionMapper.mapTransaction(
+          args.chainId,
+          domainTransaction,
+          safeInfo,
+          dataDecoded[index],
         );
       }),
     );
+
+    const results = mappedTransactions.map((mappedTransaction) => {
+      return new MultisigTransaction(mappedTransaction, ConflictType.None);
+    });
     const nextURL = cursorUrlFromLimitAndOffset(
       args.routeUrl,
       domainTransactions.next,
