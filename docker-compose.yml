@@ -35,9 +35,10 @@ services:
       -c hba_file=/etc/pg_hba.conf
 
   rabbitmq:
-    image: rabbitmq:alpine
+    image: rabbitmq:management-alpine
     ports:
       - '5672:5672'
+      - '15672:15672'
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 15s
