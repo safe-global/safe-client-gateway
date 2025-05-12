@@ -34,7 +34,7 @@ import get from 'lodash/get';
 
 export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
-  private static readonly HOLESKY_CHAIN_ID = '17000';
+  private static readonly HOODI_CHAIN_ID = '560048';
 
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly indexingExpirationTimeInSeconds: number;
@@ -58,17 +58,16 @@ export class TransactionApi implements ITransactionApi {
         'expirationTimeInSeconds.indexing',
       );
 
-    // TODO: Remove temporary cache times for Holesky chain.
-    if (chainId === TransactionApi.HOLESKY_CHAIN_ID) {
-      const holeskyExpirationTime =
-        this.configurationService.getOrThrow<number>(
-          'expirationTimeInSeconds.holesky',
-        );
-      this.defaultExpirationTimeInSeconds = holeskyExpirationTime;
-      this.defaultNotFoundExpirationTimeSeconds = holeskyExpirationTime;
-      this.tokenNotFoundExpirationTimeSeconds = holeskyExpirationTime;
-      this.contractNotFoundExpirationTimeSeconds = holeskyExpirationTime;
-      this.ownersExpirationTimeSeconds = holeskyExpirationTime;
+    // TODO: Remove temporary cache times for Hoodi chain.
+    if (chainId === TransactionApi.HOODI_CHAIN_ID) {
+      const hoodiExpirationTime = this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.hoodi',
+      );
+      this.defaultExpirationTimeInSeconds = hoodiExpirationTime;
+      this.defaultNotFoundExpirationTimeSeconds = hoodiExpirationTime;
+      this.tokenNotFoundExpirationTimeSeconds = hoodiExpirationTime;
+      this.contractNotFoundExpirationTimeSeconds = hoodiExpirationTime;
+      this.ownersExpirationTimeSeconds = hoodiExpirationTime;
     } else {
       this.defaultExpirationTimeInSeconds =
         this.configurationService.getOrThrow<number>(
