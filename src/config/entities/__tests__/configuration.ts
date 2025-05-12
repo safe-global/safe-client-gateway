@@ -296,7 +296,6 @@ export default (): ReturnType<typeof configuration> => ({
       baseUri: faker.internet.url({ appendSlash: false }),
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
-    isBaseProductionActive: faker.datatype.boolean(),
   },
   swaps: {
     api: {

@@ -600,8 +600,7 @@ export class CacheRouter {
     );
   }
 
-  // TODO: remove passing url and the associated configuration once Base is
-  // fully migrated to the Kiln mainnet API.
+  // Kiln uses different endpoints for mainnet/testnet
   static getStakingDeploymentsCacheDir(url: string): CacheDir {
     return new CacheDir(`${this.STAKING_DEPLOYMENTS_KEY}_${url}`, '');
   }
