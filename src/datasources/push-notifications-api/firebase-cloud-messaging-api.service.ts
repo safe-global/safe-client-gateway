@@ -11,6 +11,7 @@ import {
 import { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  FirebaseAndroidMessageConfig,
   FireabaseNotificationApn,
   FirebaseNotification,
   NotificationContent,
@@ -104,6 +105,17 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
   }
 
   /**
+   * Returns the Android message config for the notification.
+   *
+   * @returns {FirebaseAndroidMessageConfig} - Android message config
+   **/
+  private getAndroidMessageConfig(): FirebaseAndroidMessageConfig {
+    return {
+      android: { priority: 'high' },
+    };
+  }
+
+  /**
    * Enqueues a notification to be sent to a device with given FCM token.
    *
    * @param fcmToken - device's FCM token
@@ -123,6 +135,7 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
             token: fcmToken,
             ...notification,
             ...this.getIosNotificationData(notification.notification),
+            ...this.getAndroidMessageConfig(),
           },
         },
         networkRequest: {
