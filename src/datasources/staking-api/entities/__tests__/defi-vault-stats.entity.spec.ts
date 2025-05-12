@@ -223,6 +223,13 @@ describe('DefiVaultStatsSchema', () => {
         code: 'invalid_type',
         expected: 'number',
         message: 'Required',
+        path: ['performance_fee'],
+        received: 'undefined',
+      },
+      {
+        code: 'invalid_type',
+        expected: 'number',
+        message: 'Required',
         path: ['additional_rewards_nrr'],
         received: 'undefined',
       },
