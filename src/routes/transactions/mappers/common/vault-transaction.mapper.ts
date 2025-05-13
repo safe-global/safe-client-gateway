@@ -114,10 +114,7 @@ export class VaultTransactionMapper {
       defiVaultStats,
     });
 
-    const currentReward = this.formatUnits({
-      value: Number(stake.current_rewards),
-      decimals: token.decimals,
-    });
+    const currentReward = Number(stake.current_rewards);
 
     return new VaultRedeemTransactionInfo({
       value: getNumberString(value),
@@ -142,10 +139,7 @@ export class VaultTransactionMapper {
     expectedMonthlyReward: number;
     expectedAnnualReward: number;
   } {
-    const value = this.formatUnits({
-      value: args.assets,
-      decimals: args.token.decimals,
-    });
+    const value = args.assets;
     const cumulativeNrr =
       args.defiVaultStats.nrr + args.defiVaultStats.additional_rewards_nrr;
     const expectedAnnualReward = (cumulativeNrr / 100) * value;
@@ -157,10 +151,6 @@ export class VaultTransactionMapper {
       expectedMonthlyReward,
       expectedAnnualReward,
     };
-  }
-
-  private formatUnits(args: { value: number; decimals: number }): number {
-    return args.value / 10 ** args.decimals;
   }
 
   private mapVaultInfo(args: {
