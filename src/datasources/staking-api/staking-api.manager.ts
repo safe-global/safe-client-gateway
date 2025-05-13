@@ -15,8 +15,6 @@ import { Inject, Injectable } from '@nestjs/common';
 @Injectable()
 export class StakingApiManager implements IStakingApiManager {
   private readonly apis: Record<string, IStakingApi> = {};
-  private readonly BASE_CHAIN_ID = '8453';
-  private readonly isBaseProductionActive: boolean;
 
   constructor(
     private readonly dataSource: CacheFirstDataSource,
@@ -26,11 +24,7 @@ export class StakingApiManager implements IStakingApiManager {
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
-  ) {
-    this.isBaseProductionActive = this.configurationService.getOrThrow<boolean>(
-      'staking.isBaseProductionActive',
-    );
-  }
+  ) {}
 
   async getApi(chainId: string): Promise<IStakingApi> {
     if (this.apis[chainId]) {
@@ -41,11 +35,7 @@ export class StakingApiManager implements IStakingApiManager {
       .getChain(chainId)
       .then(ChainSchema.parse);
 
-    // TODO: remove this check and the associated configuration once Base is
-    // fully migrated to the Kiln mainnet API.
-    const isBaseTestnet =
-      chainId === this.BASE_CHAIN_ID && !this.isBaseProductionActive;
-    const env = isBaseTestnet || chain.isTestnet ? 'testnet' : 'mainnet';
+    const env = chain.isTestnet ? 'testnet' : 'mainnet';
 
     const baseUrl = this.configurationService.getOrThrow<string>(
       `staking.${env}.baseUri`,
