@@ -44,7 +44,7 @@
     "@nestjs/typeorm": "11.0.0",
     "@safe-global/safe-deployments": "1.37.30",
     "amqp-connection-manager": "4.1.14",
-    "amqplib": "0.10.5",
+    "amqplib": "0.10.8",
     "cache-manager": "6.4.1",
     "cookie-parser": "1.4.7",
     "jsonwebtoken": "9.0.2",
