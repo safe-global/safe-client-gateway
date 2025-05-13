@@ -2708,14 +2708,14 @@ describe('TransactionApi', () => {
     });
   });
 
-  // TODO: Remove temporary cache times test for Holesky chain.
-  describe('temp - Holesky expiration times', () => {
-    it('should use the Holesky expiration time for the datasource', async () => {
-      const holeskyExpirationTime = faker.number.int();
-      const holeskyChainId = '17000';
+  // TODO: Remove temporary cache times test for Hoodi chain.
+  describe('temp - Hoodi expiration times', () => {
+    it('should use the Hoodi expiration time for the datasource', async () => {
+      const hoodiExpirationTime = faker.number.int();
+      const hoodiChainId = '560048';
       mockConfigurationService.getOrThrow.mockImplementation((key) => {
-        if (key === 'expirationTimeInSeconds.holesky') {
-          return holeskyExpirationTime;
+        if (key === 'expirationTimeInSeconds.hoodi') {
+          return hoodiExpirationTime;
         }
         if (key === 'expirationTimeInSeconds.indexing') {
           return indexingExpirationTimeInSeconds;
@@ -2739,7 +2739,7 @@ describe('TransactionApi', () => {
       });
 
       service = new TransactionApi(
-        holeskyChainId, // Holesky chainId
+        hoodiChainId, // Hoodi chainId
         baseUrl,
         mockDataSource,
         mockCacheService,
@@ -2755,7 +2755,7 @@ describe('TransactionApi', () => {
       const offset = faker.number.int();
       const getTokensUrl = `${baseUrl}/api/v1/tokens/`;
       const cacheDir = new CacheDir(
-        `${holeskyChainId}_tokens`,
+        `${hoodiChainId}_tokens`,
         `${limit}_${offset}`,
       );
       mockDataSource.get.mockResolvedValueOnce(rawify(tokensPage));
@@ -2769,8 +2769,8 @@ describe('TransactionApi', () => {
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
       expect(mockDataSource.get).toHaveBeenCalledWith({
         cacheDir,
-        expireTimeSeconds: holeskyExpirationTime,
-        notFoundExpireTimeSeconds: holeskyExpirationTime,
+        expireTimeSeconds: hoodiExpirationTime,
+        notFoundExpireTimeSeconds: hoodiExpirationTime,
         url: getTokensUrl,
         networkRequest: {
           params: {

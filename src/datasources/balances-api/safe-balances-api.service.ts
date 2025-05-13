@@ -26,7 +26,7 @@ export class SafeBalancesApi implements IBalancesApi {
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private static readonly DEFAULT_DECIMALS = 18;
-  private static readonly HOLESKY_CHAIN_ID = '17000';
+  private static readonly HOODI_CHAIN_ID = '560048';
 
   constructor(
     private readonly chainId: string,
@@ -37,14 +37,13 @@ export class SafeBalancesApi implements IBalancesApi {
     private readonly httpErrorFactory: HttpErrorFactory,
     private readonly coingeckoApi: IPricesApi,
   ) {
-    // TODO: Remove temporary cache times for Holesky chain.
-    if (chainId === SafeBalancesApi.HOLESKY_CHAIN_ID) {
-      const holeskyExpirationTime =
-        this.configurationService.getOrThrow<number>(
-          'expirationTimeInSeconds.holesky',
-        );
-      this.defaultExpirationTimeInSeconds = holeskyExpirationTime;
-      this.defaultNotFoundExpirationTimeSeconds = holeskyExpirationTime;
+    // TODO: Remove temporary cache times for Hoodi chain.
+    if (chainId === SafeBalancesApi.HOODI_CHAIN_ID) {
+      const hoodiExpirationTime = this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.hoodi',
+      );
+      this.defaultExpirationTimeInSeconds = hoodiExpirationTime;
+      this.defaultNotFoundExpirationTimeSeconds = hoodiExpirationTime;
     } else {
       this.defaultExpirationTimeInSeconds =
         this.configurationService.getOrThrow<number>(

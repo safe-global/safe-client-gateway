@@ -148,7 +148,7 @@ export default (): ReturnType<typeof configuration> => ({
   expirationTimeInSeconds: {
     default: faker.number.int(),
     rpc: faker.number.int(),
-    holesky: faker.number.int(),
+    hoodi: faker.number.int(),
     indexing: faker.number.int(),
     staking: faker.number.int(),
     notFound: {
