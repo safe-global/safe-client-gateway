@@ -24,3 +24,9 @@ export type FireabaseNotificationApn = {
     };
   };
 };
+
+export type FirebaseAndroidMessageConfig = {
+  android: {
+    priority: 'high' | 'normal';
+  };
+};

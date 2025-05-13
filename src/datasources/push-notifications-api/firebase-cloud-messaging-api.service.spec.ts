@@ -109,6 +109,9 @@ describe('FirebaseCloudMessagingApiService', () => {
               },
             },
           },
+          android: {
+            priority: 'high',
+          },
         },
       },
       networkRequest: {
@@ -157,6 +160,9 @@ describe('FirebaseCloudMessagingApiService', () => {
                 'mutable-content': 1,
               },
             },
+          },
+          android: {
+            priority: 'high',
           },
         },
       },
