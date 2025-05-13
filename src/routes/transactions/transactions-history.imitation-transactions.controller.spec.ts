@@ -55,10 +55,12 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   const lookupDistance = 2;
   const prefixLength = 3;
@@ -114,6 +116,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -141,6 +144,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     let multisigTransferValue: bigint;
     let multisigToken: Token;
     let multisigTransaction: MultisigTransaction;
+    let multisigTransactionDataDecoded: DataDecoded;
     let imitationAddress: `0x${string}`;
     let imitationToken: Token;
     let imitationOutgoingTransaction: EthereumTransaction;
@@ -148,6 +152,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     let notImitatedMultisigTransfer: ERC20Transfer;
     let notImitatedMultisigToken: Token;
     let notImitatedMultisigTransaction: MultisigTransaction;
+    let notImitatedMultisigTransactionDataDecoded: DataDecoded;
 
     let getAllTransactionsUrl: string;
     let getSafeUrl: string;
@@ -195,24 +200,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             .with('isExecuted', true)
             .with('isSuccessful', true)
             .with('origin', null)
-            .with(
-              'dataDecoded',
-              dataDecodedBuilder()
-                .with('method', 'transfer')
-                .with('parameters', [
-                  dataDecodedParameterBuilder()
-                    .with('name', 'to')
-                    .with('type', 'address')
-                    .with('value', multisigTransfer.to)
-                    .build(),
-                  dataDecodedParameterBuilder()
-                    .with('name', 'value')
-                    .with('type', 'uint256')
-                    .with('value', multisigTransfer.value)
-                    .build(),
-                ])
-                .build(),
-            )
             .with('confirmationsRequired', 1)
             .with('trusted', true)
             .buildWithConfirmations({
@@ -224,6 +211,21 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         // TODO: Update type to include transfers
         transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
       } as MultisigTransaction;
+      multisigTransactionDataDecoded = dataDecodedBuilder()
+        .with('method', 'transfer')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'to')
+            .with('type', 'address')
+            .with('value', multisigTransfer.to)
+            .build(),
+          dataDecodedParameterBuilder()
+            .with('name', 'value')
+            .with('type', 'uint256')
+            .with('value', multisigTransfer.value)
+            .build(),
+        ])
+        .build();
 
       notImitatedMultisigToken = erc20TokenBuilder().build();
       notImitatedMultisigTransfer = {
@@ -253,24 +255,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             .with('isExecuted', true)
             .with('isSuccessful', true)
             .with('origin', null)
-            .with(
-              'dataDecoded',
-              dataDecodedBuilder()
-                .with('method', 'transfer')
-                .with('parameters', [
-                  dataDecodedParameterBuilder()
-                    .with('name', 'to')
-                    .with('type', 'address')
-                    .with('value', notImitatedMultisigTransfer.to)
-                    .build(),
-                  dataDecodedParameterBuilder()
-                    .with('name', 'value')
-                    .with('type', 'uint256')
-                    .with('value', notImitatedMultisigTransfer.value)
-                    .build(),
-                ])
-                .build(),
-            )
             .with('confirmationsRequired', 1)
 
             .with('trusted', true)
@@ -285,6 +269,21 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           erc20TransferToJson(notImitatedMultisigTransfer) as Transfer,
         ],
       } as MultisigTransaction;
+      notImitatedMultisigTransactionDataDecoded = dataDecodedBuilder()
+        .with('method', 'transfer')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'to')
+            .with('type', 'address')
+            .with('value', notImitatedMultisigTransfer.to)
+            .build(),
+          dataDecodedParameterBuilder()
+            .with('name', 'value')
+            .with('type', 'uint256')
+            .with('value', notImitatedMultisigTransfer.value)
+            .build(),
+        ])
+        .build();
 
       imitationAddress = getImitationAddress(multisigTransfer.to);
       const imitationExecutionDate = new Date('2024-03-20T09:42:58Z');
@@ -386,6 +385,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(imitationToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -657,6 +676,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(imitationToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -932,6 +971,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
 
         await request(app.getHttpServer())
           .get(
@@ -1120,6 +1179,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(imitationToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -1426,6 +1505,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
 
         await request(app.getHttpServer())
           .get(
@@ -1703,6 +1802,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(imitationToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -1987,6 +2106,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
 
         await request(app.getHttpServer())
           .get(
@@ -2264,6 +2403,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(imitationToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -2589,6 +2748,23 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
+      networkService.post.mockImplementation(({ url, data }) => {
+        if (url === `${safeDecoderUrl}/api/v1/data-decoder` && 'data' in data) {
+          if (data.data === multisigTransaction.data) {
+            return Promise.resolve({
+              data: rawify(multisigTransactionDataDecoded),
+              status: 200,
+            });
+          }
+          if (data.data === notImitatedMultisigTransaction.data) {
+            return Promise.resolve({
+              data: rawify(notImitatedMultisigTransactionDataDecoded),
+              status: 200,
+            });
+          }
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
 
       await request(app.getHttpServer())
         .get(
@@ -2695,8 +2871,10 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
     let multisigToken: Token;
     let multisigTransfer: ERC20Transfer;
     let multisigTransaction: MultisigTransaction;
+    let multisigTransactionDataDecoded: DataDecoded;
     let notImitatedMultisigToken: Token;
     let notImitatedMultisigTransaction: MultisigTransaction;
+    let notImitatedMultisigTransactionDataDecoded: DataDecoded;
     let imitationAddress: `0x${string}`;
     let notImitatedMultisigTransfer: ERC20Transfer;
     let imitationIncomingTransfer: ERC20Transfer;
@@ -2744,24 +2922,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             .with('isExecuted', true)
             .with('isSuccessful', true)
             .with('origin', null)
-            .with(
-              'dataDecoded',
-              dataDecodedBuilder()
-                .with('method', 'transfer')
-                .with('parameters', [
-                  dataDecodedParameterBuilder()
-                    .with('name', 'to')
-                    .with('type', 'address')
-                    .with('value', multisigTransfer.to)
-                    .build(),
-                  dataDecodedParameterBuilder()
-                    .with('name', 'value')
-                    .with('type', 'uint256')
-                    .with('value', multisigTransfer.value)
-                    .build(),
-                ])
-                .build(),
-            )
             .with('confirmationsRequired', 1)
             .with('trusted', true)
             .buildWithConfirmations({
@@ -2773,6 +2933,21 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         // TODO: Update type to include transfers
         transfers: [erc20TransferToJson(multisigTransfer) as Transfer],
       } as MultisigTransaction;
+      multisigTransactionDataDecoded = dataDecodedBuilder()
+        .with('method', 'transfer')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'to')
+            .with('type', 'address')
+            .with('value', multisigTransfer.to)
+            .build(),
+          dataDecodedParameterBuilder()
+            .with('name', 'value')
+            .with('type', 'uint256')
+            .with('value', multisigTransfer.value)
+            .build(),
+        ])
+        .build();
 
       notImitatedMultisigToken = erc20TokenBuilder()
         .with('decimals', multisigToken.decimals)
@@ -2804,24 +2979,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
             .with('isExecuted', true)
             .with('isSuccessful', true)
             .with('origin', null)
-            .with(
-              'dataDecoded',
-              dataDecodedBuilder()
-                .with('method', 'transfer')
-                .with('parameters', [
-                  dataDecodedParameterBuilder()
-                    .with('name', 'to')
-                    .with('type', 'address')
-                    .with('value', notImitatedMultisigTransfer.to)
-                    .build(),
-                  dataDecodedParameterBuilder()
-                    .with('name', 'value')
-                    .with('type', 'uint256')
-                    .with('value', notImitatedMultisigTransfer.value)
-                    .build(),
-                ])
-                .build(),
-            )
             .with('confirmationsRequired', 1)
             .with('trusted', true)
             .buildWithConfirmations({
@@ -2835,6 +2992,21 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           erc20TransferToJson(notImitatedMultisigTransfer) as Transfer,
         ],
       } as MultisigTransaction;
+      notImitatedMultisigTransactionDataDecoded = dataDecodedBuilder()
+        .with('method', 'transfer')
+        .with('parameters', [
+          dataDecodedParameterBuilder()
+            .with('name', 'to')
+            .with('type', 'address')
+            .with('value', notImitatedMultisigTransfer.to)
+            .build(),
+          dataDecodedParameterBuilder()
+            .with('name', 'value')
+            .with('type', 'uint256')
+            .with('value', notImitatedMultisigTransfer.value)
+            .build(),
+        ])
+        .build();
       imitationAddress = getImitationAddress(multisigTransfer.to);
 
       getAllTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/all-transactions/`;
@@ -2897,6 +3069,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(multisigToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -3033,6 +3225,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(notImitatedMultisigToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -3294,6 +3506,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
 
         await request(app.getHttpServer())
           .get(
@@ -3387,6 +3619,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(notImitatedMultisigToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
@@ -3695,6 +3947,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
 
         await request(app.getHttpServer())
           .get(
@@ -3836,6 +4108,26 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
               data: rawify(notImitatedMultisigToken),
               status: 200,
             });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url, data }) => {
+          if (
+            url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+            'data' in data
+          ) {
+            if (data.data === multisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(multisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
+            if (data.data === notImitatedMultisigTransaction.data) {
+              return Promise.resolve({
+                data: rawify(notImitatedMultisigTransactionDataDecoded),
+                status: 200,
+              });
+            }
           }
           return Promise.reject(new Error(`Could not match ${url}`));
         });
