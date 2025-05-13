@@ -420,10 +420,20 @@ export default () => ({
     ),
     maxInvites: parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`),
     rateLimit: {
-      max: parseInt(process.env.SPACES_RATE_LIMIT_MAX ?? `${10}`),
-      windowSeconds: parseInt(
-        process.env.SPACES_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
-      ),
+      creation: {
+        max: parseInt(process.env.SPACES_RATE_LIMIT_MAX ?? `${10}`),
+        windowSeconds: parseInt(
+          process.env.SPACES_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
+        ),
+      },
+      addressBookUpsertion: {
+        max: parseInt(
+          process.env.SPACES_ADDRESS_BOOK_RATE_LIMIT_MAX ?? `${500}`,
+        ),
+        windowSeconds: parseInt(
+          process.env.SPACES_ADDRESS_BOOK_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
+        ),
+      },
     },
   },
   staking: {
