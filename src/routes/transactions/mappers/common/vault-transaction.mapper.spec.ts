@@ -78,7 +78,7 @@ describe('VaultTransactionMapper', () => {
         .build();
       const cumulativeNrr =
         defiVaultStats.nrr + defiVaultStats.additional_rewards_nrr;
-      const expectedAnnualReward = (cumulativeNrr / 100) * 10000;
+      const expectedAnnualReward = (cumulativeNrr / 100) * assets;
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getDefiVaultStats.mockResolvedValue(defiVaultStats);
       mockStakingRepository.getDefiMorphoExtraRewards.mockResolvedValue([
@@ -108,7 +108,7 @@ describe('VaultTransactionMapper', () => {
       expect(actual).toEqual({
         type: TransactionInfoType.VaultDeposit,
         humanDescription: null,
-        value: '10000', // 1_000_000 / 10 ** 2
+        value: assets.toString(),
         fee: defiVaultStats.performance_fee,
         baseNrr: defiVaultStats.nrr,
         tokenInfo: new TokenInfo({ ...token, trusted: true }),
@@ -288,7 +288,7 @@ describe('VaultTransactionMapper', () => {
       expect(actual).toEqual({
         type: TransactionInfoType.VaultRedeem,
         humanDescription: null,
-        value: '10000', // 1_000_000 / 10 ** 2
+        value: assets.toString(),
         fee: defiVaultStats.performance_fee,
         baseNrr: defiVaultStats.nrr,
         tokenInfo: new TokenInfo({ ...token, trusted: true }),
@@ -299,10 +299,7 @@ describe('VaultTransactionMapper', () => {
           dashboardUri: deployment.external_links?.deposit_url ?? null,
           logoUri: defiVaultStats.protocol_icon,
         }),
-        currentReward: (
-          Number(defiVaultStake.current_rewards) /
-          10 ** token.decimals
-        ).toString(),
+        currentReward: Number(defiVaultStake.current_rewards).toString(),
         additionalRewardsNrr: defiVaultStats.additional_rewards_nrr,
         additionalRewards: additionalRewards.map((additionalReward) => {
           const token = additionalTokens.find((token) => {
