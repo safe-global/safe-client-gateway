@@ -182,6 +182,19 @@ export default () => ({
       // The name of the table where migrations are stored. Uses the environment variable value or defaults to '_migrations'.
       migrationsTableName:
         process.env.ORM_MIGRATION_TABLE_NAME || '_migrations',
+      cache:
+        process.env.ORM_CACHE_ENABLED?.toLowerCase() === 'true'
+          ? {
+              type: 'redis',
+              options: {
+                host: process.env.REDIS_HOST || 'localhost',
+                port: process.env.REDIS_PORT || '6379',
+                username: process.env.REDIS_USER,
+                password: process.env.REDIS_PASS,
+                duration: parseInt(process.env.ORM_CACHE_DURATION ?? `${1000}`),
+              },
+            }
+          : false,
     },
     connection: {
       postgres: {

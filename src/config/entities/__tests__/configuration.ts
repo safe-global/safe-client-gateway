@@ -119,6 +119,7 @@ export default (): ReturnType<typeof configuration> => ({
       manualInitialization: true,
       migrationsRun: false,
       migrationsTableName: '_migrations',
+      cache: false,
     },
     connection: {
       postgres: {
