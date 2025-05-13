@@ -72,11 +72,70 @@ export class CacheFirstDataSource {
     networkRequest?: NetworkRequest;
     expireTimeSeconds?: number;
   }): Promise<Raw<T>> {
+    return await this.tryCache({
+      ...args,
+      queryFn: () => {
+        return this._getFromNetworkAndWriteCache({
+          ...args,
+          method: 'get',
+        });
+      },
+    });
+  }
+
+  /**
+   * Gets the cached value behind {@link CacheDir}.
+   * If the value is not present, it tries to get the respective JSON
+   * payload from {@link url}.
+   * 404 errors are cached with {@link notFoundExpireTimeSeconds} seconds expiration time.
+   *
+   * @param args.cacheDir - {@link CacheDir} containing the key and field to be used to retrieve from cache
+   * @param args.url - the HTTP endpoint to retrieve the JSON payload
+   * @param args.networkRequest - the HTTP request to be used if there is a cache miss
+   * @param args.expireTimeSeconds - the time to live in seconds for the payload behind {@link CacheDir}
+   * @param args.notFoundExpireTimeSeconds - the time to live in seconds for the error when the item is not found
+   * @param args.data - the data to be sent in the body of the request
+   */
+  async post<T>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    notFoundExpireTimeSeconds: number;
+    networkRequest?: NetworkRequest;
+    expireTimeSeconds?: number;
+    data: object;
+  }): Promise<Raw<T>> {
+    return await this.tryCache({
+      ...args,
+      queryFn: () => {
+        return this._getFromNetworkAndWriteCache({
+          ...args,
+          method: 'post',
+        });
+      },
+    });
+  }
+
+  /**
+   * Gets the cached value behind {@link CacheDir}.
+   * If the value is not present, it tries to get the respective JSON
+   * payload from {@link queryFn}.
+   * 404 errors are cached with {@link notFoundExpireTimeSeconds} seconds expiration time.
+   *
+   * @param args.cacheDir - {@link CacheDir} containing the key and field to be used to retrieve from cache
+   * @param args.notFoundExpireTimeSeconds - the time to live in seconds for the error when the item is not found
+   * @param args.fn - the function to be executed if the cache entry is not found
+   * @returns the cached value or the result of the function
+   */
+  private async tryCache<T>(args: {
+    cacheDir: CacheDir;
+    notFoundExpireTimeSeconds: number;
+    queryFn: () => Promise<Raw<T>>;
+  }): Promise<Raw<T>> {
     const cached = await this.cacheService.hGet(args.cacheDir);
     if (cached != null) return this._getFromCachedData(args.cacheDir, cached);
 
     try {
-      return await this._getFromNetworkAndWriteCache(args);
+      return await args.queryFn();
     } catch (error) {
       if (
         error instanceof NetworkResponseError &&
@@ -111,20 +170,40 @@ export class CacheFirstDataSource {
   }
 
   /**
-   * Gets the data from the network and caches the result.
+   * Gets/posts the data from the network and caches the result.
    */
   private async _getFromNetworkAndWriteCache<T>(args: {
     cacheDir: CacheDir;
     url: string;
     networkRequest?: NetworkRequest;
     expireTimeSeconds?: number;
+    method: 'get';
+    data?: never;
+  }): Promise<Raw<T>>;
+  private async _getFromNetworkAndWriteCache<T>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    networkRequest?: NetworkRequest;
+    expireTimeSeconds?: number;
+    method: 'post';
+    data: object;
+  }): Promise<Raw<T>>;
+  private async _getFromNetworkAndWriteCache<T>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    networkRequest?: NetworkRequest;
+    expireTimeSeconds?: number;
+    method: Exclude<keyof INetworkService, 'delete'>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any;
   }): Promise<Raw<T>> {
     const { key, field } = args.cacheDir;
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
     const startTimeMs = Date.now();
-    const { data } = await this.networkService.get<T>({
+    const { data } = await this.networkService[args.method]<T>({
       url: args.url,
       networkRequest: args.networkRequest,
+      data: args?.data,
     });
 
     const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
