@@ -52,17 +52,14 @@ export class VaultTransactionMapper {
       }),
     ]);
 
-    const { value, fee, expectedMonthlyReward, expectedAnnualReward } =
-      this.calculateFeeAndRewards({
-        assets: args.assets,
-        token,
-        deployment,
-        defiVaultStats,
-      });
+    const cumulativeNrr =
+      defiVaultStats.nrr + defiVaultStats.additional_rewards_nrr;
+    const expectedAnnualReward = (cumulativeNrr / 100) * args.assets;
+    const expectedMonthlyReward = expectedAnnualReward / 12;
 
     return new VaultDepositTransactionInfo({
-      value: getNumberString(value),
-      fee,
+      value: getNumberString(args.assets),
+      fee: defiVaultStats.performance_fee,
       baseNrr: defiVaultStats.nrr,
       tokenInfo: new TokenInfo({ ...token, trusted: true }),
       vaultInfo: this.mapVaultInfo({ deployment, defiVaultStats }),
@@ -107,21 +104,11 @@ export class VaultTransactionMapper {
       }),
     ]);
 
-    const { value, fee } = this.calculateFeeAndRewards({
-      assets: args.assets,
-      token,
-      deployment,
-      defiVaultStats,
-    });
-
-    const currentReward = this.formatUnits({
-      value: Number(stake.current_rewards),
-      decimals: token.decimals,
-    });
+    const currentReward = Number(stake.current_rewards);
 
     return new VaultRedeemTransactionInfo({
-      value: getNumberString(value),
-      fee,
+      value: getNumberString(args.assets),
+      fee: defiVaultStats.performance_fee,
       baseNrr: defiVaultStats.nrr,
       tokenInfo: new TokenInfo({ ...token, trusted: true }),
       vaultInfo: this.mapVaultInfo({ deployment, defiVaultStats }),
@@ -129,38 +116,6 @@ export class VaultTransactionMapper {
       additionalRewardsNrr: defiVaultStats.additional_rewards_nrr,
       additionalRewards,
     });
-  }
-
-  private calculateFeeAndRewards(args: {
-    assets: number;
-    token: TokenInfo;
-    deployment: Deployment;
-    defiVaultStats: DefiVaultStats;
-  }): {
-    value: number;
-    fee: number;
-    expectedMonthlyReward: number;
-    expectedAnnualReward: number;
-  } {
-    const value = this.formatUnits({
-      value: args.assets,
-      decimals: args.token.decimals,
-    });
-    const cumulativeNrr =
-      args.defiVaultStats.nrr + args.defiVaultStats.additional_rewards_nrr;
-    const expectedAnnualReward = (cumulativeNrr / 100) * value;
-    const expectedMonthlyReward = expectedAnnualReward / 12;
-
-    return {
-      value,
-      fee: args.defiVaultStats.performance_fee,
-      expectedMonthlyReward,
-      expectedAnnualReward,
-    };
-  }
-
-  private formatUnits(args: { value: number; decimals: number }): number {
-    return args.value / 10 ** args.decimals;
   }
 
   private mapVaultInfo(args: {
