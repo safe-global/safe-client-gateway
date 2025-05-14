@@ -648,6 +648,7 @@ describe('Transactions History Controller (Unit)', () => {
     networkService.post.mockImplementation(({ url, data }) => {
       if (
         url === `${safeDecoderUrl}/api/v1/data-decoder` &&
+        data &&
         'data' in data &&
         data.data === multisigTransaction.data
       ) {
