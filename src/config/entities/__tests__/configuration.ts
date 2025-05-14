@@ -185,6 +185,7 @@ export default (): ReturnType<typeof configuration> => ({
     trustedForDelegateCallContractsList: false,
     filterValueParsing: false,
     vaultTransactionsMapping: false,
+    cacheInFlightRequests: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
   locking: {
