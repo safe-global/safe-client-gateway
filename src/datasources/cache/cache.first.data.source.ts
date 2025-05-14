@@ -188,13 +188,17 @@ export class CacheFirstDataSource {
           networkRequest?: NetworkRequest;
           expireTimeSeconds?: number;
           method: 'post';
-          data?: object;
+          data: object;
         },
   ): Promise<Raw<T>> {
     const { key, field } = args.cacheDir;
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
     const startTimeMs = Date.now();
-    const { data } = await this.networkService[args.method]<T>(args);
+    const { data } = await this.networkService[args.method]<T>({
+      url: args.url,
+      networkRequest: args.networkRequest,
+      data: args.data,
+    });
 
     const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
     if (shouldBeCached) {
