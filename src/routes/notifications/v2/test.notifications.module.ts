@@ -6,7 +6,6 @@ const MockedNotificationsServiceV2 = {
   getSafeSubscription: jest.fn(),
   deleteSubscription: jest.fn(),
   deleteDevice: jest.fn(),
-  deleteDeviceAndSubscriptions: jest.fn(),
 } as jest.MockedObjectDeep<NotificationsServiceV2>;
 
 @Module({

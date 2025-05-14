@@ -361,6 +361,10 @@ export default () => ({
       privateKey:
         process.env.PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY,
     },
+    getSubscribersBySafeTtlMilliseconds: +(
+      process.env.PUSH_NOTIFICATIONS_GET_SUBSCRIBERS_BY_SAFE_TTL_MILLISECONDS ||
+      60 * 1_000
+    ),
   },
   redis: {
     user: process.env.REDIS_USER,

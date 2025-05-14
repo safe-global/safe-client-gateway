@@ -16,9 +16,10 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
 import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
-import { In, type EntityManager } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { NotificationSubscriptionNotificationType } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity.db';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
@@ -56,6 +57,8 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     private readonly loggingService: ILoggingService,
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
   ) {}
 
   public async enqueueNotification(args: {
@@ -101,6 +104,10 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   }> {
     const deviceUuid = await this.postgresDatabaseService.transaction(
       async (entityManager: EntityManager): Promise<UUID> => {
+        await this.removeGetSubscribersBySafeCache({
+          entityManager,
+          subscriptionsDto: args.upsertSubscriptionsDto,
+        });
         const device = await this.upsertDevice(entityManager, args);
         await this.deletePreviousSubscriptions(entityManager, {
           deviceId: device.id,
@@ -135,34 +142,24 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     const deviceUuid =
       args.upsertSubscriptionsDto.deviceUuid ?? crypto.randomUUID();
 
-    const queryResult = await entityManager.upsert(
+    await entityManager.upsert(
       NotificationDevice,
       {
         device_uuid: deviceUuid,
         device_type: args.upsertSubscriptionsDto.deviceType,
         cloud_messaging_token: args.upsertSubscriptionsDto.cloudMessagingToken,
       },
-      ['device_uuid'],
+      {
+        conflictPaths: ['device_uuid'],
+        skipUpdateIfNoValuesChanged: true,
+      },
     );
 
-    return { id: queryResult.identifiers[0].id, device_uuid: deviceUuid };
-  }
-
-  public async deleteDeviceAndSubscriptions(deviceUuid: UUID): Promise<void> {
-    const deviceSubscriptionsRepository =
-      await this.postgresDatabaseService.getRepository<NotificationSubscription>(
-        NotificationSubscription,
-      );
-    const deviceSubscriptions = await deviceSubscriptionsRepository.find({
-      where: {
-        push_notification_device: {
-          device_uuid: deviceUuid,
-        },
-      },
+    const device = await entityManager.findOneOrFail(NotificationDevice, {
+      where: { device_uuid: deviceUuid },
     });
-    if (deviceSubscriptions.length) {
-      await deviceSubscriptionsRepository.remove(deviceSubscriptions);
-    }
+
+    return { id: device.id, device_uuid: deviceUuid };
   }
 
   private async deletePreviousSubscriptions(
@@ -219,12 +216,15 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     const insertResult = await entityManager.upsert(
       NotificationSubscription,
       subscriptionsToInsert,
-      [
-        'chain_id',
-        'safe_address',
-        'signer_address',
-        'push_notification_device',
-      ],
+      {
+        conflictPaths: [
+          'chain_id',
+          'safe_address',
+          'signer_address',
+          'push_notification_device',
+        ],
+        skipUpdateIfNoValuesChanged: true,
+      },
     );
     const subscriptionIds: Array<number> = insertResult.identifiers.map(
       (subscriptionIdentifier) => subscriptionIdentifier.id,
@@ -290,7 +290,10 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     await entityManager.upsert(
       NotificationSubscriptionNotificationType,
       subscriptionNotificationTypes,
-      ['notification_subscription', 'notification_type'],
+      {
+        conflictPaths: ['notification_subscription', 'notification_type'],
+        skipUpdateIfNoValuesChanged: true,
+      },
     );
   }
 
@@ -341,12 +344,24 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
         NotificationSubscription,
       );
 
+    const cacheTtl = this.configurationService.getOrThrow<number>(
+      'pushNotifications.getSubscribersBySafeTtlMilliseconds',
+    );
+
+    const subscriptionsCacheKey = this.getSubscribersBySafeCacheKey({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+    });
     const subscriptions = await notificationSubscriptionRepository.find({
       where: {
         chain_id: args.chainId,
         safe_address: args.safeAddress,
       },
       relations: ['push_notification_device'],
+      cache: {
+        id: subscriptionsCacheKey,
+        milliseconds: cacheTtl,
+      },
     });
 
     const output: Array<{
@@ -405,6 +420,30 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
 
     if (!deleteResult.affected) {
       throw new NotFoundException('No Device Found!');
+    }
+  }
+
+  private getSubscribersBySafeCacheKey(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): string {
+    return `getSubscribersBySafe-${args.chainId}-${args.safeAddress}`;
+  }
+
+  private async removeGetSubscribersBySafeCache(args: {
+    entityManager: EntityManager;
+    subscriptionsDto: UpsertSubscriptionsDto;
+  }): Promise<void> {
+    const safes = args.subscriptionsDto.safes;
+    for (const safe of safes) {
+      const subscriptionsCacheKey = this.getSubscribersBySafeCacheKey({
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+      });
+
+      await args.entityManager.connection.queryResultCache?.remove([
+        subscriptionsCacheKey,
+      ]);
     }
   }
 }

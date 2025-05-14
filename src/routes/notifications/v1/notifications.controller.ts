@@ -57,9 +57,7 @@ export class NotificationsController {
       // Some clients, such as the mobile app, do not call the delete endpoint to remove an owner key.
       // Instead, they resend the updated list of owners without the key they want to delete.
       // In such cases, we need to clear all the previous owners to ensure the update is applied correctly.
-      await this.notificationServiceV2.deleteDeviceAndSubscriptions(
-        registerDeviceDto.uuid,
-      );
+      await this.notificationServiceV2.deleteDevice(registerDeviceDto.uuid);
     }
 
     for (const compatibleV2Request of compatibleV2Requests) {

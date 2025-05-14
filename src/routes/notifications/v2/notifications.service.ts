@@ -21,12 +21,6 @@ export class NotificationsServiceV2 {
     return this.notificationsRepository.upsertSubscriptions(args);
   }
 
-  async deleteDeviceAndSubscriptions(deviceUuidd: UUID): Promise<void> {
-    await this.notificationsRepository.deleteDeviceAndSubscriptions(
-      deviceUuidd,
-    );
-  }
-
   async getSafeSubscription(args: {
     authPayload: AuthPayload;
     deviceUuid: UUID;
