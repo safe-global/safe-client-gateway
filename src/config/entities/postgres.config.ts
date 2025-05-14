@@ -16,6 +16,16 @@ interface IPostgresEnvConfig {
     requestCert: boolean;
     rejectUnauthorized: boolean;
   };
+  cache?: {
+    type: 'redis';
+    options: {
+      host: string;
+      port: string;
+      username: string;
+      password: string;
+    };
+    duration: number;
+  };
 }
 
 export const postgresConfig = (
@@ -41,6 +51,7 @@ export const postgresConfig = (
     database: postgresEnvConfig.database,
     migrations: ['dist/migrations/*.js'],
     logger: logger ? new PostgresqlLogger(logger) : undefined,
+    cache: postgresEnvConfig.cache,
     ssl: isSslEnabled
       ? {
           ca: postgresCa,

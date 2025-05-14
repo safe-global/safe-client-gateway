@@ -137,8 +137,12 @@ export class AppModule implements NestModule {
             loggingService: ILoggingService,
           ) => {
             const typeormConfig = configService.getOrThrow('db.orm');
+            const cache = configService.get('db.orm.cache');
             const postgresConfigObject = postgresConfig(
-              configService.getOrThrow('db.connection.postgres'),
+              {
+                ...configService.getOrThrow('db.connection.postgres'),
+                cache,
+              },
               loggingService,
             );
 
