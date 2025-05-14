@@ -172,39 +172,29 @@ export class CacheFirstDataSource {
   /**
    * Gets/posts the data from the network and caches the result.
    */
-  private async _getFromNetworkAndWriteCache<T>(args: {
-    cacheDir: CacheDir;
-    url: string;
-    networkRequest?: NetworkRequest;
-    expireTimeSeconds?: number;
-    method: 'get';
-    data?: never;
-  }): Promise<Raw<T>>;
-  private async _getFromNetworkAndWriteCache<T>(args: {
-    cacheDir: CacheDir;
-    url: string;
-    networkRequest?: NetworkRequest;
-    expireTimeSeconds?: number;
-    method: 'post';
-    data: object;
-  }): Promise<Raw<T>>;
-  private async _getFromNetworkAndWriteCache<T>(args: {
-    cacheDir: CacheDir;
-    url: string;
-    networkRequest?: NetworkRequest;
-    expireTimeSeconds?: number;
-    method: Exclude<keyof INetworkService, 'delete'>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?: any;
-  }): Promise<Raw<T>> {
+  private async _getFromNetworkAndWriteCache<T>(
+    args:
+      | {
+          cacheDir: CacheDir;
+          url: string;
+          networkRequest?: NetworkRequest;
+          expireTimeSeconds?: number;
+          method: 'get';
+          data?: never;
+        }
+      | {
+          cacheDir: CacheDir;
+          url: string;
+          networkRequest?: NetworkRequest;
+          expireTimeSeconds?: number;
+          method: 'post';
+          data?: object;
+        },
+  ): Promise<Raw<T>> {
     const { key, field } = args.cacheDir;
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
     const startTimeMs = Date.now();
-    const { data } = await this.networkService[args.method]<T>({
-      url: args.url,
-      networkRequest: args.networkRequest,
-      data: args?.data,
-    });
+    const { data } = await this.networkService[args.method]<T>(args);
 
     const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
     if (shouldBeCached) {
