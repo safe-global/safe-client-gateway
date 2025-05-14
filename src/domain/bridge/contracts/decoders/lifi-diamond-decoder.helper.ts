@@ -9,7 +9,7 @@ import { AbiDecoder } from '@/domain/contracts/decoders/abi-decoder.helper';
  * TODO: We should locate this in @/abis/... but we will need to refactor the /scripts/generate-abis.js
  * to handle ABIs that are present
  */
-const LiFiDiamondAbi = [
+export const LiFiDiamondAbi = [
   {
     type: 'function',
     name: 'startBridgeTokensViaOmniBridge',
@@ -5688,7 +5688,56 @@ const LiFiDiamondAbi = [
 
 @Injectable()
 export class LiFiDiamondDecoder extends AbiDecoder<typeof LiFiDiamondAbi> {
+  private static FunctionDefinitions = LiFiDiamondAbi.filter((item) => {
+    return item.type === 'function';
+  });
+
   constructor() {
     super(LiFiDiamondAbi);
+  }
+
+  public getTransactionId(data: `0x${string}`): string | null {
+    try {
+      const decoded = this.decodeFunctionData({ data });
+
+      const functionDefinition = LiFiDiamondDecoder.FunctionDefinitions.find(
+        (item) => {
+          return item.name === decoded.functionName;
+        },
+      );
+      if (!functionDefinition) {
+        return null;
+      }
+
+      const findInputIndex = (names: Array<string>): number => {
+        return functionDefinition.inputs.findIndex((input) => {
+          return names.includes(input.name);
+        });
+      };
+
+      const swapTransactionIdIndex = findInputIndex([
+        'transactionId',
+        '_transactionId',
+      ]);
+      const swapTransactionId = decoded.args[swapTransactionIdIndex];
+      if (typeof swapTransactionId === 'string') {
+        return swapTransactionId;
+      }
+
+      const bridgeDataIndex = findInputIndex(['_bridgeData']);
+      if (bridgeDataIndex === -1) {
+        return null;
+      }
+
+      const bridgeData = decoded.args[bridgeDataIndex];
+      if (typeof bridgeData !== 'object' || !('transactionId' in bridgeData)) {
+        return null;
+      }
+
+      return bridgeData.transactionId;
+    } catch (error) {
+      console.error('Error decoding transaction ID:', error);
+      return null;
+    }
   }
 }
