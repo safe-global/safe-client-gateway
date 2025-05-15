@@ -71,6 +71,7 @@ describe('LiFiDecoder', () => {
                 'destinationChainId',
                 BigInt(faker.string.numeric({ exclude: fromChain })),
               )
+              .with('hasSourceSwaps', true)
               .build(),
           )
           .with(
@@ -95,6 +96,7 @@ describe('LiFiDecoder', () => {
             'bridgeData',
             bridgeDataStructBuilder()
               .with('destinationChainId', BigInt(fromChain))
+              .with('hasSourceSwaps', true)
               .build(),
           )
           .with(
@@ -302,6 +304,7 @@ describe('LiFiDecoder', () => {
                 'destinationChainId',
                 BigInt(faker.string.numeric({ exclude: fromChain })),
               )
+              .with('hasSourceSwaps', true)
               .build(),
           )
           .with(
@@ -326,6 +329,7 @@ describe('LiFiDecoder', () => {
             'bridgeData',
             bridgeDataStructBuilder()
               .with('destinationChainId', BigInt(fromChain))
+              .with('hasSourceSwaps', true)
               .build(),
           )
           .with(
@@ -533,6 +537,7 @@ describe('LiFiDecoder', () => {
                 'destinationChainId',
                 BigInt(faker.string.numeric({ exclude: fromChain })),
               )
+              .with('hasSourceSwaps', true)
               .build(),
           )
           .with(
@@ -557,6 +562,7 @@ describe('LiFiDecoder', () => {
             'bridgeData',
             bridgeDataStructBuilder()
               .with('destinationChainId', BigInt(fromChain))
+              .with('hasSourceSwaps', true)
               .build(),
           )
           .with(
@@ -725,7 +731,7 @@ describe('LiFiDecoder', () => {
       const result = target.decodeBridgeAndMaybeSwap(data);
 
       expect(result).toStrictEqual({
-        transactionId: args.bridgeData.transactionId,
+        transactionId: args.bridgeData.transactionId.toLowerCase(),
         toAddress: args.bridgeData.receiver,
         fromToken: args.bridgeData.sendingAssetId,
         toToken: args.bridgeData.sendingAssetId,
@@ -736,14 +742,23 @@ describe('LiFiDecoder', () => {
     });
 
     it('should decode a swap and bridge transaction', () => {
-      const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder();
+      const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder().with(
+        'bridgeData',
+        bridgeDataStructBuilder()
+          .with(
+            'destinationChainId',
+            BigInt(faker.string.numeric({ exclude: fromChain })),
+          )
+          .with('hasSourceSwaps', true)
+          .build(),
+      );
       const args = transaction.build();
       const data = transaction.encode();
 
       const result = target.decodeBridgeAndMaybeSwap(data);
 
       expect(result).toStrictEqual({
-        transactionId: args.bridgeData.transactionId,
+        transactionId: args.bridgeData.transactionId.toLowerCase(),
         toAddress: args.bridgeData.receiver,
         fromToken: args.swapData.sendingAssetId,
         toToken: args.swapData.receivingAssetId,
@@ -771,9 +786,9 @@ describe('LiFiDecoder', () => {
       const result = target.decodeSwap(data);
 
       expect(result).toStrictEqual({
-        transactionId: args.transactionId,
+        transactionId: args.transactionId.toLowerCase(),
         toAddress: args.receiver,
-        fromToken: args.swapData?.receivingAssetId,
+        fromToken: args.swapData?.sendingAssetId,
         toToken: args.swapData?.receivingAssetId,
         fromAmount: args.swapData?.fromAmount,
         toAmount: args.minAmountOut,
@@ -806,10 +821,10 @@ describe('LiFiDecoder', () => {
       const result = target.decodeSwap(data);
 
       expect(result).toStrictEqual({
-        transactionId: args.transactionId,
+        transactionId: args.transactionId.toLowerCase(),
         toAddress: args.receiver,
-        fromToken: args.swapData?.[0].receivingAssetId,
-        toToken: args.swapData?.at(-1)?.receivingAssetId,
+        fromToken: args.swapData?.[0].sendingAssetId,
+        toToken: args.swapData?.[2].receivingAssetId,
         fromAmount: args.swapData?.[0].fromAmount,
         toAmount: args.minAmountOut,
       });
