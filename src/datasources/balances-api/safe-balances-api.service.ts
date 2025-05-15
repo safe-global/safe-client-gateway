@@ -27,6 +27,7 @@ export class SafeBalancesApi implements IBalancesApi {
   private readonly defaultNotFoundExpirationTimeSeconds: number;
   private static readonly DEFAULT_DECIMALS = 18;
   private static readonly HOODI_CHAIN_ID = '560048';
+  private static readonly BASE_CHAIN_ID = '8453';
 
   constructor(
     private readonly chainId: string,
@@ -37,8 +38,15 @@ export class SafeBalancesApi implements IBalancesApi {
     private readonly httpErrorFactory: HttpErrorFactory,
     private readonly coingeckoApi: IPricesApi,
   ) {
+    const isProduction = this.configurationService.getOrThrow<boolean>(
+      'application.isProduction',
+    );
     // TODO: Remove temporary cache times for Hoodi chain.
-    if (chainId === SafeBalancesApi.HOODI_CHAIN_ID) {
+    if (
+      chainId === SafeBalancesApi.HOODI_CHAIN_ID ||
+      // TODO: Remove after Vault decoding has been released
+      (!isProduction && chainId === SafeBalancesApi.BASE_CHAIN_ID)
+    ) {
       const hoodiExpirationTime = this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.hoodi',
       );
