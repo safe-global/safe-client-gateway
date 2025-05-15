@@ -70,16 +70,22 @@ export class LiFiDecoder {
    */
   public isSwap(data: Hex): boolean {
     try {
-      if (this.decodeSwap(data)) {
+      const { fromToken, toToken } = this.decodeSwap(data);
+
+      if (!isAddressEqual(fromToken, toToken)) {
         return true;
       }
+    } catch {
+      //
+    }
 
+    try {
       const { toChain, fromToken, toToken } =
         this.decodeBridgeAndMaybeSwap(data);
 
       return (
         this.fromChain === toChain.toString() &&
-        isAddressEqual(fromToken, toToken)
+        !isAddressEqual(fromToken, toToken)
       );
     } catch {
       return false;
@@ -215,7 +221,7 @@ export class LiFiDecoder {
     toAmount: bigint;
   } {
     if (!this.isGenericSwapCalldata(data)) {
-      throw new Error('Invalid calldata for a generic swap call');
+      throw new Error('Insufficient calldata for a generic swap call');
     }
 
     let swapDataArr: Array<
@@ -282,7 +288,9 @@ export class LiFiDecoder {
    * @returns {boolean} True if the calldata is a single swap call, false otherwise.
    */
   private isSingleSwap(data: Hex): boolean {
-    return LiFiDecoder.SingleSwapFunctionSelectors.some(data.startsWith);
+    return LiFiDecoder.SingleSwapFunctionSelectors.some((selector) => {
+      data.startsWith(selector);
+    });
   }
 
   /**
@@ -307,7 +315,6 @@ export class LiFiDecoder {
     _minAmountOut: bigint;
     _swapData: AbiParameterToPrimitiveType<typeof LiFiDecoder.SwapDataStruct>;
   } {
-    const payload = this.stripFunctionSelector(data);
     const [
       _transactionId,
       _integrator,
@@ -317,7 +324,7 @@ export class LiFiDecoder {
       _swapData,
     ] = decodeAbiParameters(
       [...LiFiDecoder.GenericSwapParameters, LiFiDecoder.SwapDataStruct],
-      payload,
+      this.stripFunctionSelector(data),
     );
 
     return {
@@ -354,7 +361,6 @@ export class LiFiDecoder {
       typeof LiFiDecoder.SwapDataStructArr
     >;
   } {
-    const payload = this.stripFunctionSelector(data);
     const [
       _transactionId,
       _integrator,
@@ -364,7 +370,7 @@ export class LiFiDecoder {
       _swapData,
     ] = decodeAbiParameters(
       [...LiFiDecoder.GenericSwapParameters, LiFiDecoder.SwapDataStructArr],
-      payload,
+      this.stripFunctionSelector(data),
     );
 
     return {
