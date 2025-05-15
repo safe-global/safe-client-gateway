@@ -4,6 +4,7 @@ import {
   Address,
   decodeAbiParameters,
   Hex,
+  isAddressEqual,
   parseAbiParameter,
   parseAbiParameters,
 } from 'viem';
@@ -39,6 +40,8 @@ export class LiFiDecoder {
     'bytes32 _transactionId, string _integrator, string _referrer, address _receiver, uint256 _minAmountOut',
   );
 
+  constructor(private readonly fromChain: string) {}
+
   /**
    * Checks if the given calldata represents a (no swap and) bridge call.
    *
@@ -46,13 +49,14 @@ export class LiFiDecoder {
    * @returns {boolean} True if the calldata is a bridge call, false otherwise.
    */
   public isBridge(data: Hex): boolean {
-    if (this.isSwapAndBridge(data)) {
-      return false;
-    }
-
     try {
-      this.decodeBridgeData(data);
-      return true;
+      const { toChain, fromToken, toToken } =
+        this.decodeBridgeAndMaybeSwap(data);
+
+      return (
+        this.fromChain !== toChain.toString() &&
+        isAddressEqual(fromToken, toToken)
+      );
     } catch {
       return false;
     }
@@ -66,8 +70,17 @@ export class LiFiDecoder {
    */
   public isSwap(data: Hex): boolean {
     try {
-      this.decodeSwap(data);
-      return true;
+      if (this.decodeSwap(data)) {
+        return true;
+      }
+
+      const { toChain, fromToken, toToken } =
+        this.decodeBridgeAndMaybeSwap(data);
+
+      return (
+        this.fromChain === toChain.toString() &&
+        isAddressEqual(fromToken, toToken)
+      );
     } catch {
       return false;
     }
@@ -81,9 +94,13 @@ export class LiFiDecoder {
    */
   public isSwapAndBridge(data: Hex): boolean {
     try {
-      this.decodeBridgeData(data);
-      this.decodeBridgeSwapData(data);
-      return true;
+      const { toChain, fromToken, toToken } =
+        this.decodeBridgeAndMaybeSwap(data);
+
+      return (
+        this.fromChain !== toChain.toString() &&
+        !isAddressEqual(fromToken, toToken)
+      );
     } catch {
       return false;
     }
@@ -104,7 +121,7 @@ export class LiFiDecoder {
    * }} The decoded (swap and) bridge data.
    * @throws {Error} If the calldata is not a (swap and) bridge call call.
    */
-  public decodeBridge(data: Hex): {
+  public decodeBridgeAndMaybeSwap(data: Hex): {
     transactionId: Hex;
     toAddress: Address;
     fromToken: Address;
