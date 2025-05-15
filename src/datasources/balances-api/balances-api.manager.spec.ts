@@ -74,6 +74,8 @@ beforeEach(() => {
     if (key === 'features.zerionBalancesChainIds')
       return ZERION_BALANCES_CHAIN_IDS;
     if (key === 'features.counterfactualBalances') return true;
+    // TODO: Remove after Vault decoding has been released
+    else if (key === 'application.isProduction') return true;
   });
 });
 
@@ -154,6 +156,8 @@ describe('Balances API Manager Tests', () => {
         else if (key === 'features.zerionBalancesChainIds')
           return ZERION_BALANCES_CHAIN_IDS;
         else if (key === 'features.counterfactualBalances') return true;
+        // TODO: Remove after Vault decoding has been released
+        else if (key === 'application.isProduction') return true;
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(rawify(chain));
