@@ -4,6 +4,7 @@ import type { AbiParameter, AbiParameterToPrimitiveType, Hex } from 'viem';
 import type { ParseStructs } from 'abitype/dist/types/human-readable/types/structs';
 
 import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '@/__tests__/builder';
 import type { IEncoder } from '@/__tests__/encoder-builder';
 
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Interfaces/ILiFi.sol#L10-L21
@@ -41,6 +42,51 @@ function fake32BitInt(): number {
   });
 }
 
+export function bridgeDataStructBuilder<
+  T extends BridgeDataStructArgs,
+>(): IBuilder<T> {
+  return new Builder<T>()
+    .with('transactionId', faker.string.hexadecimal({ length: 64 }) as Hex)
+    .with('bridge', faker.word.noun())
+    .with('integrator', faker.word.noun())
+    .with('referrer', getAddress(faker.finance.ethereumAddress()))
+    .with('sendingAssetId', getAddress(faker.finance.ethereumAddress()))
+    .with('receiver', getAddress(faker.finance.ethereumAddress()))
+    .with('minAmount', faker.number.bigInt())
+    .with('destinationChainId', BigInt(faker.string.numeric()))
+    .with('hasSourceSwaps', false)
+    .with('hasDestinationCall', faker.datatype.boolean());
+}
+
+export function acrossV3DataStructBuilder<
+  T extends AcrossV3DataStructArgs,
+>(): IBuilder<T> {
+  return new Builder<T>()
+    .with('receiverAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('refundAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('receivingAssetId', getAddress(faker.finance.ethereumAddress()))
+    .with('outputAmount', faker.number.bigInt())
+    .with('outputAmountPercent', faker.number.bigInt())
+    .with('exclusiveRelayer', getAddress(faker.finance.ethereumAddress()))
+    .with('quoteTimestamp', fake32BitInt())
+    .with('fillDeadline', fake32BitInt())
+    .with('exclusivityDeadline', fake32BitInt())
+    .with('message', faker.string.hexadecimal() as Hex);
+}
+
+export function swapDataStructBuilder<
+  T extends SwapDataStructArgs,
+>(): IBuilder<T> {
+  return new Builder<T>()
+    .with('callTo', getAddress(faker.finance.ethereumAddress()))
+    .with('approveTo', getAddress(faker.finance.ethereumAddress()))
+    .with('sendingAssetId', getAddress(faker.finance.ethereumAddress()))
+    .with('receivingAssetId', getAddress(faker.finance.ethereumAddress()))
+    .with('fromAmount', faker.number.bigInt())
+    .with('callData', faker.string.hexadecimal({ length: 130 }) as Hex)
+    .with('requiresDeposit', faker.datatype.boolean());
+}
+
 // Bridge
 
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Facets/AcrossFacetV3.sol#L67-L70
@@ -51,8 +97,8 @@ const startBridgeTokensViaAcrossV3Abi = parseAbi([
 ]);
 
 type StartBridgeTokensViaAcrossV3Args = {
-  bridgeData: Partial<BridgeDataStructArgs>;
-  acrossData: Partial<AcrossV3DataStructArgs>;
+  bridgeData: BridgeDataStructArgs;
+  acrossData: AcrossV3DataStructArgs;
 };
 
 class StartBridgeTokensViaAcrossV3Encoder<
@@ -62,39 +108,7 @@ class StartBridgeTokensViaAcrossV3Encoder<
   implements IEncoder
 {
   encode(): Hex {
-    const args = this.build();
-
-    const sendingAssetId = getAddress(faker.finance.ethereumAddress());
-    const hasSourceSwaps = false;
-    const receivingAssetId = sendingAssetId;
-
-    const bridgeData: BridgeDataStructArgs = {
-      transactionId: faker.string.hexadecimal({ length: 64 }) as Hex,
-      bridge: faker.word.noun(),
-      integrator: faker.word.noun(),
-      referrer: getAddress(faker.finance.ethereumAddress()),
-      sendingAssetId,
-      receiver: getAddress(faker.finance.ethereumAddress()),
-      minAmount: faker.number.bigInt(),
-      destinationChainId: BigInt(faker.string.numeric()),
-      hasSourceSwaps,
-      hasDestinationCall: faker.datatype.boolean(),
-      ...args.bridgeData,
-    };
-
-    const acrossData: AcrossV3DataStructArgs = {
-      receiverAddress: getAddress(faker.finance.ethereumAddress()),
-      refundAddress: getAddress(faker.finance.ethereumAddress()),
-      receivingAssetId: receivingAssetId,
-      outputAmount: faker.number.bigInt(),
-      outputAmountPercent: faker.number.bigInt(),
-      exclusiveRelayer: getAddress(faker.finance.ethereumAddress()),
-      quoteTimestamp: fake32BitInt(),
-      fillDeadline: fake32BitInt(),
-      exclusivityDeadline: fake32BitInt(),
-      message: faker.string.hexadecimal() as Hex,
-      ...args.acrossData,
-    };
+    const { bridgeData, acrossData } = this.build();
 
     return encodeFunctionData({
       abi: startBridgeTokensViaAcrossV3Abi,
@@ -105,7 +119,16 @@ class StartBridgeTokensViaAcrossV3Encoder<
 }
 
 export function startBridgeTokensViaAcrossV3Encoder(): StartBridgeTokensViaAcrossV3Encoder<StartBridgeTokensViaAcrossV3Args> {
-  return new StartBridgeTokensViaAcrossV3Encoder();
+  const bridgeDataStruct = bridgeDataStructBuilder().build();
+
+  return new StartBridgeTokensViaAcrossV3Encoder()
+    .with('bridgeData', bridgeDataStructBuilder().build())
+    .with(
+      'acrossData',
+      acrossV3DataStructBuilder()
+        .with('receivingAssetId', bridgeDataStruct.sendingAssetId)
+        .build(),
+    );
 }
 
 // Swap and bridge
@@ -119,9 +142,9 @@ const swapAndStartBridgeTokensViaAcrossV3Abi = parseAbi([
 ]);
 
 type SwapAndStartBridgeTokensViaAcrossV3Args = {
-  bridgeData: Partial<BridgeDataStructArgs>;
-  swapData: Partial<SwapDataStructArgs>;
-  acrossData: Partial<AcrossV3DataStructArgs>;
+  bridgeData: BridgeDataStructArgs;
+  swapData: SwapDataStructArgs;
+  acrossData: AcrossV3DataStructArgs;
 };
 
 class SwapAndStartBridgeTokensViaAcrossV3Encoder<
@@ -131,50 +154,7 @@ class SwapAndStartBridgeTokensViaAcrossV3Encoder<
   implements IEncoder
 {
   encode(): Hex {
-    const args = this.build();
-
-    const sendingAssetId = getAddress(faker.finance.ethereumAddress());
-    const hasSourceSwaps = true;
-    const receivingAssetId = sendingAssetId;
-
-    const bridgeData: BridgeDataStructArgs = {
-      transactionId: faker.string.hexadecimal({ length: 64 }) as Hex,
-      bridge: faker.word.noun(),
-      integrator: faker.word.noun(),
-      referrer: getAddress(faker.finance.ethereumAddress()),
-      sendingAssetId,
-      receiver: getAddress(faker.finance.ethereumAddress()),
-      minAmount: faker.number.bigInt(),
-      destinationChainId: BigInt(faker.string.numeric()),
-      hasSourceSwaps,
-      hasDestinationCall: faker.datatype.boolean(),
-      ...args.bridgeData,
-    };
-
-    const swapData: SwapDataStructArgs = {
-      callTo: getAddress(faker.finance.ethereumAddress()),
-      approveTo: getAddress(faker.finance.ethereumAddress()),
-      sendingAssetId,
-      receivingAssetId,
-      fromAmount: faker.number.bigInt(),
-      callData: faker.string.hexadecimal({ length: 130 }) as Hex,
-      requiresDeposit: faker.datatype.boolean(),
-      ...args.swapData,
-    };
-
-    const acrossData: AcrossV3DataStructArgs = {
-      receiverAddress: getAddress(faker.finance.ethereumAddress()),
-      refundAddress: getAddress(faker.finance.ethereumAddress()),
-      receivingAssetId,
-      outputAmount: faker.number.bigInt(),
-      outputAmountPercent: faker.number.bigInt(),
-      exclusiveRelayer: getAddress(faker.finance.ethereumAddress()),
-      quoteTimestamp: fake32BitInt(),
-      fillDeadline: fake32BitInt(),
-      exclusivityDeadline: fake32BitInt(),
-      message: faker.string.hexadecimal() as Hex,
-      ...args.acrossData,
-    };
+    const { bridgeData, swapData, acrossData } = this.build();
 
     return encodeFunctionData({
       abi: swapAndStartBridgeTokensViaAcrossV3Abi,
@@ -190,7 +170,17 @@ class SwapAndStartBridgeTokensViaAcrossV3Encoder<
 }
 
 export function swapAndStartBridgeTokensViaAcrossV3Encoder(): SwapAndStartBridgeTokensViaAcrossV3Encoder<SwapAndStartBridgeTokensViaAcrossV3Args> {
-  return new SwapAndStartBridgeTokensViaAcrossV3Encoder();
+  const bridgeData = bridgeDataStructBuilder().build();
+
+  return new SwapAndStartBridgeTokensViaAcrossV3Encoder()
+    .with('bridgeData', bridgeData)
+    .with(
+      'swapData',
+      swapDataStructBuilder()
+        .with('sendingAssetId', bridgeData.sendingAssetId)
+        .build(),
+    )
+    .with('acrossData', acrossV3DataStructBuilder().build());
 }
 
 // Single swap
@@ -202,14 +192,14 @@ const swapTokensSingleV3ERC20ToERC20Abi = parseAbi([
   SwapDataStruct,
 ]);
 
-type SwapTokensSingleV3ERC20ToERC20Args = Partial<{
+type SwapTokensSingleV3ERC20ToERC20Args = {
   transactionId: Hex;
   integrator: string;
   referrer: string;
   receiver: Hex;
   minAmountOut: bigint;
-  swapData: Partial<SwapDataStructArgs>;
-}>;
+  swapData: SwapDataStructArgs;
+};
 
 class SwapTokensSingleV3ERC20ToERC20Encoder<
     T extends SwapTokensSingleV3ERC20ToERC20Args,
@@ -218,44 +208,38 @@ class SwapTokensSingleV3ERC20ToERC20Encoder<
   implements IEncoder
 {
   encode(): Hex {
-    const { swapData, ...rest } = this.build();
-
-    const args = {
-      transactionId: faker.string.hexadecimal({ length: 64 }) as Hex,
-      integrator: faker.word.noun(),
-      referrer: faker.word.noun(),
-      receiver: getAddress(faker.finance.ethereumAddress()),
-      minAmountOut: faker.number.bigInt(),
-      swapData: {
-        callTo: getAddress(faker.finance.ethereumAddress()),
-        approveTo: getAddress(faker.finance.ethereumAddress()),
-        sendingAssetId: getAddress(faker.finance.ethereumAddress()),
-        receivingAssetId: getAddress(faker.finance.ethereumAddress()),
-        fromAmount: faker.number.bigInt(),
-        callData: faker.string.hexadecimal({ length: 130 }) as Hex,
-        requiresDeposit: faker.datatype.boolean(),
-        ...swapData,
-      },
-      ...rest,
-    };
+    const {
+      transactionId,
+      integrator,
+      referrer,
+      receiver,
+      minAmountOut,
+      swapData,
+    } = this.build();
 
     return encodeFunctionData({
       abi: swapTokensSingleV3ERC20ToERC20Abi,
       functionName: 'swapTokensSingleV3ERC20ToERC20',
       args: [
-        args.transactionId,
-        args.integrator,
-        args.referrer,
-        args.receiver,
-        args.minAmountOut,
-        args.swapData,
+        transactionId,
+        integrator,
+        referrer,
+        receiver,
+        minAmountOut,
+        swapData,
       ],
     });
   }
 }
 
 export function swapTokensSingleV3ERC20ToERC20Encoder(): SwapTokensSingleV3ERC20ToERC20Encoder<SwapTokensSingleV3ERC20ToERC20Args> {
-  return new SwapTokensSingleV3ERC20ToERC20Encoder();
+  return new SwapTokensSingleV3ERC20ToERC20Encoder()
+    .with('transactionId', faker.string.hexadecimal({ length: 64 }) as Hex)
+    .with('integrator', faker.word.noun())
+    .with('referrer', faker.word.noun())
+    .with('receiver', getAddress(faker.finance.ethereumAddress()))
+    .with('minAmountOut', faker.number.bigInt())
+    .with('swapData', swapDataStructBuilder().build());
 }
 
 // Multi swap
@@ -267,15 +251,14 @@ const swapTokensMultiV3ERC20ToERC20Abi = parseAbi([
   SwapDataStruct,
 ]);
 
-type SwapTokensMultiV3ERC20ToERC20Args = Partial<{
+type SwapTokensMultiV3ERC20ToERC20Args = {
   transactionId: Hex;
   integrator: string;
   referrer: string;
   receiver: Hex;
   minAmountOut: bigint;
-  // Note: we only support one swap for simplicity
-  swapData: Partial<SwapDataStructArgs>;
-}>;
+  swapData: Array<SwapDataStructArgs>;
+};
 
 class SwapTokensMultiV3ERC20ToERC20Encoder<
     T extends SwapTokensMultiV3ERC20ToERC20Args,
@@ -284,42 +267,41 @@ class SwapTokensMultiV3ERC20ToERC20Encoder<
   implements IEncoder
 {
   encode(): Hex {
-    const { swapData, ...rest } = this.build();
-
-    const args = {
-      transactionId: faker.string.hexadecimal({ length: 64 }) as Hex,
-      integrator: faker.word.noun(),
-      referrer: faker.word.noun(),
-      receiver: getAddress(faker.finance.ethereumAddress()),
-      minAmountOut: faker.number.bigInt(),
-      swapData: {
-        callTo: getAddress(faker.finance.ethereumAddress()),
-        approveTo: getAddress(faker.finance.ethereumAddress()),
-        sendingAssetId: getAddress(faker.finance.ethereumAddress()),
-        receivingAssetId: getAddress(faker.finance.ethereumAddress()),
-        fromAmount: faker.number.bigInt(),
-        callData: faker.string.hexadecimal({ length: 130 }) as Hex,
-        requiresDeposit: faker.datatype.boolean(),
-        ...swapData,
-      },
-      ...rest,
-    };
+    const {
+      transactionId,
+      integrator,
+      referrer,
+      receiver,
+      minAmountOut,
+      swapData,
+    } = this.build();
 
     return encodeFunctionData({
       abi: swapTokensMultiV3ERC20ToERC20Abi,
       functionName: 'swapTokensMultipleV3ERC20ToERC20',
       args: [
-        args.transactionId,
-        args.integrator,
-        args.referrer,
-        args.receiver,
-        args.minAmountOut,
-        [args.swapData],
+        transactionId,
+        integrator,
+        referrer,
+        receiver,
+        minAmountOut,
+        swapData,
       ],
     });
   }
 }
 
 export function swapTokensMultiV3ERC20ToERC20Encoder(): SwapTokensMultiV3ERC20ToERC20Encoder<SwapTokensMultiV3ERC20ToERC20Args> {
-  return new SwapTokensMultiV3ERC20ToERC20Encoder();
+  return new SwapTokensMultiV3ERC20ToERC20Encoder()
+    .with('transactionId', faker.string.hexadecimal({ length: 64 }) as Hex)
+    .with('integrator', faker.word.noun())
+    .with('referrer', faker.word.noun())
+    .with('receiver', getAddress(faker.finance.ethereumAddress()))
+    .with('minAmountOut', faker.number.bigInt())
+    .with(
+      'swapData',
+      faker.helpers.multiple(() => swapDataStructBuilder().build(), {
+        count: { min: 2, max: 5 },
+      }),
+    );
 }
