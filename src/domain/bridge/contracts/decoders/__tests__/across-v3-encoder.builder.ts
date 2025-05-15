@@ -45,7 +45,7 @@ function fake32BitInt(): number {
 
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Facets/AcrossFacetV3.sol#L67-L70
 const startBridgeTokensViaAcrossV3Abi = parseAbi([
-  `function startBridgeTokensViaAcrossV3(BridgeData memory _bridgeData, AcrossV3Data calldata _acrossData)`,
+  'function startBridgeTokensViaAcrossV3(BridgeData memory _bridgeData, AcrossV3Data calldata _acrossData)',
   BridgeDataStruct,
   AcrossV3DataStruct,
 ]);
@@ -112,7 +112,7 @@ export function startBridgeTokensViaAcrossV3Encoder(): StartBridgeTokensViaAcros
 
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Facets/AcrossFacetV3.sol#L89-L93
 const swapAndStartBridgeTokensViaAcrossV3Abi = parseAbi([
-  `function swapAndStartBridgeTokensViaAcrossV3(BridgeData memory _bridgeData, SwapData[] calldata _swapData, AcrossV3Data calldata _acrossData)`,
+  'function swapAndStartBridgeTokensViaAcrossV3(BridgeData memory _bridgeData, SwapData[] calldata _swapData, AcrossV3Data calldata _acrossData)',
   BridgeDataStruct,
   SwapDataStruct,
   AcrossV3DataStruct,
@@ -157,7 +157,7 @@ class SwapAndStartBridgeTokensViaAcrossV3Encoder<
       sendingAssetId,
       receivingAssetId,
       fromAmount: faker.number.bigInt(),
-      callData: faker.string.hexadecimal() as Hex,
+      callData: faker.string.hexadecimal({ length: 130 }) as Hex,
       requiresDeposit: faker.datatype.boolean(),
       ...args.swapData,
     };
@@ -193,12 +193,12 @@ export function swapAndStartBridgeTokensViaAcrossV3Encoder(): SwapAndStartBridge
   return new SwapAndStartBridgeTokensViaAcrossV3Encoder();
 }
 
-// Swap
+// Single swap
 
 // Note: whilst there are three swap methods: ERC-20 -> ERC-20, ERC-20 -> native, and native -> ERC-20, they all have the same function signature
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Facets/GenericSwapFacetV3.sol#L40-L47
 const swapTokensSingleV3ERC20ToERC20Abi = parseAbi([
-  `function swapTokensSingleV3ERC20ToERC20(bytes32 _transactionId, string calldata _integrator, string calldata _referrer, address _receiver, uint256 _minAmountOut, SwapData calldata _swapData)`,
+  'function swapTokensSingleV3ERC20ToERC20(bytes32 _transactionId, string calldata _integrator, string calldata _referrer, address _receiver, uint256 _minAmountOut, SwapData _swapData)',
   SwapDataStruct,
 ]);
 
@@ -232,7 +232,7 @@ class SwapTokensSingleV3ERC20ToERC20Encoder<
         sendingAssetId: getAddress(faker.finance.ethereumAddress()),
         receivingAssetId: getAddress(faker.finance.ethereumAddress()),
         fromAmount: faker.number.bigInt(),
-        callData: faker.string.hexadecimal() as Hex,
+        callData: faker.string.hexadecimal({ length: 130 }) as Hex,
         requiresDeposit: faker.datatype.boolean(),
         ...swapData,
       },
@@ -256,4 +256,70 @@ class SwapTokensSingleV3ERC20ToERC20Encoder<
 
 export function swapTokensSingleV3ERC20ToERC20Encoder(): SwapTokensSingleV3ERC20ToERC20Encoder<SwapTokensSingleV3ERC20ToERC20Args> {
   return new SwapTokensSingleV3ERC20ToERC20Encoder();
+}
+
+// Multi swap
+
+// Note: whilst there are three swap methods: ERC-20 -> ERC-20, ERC-20 -> native, and native -> ERC-20, they all have the same function signature
+// @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Facets/GenericSwapFacetV3.sol#L249-L256
+const swapTokensMultiV3ERC20ToERC20Abi = parseAbi([
+  'function swapTokensMultipleV3ERC20ToERC20(bytes32 _transactionId, string calldata _integrator, string calldata _referrer, address _receiver, uint256 _minAmountOut, SwapData[] calldata _swapData)',
+  SwapDataStruct,
+]);
+
+type SwapTokensMultiV3ERC20ToERC20Args = Partial<{
+  transactionId: Hex;
+  integrator: string;
+  referrer: string;
+  receiver: Hex;
+  minAmountOut: bigint;
+  // Note: we only support one swap for simplicity
+  swapData: Partial<SwapDataStructArgs>;
+}>;
+
+class SwapTokensMultiV3ERC20ToERC20Encoder<
+    T extends SwapTokensMultiV3ERC20ToERC20Args,
+  >
+  extends Builder<T>
+  implements IEncoder
+{
+  encode(): Hex {
+    const { swapData, ...rest } = this.build();
+
+    const args = {
+      transactionId: faker.string.hexadecimal({ length: 64 }) as Hex,
+      integrator: faker.word.noun(),
+      referrer: faker.word.noun(),
+      receiver: getAddress(faker.finance.ethereumAddress()),
+      minAmountOut: faker.number.bigInt(),
+      swapData: {
+        callTo: getAddress(faker.finance.ethereumAddress()),
+        approveTo: getAddress(faker.finance.ethereumAddress()),
+        sendingAssetId: getAddress(faker.finance.ethereumAddress()),
+        receivingAssetId: getAddress(faker.finance.ethereumAddress()),
+        fromAmount: faker.number.bigInt(),
+        callData: faker.string.hexadecimal({ length: 130 }) as Hex,
+        requiresDeposit: faker.datatype.boolean(),
+        ...swapData,
+      },
+      ...rest,
+    };
+
+    return encodeFunctionData({
+      abi: swapTokensMultiV3ERC20ToERC20Abi,
+      functionName: 'swapTokensMultipleV3ERC20ToERC20',
+      args: [
+        args.transactionId,
+        args.integrator,
+        args.referrer,
+        args.receiver,
+        args.minAmountOut,
+        [args.swapData],
+      ],
+    });
+  }
+}
+
+export function swapTokensMultiV3ERC20ToERC20Encoder(): SwapTokensMultiV3ERC20ToERC20Encoder<SwapTokensMultiV3ERC20ToERC20Args> {
+  return new SwapTokensMultiV3ERC20ToERC20Encoder();
 }

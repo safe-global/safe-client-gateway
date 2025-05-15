@@ -289,7 +289,7 @@ export class LiFiDecoder {
    */
   private isSingleSwap(data: Hex): boolean {
     return LiFiDecoder.SingleSwapFunctionSelectors.some((selector) => {
-      data.startsWith(selector);
+      return data.startsWith(selector);
     });
   }
 
