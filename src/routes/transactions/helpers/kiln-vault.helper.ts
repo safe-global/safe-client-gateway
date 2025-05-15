@@ -46,7 +46,7 @@ export class KilnVaultHelper extends Erc4262Decoder {
     };
   }
 
-  public getVaultRedeemTransaction(
+  public getVaultRedeemOrWithdrawTransaction(
     args: Pick<
       MultisigTransaction | ModuleTransaction,
       'to' | 'data' | 'value'
@@ -56,10 +56,17 @@ export class KilnVaultHelper extends Erc4262Decoder {
     data: `0x${string}`;
     assets: number;
   } | null {
-    const decoded = this.getDecodedTransaction({
-      functionName: 'redeem',
-      transaction: args,
-    });
+    const decoded =
+      // redeem = full withdrawal from Vault
+      this.getDecodedTransaction({
+        functionName: 'redeem',
+        transaction: args,
+      }) ??
+      // withdraw = partial withdrawal from Vault
+      this.getDecodedTransaction({
+        functionName: 'withdraw',
+        transaction: args,
+      });
 
     if (!decoded) {
       return null;

@@ -416,23 +416,23 @@ export class MultisigTransactionInfoMapper {
       return null;
     }
 
-    const vaultRedeemTransaction =
-      this.kilnVaultHelper.getVaultRedeemTransaction({
+    const vaultRedeemOrWithdrawTransaction =
+      this.kilnVaultHelper.getVaultRedeemOrWithdrawTransaction({
         to: args.transaction.to,
         data: args.transaction.data,
         value: args.transaction.value,
       });
 
-    if (!vaultRedeemTransaction?.to) {
+    if (!vaultRedeemOrWithdrawTransaction?.to) {
       return null;
     }
 
     try {
       return await this.vaultTransactionMapper.mapRedeemInfo({
         chainId: args.chainId,
-        to: vaultRedeemTransaction.to,
-        assets: vaultRedeemTransaction.assets,
-        data: vaultRedeemTransaction.data,
+        to: vaultRedeemOrWithdrawTransaction.to,
+        assets: vaultRedeemOrWithdrawTransaction.assets,
+        data: vaultRedeemOrWithdrawTransaction.data,
         safeAddress: args.transaction.safe,
       });
     } catch (error) {
