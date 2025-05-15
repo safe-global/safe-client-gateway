@@ -58,6 +58,9 @@ describe('NotificationsRepositoryV2', () => {
       database: testDatabaseName,
     }),
     cache: {
+      /**
+       * @todo Test against Redis
+       */
       type: 'database',
       tableName: databaseCacheTableName,
       duration: mockConfigService.getOrThrow(

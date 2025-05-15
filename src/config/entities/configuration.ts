@@ -191,8 +191,8 @@ export default () => ({
                 port: process.env.REDIS_PORT || '6379',
                 username: process.env.REDIS_USER,
                 password: process.env.REDIS_PASS,
-                duration: parseInt(process.env.ORM_CACHE_DURATION ?? `${1000}`),
               },
+              duration: parseInt(process.env.ORM_CACHE_DURATION ?? `${1000}`),
             }
           : false,
     },
