@@ -75,6 +75,8 @@ describe('Transaction API Manager Tests', () => {
       else if (key === 'expirationTimeInSeconds.notFound.token')
         return notFoundExpireTimeSeconds;
       else if (key === 'owners.ownersTtlSeconds') return ownersTtlSeconds;
+      // TODO: Remove after Vault decoding has been released
+      else if (key === 'application.isProduction') return true;
 
       throw new Error(`Unexpected key: ${key}`);
     });

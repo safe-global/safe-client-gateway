@@ -93,6 +93,10 @@ describe('TransactionApi', () => {
       if (key === 'owners.ownersTtlSeconds') {
         return ownersTtlSeconds;
       }
+      // TODO: Remove after Vault decoding has been released
+      if (key === 'application.isProduction') {
+        return true;
+      }
       throw Error(`Unexpected key: ${key}`);
     });
 
@@ -2734,6 +2738,10 @@ describe('TransactionApi', () => {
         }
         if (key === 'owners.ownersTtlSeconds') {
           return ownersTtlSeconds;
+        }
+        // TODO: Remove after Vault decoding has been released
+        if (key === 'application.isProduction') {
+          return true;
         }
         throw Error(`Unexpected key: ${key}`);
       });

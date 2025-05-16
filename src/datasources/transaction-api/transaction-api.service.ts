@@ -36,6 +36,9 @@ export class TransactionApi implements ITransactionApi {
   private static readonly ERROR_ARRAY_PATH = 'nonFieldErrors';
   private static readonly HOODI_CHAIN_ID = '560048';
 
+  // TODO: Remove after Vault decoding has been released
+  private static readonly BASE_CHAIN_ID = '8453';
+
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly indexingExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
@@ -58,8 +61,15 @@ export class TransactionApi implements ITransactionApi {
         'expirationTimeInSeconds.indexing',
       );
 
+    const isProduction = this.configurationService.getOrThrow<boolean>(
+      'application.isProduction',
+    );
     // TODO: Remove temporary cache times for Hoodi chain.
-    if (chainId === TransactionApi.HOODI_CHAIN_ID) {
+    if (
+      chainId === TransactionApi.HOODI_CHAIN_ID ||
+      // TODO: Remove after Vault decoding has been released
+      (!isProduction && chainId === TransactionApi.BASE_CHAIN_ID)
+    ) {
       const hoodiExpirationTime = this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.hoodi',
       );
