@@ -20,6 +20,7 @@ import { EntityManager, In } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { NotificationSubscriptionNotificationType } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity.db';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 
 @Injectable()
 export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
@@ -427,7 +428,11 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     chainId: string;
     safeAddress: `0x${string}`;
   }): string {
-    return `getSubscribersBySafe-${args.chainId}-${args.safeAddress}`;
+    return CacheRouter.getOrnCacheKey(
+      'getSubscribersBySafe',
+      args.chainId,
+      args.safeAddress,
+    );
   }
 
   private async removeGetSubscribersBySafeCache(args: {

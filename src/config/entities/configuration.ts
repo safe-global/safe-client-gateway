@@ -187,12 +187,18 @@ export default () => ({
           ? {
               type: 'redis',
               options: {
-                host: process.env.REDIS_HOST || 'localhost',
-                port: process.env.REDIS_PORT || '6379',
+                socket: {
+                  host: process.env.REDIS_HOST || 'localhost',
+                  port: process.env.REDIS_PORT || '6379',
+                },
                 username: process.env.REDIS_USER,
                 password: process.env.REDIS_PASS,
               },
               duration: parseInt(process.env.ORM_CACHE_DURATION ?? `${1000}`),
+              /**
+               * @todo Fix the underlying issue with the Redis client shutting down
+               */
+              ignoreErrors: true,
             }
           : false,
     },

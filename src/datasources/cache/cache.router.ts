@@ -71,6 +71,7 @@ export class CacheRouter {
   private static readonly UNSUPPORTED_CHAIN_EVENT = 'unsupported_chain_event';
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
+  private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -786,5 +787,22 @@ export class CacheRouter {
    */
   static getMemoryKey(cacheDir: CacheDir): string {
     return `${cacheDir.key}:${cacheDir.field}`;
+  }
+
+  /**
+   * Gets Redis cache key for the ORM query cache.
+   *
+   * @param {string} prefix - Prefix for the cache key
+   * @param {string} chainId - Chain ID
+   * @param {string} safeAddress - Safe address
+   *
+   * @returns {string} - Cache key
+   */
+  static getOrnCacheKey(
+    prefix: string,
+    chainId: string,
+    safeAddress: `0x${string}`,
+  ): string {
+    return `${CacheRouter.ORM_QUERY_CACHE_KEY}:${prefix}:${chainId}:${safeAddress}`;
   }
 }
