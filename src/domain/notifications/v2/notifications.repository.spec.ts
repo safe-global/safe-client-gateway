@@ -17,6 +17,7 @@ import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
 import { getAddress } from 'viem';
+import type { ConfigService } from '@nestjs/config';
 
 describe('NotificationsRepositoryV2', () => {
   let notificationsRepository: INotificationsRepositoryV2;
@@ -33,6 +34,9 @@ describe('NotificationsRepositoryV2', () => {
   const mockPushNotificationsApi: IPushNotificationsApi = {
     enqueueNotification: jest.fn(),
   };
+  const mockConfigService = {
+    getOrThrow: jest.fn(),
+  } as jest.MockedObjectDeep<ConfigService>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -40,6 +44,7 @@ describe('NotificationsRepositoryV2', () => {
       mockPushNotificationsApi,
       mockLoggingService,
       mockPostgresDatabaseService,
+      mockConfigService,
     );
   });
 
@@ -54,10 +59,13 @@ describe('NotificationsRepositoryV2', () => {
         ],
         generatedMaps: [
           {
-            id: 1,
+            id: deviceId,
           },
         ],
         raw: jest.fn(),
+      });
+      mockEntityManager.findOneOrFail.mockResolvedValue({
+        id: deviceId,
       });
     });
 
@@ -94,7 +102,10 @@ describe('NotificationsRepositoryV2', () => {
           device_type: upsertSubscriptionsDto.deviceType,
           cloud_messaging_token: upsertSubscriptionsDto.cloudMessagingToken,
         },
-        ['device_uuid'],
+        {
+          conflictPaths: ['device_uuid'],
+          skipUpdateIfNoValuesChanged: true,
+        },
       );
     });
 
@@ -102,6 +113,10 @@ describe('NotificationsRepositoryV2', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+      const mockNotificationTypes = Array.from({ length: 4 }, () =>
+        notificationTypeBuilder().build(),
+      );
+      mockEntityManager.find.mockResolvedValue(mockNotificationTypes);
 
       await notificationsRepository.upsertSubscriptions({
         authPayload,
@@ -165,12 +180,15 @@ describe('NotificationsRepositoryV2', () => {
         2,
         NotificationSubscription,
         subscriptionsToInsert,
-        [
-          'chain_id',
-          'safe_address',
-          'signer_address',
-          'push_notification_device',
-        ],
+        {
+          conflictPaths: [
+            'chain_id',
+            'safe_address',
+            'signer_address',
+            'push_notification_device',
+          ],
+          skipUpdateIfNoValuesChanged: true,
+        },
       );
     });
 

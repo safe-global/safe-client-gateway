@@ -39,8 +39,15 @@ describe('NotificationsRepositoryV2', () => {
       if (key === 'db.migrator.retryAfterMs') {
         return config.db.migrator.retryAfterMs;
       }
+      if (key === 'pushNotifications.getSubscribersBySafeTtlMilliseconds') {
+        return faker.number.int({
+          min: 10000,
+          max: 70000,
+        });
+      }
     }),
   } as jest.MockedObjectDeep<ConfigService>;
+  const databaseCacheTableName = 'query-result-cache';
 
   const config = configuration();
   const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
@@ -50,6 +57,17 @@ describe('NotificationsRepositoryV2', () => {
       type: 'postgres',
       database: testDatabaseName,
     }),
+    cache: {
+      /**
+       * @todo Test against Redis
+       */
+      type: 'database',
+      tableName: databaseCacheTableName,
+      duration: mockConfigService.getOrThrow(
+        'pushNotifications.getSubscribersBySafeTtlMilliseconds',
+      ),
+    },
+    synchronize: true,
     migrationsTableName: config.db.orm.migrationsTableName,
     entities: [
       NotificationType,
@@ -182,6 +200,7 @@ describe('NotificationsRepositoryV2', () => {
       mockPushNotificationsApi,
       mockLoggingService,
       postgresDatabaseService,
+      mockConfigService,
     );
   });
 
@@ -217,6 +236,111 @@ describe('NotificationsRepositoryV2', () => {
       expect(dataSource.transaction).toHaveBeenCalledTimes(1);
       expect(device).toHaveProperty('device_uuid');
       expect(device?.device_uuid).toBe(upsertSubscriptionsDto.deviceUuid);
+    });
+
+    it('Should remove subscriptions cache when upserting a subscription', async () => {
+      jest.spyOn(dataSource, 'transaction');
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+      const cacheKeys: Array<string> = [];
+      for (const safe of upsertSubscriptionsDto.safes) {
+        cacheKeys.push(`getSubscribersBySafe-${safe.chainId}-${safe.address}`);
+        await notificationsRepositoryService.getSubscribersBySafe({
+          chainId: safe.chainId,
+          safeAddress: safe.address,
+        });
+      }
+      const cacheKeysArray = cacheKeys.join("','");
+      const cacheResult: Array<{ id: number }> = await postgresDatabaseService
+        .getDataSource()
+        .query(
+          `SELECT id FROM "${databaseCacheTableName}" WHERE identifier IN('${cacheKeysArray}');`,
+        );
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+      const cacheResultNew: Array<{ id: number }> =
+        await postgresDatabaseService
+          .getDataSource()
+          .query(`SELECT id FROM "${databaseCacheTableName}";`);
+
+      expect(cacheResult).toHaveLength(upsertSubscriptionsDto.safes.length);
+      expect(cacheResultNew).toHaveLength(0);
+    });
+
+    it('Should not remove other devices subscriptions cache when upserting a new subscription', async () => {
+      jest.spyOn(dataSource, 'transaction');
+      const authPayloadDto_1 = authPayloadDtoBuilder().build();
+      const authPayloadDto_2 = authPayloadDtoBuilder().build();
+      const authPayload_1 = new AuthPayload(authPayloadDto_1);
+      const upsertSubscriptionsDto_1 = upsertSubscriptionsDtoBuilder().build();
+      const authPayload_2 = new AuthPayload(authPayloadDto_2);
+      const upsertSubscriptionsDto_2 = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload: authPayload_1,
+        upsertSubscriptionsDto: upsertSubscriptionsDto_1,
+      });
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload: authPayload_2,
+        upsertSubscriptionsDto: upsertSubscriptionsDto_2,
+      });
+
+      const cacheKeys_1: Array<string> = [];
+      for (const safe of upsertSubscriptionsDto_1.safes) {
+        cacheKeys_1.push(
+          `getSubscribersBySafe-${safe.chainId}-${safe.address}`,
+        );
+        await notificationsRepositoryService.getSubscribersBySafe({
+          chainId: safe.chainId,
+          safeAddress: safe.address,
+        });
+      }
+      const cacheKeys_2: Array<string> = [];
+      for (const safe of upsertSubscriptionsDto_2.safes) {
+        cacheKeys_2.push(
+          `getSubscribersBySafe-${safe.chainId}-${safe.address}`,
+        );
+        await notificationsRepositoryService.getSubscribersBySafe({
+          chainId: safe.chainId,
+          safeAddress: safe.address,
+        });
+      }
+      const cacheKeysArray_1 = cacheKeys_1.join("','");
+      const cacheResult_1_old: Array<{ id: number }> =
+        await postgresDatabaseService
+          .getDataSource()
+          .query(
+            `SELECT id FROM "${databaseCacheTableName}" WHERE identifier IN('${cacheKeysArray_1}');`,
+          );
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload: authPayload_1,
+        upsertSubscriptionsDto: upsertSubscriptionsDto_1,
+      });
+      const cacheResult_1_new: Array<{ id: number }> =
+        await postgresDatabaseService
+          .getDataSource()
+          .query(
+            `SELECT id FROM "${databaseCacheTableName}" WHERE identifier IN('${cacheKeysArray_1}');`,
+          );
+      const cacheResult_2: Array<{ id: number }> = await postgresDatabaseService
+        .getDataSource()
+        .query(`SELECT id FROM "${databaseCacheTableName}";`);
+
+      expect(cacheResult_1_old).toHaveLength(
+        upsertSubscriptionsDto_1.safes.length,
+      );
+      expect(cacheResult_1_new).toHaveLength(0);
+      expect(cacheResult_2).toHaveLength(upsertSubscriptionsDto_2.safes.length);
     });
 
     it('Should deletePreviousSubscriptions() when upserting a subscription', async () => {
@@ -483,6 +607,38 @@ describe('NotificationsRepositoryV2', () => {
 
       expect(safeSubscription).toHaveProperty('subscriber');
       expect(secondSafeSubscription).toHaveProperty('subscriber');
+    });
+
+    it('Should cache safe subscribers successfully', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const secondAuthPayloadDto = authPayloadDtoBuilder().build();
+      const secondAuthPayload = new AuthPayload(secondAuthPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload: secondAuthPayload,
+        upsertSubscriptionsDto,
+      });
+
+      await notificationsRepositoryService.getSubscribersBySafe({
+        chainId: upsertSubscriptionsDto.safes[0].chainId,
+        safeAddress: upsertSubscriptionsDto.safes[0].address,
+      });
+
+      const cacheKey = `getSubscribersBySafe-${upsertSubscriptionsDto.safes[0].chainId}-${upsertSubscriptionsDto.safes[0].address}`;
+
+      const cacheResult = await postgresDatabaseService
+        .getDataSource()
+        .query(
+          `SELECT id FROM "${databaseCacheTableName}" WHERE identifier = '${cacheKey}';`,
+        );
+
+      expect(cacheResult).toHaveLength(1);
     });
 
     it('Should return an empty array if no subscriber exists', async () => {

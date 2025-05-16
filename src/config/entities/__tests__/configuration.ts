@@ -235,6 +235,7 @@ export default (): ReturnType<typeof configuration> => ({
       clientEmail: faker.internet.email(),
       privateKey: faker.string.alphanumeric(),
     },
+    getSubscribersBySafeTtlMilliseconds: faker.number.int({ min: 1, max: 100 }),
   },
   redis: {
     user: process.env.REDIS_USER,
