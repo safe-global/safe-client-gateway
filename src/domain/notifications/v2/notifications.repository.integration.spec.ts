@@ -20,6 +20,7 @@ import { NotificationType as NotificationTypeEnum } from '@/domain/notifications
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import type { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 
 describe('NotificationsRepositoryV2', () => {
   const mockLoggingService = {
@@ -39,6 +40,12 @@ describe('NotificationsRepositoryV2', () => {
       if (key === 'db.migrator.retryAfterMs') {
         return config.db.migrator.retryAfterMs;
       }
+      if (key === 'db.orm.cache.socket.host') {
+        return config.redis.host;
+      }
+      if (key === 'db.orm.cache.socket.port') {
+        return config.redis.port;
+      }
       if (key === 'pushNotifications.getSubscribersBySafeTtlMilliseconds') {
         return faker.number.int({
           min: 10000,
@@ -47,10 +54,11 @@ describe('NotificationsRepositoryV2', () => {
       }
     }),
   } as jest.MockedObjectDeep<ConfigService>;
-  const databaseCacheTableName = 'query-result-cache';
-
   const config = configuration();
   const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
+  const QUERY_CACHE_DURATION = mockConfigService.getOrThrow(
+    'pushNotifications.getSubscribersBySafeTtlMilliseconds',
+  );
   const dataSource = new DataSource({
     ...postgresConfig({
       ...config.db.connection.postgres,
@@ -58,14 +66,20 @@ describe('NotificationsRepositoryV2', () => {
       database: testDatabaseName,
     }),
     cache: {
+      type: 'redis',
+      options: {
+        socket: {
+          host: config.redis.host,
+          port: config.redis.port,
+        },
+        password: config.redis.pass,
+        username: config.redis.user,
+      },
+      duration: QUERY_CACHE_DURATION,
       /**
-       * @todo Test against Redis
+       * @todo Fix the underlying issue with the Redis client shutting down
        */
-      type: 'database',
-      tableName: databaseCacheTableName,
-      duration: mockConfigService.getOrThrow(
-        'pushNotifications.getSubscribersBySafeTtlMilliseconds',
-      ),
+      ignoreErrors: true,
     },
     synchronize: true,
     migrationsTableName: config.db.orm.migrationsTableName,
@@ -250,27 +264,42 @@ describe('NotificationsRepositoryV2', () => {
       });
       const cacheKeys: Array<string> = [];
       for (const safe of upsertSubscriptionsDto.safes) {
-        cacheKeys.push(`getSubscribersBySafe-${safe.chainId}-${safe.address}`);
+        const cacheKey = CacheRouter.getOrnCacheKey(
+          'getSubscribersBySafe',
+          safe.chainId,
+          safe.address,
+        );
+        cacheKeys.push(cacheKey);
         await notificationsRepositoryService.getSubscribersBySafe({
           chainId: safe.chainId,
           safeAddress: safe.address,
         });
       }
-      const cacheKeysArray = cacheKeys.join("','");
-      const cacheResult: Array<{ id: number }> = await postgresDatabaseService
-        .getDataSource()
-        .query(
-          `SELECT id FROM "${databaseCacheTableName}" WHERE identifier IN('${cacheKeysArray}');`,
-        );
+      const cacheResult: Array<string> = [];
+      for (const cacheKey of cacheKeys) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResult.push(result.identifier);
+        }
+      }
 
       await notificationsRepositoryService.upsertSubscriptions({
         authPayload,
         upsertSubscriptionsDto,
       });
-      const cacheResultNew: Array<{ id: number }> =
-        await postgresDatabaseService
-          .getDataSource()
-          .query(`SELECT id FROM "${databaseCacheTableName}";`);
+      const cacheResultNew: Array<string> = [];
+      for (const cacheKey of cacheKeys) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResultNew.push(result.identifier);
+        }
+      }
 
       expect(cacheResult).toHaveLength(upsertSubscriptionsDto.safes.length);
       expect(cacheResultNew).toHaveLength(0);
@@ -297,9 +326,12 @@ describe('NotificationsRepositoryV2', () => {
 
       const cacheKeys_1: Array<string> = [];
       for (const safe of upsertSubscriptionsDto_1.safes) {
-        cacheKeys_1.push(
-          `getSubscribersBySafe-${safe.chainId}-${safe.address}`,
+        const cacheKey = CacheRouter.getOrnCacheKey(
+          'getSubscribersBySafe',
+          safe.chainId,
+          safe.address,
         );
+        cacheKeys_1.push(cacheKey);
         await notificationsRepositoryService.getSubscribersBySafe({
           chainId: safe.chainId,
           safeAddress: safe.address,
@@ -307,34 +339,53 @@ describe('NotificationsRepositoryV2', () => {
       }
       const cacheKeys_2: Array<string> = [];
       for (const safe of upsertSubscriptionsDto_2.safes) {
-        cacheKeys_2.push(
-          `getSubscribersBySafe-${safe.chainId}-${safe.address}`,
+        const cacheKey = CacheRouter.getOrnCacheKey(
+          'getSubscribersBySafe',
+          safe.chainId,
+          safe.address,
         );
+        cacheKeys_2.push(cacheKey);
         await notificationsRepositoryService.getSubscribersBySafe({
           chainId: safe.chainId,
           safeAddress: safe.address,
         });
       }
-      const cacheKeysArray_1 = cacheKeys_1.join("','");
-      const cacheResult_1_old: Array<{ id: number }> =
-        await postgresDatabaseService
-          .getDataSource()
-          .query(
-            `SELECT id FROM "${databaseCacheTableName}" WHERE identifier IN('${cacheKeysArray_1}');`,
-          );
+
+      const cacheResult_1_old: Array<string> = [];
+      for (const cacheKey of cacheKeys_1) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResult_1_old.push(result.identifier);
+        }
+      }
       await notificationsRepositoryService.upsertSubscriptions({
         authPayload: authPayload_1,
         upsertSubscriptionsDto: upsertSubscriptionsDto_1,
       });
-      const cacheResult_1_new: Array<{ id: number }> =
-        await postgresDatabaseService
-          .getDataSource()
-          .query(
-            `SELECT id FROM "${databaseCacheTableName}" WHERE identifier IN('${cacheKeysArray_1}');`,
-          );
-      const cacheResult_2: Array<{ id: number }> = await postgresDatabaseService
-        .getDataSource()
-        .query(`SELECT id FROM "${databaseCacheTableName}";`);
+      const cacheResult_1_new: Array<string> = [];
+      for (const cacheKey of cacheKeys_1) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResult_1_new.push(result.identifier);
+        }
+      }
+
+      const cacheResult_2: Array<string> = [];
+      for (const cacheKey of cacheKeys_2) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResult_2.push(result.identifier);
+        }
+      }
 
       expect(cacheResult_1_old).toHaveLength(
         upsertSubscriptionsDto_1.safes.length,
@@ -630,15 +681,18 @@ describe('NotificationsRepositoryV2', () => {
         safeAddress: upsertSubscriptionsDto.safes[0].address,
       });
 
-      const cacheKey = `getSubscribersBySafe-${upsertSubscriptionsDto.safes[0].chainId}-${upsertSubscriptionsDto.safes[0].address}`;
+      const cacheKey = CacheRouter.getOrnCacheKey(
+        'getSubscribersBySafe',
+        upsertSubscriptionsDto.safes[0].chainId,
+        upsertSubscriptionsDto.safes[0].address,
+      );
 
-      const cacheResult = await postgresDatabaseService
-        .getDataSource()
-        .query(
-          `SELECT id FROM "${databaseCacheTableName}" WHERE identifier = '${cacheKey}';`,
-        );
+      const cacheResult = await dataSource.queryResultCache?.getFromCache({
+        identifier: cacheKey,
+        duration: QUERY_CACHE_DURATION,
+      });
 
-      expect(cacheResult).toHaveLength(1);
+      expect(cacheResult?.identifier).toBeTruthy();
     });
 
     it('Should return an empty array if no subscriber exists', async () => {
