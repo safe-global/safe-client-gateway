@@ -26,6 +26,18 @@ export default () => ({
         process.env.COUNTERFACTUAL_SAFES_CREATION_RATE_LIMIT_CALLS_BY_PERIOD ??
           `${25}`,
       ),
+    }, // TODO: Unify base URLs with staking
+    earn: {
+      testnet: {
+        baseUri:
+          process.env.STAKING_TESTNET_API_BASE_URI ||
+          'https://api.testnet.kiln.fi',
+        apiKey: process.env.EARN_TESTNET_API_KEY,
+      },
+      mainnet: {
+        baseUri: process.env.STAKING_API_BASE_URI || 'https://api.kiln.fi',
+        apiKey: process.env.EARN_MAINNET_API_KEY,
+      },
     },
     encryption: {
       // The encryption type to use. Defaults to 'local'.
@@ -154,10 +166,6 @@ export default () => ({
     infura: {
       apiKey: process.env.INFURA_API_KEY,
     },
-  },
-  bridge: {
-    baseUri: 'https://li.quest',
-    apiKey: process.env.BRIDGE_API_KEY,
   },
   contracts: {
     trustedForDelegateCall: {
