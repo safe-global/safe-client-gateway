@@ -1,3 +1,4 @@
+import { DataDecodedSchema } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
@@ -26,6 +27,7 @@ export const MultisigTransactionSchema = z.object({
   to: AddressSchema,
   value: NumericStringSchema,
   data: HexSchema.nullish().default(null),
+  dataDecoded: DataDecodedSchema.nullish().default(null),
   operation: z.nativeEnum(Operation),
   gasToken: AddressSchema.nullish().default(null),
   safeTxGas: CoercedNumberSchema.nullish().default(null),

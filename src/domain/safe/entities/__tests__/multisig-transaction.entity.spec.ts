@@ -151,6 +151,7 @@ describe('MultisigTransaction', () => {
 
     it.each([
       'data' as const,
+      'dataDecoded' as const,
       'gasToken' as const,
       'safeTxGas' as const,
       'baseGas' as const,

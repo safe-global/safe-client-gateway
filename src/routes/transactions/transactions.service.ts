@@ -51,7 +51,6 @@ import { TXSMultisigTransactionPage } from '@/routes/transactions/entities/txs-m
 import { TXSCreationTransaction } from '@/routes/transactions/entities/txs-creation-transaction.entity';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 
 @Injectable()
 export class TransactionsService {
@@ -59,8 +58,6 @@ export class TransactionsService {
 
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
-    @Inject(IDataDecoderRepository)
-    private readonly dataDecoderRepository: IDataDecoderRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly transferMapper: TransferMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
@@ -90,20 +87,13 @@ export class TransactionsService {
 
     switch (txType) {
       case MODULE_TRANSACTION_PREFIX: {
-        const tx = await this.safeRepository.getModuleTransaction({
-          chainId: args.chainId,
-          moduleTransactionId: id,
-        });
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
+        const [tx] = await Promise.all([
+          this.safeRepository.getModuleTransaction({
             chainId: args.chainId,
-            transaction: tx,
-          });
-        return this.moduleTransactionDetailsMapper.mapDetails(
-          args.chainId,
-          tx,
-          dataDecoded,
-        );
+            moduleTransactionId: id,
+          }),
+        ]);
+        return this.moduleTransactionDetailsMapper.mapDetails(args.chainId, tx);
       }
 
       case TRANSFER_PREFIX: {
@@ -150,17 +140,10 @@ export class TransactionsService {
           throw new BadRequestException('Invalid transaction ID');
         }
 
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId: args.chainId,
-            transaction: tx,
-          });
-
         return this.multisigTransactionDetailsMapper.mapDetails(
           args.chainId,
           tx,
           safe,
-          dataDecoded,
         );
       }
 
@@ -170,21 +153,14 @@ export class TransactionsService {
           chainId: args.chainId,
           safeTransactionHash: args.txId,
         });
-        const [safe, dataDecoded] = await Promise.all([
-          this.safeRepository.getSafe({
-            chainId: args.chainId,
-            address: tx.safe,
-          }),
-          this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId: args.chainId,
-            transaction: tx,
-          }),
-        ]);
+        const safe = await this.safeRepository.getSafe({
+          chainId: args.chainId,
+          address: tx.safe,
+        });
         return this.multisigTransactionDetailsMapper.mapDetails(
           args.chainId,
           tx,
           safe,
-          dataDecoded,
         );
       }
     }
@@ -198,12 +174,7 @@ export class TransactionsService {
       chainId: args.chainId,
       safeTransactionHash: args.safeTxHash,
     });
-    const dataDecoded =
-      await this.dataDecoderRepository.getTransactionDataDecoded({
-        chainId: args.chainId,
-        transaction: tx,
-      });
-    return new TXSMultisigTransaction({ ...tx, dataDecoded });
+    return new TXSMultisigTransaction(tx);
   }
 
   async getMultisigTransactions(args: {
@@ -240,29 +211,19 @@ export class TransactionsService {
       chainId: args.chainId,
       transactions: domainTransactions.results,
     });
-
-    const dataDecoded = await Promise.all(
-      domainTransactions.results.map((domainTransaction) => {
-        return this.dataDecoderRepository.getTransactionDataDecoded({
-          chainId: args.chainId,
-          transaction: domainTransaction,
-        });
-      }),
+    const results = await Promise.all(
+      domainTransactions.results.map(
+        async (domainTransaction) =>
+          new MultisigTransaction(
+            await this.multisigTransactionMapper.mapTransaction(
+              args.chainId,
+              domainTransaction,
+              safeInfo,
+            ),
+            ConflictType.None,
+          ),
+      ),
     );
-    const mappedTransactions = await Promise.all(
-      domainTransactions.results.map((domainTransaction, index) => {
-        return this.multisigTransactionMapper.mapTransaction(
-          args.chainId,
-          domainTransaction,
-          safeInfo,
-          dataDecoded[index],
-        );
-      }),
-    );
-
-    const results = mappedTransactions.map((mappedTransaction) => {
-      return new MultisigTransaction(mappedTransaction, ConflictType.None);
-    });
     const nextURL = cursorUrlFromLimitAndOffset(
       args.routeUrl,
       domainTransactions.next,
@@ -331,22 +292,15 @@ export class TransactionsService {
       chainId: args.chainId,
       safeTransactionHash: args.safeTxHash,
     });
-    const [safe, dataDecoded] = await Promise.all([
-      this.safeRepository.getSafe({
-        chainId: args.chainId,
-        address: transaction.safe,
-      }),
-      this.dataDecoderRepository.getTransactionDataDecoded({
-        chainId: args.chainId,
-        transaction,
-      }),
-    ]);
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: transaction.safe,
+    });
 
     return this.multisigTransactionDetailsMapper.mapDetails(
       args.chainId,
       transaction,
       safe,
-      dataDecoded,
     );
   }
 
@@ -366,20 +320,15 @@ export class TransactionsService {
     });
 
     const results = await Promise.all(
-      domainTransactions.results.map(async (domainTransaction) => {
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId: args.chainId,
-            transaction: domainTransaction,
-          });
-        return new ModuleTransaction(
-          await this.moduleTransactionMapper.mapTransaction(
-            args.chainId,
-            domainTransaction,
-            dataDecoded,
+      domainTransactions.results.map(
+        async (domainTransaction) =>
+          new ModuleTransaction(
+            await this.moduleTransactionMapper.mapTransaction(
+              args.chainId,
+              domainTransaction,
+            ),
           ),
-        );
-      }),
+      ),
     );
     const nextURL = cursorUrlFromLimitAndOffset(
       args.routeUrl,
@@ -583,26 +532,19 @@ export class TransactionsService {
     );
     await this.safeRepository.proposeTransaction(args);
 
+    const safe = await this.safeRepository.getSafe({
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
     const domainTransaction = await this.safeRepository.getMultiSigTransaction({
       chainId: args.chainId,
       safeTransactionHash: args.proposeTransactionDto.safeTxHash,
     });
-    const [safe, dataDecoded] = await Promise.all([
-      this.safeRepository.getSafe({
-        chainId: args.chainId,
-        address: args.safeAddress,
-      }),
-      this.dataDecoderRepository.getTransactionDataDecoded({
-        chainId: args.chainId,
-        transaction: domainTransaction,
-      }),
-    ]);
 
     return this.multisigTransactionDetailsMapper.mapDetails(
       args.chainId,
       domainTransaction,
       safe,
-      dataDecoded,
     );
   }
 
@@ -610,16 +552,7 @@ export class TransactionsService {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<CreationTransaction> {
-    const tx = await this.safeRepository.getCreationTransaction(args);
-    const dataDecoded =
-      await this.dataDecoderRepository.getTransactionDataDecoded({
-        chainId: args.chainId,
-        transaction: tx,
-      });
-    return {
-      ...tx,
-      dataDecoded,
-    };
+    return this.safeRepository.getCreationTransaction(args);
   }
 
   async getDomainCreationTransaction(args: {

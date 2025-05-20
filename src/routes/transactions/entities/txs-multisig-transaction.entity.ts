@@ -16,6 +16,8 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()
   data: `0x${string}` | null;
   @ApiProperty()
+  dataDecoded: DataDecoded | null;
+  @ApiProperty()
   operation: Operation;
   @ApiProperty()
   gasToken: `0x${string}` | null;
@@ -105,6 +107,7 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
     this.to = args.to;
     this.value = args.value;
     this.data = args.data;
+    this.dataDecoded = args.dataDecoded;
     this.operation = args.operation;
     this.gasToken = args.gasToken;
     this.safeTxGas = args.safeTxGas;

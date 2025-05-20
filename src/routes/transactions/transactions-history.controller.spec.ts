@@ -73,7 +73,6 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 describe('Transactions History Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string | undefined;
-  let safeDecoderUrl: string | undefined;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
 
@@ -111,7 +110,6 @@ describe('Transactions History Controller (Unit)', () => {
 
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
-    safeDecoderUrl = configurationService.get('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -303,11 +301,13 @@ describe('Transactions History Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const moduleTransaction = moduleTransactionToJson(
       moduleTransactionBuilder()
+        .with('dataDecoded', null)
         .with('executionDate', new Date('2022-12-06T23:00:00Z'))
         .build(),
     );
     const multisigTransaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
+      .with('dataDecoded', null)
       .with('origin', null)
       .with('executionDate', new Date('2022-12-25T00:00:00Z'))
       .buildWithConfirmations({
@@ -383,6 +383,7 @@ describe('Transactions History Controller (Unit)', () => {
     const chainId = chainResponse.chainId;
     const moduleTransaction = moduleTransactionToJson(
       moduleTransactionBuilder()
+        .with('dataDecoded', null)
         .with('executionDate', new Date('2022-12-31T22:09:36Z'))
         .build(),
     );
@@ -432,9 +433,11 @@ describe('Transactions History Controller (Unit)', () => {
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
     const moduleTransaction1 = moduleTransactionBuilder()
+      .with('dataDecoded', null)
       .with('executionDate', new Date('2022-12-31T21:09:36Z'))
       .build();
     const moduleTransaction2 = moduleTransactionBuilder()
+      .with('dataDecoded', null)
       .with('executionDate', new Date('2022-12-31T23:09:36Z'))
       .build();
     const safe = safeBuilder().build();
@@ -500,9 +503,11 @@ describe('Transactions History Controller (Unit)', () => {
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
     const moduleTransaction1 = moduleTransactionBuilder()
+      .with('dataDecoded', null)
       .with('executionDate', new Date('2022-12-31T21:09:36Z'))
       .build();
     const moduleTransaction2 = moduleTransactionBuilder()
+      .with('dataDecoded', null)
       .with('executionDate', new Date('2022-12-31T23:09:36Z'))
       .build();
     const safe = safeBuilder().build();
@@ -581,27 +586,30 @@ describe('Transactions History Controller (Unit)', () => {
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'transfer')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('name', 'to')
+              .with('type', 'address')
+              .with('value', multisigTransactionToAddress)
+              .build(),
+            dataDecodedParameterBuilder()
+              .with('name', 'value')
+              .with('type', 'uint256')
+              .with('value', multisigTransactionValue)
+              .build(),
+          ])
+          .build(),
+      )
       .with('confirmationsRequired', 2)
       .buildWithConfirmations({
         safe,
         signers,
         chainId: chain.chainId,
       });
-    const multisigTransactionDataDecoded = dataDecodedBuilder()
-      .with('method', 'transfer')
-      .with('parameters', [
-        dataDecodedParameterBuilder()
-          .with('name', 'to')
-          .with('type', 'address')
-          .with('value', multisigTransactionToAddress)
-          .build(),
-        dataDecodedParameterBuilder()
-          .with('name', 'value')
-          .with('type', 'uint256')
-          .with('value', multisigTransactionValue)
-          .build(),
-      ])
-      .build();
     const nativeTokenTransfer = nativeTokenTransferBuilder()
       .with('executionDate', new Date('2022-08-04T12:44:22Z'))
       .with('to', safe.address)
@@ -642,19 +650,6 @@ describe('Transactions History Controller (Unit)', () => {
       }
       if (url === getTokenUrlPattern) {
         return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
-    networkService.post.mockImplementation(({ url, data }) => {
-      if (
-        url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-        'data' in data &&
-        data.data === multisigTransaction.data
-      ) {
-        return Promise.resolve({
-          data: rawify(multisigTransactionDataDecoded),
-          status: 200,
-        });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -771,7 +766,9 @@ describe('Transactions History Controller (Unit)', () => {
     const safeAddress = faker.finance.ethereumAddress();
     const chainResponse = chainBuilder().build();
     const chainId = chainResponse.chainId;
-    const moduleTransaction = moduleTransactionBuilder().build();
+    const moduleTransaction = moduleTransactionBuilder()
+      .with('dataDecoded', null)
+      .build();
     const safe = safeBuilder().build();
     const allTransactionsResponse = {
       count: 2,
@@ -853,7 +850,7 @@ describe('Transactions History Controller (Unit)', () => {
     const limit = 5;
     const offset = 5;
     const moduleTransaction = moduleTransactionToJson(
-      moduleTransactionBuilder().build(),
+      moduleTransactionBuilder().with('dataDecoded', null).build(),
     );
     const safe = safeBuilder().build();
     const clientNextCursor = `cursor=limit%3D${limit}%26offset%3D10`;

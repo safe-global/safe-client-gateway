@@ -18,7 +18,6 @@ import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import {
   creationTransactionBuilder,
   toJson as creationTransactionToJson,
@@ -36,7 +35,6 @@ import request from 'supertest';
 describe('Get creation transaction', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -64,7 +62,6 @@ describe('Get creation transaction', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-    safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -79,7 +76,6 @@ describe('Get creation transaction', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const creationTransaction = creationTransactionBuilder().build();
-    const dataDecoded = dataDecodedBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getCreationTransactionUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/creation/`;
     networkService.get.mockImplementation(({ url }) => {
@@ -95,12 +91,6 @@ describe('Get creation transaction', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    networkService.post.mockImplementation(({ url }) => {
-      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
-        return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
 
     await request(app.getHttpServer())
       .get(
@@ -110,7 +100,6 @@ describe('Get creation transaction', () => {
       .expect(({ body }) => {
         expect(body).toEqual({
           ...creationTransaction,
-          dataDecoded,
           created: creationTransaction.created.toISOString(),
         });
       });
