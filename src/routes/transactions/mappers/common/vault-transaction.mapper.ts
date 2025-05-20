@@ -4,7 +4,7 @@ import {
 } from '@/datasources/staking-api/entities/defi-vault-stats.entity';
 import { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
 import { getNumberString } from '@/domain/common/utils/utils';
-import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { EarnRepository } from '@/domain/earn/earn.repository';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { VaultExtraReward } from '@/routes/transactions/entities/vaults/vault-extra-reward.entity';
@@ -18,8 +18,8 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 @Injectable()
 export class VaultTransactionMapper {
   constructor(
-    @Inject(IStakingRepository)
-    private readonly stakingRepository: IStakingRepository,
+    @Inject(EarnRepository)
+    private readonly earnRepository: EarnRepository,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
   ) {}
@@ -31,12 +31,12 @@ export class VaultTransactionMapper {
     data: `0x${string}`;
     safeAddress: `0x${string}`;
   }): Promise<VaultDepositTransactionInfo> {
-    const deployment = await this.stakingRepository.getDeployment({
+    const deployment = await this.earnRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
     });
     this.validateDeployment({ chainId: args.chainId, deployment });
-    const defiVaultStats = await this.stakingRepository.getDefiVaultStats({
+    const defiVaultStats = await this.earnRepository.getDefiVaultStats({
       chainId: args.chainId,
       vault: args.to,
     });
@@ -78,12 +78,12 @@ export class VaultTransactionMapper {
     data: `0x${string}`;
     safeAddress: `0x${string}`;
   }): Promise<VaultRedeemTransactionInfo> {
-    const deployment = await this.stakingRepository.getDeployment({
+    const deployment = await this.earnRepository.getDeployment({
       chainId: args.chainId,
       address: args.to,
     });
     this.validateDeployment({ chainId: args.chainId, deployment });
-    const defiVaultStats = await this.stakingRepository.getDefiVaultStats({
+    const defiVaultStats = await this.earnRepository.getDefiVaultStats({
       chainId: args.chainId,
       vault: args.to,
     });
@@ -97,7 +97,7 @@ export class VaultTransactionMapper {
         safeAddress: args.safeAddress,
         additionalRewards: defiVaultStats.additional_rewards,
       }),
-      this.stakingRepository.getDefiVaultStake({
+      this.earnRepository.getDefiVaultStake({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         vault: args.to,
@@ -140,7 +140,7 @@ export class VaultTransactionMapper {
       return [];
     }
 
-    const morphoExtraRewards = await this.stakingRepository
+    const morphoExtraRewards = await this.earnRepository
       .getDefiMorphoExtraRewards(args)
       .catch(() => []);
 

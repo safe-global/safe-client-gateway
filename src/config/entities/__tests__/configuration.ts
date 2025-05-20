@@ -139,6 +139,16 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  earn: {
+    testnet: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+    },
+    mainnet: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+    },
+  },
   email: {
     applicationCode: faker.string.alphanumeric(),
     baseUri: faker.internet.url({ appendSlash: false }),

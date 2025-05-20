@@ -6,6 +6,7 @@ import type { ChainsRepository } from '@/domain/chains/chains.repository';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import type { CollectiblesRepository } from '@/domain/collectibles/collectibles.repository';
 import type { DelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.repository';
+import type { EarnRepository } from '@/domain/earn/earn.repository';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { EventCacheHelper } from '@/domain/hooks/helpers/event-cache.helper';
 import type { EventNotificationsHelper } from '@/domain/hooks/helpers/event-notifications.helper';
@@ -66,6 +67,10 @@ const mockStakingRepository = jest.mocked({
   clearApi: jest.fn(),
 } as jest.MockedObjectDeep<StakingRepository>);
 
+const mockEarnRepository = jest.mocked({
+  clearApi: jest.fn(),
+} as jest.MockedObjectDeep<EarnRepository>);
+
 const mockTransactionsRepository = jest.mocked({
   clearApi: jest.fn(),
 } as jest.MockedObjectDeep<TransactionsRepository>);
@@ -107,6 +112,7 @@ describe('HooksRepository (Unit)', () => {
       mockSafeAppsRepository,
       mockSafeRepository,
       mockStakingRepository,
+      mockEarnRepository,
       mockTransactionsRepository,
       mockLoggingService,
       fakeCacheService,
@@ -176,6 +182,7 @@ describe('HooksRepository (Unit)', () => {
     expect(mockChainsRepository.clearChain).toHaveBeenCalledTimes(3);
     expect(mockBlockchainRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockStakingRepository.clearApi).toHaveBeenCalledTimes(3);
+    expect(mockEarnRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockTransactionsRepository.clearApi).toHaveBeenCalledTimes(3);
     expect(mockBalancesRepository.clearApi).toHaveBeenCalledTimes(3);
   });

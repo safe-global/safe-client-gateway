@@ -395,6 +395,7 @@ export class MultisigTransactionInfoMapper {
         safeAddress: args.transaction.safe,
       });
     } catch (error) {
+      console.log('Error mapping vault deposit:', error);
       this.loggingService.warn(error);
       return null;
     }
@@ -428,6 +429,7 @@ export class MultisigTransactionInfoMapper {
         safeAddress: args.transaction.safe,
       });
     } catch (error) {
+      console.log('Error mapping vault redeem:', error);
       this.loggingService.warn(error);
       return null;
     }

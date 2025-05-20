@@ -225,6 +225,19 @@ export default () => ({
       },
     },
   },
+  // TODO: Unify base URLs with staking
+  earn: {
+    testnet: {
+      baseUri:
+        process.env.STAKING_TESTNET_API_BASE_URI ||
+        'https://api.testnet.kiln.fi',
+      apiKey: process.env.EARN_TESTNET_API_KEY,
+    },
+    mainnet: {
+      baseUri: process.env.STAKING_API_BASE_URI || 'https://api.kiln.fi',
+      apiKey: process.env.EARN_MAINNET_API_KEY,
+    },
+  },
   email: {
     applicationCode: process.env.EMAIL_API_APPLICATION_CODE,
     baseUri: process.env.EMAIL_API_BASE_URI || 'https://api.pushwoosh.com',
@@ -327,7 +340,7 @@ export default () => ({
   },
   log: {
     level: process.env.LOG_LEVEL || 'debug',
-    silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
+    silent: true,
     prettyColorize: process.env.LOG_PRETTY_COLORIZE?.toLowerCase() === 'true',
   },
   owners: {

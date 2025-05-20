@@ -1,4 +1,4 @@
-import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
+import { EarnApiManager } from '@/datasources/earn-api/earn-api.manager';
 import {
   NetworkStats,
   NetworkStatsSchema,
@@ -38,13 +38,17 @@ import {
   DefiMorphoExtraRewardsSchema,
 } from '@/datasources/staking-api/entities/defi-morpho-extra-reward.entity';
 
-// TODO: Deduplicate code with EarnRepository
+// TODO: Deduplicate code with StakingRepository
+
+// Note: This mirrors that of StakingApiManager but as each widget deployment
+// is its own Kiln "organization", deployments have different base URLs when
+// compared to the staking API.
 
 @Injectable()
-export class StakingRepository implements IStakingRepository {
+export class EarnRepository implements IStakingRepository {
   constructor(
-    @Inject(IStakingApiManager)
-    private readonly stakingApiFactory: IStakingApiManager,
+    @Inject(EarnApiManager)
+    private readonly earnApiFactory: EarnApiManager,
   ) {}
 
   public async getDeployment(args: {
@@ -65,23 +69,23 @@ export class StakingRepository implements IStakingRepository {
   }
 
   private async getDeployments(chainId: string): Promise<Array<Deployment>> {
-    const stakingApi = await this.stakingApiFactory.getApi(chainId);
-    const deployments = await stakingApi.getDeployments();
+    const earnApi = await this.earnApiFactory.getApi(chainId);
+    const deployments = await earnApi.getDeployments();
     // TODO: Filter response by chainId and remove logic from validateDeployment
     return DeploymentsSchema.parse(deployments);
   }
 
   public async getNetworkStats(chainId: string): Promise<NetworkStats> {
-    const stakingApi = await this.stakingApiFactory.getApi(chainId);
-    const networkStats = await stakingApi.getNetworkStats();
+    const earnApi = await this.earnApiFactory.getApi(chainId);
+    const networkStats = await earnApi.getNetworkStats();
     return NetworkStatsSchema.parse(networkStats);
   }
 
   public async getDedicatedStakingStats(
     chainId: string,
   ): Promise<DedicatedStakingStats> {
-    const stakingApi = await this.stakingApiFactory.getApi(chainId);
-    const dedicatedStakingStats = await stakingApi.getDedicatedStakingStats();
+    const earnApi = await this.earnApiFactory.getApi(chainId);
+    const dedicatedStakingStats = await earnApi.getDedicatedStakingStats();
     return DedicatedStakingStatsSchema.parse(dedicatedStakingStats);
   }
 
@@ -89,8 +93,8 @@ export class StakingRepository implements IStakingRepository {
     chainId: string;
     pool: `0x${string}`;
   }): Promise<PooledStakingStats> {
-    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const pooledStaking = await stakingApi.getPooledStakingStats(args.pool);
+    const earnApi = await this.earnApiFactory.getApi(args.chainId);
+    const pooledStaking = await earnApi.getPooledStakingStats(args.pool);
     return PooledStakingStatsSchema.parse(pooledStaking);
   }
 
@@ -98,8 +102,8 @@ export class StakingRepository implements IStakingRepository {
     chainId: string;
     vault: `0x${string}`;
   }): Promise<DefiVaultStats> {
-    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const defiStats = await stakingApi.getDefiVaultStats(args.vault);
+    const earnApi = await this.earnApiFactory.getApi(args.chainId);
+    const defiStats = await earnApi.getDefiVaultStats(args.vault);
     // Cannot be >1 contract deployed at the same address so return first element
     return DefiVaultsStateSchema.parse(defiStats)[0];
   }
@@ -109,8 +113,8 @@ export class StakingRepository implements IStakingRepository {
     safeAddress: `0x${string}`;
     vault: `0x${string}`;
   }): Promise<DefiVaultStake> {
-    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const defiStakes = await stakingApi.getDefiVaultStakes(args);
+    const earnApi = await this.earnApiFactory.getApi(args.chainId);
+    const defiStakes = await earnApi.getDefiVaultStakes(args);
     // Safe can only have one stake per Vault so return first element
     return DefiVaultStakesSchema.parse(defiStakes)[0];
   }
@@ -119,8 +123,8 @@ export class StakingRepository implements IStakingRepository {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<Array<DefiMorphoExtraReward>> {
-    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const defiMorphoExtraRewards = await stakingApi.getDefiMorphoExtraRewards(
+    const earnApi = await this.earnApiFactory.getApi(args.chainId);
+    const defiMorphoExtraRewards = await earnApi.getDefiMorphoExtraRewards(
       args.safeAddress,
     );
     return DefiMorphoExtraRewardsSchema.parse(defiMorphoExtraRewards);
@@ -131,8 +135,8 @@ export class StakingRepository implements IStakingRepository {
     safeAddress: `0x${string}`;
     validatorsPublicKeys: Array<`0x${string}`>;
   }): Promise<Array<Stake>> {
-    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const stakes = await stakingApi.getStakes(args);
+    const earnApi = await this.earnApiFactory.getApi(args.chainId);
+    const stakes = await earnApi.getStakes(args);
     return StakesSchema.parse(stakes);
   }
 
@@ -140,20 +144,20 @@ export class StakingRepository implements IStakingRepository {
     chainId: string;
     safeAddress: `0x${string}`;
   }): Promise<void> {
-    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    await stakingApi.clearStakes(args.safeAddress);
+    const earnApi = await this.earnApiFactory.getApi(args.chainId);
+    await earnApi.clearStakes(args.safeAddress);
   }
 
   public async getTransactionStatus(args: {
     chainId: string;
     txHash: `0x${string}`;
   }): Promise<TransactionStatus> {
-    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
-    const txStatus = await stakingApi.getTransactionStatus(args.txHash);
+    const earnApi = await this.earnApiFactory.getApi(args.chainId);
+    const txStatus = await earnApi.getTransactionStatus(args.txHash);
     return TransactionStatusSchema.parse(txStatus);
   }
 
   public clearApi(chainId: string): void {
-    this.stakingApiFactory.destroyApi(chainId);
+    this.earnApiFactory.destroyApi(chainId);
   }
 }
