@@ -50,13 +50,11 @@ export class LiFiDecoder {
    */
   public isBridge(data: Hex): boolean {
     try {
-      const { toChain, fromToken, toToken } =
-        this.decodeBridgeAndMaybeSwap(data);
+      const { destinationChainId, hasSourceSwaps } =
+        this.decodeBridgeData(data);
 
-      return (
-        this.fromChain !== toChain.toString() &&
-        isAddressEqual(fromToken, toToken)
-      );
+      const isBridge = this.fromChain !== destinationChainId.toString();
+      return isBridge && !hasSourceSwaps;
     } catch {
       return false;
     }
@@ -76,17 +74,15 @@ export class LiFiDecoder {
         return true;
       }
     } catch {
-      //
+      // Maybe swap and bridge
     }
 
     try {
-      const { toChain, fromToken, toToken } =
-        this.decodeBridgeAndMaybeSwap(data);
+      const { destinationChainId, hasSourceSwaps } =
+        this.decodeBridgeData(data);
 
-      return (
-        this.fromChain === toChain.toString() &&
-        !isAddressEqual(fromToken, toToken)
-      );
+      const isBridge = this.fromChain !== destinationChainId.toString();
+      return !isBridge && hasSourceSwaps;
     } catch {
       return false;
     }
@@ -100,13 +96,11 @@ export class LiFiDecoder {
    */
   public isSwapAndBridge(data: Hex): boolean {
     try {
-      const { toChain, fromToken, toToken } =
-        this.decodeBridgeAndMaybeSwap(data);
+      const { destinationChainId, hasSourceSwaps } =
+        this.decodeBridgeData(data);
 
-      return (
-        this.fromChain !== toChain.toString() &&
-        !isAddressEqual(fromToken, toToken)
-      );
+      const isBridge = this.fromChain !== destinationChainId.toString();
+      return isBridge && hasSourceSwaps;
     } catch {
       return false;
     }
