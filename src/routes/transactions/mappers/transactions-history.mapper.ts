@@ -23,8 +23,6 @@ import {
 } from '@/routes/transactions/helpers/timezone.helper';
 import { EthereumTransaction } from '@/domain/safe/entities/ethereum-transaction.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
-import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 
 @Injectable()
 export class TransactionsHistoryMapper {
@@ -33,8 +31,6 @@ export class TransactionsHistoryMapper {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(IDataDecoderRepository)
-    private readonly dataDecoderRepository: IDataDecoderRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
     private readonly moduleTransactionMapper: ModuleTransactionMapper,
     private readonly transferMapper: TransferMapper,
@@ -166,19 +162,12 @@ export class TransactionsHistoryMapper {
     onlyTrusted: boolean;
   }): Promise<TransactionItem | undefined> {
     const prevDomainTransaction = args.transactionsDomain[0];
-    const dataDecoded =
-      await this.dataDecoderRepository.getTransactionDataDecoded({
-        chainId: args.chainId,
-        transaction: prevDomainTransaction,
-      });
-
     // We map in order to filter last list item against it
     const mappedPreviousTransaction = await this.mapTransaction(
       prevDomainTransaction,
       args.chainId,
       args.safe,
       args.onlyTrusted,
-      dataDecoded,
     );
 
     return Array.isArray(mappedPreviousTransaction)
@@ -196,18 +185,12 @@ export class TransactionsHistoryMapper {
     showImitations: boolean;
   }): Promise<Array<TransactionItem>> {
     const mappedTransactions = await Promise.all(
-      args.transactionsDomain.map(async (transaction) => {
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId: args.chainId,
-            transaction,
-          });
+      args.transactionsDomain.map((transaction) => {
         return this.mapTransaction(
           transaction,
           args.chainId,
           args.safe,
           args.onlyTrusted,
-          dataDecoded,
         );
       }),
     );
@@ -277,7 +260,6 @@ export class TransactionsHistoryMapper {
     chainId: string,
     safe: Safe,
     onlyTrusted: boolean,
-    dataDecoded: DataDecoded | null,
   ): Promise<TransactionItem | Array<TransactionItem> | undefined> {
     if (isMultisigTransaction(transaction)) {
       return new TransactionItem(
@@ -285,16 +267,11 @@ export class TransactionsHistoryMapper {
           chainId,
           transaction,
           safe,
-          dataDecoded,
         ),
       );
     } else if (isModuleTransaction(transaction)) {
       return new TransactionItem(
-        await this.moduleTransactionMapper.mapTransaction(
-          chainId,
-          transaction,
-          dataDecoded,
-        ),
+        await this.moduleTransactionMapper.mapTransaction(chainId, transaction),
       );
     } else if (isEthereumTransaction(transaction)) {
       const transfers = transaction.transfers;

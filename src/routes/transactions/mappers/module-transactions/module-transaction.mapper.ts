@@ -9,7 +9,6 @@ import { ModuleExecutionInfo } from '@/routes/transactions/entities/module-execu
 import { Transaction } from '@/routes/transactions/entities/transaction.entity';
 import { MultisigTransactionInfoMapper } from '@/routes/transactions/mappers/common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from '@/routes/transactions/mappers/module-transactions/module-transaction-status.mapper';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
 @Injectable()
 export class ModuleTransactionMapper {
@@ -22,13 +21,11 @@ export class ModuleTransactionMapper {
   async mapTransaction(
     chainId: string,
     transaction: ModuleTransaction,
-    dataDecoded: DataDecoded | null,
   ): Promise<Transaction> {
     const txStatus = this.statusMapper.mapTransactionStatus(transaction);
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
       transaction,
-      dataDecoded,
     );
     const executionInfo = new ModuleExecutionInfo(
       await this.addressInfoHelper.getOrDefault(chainId, transaction.module, [

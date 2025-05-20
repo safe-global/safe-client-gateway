@@ -32,10 +32,7 @@ import {
   VaultRedeemTransactionInfo,
 } from '@/routes/transactions/entities/vaults/vault-transaction-info.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  BaseDataDecoded,
-  DataDecoded,
-} from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -83,7 +80,6 @@ export class MultisigTransactionInfoMapper {
   async mapTransactionInfo(
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
-    dataDecoded: DataDecoded | null,
   ): Promise<TransactionInfo> {
     const value = Number(transaction?.value) || 0;
     const dataByteLength = transaction.data
@@ -163,7 +159,6 @@ export class MultisigTransactionInfoMapper {
         dataSize,
         chainId,
         humanDescription,
-        dataDecoded,
       );
     }
 
@@ -175,26 +170,26 @@ export class MultisigTransactionInfoMapper {
       );
     }
 
-    if (this.isSettingsChange(transaction, value, dataSize, dataDecoded)) {
+    if (this.isSettingsChange(transaction, value, dataSize)) {
       const settingsInfo = await this.settingsChangeMapper.mapSettingsChange(
         chainId,
-        dataDecoded,
+        transaction,
       );
 
-      if (!dataDecoded) {
+      if (!transaction.dataDecoded) {
         throw new Error(
           `Data decoded is null. txHash=${transaction.transactionHash}`,
         );
       }
 
       return new SettingsChangeTransaction(
-        dataDecoded,
+        transaction.dataDecoded,
         settingsInfo,
         humanDescription,
       );
     }
 
-    if (this.isValidTokenTransfer(transaction.safe, dataDecoded)) {
+    if (this.isValidTokenTransfer(transaction.safe, transaction.dataDecoded)) {
       const token = await this.tokenRepository
         .getToken({ chainId, address: transaction.to })
         .catch(() => null);
@@ -206,7 +201,6 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
-            dataDecoded,
           );
         case 'ERC721':
           return this.erc721TransferMapper.mapErc721Transfer(
@@ -214,7 +208,6 @@ export class MultisigTransactionInfoMapper {
             chainId,
             transaction,
             humanDescription,
-            dataDecoded,
           );
       }
     }
@@ -224,7 +217,6 @@ export class MultisigTransactionInfoMapper {
       dataSize,
       chainId,
       humanDescription,
-      dataDecoded,
     );
   }
 
@@ -490,11 +482,10 @@ export class MultisigTransactionInfoMapper {
     transaction: MultisigTransaction | ModuleTransaction,
     value: number,
     dataSize: number,
-    dataDecoded: DataDecoded | null,
   ): boolean {
-    const isSettingsChangeMethod: boolean = dataDecoded
+    const isSettingsChangeMethod: boolean = transaction.dataDecoded
       ? SettingsChangeMapper.SETTINGS_CHANGE_METHODS.includes(
-          dataDecoded.method,
+          transaction.dataDecoded.method,
         )
       : false;
 

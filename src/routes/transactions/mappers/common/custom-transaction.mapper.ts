@@ -10,7 +10,6 @@ import {
 } from '@/routes/transactions/constants';
 import { CustomTransactionInfo } from '@/routes/transactions/entities/custom-transaction.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
 @Injectable()
 export class CustomTransactionMapper {
@@ -21,7 +20,6 @@ export class CustomTransactionMapper {
     dataSize: number,
     chainId: string,
     humanDescription: string | null,
-    dataDecoded: DataDecoded | null,
   ): Promise<CustomTransactionInfo> {
     const toAddressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -33,14 +31,17 @@ export class CustomTransactionMapper {
       toAddressInfo,
       dataSize.toString(),
       transaction.value,
-      dataDecoded?.method ?? null,
-      this.getActionCount(dataDecoded),
+      transaction?.dataDecoded?.method ?? null,
+      this.getActionCount(transaction),
       this.isCancellation(transaction, dataSize),
       humanDescription,
     );
   }
 
-  private getActionCount(dataDecoded: DataDecoded | null): number | null {
+  private getActionCount(
+    transaction: MultisigTransaction | ModuleTransaction,
+  ): number | null {
+    const { dataDecoded } = transaction;
     if (dataDecoded?.method === MULTI_SEND_METHOD_NAME) {
       const parameter = dataDecoded.parameters?.find(
         (parameter) => parameter.name === TRANSACTIONS_PARAMETER_NAME,

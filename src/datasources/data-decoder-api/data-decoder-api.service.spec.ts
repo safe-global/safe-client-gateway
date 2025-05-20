@@ -9,20 +9,19 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
 
-const mockCacheFirstDataSource = jest.mocked({
+const mockNetworkService = jest.mocked({
   get: jest.fn(),
   post: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>);
+} as jest.MockedObjectDeep<INetworkService>);
 
 describe('DataDecoderApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
-  const notFoundExpireTimeSeconds = faker.number.int();
   let target: DataDecoderApi;
 
   beforeEach(() => {
@@ -32,15 +31,12 @@ describe('DataDecoderApi', () => {
       if (key === 'safeDataDecoder.baseUri') {
         return baseUrl;
       }
-      if (key === 'expirationTimeInSeconds.notFound.default') {
-        return notFoundExpireTimeSeconds;
-      }
       throw new Error('Unexpected key');
     });
     const httpErrorFactory = new HttpErrorFactory();
     target = new DataDecoderApi(
       mockConfigurationService,
-      mockCacheFirstDataSource,
+      mockNetworkService,
       httpErrorFactory,
     );
   });
@@ -52,9 +48,9 @@ describe('DataDecoderApi', () => {
       const chainId = faker.string.numeric();
       const data = faker.string.hexadecimal() as `0x${string}`;
       const getDataDecodedUrl = `${baseUrl}/api/v1/data-decoder`;
-      mockCacheFirstDataSource.post.mockImplementation(({ url }) => {
+      mockNetworkService.post.mockImplementation(({ url }) => {
         if (url === getDataDecodedUrl) {
-          return Promise.resolve(rawify(dataDecoded));
+          return Promise.resolve({ status: 200, data: rawify(dataDecoded) });
         }
         throw new Error('Unexpected URL');
       });
@@ -62,14 +58,9 @@ describe('DataDecoderApi', () => {
       const actual = await target.getDecodedData({ data, to, chainId });
 
       expect(actual).toStrictEqual(dataDecoded);
-      expect(mockCacheFirstDataSource.post).toHaveBeenCalledTimes(1);
-      expect(mockCacheFirstDataSource.post).toHaveBeenCalledWith({
-        cacheDir: {
-          field: '',
-          key: `${chainId}_decoded_data_${data}_${to}`,
-        },
+      expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: getDataDecodedUrl,
-        notFoundExpireTimeSeconds,
         data: { chainId, to, data },
       });
     });
@@ -84,7 +75,7 @@ describe('DataDecoderApi', () => {
       });
       const expected = new DataSourceError(errorMessage, statusCode);
       const getDataDecodedUrl = `${baseUrl}/api/v1/data-decoder`;
-      mockCacheFirstDataSource.post.mockImplementation(({ url }) => {
+      mockNetworkService.post.mockImplementation(({ url }) => {
         if (url === getDataDecodedUrl) {
           return Promise.reject(
             new NetworkResponseError(
@@ -103,14 +94,9 @@ describe('DataDecoderApi', () => {
         target.getDecodedData({ data, to, chainId }),
       ).rejects.toThrow(expected);
 
-      expect(mockCacheFirstDataSource.post).toHaveBeenCalledTimes(1);
-      expect(mockCacheFirstDataSource.post).toHaveBeenCalledWith({
-        cacheDir: {
-          field: '',
-          key: `${chainId}_decoded_data_${data}_${to}`,
-        },
+      expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: getDataDecodedUrl,
-        notFoundExpireTimeSeconds,
         data: { chainId, to, data },
       });
     });
@@ -121,9 +107,9 @@ describe('DataDecoderApi', () => {
       const contract = contractBuilder().build();
       const contractPage = pageBuilder().with('results', [contract]).build();
       const getContractsUrl = `${baseUrl}/api/v1/contracts/${contract.address}`;
-      mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
+      mockNetworkService.get.mockImplementation(({ url }) => {
         if (url === getContractsUrl) {
-          return Promise.resolve(rawify(contractPage));
+          return Promise.resolve({ status: 200, data: rawify(contractPage) });
         }
         throw new Error('Unexpected URL');
       });
@@ -134,14 +120,9 @@ describe('DataDecoderApi', () => {
       });
 
       expect(actual).toStrictEqual(contractPage);
-      expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
-        cacheDir: {
-          field: 'undefined_undefined',
-          key: `${contract.chainId}_decoded_data_contracts_${contract.address}`,
-        },
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: getContractsUrl,
-        notFoundExpireTimeSeconds,
         networkRequest: {
           params: {
             chain_ids: contract.chainId.toString(),
@@ -161,9 +142,9 @@ describe('DataDecoderApi', () => {
       ];
       const contractPage = pageBuilder().with('results', [contract]).build();
       const getContractsUrl = `${baseUrl}/api/v1/contracts/${contract.address}`;
-      mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
+      mockNetworkService.get.mockImplementation(({ url }) => {
         if (url === getContractsUrl) {
-          return Promise.resolve(rawify(contractPage));
+          return Promise.resolve({ status: 200, data: rawify(contractPage) });
         }
         throw new Error('Unexpected URL');
       });
@@ -174,14 +155,9 @@ describe('DataDecoderApi', () => {
       });
 
       expect(actual).toStrictEqual(contractPage);
-      expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
-        cacheDir: {
-          field: 'undefined_undefined',
-          key: `${chainIds.sort().join('_')}_decoded_data_contracts_${contract.address}`,
-        },
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: getContractsUrl,
-        notFoundExpireTimeSeconds,
         networkRequest: {
           params: {
             chain_ids: `${chainIds[0]}&chain_ids=${chainIds[1]}&chain_ids=${chainIds[2]}`,
@@ -200,7 +176,7 @@ describe('DataDecoderApi', () => {
       });
       const expected = new DataSourceError(errorMessage, statusCode);
       const getContractsUrl = `${baseUrl}/api/v1/contracts/${contract.address}`;
-      mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
+      mockNetworkService.get.mockImplementation(({ url }) => {
         if (url === getContractsUrl) {
           return Promise.reject(
             new NetworkResponseError(
@@ -222,14 +198,9 @@ describe('DataDecoderApi', () => {
         }),
       ).rejects.toThrow(expected);
 
-      expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
-      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
-        cacheDir: {
-          field: 'undefined_undefined',
-          key: `${contract.chainId}_decoded_data_contracts_${contract.address}`,
-        },
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: getContractsUrl,
-        notFoundExpireTimeSeconds,
         networkRequest: {
           params: {
             chain_ids: contract.chainId.toString(),

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
 import {
@@ -14,14 +14,10 @@ import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transac
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { getAddress, isAddress } from 'viem';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
-import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 
 @Injectable()
 export class MultisigTransactionMapper {
   constructor(
-    @Inject(IDataDecoderRepository)
-    private readonly dataDecoderRepository: IDataDecoderRepository,
     private readonly statusMapper: MultisigTransactionStatusMapper,
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly executionInfoMapper: MultisigTransactionExecutionInfoMapper,
@@ -35,7 +31,6 @@ export class MultisigTransactionMapper {
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
-    dataDecoded: DataDecoded | null,
   ): Promise<Transaction> {
     // TODO: This should be located on the domain layer but only route layer exists
     this.transactionVerifier.verifyApiTransaction({
@@ -47,7 +42,6 @@ export class MultisigTransactionMapper {
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
       transaction,
-      dataDecoded,
     );
     const executionInfo = this.executionInfoMapper.mapExecutionInfo(
       transaction,
@@ -83,22 +77,16 @@ export class MultisigTransactionMapper {
     for (const transaction of args.transactions) {
       addresses.add(transaction.safe);
       addresses.add(transaction.to);
-
-      const dataDecoded =
-        await this.dataDecoderRepository.getTransactionDataDecoded({
-          chainId: args.chainId,
-          transaction,
-        });
-      if (dataDecoded) {
+      if (transaction.dataDecoded) {
         const fromAddress = this.dataDecodedParamHelper.getFromParam(
-          dataDecoded,
+          transaction.dataDecoded,
           transaction.safe,
         );
         if (isAddress(fromAddress)) {
           addresses.add(getAddress(fromAddress));
         }
         const toAddress = this.dataDecodedParamHelper.getToParam(
-          dataDecoded,
+          transaction.dataDecoded,
           transaction.safe,
         );
         if (isAddress(toAddress)) {

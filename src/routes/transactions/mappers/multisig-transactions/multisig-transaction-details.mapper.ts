@@ -17,7 +17,6 @@ import { MultisigTransactionExecutionDetailsMapper } from '@/routes/transactions
 import { MultisigTransactionStatusMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { MultisigTransactionNoteMapper } from '@/routes/transactions/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transaction-verifier.helper';
-import { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
 @Injectable()
 export class MultisigTransactionDetailsMapper {
@@ -36,7 +35,6 @@ export class MultisigTransactionDetailsMapper {
     chainId: string,
     transaction: MultisigTransaction,
     safe: Safe,
-    dataDecoded: DataDecoded | null,
   ): Promise<TransactionDetails> {
     // TODO: This should be located on the domain layer but only route layer exists
     this.transactionVerifier.verifyApiTransaction({
@@ -60,15 +58,14 @@ export class MultisigTransactionDetailsMapper {
         chainId,
         transaction.operation,
         transaction.to,
-        dataDecoded,
+        transaction.dataDecoded,
       ),
-      this.transactionDataMapper.buildAddressInfoIndex(chainId, dataDecoded),
-      this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction),
-      this.transactionInfoMapper.mapTransactionInfo(
+      this.transactionDataMapper.buildAddressInfoIndex(
         chainId,
-        transaction,
-        dataDecoded,
+        transaction.dataDecoded,
       ),
+      this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction),
+      this.transactionInfoMapper.mapTransactionInfo(chainId, transaction),
       this.multisigTransactionExecutionDetailsMapper.mapMultisigExecutionDetails(
         chainId,
         transaction,
@@ -78,7 +75,7 @@ export class MultisigTransactionDetailsMapper {
       this.transactionDataMapper.buildTokenInfoIndex({
         chainId,
         safeAddress: transaction.safe,
-        dataDecoded,
+        dataDecoded: transaction.dataDecoded,
       }),
     ]);
 
@@ -90,7 +87,7 @@ export class MultisigTransactionDetailsMapper {
       txInfo,
       txData: new TransactionData(
         transaction.data,
-        dataDecoded,
+        transaction.dataDecoded,
         recipientAddressInfo,
         transaction.value,
         transaction.operation,
