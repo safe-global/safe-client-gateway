@@ -391,7 +391,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -683,7 +682,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -976,7 +974,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -1188,7 +1185,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -1512,7 +1508,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -1813,7 +1808,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -2115,7 +2109,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -2416,7 +2409,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -2757,11 +2749,7 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         return Promise.reject(new Error(`Could not match ${url}`));
       });
       networkService.post.mockImplementation(({ url, data }) => {
-        if (
-          url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-          data &&
-          'data' in data
-        ) {
+        if (url === `${safeDecoderUrl}/api/v1/data-decoder` && 'data' in data) {
           if (data.data === multisigTransaction.data) {
             return Promise.resolve({
               data: rawify(multisigTransactionDataDecoded),
@@ -3087,7 +3075,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -3244,7 +3231,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -3523,7 +3509,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -3640,7 +3625,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -3966,7 +3950,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
@@ -4131,7 +4114,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
         networkService.post.mockImplementation(({ url, data }) => {
           if (
             url === `${safeDecoderUrl}/api/v1/data-decoder` &&
-            data &&
             'data' in data
           ) {
             if (data.data === multisigTransaction.data) {
