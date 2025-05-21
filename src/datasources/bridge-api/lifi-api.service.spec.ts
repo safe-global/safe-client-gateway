@@ -9,6 +9,7 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { getAddress } from 'viem';
+import { bridgeChainPageBuilder } from '@/domain/bridge/entities/__tests__/bridge-chain.builder';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
@@ -38,6 +39,51 @@ describe('LifiBridgeApi', () => {
       mockNetworkService,
       httpErrorFactory,
     );
+  });
+
+  describe('getChains', () => {
+    it('should return the chains', async () => {
+      const bridgeChainPage = bridgeChainPageBuilder().build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: rawify(bridgeChainPage),
+        status: 200,
+      });
+
+      const actual = await target.getChains();
+
+      expect(actual).toBe(bridgeChainPage);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${baseUrl}/v1/chains`,
+        networkRequest: {
+          params: {
+            chainTypes: 'EVM',
+          },
+          headers: {
+            'x-lifi-api-key': apiKey,
+          },
+        },
+      });
+    });
+
+    it('should forward errors', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${baseUrl}/v1/chains`),
+        {
+          status,
+        } as Response,
+        {
+          message: 'Unexpected error',
+        },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(target.getChains()).rejects.toThrow(
+        new DataSourceError('Unexpected error', status),
+      );
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('getStatus', () => {

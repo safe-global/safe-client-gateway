@@ -14,6 +14,7 @@ import { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity';
 import { OrderType } from '@/domain/bridge/entities/order-type.entity';
 import { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
 import { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
+import { BridgeChainPageSchema } from '@/domain/bridge/entities/bridge-chain.entity';
 
 @Injectable()
 export class BridgeRepository implements IBridgeRepository {
@@ -21,6 +22,20 @@ export class BridgeRepository implements IBridgeRepository {
     @Inject(IBridgeApiFactory)
     private readonly bridgeApiFactory: IBridgeApiFactory,
   ) {}
+
+  public async getDiamondAddress(chainId: string): Promise<`0x${string}`> {
+    const api = await this.bridgeApiFactory.getApi(chainId);
+    const result = await api.getChains();
+    const { chains } = BridgeChainPageSchema.parse(result);
+    const chain = chains.find((chain) => {
+      return chain.id === chainId;
+    });
+
+    if (!chain) {
+      throw new Error(`Chain not found. chainId=${chainId}`);
+    }
+    return chain.diamondAddress;
+  }
 
   async getStatus(args: {
     txHash: `0x${string}`;

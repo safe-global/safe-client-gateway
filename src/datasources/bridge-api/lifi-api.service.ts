@@ -9,9 +9,11 @@ import type { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity
 import type { OrderType } from '@/domain/bridge/entities/order-type.entity';
 import type { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
 import type { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
+import type { BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
 
 export class LifiBridgeApi implements IBridgeApi {
   private static readonly LIFI_API_HEADER = 'x-lifi-api-key';
+  private static readonly CHAIN_TYPES = 'EVM';
 
   constructor(
     private readonly chainId: string,
@@ -20,6 +22,26 @@ export class LifiBridgeApi implements IBridgeApi {
     private readonly networkService: INetworkService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {}
+
+  public async getChains(): Promise<Raw<BridgeChainPage>> {
+    try {
+      const url = `${this.baseUrl}/v1/chains`;
+      const { data } = await this.networkService.get<BridgeChainPage>({
+        url,
+        networkRequest: {
+          headers: {
+            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
+          },
+          params: {
+            chainTypes: LifiBridgeApi.CHAIN_TYPES,
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
 
   public async getStatus(args: {
     txHash: `0x${string}`;

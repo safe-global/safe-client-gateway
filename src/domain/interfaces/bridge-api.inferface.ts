@@ -6,10 +6,13 @@ import type { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity
 import type { OrderType } from '@/domain/bridge/entities/order-type.entity';
 import type { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
 import type { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
+import type { BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
 
 export const IBridgeApi = Symbol('IBridgeApi');
 
 export interface IBridgeApi {
+  getChains(): Promise<Raw<BridgeChainPage>>;
+
   getStatus(args: {
     txHash: `0x${string}`;
     bridge?: BridgeName;

@@ -7,6 +7,8 @@ import type { TimingStrategies } from '@/domain/bridge/entities/timing-strategie
 export const IBridgeRepository = Symbol('IBridgeRepository');
 
 export interface IBridgeRepository {
+  getDiamondAddress(chainId: string): Promise<`0x${string}`>;
+
   getStatus(args: {
     fromChain: string;
     txHash: `0x${string}`;
