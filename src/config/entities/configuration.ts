@@ -224,6 +224,18 @@ export default () => ({
         },
       },
     },
+  }, // TODO: Unify base URLs with staking
+  earn: {
+    testnet: {
+      baseUri:
+        process.env.STAKING_TESTNET_API_BASE_URI ||
+        'https://api.testnet.kiln.fi',
+      apiKey: process.env.EARN_TESTNET_API_KEY,
+    },
+    mainnet: {
+      baseUri: process.env.STAKING_API_BASE_URI || 'https://api.kiln.fi',
+      apiKey: process.env.EARN_MAINNET_API_KEY,
+    },
   },
   email: {
     applicationCode: process.env.EMAIL_API_APPLICATION_CODE,

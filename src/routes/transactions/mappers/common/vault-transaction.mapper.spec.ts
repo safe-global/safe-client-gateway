@@ -6,7 +6,7 @@ import {
 } from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import type { StakingRepository } from '@/domain/staking/staking.repository';
+import type { EarnRepository } from '@/domain/earn/earn.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import type { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
@@ -17,12 +17,12 @@ import { faker } from '@faker-js/faker/.';
 import { NotFoundException } from '@nestjs/common';
 import { getAddress } from 'viem';
 
-const mockStakingRepository = jest.mocked({
+const mockEarnRepository = jest.mocked({
   getDeployment: jest.fn(),
   getDefiVaultStats: jest.fn(),
   getDefiVaultStake: jest.fn(),
   getDefiMorphoExtraRewards: jest.fn(),
-} as jest.MockedObjectDeep<StakingRepository>);
+} as jest.MockedObjectDeep<EarnRepository>);
 
 const mockTokenRepository = {
   getToken: jest.fn(),
@@ -35,7 +35,7 @@ describe('VaultTransactionMapper', () => {
     jest.resetAllMocks();
 
     target = new VaultTransactionMapper(
-      mockStakingRepository,
+      mockEarnRepository,
       mockTokenRepository,
     );
   });
@@ -79,9 +79,9 @@ describe('VaultTransactionMapper', () => {
       const cumulativeNrr =
         defiVaultStats.nrr + defiVaultStats.additional_rewards_nrr;
       const expectedAnnualReward = (cumulativeNrr / 100) * assets;
-      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
-      mockStakingRepository.getDefiVaultStats.mockResolvedValue(defiVaultStats);
-      mockStakingRepository.getDefiMorphoExtraRewards.mockResolvedValue([
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDefiVaultStats.mockResolvedValue(defiVaultStats);
+      mockEarnRepository.getDefiMorphoExtraRewards.mockResolvedValue([
         morphoExtraReward,
       ]);
       mockTokenRepository.getToken.mockImplementation((args) => {
@@ -158,7 +158,7 @@ describe('VaultTransactionMapper', () => {
         .with('status', 'active')
         .with('chain_id', Number(chain.chainId))
         .build();
-      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
         target.mapDepositInfo({
@@ -181,7 +181,7 @@ describe('VaultTransactionMapper', () => {
         .with('status', 'disabled')
         .with('chain_id', Number(chain.chainId))
         .build();
-      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
         target.mapDepositInfo({
@@ -207,7 +207,7 @@ describe('VaultTransactionMapper', () => {
           Number(faker.string.numeric({ exclude: [chain.chainId] })),
         )
         .build();
-      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
         target.mapDepositInfo({
@@ -258,10 +258,10 @@ describe('VaultTransactionMapper', () => {
       const morphoExtraReward = defiMorphoExtraRewardBuilder()
         .with('asset', additionalRewards[0].asset)
         .build();
-      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
-      mockStakingRepository.getDefiVaultStats.mockResolvedValue(defiVaultStats);
-      mockStakingRepository.getDefiVaultStake.mockResolvedValue(defiVaultStake);
-      mockStakingRepository.getDefiMorphoExtraRewards.mockResolvedValue([
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDefiVaultStats.mockResolvedValue(defiVaultStats);
+      mockEarnRepository.getDefiVaultStake.mockResolvedValue(defiVaultStake);
+      mockEarnRepository.getDefiMorphoExtraRewards.mockResolvedValue([
         morphoExtraReward,
       ]);
       mockTokenRepository.getToken.mockImplementation((args) => {
@@ -336,7 +336,7 @@ describe('VaultTransactionMapper', () => {
         .with('status', 'disabled')
         .with('chain_id', Number(chain.chainId))
         .build();
-      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
         target.mapRedeemInfo({
@@ -359,7 +359,7 @@ describe('VaultTransactionMapper', () => {
         .with('status', 'disabled')
         .with('chain_id', Number(chain.chainId))
         .build();
-      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
         target.mapRedeemInfo({
@@ -386,7 +386,7 @@ describe('VaultTransactionMapper', () => {
           Number(faker.string.numeric({ exclude: [chain.chainId] })),
         )
         .build();
-      mockStakingRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(
         target.mapRedeemInfo({

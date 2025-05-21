@@ -168,7 +168,10 @@ describe('KilnApi', () => {
       expect(actual).toBe(networkStats);
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_network_stats', ''),
+        cacheDir: new CacheDir(
+          `staking_network_stats_${baseUrl}/v1/eth/network-stats`,
+          '',
+        ),
         url: `${baseUrl}/v1/eth/network-stats`,
         networkRequest: {
           headers: {
@@ -201,7 +204,10 @@ describe('KilnApi', () => {
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_network_stats', ''),
+        cacheDir: new CacheDir(
+          `staking_network_stats_${baseUrl}/v1/eth/network-stats`,
+          '',
+        ),
         url: `${baseUrl}/v1/eth/network-stats`,
         networkRequest: {
           headers: {
@@ -231,7 +237,10 @@ describe('KilnApi', () => {
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_dedicated_staking_stats', ''),
+        cacheDir: new CacheDir(
+          `staking_dedicated_staking_stats_${baseUrl}/v1/eth/kiln-stats`,
+          '',
+        ),
         url: `${baseUrl}/v1/eth/kiln-stats`,
         networkRequest: {
           headers: {
@@ -263,7 +272,10 @@ describe('KilnApi', () => {
 
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_dedicated_staking_stats', ''),
+        cacheDir: new CacheDir(
+          `staking_dedicated_staking_stats_${baseUrl}/v1/eth/kiln-stats`,
+          '',
+        ),
         url: getDedicatedStakingStats,
         networkRequest: {
           headers: {
@@ -296,7 +308,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `staking_pooled_staking_stats_${pooledStakingStats.address}`,
+          `staking_pooled_staking_stats_${baseUrl}/v1/eth/onchain/v2/network-stats_${pooledStakingStats.address}`,
           '',
         ),
         url: `${baseUrl}/v1/eth/onchain/v2/network-stats`,
@@ -337,7 +349,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `staking_pooled_staking_stats_${pooledStakingStats.address}`,
+          `staking_pooled_staking_stats_${baseUrl}/v1/eth/onchain/v2/network-stats_${pooledStakingStats.address}`,
           '',
         ),
         url: `${baseUrl}/v1/eth/onchain/v2/network-stats`,
@@ -388,7 +400,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `${defiVaultStats.chain_id.toString()}_staking_defi_vault_stats_${defiVaultStats.vault}`,
+          `${defiVaultStats.chain_id.toString()}_staking_defi_vault_stats_${baseUrl}/v1/defi/network-stats_${defiVaultStats.vault}`,
           '',
         ),
         url: `${baseUrl}/v1/defi/network-stats`,
@@ -460,7 +472,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `${defiVaultStats.chain_id.toString()}_staking_defi_vault_stats_${defiVaultStats.vault}`,
+          `${defiVaultStats.chain_id.toString()}_staking_defi_vault_stats_${baseUrl}/v1/defi/network-stats_${defiVaultStats.vault}`,
           '',
         ),
         url: `${baseUrl}/v1/defi/network-stats`,
@@ -515,7 +527,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `${defiVaultStake.chain_id}_staking_defi_vault_stakes_${safeAddress}_${defiVaultStake.vault}`,
+          `${defiVaultStake.chain_id}_staking_defi_vault_stakes_${baseUrl}/v1/defi/stakes_${safeAddress}_${defiVaultStake.vault}`,
           '',
         ),
         url: `${baseUrl}/v1/defi/stakes`,
@@ -597,7 +609,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `${defiVaultStake.chain_id}_staking_defi_vault_stakes_${safeAddress}_${defiVaultStake.vault}`,
+          `${defiVaultStake.chain_id}_staking_defi_vault_stakes_${baseUrl}/v1/defi/stakes_${safeAddress}_${defiVaultStake.vault}`,
           '',
         ),
         url: `${baseUrl}/v1/defi/stakes`,
@@ -652,7 +664,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `${chain_id}_staking_defi_morpho_extra_rewards_${safeAddress}`,
+          `${chain_id}_staking_defi_morpho_extra_rewards_${baseUrl}/v1/defi/extra-rewards/morpho_${safeAddress}`,
           '',
         ),
         url: `${baseUrl}/v1/defi/extra-rewards/morpho`,
@@ -706,7 +718,7 @@ describe('KilnApi', () => {
       expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir(
-          `${chain_id}_staking_defi_morpho_extra_rewards_${safeAddress}`,
+          `${chain_id}_staking_defi_morpho_extra_rewards_${baseUrl}/v1/defi/extra-rewards/morpho_${safeAddress}`,
           '',
         ),
         url: `${baseUrl}/v1/defi/extra-rewards/morpho`,

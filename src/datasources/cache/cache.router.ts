@@ -601,50 +601,71 @@ export class CacheRouter {
     );
   }
 
+  // TODO: Remove url from the following cache keys where it isn't required
+  // e.g. when fetching a specific address
+
   // Kiln uses different endpoints for mainnet/testnet
   static getStakingDeploymentsCacheDir(url: string): CacheDir {
     return new CacheDir(`${this.STAKING_DEPLOYMENTS_KEY}_${url}`, '');
   }
 
-  static getStakingNetworkStatsCacheDir(): CacheDir {
-    return new CacheDir(this.STAKING_NETWORK_STATS_KEY, '');
+  // Kiln uses different endpoints for mainnet/testnet
+  static getStakingNetworkStatsCacheDir(url: string): CacheDir {
+    return new CacheDir(`${this.STAKING_NETWORK_STATS_KEY}_${url}`, '');
   }
 
-  static getStakingDedicatedStakingStatsCacheDir(): CacheDir {
-    return new CacheDir(this.STAKING_DEDICATED_STAKING_STATS_KEY, '');
+  // Kiln uses different endpoints for mainnet/testnet
+  static getStakingDedicatedStakingStatsCacheDir(url: string): CacheDir {
+    return new CacheDir(
+      `${this.STAKING_DEDICATED_STAKING_STATS_KEY}_${url}`,
+      '',
+    );
   }
 
-  static getStakingPooledStakingStatsCacheDir(pool: `0x${string}`): CacheDir {
-    return new CacheDir(`${this.STAKING_POOLED_STAKING_STATS_KEY}_${pool}`, '');
+  // Kiln uses different endpoints for mainnet/testnet
+  static getStakingPooledStakingStatsCacheDir(args: {
+    url: string;
+    pool: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      `${this.STAKING_POOLED_STAKING_STATS_KEY}_${args.url}_${args.pool}`,
+      '',
+    );
   }
 
+  // Kiln uses different endpoints for mainnet/testnet
   static getStakingDefiVaultStatsCacheDir(args: {
+    url: string;
     chainId: string;
     vault: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_VAULT_STATS_KEY}_${args.vault}`,
+      `${args.chainId}_${this.STAKING_DEFI_VAULT_STATS_KEY}_${args.url}_${args.vault}`,
       '',
     );
   }
 
+  // Kiln uses different endpoints for mainnet/testnet
   static getStakingDefiVaultStakesCacheDir(args: {
+    url: string;
     chainId: string;
     safeAddress: `0x${string}`;
     vault: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_VAULT_STAKES_KEY}_${args.safeAddress}_${args.vault}`,
+      `${args.chainId}_${this.STAKING_DEFI_VAULT_STAKES_KEY}_${args.url}_${args.safeAddress}_${args.vault}`,
       '',
     );
   }
 
+  // Kiln uses different endpoints for mainnet/testnet
   static getStakingDefiMorphoExtraRewardsCacheDir(args: {
+    url: string;
     chainId: string;
     safeAddress: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY}_${args.safeAddress}`,
+      `${args.chainId}_${this.STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY}_${args.url}_${args.safeAddress}`,
       '',
     );
   }
