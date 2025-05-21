@@ -20,6 +20,7 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Operation } from '@/domain/safe/entities/operation.entity';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),
@@ -122,6 +123,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         safe,
         signers: [signer],
       });
+    const dataDecoded = dataDecodedBuilder().build();
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
     const txInfo = transferTransactionInfoBuilder().build();
@@ -137,7 +139,12 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const to = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(to);
 
-    const actual = await mapper.mapDetails(chainId, transaction, safe);
+    const actual = await mapper.mapDetails(
+      chainId,
+      transaction,
+      safe,
+      dataDecoded,
+    );
 
     expect(actual).toEqual({
       safeAddress: safe.address,
@@ -147,7 +154,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       txInfo,
       txData: expect.objectContaining({
         hexData: transaction.data,
-        dataDecoded: transaction.dataDecoded,
+        dataDecoded,
         to,
         value: transaction.value,
         operation: transaction.operation,
@@ -176,6 +183,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         safe,
         signers: [signer],
       });
+    const dataDecoded = dataDecodedBuilder().build();
     const txStatus = faker.helpers.objectValue(TransactionStatus);
     statusMapper.mapTransactionStatus.mockReturnValue(txStatus);
     const txInfo = transferTransactionInfoBuilder().build();
@@ -197,7 +205,12 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     const to = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(to);
 
-    const actual = await mapper.mapDetails(chainId, transaction, safe);
+    const actual = await mapper.mapDetails(
+      chainId,
+      transaction,
+      safe,
+      dataDecoded,
+    );
 
     expect(actual).toEqual({
       safeAddress: safe.address,
@@ -207,7 +220,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       txInfo,
       txData: expect.objectContaining({
         hexData: transaction.data,
-        dataDecoded: transaction.dataDecoded,
+        dataDecoded,
         to,
         value: transaction.value,
         operation: transaction.operation,
