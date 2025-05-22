@@ -15,6 +15,7 @@ export class BridgeApiFactory implements IBridgeApiFactory {
   private readonly apis: Record<string, IBridgeApi> = {};
 
   private readonly baseUrl: string;
+  private readonly apiKey: string;
 
   constructor(
     @Inject(IConfigurationService)
@@ -26,6 +27,7 @@ export class BridgeApiFactory implements IBridgeApiFactory {
   ) {
     this.baseUrl =
       this.configurationService.getOrThrow<string>('bridge.baseUri');
+    this.apiKey = this.configurationService.getOrThrow<string>('bridge.apiKey');
   }
 
   getApi(chainId: string): Promise<IBridgeApi> {
@@ -36,6 +38,7 @@ export class BridgeApiFactory implements IBridgeApiFactory {
     this.apis[chainId] = new LifiBridgeApi(
       chainId,
       this.baseUrl,
+      this.apiKey,
       this.networkService,
       this.cacheFirstDataSource,
       this.httpErrorFactory,

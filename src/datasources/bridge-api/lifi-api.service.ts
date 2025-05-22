@@ -6,15 +6,22 @@ import type { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity
 import type { IBridgeApi } from '@/domain/interfaces/bridge-api.inferface';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity';
-import type { OrderType } from '@/domain/bridge/entities/order-type.entity';
-import type { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
+import type {
+  AllowDenyPrefer,
+  RoutePreference,
+} from '@/domain/bridge/entities/bridge-preference.entity';
 import type { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
 import type { BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import type {
+  BridgeRoutesResponse,
+  OrderType,
+} from '@/domain/bridge/entities/bridge-route.entity';
 
 export class LifiBridgeApi implements IBridgeApi {
+  public static readonly LIFI_API_HEADER = 'x-lifi-api-key';
   private static readonly CHAIN_TYPES = 'EVM';
 
   private readonly defaultExpirationTimeInSeconds: number;
@@ -23,6 +30,7 @@ export class LifiBridgeApi implements IBridgeApi {
   constructor(
     private readonly chainId: string,
     private readonly baseUrl: string,
+    private readonly apiKey: string,
     private readonly networkService: INetworkService,
     private readonly cacheFirstDataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
@@ -50,6 +58,9 @@ export class LifiBridgeApi implements IBridgeApi {
           params: {
             chainTypes: LifiBridgeApi.CHAIN_TYPES,
           },
+          headers: {
+            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
+          },
         },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
@@ -73,6 +84,9 @@ export class LifiBridgeApi implements IBridgeApi {
             fromChain: this.chainId,
             toChain: args.toChain,
             bridge: args.bridge,
+          },
+          headers: {
+            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
           },
         },
       });
@@ -117,6 +131,44 @@ export class LifiBridgeApi implements IBridgeApi {
         data: {
           ...args,
           fromChain: this.chainId,
+        },
+        networkRequest: {
+          headers: {
+            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  public async getRoutes(args: {
+    integrator?: string;
+    fee?: number;
+    maxPriceImpact?: number;
+    order?: OrderType;
+    slippage?: number;
+    referrer?: string;
+    allowSwitchChain?: boolean;
+    allowDestinationCall?: boolean;
+    bridges?: AllowDenyPrefer<BridgeName>;
+    exchanges?: AllowDenyPrefer<ExchangeName>;
+    swapStepTimingStrategies?: Array<TimingStrategies>;
+    routeTimingStrategies?: Array<TimingStrategies>;
+  }): Promise<Raw<BridgeRoutesResponse>> {
+    try {
+      const url = `${this.baseUrl}/v1/routes`;
+      const { data } = await this.networkService.get<BridgeRoutesResponse>({
+        url,
+        networkRequest: {
+          // TODO: Fix type to allow non-primitives
+          // @ts-expect-error - expects primitives
+          params: args,
+          headers: {
+            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
+          },
         },
       });
       return data;

@@ -3,10 +3,16 @@ import type { BridgeName } from '@/domain/bridge/entities/bridge-name.entity';
 import type { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity';
-import type { OrderType } from '@/domain/bridge/entities/order-type.entity';
-import type { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
+import type {
+  AllowDenyPrefer,
+  RoutePreference,
+} from '@/domain/bridge/entities/bridge-preference.entity';
 import type { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
 import type { BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
+import type {
+  BridgeRoutesResponse,
+  OrderType,
+} from '@/domain/bridge/entities/bridge-route.entity';
 
 export const IBridgeApi = Symbol('IBridgeApi');
 
@@ -44,4 +50,19 @@ export interface IBridgeApi {
     routeTimingStrategies?: Array<TimingStrategies>;
     skipSimulation?: boolean;
   }): Promise<Raw<BridgeQuote>>;
+
+  getRoutes(args: {
+    integrator?: string;
+    fee?: number;
+    maxPriceImpact?: number;
+    order?: OrderType;
+    slippage?: number;
+    referrer?: string;
+    allowSwitchChain?: boolean;
+    allowDestinationCall?: boolean;
+    bridges?: AllowDenyPrefer<BridgeName>;
+    exchanges?: AllowDenyPrefer<ExchangeName>;
+    swapStepTimingStrategies?: Array<TimingStrategies>;
+    routeTimingStrategies?: Array<TimingStrategies>;
+  }): Promise<Raw<BridgeRoutesResponse>>;
 }

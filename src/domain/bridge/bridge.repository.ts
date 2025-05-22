@@ -11,10 +11,17 @@ import {
 } from '@/domain/bridge/entities/bridge-quote.entity';
 import { BridgeName } from '@/domain/bridge/entities/bridge-name.entity';
 import { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity';
-import { OrderType } from '@/domain/bridge/entities/order-type.entity';
-import { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
+import {
+  AllowDenyPrefer,
+  RoutePreference,
+} from '@/domain/bridge/entities/bridge-preference.entity';
 import { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
 import { BridgeChainPageSchema } from '@/domain/bridge/entities/bridge-chain.entity';
+import {
+  BridgeRoute,
+  BridgeRoutesResponseSchema,
+  OrderType,
+} from '@/domain/bridge/entities/bridge-route.entity';
 
 @Injectable()
 export class BridgeRepository implements IBridgeRepository {
@@ -77,5 +84,25 @@ export class BridgeRepository implements IBridgeRepository {
     const api = await this.bridgeApiFactory.getApi(args.fromChain);
     const calldata = await api.getQuote(args);
     return BridgeQuoteSchema.parse(calldata);
+  }
+
+  async getRoutes(args: {
+    fromChain: string;
+    integrator?: string;
+    fee?: number;
+    maxPriceImpact?: number;
+    order?: OrderType;
+    slippage?: number;
+    referrer?: string;
+    allowSwitchChain?: boolean;
+    allowDestinationCall?: boolean;
+    bridges?: AllowDenyPrefer<BridgeName>;
+    exchanges?: AllowDenyPrefer<ExchangeName>;
+    swapStepTimingStrategies?: Array<TimingStrategies>;
+    routeTimingStrategies?: Array<TimingStrategies>;
+  }): Promise<Array<BridgeRoute>> {
+    const api = await this.bridgeApiFactory.getApi(args.fromChain);
+    const routes = await api.getRoutes(args);
+    return BridgeRoutesResponseSchema.parse({ routes }).routes;
   }
 }

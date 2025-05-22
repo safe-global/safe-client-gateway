@@ -7,3 +7,10 @@ export type RoutePreference<T extends BridgeName | ExchangeName> =
   | 'all'
   | 'none'
   | 'default';
+
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+export type AllowDenyPrefer<T extends BridgeName | ExchangeName> = {
+  allow?: Array<RoutePreference<T>>;
+  deny?: Array<RoutePreference<T>>;
+  prefer?: Array<RoutePreference<T>>;
+};

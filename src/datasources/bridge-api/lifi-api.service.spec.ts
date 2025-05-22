@@ -207,4 +207,6 @@ describe('LifiBridgeApi', () => {
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
     });
   });
+
+  it.todo('getRoutes');
 });
