@@ -53,9 +53,6 @@ export class SwapAndBridgeTransactionInfo extends TransactionInfo {
   status: BridgeStatus['status'];
 
   @ApiProperty()
-  numberOfSteps: number;
-
-  @ApiProperty()
   fee: number;
 
   @ApiProperty()
@@ -64,6 +61,9 @@ export class SwapAndBridgeTransactionInfo extends TransactionInfo {
   @ApiProperty()
   toAmount: string;
 
+  @ApiProperty()
+  maxSlippage: number;
+
   constructor(args: {
     fromToken: TokenInfo;
     toToken: TokenInfo;
@@ -71,10 +71,10 @@ export class SwapAndBridgeTransactionInfo extends TransactionInfo {
     exchangeRate: number;
     explorerUrl: string | null;
     status: BridgeStatus['status'];
-    numberOfSteps: number;
     fee: number;
     fromAmount: string;
     toAmount: string;
+    maxSlippage: number;
   }) {
     super(TransactionInfoType.SwapAndBridge, null);
 
@@ -84,9 +84,9 @@ export class SwapAndBridgeTransactionInfo extends TransactionInfo {
     this.exchangeRate = args.exchangeRate;
     this.explorerUrl = args.explorerUrl;
     this.status = args.status;
-    this.numberOfSteps = args.numberOfSteps;
     this.fee = args.fee;
     this.fromAmount = args.fromAmount;
     this.toAmount = args.toAmount;
+    this.maxSlippage = args.maxSlippage;
   }
 }

@@ -83,7 +83,7 @@ export class BridgeTransactionMapper {
 
   private async getQueuedInfo(): Promise<{
     exchangeRate: number;
-    numberOfSteps: number;
+    maxSlippage: number;
     toAmount: string;
     fee: number;
     explorerUrl: null;
@@ -95,7 +95,8 @@ export class BridgeTransactionMapper {
       toAmount: '0',
       fee: -1,
       explorerUrl: null,
-      status: 'PENDING',
+      status: 'PENDING', // TODO: Add awaiting execution status
+      maxSlippage: -1,
     });
   }
 
@@ -105,11 +106,11 @@ export class BridgeTransactionMapper {
     chainId: string;
   }): Promise<{
     exchangeRate: number;
-    numberOfSteps: number;
     toAmount: string;
     fee: number;
     explorerUrl: string | null;
     status: BridgeStatus['status'];
+    maxSlippage: number;
   }> {
     const status = await this.bridgeRepository.getStatus({
       txHash: args.transactionId,
@@ -139,11 +140,11 @@ export class BridgeTransactionMapper {
 
     return {
       exchangeRate,
-      numberOfSteps: includedSteps.length,
       toAmount,
       fee,
       explorerUrl,
-      status: status?.status ?? 'PENDING', // TODO: Add awaiting execution status
+      status: status.status,
+      maxSlippage: -1, // TODO: Add max slippage
     };
   }
 }
