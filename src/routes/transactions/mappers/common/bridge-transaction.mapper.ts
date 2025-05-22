@@ -10,6 +10,10 @@ import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entit
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { IBridgeRepository } from '@/domain/bridge/bridge.repository.interface';
 import { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
+import {
+  BridgeName,
+  isBridgeName,
+} from '@/domain/bridge/entities/bridge-name.entity';
 
 @Injectable()
 export class BridgeTransactionMapper {
@@ -42,6 +46,7 @@ export class BridgeTransactionMapper {
     chainId: string;
     data: `0x${string}`;
     executionDate: Date | null;
+    safeAddress: `0x${string}`;
   }): Promise<SwapAndBridgeTransactionInfo | null> {
     const decoded = this.liFiDecoder.decodeBridgeAndMaybeSwap(args.data);
 
@@ -63,7 +68,15 @@ export class BridgeTransactionMapper {
             ...decoded,
             chainId: args.chainId,
           })
-        : this.getQueuedInfo(),
+        : this.getQueuedInfo({
+            fromChain: args.chainId,
+            toChain: args.chainId,
+            fromAddress: args.safeAddress,
+            fromAmount: decoded.fromAmount.toString(),
+            fromToken: decoded.fromToken,
+            toToken: decoded.toToken,
+            bridge: isBridgeName(decoded.bridge) ? decoded.bridge : 'all',
+          }),
     ]);
 
     return new SwapAndBridgeTransactionInfo({
@@ -81,7 +94,15 @@ export class BridgeTransactionMapper {
     });
   }
 
-  private async getQueuedInfo(): Promise<{
+  private async getQueuedInfo(args: {
+    fromChain: string;
+    toChain: string;
+    fromToken: `0x${string}`;
+    toToken: `0x${string}`;
+    fromAddress: `0x${string}`;
+    fromAmount: string;
+    bridge: BridgeName | 'all';
+  }): Promise<{
     exchangeRate: number;
     maxSlippage: number;
     toAmount: string;
@@ -89,14 +110,29 @@ export class BridgeTransactionMapper {
     explorerUrl: null;
     status: BridgeStatus['status'];
   }> {
+    const [route] = await this.bridgeRepository.getRoutes({
+      fromChainId: args.fromChain,
+      fromAmount: args.fromAmount,
+      fromTokenAddress: args.fromToken,
+      fromAddress: args.fromAddress,
+      toChainId: args.toChain,
+      toTokenAddress: args.toToken,
+      options: {
+        bridges: {
+          allow: [args.bridge],
+        },
+      },
+    });
+
+    const exchangeRate = Number(route.toAmount) / Number(args.fromAmount);
+
     return Promise.resolve({
-      exchangeRate: -1,
-      numberOfSteps: -1,
-      toAmount: '0',
-      fee: -1,
+      exchangeRate,
+      toAmount: route.toAmount,
+      fee: -1, // TODO:
       explorerUrl: null,
       status: 'PENDING', // TODO: Add awaiting execution status
-      maxSlippage: -1,
+      maxSlippage: -1, // TODO:
     });
   }
 
@@ -116,22 +152,23 @@ export class BridgeTransactionMapper {
       txHash: args.transactionId,
       fromChain: args.chainId,
     });
+
     const includedSteps =
       status && 'includedSteps' in status.sending
         ? (status.sending.includedSteps ?? [])
         : [];
+    const toAmount = includedSteps[includedSteps.length - 1].toAmount;
+    const exchangeRate = Number(toAmount) / Number(args.fromAmount);
+
     const explorerUrl =
       status && 'lifiExplorerLink' in status ? status.lifiExplorerLink : null;
-
-    const toAmount = includedSteps[includedSteps.length - 1].toAmount;
-
-    const exchangeRate = Number(toAmount) / Number(args.fromAmount);
 
     const feeCollectionStep = includedSteps.find(({ tool }) => {
       return tool === 'feeCollection';
     });
 
     // TODO: Look into maybe using feeCosts from FullStatusDataSchema
+    //       and maybe need to format token values
     const fee = feeCollectionStep
       ? // TODO: Format token values
         Number(feeCollectionStep.fromAmount) -
@@ -144,7 +181,7 @@ export class BridgeTransactionMapper {
       fee,
       explorerUrl,
       status: status.status,
-      maxSlippage: -1, // TODO: Add max slippage
+      maxSlippage: -1, // TODO:
     };
   }
 }

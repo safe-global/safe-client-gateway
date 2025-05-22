@@ -301,6 +301,7 @@ export class MultisigTransactionInfoMapper {
         chainId: args.chainId,
         data: transaction.data,
         executionDate: args.transaction.executionDate,
+        safeAddress: args.transaction.safe,
       });
     } catch (error) {
       this.loggingService.warn(error);

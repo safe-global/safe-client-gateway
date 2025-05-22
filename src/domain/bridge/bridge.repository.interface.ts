@@ -52,17 +52,27 @@ export interface IBridgeRepository {
   }): Promise<BridgeQuote>;
 
   getRoutes(args: {
-    integrator?: string;
-    fee?: number;
-    maxPriceImpact?: number;
-    order?: OrderType;
-    slippage?: number;
-    referrer?: string;
-    allowSwitchChain?: boolean;
-    allowDestinationCall?: boolean;
-    bridges?: AllowDenyPrefer<BridgeName>;
-    exchanges?: AllowDenyPrefer<ExchangeName>;
-    swapStepTimingStrategies?: Array<TimingStrategies>;
-    routeTimingStrategies?: Array<TimingStrategies>;
+    fromChainId: string;
+    fromAmount: string;
+    fromTokenAddress: string;
+    fromAddress?: string;
+    toChainId: string;
+    toTokenAddress: string;
+    toAddress?: string;
+    fromAmountForGas?: string;
+    options: {
+      integrator?: string;
+      fee?: number;
+      maxPriceImpact?: number;
+      order?: OrderType;
+      slippage?: number;
+      referrer?: string;
+      allowSwitchChain?: boolean;
+      allowDestinationCall?: boolean;
+      bridges?: AllowDenyPrefer<BridgeName>;
+      exchanges?: AllowDenyPrefer<ExchangeName>;
+      swapStepTimingStrategies?: Array<TimingStrategies>;
+      routeTimingStrategies?: Array<TimingStrategies>;
+    };
   }): Promise<Array<BridgeRoute>>;
 }

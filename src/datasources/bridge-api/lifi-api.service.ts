@@ -126,13 +126,15 @@ export class LifiBridgeApi implements IBridgeApi {
       // rather than fromAmount but as the transaction already exists, we
       // assume the user wants to quote based on fromAmount
       const url = `${this.baseUrl}/v1/quote`;
-      const { data } = await this.networkService.post<BridgeQuote>({
+      const { data } = await this.networkService.get<BridgeQuote>({
         url,
-        data: {
-          ...args,
-          fromChain: this.chainId,
-        },
         networkRequest: {
+          // TODO: Fix type to allow non-primitives
+          // @ts-expect-error - expects primitives
+          params: {
+            ...args,
+            fromChain: this.chainId,
+          },
           headers: {
             [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
           },
@@ -145,31 +147,39 @@ export class LifiBridgeApi implements IBridgeApi {
   }
 
   public async getRoutes(args: {
-    integrator?: string;
-    fee?: number;
-    maxPriceImpact?: number;
-    order?: OrderType;
-    slippage?: number;
-    referrer?: string;
-    allowSwitchChain?: boolean;
-    allowDestinationCall?: boolean;
-    bridges?: AllowDenyPrefer<BridgeName>;
-    exchanges?: AllowDenyPrefer<ExchangeName>;
-    swapStepTimingStrategies?: Array<TimingStrategies>;
-    routeTimingStrategies?: Array<TimingStrategies>;
+    fromChainId: string;
+    fromAmount: string;
+    fromTokenAddress: string;
+    fromAddress?: string;
+    toChainId: string;
+    toTokenAddress: string;
+    toAddress?: string;
+    fromAmountForGas?: string;
+    options: {
+      integrator?: string;
+      fee?: number;
+      maxPriceImpact?: number;
+      order?: OrderType;
+      slippage?: number;
+      referrer?: string;
+      allowSwitchChain?: boolean;
+      allowDestinationCall?: boolean;
+      bridges?: AllowDenyPrefer<BridgeName>;
+      exchanges?: AllowDenyPrefer<ExchangeName>;
+      swapStepTimingStrategies?: Array<TimingStrategies>;
+      routeTimingStrategies?: Array<TimingStrategies>;
+    };
   }): Promise<Raw<BridgeRoutesResponse>> {
     try {
-      const url = `${this.baseUrl}/v1/routes`;
-      const { data } = await this.networkService.get<BridgeRoutesResponse>({
+      const url = `${this.baseUrl}/v1/advanced/routes`;
+      const { data } = await this.networkService.post<BridgeRoutesResponse>({
         url,
         networkRequest: {
-          // TODO: Fix type to allow non-primitives
-          // @ts-expect-error - expects primitives
-          params: args,
           headers: {
             [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
           },
         },
+        data: args,
       });
       return data;
     } catch (error) {

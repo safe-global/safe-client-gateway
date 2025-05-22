@@ -87,21 +87,30 @@ export class BridgeRepository implements IBridgeRepository {
   }
 
   async getRoutes(args: {
-    fromChain: string;
-    integrator?: string;
-    fee?: number;
-    maxPriceImpact?: number;
-    order?: OrderType;
-    slippage?: number;
-    referrer?: string;
-    allowSwitchChain?: boolean;
-    allowDestinationCall?: boolean;
-    bridges?: AllowDenyPrefer<BridgeName>;
-    exchanges?: AllowDenyPrefer<ExchangeName>;
-    swapStepTimingStrategies?: Array<TimingStrategies>;
-    routeTimingStrategies?: Array<TimingStrategies>;
+    fromChainId: string;
+    fromAmount: string;
+    fromTokenAddress: string;
+    fromAddress?: string;
+    toChainId: string;
+    toTokenAddress: string;
+    toAddress?: string;
+    fromAmountForGas?: string;
+    options: {
+      integrator?: string;
+      fee?: number;
+      maxPriceImpact?: number;
+      order?: OrderType;
+      slippage?: number;
+      referrer?: string;
+      allowSwitchChain?: boolean;
+      allowDestinationCall?: boolean;
+      bridges?: AllowDenyPrefer<BridgeName>;
+      exchanges?: AllowDenyPrefer<ExchangeName>;
+      swapStepTimingStrategies?: Array<TimingStrategies>;
+      routeTimingStrategies?: Array<TimingStrategies>;
+    };
   }): Promise<Array<BridgeRoute>> {
-    const api = await this.bridgeApiFactory.getApi(args.fromChain);
+    const api = await this.bridgeApiFactory.getApi(args.fromChainId);
     const routes = await api.getRoutes(args);
     return BridgeRoutesResponseSchema.parse({ routes }).routes;
   }
