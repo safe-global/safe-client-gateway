@@ -10,34 +10,49 @@ import type { OrderType } from '@/domain/bridge/entities/order-type.entity';
 import type { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
 import type { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
 import type { BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 
 export class LifiBridgeApi implements IBridgeApi {
-  private static readonly LIFI_API_HEADER = 'x-lifi-api-key';
   private static readonly CHAIN_TYPES = 'EVM';
+
+  private readonly defaultExpirationTimeInSeconds: number;
+  private readonly defaultNotFoundExpirationTimeSeconds: number;
 
   constructor(
     private readonly chainId: string,
     private readonly baseUrl: string,
-    private readonly apiKey: string,
     private readonly networkService: INetworkService,
+    private readonly cacheFirstDataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
-  ) {}
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.defaultExpirationTimeInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.default',
+      );
+    this.defaultNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.default',
+      );
+  }
 
   public async getChains(): Promise<Raw<BridgeChainPage>> {
+    const url = `${this.baseUrl}/v1/chains`;
+    const cacheDir = CacheRouter.getBridgeChainsCacheDir();
     try {
-      const url = `${this.baseUrl}/v1/chains`;
-      const { data } = await this.networkService.get<BridgeChainPage>({
+      return await this.cacheFirstDataSource.get<BridgeChainPage>({
+        cacheDir,
         url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: {
-          headers: {
-            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
-          },
           params: {
             chainTypes: LifiBridgeApi.CHAIN_TYPES,
           },
         },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
-      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -58,9 +73,6 @@ export class LifiBridgeApi implements IBridgeApi {
             fromChain: this.chainId,
             toChain: args.toChain,
             bridge: args.bridge,
-          },
-          headers: {
-            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
           },
         },
       });
@@ -105,11 +117,6 @@ export class LifiBridgeApi implements IBridgeApi {
         data: {
           ...args,
           fromChain: this.chainId,
-        },
-        networkRequest: {
-          headers: {
-            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
-          },
         },
       });
       return data;

@@ -52,11 +52,16 @@ import { TransactionVerifierHelper } from '@/routes/transactions/helpers/transac
 import { DelegatesV2RepositoryModule } from '@/domain/delegate/v2/delegates.v2.repository.interface';
 import { KilnVaultHelperModule } from '@/routes/transactions/helpers/kiln-vault.helper';
 import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vault-transaction.mapper';
+import { BridgeTransactionMapper } from '@/routes/transactions/mappers/common/bridge-transaction.mapper';
+import { LiFiDecoderModule } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
+import { LiFiHelperModule } from '@/routes/transactions/helpers/lifi-helper';
+import { BridgeRepositoryModule } from '@/domain/bridge/bridge.repository.module';
 
 @Module({
   controllers: [TransactionsController],
   imports: [
     AddressInfoModule,
+    BridgeRepositoryModule,
     ChainsRepositoryModule,
     ContractsRepositoryModule,
     DataDecoderRepositoryModule,
@@ -65,6 +70,8 @@ import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vau
     HumanDescriptionRepositoryModule,
     KilnNativeStakingHelperModule,
     KilnVaultHelperModule,
+    LiFiHelperModule,
+    LiFiDecoderModule,
     SafeAppsRepositoryModule,
     SafeRepositoryModule,
     StakingRepositoryModule,
@@ -77,6 +84,7 @@ import { VaultTransactionMapper } from '@/routes/transactions/mappers/common/vau
     TwapOrderMapperModule,
   ],
   providers: [
+    BridgeTransactionMapper,
     CreationTransactionMapper,
     CustomTransactionMapper,
     DataDecodedParamHelper,

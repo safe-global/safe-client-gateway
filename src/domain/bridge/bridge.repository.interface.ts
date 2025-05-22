@@ -1,5 +1,7 @@
 import type { BridgeName } from '@/domain/bridge/entities/bridge-name.entity';
 import type { RoutePreference } from '@/domain/bridge/entities/bridge-preference.entity';
+import type { BridgeQuote } from '@/domain/bridge/entities/bridge-quote.entity';
+import type { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
 import type { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity';
 import type { OrderType } from '@/domain/bridge/entities/order-type.entity';
 import type { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
@@ -14,7 +16,7 @@ export interface IBridgeRepository {
     txHash: `0x${string}`;
     bridge?: BridgeName;
     toChain?: string;
-  }): Promise<unknown>;
+  }): Promise<BridgeStatus>;
 
   getQuote(args: {
     fromChain: string;
@@ -41,5 +43,5 @@ export interface IBridgeRepository {
     swapStepTimingStrategies?: Array<TimingStrategies>;
     routeTimingStrategies?: Array<TimingStrategies>;
     skipSimulation?: boolean;
-  }): Promise<unknown>;
+  }): Promise<BridgeQuote>;
 }

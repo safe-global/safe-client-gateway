@@ -33,6 +33,13 @@ import {
 } from '@/routes/transactions/entities/vaults/vault-transaction-info.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
+import { BridgeTransactionMapper } from '@/routes/transactions/mappers/common/bridge-transaction.mapper';
+import { LiFiHelper } from '@/routes/transactions/helpers/lifi-helper';
+import {
+  BridgeTransactionInfo,
+  SwapAndBridgeTransactionInfo,
+  SwapTransactionInfo,
+} from '@/routes/transactions/entities/bridge/bridge-info.entity';
 
 @Injectable()
 export class MultisigTransactionInfoMapper {
@@ -57,9 +64,11 @@ export class MultisigTransactionInfoMapper {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly bridgeTransactionMapper: BridgeTransactionMapper,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
     private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
+    private readonly liFiHelper: LiFiHelper,
     private readonly nativeCoinTransferMapper: NativeCoinTransferMapper,
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
@@ -94,6 +103,30 @@ export class MultisigTransactionInfoMapper {
         transaction,
         chainId,
       );
+
+    const bridge = await this.mapBridge({
+      chainId,
+      transaction,
+    });
+    if (bridge) {
+      return bridge;
+    }
+
+    const swap = await this.mapSwap({
+      chainId,
+      transaction,
+    });
+    if (swap) {
+      return swap;
+    }
+
+    const swapAndBridge = await this.mapSwapAndBridge({
+      chainId,
+      transaction,
+    });
+    if (swapAndBridge) {
+      return swapAndBridge;
+    }
 
     const swapOrder: SwapOrderTransactionInfo | null = await this.mapSwapOrder(
       chainId,
@@ -218,6 +251,61 @@ export class MultisigTransactionInfoMapper {
       chainId,
       humanDescription,
     );
+  }
+
+  private async mapBridge(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+  }): Promise<BridgeTransactionInfo | null> {
+    const transaction = await this.liFiHelper.getBridgeTransaction(args);
+    if (!transaction) {
+      return null;
+    }
+
+    try {
+      return this.bridgeTransactionMapper.mapBridge(transaction.data);
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapSwap(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+  }): Promise<SwapTransactionInfo | null> {
+    const transaction = await this.liFiHelper.getSwapTransaction(args);
+    if (!transaction) {
+      return null;
+    }
+
+    try {
+      return this.bridgeTransactionMapper.mapSwap(transaction.data);
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapSwapAndBridge(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+  }): Promise<SwapAndBridgeTransactionInfo | null> {
+    const transaction = await this.liFiHelper.getSwapAndBridgeTransaction(args);
+    if (!transaction) {
+      return null;
+    }
+
+    try {
+      return this.bridgeTransactionMapper.mapSwapAndBridge({
+        chainId: args.chainId,
+        data: transaction.data,
+        executionDate: args.transaction.executionDate,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
   }
 
   /**

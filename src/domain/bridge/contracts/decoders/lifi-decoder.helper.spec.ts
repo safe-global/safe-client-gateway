@@ -16,16 +16,15 @@ import {
 // common parameters. This means that we can safely rely on AcrossV3 for these tests.
 describe('LiFiDecoder', () => {
   let target: LiFiDecoder;
-  let fromChain: string;
 
   beforeEach(() => {
-    fromChain = faker.string.numeric();
-    target = new LiFiDecoder(fromChain);
+    target = new LiFiDecoder();
   });
 
   describe('isBridge', () => {
     describe('bridge transaction', () => {
       it('should return true when bridging to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const data = startBridgeTokensViaAcrossV3Encoder()
           .with(
             'bridgeData',
@@ -39,12 +38,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(true);
       });
 
       it('should return false when bridging to the same chain', () => {
+        const fromChain = faker.string.numeric();
         const data = startBridgeTokensViaAcrossV3Encoder()
           .with(
             'bridgeData',
@@ -55,7 +58,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -63,6 +69,7 @@ describe('LiFiDecoder', () => {
 
     describe('swap and bridge transaction', () => {
       it('should return false when swapping to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -85,12 +92,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when swapping on the same chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -110,12 +121,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return true when only bridging to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -138,12 +153,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(true);
       });
 
       it('should return false when only bridging to the same chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -163,7 +182,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -171,6 +193,7 @@ describe('LiFiDecoder', () => {
 
     describe('single swap transaction', () => {
       it('should return false when swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapTokensSingleV3ERC20ToERC20Encoder()
@@ -183,12 +206,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when not swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapTokensSingleV3ERC20ToERC20Encoder()
@@ -201,7 +228,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -209,6 +239,7 @@ describe('LiFiDecoder', () => {
 
     describe('multi swap transaction', () => {
       it('should return false when swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapTokensMultiV3ERC20ToERC20Encoder()
@@ -224,12 +255,16 @@ describe('LiFiDecoder', () => {
           ])
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when not swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapTokensMultiV3ERC20ToERC20Encoder()
@@ -245,16 +280,23 @@ describe('LiFiDecoder', () => {
           ])
           .encode();
 
-        const result = target.isBridge(data);
+        const result = target.isBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
     });
 
     it('should return false for a non-LiFi transaction', () => {
+      const fromChain = faker.string.numeric();
       const data = faker.string.hexadecimal() as Hex;
 
-      const result = target.isBridge(data);
+      const result = target.isBridge({
+        data,
+        chainId: fromChain,
+      });
 
       expect(result).toBe(false);
     });
@@ -263,6 +305,7 @@ describe('LiFiDecoder', () => {
   describe('isSwap', () => {
     describe('bridge transaction', () => {
       it('should return false when bridging to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const data = startBridgeTokensViaAcrossV3Encoder()
           .with(
             'bridgeData',
@@ -276,12 +319,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when bridging to the same chain', () => {
+        const fromChain = faker.string.numeric();
         const data = startBridgeTokensViaAcrossV3Encoder()
           .with(
             'bridgeData',
@@ -292,7 +339,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -300,6 +350,7 @@ describe('LiFiDecoder', () => {
 
     describe('swap and bridge transaction', () => {
       it('should return false when swapping to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -322,12 +373,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return true when swapping on the same chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -347,12 +402,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(true);
       });
 
       it('should return false when only bridging to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -375,12 +434,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when only bridging to the same chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -400,7 +463,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -408,6 +474,7 @@ describe('LiFiDecoder', () => {
 
     describe('single swap transaction', () => {
       it('should return true when swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapTokensSingleV3ERC20ToERC20Encoder()
@@ -420,12 +487,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(true);
       });
 
       it('should return false when not swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapTokensSingleV3ERC20ToERC20Encoder()
@@ -438,7 +509,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -446,6 +520,7 @@ describe('LiFiDecoder', () => {
 
     describe('multi swap transaction', () => {
       it('should return true when swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapTokensMultiV3ERC20ToERC20Encoder()
@@ -461,12 +536,16 @@ describe('LiFiDecoder', () => {
           ])
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(true);
       });
 
       it('should return false when not swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapTokensMultiV3ERC20ToERC20Encoder()
@@ -482,16 +561,23 @@ describe('LiFiDecoder', () => {
           ])
           .encode();
 
-        const result = target.isSwap(data);
+        const result = target.isSwap({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
     });
 
     it('should return false for a non-LiFi transaction', () => {
+      const fromChain = faker.string.numeric();
       const data = faker.string.hexadecimal() as Hex;
 
-      const result = target.isSwap(data);
+      const result = target.isSwap({
+        data,
+        chainId: fromChain,
+      });
 
       expect(result).toBe(false);
     });
@@ -500,6 +586,7 @@ describe('LiFiDecoder', () => {
   describe('isSwapAndBridge', () => {
     describe('bridge transaction', () => {
       it('should return false when bridging to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const data = startBridgeTokensViaAcrossV3Encoder()
           .with(
             'bridgeData',
@@ -513,12 +600,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when bridging to the same chain', () => {
+        const fromChain = faker.string.numeric();
         const data = startBridgeTokensViaAcrossV3Encoder()
           .with(
             'bridgeData',
@@ -529,7 +620,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -537,6 +631,7 @@ describe('LiFiDecoder', () => {
 
     describe('swap and bridge transaction', () => {
       it('should return true when swapping to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -559,12 +654,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(true);
       });
 
       it('should return false when swapping on the same chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -584,12 +683,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when only bridging to a different chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -612,12 +715,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when only bridging to the same chain', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapAndStartBridgeTokensViaAcrossV3Encoder()
@@ -637,7 +744,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -645,6 +755,7 @@ describe('LiFiDecoder', () => {
 
     describe('single swap transaction', () => {
       it('should return false when swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapTokensSingleV3ERC20ToERC20Encoder()
@@ -657,12 +768,16 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when not swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapTokensSingleV3ERC20ToERC20Encoder()
@@ -675,7 +790,10 @@ describe('LiFiDecoder', () => {
           )
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
@@ -683,6 +801,7 @@ describe('LiFiDecoder', () => {
 
     describe('multi swap transaction', () => {
       it('should return false when swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = getAddress(faker.finance.ethereumAddress());
         const data = swapTokensMultiV3ERC20ToERC20Encoder()
@@ -698,12 +817,16 @@ describe('LiFiDecoder', () => {
           ])
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
 
       it('should return false when not swapping', () => {
+        const fromChain = faker.string.numeric();
         const sendingAssetId = getAddress(faker.finance.ethereumAddress());
         const receivingAssetId = sendingAssetId;
         const data = swapTokensMultiV3ERC20ToERC20Encoder()
@@ -719,16 +842,23 @@ describe('LiFiDecoder', () => {
           ])
           .encode();
 
-        const result = target.isSwapAndBridge(data);
+        const result = target.isSwapAndBridge({
+          data,
+          chainId: fromChain,
+        });
 
         expect(result).toBe(false);
       });
     });
 
     it('should return false for a non-LiFi transaction', () => {
+      const fromChain = faker.string.numeric();
       const data = faker.string.hexadecimal() as Hex;
 
-      const result = target.isSwapAndBridge(data);
+      const result = target.isSwapAndBridge({
+        data,
+        chainId: fromChain,
+      });
 
       expect(result).toBe(false);
     });
@@ -754,6 +884,7 @@ describe('LiFiDecoder', () => {
     });
 
     it('should decode a swap and bridge transaction', () => {
+      const fromChain = faker.string.numeric();
       const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder().with(
         'bridgeData',
         bridgeDataStructBuilder()

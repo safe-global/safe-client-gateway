@@ -1,13 +1,17 @@
 import { IBridgeRepository } from '@/domain/bridge/bridge.repository.interface';
+import { BridgeRepositoryModule } from '@/domain/bridge/bridge.repository.module';
 import { LiFiDecoder } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
-import { TransactionFinder } from '@/routes/transactions/helpers/transaction-finder.helper';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  TransactionFinder,
+  TransactionFinderModule,
+} from '@/routes/transactions/helpers/transaction-finder.helper';
+import { Inject, Injectable, Module } from '@nestjs/common';
 import { isAddressEqual } from 'viem';
 
 @Injectable()
-export class BridgeMapper {
+export class LiFiHelper {
   constructor(
     private readonly liFiDecoder: LiFiDecoder,
     private readonly transactionFinder: TransactionFinder,
@@ -15,55 +19,55 @@ export class BridgeMapper {
     private readonly bridgeRepository: IBridgeRepository,
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  public async mapBridge(args: {
+  public async getBridgeTransaction(args: {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
-  }) {
-    const transaction = await this.findTransactionByPredicate({
+  }): Promise<{
+    to?: `0x${string}`;
+    data: `0x${string}`;
+    value: string;
+  } | null> {
+    return await this.findTransactionByPredicate({
       ...args,
-      predicate: this.liFiDecoder.isBridge,
+      predicate: (data) => {
+        return this.liFiDecoder.isBridge({ chainId: args.chainId, data });
+      },
     });
-
-    if (!transaction) {
-      return null;
-    }
-
-    return this.liFiDecoder.decodeBridgeAndMaybeSwap(transaction.data);
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  public async mapSwap(args: {
+  public async getSwapTransaction(args: {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
-  }) {
-    const transaction = await this.findTransactionByPredicate({
+  }): Promise<{
+    to?: `0x${string}`;
+    data: `0x${string}`;
+    value: string;
+  } | null> {
+    return await this.findTransactionByPredicate({
       ...args,
-      predicate: this.liFiDecoder.isSwap,
+      predicate: (data) => {
+        return this.liFiDecoder.isSwap({ chainId: args.chainId, data });
+      },
     });
-
-    if (!transaction) {
-      return null;
-    }
-
-    return this.liFiDecoder.decodeSwap(transaction.data);
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  public async mapSwapAndBridge(args: {
+  public async getSwapAndBridgeTransaction(args: {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
-  }) {
-    const transaction = await this.findTransactionByPredicate({
+  }): Promise<{
+    to?: `0x${string}`;
+    data: `0x${string}`;
+    value: string;
+  } | null> {
+    return await this.findTransactionByPredicate({
       ...args,
-      predicate: this.liFiDecoder.isSwapAndBridge,
+      predicate: (data) => {
+        return this.liFiDecoder.isSwapAndBridge({
+          chainId: args.chainId,
+          data,
+        });
+      },
     });
-
-    if (!transaction) {
-      return null;
-    }
-
-    return this.liFiDecoder.decodeBridgeAndMaybeSwap(transaction.data);
   }
 
   private async findTransactionByPredicate(args: {
@@ -98,3 +102,9 @@ export class BridgeMapper {
     );
   }
 }
+@Module({
+  imports: [TransactionFinderModule, BridgeRepositoryModule],
+  providers: [LiFiHelper, LiFiDecoder],
+  exports: [LiFiHelper, LiFiDecoder],
+})
+export class LiFiHelperModule {}

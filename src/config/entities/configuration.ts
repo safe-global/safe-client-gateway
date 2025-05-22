@@ -157,7 +157,6 @@ export default () => ({
   },
   bridge: {
     baseUri: 'https://li.quest',
-    apiKey: process.env.BRIDGE_API_KEY,
   },
   contracts: {
     trustedForDelegateCall: {

@@ -8,12 +8,12 @@ import {
 } from '@/datasources/network/network.service.interface';
 import type { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
 import type { IBridgeApi } from '@/domain/interfaces/bridge-api.inferface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 
 @Injectable()
 export class BridgeApiFactory implements IBridgeApiFactory {
   private readonly apis: Record<string, IBridgeApi> = {};
 
-  private readonly apiKey: string;
   private readonly baseUrl: string;
 
   constructor(
@@ -21,10 +21,11 @@ export class BridgeApiFactory implements IBridgeApiFactory {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(NetworkService) private readonly networkService: INetworkService,
+    @Inject(CacheFirstDataSource)
+    private readonly cacheFirstDataSource: CacheFirstDataSource,
   ) {
-    this.apiKey = this.configurationService.getOrThrow<string>('bridge.apiKey');
     this.baseUrl =
-      this.configurationService.getOrThrow<string>('bridge.baseUrl');
+      this.configurationService.getOrThrow<string>('bridge.baseUri');
   }
 
   getApi(chainId: string): Promise<IBridgeApi> {
@@ -35,9 +36,10 @@ export class BridgeApiFactory implements IBridgeApiFactory {
     this.apis[chainId] = new LifiBridgeApi(
       chainId,
       this.baseUrl,
-      this.apiKey,
       this.networkService,
+      this.cacheFirstDataSource,
       this.httpErrorFactory,
+      this.configurationService,
     );
 
     return Promise.resolve(this.apis[chainId]);
