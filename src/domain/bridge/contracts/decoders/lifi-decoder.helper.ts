@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import {
   AbiParameterToPrimitiveType,
   Address,
@@ -40,20 +40,21 @@ export class LiFiDecoder {
     'bytes32 _transactionId, string _integrator, string _referrer, address _receiver, uint256 _minAmountOut',
   );
 
-  constructor(private readonly fromChain: string) {}
-
   /**
    * Checks if the given calldata represents a (no swap and) bridge call.
    *
-   * @param {Hex} data - The calldata to check.
+   * @param {Object} args - The arguments object.
+   * @param {string} args.chainId - The chain ID to check against.
+   * @param {Hex} args.data - The calldata to check.
    * @returns {boolean} True if the calldata is a bridge call, false otherwise.
    */
-  public isBridge(data: Hex): boolean {
+  public isBridge(args: { chainId: string; data: Hex }): boolean {
     try {
-      const { destinationChainId, hasSourceSwaps } =
-        this.decodeBridgeData(data);
+      const { destinationChainId, hasSourceSwaps } = this.decodeBridgeData(
+        args.data,
+      );
 
-      const isBridge = this.fromChain !== destinationChainId.toString();
+      const isBridge = args.chainId !== destinationChainId.toString();
       return isBridge && !hasSourceSwaps;
     } catch {
       return false;
@@ -63,12 +64,14 @@ export class LiFiDecoder {
   /**
    * Checks if the given calldata represents a swap call.
    *
-   * @param {Hex} data - The calldata to check.
+   * @param {Object} args - The arguments object.
+   * @param {string} args.chainId - The chain ID to check against.
+   * @param {Hex} args.data - The calldata to check.
    * @returns {boolean} True if the calldata is a swap call, false otherwise.
    */
-  public isSwap(data: Hex): boolean {
+  public isSwap(args: { chainId: string; data: Hex }): boolean {
     try {
-      const { fromToken, toToken } = this.decodeSwap(data);
+      const { fromToken, toToken } = this.decodeSwap(args.data);
 
       if (!isAddressEqual(fromToken, toToken)) {
         return true;
@@ -78,10 +81,11 @@ export class LiFiDecoder {
     }
 
     try {
-      const { destinationChainId, hasSourceSwaps } =
-        this.decodeBridgeData(data);
+      const { destinationChainId, hasSourceSwaps } = this.decodeBridgeData(
+        args.data,
+      );
 
-      const isBridge = this.fromChain !== destinationChainId.toString();
+      const isBridge = args.chainId !== destinationChainId.toString();
       return !isBridge && hasSourceSwaps;
     } catch {
       return false;
@@ -91,15 +95,18 @@ export class LiFiDecoder {
   /**
    * Checks if the given calldata represents a swap and bridge call.
    *
-   * @param {Hex} data - The calldata to check.
+   * @param {Object} args - The arguments object.
+   * @param {string} args.chainId - The chain ID to check against.
+   * @param {Hex} args.data - The calldata to check.
    * @returns {boolean} True if the calldata is a swap and bridge call, false otherwise.
    */
-  public isSwapAndBridge(data: Hex): boolean {
+  public isSwapAndBridge(args: { chainId: string; data: Hex }): boolean {
     try {
-      const { destinationChainId, hasSourceSwaps } =
-        this.decodeBridgeData(data);
+      const { destinationChainId, hasSourceSwaps } = this.decodeBridgeData(
+        args.data,
+      );
 
-      const isBridge = this.fromChain !== destinationChainId.toString();
+      const isBridge = args.chainId !== destinationChainId.toString();
       return isBridge && hasSourceSwaps;
     } catch {
       return false;
@@ -387,3 +394,9 @@ export class LiFiDecoder {
     return `0x${data.slice(10)}`;
   }
 }
+
+@Module({
+  providers: [LiFiDecoder],
+  exports: [LiFiDecoder],
+})
+export class LiFiDecoderModule {}
