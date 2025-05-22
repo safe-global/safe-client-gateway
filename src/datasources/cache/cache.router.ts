@@ -640,72 +640,65 @@ export class CacheRouter {
     );
   }
 
-  // TODO: Remove url from the following cache keys where it isn't required
-  // e.g. when fetching a specific address
-
-  // Kiln uses different endpoints for mainnet/testnet
-  static getStakingDeploymentsCacheDir(url: string): CacheDir {
-    return new CacheDir(`${this.STAKING_DEPLOYMENTS_KEY}_${url}`, '');
+  static getStakingDeploymentsCacheDir(
+    cacheType: 'earn' | 'staking',
+  ): CacheDir {
+    return new CacheDir(this.STAKING_DEPLOYMENTS_KEY, cacheType);
   }
 
-  // Kiln uses different endpoints for mainnet/testnet
-  static getStakingNetworkStatsCacheDir(url: string): CacheDir {
-    return new CacheDir(`${this.STAKING_NETWORK_STATS_KEY}_${url}`, '');
+  static getStakingNetworkStatsCacheDir(
+    cacheType: 'earn' | 'staking',
+  ): CacheDir {
+    return new CacheDir(this.STAKING_NETWORK_STATS_KEY, cacheType);
   }
 
-  // Kiln uses different endpoints for mainnet/testnet
-  static getStakingDedicatedStakingStatsCacheDir(url: string): CacheDir {
-    return new CacheDir(
-      `${this.STAKING_DEDICATED_STAKING_STATS_KEY}_${url}`,
-      '',
-    );
+  static getStakingDedicatedStakingStatsCacheDir(
+    cacheType: 'earn' | 'staking',
+  ): CacheDir {
+    return new CacheDir(this.STAKING_DEDICATED_STAKING_STATS_KEY, cacheType);
   }
 
-  // Kiln uses different endpoints for mainnet/testnet
   static getStakingPooledStakingStatsCacheDir(args: {
-    url: string;
+    cacheType: 'earn' | 'staking';
     pool: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      `${this.STAKING_POOLED_STAKING_STATS_KEY}_${args.url}_${args.pool}`,
-      '',
+      `${this.STAKING_POOLED_STAKING_STATS_KEY}_${args.pool}`,
+      args.cacheType,
     );
   }
 
-  // Kiln uses different endpoints for mainnet/testnet
   static getStakingDefiVaultStatsCacheDir(args: {
-    url: string;
+    cacheType: 'earn' | 'staking';
     chainId: string;
     vault: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_VAULT_STATS_KEY}_${args.url}_${args.vault}`,
-      '',
+      `${args.chainId}_${this.STAKING_DEFI_VAULT_STATS_KEY}_${args.vault}`,
+      args.cacheType,
     );
   }
 
-  // Kiln uses different endpoints for mainnet/testnet
   static getStakingDefiVaultStakesCacheDir(args: {
-    url: string;
+    cacheType: 'earn' | 'staking';
     chainId: string;
     safeAddress: `0x${string}`;
     vault: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_VAULT_STAKES_KEY}_${args.url}_${args.safeAddress}_${args.vault}`,
-      '',
+      `${args.chainId}_${this.STAKING_DEFI_VAULT_STAKES_KEY}_${args.safeAddress}_${args.vault}`,
+      args.cacheType,
     );
   }
 
-  // Kiln uses different endpoints for mainnet/testnet
   static getStakingDefiMorphoExtraRewardsCacheDir(args: {
-    url: string;
+    cacheType: 'earn' | 'staking';
     chainId: string;
     safeAddress: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
-      `${args.chainId}_${this.STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY}_${args.url}_${args.safeAddress}`,
-      '',
+      `${args.chainId}_${this.STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY}_${args.safeAddress}`,
+      args.cacheType,
     );
   }
 
@@ -730,12 +723,14 @@ export class CacheRouter {
    * cache field short and deterministic. Redis and other cache systems
    * may experience performance degradation with long fields.
    *
+   * @param {string} args.cacheType - Cache type (earn or staking)
    * @param {string} args.chainId - Chain ID
    * @param {string} args.safeAddress - Safe address
    * @param {string} args.validatorsPublicKeys - Array of validators public keys
    * @returns {@link CacheDir} - Cache directory
    */
   static getStakingStakesCacheDir(args: {
+    cacheType: 'earn' | 'staking';
     chainId: string;
     safeAddress: `0x${string}`;
     validatorsPublicKeys: Array<`0x${string}`>;
@@ -744,7 +739,7 @@ export class CacheRouter {
     hash.update(args.validatorsPublicKeys.join('_'));
     return new CacheDir(
       CacheRouter.getStakingStakesCacheKey(args),
-      hash.digest('hex'),
+      `${args.cacheType}_${hash.digest('hex')}`,
     );
   }
 
@@ -753,12 +748,13 @@ export class CacheRouter {
   }
 
   static getStakingTransactionStatusCacheDir(args: {
+    cacheType: 'earn' | 'staking';
     chainId: string;
     txHash: `0x${string}`;
   }): CacheDir {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.STAKING_TRANSACTION_STATUS_KEY}_${args.txHash}`,
-      '',
+      args.cacheType,
     );
   }
 
