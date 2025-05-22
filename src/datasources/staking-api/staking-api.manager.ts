@@ -52,6 +52,7 @@ export class StakingApiManager implements IStakingApiManager {
       this.configurationService,
       this.cacheService,
       chain.chainId,
+      'staking',
     );
 
     return Promise.resolve(this.apis[chainId]);

@@ -57,6 +57,7 @@ export class EarnApiManager implements IStakingApiManager {
       this.configurationService,
       this.cacheService,
       chain.chainId,
+      'earn',
     );
 
     return Promise.resolve(this.apis[chainId]);
