@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Safe } from '@/domain/safe/entities/safe.entity';
@@ -13,7 +13,6 @@ import {
 } from '@/routes/transactions/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '@/routes/transactions/entities/queued-items/transaction-queued-item.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 
 class TransactionGroup {
   nonce!: number;
@@ -23,8 +22,6 @@ class TransactionGroup {
 @Injectable()
 export class QueuedItemsMapper {
   constructor(
-    @Inject(IDataDecoderRepository)
-    private readonly dataDecoderRepository: IDataDecoderRepository,
     private readonly mapper: MultisigTransactionMapper,
     private readonly addressInfoHelper: AddressInfoHelper,
   ) {}
@@ -91,18 +88,8 @@ export class QueuedItemsMapper {
       transactionGroup.transactions.map(async (transaction, idx) => {
         const isFirstInGroup = idx === 0;
         const isLastInGroup = idx === transactionGroup.transactions.length - 1;
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId,
-            transaction,
-          });
         return new TransactionQueuedItem(
-          await this.mapper.mapTransaction(
-            chainId,
-            transaction,
-            safe,
-            dataDecoded,
-          ),
+          await this.mapper.mapTransaction(chainId, transaction, safe),
           this.getConflictType(
             isFirstInGroup,
             isLastInGroup,

@@ -51,7 +51,6 @@ import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/nat
 describe('List multisig transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -91,7 +90,6 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-    safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -228,27 +226,30 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', null)
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'transfer')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('name', 'to')
+              .with('type', 'address')
+              .with('value', '0x84662112A54cC30733A0DfF864bc38905AB42fD4')
+              .build(),
+            dataDecodedParameterBuilder()
+              .with('name', 'value')
+              .with('type', 'uint256')
+              .with('value', '455753658736')
+              .build(),
+          ])
+          .build(),
+      )
       .with('confirmationsRequired', 2)
       .buildWithConfirmations({
         chainId: chain.chainId,
         safe,
         signers,
       });
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'transfer')
-      .with('parameters', [
-        dataDecodedParameterBuilder()
-          .with('name', 'to')
-          .with('type', 'address')
-          .with('value', '0x84662112A54cC30733A0DfF864bc38905AB42fD4')
-          .build(),
-        dataDecodedParameterBuilder()
-          .with('name', 'value')
-          .with('type', 'uint256')
-          .with('value', '455753658736')
-          .build(),
-      ])
-      .build();
     const token = erc20TokenBuilder()
       .with('address', getAddress(multisigTransaction.to))
       .build();
@@ -279,12 +280,6 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       }
       if (url === getTokenUrlPattern) {
         return Promise.resolve({ data: rawify(token), status: 200 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
-    networkService.post.mockImplementation(({ url }) => {
-      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
-        return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -361,32 +356,35 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .with('isExecuted', true)
       .with('isSuccessful', true)
       .with('origin', '{}')
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'safeTransferFrom')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('name', 'from')
+              .with('type', 'address')
+              .with('value', safe.address)
+              .build(),
+            dataDecodedParameterBuilder()
+              .with('name', 'to')
+              .with('type', 'address')
+              .with('value', '0x3a55e304D9cF13E45Ead6BA3DabCcadD3a419356')
+              .build(),
+            dataDecodedParameterBuilder()
+              .with('name', 'tokenId')
+              .with('type', 'uint256')
+              .with('value', '495')
+              .build(),
+          ])
+          .build(),
+      )
       .with('confirmationsRequired', 3)
       .buildWithConfirmations({
         safe,
         chainId: chain.chainId,
         signers,
       });
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'safeTransferFrom')
-      .with('parameters', [
-        dataDecodedParameterBuilder()
-          .with('name', 'from')
-          .with('type', 'address')
-          .with('value', safe.address)
-          .build(),
-        dataDecodedParameterBuilder()
-          .with('name', 'to')
-          .with('type', 'address')
-          .with('value', '0x3a55e304D9cF13E45Ead6BA3DabCcadD3a419356')
-          .build(),
-        dataDecodedParameterBuilder()
-          .with('name', 'tokenId')
-          .with('type', 'uint256')
-          .with('value', '495')
-          .build(),
-      ])
-      .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -414,12 +412,6 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       }
       if (url === getTokenUrlPattern) {
         return Promise.resolve({ data: rawify(token), status: 200 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
-    networkService.post.mockImplementation(({ url }) => {
-      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
-        return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -491,25 +483,28 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .with('data', faker.string.hexadecimal({ length: 32 }) as `0x${string}`)
       .with('isExecuted', true)
       .with('isSuccessful', true)
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'multiSend')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('name', 'transactions')
+              .with('valueDecoded', [
+                multisendBuilder().build(),
+                multisendBuilder().build(),
+                multisendBuilder().build(),
+              ])
+              .build(),
+          ])
+          .build(),
+      )
       .with('confirmationsRequired', 3)
       .buildWithConfirmations({
         chainId: chain.chainId,
         safe,
         signers,
       });
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'multiSend')
-      .with('parameters', [
-        dataDecodedParameterBuilder()
-          .with('name', 'transactions')
-          .with('valueDecoded', [
-            multisendBuilder().build(),
-            multisendBuilder().build(),
-            multisendBuilder().build(),
-          ])
-          .build(),
-      ])
-      .build();
     const multisigTransactionsPage = pageBuilder()
       .with('results', [multisigTransactionToJson(domainTransaction)])
       .build();
@@ -539,12 +534,6 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
-    networkService.post.mockImplementation(({ url }) => {
-      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
-        return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
 
     await request(app.getHttpServer())
       .get(
@@ -570,7 +559,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
                   },
                   dataSize: '16',
                   value: domainTransaction.value,
-                  methodName: dataDecoded.method,
+                  methodName: domainTransaction.dataDecoded?.method ?? null,
                   actionCount: 3,
                   isCancellation: false,
                 },
@@ -629,7 +618,6 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
         safe,
         signers,
       });
-    const dataDecoded = dataDecodedBuilder().build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
@@ -653,12 +641,6 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       }
       if (url.includes(getContractUrlPattern)) {
         return Promise.reject({ detail: 'Not found', status: 404 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
-    networkService.post.mockImplementation(({ url }) => {
-      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
-        return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });

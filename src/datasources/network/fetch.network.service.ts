@@ -39,7 +39,7 @@ export class FetchNetworkService implements INetworkService {
 
   async post<T>(args: {
     url: string;
-    data?: object;
+    data: object;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
     const url = this.buildUrl(args.url, args.networkRequest?.params);

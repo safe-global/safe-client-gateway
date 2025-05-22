@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { Builder } from '@/__tests__/builder';
+import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import {
   confirmationBuilder,
   toJson as confirmationToJson,
@@ -78,6 +79,7 @@ export function multisigTransactionBuilder(): BuilderWithConfirmations<MultisigT
       .with('blockNumber', faker.number.int())
       .with('confirmationsRequired', faker.number.int())
       .with('data', faker.string.hexadecimal() as `0x${string}`)
+      .with('dataDecoded', dataDecodedBuilder().build())
       .with('ethGasPrice', faker.string.numeric())
       .with('executor', getAddress(faker.finance.ethereumAddress()))
       .with('executionDate', faker.date.recent())

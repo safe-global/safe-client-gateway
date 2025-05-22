@@ -51,12 +51,10 @@ import {
 } from '@/logging/logging.interface';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { confirmationBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction-confirmation.builder';
-import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 
 describe('Propose transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let safeDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let loggingService: jest.MockedObjectDeep<ILoggingService>;
 
@@ -91,7 +89,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-    safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
 
@@ -170,7 +167,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           signers: [signer],
           signatureType,
         });
-      const dataDecoded = dataDecodedBuilder().build();
       const proposeTransactionDto = proposeTransactionDtoBuilder()
         .with('to', transaction.to)
         .with('value', transaction.value)
@@ -224,12 +220,9 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       });
       networkService.post.mockImplementation(({ url }) => {
         const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
-        const getDataDecodedUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
         switch (url) {
           case proposeTransactionUrl:
             return Promise.resolve({ data: rawify({}), status: 200 });
-          case getDataDecodedUrl:
-            return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -288,7 +281,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
         safe,
         signers,
       });
-    const dataDecoded = dataDecodedBuilder().build();
     const proposeTransactionDto = proposeTransactionDtoBuilder()
       .with('to', transaction.to)
       .with('value', transaction.value)
@@ -345,12 +337,9 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     });
     networkService.post.mockImplementation(({ url }) => {
       const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
-      const getDataDecodedUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
       switch (url) {
         case proposeTransactionUrl:
           return Promise.resolve({ data: rawify({}), status: 200 });
-        case getDataDecodedUrl:
-          return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -407,7 +396,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
         safe,
         signers,
       });
-    const dataDecoded = dataDecodedBuilder().build();
     const signature = await getSignature({
       signer: delegate,
       hash: transaction.safeTxHash,
@@ -477,12 +465,9 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
     });
     networkService.post.mockImplementation(({ url }) => {
       const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
-      const getDataDecodedUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
       switch (url) {
         case proposeTransactionUrl:
           return Promise.resolve({ data: rawify({}), status: 200 });
-        case getDataDecodedUrl:
-          return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -594,7 +579,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
           safe,
           signers: [signer],
         });
-      const dataDecoded = dataDecodedBuilder().build();
       const contractPage = pageBuilder()
         .with('results', [
           contractBuilder().with('trustedForDelegateCall', true).build(),
@@ -659,12 +643,9 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
       });
       networkService.post.mockImplementation(({ url }) => {
         const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}/multisig-transactions/`;
-        const getDataDecodedUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
         switch (url) {
           case proposeTransactionUrl:
             return Promise.resolve({ data: rawify({}), status: 200 });
-          case getDataDecodedUrl:
-            return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -1477,7 +1458,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
         .with('operation', Operation.CALL)
         .with('confirmations', [])
         .build();
-      const dataDecoded = dataDecodedBuilder().build();
       transaction.safeTxHash = getSafeTxHash({
         chainId: chain.chainId,
         safe,
@@ -1571,18 +1551,6 @@ describe('Propose transaction - Transactions Controller (Unit)', () => {
             return Promise.resolve({ data: rawify(token), status: 200 });
           case getGasTokenContractUrl:
             return Promise.resolve({ data: rawify(gasToken), status: 200 });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-      networkService.post.mockImplementation(({ url }) => {
-        const proposeTransactionUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
-        const getDataDecodedUrl = `${safeDecoderUrl}/api/v1/data-decoder`;
-        switch (url) {
-          case proposeTransactionUrl:
-            return Promise.resolve({ data: rawify({}), status: 200 });
-          case getDataDecodedUrl:
-            return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }

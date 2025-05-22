@@ -11,6 +11,7 @@ import { RemoveOwner } from '@/routes/transactions/entities/settings-changes/rem
 import { SetFallbackHandler } from '@/routes/transactions/entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '@/routes/transactions/entities/settings-changes/set-guard.entity';
 import { SwapOwner } from '@/routes/transactions/entities/settings-changes/swap-owner.entity';
+import { multisigTransactionBuilder } from '@/domain/safe/entities/__tests__/multisig-transaction.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
@@ -37,16 +38,21 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(handlerValue),
     );
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'setFallbackHandler')
-      .with('parameters', [
-        dataDecodedParameterBuilder().with('value', handlerValue).build(),
-      ])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'setFallbackHandler')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', handlerValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new SetFallbackHandler(new AddressInfo(handlerValue));
@@ -54,14 +60,19 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a SetFallbackHandler setting with a null handler', async () => {
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'setFallbackHandler')
-      .with('parameters', [])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'setFallbackHandler')
+          .with('parameters', [])
+          .build(),
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     expect(actual).toBeNull();
@@ -70,17 +81,22 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a AddOwner setting', async () => {
     const ownerValue = faker.string.numeric();
     const thresholdValue = faker.string.numeric();
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'addOwnerWithThreshold')
-      .with('parameters', [
-        dataDecodedParameterBuilder().with('value', ownerValue).build(),
-        dataDecodedParameterBuilder().with('value', thresholdValue).build(),
-      ])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'addOwnerWithThreshold')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', ownerValue).build(),
+            dataDecodedParameterBuilder().with('value', thresholdValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new AddOwner(
@@ -93,20 +109,25 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a RemoveOwner setting', async () => {
     const ownerValue = faker.finance.ethereumAddress();
     const thresholdValue = faker.string.numeric();
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'removeOwner')
-      .with('parameters', [
-        dataDecodedParameterBuilder()
-          .with('value', faker.string.numeric())
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'removeOwner')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('value', faker.string.numeric())
+              .build(),
+            dataDecodedParameterBuilder().with('value', ownerValue).build(),
+            dataDecodedParameterBuilder().with('value', thresholdValue).build(),
+          ])
           .build(),
-        dataDecodedParameterBuilder().with('value', ownerValue).build(),
-        dataDecodedParameterBuilder().with('value', thresholdValue).build(),
-      ])
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new RemoveOwner(
@@ -119,20 +140,25 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   it('should build a SwapOwner setting', async () => {
     const oldOwner = faker.string.numeric();
     const newOwner = faker.string.numeric();
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'swapOwner')
-      .with('parameters', [
-        dataDecodedParameterBuilder()
-          .with('value', faker.string.numeric())
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'swapOwner')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('value', faker.string.numeric())
+              .build(),
+            dataDecodedParameterBuilder().with('value', oldOwner).build(),
+            dataDecodedParameterBuilder().with('value', newOwner).build(),
+          ])
           .build(),
-        dataDecodedParameterBuilder().with('value', oldOwner).build(),
-        dataDecodedParameterBuilder().with('value', newOwner).build(),
-      ])
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new SwapOwner(
@@ -147,16 +173,21 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(newMasterCopy),
     );
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'changeMasterCopy')
-      .with('parameters', [
-        dataDecodedParameterBuilder().with('value', newMasterCopy).build(),
-      ])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'changeMasterCopy')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', newMasterCopy).build(),
+          ])
+          .build(),
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new ChangeMasterCopy(new AddressInfo(newMasterCopy));
@@ -168,16 +199,21 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(moduleAddress),
     );
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'enableModule')
-      .with('parameters', [
-        dataDecodedParameterBuilder().with('value', moduleAddress).build(),
-      ])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'enableModule')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', moduleAddress).build(),
+          ])
+          .build(),
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new EnableModule(new AddressInfo(moduleAddress));
@@ -189,19 +225,24 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     addressInfoHelper.getOrDefault.mockResolvedValue(
       new AddressInfo(moduleAddress),
     );
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'disableModule')
-      .with('parameters', [
-        dataDecodedParameterBuilder()
-          .with('value', faker.finance.ethereumAddress())
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'disableModule')
+          .with('parameters', [
+            dataDecodedParameterBuilder()
+              .with('value', faker.finance.ethereumAddress())
+              .build(),
+            dataDecodedParameterBuilder().with('value', moduleAddress).build(),
+          ])
           .build(),
-        dataDecodedParameterBuilder().with('value', moduleAddress).build(),
-      ])
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new DisableModule(new AddressInfo(moduleAddress));
@@ -210,16 +251,21 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a ChangeThreshold setting', async () => {
     const thresholdValue = faker.string.numeric();
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'changeThreshold')
-      .with('parameters', [
-        dataDecodedParameterBuilder().with('value', thresholdValue).build(),
-      ])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'changeThreshold')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', thresholdValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new ChangeThreshold(Number(thresholdValue));
@@ -230,16 +276,21 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     const guardAddress = faker.finance.ethereumAddress();
     const guardAddressInfo = new AddressInfo(guardAddress);
     addressInfoHelper.getOrDefault.mockResolvedValue(guardAddressInfo);
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'setGuard')
-      .with('parameters', [
-        dataDecodedParameterBuilder().with('value', guardAddress).build(),
-      ])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'setGuard')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', guardAddress).build(),
+          ])
+          .build(),
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     const expected = new SetGuard(new AddressInfo(guardAddress));
@@ -248,29 +299,39 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
 
   it('should build a DeleteGuard setting', async () => {
     const guardValue = '0x0000000000000000000000000000000000000000';
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'setGuard')
-      .with('parameters', [
-        dataDecodedParameterBuilder().with('value', guardValue).build(),
-      ])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'setGuard')
+          .with('parameters', [
+            dataDecodedParameterBuilder().with('value', guardValue).build(),
+          ])
+          .build(),
+      )
       .build();
 
     const actual = await mapper.mapSettingsChange(
       faker.string.numeric(),
-      dataDecoded,
+      transaction,
     );
 
     expect(actual).toEqual(new DeleteGuard());
   });
 
   it('should throw an error on a unknown setting', async () => {
-    const dataDecoded = dataDecodedBuilder()
-      .with('method', 'unknownMethod')
-      .with('parameters', [])
+    const transaction = multisigTransactionBuilder()
+      .with(
+        'dataDecoded',
+        dataDecodedBuilder()
+          .with('method', 'unknownMethod')
+          .with('parameters', [])
+          .build(),
+      )
       .build();
 
     await expect(
-      mapper.mapSettingsChange(faker.string.numeric(), dataDecoded),
+      mapper.mapSettingsChange(faker.string.numeric(), transaction),
     ).rejects.toThrow();
   });
 });
