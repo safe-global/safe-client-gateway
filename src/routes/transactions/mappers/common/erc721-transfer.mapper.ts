@@ -9,7 +9,6 @@ import { Erc721Transfer } from '@/routes/transactions/entities/transfers/erc721-
 import { DataDecodedParamHelper } from '@/routes/transactions/mappers/common/data-decoded-param.helper';
 import { getTransferDirection } from '@/routes/transactions/mappers/common/transfer-direction.helper';
 import { getAddress } from 'viem';
-import { DataDecoded } from '@/routes/data-decode/entities/data-decoded.entity';
 
 @Injectable()
 export class Erc721TransferMapper {
@@ -23,8 +22,8 @@ export class Erc721TransferMapper {
     chainId: string,
     transaction: MultisigTransaction | ModuleTransaction,
     humanDescription: string | null,
-    dataDecoded: DataDecoded | null,
   ): Promise<TransferTransactionInfo> {
+    const { dataDecoded } = transaction;
     const sender = this.dataDecodedParamHelper.getFromParam(
       dataDecoded,
       transaction.safe,

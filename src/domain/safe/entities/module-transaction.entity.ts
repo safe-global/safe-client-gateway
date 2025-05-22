@@ -1,3 +1,4 @@
+import { DataDecodedSchema } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -12,6 +13,7 @@ export const ModuleTransactionSchema = z.object({
   to: AddressSchema,
   value: NumericStringSchema.nullish().default(null),
   data: HexSchema.nullish().default(null),
+  dataDecoded: DataDecodedSchema.nullish().default(null),
   operation: z.nativeEnum(Operation),
   created: z.coerce.date(),
   executionDate: z.coerce.date(),
