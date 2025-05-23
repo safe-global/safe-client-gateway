@@ -38,7 +38,7 @@ describe('ModuleTransaction schemas', () => {
       },
     );
 
-    it.each(['value' as const, 'data' as const, 'dataDecoded' as const])(
+    it.each(['value' as const, 'data' as const])(
       'should allow %s to be undefined, defaulting to null',
       (key) => {
         const moduleTransaction = moduleTransactionBuilder().build();

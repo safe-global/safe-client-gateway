@@ -26,14 +26,23 @@ export class TransactionPreviewMapper {
     safe: Safe,
     previewTransactionDto: PreviewTransactionDto,
   ): Promise<TransactionPreview> {
+    const multisigTransaction = {
+      safe: safe.address,
+      to: previewTransactionDto.to,
+      value: previewTransactionDto.value,
+      data: previewTransactionDto.data,
+      operation: previewTransactionDto.operation,
+      // Keep type safety as only the above are available in previewTransactionDto
+    } as MultisigTransaction;
+
     let dataDecoded: DataDecoded | null = null;
     try {
       if (previewTransactionDto.data !== null) {
-        dataDecoded = await this.dataDecoderRepository.getDecodedData({
-          chainId,
-          data: previewTransactionDto.data,
-          to: previewTransactionDto.to,
-        });
+        dataDecoded =
+          await this.dataDecoderRepository.getTransactionDataDecoded({
+            chainId,
+            transaction: multisigTransaction,
+          });
       }
     } catch (error) {
       this.loggingService.info(
@@ -42,15 +51,8 @@ export class TransactionPreviewMapper {
     }
     const txInfo = await this.transactionInfoMapper.mapTransactionInfo(
       chainId,
-      {
-        safe: safe.address,
-        to: previewTransactionDto.to,
-        value: previewTransactionDto.value,
-        dataDecoded,
-        data: previewTransactionDto.data,
-        operation: previewTransactionDto.operation,
-        // Keep type safety as only the above are available in previewTransactionDto
-      } as MultisigTransaction,
+      multisigTransaction,
+      dataDecoded,
     );
     const txData = await this.transactionDataMapper.mapTransactionData(
       chainId,
