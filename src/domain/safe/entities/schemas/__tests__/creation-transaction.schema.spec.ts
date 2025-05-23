@@ -44,19 +44,17 @@ describe('CreationTransactionSchema', () => {
     );
   });
 
-  it.each([
-    'masterCopy' as const,
-    'setupData' as const,
-    'dataDecoded' as const,
-    'saltNonce' as const,
-  ])('should allow an optional %s', (field) => {
-    const creationTransaction = creationTransactionBuilder().build();
-    delete creationTransaction[field];
+  it.each(['masterCopy' as const, 'setupData' as const, 'saltNonce' as const])(
+    'should allow an optional %s',
+    (field) => {
+      const creationTransaction = creationTransactionBuilder().build();
+      delete creationTransaction[field];
 
-    const result = CreationTransactionSchema.safeParse(creationTransaction);
+      const result = CreationTransactionSchema.safeParse(creationTransaction);
 
-    expect(result.success && result.data[field]).toBe(null);
-  });
+      expect(result.success && result.data[field]).toBe(null);
+    },
+  );
 
   it.each([
     'creator' as const,

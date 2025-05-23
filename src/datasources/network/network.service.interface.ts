@@ -11,7 +11,7 @@ export interface INetworkService {
 
   post<T>(args: {
     url: string;
-    data: object;
+    data?: object;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>>;
 

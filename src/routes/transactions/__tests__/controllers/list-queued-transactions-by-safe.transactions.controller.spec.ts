@@ -168,7 +168,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .with('safe', safeAddress)
         .with('isExecuted', false)
         .with('nonce', nonce)
-        .with('dataDecoded', null)
         .buildWithConfirmations({
           safe: safeResponse,
           chainId: chainResponse.chainId,
@@ -331,7 +330,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .with('safe', safeAddress)
         .with('isExecuted', false)
         .with('nonce', nonce)
-        .with('dataDecoded', null)
         .buildWithConfirmations({
           safe: safeResponse,
           chainId: chainResponse.chainId,
@@ -496,7 +494,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
         .with('safe', safeAddress)
         .with('isExecuted', false)
         .with('nonce', nonce)
-        .with('dataDecoded', null)
         .buildWithConfirmations({
           safe: safeResponse,
           chainId: chainResponse.chainId,
@@ -615,7 +612,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', nonce)
-          .with('dataDecoded', null)
           .buildWithConfirmations({
             safe: safeResponse,
             chainId: chainResponse.chainId,
@@ -718,7 +714,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', nonce)
-          .with('dataDecoded', null)
           .buildWithConfirmations({
             safe: safeResponse,
             chainId: chainResponse.chainId,
@@ -825,7 +820,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', nonce)
-          .with('dataDecoded', null)
           .buildWithConfirmations({
             safe: safeResponse,
             chainId: chainResponse.chainId,
@@ -912,7 +906,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', nonce)
-          .with('dataDecoded', null)
           .buildWithConfirmations({
             safe: safeResponse,
             chainId: chainResponse.chainId,
@@ -1001,7 +994,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
             .with('safe', safeAddress)
             .with('isExecuted', false)
             .with('nonce', nonce)
-            .with('dataDecoded', null)
             .buildWithConfirmations({
               safe: safeResponse,
               chainId: chainResponse.chainId,
@@ -1097,7 +1089,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', nonce)
-          .with('dataDecoded', null)
           .buildWithConfirmations({
             safe: safeResponse,
             chainId: chainResponse.chainId,
@@ -1184,7 +1175,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', nonce)
-          .with('dataDecoded', null)
           .buildWithConfirmations({
             safe: safeResponse,
             chainId: chainResponse.chainId,
@@ -1275,7 +1265,6 @@ describe('List queued transactions by Safe - Transactions Controller (Unit)', ()
           .with('safe', safeAddress)
           .with('isExecuted', false)
           .with('nonce', nonce)
-          .with('dataDecoded', null)
           .buildWithConfirmations({
             safe: safeResponse,
             chainId: chainResponse.chainId,
