@@ -2642,7 +2642,6 @@ describe('MembersRepository', () => {
     const member = await dbUserRepo.insert({
       status: 'ACTIVE',
     });
-    const memberUserId = member.generatedMaps[0].id;
     await dbWalletRepo.insert({
       user: member.generatedMaps[0],
       address: getAddress(faker.finance.ethereumAddress()),
