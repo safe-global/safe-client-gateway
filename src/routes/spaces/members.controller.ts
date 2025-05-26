@@ -3,6 +3,7 @@ import {
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -180,6 +181,29 @@ export class MembersController {
       authPayload,
       spaceId,
       userId,
+    });
+  }
+
+  @ApiOperation({ summary: 'Leave a space', description: 'Remove own membership from a space.' })
+  @ApiOkResponse({ description: 'Membership deleted' })
+  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiNotFoundResponse({
+    description: 'Signer or space not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Signer address not provided',
+  })
+  @ApiConflictResponse({ description: 'Cannot remove last admin' })
+  @Delete('/:spaceId/members')
+  @UseGuards(AuthGuard)
+  public async selfRemove(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+  ): Promise<void> {
+    return await this.membersService.selfRemove({
+      authPayload,
+      spaceId,
     });
   }
 }

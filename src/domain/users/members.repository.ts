@@ -307,8 +307,8 @@ export class MembersRepository implements IMembersRepository {
 
   public async removeUser(args: {
     authPayload: AuthPayload;
-    userId: User['id'];
     spaceId: Space['id'];
+    userId?: User['id'];
   }): Promise<void> {
     this.assertSignerAddress(args.authPayload);
 
@@ -318,16 +318,23 @@ export class MembersRepository implements IMembersRepository {
 
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 
-    this.assertIsActiveAdmin({ members: activeAdmins, userId: user.id });
-    const isSelf = user.id === args.userId;
+    if (args.userId) {
+      // If another user than the signer should be removed, check if the signer is an active admin
+      this.assertIsActiveAdmin({ members: activeAdmins, userId: user.id });
+    }
+
+    const isSelf = !args.userId || user.id === args.userId;
+
+    // If the signer is removing themselves, make sure they are not the last admin
     if (isSelf) {
       this.assertIsNotLastAdmin({ members: activeAdmins, userId: user.id });
     }
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
+
     const deleteResult = await membersRepository.delete({
-      user: { id: args.userId },
+      user: { id: args.userId ?? user.id },
       space: { id: args.spaceId },
     });
 

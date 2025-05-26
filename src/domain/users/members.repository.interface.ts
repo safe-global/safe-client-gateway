@@ -65,6 +65,6 @@ export interface IMembersRepository {
   removeUser(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    userId: User['id'];
+    userId?: User['id'];
   }): Promise<void>;
 }
