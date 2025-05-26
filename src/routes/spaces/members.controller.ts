@@ -184,7 +184,10 @@ export class MembersController {
     });
   }
 
-  @ApiOperation({ summary: 'Leave a space', description: 'Remove own membership from a space.' })
+  @ApiOperation({
+    summary: 'Leave a space',
+    description: 'Remove own membership from a space.',
+  })
   @ApiOkResponse({ description: 'Membership deleted' })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
