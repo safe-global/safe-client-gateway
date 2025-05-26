@@ -2,6 +2,10 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { UpsertSubscriptionsDto } from '@/routes/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { UpsertSubscriptionsDtoSchema } from '@/domain/notifications/v2/entities/upsert-subscriptions.dto.entity';
 import { NotificationsServiceV2 } from '@/routes/notifications/v2/notifications.service';
+import {
+  DeleteSubscriptionsDto,
+  DeleteSubscriptionsDtoSchema,
+} from '@/domain/notifications/v2/entities/delete-subscriptions.dto.entity';
 import { Auth } from '@/routes/auth/decorators/auth.decorator';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -17,7 +21,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiBody, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
@@ -70,6 +74,32 @@ export class NotificationsControllerV2 {
       deviceUuid,
       chainId,
       safeAddress,
+    });
+  }
+
+  @Delete('notifications/devices/:deviceUuid/safes')
+  @ApiOperation({
+    summary: 'Delete notification subscriptions for multiple safes',
+    description:
+      'Deletes notification subscriptions for a list of safes associated with the specified device UUID',
+  })
+  @ApiParam({
+    name: 'deviceUuid',
+    description: 'UUID of the device to delete subscriptions for',
+    type: 'string',
+  })
+  @ApiBody({ type: DeleteSubscriptionsDto })
+  deleteSubscriptions(
+    @Param('deviceUuid', new ValidationPipe(UuidSchema)) deviceUuid: UUID,
+    @Body(new ValidationPipe(DeleteSubscriptionsDtoSchema))
+    deleteSubscriptionsDto: DeleteSubscriptionsDto,
+  ): Promise<void> {
+    return this.notificationsService.deleteSubscriptions({
+      deviceUuid,
+      safes: deleteSubscriptionsDto.safes.map((safe) => ({
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+      })),
     });
   }
 

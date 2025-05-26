@@ -21,6 +21,7 @@ import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v2/entities/__tests__/upsert-subscriptions.dto.builder';
+import { deleteSubscriptionsDtoBuilder } from '@/routes/notifications/v2/entities/__tests__/delete-subscriptions.dto.builder';
 import type { Chain } from '@/routes/chains/entities/chain.entity';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -994,6 +995,62 @@ describe('Notifications Controller V2 (Unit)', () => {
         .delete(
           `/v2/chains/${chainId}/notifications/devices/${deviceUuid}/safes/${safeAddress}`,
         )
+        .expect({
+          message: 'Not Found',
+          statusCode: 404,
+        });
+    });
+  });
+
+  describe('DELETE /v2/notifications/devices/:deviceUuid/safes', () => {
+    it('should delete the subscriptions for the provided Safes', async () => {
+      const deviceUuid = faker.string.uuid();
+      const dto = deleteSubscriptionsDtoBuilder().build();
+
+      await request(app.getHttpServer())
+        .delete(`/v2/notifications/devices/${deviceUuid}/safes`)
+        .send(dto)
+        .expect(200);
+
+      expect(notificationsRepository.deleteSubscription).toHaveBeenCalledTimes(
+        dto.safes.length,
+      );
+      for (const [index, safe] of dto.safes.entries()) {
+        expect(
+          notificationsRepository.deleteSubscription,
+        ).toHaveBeenNthCalledWith(index + 1, {
+          deviceUuid,
+          chainId: safe.chainId,
+          safeAddress: safe.address,
+        });
+      }
+    });
+
+    it('should return 422 if the deviceUuid is invalid', async () => {
+      const invalidDeviceUuid = faker.string.alphanumeric();
+      const dto = deleteSubscriptionsDtoBuilder().build();
+
+      await request(app.getHttpServer())
+        .delete(`/v2/notifications/devices/${invalidDeviceUuid}/safes`)
+        .send(dto)
+        .expect({
+          statusCode: 422,
+          validation: 'uuid',
+          code: 'invalid_string',
+          message: 'Invalid UUID',
+          path: [],
+        });
+    });
+
+    it('should forward datasource errors', async () => {
+      const deviceUuid = faker.string.uuid();
+      const dto = deleteSubscriptionsDtoBuilder().build();
+      const error = new NotFoundException();
+      notificationsRepository.deleteSubscription.mockRejectedValue(error);
+
+      await request(app.getHttpServer())
+        .delete(`/v2/notifications/devices/${deviceUuid}/safes`)
+        .send(dto)
         .expect({
           message: 'Not Found',
           statusCode: 404,
