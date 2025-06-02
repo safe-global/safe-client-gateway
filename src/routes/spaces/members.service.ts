@@ -102,7 +102,7 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<void> {
-    return await this.membersRepository.removeUser({
+    return await this.membersRepository.removeSelf({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
