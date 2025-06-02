@@ -2356,11 +2356,11 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const user = await dbUserRepo.insert({
+      const admin = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
       await dbWalletRepo.insert({
-        user: user.generatedMaps[0],
+        user: admin.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
       const nonMember = await dbUserRepo.insert({
@@ -2377,7 +2377,7 @@ describe('MembersRepository', () => {
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: user.generatedMaps[0],
+        user: admin.generatedMaps[0],
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
