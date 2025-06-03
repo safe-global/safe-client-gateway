@@ -2401,11 +2401,11 @@ describe('MembersRepository', () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
-      const signer = await dbUserRepo.insert({
+      const signerUser = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
       await dbWalletRepo.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
       const otherAdmin = await dbUserRepo.insert({
@@ -2429,7 +2429,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const signerMember = await dbMembersRepository.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         space: space.generatedMaps[0],
         name: adminName,
         role: 'ADMIN',
@@ -2455,11 +2455,11 @@ describe('MembersRepository', () => {
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const adminName = nameBuilder();
-      const signer = await dbUserRepo.insert({
+      const signerUser = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
       await dbWalletRepo.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
       const admin = await dbUserRepo.insert({
@@ -2483,7 +2483,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const signerMember = await dbMembersRepository.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         space: space.generatedMaps[0],
         name: memberName,
         role: 'MEMBER',
@@ -2511,11 +2511,11 @@ describe('MembersRepository', () => {
       const member1Name = nameBuilder();
       const member2Name = nameBuilder();
       const adminName = nameBuilder();
-      const signer = await dbUserRepo.insert({
+      const signerUser = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
       await dbWalletRepo.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
       const admin = await dbUserRepo.insert({
@@ -2545,7 +2545,7 @@ describe('MembersRepository', () => {
         invitedBy: getAddress(faker.finance.ethereumAddress()),
       });
       const signerMember1 = await dbMembersRepository.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         space: space1.generatedMaps[0],
         name: member1Name,
         role: 'MEMBER',
@@ -2559,7 +2559,7 @@ describe('MembersRepository', () => {
         faker.finance.ethereumAddress(),
       );
       const signerMember2 = await dbMembersRepository.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         space: space2.generatedMaps[0],
         name: member2Name,
         role: 'MEMBER',
@@ -2598,11 +2598,11 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const signerMemberName = nameBuilder();
-      const signer = await dbUserRepo.insert({
+      const signerUser = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
       await dbWalletRepo.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
       const space = await dbSpacesRepository.insert({
@@ -2611,7 +2611,7 @@ describe('MembersRepository', () => {
       });
       const spaceId = space.generatedMaps[0].id;
       await dbMembersRepository.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         space: space.generatedMaps[0],
         name: signerMemberName,
         role: 'ADMIN',
@@ -2631,11 +2631,11 @@ describe('MembersRepository', () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const signer = await dbUserRepo.insert({
+      const signerUser = await dbUserRepo.insert({
         status: 'ACTIVE',
       });
       await dbWalletRepo.insert({
-        user: signer.generatedMaps[0],
+        user: signerUser.generatedMaps[0],
         address: authPayloadDto.signer_address,
       });
       const member = await dbUserRepo.insert({
