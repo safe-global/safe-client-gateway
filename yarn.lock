@@ -3426,15 +3426,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/express@npm:5.0.0":
-  version: 5.0.0
-  resolution: "@types/express@npm:5.0.0"
+"@types/express@npm:5.0.2":
+  version: 5.0.2
+  resolution: "@types/express@npm:5.0.2"
   dependencies:
     "@types/body-parser": "npm:*"
     "@types/express-serve-static-core": "npm:^5.0.0"
-    "@types/qs": "npm:*"
     "@types/serve-static": "npm:*"
-  checksum: 10/45b199ab669caa33e6badafeebf078e277ea95042309d325a04b1ec498f33d33fd5a4ae9c8e358342367b178fe454d7323c5dfc8002bf27070b210a2c6cc11f0
+  checksum: 10/c6f73c75c2b62e293e5fadcfd7de61716e3d0c0eaecda082b1921c9c8e56ddc37c530c5d4d68404794b38c7e8f5b893719ffc04c6fba2efa2fb13223bfb0346b
   languageName: node
   linkType: hard
 
@@ -8929,7 +8928,7 @@ __metadata:
     "@smithy/util-stream": "npm:4.1.2"
     "@types/amqplib": "npm:0"
     "@types/cookie-parser": "npm:1.4.8"
-    "@types/express": "npm:5.0.0"
+    "@types/express": "npm:5.0.2"
     "@types/jest": "npm:29.5.14"
     "@types/jsonwebtoken": "npm:9"
     "@types/lodash": "npm:4.17.17"
