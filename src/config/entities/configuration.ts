@@ -245,6 +245,7 @@ export default () => ({
     fromName: process.env.EMAIL_API_FROM_NAME || 'Safe',
   },
   expirationTimeInSeconds: {
+    deviatePercent: parseInt(process.env.EXPIRATION_DEVIATE_PERCENT ?? `${10}`),
     default: parseInt(process.env.EXPIRATION_TIME_DEFAULT_SECONDS ?? `${60}`),
     rpc: parseInt(process.env.EXPIRATION_TIME_RPC_SECONDS ?? `${15}`),
     hoodi: parseInt(process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`),
