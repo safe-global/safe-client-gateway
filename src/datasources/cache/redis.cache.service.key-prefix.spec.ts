@@ -34,14 +34,19 @@ const mockConfigurationService = jest.mocked(configurationService);
 describe('RedisCacheService with a Key Prefix', () => {
   let redisCacheService: RedisCacheService;
   let defaultExpirationTimeInSeconds: number;
+  let defaultExpirationDeviatePercent: number;
   const keyPrefix = faker.string.uuid();
 
   beforeEach(() => {
     clearAllMocks();
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
+    defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 3600 });
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') {
         return defaultExpirationTimeInSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.deviatePercent') {
+        return defaultExpirationDeviatePercent;
       }
       throw Error(`Unexpected key: ${key}`);
     });
@@ -62,7 +67,7 @@ describe('RedisCacheService with a Key Prefix', () => {
     const value = fakeJson();
     const expireTime = faker.number.int();
 
-    await redisCacheService.hSet(cacheDir, value, expireTime);
+    await redisCacheService.hSet(cacheDir, value, expireTime, 0);
 
     expect(redisClientTypeMock.hSet).toHaveBeenCalledWith(
       `${keyPrefix}-${cacheDir.key}`,

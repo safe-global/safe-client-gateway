@@ -7,6 +7,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { deviateRandomlyByPercentage } from '@/domain/common/utils/number';
 
 @Injectable()
 export class RedisCacheService
@@ -14,6 +15,7 @@ export class RedisCacheService
 {
   private readonly quitTimeoutInSeconds: number = 2;
   private readonly defaultExpirationTimeInSeconds: number;
+  private readonly defaultExpirationDeviatePercent: number;
 
   constructor(
     @Inject('RedisClient') private readonly client: RedisClientType,
@@ -25,6 +27,10 @@ export class RedisCacheService
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
+      );
+    this.defaultExpirationDeviatePercent =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.deviatePercent',
       );
   }
 
@@ -46,18 +52,23 @@ export class RedisCacheService
     cacheDir: CacheDir,
     value: string,
     expireTimeSeconds: number | undefined,
+    expireDeviatePercent?: number,
   ): Promise<void> {
     if (!expireTimeSeconds || expireTimeSeconds <= 0) {
       return;
     }
 
     const key = this._prefixKey(cacheDir.key);
+    const expirationTime = deviateRandomlyByPercentage(
+      expireTimeSeconds,
+      expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+    );
 
     try {
       await this.client.hSet(key, cacheDir.field, value);
       // NX - Set expiry only when the key has no expiry
       // See https://redis.io/commands/expire/
-      await this.client.expire(key, expireTimeSeconds, 'NX');
+      await this.client.expire(key, expirationTime, 'NX');
     } catch (error) {
       this.loggingService.error({
         type: LogType.CacheError,
@@ -78,10 +89,12 @@ export class RedisCacheService
     const keyWithPrefix = this._prefixKey(key);
     // see https://redis.io/commands/unlink/
     const result = await this.client.unlink(keyWithPrefix);
+
     await this.hSet(
       new CacheDir(`invalidationTimeMs:${key}`, ''),
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
+      0,
     );
     return result;
   }
@@ -89,10 +102,16 @@ export class RedisCacheService
   async increment(
     cacheKey: string,
     expireTimeSeconds: number | undefined,
+    expireDeviatePercent?: number,
   ): Promise<number> {
     const transaction = this.client.multi().incr(cacheKey);
     if (expireTimeSeconds !== undefined && expireTimeSeconds > 0) {
-      transaction.expire(cacheKey, expireTimeSeconds, 'NX');
+      const expirationTime = deviateRandomlyByPercentage(
+        expireTimeSeconds,
+        expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+      );
+
+      transaction.expire(cacheKey, expirationTime, 'NX');
     }
     const [incrRes] = await transaction.get(cacheKey).exec();
     return Number(incrRes);
@@ -102,8 +121,17 @@ export class RedisCacheService
     key: string,
     value: number,
     expireTimeSeconds: number,
+    expireDeviatePercent?: number,
   ): Promise<void> {
-    await this.client.set(key, value, { EX: expireTimeSeconds, NX: true });
+    const expirationTime = deviateRandomlyByPercentage(
+      expireTimeSeconds,
+      expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+    );
+
+    await this.client.set(key, value, {
+      EX: expirationTime,
+      NX: true,
+    });
   }
 
   /**
