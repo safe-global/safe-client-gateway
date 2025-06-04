@@ -67,4 +67,9 @@ export interface IMembersRepository {
     spaceId: Space['id'];
     userId: User['id'];
   }): Promise<void>;
+
+  removeSelf(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<void>;
 }
