@@ -137,21 +137,6 @@ describe('RedisCacheService', () => {
     expect(ttl).toBeLessThanOrEqual(maxDeviation);
   });
 
-  it('Setting key throws on expire', async () => {
-    const cacheDir = new CacheDir(
-      faker.string.alphanumeric(),
-      faker.string.sample(),
-    );
-
-    // Expiration time out of range to force an error
-    await expect(
-      redisCacheService.hSet(cacheDir, '', Number.MAX_VALUE + 1),
-    ).rejects.toThrow();
-
-    const storedValue = await redisClient.hGet(cacheDir.key, cacheDir.field);
-    expect(storedValue).toBeNull();
-  });
-
   it('Getting key gets the stored value', async () => {
     const cacheDir = new CacheDir(
       faker.string.alphanumeric(),
@@ -297,5 +282,45 @@ describe('RedisCacheService', () => {
     expect(storedValue).toEqual(value);
     expect(ttl).toBeGreaterThan(0);
     expect(ttl).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
+  });
+
+  it('Setting key with TTL larger than MAX_TTL enforces MAX_TTL limit', async () => {
+    const cacheDir = new CacheDir(
+      faker.string.alphanumeric(),
+      faker.string.sample(),
+    );
+    const value = fakeJson();
+    const expireTime = MAX_TTL + faker.number.int({ min: 1000, max: 10000 });
+
+    await redisCacheService.hSet(cacheDir, value, expireTime, 0);
+
+    const storedValue = await redisClient.hGet(cacheDir.key, cacheDir.field);
+    const ttl = await redisClient.ttl(cacheDir.key);
+    expect(storedValue).toEqual(value);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(MAX_TTL);
+  });
+
+  it('Increment with TTL larger than MAX_TTL enforces MAX_TTL limit', async () => {
+    const key = faker.string.alphanumeric();
+    const expireTime = MAX_TTL + faker.number.int({ min: 1000, max: 10000 });
+
+    await redisCacheService.increment(key, expireTime, 0);
+
+    const ttl = await redisClient.ttl(key);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(MAX_TTL);
+  });
+
+  it('SetCounter with TTL larger than MAX_TTL enforces MAX_TTL limit', async () => {
+    const key = faker.string.alphanumeric();
+    const value = faker.number.int({ min: 1, max: 100 });
+    const expireTime = MAX_TTL + faker.number.int({ min: 1000, max: 10000 });
+
+    await redisCacheService.setCounter(key, value, expireTime, 0);
+
+    const ttl = await redisClient.ttl(key);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(MAX_TTL);
   });
 });

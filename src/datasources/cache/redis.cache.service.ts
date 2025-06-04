@@ -5,7 +5,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { CacheKeyPrefix, MAX_TTL } from '@/datasources/cache/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { deviateRandomlyByPercentage } from '@/domain/common/utils/number';
 
@@ -59,9 +59,11 @@ export class RedisCacheService
     }
 
     const key = this._prefixKey(cacheDir.key);
-    const expirationTime = deviateRandomlyByPercentage(
-      expireTimeSeconds,
-      expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+    const expirationTime = this.enforceMaxRedisTTL(
+      deviateRandomlyByPercentage(
+        expireTimeSeconds,
+        expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+      ),
     );
 
     try {
@@ -106,9 +108,11 @@ export class RedisCacheService
   ): Promise<number> {
     const transaction = this.client.multi().incr(cacheKey);
     if (expireTimeSeconds !== undefined && expireTimeSeconds > 0) {
-      const expirationTime = deviateRandomlyByPercentage(
-        expireTimeSeconds,
-        expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+      const expirationTime = this.enforceMaxRedisTTL(
+        deviateRandomlyByPercentage(
+          expireTimeSeconds,
+          expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+        ),
       );
 
       transaction.expire(cacheKey, expirationTime, 'NX');
@@ -123,9 +127,11 @@ export class RedisCacheService
     expireTimeSeconds: number,
     expireDeviatePercent?: number,
   ): Promise<void> {
-    const expirationTime = deviateRandomlyByPercentage(
-      expireTimeSeconds,
-      expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+    const expirationTime = this.enforceMaxRedisTTL(
+      deviateRandomlyByPercentage(
+        expireTimeSeconds,
+        expireDeviatePercent ?? this.defaultExpirationDeviatePercent,
+      ),
     );
 
     await this.client.set(key, value, {
@@ -181,5 +187,16 @@ export class RedisCacheService
       event: 'Forcing Redis connection close',
     });
     await this.client.disconnect();
+  }
+
+  /**
+   * Enforces the maximum TTL for Redis to prevent overflow errors.
+   *
+   * @param {number} ttl - The TTL to enforce.
+   *
+   * @returns {number} The TTL if it is less than or equal to MAX_TTL, otherwise MAX_TTL.
+   */
+  private enforceMaxRedisTTL(ttl: number): number {
+    return ttl > MAX_TTL ? MAX_TTL : ttl;
   }
 }
