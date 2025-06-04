@@ -11,7 +11,12 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import { Page } from '@/routes/common/entities/page.entity';
@@ -66,6 +71,7 @@ export class TransactionsController {
   }
 
   @ApiOkResponse({ type: TXSMultisigTransaction })
+  @ApiOperation({ deprecated: true, summary: 'Deprecated' })
   @Get('chains/:chainId/multisig-transactions/:safeTxHash/raw')
   async getDomainMultisigTransactionBySafeTxHash(
     @Param('chainId') chainId: string,
@@ -104,6 +110,7 @@ export class TransactionsController {
   @ApiQuery({ name: 'ordering', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiOperation({ deprecated: true, summary: 'Deprecated' })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions/raw')
   async getDomainMultisigTransactions(
     @Param('chainId') chainId: string,
@@ -421,6 +428,7 @@ export class TransactionsController {
 
   @HttpCode(200)
   @ApiOkResponse({ type: TXSCreationTransaction })
+  @ApiOperation({ deprecated: true, summary: 'Deprecated' })
   @Get('chains/:chainId/safes/:safeAddress/creation/raw')
   async getDomainCreationTransaction(
     @Param('chainId') chainId: string,

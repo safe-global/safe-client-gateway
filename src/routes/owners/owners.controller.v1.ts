@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SafeList } from '@/routes/owners/entities/safe-list.entity';
 import { OwnersService } from '@/routes/owners/owners.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -24,6 +24,7 @@ export class OwnersControllerV1 {
   }
 
   @ApiOkResponse({ type: SafeList })
+  @ApiOperation({ deprecated: true, summary: 'Deprecated' })
   @Get('owners/:ownerAddress/safes')
   async getAllSafesByOwner(
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
