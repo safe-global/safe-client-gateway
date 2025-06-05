@@ -38,6 +38,11 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
     STAKING_API_KEY: z.string(),
+    EXPIRATION_DEVIATE_PERCENT: z
+      .number({ coerce: true })
+      .min(0)
+      .max(100)
+      .optional(),
     STAKING_TESTNET_API_KEY: z.string(),
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
   })
