@@ -19,6 +19,11 @@ export const RootConfigurationSchema = z
     EMAIL_TEMPLATE_RECOVERY_TX: z.string(),
     EMAIL_TEMPLATE_UNKNOWN_RECOVERY_TX: z.string(),
     EMAIL_TEMPLATE_VERIFICATION_CODE: z.string(),
+    EXPIRATION_DEVIATE_PERCENT: z
+      .number({ coerce: true })
+      .min(0)
+      .max(100)
+      .optional(),
     FINGERPRINT_ENCRYPTION_KEY: z.string(),
     INFURA_API_KEY: z.string(),
     JWT_ISSUER: z.string(),
@@ -38,11 +43,6 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
     STAKING_API_KEY: z.string(),
-    EXPIRATION_DEVIATE_PERCENT: z
-      .number({ coerce: true })
-      .min(0)
-      .max(100)
-      .optional(),
     STAKING_TESTNET_API_KEY: z.string(),
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
   })
