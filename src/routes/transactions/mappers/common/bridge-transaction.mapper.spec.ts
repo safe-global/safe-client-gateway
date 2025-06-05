@@ -1,1 +1,391 @@
-it.todo('BridgeTransactionMapper');
+import { faker } from '@faker-js/faker';
+import type { LiFiDecoder } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
+import type { ITokenRepository } from '@/domain/tokens/token.repository.interface';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { IBridgeRepository } from '@/domain/bridge/bridge.repository.interface';
+import type { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
+import { BridgeTransactionMapper } from './bridge-transaction.mapper';
+import { SwapTransactionInfo } from '@/routes/transactions/entities/bridge/bridge-info.entity';
+import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+
+describe('BridgeTransactionMapper (Unit)', () => {
+  let mapper: BridgeTransactionMapper;
+  let liFiDecoder: jest.Mocked<LiFiDecoder>;
+  let tokenRepository: jest.Mocked<ITokenRepository>;
+  let addressInfoHelper: jest.Mocked<AddressInfoHelper>;
+  let bridgeRepository: jest.Mocked<IBridgeRepository>;
+
+  beforeEach(() => {
+    liFiDecoder = {
+      isBridge: jest.fn(),
+      isSwap: jest.fn(),
+      isSwapAndBridge: jest.fn(),
+      decodeSwap: jest.fn(),
+      decodeBridgeAndMaybeSwap: jest.fn(),
+    } as unknown as jest.Mocked<LiFiDecoder>;
+
+    tokenRepository = {
+      getToken: jest.fn(),
+      getTokens: jest.fn(),
+    } as unknown as jest.Mocked<ITokenRepository>;
+
+    addressInfoHelper = {
+      get: jest.fn(),
+      getOrDefault: jest.fn(),
+      getCollection: jest.fn(),
+    } as unknown as jest.Mocked<AddressInfoHelper>;
+
+    bridgeRepository = {
+      getDiamondAddress: jest.fn(),
+      getStatus: jest.fn(),
+      getQuote: jest.fn(),
+      getRoutes: jest.fn(),
+    } as unknown as jest.Mocked<IBridgeRepository>;
+
+    mapper = new BridgeTransactionMapper(
+      liFiDecoder,
+      tokenRepository,
+      addressInfoHelper,
+      bridgeRepository,
+    );
+  });
+
+  describe('mapSwap', () => {
+    it('should return a SwapTransactionInfo', () => {
+      const data = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
+      const decoded = {
+        transactionId: faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`,
+        toAddress: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        fromToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        fromAmount: BigInt(1000000),
+        toAmount: BigInt(1000000),
+      };
+      liFiDecoder.decodeSwap.mockReturnValue(decoded);
+
+      const result = mapper.mapSwap(data);
+
+      expect(result).toBeInstanceOf(SwapTransactionInfo);
+      expect(liFiDecoder.decodeSwap).toHaveBeenCalledWith(data);
+    });
+  });
+
+  describe('mapSwapAndBridge', () => {
+    const chainId = faker.string.numeric();
+    const data = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
+    const safeAddress = faker.string.hexadecimal({
+      length: 40,
+    }) as `0x${string}`;
+    const fromToken = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
+    const toAddress = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
+    const toChain = BigInt(faker.number.int());
+
+    it('should map a queued bridge transaction', async () => {
+      const decoded = {
+        transactionId: faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`,
+        fromToken,
+        toAddress,
+        toChain,
+        fromAmount: BigInt(1000000),
+        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        minAmount: BigInt(1000000),
+        fees: {
+          tokenAddress: faker.string.hexadecimal({
+            length: 40,
+          }) as `0x${string}`,
+          integratorFee: BigInt(100),
+          lifiFee: BigInt(200),
+          integratorAddress: faker.string.hexadecimal({
+            length: 40,
+          }) as `0x${string}`,
+        },
+        bridge: 'lifi',
+      };
+      liFiDecoder.decodeBridgeAndMaybeSwap.mockReturnValue(decoded);
+
+      const tokenInfo = {
+        address: fromToken,
+        decimals: 18,
+        logoUri: faker.image.url(),
+        name: 'Test Token',
+        symbol: 'TEST',
+        trusted: true,
+        type: 'ERC20' as const,
+      };
+      tokenRepository.getToken.mockResolvedValue(tokenInfo);
+
+      const addressInfo = {
+        value: toAddress,
+        name: 'Test Address',
+        logoUri: faker.image.url(),
+      };
+      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+
+      const result = await mapper.mapSwapAndBridge({
+        chainId,
+        data,
+        executionDate: null,
+        safeAddress,
+      });
+
+      expect(result).toBeDefined();
+      expect(result?.fromToken).toEqual(new TokenInfo(tokenInfo));
+      expect(result?.recipient).toEqual(addressInfo);
+      expect(result?.fromAmount).toBe(decoded.fromAmount.toString());
+      expect(result?.toChain).toBe(decoded.toChain.toString());
+      expect(result?.status).toBe('AWAITING_EXECUTION');
+      expect(result?.substatus).toBe('AWAITING_EXECUTION');
+    });
+
+    it('should map a historical bridge transaction with DONE status', async () => {
+      const executionDate = new Date();
+      const decoded = {
+        transactionId: faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`,
+        fromToken,
+        toAddress,
+        toChain,
+        fromAmount: BigInt(1000000),
+        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        minAmount: BigInt(1000000),
+        fees: {
+          tokenAddress: faker.string.hexadecimal({
+            length: 40,
+          }) as `0x${string}`,
+          integratorFee: BigInt(100),
+          lifiFee: BigInt(200),
+          integratorAddress: faker.string.hexadecimal({
+            length: 40,
+          }) as `0x${string}`,
+        },
+        bridge: 'lifi',
+      };
+      liFiDecoder.decodeBridgeAndMaybeSwap.mockReturnValue(decoded);
+
+      const tokenInfo = {
+        address: fromToken,
+        decimals: 18,
+        logoUri: faker.image.url(),
+        name: 'Test Token',
+        symbol: 'TEST',
+        trusted: true,
+        type: 'ERC20' as const,
+      };
+      tokenRepository.getToken.mockResolvedValue(tokenInfo);
+
+      const addressInfo = {
+        value: toAddress,
+        name: 'Test Address',
+        logoUri: faker.image.url(),
+      };
+      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+
+      const bridgeStatus: BridgeStatus = {
+        status: 'DONE',
+        substatus: 'COMPLETED',
+        substatusMessage: null,
+        transactionId: decoded.transactionId,
+        receiving: {
+          value: '1000000',
+          txHash: faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
+          chainId: decoded.toChain.toString(),
+          txLink: faker.internet.url(),
+          token: {
+            address: decoded.toToken,
+            decimals: 18,
+            symbol: 'RECV',
+            name: 'Received Token',
+            chainId: decoded.toChain.toString(),
+            coinKey: null,
+            logoURI: faker.image.url(),
+            priceUSD: '1',
+          },
+          amount: '1000000',
+          gasPrice: '0',
+          gasUsed: '0',
+          gasToken: {
+            address: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+            decimals: 18,
+            symbol: 'ETH',
+            name: 'Ethereum',
+            chainId: decoded.toChain.toString(),
+            coinKey: null,
+            logoURI: faker.image.url(),
+            priceUSD: '1',
+          },
+          gasAmount: '0',
+          timestamp: null,
+        },
+        feeCosts: [],
+        lifiExplorerLink: faker.internet.url(),
+        fromAddress: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        toAddress: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        metadata: {
+          integrator: faker.string.alpha({ length: 10 }),
+        },
+        bridgeExplorerLink: null,
+      };
+      bridgeRepository.getStatus.mockResolvedValue(bridgeStatus);
+
+      const result = await mapper.mapSwapAndBridge({
+        chainId,
+        data,
+        executionDate,
+        safeAddress,
+      });
+
+      expect(result).toBeDefined();
+      expect(result?.fromToken).toEqual(new TokenInfo(tokenInfo));
+      expect(result?.recipient).toEqual(addressInfo);
+      expect(result?.fromAmount).toBe(decoded.fromAmount.toString());
+      expect(result?.toChain).toBe(decoded.toChain.toString());
+      expect(result?.status).toBe('DONE');
+      expect(result?.substatus).toBe('COMPLETED');
+      expect(result?.toAmount).toBe(bridgeStatus.receiving.amount);
+      expect(result?.toToken).toBeDefined();
+      expect(result?.explorerUrl).toBe(bridgeStatus.lifiExplorerLink);
+    });
+
+    it('should map a historical bridge transaction with FAILED status', async () => {
+      const executionDate = new Date();
+      const decoded = {
+        transactionId: faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`,
+        fromToken,
+        toAddress,
+        toChain,
+        fromAmount: BigInt(1000000),
+        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        minAmount: BigInt(1000000),
+        fees: {
+          tokenAddress: faker.string.hexadecimal({
+            length: 40,
+          }) as `0x${string}`,
+          integratorFee: BigInt(100),
+          lifiFee: BigInt(200),
+          integratorAddress: faker.string.hexadecimal({
+            length: 40,
+          }) as `0x${string}`,
+        },
+        bridge: 'lifi',
+      };
+      liFiDecoder.decodeBridgeAndMaybeSwap.mockReturnValue(decoded);
+
+      const tokenInfo = {
+        address: fromToken,
+        decimals: 18,
+        logoUri: faker.image.url(),
+        name: 'Test Token',
+        symbol: 'TEST',
+        trusted: true,
+        type: 'ERC20' as const,
+      };
+      tokenRepository.getToken.mockResolvedValue(tokenInfo);
+
+      const addressInfo = {
+        value: toAddress,
+        name: 'Test Address',
+        logoUri: faker.image.url(),
+      };
+      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+
+      const bridgeStatus: BridgeStatus = {
+        status: 'FAILED',
+        substatus: 'UNKNOWN_FAILED_ERROR',
+        substatusMessage: 'Transaction failed',
+        sending: {
+          txHash: faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
+          chainId,
+          txLink: faker.internet.url(),
+        },
+      };
+      bridgeRepository.getStatus.mockResolvedValue(bridgeStatus);
+
+      const result = await mapper.mapSwapAndBridge({
+        chainId,
+        data,
+        executionDate,
+        safeAddress,
+      });
+
+      expect(result).toBeDefined();
+      expect(result?.fromToken).toEqual(new TokenInfo(tokenInfo));
+      expect(result?.recipient).toEqual(addressInfo);
+      expect(result?.fromAmount).toBe(decoded.fromAmount.toString());
+      expect(result?.toChain).toBe(decoded.toChain.toString());
+      expect(result?.status).toBe('FAILED');
+      expect(result?.substatus).toBe('UNKNOWN_FAILED_ERROR');
+      expect(result?.toAmount).toBeUndefined();
+      expect(result?.toToken).toBeUndefined();
+      expect(result?.explorerUrl).toBeNull();
+    });
+
+    it('should map a historical bridge transaction with PENDING status', async () => {
+      const executionDate = new Date();
+      const decoded = {
+        transactionId: faker.string.hexadecimal({
+          length: 64,
+        }) as `0x${string}`,
+        fromToken,
+        toAddress,
+        toChain,
+        fromAmount: BigInt(1000000),
+        toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
+        minAmount: BigInt(1000000),
+        fees: null,
+        bridge: 'lifi',
+      };
+      liFiDecoder.decodeBridgeAndMaybeSwap.mockReturnValue(decoded);
+
+      const tokenInfo = {
+        address: fromToken,
+        decimals: 18,
+        logoUri: faker.image.url(),
+        name: 'Test Token',
+        symbol: 'TEST',
+        trusted: true,
+        type: 'ERC20' as const,
+      };
+      tokenRepository.getToken.mockResolvedValue(tokenInfo);
+
+      const addressInfo = {
+        value: toAddress,
+        name: 'Test Address',
+        logoUri: faker.image.url(),
+      };
+      addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+
+      const bridgeStatus: BridgeStatus = {
+        status: 'PENDING',
+        substatus: 'WAIT_SOURCE_CONFIRMATIONS',
+        substatusMessage: 'Waiting for source confirmations',
+      };
+      bridgeRepository.getStatus.mockResolvedValue(bridgeStatus);
+
+      const result = await mapper.mapSwapAndBridge({
+        chainId,
+        data,
+        executionDate,
+        safeAddress,
+      });
+
+      expect(result).toBeDefined();
+      expect(result?.fromToken).toEqual(new TokenInfo(tokenInfo));
+      expect(result?.recipient).toEqual(addressInfo);
+      expect(result?.fromAmount).toBe(decoded.fromAmount.toString());
+      expect(result?.toChain).toBe(decoded.toChain.toString());
+      expect(result?.status).toBe('PENDING');
+      expect(result?.substatus).toBe('WAIT_SOURCE_CONFIRMATIONS');
+      expect(result?.toAmount).toBeUndefined();
+      expect(result?.toToken).toBeUndefined();
+      expect(result?.explorerUrl).toBeNull();
+      expect(result?.fees).toBeNull();
+    });
+  });
+});

@@ -1,8 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import {
-  StatusMessages,
   SubstatusesDone,
   SubstatusesFailed,
   SubstatusesPending,
@@ -13,21 +11,18 @@ import type {
   BridgeStatus,
   ExtendedTransactionInfo,
   FailedStatusData,
-  FullStatusData,
-  IncludedStep,
+  PendingStatusData,
+  SuccessStatusData,
   PendingReceivingInfo,
-  SetupToolDetails,
-  StatusData,
   TransferMetadata,
 } from '@/domain/bridge/entities/bridge-status.entity';
 import { tokenBuilder } from '@/domain/bridge/entities/__tests__/token.builder';
 import { feeCostBuilder } from '@/domain/bridge/entities/__tests__/fee-cost.builder';
 
 export function baseStatusDataBuilder<
-  T extends FullStatusData | StatusData | FailedStatusData,
+  T extends SuccessStatusData | FailedStatusData | PendingStatusData,
 >(): IBuilder<T> {
   return new Builder<T>()
-    .with('status', faker.helpers.arrayElement(StatusMessages))
     .with(
       'substatus',
       faker.helpers.arrayElement([
@@ -48,27 +43,6 @@ export function baseTransactionInfoBuilder<
     .with('txLink', faker.internet.url({ appendSlash: false }));
 }
 
-export function setupToolDetailsBuilder(): IBuilder<SetupToolDetails> {
-  return new Builder<SetupToolDetails>()
-    .with('key', faker.word.sample())
-    .with('name', faker.word.sample())
-    .with('logoURI', faker.internet.url({ appendSlash: false }));
-}
-
-export function includedStepBuilder(): IBuilder<IncludedStep> {
-  return new Builder<IncludedStep>()
-    .with('fromAmount', faker.number.float({ min: 0, max: 1_000 }).toString())
-    .with('fromToken', tokenBuilder().build())
-    .with('toAmount', faker.number.float({ min: 0, max: 1_000 }).toString())
-    .with('toToken', tokenBuilder().build())
-    .with(
-      'bridgedAmount',
-      faker.number.float({ min: 0, max: 1_000 }).toString(),
-    )
-    .with('tool', faker.word.sample())
-    .with('toolDetails', setupToolDetailsBuilder().build());
-}
-
 export function pendingReceivingInfoBuilder(): IBuilder<PendingReceivingInfo> {
   return new Builder<PendingReceivingInfo>().with(
     'chainId',
@@ -81,21 +55,13 @@ export function extendedTransactionInfoBuilder<
 >(): IBuilder<T> {
   return baseTransactionInfoBuilder<T>()
     .with('amount', faker.number.float({ min: 0, max: 1_000 }).toString())
-    .with('amountUSD', faker.number.float({ min: 0, max: 1_000 }).toString())
     .with('token', tokenBuilder().build())
     .with('gasPrice', faker.number.float({ min: 0, max: 1_000 }).toString())
     .with('gasUsed', faker.number.float({ min: 0, max: 1_000 }).toString())
     .with('gasToken', tokenBuilder().build())
     .with('gasAmount', faker.number.float({ min: 0, max: 1_000 }).toString())
-    .with('gasAmountUSD', faker.number.float({ min: 0, max: 1_000 }).toString())
     .with('timestamp', faker.number.int())
-    .with('value', faker.number.float({ min: 0, max: 1_000 }).toString())
-    .with(
-      'includedSteps',
-      faker.helpers.multiple(() => includedStepBuilder().build(), {
-        count: { min: 1, max: 5 },
-      }),
-    );
+    .with('value', faker.number.float({ min: 0, max: 1_000 }).toString());
 }
 
 export function transferMetadataBuilder(): IBuilder<TransferMetadata> {
@@ -105,58 +71,49 @@ export function transferMetadataBuilder(): IBuilder<TransferMetadata> {
   );
 }
 
-export function fullStatusDataBuilder<
-  T extends FullStatusData = FullStatusData,
+export function successStatusDataBuilder<
+  T extends SuccessStatusData = SuccessStatusData,
 >(): IBuilder<T> {
   return baseStatusDataBuilder<T>()
+    .with('status', 'DONE')
+    .with('toAddress', faker.finance.ethereumAddress() as `0x${string}`)
+    .with('fromAddress', faker.finance.ethereumAddress() as `0x${string}`)
+    .with('substatus', faker.helpers.arrayElement([...SubstatusesDone]))
+    .with('receiving', extendedTransactionInfoBuilder().build())
     .with(
       'transactionId',
       faker.string.hexadecimal({ length: 64 }) as `0x${string}`,
     )
-    .with('sending', extendedTransactionInfoBuilder().build())
-    .with(
-      'receiving',
-      faker.helpers
-        .arrayElement([
-          pendingReceivingInfoBuilder(),
-          extendedTransactionInfoBuilder(),
-        ])
-        .build(),
-    )
-    .with(
-      'feeCosts',
-      faker.helpers.multiple(() => feeCostBuilder().build(), {
-        count: { min: 1, max: 5 },
-      }),
-    )
-    .with('lifiExplorerLink', faker.internet.url({ appendSlash: false }))
-    .with('fromAddress', getAddress(faker.finance.ethereumAddress()))
-    .with('toAddress', getAddress(faker.finance.ethereumAddress()))
     .with('metadata', transferMetadataBuilder().build())
-    .with('bridgeExplorerLink', faker.internet.url({ appendSlash: false }));
+    .with('bridgeExplorerLink', faker.internet.url({ appendSlash: false }))
+    .with('lifiExplorerLink', faker.internet.url({ appendSlash: false }))
+    .with('feeCosts', [feeCostBuilder().build()]);
 }
 
-export function statusDataBuilder<
-  T extends StatusData = StatusData,
+export function pendingStatusDataBuilder<
+  T extends PendingStatusData = PendingStatusData,
 >(): IBuilder<T> {
   return baseStatusDataBuilder<T>()
-    .with('tool', faker.word.sample())
-    .with('sending', baseTransactionInfoBuilder().build())
-    .with('receiving', pendingReceivingInfoBuilder().build());
+    .with('status', 'PENDING')
+    .with('substatus', faker.helpers.arrayElement([...SubstatusesPending]));
 }
 
 export function failedStatusDataBuilder<
   T extends FailedStatusData = FailedStatusData,
 >(): IBuilder<T> {
   return baseStatusDataBuilder<T>()
-    .with('status', 'FAILED')
+    .with(
+      'status',
+      faker.helpers.arrayElement(['FAILED', 'INVALID', 'NOT_FOUND']),
+    )
+    .with('substatus', faker.helpers.arrayElement([...SubstatusesFailed]))
     .with('sending', baseTransactionInfoBuilder().build());
 }
 
 export function bridgeStatusBuilder(): IBuilder<BridgeStatus> {
   return faker.helpers.arrayElement([
-    fullStatusDataBuilder(),
-    statusDataBuilder(),
+    successStatusDataBuilder(),
+    pendingStatusDataBuilder(),
     failedStatusDataBuilder(),
   ]);
 }

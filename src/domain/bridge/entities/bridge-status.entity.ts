@@ -81,26 +81,6 @@ export const BaseTransactionInfoSchema = z.object({
 
 export type BaseTransactionInfo = z.infer<typeof BaseTransactionInfoSchema>;
 
-export const SetupToolDetailsSchema = z.object({
-  key: z.string(),
-  name: z.string(),
-  logoURI: z.string(),
-});
-
-export type SetupToolDetails = z.infer<typeof SetupToolDetailsSchema>;
-
-export const IncludedStepSchema = z.object({
-  fromAmount: z.string(),
-  fromToken: TokenSchema,
-  toAmount: z.string(),
-  toToken: TokenSchema,
-  bridgedAmount: z.string().nullish().default(null),
-  tool: z.string(),
-  toolDetails: SetupToolDetailsSchema,
-});
-
-export type IncludedStep = z.infer<typeof IncludedStepSchema>;
-
 export const PendingReceivingInfoSchema = z.object({
   chainId: z.coerce.string(),
 });
@@ -109,16 +89,13 @@ export type PendingReceivingInfo = z.infer<typeof PendingReceivingInfoSchema>;
 
 export const ExtendedTransactionInfoSchema = BaseTransactionInfoSchema.extend({
   amount: z.string().nullish().default(null),
-  amountUSD: z.string().nullish().default(null),
   token: TokenSchema.nullish().default(null),
   gasPrice: z.string(),
   gasUsed: z.string(),
   gasToken: TokenSchema,
   gasAmount: z.string(),
-  gasAmountUSD: z.string(),
   timestamp: z.number().nullish().default(null),
   value: z.string().nullish().default(null),
-  includedSteps: z.array(IncludedStepSchema).nullish().default(null),
 });
 
 export type ExtendedTransactionInfo = z.infer<
@@ -131,41 +108,39 @@ export const TransferMetadataSchema = z.object({
 
 export type TransferMetadata = z.infer<typeof TransferMetadataSchema>;
 
-export const FullStatusDataSchema = BaseStatusDataSchema.extend({
+export const SuccessStatusDataSchema = BaseStatusDataSchema.extend({
+  status: z.literal('DONE'),
+  substatus: z.enum([...SubstatusesDone]),
   transactionId: z.string(),
-  sending: ExtendedTransactionInfoSchema,
-  receiving: z.union([
-    PendingReceivingInfoSchema,
-    ExtendedTransactionInfoSchema,
-  ]),
+  receiving: ExtendedTransactionInfoSchema,
   feeCosts: z.array(FeeCostSchema),
   lifiExplorerLink: z.string(),
-  fromAddress: AddressSchema,
-  toAddress: AddressSchema,
   metadata: TransferMetadataSchema,
   bridgeExplorerLink: z.string().nullish().default(null),
+  fromAddress: AddressSchema,
+  toAddress: AddressSchema,
 });
 
-export type FullStatusData = z.infer<typeof FullStatusDataSchema>;
-
-export const StatusDataSchema = BaseStatusDataSchema.extend({
-  tool: z.string(),
-  sending: BaseTransactionInfoSchema,
-  receiving: PendingReceivingInfoSchema,
+export const PendingStatusDataSchema = BaseStatusDataSchema.extend({
+  status: z.literal('PENDING'),
+  substatus: z.enum([...SubstatusesPending]),
 });
 
-export type StatusData = z.infer<typeof StatusDataSchema>;
+export type PendingStatusData = z.infer<typeof PendingStatusDataSchema>;
+
+export type SuccessStatusData = z.infer<typeof SuccessStatusDataSchema>;
 
 export const FailedStatusDataSchema = BaseStatusDataSchema.extend({
-  status: z.literal('FAILED'),
+  status: z.enum(['FAILED', 'INVALID', 'NOT_FOUND']),
+  substatus: z.enum([...SubstatusesFailed]),
   sending: BaseTransactionInfoSchema,
 });
 
 export type FailedStatusData = z.infer<typeof FailedStatusDataSchema>;
 
-export const BridgeStatusSchema = z.union([
-  FullStatusDataSchema,
-  StatusDataSchema,
+export const BridgeStatusSchema = z.discriminatedUnion('status', [
+  SuccessStatusDataSchema,
+  PendingStatusDataSchema,
   FailedStatusDataSchema,
 ]);
 

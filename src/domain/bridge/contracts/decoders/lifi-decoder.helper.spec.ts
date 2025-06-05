@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { decodeFunctionData, getAddress } from 'viem';
 import type { Hex } from 'viem';
 
 import { LiFiDecoder } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
@@ -83,13 +83,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', true)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isBridge({
@@ -112,13 +111,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', true)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isBridge({
@@ -144,13 +142,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', false)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isBridge({
@@ -173,13 +170,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', false)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isBridge({
@@ -364,13 +360,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', true)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isSwap({
@@ -393,13 +388,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', true)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isSwap({
@@ -425,13 +419,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', false)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isSwap({
@@ -454,13 +447,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', false)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isSwap({
@@ -645,13 +637,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', true)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isSwapAndBridge({
@@ -674,13 +665,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', true)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isSwapAndBridge({
@@ -706,13 +696,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', false)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isSwapAndBridge({
@@ -735,13 +724,12 @@ describe('LiFiDecoder', () => {
               .with('hasSourceSwaps', false)
               .build(),
           )
-          .with(
-            'swapData',
+          .with('swapData', [
             swapDataStructBuilder()
               .with('sendingAssetId', sendingAssetId)
               .with('receivingAssetId', receivingAssetId)
               .build(),
-          )
+          ])
           .encode();
 
         const result = target.isSwapAndBridge({
@@ -866,9 +854,14 @@ describe('LiFiDecoder', () => {
 
   describe('decodeBridgeAndMaybeSwap', () => {
     it('should decode a bridge transaction', () => {
-      const transaction = startBridgeTokensViaAcrossV3Encoder();
+      const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder();
       const args = transaction.build();
       const data = transaction.encode();
+
+      const feeCollectorData = decodeFunctionData({
+        abi: LiFiDecoder.FeeCollectorAbi,
+        data: args.swapData[0].callData,
+      });
 
       const result = target.decodeBridgeAndMaybeSwap(data);
 
@@ -876,10 +869,15 @@ describe('LiFiDecoder', () => {
         transactionId: args.bridgeData.transactionId.toLowerCase(),
         toAddress: args.bridgeData.receiver,
         fromToken: args.bridgeData.sendingAssetId,
-        toToken: args.bridgeData.sendingAssetId,
         fromAmount: args.bridgeData.minAmount,
         bridge: args.bridgeData.bridge,
         toChain: args.bridgeData.destinationChainId,
+        fees: {
+          tokenAddress: feeCollectorData.args[0],
+          integratorFee: feeCollectorData.args[1],
+          lifiFee: feeCollectorData.args[2],
+          integratorAddress: feeCollectorData.args[3],
+        },
       });
     });
 
@@ -898,16 +896,26 @@ describe('LiFiDecoder', () => {
       const args = transaction.build();
       const data = transaction.encode();
 
+      const feeCollectorData = decodeFunctionData({
+        abi: LiFiDecoder.FeeCollectorAbi,
+        data: args.swapData[0].callData,
+      });
+
       const result = target.decodeBridgeAndMaybeSwap(data);
 
       expect(result).toStrictEqual({
         transactionId: args.bridgeData.transactionId.toLowerCase(),
         toAddress: args.bridgeData.receiver,
-        fromToken: args.swapData.sendingAssetId,
-        toToken: args.swapData.receivingAssetId,
-        fromAmount: args.swapData.fromAmount,
+        fromToken: args.bridgeData.sendingAssetId,
+        fromAmount: args.bridgeData.minAmount,
         bridge: args.bridgeData.bridge,
         toChain: args.bridgeData.destinationChainId,
+        fees: {
+          tokenAddress: feeCollectorData.args[0],
+          integratorFee: feeCollectorData.args[1],
+          lifiFee: feeCollectorData.args[2],
+          integratorAddress: feeCollectorData.args[3],
+        },
       });
     });
   });
@@ -931,9 +939,9 @@ describe('LiFiDecoder', () => {
       expect(result).toStrictEqual({
         transactionId: args.transactionId.toLowerCase(),
         toAddress: args.receiver,
-        fromToken: args.swapData?.sendingAssetId,
-        toToken: args.swapData?.receivingAssetId,
-        fromAmount: args.swapData?.fromAmount,
+        fromToken: args.swapData.sendingAssetId,
+        toToken: args.swapData.receivingAssetId,
+        fromAmount: args.swapData.fromAmount,
         toAmount: args.minAmountOut,
       });
     });
@@ -966,9 +974,9 @@ describe('LiFiDecoder', () => {
       expect(result).toStrictEqual({
         transactionId: args.transactionId.toLowerCase(),
         toAddress: args.receiver,
-        fromToken: args.swapData?.[0].sendingAssetId,
-        toToken: args.swapData?.[2].receivingAssetId,
-        fromAmount: args.swapData?.[0].fromAmount,
+        fromToken: args.swapData[0].sendingAssetId,
+        toToken: args.swapData[2].receivingAssetId,
+        fromAmount: args.swapData[0].fromAmount,
         toAmount: args.minAmountOut,
       });
     });

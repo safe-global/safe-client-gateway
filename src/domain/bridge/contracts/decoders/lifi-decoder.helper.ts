@@ -3,10 +3,13 @@ import {
   AbiParameterToPrimitiveType,
   Address,
   decodeAbiParameters,
+  decodeFunctionData,
   Hex,
   isAddressEqual,
+  parseAbi,
   parseAbiParameter,
   parseAbiParameters,
+  toFunctionSelector,
 } from 'viem';
 
 // Note: the following is heavily inspired by LiFi's CalldataVerificationFacet.sol
@@ -34,6 +37,11 @@ export class LiFiDecoder {
     '0x733214a3',
     '0xaf7060fd',
   ] as const;
+
+  public static readonly FeeCollectorAbi = parseAbi([
+    'function collectNativeFees(uint256 integratorFee,uint256 lifiFee,address integratorAddress) external payable',
+    'function collectTokenFees(address tokenAddress,uint256 integratorFee,uint256 lifiFee,address integratorAddress) external',
+  ]);
 
   // Initial arguments of all swap* functions
   private static readonly GenericSwapParameters = parseAbiParameters(
@@ -113,6 +121,48 @@ export class LiFiDecoder {
     }
   }
 
+  private isFeeCollection(data: Hex): boolean {
+    return (
+      data.startsWith(toFunctionSelector(LiFiDecoder.FeeCollectorAbi[0])) ||
+      data.startsWith(toFunctionSelector(LiFiDecoder.FeeCollectorAbi[1]))
+    );
+  }
+
+  private decodeFeeCollection(data: Hex): {
+    tokenAddress: Address;
+    integratorFee: bigint;
+    lifiFee: bigint;
+    integratorAddress: Address;
+  } | null {
+    try {
+      const { functionName, args } = decodeFunctionData({
+        abi: LiFiDecoder.FeeCollectorAbi,
+        data,
+      });
+
+      if (functionName === 'collectNativeFees') {
+        return {
+          tokenAddress: '0x0000000000000000000000000000000000000000',
+          integratorFee: args[0],
+          lifiFee: args[1],
+          integratorAddress: args[2],
+        };
+      }
+
+      if (functionName === 'collectTokenFees') {
+        return {
+          tokenAddress: args[0],
+          integratorFee: args[1],
+          lifiFee: args[2],
+          integratorAddress: args[3],
+        };
+      }
+    } catch {
+      // TODO: Do we need to handle this?
+    }
+    return null;
+  }
+
   /**
    * Decodes the bridge data (and swap data) from the given calldata.
    *
@@ -132,25 +182,43 @@ export class LiFiDecoder {
     transactionId: Hex;
     toAddress: Address;
     fromToken: Address;
-    toToken: Address;
     fromAmount: bigint;
     bridge: string;
     toChain: bigint;
+    fees: {
+      tokenAddress: Address;
+      integratorFee: bigint;
+      lifiFee: bigint;
+      integratorAddress: Address;
+    } | null;
   } {
     const bridgeData = this.decodeBridgeData(data);
 
     let fromToken: Address;
-    let toToken: Address;
     let fromAmount: bigint;
+    let fees = null;
 
     if (bridgeData.hasSourceSwaps) {
-      const [singleSwap] = this.decodeBridgeSwapData(data);
-      fromToken = singleSwap.sendingAssetId;
-      toToken = singleSwap.receivingAssetId;
-      fromAmount = singleSwap.fromAmount;
+      const allSwapData = this.decodeBridgeSwapData(data);
+      const [singleSwap] = allSwapData.filter(
+        (swapData) => !this.isFeeCollection(swapData.callData),
+      );
+      const [feeCollection] = allSwapData.filter((swapData) =>
+        this.isFeeCollection(swapData.callData),
+      );
+
+      fees = feeCollection
+        ? this.decodeFeeCollection(feeCollection.callData)
+        : null;
+      if (!singleSwap) {
+        fromToken = bridgeData.sendingAssetId;
+        fromAmount = bridgeData.minAmount;
+      } else {
+        fromToken = singleSwap.sendingAssetId;
+        fromAmount = singleSwap.fromAmount;
+      }
     } else {
       fromToken = bridgeData.sendingAssetId;
-      toToken = bridgeData.sendingAssetId;
       fromAmount = bridgeData.minAmount;
     }
 
@@ -158,10 +226,10 @@ export class LiFiDecoder {
       transactionId: bridgeData.transactionId,
       toAddress: bridgeData.receiver,
       fromToken,
-      toToken,
       fromAmount,
       bridge: bridgeData.bridge,
       toChain: bridgeData.destinationChainId,
+      fees,
     };
   }
 

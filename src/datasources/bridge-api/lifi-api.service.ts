@@ -1,24 +1,13 @@
 import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { BridgeQuote } from '@/domain/bridge/entities/bridge-quote.entity';
 import type { BridgeName } from '@/domain/bridge/entities/bridge-name.entity';
 import type { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
 import type { IBridgeApi } from '@/domain/interfaces/bridge-api.inferface';
 import type { Raw } from '@/validation/entities/raw.entity';
-import type { ExchangeName } from '@/domain/bridge/entities/exchange-name.entity';
-import type {
-  AllowDenyPrefer,
-  RoutePreference,
-} from '@/domain/bridge/entities/bridge-preference.entity';
-import type { TimingStrategies } from '@/domain/bridge/entities/timing-strategies';
-import type { BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import type {
-  BridgeRoutesResponse,
-  OrderType,
-} from '@/domain/bridge/entities/bridge-route.entity';
+import { type BridgeChainPage } from '@/domain/bridge/entities/bridge-chain.entity';
 
 export class LifiBridgeApi implements IBridgeApi {
   public static readonly LIFI_API_HEADER = 'x-lifi-api-key';
@@ -89,97 +78,6 @@ export class LifiBridgeApi implements IBridgeApi {
             [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
           },
         },
-      });
-      return data;
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
-    }
-  }
-
-  public async getQuote(args: {
-    toChain: string;
-    fromToken: `0x${string}`;
-    toToken: `0x${string}`;
-    fromAddress: `0x${string}`;
-    toAddress?: `0x${string}`;
-    fromAmount: string;
-    order?: OrderType;
-    slippage?: number;
-    integrator?: string;
-    fee?: number;
-    referrer?: string;
-    allowBridges?: Array<RoutePreference<BridgeName>>;
-    allowExchanges?: Array<RoutePreference<ExchangeName>>;
-    denyBridges?: Array<RoutePreference<BridgeName>>;
-    denyExchanges?: Array<RoutePreference<ExchangeName>>;
-    preferBridges?: Array<RoutePreference<BridgeName>>;
-    preferExchanges?: Array<RoutePreference<ExchangeName>>;
-    allowDestinationCall?: boolean;
-    fromAmountForGas?: string;
-    maxPriceImpact?: number;
-    swapStepTimingStrategies?: Array<TimingStrategies>;
-    routeTimingStrategies?: Array<TimingStrategies>;
-    skipSimulation?: boolean;
-  }): Promise<Raw<BridgeQuote>> {
-    try {
-      // Note: there is also /v1/quote/toAmount to quote based on toAmount
-      // rather than fromAmount but as the transaction already exists, we
-      // assume the user wants to quote based on fromAmount
-      const url = `${this.baseUrl}/v1/quote`;
-      const { data } = await this.networkService.get<BridgeQuote>({
-        url,
-        networkRequest: {
-          // TODO: Fix type to allow non-primitives
-          // @ts-expect-error - expects primitives
-          params: {
-            ...args,
-            fromChain: this.chainId,
-          },
-          headers: {
-            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
-          },
-        },
-      });
-      return data;
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
-    }
-  }
-
-  public async getRoutes(args: {
-    fromChainId: string;
-    fromAmount: string;
-    fromTokenAddress: string;
-    fromAddress?: string;
-    toChainId: string;
-    toTokenAddress: string;
-    toAddress?: string;
-    fromAmountForGas?: string;
-    options: {
-      integrator?: string;
-      fee?: number;
-      maxPriceImpact?: number;
-      order?: OrderType;
-      slippage?: number;
-      referrer?: string;
-      allowSwitchChain?: boolean;
-      allowDestinationCall?: boolean;
-      bridges?: AllowDenyPrefer<BridgeName>;
-      exchanges?: AllowDenyPrefer<ExchangeName>;
-      swapStepTimingStrategies?: Array<TimingStrategies>;
-      routeTimingStrategies?: Array<TimingStrategies>;
-    };
-  }): Promise<Raw<BridgeRoutesResponse>> {
-    try {
-      const url = `${this.baseUrl}/v1/advanced/routes`;
-      const { data } = await this.networkService.post<BridgeRoutesResponse>({
-        url,
-        networkRequest: {
-          headers: {
-            [LifiBridgeApi.LIFI_API_HEADER]: this.apiKey,
-          },
-        },
-        data: args,
       });
       return data;
     } catch (error) {

@@ -6,11 +6,8 @@ import {
   bridgeStatusBuilder,
   extendedTransactionInfoBuilder,
   failedStatusDataBuilder,
-  fullStatusDataBuilder,
-  includedStepBuilder,
   pendingReceivingInfoBuilder,
-  setupToolDetailsBuilder,
-  statusDataBuilder,
+  successStatusDataBuilder,
   transferMetadataBuilder,
 } from '@/domain/bridge/entities/__tests__/bridge-status.builder';
 import {
@@ -19,12 +16,8 @@ import {
   BridgeStatusSchema,
   ExtendedTransactionInfoSchema,
   FailedStatusDataSchema,
-  FullStatusDataSchema,
-  IncludedStepSchema,
   PendingReceivingInfoSchema,
-  SetupToolDetailsSchema,
-  StatusDataSchema,
-  StatusMessages,
+  SuccessStatusDataSchema,
   TransferMetadataSchema,
 } from '@/domain/bridge/entities/bridge-status.entity';
 
@@ -42,7 +35,7 @@ describe('BridgeStatusSchema', () => {
       '%s should fallback to UNKNOWN',
       (key) => {
         const baseStatusData = baseStatusDataBuilder()
-          .with(key, 'not a real status' as 'UNKNOWN')
+          .with(key, 'not a real status' as unknown as 'DONE')
           .build();
 
         const result = BaseStatusDataSchema.safeParse(baseStatusData);
@@ -58,7 +51,8 @@ describe('BridgeStatusSchema', () => {
 
       const result = BaseStatusDataSchema.safeParse(baseStatusData);
 
-      expect(result.success && result.data.substatusMessage).toBe(null);
+      expect(result.success).toBe(true);
+      expect(result.data?.substatusMessage).toBe(null);
     });
   });
 
@@ -82,37 +76,6 @@ describe('BridgeStatusSchema', () => {
       expect(result.success && result.data.chainId).toBe(String(chainId));
     });
   });
-
-  describe('SetupToolDetailsSchema', () => {
-    it('should validate a SetupToolDetails', () => {
-      const setupToolDetails = setupToolDetailsBuilder().build();
-
-      const result = SetupToolDetailsSchema.safeParse(setupToolDetails);
-
-      expect(result.success).toBe(true);
-    });
-  });
-
-  describe('IncludedStepSchema', () => {
-    it('should validate an IncludedStep', () => {
-      const includedStep = includedStepBuilder().build();
-
-      const result = IncludedStepSchema.safeParse(includedStep);
-
-      expect(result.success).toBe(true);
-    });
-
-    it('should default bridgedAmount to null', () => {
-      const includedStep = includedStepBuilder().build();
-      // @ts-expect-error - inferred type expects defined value
-      delete includedStep.bridgedAmount;
-
-      const result = IncludedStepSchema.safeParse(includedStep);
-
-      expect(result.success && result.data.bridgedAmount).toBe(null);
-    });
-  });
-
   describe('PendingReceivingInfoSchema', () => {
     it('should validate a PendingReceivingInfo', () => {
       const pendingReceivingInfo = pendingReceivingInfoBuilder().build();
@@ -147,11 +110,9 @@ describe('BridgeStatusSchema', () => {
 
     it.each([
       'amount' as const,
-      'amountUSD' as const,
       'token' as const,
       'timestamp' as const,
       'value' as const,
-      'includedSteps' as const,
     ])('%s should default to null', (key) => {
       const extendedTransactionInfo = extendedTransactionInfoBuilder().build();
       delete extendedTransactionInfo[key];
@@ -174,11 +135,11 @@ describe('BridgeStatusSchema', () => {
     });
   });
 
-  describe('FullStatusDataSchema', () => {
-    it('should validate a FullStatusData', () => {
-      const fullStatusData = fullStatusDataBuilder().build();
+  describe('SuccessStatusDataSchema', () => {
+    it('should validate a SuccessStatusData', () => {
+      const successStatusData = successStatusDataBuilder().build();
 
-      const result = FullStatusDataSchema.safeParse(fullStatusData);
+      const result = SuccessStatusDataSchema.safeParse(successStatusData);
 
       expect(result.success).toBe(true);
     });
@@ -189,11 +150,11 @@ describe('BridgeStatusSchema', () => {
         const nonChecksummedAddress = faker.finance
           .ethereumAddress()
           .toLowerCase();
-        const fullStatusData = fullStatusDataBuilder()
+        const fullStatusData = successStatusDataBuilder()
           .with(key, nonChecksummedAddress as `0x${string}`)
           .build();
 
-        const result = FullStatusDataSchema.safeParse(fullStatusData);
+        const result = SuccessStatusDataSchema.safeParse(fullStatusData);
 
         expect(result.success && result.data[key]).toBe(
           getAddress(nonChecksummedAddress),
@@ -202,23 +163,13 @@ describe('BridgeStatusSchema', () => {
     );
 
     it('should default bridgeExplorerLink to null', () => {
-      const fullStatusData = fullStatusDataBuilder().build();
+      const fullStatusData = successStatusDataBuilder().build();
       // @ts-expect-error - inferred type expects defined value
       delete fullStatusData.bridgeExplorerLink;
 
-      const result = FullStatusDataSchema.safeParse(fullStatusData);
+      const result = SuccessStatusDataSchema.safeParse(fullStatusData);
 
       expect(result.success && result.data.bridgeExplorerLink).toBe(null);
-    });
-  });
-
-  describe('StatusDataSchema', () => {
-    it('should validate a StatusData', () => {
-      const statusData = statusDataBuilder().build();
-
-      const result = StatusDataSchema.safeParse(statusData);
-
-      expect(result.success).toBe(true);
     });
   });
 
@@ -231,23 +182,23 @@ describe('BridgeStatusSchema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should only accept FAILED status', () => {
-      const status = faker.helpers.arrayElement(
-        StatusMessages.filter((status) => status !== 'FAILED'),
-      );
+    it('should only accept FAILED, INVALID, or NOT_FOUND status', () => {
       const failedStatusData = failedStatusDataBuilder()
-        .with('status', status as 'FAILED')
+        .with('status', 'DONE' as 'FAILED')
         .build();
 
       const result = FailedStatusDataSchema.safeParse(failedStatusData);
 
-      expect(!result.success && result.error.issues).toStrictEqual([
+      expect(result.success).toBe(false);
+
+      expect(result.error?.issues).toStrictEqual([
         {
-          code: 'invalid_literal',
-          expected: 'FAILED',
-          message: 'Invalid literal value, expected "FAILED"',
+          code: 'invalid_enum_value',
+          options: ['FAILED', 'INVALID', 'NOT_FOUND'],
+          message:
+            "Invalid enum value. Expected 'FAILED' | 'INVALID' | 'NOT_FOUND', received 'DONE'",
           path: ['status'],
-          received: status,
+          received: 'DONE',
         },
       ]);
     });

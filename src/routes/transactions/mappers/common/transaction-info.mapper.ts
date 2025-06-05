@@ -36,8 +36,7 @@ import { BaseDataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.
 import { BridgeTransactionMapper } from '@/routes/transactions/mappers/common/bridge-transaction.mapper';
 import { LiFiHelper } from '@/routes/transactions/helpers/lifi-helper';
 import {
-  BridgeTransactionInfo,
-  SwapAndBridgeTransactionInfo,
+  BridgeAndSwapTransactionInfo,
   SwapTransactionInfo,
 } from '@/routes/transactions/entities/bridge/bridge-info.entity';
 
@@ -103,14 +102,6 @@ export class MultisigTransactionInfoMapper {
         transaction,
         chainId,
       );
-
-    const bridge = await this.mapBridge({
-      chainId,
-      transaction,
-    });
-    if (bridge) {
-      return bridge;
-    }
 
     const swap = await this.mapSwap({
       chainId,
@@ -253,23 +244,6 @@ export class MultisigTransactionInfoMapper {
     );
   }
 
-  private async mapBridge(args: {
-    chainId: string;
-    transaction: MultisigTransaction | ModuleTransaction;
-  }): Promise<BridgeTransactionInfo | null> {
-    const transaction = await this.liFiHelper.getBridgeTransaction(args);
-    if (!transaction) {
-      return null;
-    }
-
-    try {
-      return this.bridgeTransactionMapper.mapBridge(transaction.data);
-    } catch (error) {
-      this.loggingService.warn(error);
-      return null;
-    }
-  }
-
   private async mapSwap(args: {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
@@ -290,7 +264,7 @@ export class MultisigTransactionInfoMapper {
   private async mapSwapAndBridge(args: {
     chainId: string;
     transaction: MultisigTransaction | ModuleTransaction;
-  }): Promise<SwapAndBridgeTransactionInfo | null> {
+  }): Promise<BridgeAndSwapTransactionInfo | null> {
     const transaction = await this.liFiHelper.getSwapAndBridgeTransaction(args);
     if (!transaction) {
       return null;

@@ -1,20 +1,28 @@
 import { faker } from '@faker-js/faker';
 import { LifiBridgeApi } from '@/datasources/bridge-api/lifi-api.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { bridgeQuoteBuilder } from '@/domain/bridge/entities/__tests__/bridge-quote.builder';
 import { bridgeStatusBuilder } from '@/domain/bridge/entities/__tests__/bridge-status.builder';
 import { BridgeNames } from '@/domain/bridge/entities/bridge-name.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { getAddress } from 'viem';
 import { bridgeChainPageBuilder } from '@/domain/bridge/entities/__tests__/bridge-chain.builder';
+import { type CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { type IConfigurationService } from '@/config/configuration.service.interface';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
   post: jest.fn(),
 } as jest.MockedObjectDeep<INetworkService>);
+
+const mockCacheFirstDataSource = jest.mocked({
+  get: jest.fn(),
+} as jest.MockedObjectDeep<CacheFirstDataSource>);
+
+const mockConfigurationService = jest.mocked({
+  get: jest.fn(),
+} as jest.MockedObjectDeep<IConfigurationService>);
 
 describe('LifiBridgeApi', () => {
   let target: LifiBridgeApi;
@@ -37,7 +45,9 @@ describe('LifiBridgeApi', () => {
       baseUrl,
       apiKey,
       mockNetworkService,
+      mockCacheFirstDataSource,
       httpErrorFactory,
+      mockConfigurationService,
     );
   });
 
@@ -147,66 +157,4 @@ describe('LifiBridgeApi', () => {
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     });
   });
-
-  describe('getQuote', () => {
-    it('should return a quote', async () => {
-      const bridgeQuote = bridgeQuoteBuilder().build();
-      const args = {
-        toChain: faker.string.numeric(),
-        fromToken: getAddress(faker.finance.ethereumAddress()),
-        toToken: getAddress(faker.finance.ethereumAddress()),
-        fromAddress: getAddress(faker.finance.ethereumAddress()),
-        fromAmount: faker.string.numeric(),
-      };
-      mockNetworkService.post.mockResolvedValueOnce({
-        data: rawify(bridgeQuote),
-        status: 200,
-      });
-
-      const actual = await target.getQuote(args);
-
-      expect(actual).toBe(bridgeQuote);
-      expect(mockNetworkService.post).toHaveBeenCalledWith({
-        url: `${baseUrl}/v1/quote`,
-        data: {
-          fromChain: chainId,
-          ...args,
-        },
-        networkRequest: {
-          headers: {
-            'x-lifi-api-key': apiKey,
-          },
-        },
-      });
-    });
-
-    it('should forward errors', async () => {
-      const args = {
-        toChain: faker.string.numeric(),
-        fromToken: getAddress(faker.finance.ethereumAddress()),
-        toToken: getAddress(faker.finance.ethereumAddress()),
-        fromAddress: getAddress(faker.finance.ethereumAddress()),
-        fromAmount: faker.string.numeric(),
-      };
-      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-      const error = new NetworkResponseError(
-        new URL(`${baseUrl}/v1/status`),
-        {
-          status,
-        } as Response,
-        {
-          message: 'Unexpected error',
-        },
-      );
-      mockNetworkService.post.mockRejectedValueOnce(error);
-
-      await expect(target.getQuote(args)).rejects.toThrow(
-        new DataSourceError('Unexpected error', status),
-      );
-
-      expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it.todo('getRoutes');
 });

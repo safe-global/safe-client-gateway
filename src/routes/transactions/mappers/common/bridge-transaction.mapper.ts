@@ -1,10 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { LiFiDecoder } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
-import {
-  BridgeTransactionInfo,
-  SwapAndBridgeTransactionInfo,
-  SwapTransactionInfo,
-} from '@/routes/transactions/entities/bridge/bridge-info.entity';
+import { SwapTransactionInfo } from '@/routes/transactions/entities/bridge/bridge-info.entity';
 import { ITokenRepository } from '@/domain/tokens/token.repository.interface';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
@@ -14,6 +10,8 @@ import {
   BridgeName,
   isBridgeName,
 } from '@/domain/bridge/entities/bridge-name.entity';
+import { Address } from 'viem';
+import { BridgeAndSwapTransactionInfo } from '@/routes/transactions/entities/bridge/bridge-info.entity';
 
 @Injectable()
 export class BridgeTransactionMapper {
@@ -25,15 +23,6 @@ export class BridgeTransactionMapper {
     @Inject(IBridgeRepository)
     private readonly bridgeRepository: IBridgeRepository,
   ) {}
-
-  // TODO:
-  public mapBridge(data: `0x${string}`): BridgeTransactionInfo | null {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const decoded = this.liFiDecoder.decodeBridgeAndMaybeSwap(data);
-
-    return new BridgeTransactionInfo();
-  }
-
   // TODO:
   public mapSwap(data: `0x${string}`): SwapTransactionInfo {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -47,20 +36,15 @@ export class BridgeTransactionMapper {
     data: `0x${string}`;
     executionDate: Date | null;
     safeAddress: `0x${string}`;
-  }): Promise<SwapAndBridgeTransactionInfo | null> {
+  }): Promise<BridgeAndSwapTransactionInfo | null> {
     const decoded = this.liFiDecoder.decodeBridgeAndMaybeSwap(args.data);
 
-    const [fromToken, toToken, recipient, info] = await Promise.all([
+    const [fromToken, recipient, info] = await Promise.all([
       this.tokenRepository.getToken({
         address: decoded.fromToken,
         chainId: args.chainId,
       }),
-      this.tokenRepository.getToken({
-        address: decoded.toToken,
-        chainId: args.chainId,
-      }),
       this.addressInfoHelper.getOrDefault(args.chainId, decoded.toAddress, [
-        'TOKEN',
         'CONTRACT',
       ]),
       args.executionDate
@@ -70,26 +54,25 @@ export class BridgeTransactionMapper {
           })
         : this.getQueuedInfo({
             fromChain: args.chainId,
-            toChain: args.chainId,
+            toChain: decoded.toChain.toString(),
             fromAddress: args.safeAddress,
             fromAmount: decoded.fromAmount.toString(),
             fromToken: decoded.fromToken,
-            toToken: decoded.toToken,
+            fees: decoded.fees,
             bridge: isBridgeName(decoded.bridge) ? decoded.bridge : 'all',
           }),
     ]);
 
-    return new SwapAndBridgeTransactionInfo({
+    return new BridgeAndSwapTransactionInfo({
       fromToken: new TokenInfo({
         ...fromToken,
         trusted: true,
       }),
-      toToken: new TokenInfo({
-        ...toToken,
-        trusted: true,
-      }),
+      toToken: 'toToken' in info ? info.toToken : undefined,
+      toAmount: 'toAmount' in info ? info.toAmount : undefined,
       recipient,
       fromAmount: decoded.fromAmount.toString(),
+      toChain: decoded.toChain.toString(),
       ...info,
     });
   }
@@ -98,41 +81,36 @@ export class BridgeTransactionMapper {
     fromChain: string;
     toChain: string;
     fromToken: `0x${string}`;
-    toToken: `0x${string}`;
     fromAddress: `0x${string}`;
     fromAmount: string;
     bridge: BridgeName | 'all';
+    fees: {
+      tokenAddress: `0x${string}`;
+      integratorFee: bigint;
+      lifiFee: bigint;
+      integratorAddress: `0x${string}`;
+    } | null;
   }): Promise<{
-    exchangeRate: number;
-    maxSlippage: number;
-    toAmount: string;
-    fee: number;
+    fees: {
+      tokenAddress: Address;
+      integratorFee: string;
+      lifiFee: string;
+    } | null;
     explorerUrl: null;
-    status: BridgeStatus['status'];
+    status: BridgeStatus['status'] | 'AWAITING_EXECUTION';
+    substatus: BridgeStatus['substatus'] | 'AWAITING_EXECUTION';
   }> {
-    const [route] = await this.bridgeRepository.getRoutes({
-      fromChainId: args.fromChain,
-      fromAmount: args.fromAmount,
-      fromTokenAddress: args.fromToken,
-      fromAddress: args.fromAddress,
-      toChainId: args.toChain,
-      toTokenAddress: args.toToken,
-      options: {
-        bridges: {
-          allow: [args.bridge],
-        },
-      },
-    });
-
-    const exchangeRate = Number(route.toAmount) / Number(args.fromAmount);
-
     return Promise.resolve({
-      exchangeRate,
-      toAmount: route.toAmount,
-      fee: -1, // TODO:
+      fees: args.fees
+        ? {
+            tokenAddress: args.fees.tokenAddress,
+            integratorFee: args.fees.integratorFee.toString(),
+            lifiFee: args.fees.lifiFee.toString(),
+          }
+        : null,
       explorerUrl: null,
-      status: 'PENDING', // TODO: Add awaiting execution status
-      maxSlippage: -1, // TODO:
+      status: 'AWAITING_EXECUTION',
+      substatus: 'AWAITING_EXECUTION',
     });
   }
 
@@ -140,48 +118,79 @@ export class BridgeTransactionMapper {
     transactionId: `0x${string}`;
     fromAmount: bigint;
     chainId: string;
+    fees: {
+      tokenAddress: `0x${string}`;
+      integratorFee: bigint;
+      lifiFee: bigint;
+      integratorAddress: `0x${string}`;
+    } | null;
   }): Promise<{
-    exchangeRate: number;
-    toAmount: string;
-    fee: number;
+    toAmount: string | undefined;
+    fees: {
+      tokenAddress: Address;
+      integratorFee: string;
+      lifiFee: string;
+    } | null;
     explorerUrl: string | null;
     status: BridgeStatus['status'];
-    maxSlippage: number;
+    toToken: TokenInfo | undefined;
+    substatus: BridgeStatus['substatus'];
   }> {
     const status = await this.bridgeRepository.getStatus({
       txHash: args.transactionId,
       fromChain: args.chainId,
     });
-
-    const includedSteps =
-      status && 'includedSteps' in status.sending
-        ? (status.sending.includedSteps ?? [])
-        : [];
-    const toAmount = includedSteps[includedSteps.length - 1].toAmount;
-    const exchangeRate = Number(toAmount) / Number(args.fromAmount);
-
-    const explorerUrl =
-      status && 'lifiExplorerLink' in status ? status.lifiExplorerLink : null;
-
-    const feeCollectionStep = includedSteps.find(({ tool }) => {
-      return tool === 'feeCollection';
-    });
-
-    // TODO: Look into maybe using feeCosts from FullStatusDataSchema
-    //       and maybe need to format token values
-    const fee = feeCollectionStep
-      ? // TODO: Format token values
-        Number(feeCollectionStep.fromAmount) -
-        Number(feeCollectionStep.toAmount)
-      : 0;
-
-    return {
-      exchangeRate,
-      toAmount,
-      fee,
-      explorerUrl,
-      status: status.status,
-      maxSlippage: -1, // TODO:
-    };
+    switch (status.status) {
+      case 'DONE':
+        return {
+          toAmount: status.receiving.amount ?? '0',
+          fees: args.fees
+            ? {
+                integratorFee: args.fees.integratorFee.toString(),
+                lifiFee: args.fees.lifiFee.toString(),
+                tokenAddress: args.fees.tokenAddress,
+              }
+            : null,
+          status: status.status,
+          toToken: status.receiving.token
+            ? {
+                address: status.receiving.token.address,
+                decimals: status.receiving.token.decimals,
+                logoUri: status.receiving.token.logoURI,
+                name: status.receiving.token.name,
+                symbol: status.receiving.token.symbol,
+                trusted: true,
+              }
+            : undefined,
+          explorerUrl: status.lifiExplorerLink,
+          substatus: status.substatus,
+        };
+      case 'FAILED':
+      case 'INVALID':
+      case 'NOT_FOUND':
+        return {
+          toAmount: undefined,
+          toToken: undefined,
+          fees: args.fees
+            ? {
+                integratorFee: args.fees.integratorFee.toString(),
+                lifiFee: args.fees.lifiFee.toString(),
+                tokenAddress: args.fees.tokenAddress,
+              }
+            : null,
+          explorerUrl: null,
+          status: status.status,
+          substatus: status.substatus,
+        };
+      case 'PENDING':
+        return {
+          toAmount: undefined,
+          toToken: undefined,
+          fees: null,
+          explorerUrl: null,
+          status: status.status,
+          substatus: status.substatus,
+        };
+    }
   }
 }
