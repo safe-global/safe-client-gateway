@@ -197,6 +197,6 @@ export class RedisCacheService
    * @returns {number} The TTL if it is less than or equal to MAX_TTL, otherwise MAX_TTL.
    */
   private enforceMaxRedisTTL(ttl: number): number {
-    return ttl > MAX_TTL ? MAX_TTL : ttl;
+    return Math.min(ttl, MAX_TTL);
   }
 }
