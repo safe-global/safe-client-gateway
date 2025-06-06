@@ -7,6 +7,7 @@ import {
   limitAndOffsetUrlFactory,
   pageBuilder,
 } from '@/domain/entities/__tests__/page.builder';
+import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -24,6 +25,9 @@ const mockTransactionApi = {
   getContract: jest.fn(),
   getTrustedForDelegateCallContracts: jest.fn(),
 } as jest.MockedObjectDeep<ITransactionApi>;
+const mockDataDecoderApi = {
+  getContracts: jest.fn(),
+} as jest.MockedObjectDeep<IDataDecoderApi>;
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>);
@@ -42,6 +46,7 @@ describe('ContractsRepository', () => {
 
     target = new ContractsRepository(
       mockTransactionApiManager,
+      mockDataDecoderApi,
       mockConfigurationService,
       mockLoggingService,
     );
