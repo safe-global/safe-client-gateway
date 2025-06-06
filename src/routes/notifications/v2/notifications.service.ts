@@ -38,6 +38,19 @@ export class NotificationsServiceV2 {
     await this.notificationsRepository.deleteSubscription(args);
   }
 
+  async deleteSubscriptions(args: {
+    deviceUuid: UUID;
+    safes: Array<{ chainId: string; safeAddress: `0x${string}` }>;
+  }): Promise<void> {
+    for (const safe of args.safes) {
+      await this.notificationsRepository.deleteSubscription({
+        deviceUuid: args.deviceUuid,
+        chainId: safe.chainId,
+        safeAddress: safe.safeAddress,
+      });
+    }
+  }
+
   async deleteDevice(deviceUuid: UUID): Promise<void> {
     await this.notificationsRepository.deleteDevice(deviceUuid);
   }
