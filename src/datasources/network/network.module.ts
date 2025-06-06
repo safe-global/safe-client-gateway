@@ -17,6 +17,8 @@ export type FetchClient = <T>(
   options: RequestInit,
 ) => Promise<NetworkResponse<T>>;
 
+const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
+
 /**
  * Use this factory to create a {@link FetchClient} instance
  * that can be used to make HTTP requests.
@@ -81,8 +83,6 @@ function createCachedRequestFunction(
   ) => Promise<NetworkResponse<T>>,
   loggingService: ILoggingService,
 ) {
-  const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
-
   return async <T>(
     url: string,
     options: RequestInit,
