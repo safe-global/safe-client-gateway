@@ -5,11 +5,11 @@ import {
 } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 import { IDataDecoderRepository } from '@/domain/data-decoder/v2/data-decoder.repository.interface';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
-import { Page } from '@/domain/entities/page.entity';
-import {
-  Contract,
-  ContractPageSchema,
-} from '@/domain/data-decoder/v2/entities/contract.entity';
+// import { Page } from '@/domain/entities/page.entity';
+// import {
+//   Contract,
+//   ContractPageSchema,
+// } from '@/domain/data-decoder/v2/entities/contract.entity';
 import { Transaction } from '@/domain/safe/entities/transaction.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
@@ -31,13 +31,13 @@ export class DataDecoderRepository implements IDataDecoderRepository {
     return DataDecodedSchema.parse(dataDecoded);
   }
 
-  public async getContracts(args: {
-    chainIds: Array<string>;
-    address: `0x${string}`;
-  }): Promise<Page<Contract>> {
-    const contracts = await this.dataDecoderApi.getContracts(args);
-    return ContractPageSchema.parse(contracts);
-  }
+  // public async getContracts(args: {
+  //   chainIds: Array<string>;
+  //   address: `0x${string}`;
+  // }): Promise<Page<Contract>> {
+  //   const contracts = await this.dataDecoderApi.getContracts(args);
+  //   return ContractPageSchema.parse(contracts);
+  // }
 
   public async getTransactionDataDecoded(args: {
     chainId: string;

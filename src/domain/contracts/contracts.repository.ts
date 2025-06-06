@@ -11,6 +11,12 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
+import { Page } from '@/domain/entities/page.entity';
+import {
+  Contract as DataDecoderContract,
+  ContractPageSchema as DataDecoderContractPageSchema,
+} from '@/domain/data-decoder/v2/entities/contract.entity';
 
 @Injectable()
 export class ContractsRepository implements IContractsRepository {
@@ -20,6 +26,8 @@ export class ContractsRepository implements IContractsRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
+    @Inject(IDataDecoderApi)
+    private readonly dataDecoderApi: IDataDecoderApi,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -40,6 +48,17 @@ export class ContractsRepository implements IContractsRepository {
     const api = await this.transactionApiManager.getApi(args.chainId);
     const data = await api.getContract(args.contractAddress);
     return ContractSchema.parse(data);
+  }
+
+  async getContracts(args: {
+    chainId: string;
+    contractAddress: `0x${string}`;
+  }): Promise<Page<DataDecoderContract>> {
+    const contracts = await this.dataDecoderApi.getContracts({
+      address: args.contractAddress,
+      chainIds: [args.chainId],
+    });
+    return DataDecoderContractPageSchema.parse(contracts);
   }
 
   async isTrustedForDelegateCall(args: {
