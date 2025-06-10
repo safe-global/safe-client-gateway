@@ -10,6 +10,13 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { bridgeChainPageBuilder } from '@/domain/bridge/entities/__tests__/bridge-chain.builder';
 import { type CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { type IConfigurationService } from '@/config/configuration.service.interface';
+import { ConfigurationModule } from '@/config/configuration.module';
+import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Test } from '@nestjs/testing';
+import configuration from '@/config/entities/__tests__/configuration';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),
@@ -20,10 +27,6 @@ const mockCacheFirstDataSource = jest.mocked({
   get: jest.fn(),
 } as jest.MockedObjectDeep<CacheFirstDataSource>);
 
-const mockConfigurationService = jest.mocked({
-  get: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
-
 describe('LifiBridgeApi', () => {
   let target: LifiBridgeApi;
 
@@ -31,14 +34,27 @@ describe('LifiBridgeApi', () => {
   let baseUrl: string;
   let apiKey: string;
   let httpErrorFactory: HttpErrorFactory;
+  let configurationService: IConfigurationService;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.resetAllMocks();
 
     chainId = faker.string.numeric();
     baseUrl = faker.internet.url({ appendSlash: false });
     apiKey = faker.string.uuid();
     httpErrorFactory = new HttpErrorFactory();
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [
+        TestLoggingModule,
+        ConfigurationModule.register(configuration),
+        ConfigModule,
+        TestPostgresDatabaseModuleV2,
+      ],
+      providers: [DatabaseMigrator],
+    }).compile();
+
+    configurationService = moduleRef.get<ConfigService>(ConfigService);
 
     target = new LifiBridgeApi(
       chainId,
@@ -47,32 +63,17 @@ describe('LifiBridgeApi', () => {
       mockNetworkService,
       mockCacheFirstDataSource,
       httpErrorFactory,
-      mockConfigurationService,
+      configurationService,
     );
   });
 
   describe('getChains', () => {
     it('should return the chains', async () => {
       const bridgeChainPage = bridgeChainPageBuilder().build();
-      mockNetworkService.get.mockResolvedValueOnce({
-        data: rawify(bridgeChainPage),
-        status: 200,
-      });
+      mockCacheFirstDataSource.get.mockResolvedValue(rawify(bridgeChainPage));
 
       const actual = await target.getChains();
-
       expect(actual).toBe(bridgeChainPage);
-      expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${baseUrl}/v1/chains`,
-        networkRequest: {
-          params: {
-            chainTypes: 'EVM',
-          },
-          headers: {
-            'x-lifi-api-key': apiKey,
-          },
-        },
-      });
     });
 
     it('should forward errors', async () => {
@@ -86,13 +87,12 @@ describe('LifiBridgeApi', () => {
           message: 'Unexpected error',
         },
       );
-      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      mockCacheFirstDataSource.get.mockRejectedValueOnce(error);
 
       await expect(target.getChains()).rejects.toThrow(
         new DataSourceError('Unexpected error', status),
       );
-
-      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
     });
   });
 

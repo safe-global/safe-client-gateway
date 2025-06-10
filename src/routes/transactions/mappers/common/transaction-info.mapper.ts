@@ -46,6 +46,7 @@ import {
 @Injectable()
 export class MultisigTransactionInfoMapper {
   private readonly isVaultTransactionsMappingEnabled: boolean;
+  private readonly isLifiTransactionsMappingEnabled: boolean;
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
@@ -86,6 +87,8 @@ export class MultisigTransactionInfoMapper {
   ) {
     this.isVaultTransactionsMappingEnabled =
       this.configurationService.getOrThrow('features.vaultTransactionsMapping');
+    this.isLifiTransactionsMappingEnabled =
+      this.configurationService.getOrThrow('features.lifiTransactionsMapping');
   }
 
   async mapTransactionInfo(
@@ -107,22 +110,23 @@ export class MultisigTransactionInfoMapper {
         chainId,
       );
 
-    const swap = await this.mapSwap({
-      chainId,
-      transaction,
-    });
-    if (swap) {
-      return swap;
-    }
+    if (this.isLifiTransactionsMappingEnabled) {
+      const swap = await this.mapSwap({
+        chainId,
+        transaction,
+      });
+      if (swap) {
+        return swap;
+      }
 
-    const swapAndBridge = await this.mapSwapAndBridge({
-      chainId,
-      transaction,
-    });
-    if (swapAndBridge) {
-      return swapAndBridge;
+      const swapAndBridge = await this.mapSwapAndBridge({
+        chainId,
+        transaction,
+      });
+      if (swapAndBridge) {
+        return swapAndBridge;
+      }
     }
-
     const swapOrder: SwapOrderTransactionInfo | null = await this.mapSwapOrder(
       chainId,
       transaction,
