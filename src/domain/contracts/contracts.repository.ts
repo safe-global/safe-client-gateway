@@ -47,7 +47,7 @@ export class ContractsRepository implements IContractsRepository {
   }): Promise<Contract> {
     const api = await this.transactionApiManager.getApi(args.chainId);
     const data = await api.getContract(args.contractAddress);
-    return ContractSchema.parse(data);
+    return ContractSchema.parse(data); //TODO: handle old entity 
   }
 
   async getContracts(args: {
