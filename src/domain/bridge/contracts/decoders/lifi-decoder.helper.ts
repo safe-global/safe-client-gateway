@@ -10,6 +10,7 @@ import {
   parseAbiParameter,
   parseAbiParameters,
   toFunctionSelector,
+  zeroAddress,
 } from 'viem';
 
 // Note: the following is heavily inspired by LiFi's CalldataVerificationFacet.sol
@@ -142,7 +143,7 @@ export class LiFiDecoder {
 
       if (functionName === 'collectNativeFees') {
         return {
-          tokenAddress: '0x0000000000000000000000000000000000000000',
+          tokenAddress: zeroAddress,
           integratorFee: args[0],
           lifiFee: args[1],
           integratorAddress: args[2],
@@ -158,8 +159,9 @@ export class LiFiDecoder {
         };
       }
     } catch {
-      // TODO: Do we need to handle this?
+      // Fee collection may not be present
     }
+
     return null;
   }
 
@@ -200,16 +202,17 @@ export class LiFiDecoder {
 
     if (bridgeData.hasSourceSwaps) {
       const allSwapData = this.decodeBridgeSwapData(data);
-      const [singleSwap] = allSwapData.filter(
+      const singleSwap = allSwapData.find(
         (swapData) => !this.isFeeCollection(swapData.callData),
       );
-      const [feeCollection] = allSwapData.filter((swapData) =>
+      const feeCollection = allSwapData.find((swapData) =>
         this.isFeeCollection(swapData.callData),
       );
 
       fees = feeCollection
         ? this.decodeFeeCollection(feeCollection.callData)
         : null;
+
       if (!singleSwap) {
         fromToken = bridgeData.sendingAssetId;
         fromAmount = bridgeData.minAmount;
