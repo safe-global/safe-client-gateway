@@ -167,6 +167,72 @@ describe('NetworkModule', () => {
       });
     });
 
+    it('throws NetworkRequestError when fetch fails', async () => {
+      const error = new Error('Fetch failed');
+      fetchMock.mockRejectedValue(error);
+
+      const url = faker.internet.url({ appendSlash: false });
+
+      await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
+        new NetworkRequestError(new URL(url), error),
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws NetworkRequestError when fetching POST fails', async () => {
+      const error = new Error('Fetch failed');
+      fetchMock.mockRejectedValue(error);
+
+      const url = faker.internet.url({ appendSlash: false });
+
+      await expect(fetchClient(url, { method: 'GET' })).rejects.toThrow(
+        new NetworkRequestError(new URL(url), error),
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws NetworkResponseError when response is not OK', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: false,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+
+      await expect(
+        fetchClient(url, {
+          method: 'POST',
+          body: JSON.stringify({ example: faker.lorem.word() }),
+        }),
+      ).rejects.toThrow(new NetworkResponseError(new URL(url), response, json));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws NetworkResponseError when a POST request response is not OK', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: false,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+
+      await expect(
+        fetchClient(url, {
+          method: 'POST',
+          body: JSON.stringify({ example: faker.lorem.word() }),
+        }),
+      ).rejects.toThrow(new NetworkResponseError(new URL(url), response, json));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     it.each(['POST', 'DELETE'])(
       'caches %s requests based on URL and options',
       async (method) => {

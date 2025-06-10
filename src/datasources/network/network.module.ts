@@ -108,7 +108,7 @@ function createCachedRequestFunction(
             url,
             key,
           });
-          return err;
+          throw err;
         })
         .finally(() => {
           delete cache[key];
