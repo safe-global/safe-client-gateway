@@ -5,6 +5,7 @@ import { ContractsService } from '@/routes/contracts/contracts.service';
 import { Contract as ApiContract } from '@/routes/contracts/entities/contract.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 @ApiTags('contracts')
 @Controller({
@@ -17,7 +18,7 @@ export class ContractsController {
   @ApiOkResponse({ type: ApiContract })
   @Get('chains/:chainId/contracts/:contractAddress')
   async getContract(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('contractAddress', new ValidationPipe(AddressSchema))
     contractAddress: `0x${string}`,
   ): Promise<Contract> {
