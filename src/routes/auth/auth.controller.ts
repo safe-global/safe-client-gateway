@@ -1,8 +1,14 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { AuthPayload, AuthPayloadWithAdminFlag } from '@/domain/auth/entities/auth-payload.entity';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
 import { AuthService } from '@/routes/auth/auth.service';
 import { AuthNonce } from '@/routes/auth/entities/auth-nonce.entity';
+import {
+  CheckTokenDto,
+  CheckTokenDtoSchema,
+} from '@/routes/auth/entities/check-token.dto.entity';
 import { SiweDto, SiweDtoSchema } from '@/routes/auth/entities/siwe.dto.entity';
+import { MembersService } from '@/routes/spaces/members.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   Body,
@@ -10,6 +16,7 @@ import {
   Get,
   HttpCode,
   Inject,
+  Logger,
   Post,
   Res,
 } from '@nestjs/common';
@@ -32,21 +39,53 @@ export class AuthController {
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_LAX = 'lax';
   static readonly ACCESS_TOKEN_COOKIE_SAME_SITE_NONE = 'none';
   private readonly isProduction: boolean;
+  private logger;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly authService: AuthService,
+    private readonly memberService: MembersService,
   ) {
     this.isProduction = this.configurationService.getOrThrow<boolean>(
       'application.isProduction',
     );
+
+    this.logger = new Logger(AuthController.name);
   }
 
   @ApiOkResponse({ type: AuthNonce })
   @Get('nonce')
   async getNonce(): Promise<AuthNonce> {
     return this.authService.getNonce();
+  }
+
+  @HttpCode(200)
+  @Post('check-token')
+  async checkToken(
+    @Body(new ValidationPipe(CheckTokenDtoSchema)) body: CheckTokenDto,
+  ): Promise<AuthPayloadWithAdminFlag> {
+    const accessToken: string = body.accessToken;
+
+    const result = this.authService.getTokenPayloadWithClaims(accessToken);
+    const authPayload: AuthPayload = new AuthPayload({
+      chain_id: result.chain_id,
+      signer_address: result.signer_address,
+    });
+
+    const isAdmin = await this.memberService.isAdmin({
+      authPayload, 
+      spaceId: parseInt(body.spaceId)
+    });
+
+    this.logger.log(
+      `Token for chain ${authPayload.chain_id} and signer ${authPayload.signer_address} and spaceId ${body.spaceId}`,)
+    
+    return {
+      chain_id: authPayload.chain_id as string,
+      signer_address: authPayload.signer_address as `0x${string}`,
+      isAdmin,
+    };;
   }
 
   @HttpCode(200)

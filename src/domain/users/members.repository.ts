@@ -266,6 +266,27 @@ export class MembersRepository implements IMembersRepository {
     return space.members;
   }
 
+  // POC: Check if the user is an admin of the space
+  public async isAdmin(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<boolean> {
+    try {
+      this.assertSignerAddress(args.authPayload);
+
+      const user = await this.usersRepository.findByWalletAddressOrFail(
+        args.authPayload.signer_address,
+      );
+
+      const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
+
+      this.assertIsActiveAdmin({ members: activeAdmins, userId: user.id });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private findActiveAdminsOrFail(spaceId: Space['id']): Promise<Array<Member>> {
     return this.findOrFail({
       where: { space: { id: spaceId }, role: 'ADMIN', status: 'ACTIVE' },

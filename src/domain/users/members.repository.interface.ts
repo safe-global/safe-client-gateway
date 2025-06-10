@@ -72,4 +72,9 @@ export interface IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<void>;
+
+  isAdmin(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<boolean>;
 }

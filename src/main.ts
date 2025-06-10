@@ -4,6 +4,9 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 
 async function bootstrap(): Promise<void> {
   const app = await new DefaultAppProvider().provide(AppModule.register());
+  app.enableCors({
+    origin: '*',
+  });
 
   const configurationService: IConfigurationService =
     app.get<IConfigurationService>(IConfigurationService);

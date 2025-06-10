@@ -17,6 +17,8 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { MembersService } from '@/routes/spaces/members.service';
@@ -31,12 +33,13 @@ import { UpdateRoleDtoSchema } from '@/routes/spaces/entities/update-role.dto.en
 import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { MembersDto } from '@/routes/spaces/entities/members.dto.entity';
 import { Invitation } from '@/routes/spaces/entities/invitation.entity';
-import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
+import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { UpdateRoleDto } from '@/routes/spaces/entities/update-role.dto.entity';
 import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
 } from '@/routes/spaces/entities/accept-invite.dto.entity';
+import { AuthService } from '@/routes/auth/auth.service';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -44,6 +47,8 @@ export class MembersController {
   constructor(
     @Inject(MembersService)
     private readonly membersService: MembersService,
+    @Inject(AuthService)
+    private readonly authService: AuthService,
   ) {}
 
   @ApiOkResponse({
@@ -133,6 +138,39 @@ export class MembersController {
       authPayload,
       spaceId,
     });
+  }
+
+  @ApiOkResponse({
+    description: 'Check if signer is admin',
+  })
+  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiNotFoundResponse({
+    description: 'Signer or space not found',
+  })
+  @Get('/:spaceId/is-admin')
+  public async isAdmin(
+    @Query('access_token') accessToken: string,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+  ): Promise<void> {
+    try {
+      const decodedToken =
+        this.authService.getTokenPayloadWithClaims(accessToken);
+      const authPayload: AuthPayload = new AuthPayload({
+        chain_id: decodedToken.chain_id,
+        signer_address: decodedToken.signer_address,
+      });
+      const result = await this.membersService.isAdmin({
+        authPayload,
+        spaceId,
+      });
+
+      if (!result) {
+        throw new UnauthorizedException('Signer is not an active admin.');
+      }
+    } catch {
+      throw new UnauthorizedException('Signer is not an active admin.');
+    }
   }
 
   @ApiOkResponse({ description: 'Role updated' })

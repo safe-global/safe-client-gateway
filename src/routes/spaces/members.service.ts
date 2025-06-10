@@ -107,4 +107,14 @@ export class MembersService {
       spaceId: args.spaceId,
     });
   }
+
+  public async isAdmin(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<boolean> {
+    return await this.membersRepository.isAdmin({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
+  }
 }

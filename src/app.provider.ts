@@ -118,6 +118,7 @@ export class DefaultAppProvider<
     DEFAULT_CONFIGURATION;
 
   protected getApp(module: T): Promise<INestApplication> {
-    return NestFactory.create(module);
+    return NestFactory.create(module, { cors: true }
+    );
   }
 }

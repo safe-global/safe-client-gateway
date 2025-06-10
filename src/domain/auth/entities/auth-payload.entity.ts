@@ -9,6 +9,11 @@ export const AuthPayloadDtoSchema = z.object({
   signer_address: AddressSchema,
 });
 
+export type AuthPayloadWithAdminFlag = z.infer<typeof AuthPayloadWithAdminFlagSchema>;
+export const AuthPayloadWithAdminFlagSchema = AuthPayloadDtoSchema.extend({
+  isAdmin: z.boolean(),
+});
+
 // This is Partial in order to allow `AuthPayload` instances to always be returned by
 // the `Auth` decorator, should there not be a payload
 export class AuthPayload implements Partial<AuthPayloadDto> {

@@ -3,10 +3,13 @@ import { MembersRepositoryModule } from '@/domain/users/members.repository.modul
 import { MembersController } from '@/routes/spaces/members.controller';
 import { MembersService } from '@/routes/spaces/members.service';
 import { AuthRepositoryModule } from '@/domain/auth/auth.repository.interface';
+import { AuthService } from '@/routes/auth/auth.service';
+import { SiweRepositoryModule } from '@/domain/siwe/siwe.repository.interface';
 
 @Module({
-  imports: [MembersRepositoryModule, AuthRepositoryModule],
+  imports: [MembersRepositoryModule, AuthRepositoryModule, SiweRepositoryModule],
   controllers: [MembersController],
-  providers: [MembersService],
+  providers: [MembersService, AuthService],
+  exports: [MembersService],
 })
 export class MembersModule {}

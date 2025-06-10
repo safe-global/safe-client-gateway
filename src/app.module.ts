@@ -59,6 +59,7 @@ import {
 import { UsersModule } from '@/routes/users/users.module';
 import { SpacesModule } from '@/routes/spaces/spaces.module';
 import { MembersModule } from '@/routes/spaces/members.module';
+import { ProModule } from '@/routes/pro/pro.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -153,6 +154,7 @@ export class AppModule implements NestModule {
           },
           inject: [ConfigService, LoggingService],
         }),
+        ProModule
       ],
       providers: [
         {
