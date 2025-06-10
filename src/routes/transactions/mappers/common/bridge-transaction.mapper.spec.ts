@@ -132,13 +132,24 @@ describe('BridgeTransactionMapper (Unit)', () => {
         safeAddress,
       });
 
-      expect(result).toBeDefined();
-      expect(result?.fromToken).toEqual(new TokenInfo(tokenInfo));
-      expect(result?.recipient).toEqual(addressInfo);
-      expect(result?.fromAmount).toBe(decoded.fromAmount.toString());
-      expect(result?.toChain).toBe(decoded.toChain.toString());
-      expect(result?.status).toBe('AWAITING_EXECUTION');
-      expect(result?.substatus).toBe('AWAITING_EXECUTION');
+      expect(result).toEqual({
+        fees: {
+          integratorFee: decoded.fees.integratorFee.toString(),
+          lifiFee: decoded.fees.lifiFee.toString(),
+          tokenAddress: decoded.fees.tokenAddress,
+        },
+        fromToken: new TokenInfo(tokenInfo),
+        humanDescription: null,
+        recipient: addressInfo,
+        fromAmount: decoded.fromAmount.toString(),
+        toChain: decoded.toChain.toString(),
+        status: 'AWAITING_EXECUTION',
+        substatus: 'AWAITING_EXECUTION',
+        toAmount: null,
+        toToken: null,
+        explorerUrl: null,
+        type: 'SwapAndBridge',
+      });
     });
 
     it('should map a historical bridge transaction with DONE status', async () => {
@@ -239,16 +250,31 @@ describe('BridgeTransactionMapper (Unit)', () => {
         safeAddress,
       });
 
-      expect(result).toBeDefined();
-      expect(result?.fromToken).toEqual(new TokenInfo(tokenInfo));
-      expect(result?.recipient).toEqual(addressInfo);
-      expect(result?.fromAmount).toBe(decoded.fromAmount.toString());
-      expect(result?.toChain).toBe(decoded.toChain.toString());
-      expect(result?.status).toBe('DONE');
-      expect(result?.substatus).toBe('COMPLETED');
-      expect(result?.toAmount).toBe(bridgeStatus.receiving.amount);
-      expect(result?.toToken).toBeDefined();
-      expect(result?.explorerUrl).toBe(bridgeStatus.lifiExplorerLink);
+      expect(result).toEqual({
+        fromToken: new TokenInfo(tokenInfo),
+        recipient: addressInfo,
+        fromAmount: decoded.fromAmount.toString(),
+        toChain: decoded.toChain.toString(),
+        status: 'DONE',
+        substatus: 'COMPLETED',
+        toAmount: bridgeStatus.receiving.amount,
+        toToken: {
+          address: decoded.toToken,
+          decimals: 18,
+          symbol: 'RECV',
+          name: 'Received Token',
+          logoUri: bridgeStatus.receiving.token?.logoURI,
+          trusted: true,
+        },
+        explorerUrl: bridgeStatus.lifiExplorerLink,
+        fees: {
+          integratorFee: decoded.fees.integratorFee.toString(),
+          lifiFee: decoded.fees.lifiFee.toString(),
+          tokenAddress: decoded.fees.tokenAddress,
+        },
+        humanDescription: null,
+        type: 'SwapAndBridge',
+      });
     });
 
     it('should map a historical bridge transaction with FAILED status', async () => {
@@ -314,16 +340,24 @@ describe('BridgeTransactionMapper (Unit)', () => {
         safeAddress,
       });
 
-      expect(result).toBeDefined();
-      expect(result?.fromToken).toEqual(new TokenInfo(tokenInfo));
-      expect(result?.recipient).toEqual(addressInfo);
-      expect(result?.fromAmount).toBe(decoded.fromAmount.toString());
-      expect(result?.toChain).toBe(decoded.toChain.toString());
-      expect(result?.status).toBe('FAILED');
-      expect(result?.substatus).toBe('UNKNOWN_FAILED_ERROR');
-      expect(result?.toAmount).toBeUndefined();
-      expect(result?.toToken).toBeUndefined();
-      expect(result?.explorerUrl).toBeNull();
+      expect(result).toEqual({
+        fromToken: new TokenInfo(tokenInfo),
+        recipient: addressInfo,
+        fromAmount: decoded.fromAmount.toString(),
+        toChain: decoded.toChain.toString(),
+        status: 'FAILED',
+        substatus: 'UNKNOWN_FAILED_ERROR',
+        toAmount: null,
+        toToken: null,
+        explorerUrl: null,
+        fees: {
+          integratorFee: decoded.fees.integratorFee.toString(),
+          lifiFee: decoded.fees.lifiFee.toString(),
+          tokenAddress: decoded.fees.tokenAddress,
+        },
+        humanDescription: null,
+        type: 'SwapAndBridge',
+      });
     });
 
     it('should map a historical bridge transaction with PENDING status', async () => {
@@ -375,17 +409,20 @@ describe('BridgeTransactionMapper (Unit)', () => {
         safeAddress,
       });
 
-      expect(result).toBeDefined();
-      expect(result?.fromToken).toEqual(new TokenInfo(tokenInfo));
-      expect(result?.recipient).toEqual(addressInfo);
-      expect(result?.fromAmount).toBe(decoded.fromAmount.toString());
-      expect(result?.toChain).toBe(decoded.toChain.toString());
-      expect(result?.status).toBe('PENDING');
-      expect(result?.substatus).toBe('WAIT_SOURCE_CONFIRMATIONS');
-      expect(result?.toAmount).toBeUndefined();
-      expect(result?.toToken).toBeUndefined();
-      expect(result?.explorerUrl).toBeNull();
-      expect(result?.fees).toBeNull();
+      expect(result).toEqual({
+        fromToken: new TokenInfo(tokenInfo),
+        recipient: addressInfo,
+        fromAmount: decoded.fromAmount.toString(),
+        toChain: decoded.toChain.toString(),
+        status: 'PENDING',
+        substatus: 'WAIT_SOURCE_CONFIRMATIONS',
+        toAmount: null,
+        toToken: null,
+        explorerUrl: null,
+        fees: null,
+        humanDescription: null,
+        type: 'SwapAndBridge',
+      });
     });
   });
 });
