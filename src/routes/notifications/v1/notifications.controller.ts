@@ -8,7 +8,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -36,6 +36,7 @@ export class NotificationsController {
   ) {}
 
   @ApiOkResponse()
+  @ApiOperation({ deprecated: true })
   @Post('register/notifications')
   @HttpCode(200)
   async registerDevice(
@@ -188,6 +189,7 @@ export class NotificationsController {
     }
   }
 
+  @ApiOperation({ deprecated: true })
   @Delete('chains/:chainId/notifications/devices/:uuid')
   async unregisterDevice(
     @Param('chainId') _: string, // We need to keep this parameter for the swagger documentation
@@ -196,6 +198,7 @@ export class NotificationsController {
     await this.notificationServiceV2.deleteDevice(uuid);
   }
 
+  @ApiOperation({ deprecated: true })
   @Delete('chains/:chainId/notifications/devices/:uuid/safes/:safeAddress')
   async unregisterSafe(
     @Param('chainId') chainId: string,
