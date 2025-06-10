@@ -65,11 +65,11 @@ export class BridgeAndSwapTransactionInfo extends TransactionInfo {
   @ApiProperty()
   toChain: string;
 
-  @ApiPropertyOptional()
-  toToken?: TokenInfo;
+  @ApiProperty({ nullable: true })
+  toToken: TokenInfo | null;
 
-  @ApiPropertyOptional()
-  toAmount?: string;
+  @ApiProperty({ nullable: true })
+  toAmount: string | null;
 
   constructor(args: {
     fromToken: TokenInfo;
@@ -84,8 +84,8 @@ export class BridgeAndSwapTransactionInfo extends TransactionInfo {
       lifiFee: string;
     } | null;
     toChain: string;
-    toToken?: TokenInfo;
-    toAmount?: string;
+    toToken: TokenInfo | null;
+    toAmount: string | null;
   }) {
     super(TransactionInfoType.SwapAndBridge, null);
 
