@@ -336,6 +336,33 @@ export class MembersRepository implements IMembersRepository {
     }
   }
 
+  public async removeSelf(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<void> {
+    this.assertSignerAddress(args.authPayload);
+
+    const user = await this.usersRepository.findByWalletAddressOrFail(
+      args.authPayload.signer_address,
+    );
+
+    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
+
+    this.assertIsNotLastAdmin({ members: activeAdmins, userId: user.id });
+
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+
+    const deleteResult = await membersRepository.delete({
+      user: { id: user.id },
+      space: { id: args.spaceId },
+    });
+
+    if (deleteResult.affected === 0) {
+      throw new NotFoundException('Member not found.');
+    }
+  }
+
   private assertSignerAddress(
     authPayload: AuthPayload,
   ): asserts authPayload is AuthPayload & { signer_address: `0x${string}` } {

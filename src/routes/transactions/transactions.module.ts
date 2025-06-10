@@ -1,6 +1,7 @@
 import { ChainsRepositoryModule } from '@/domain/chains/chains.repository.interface';
 import { ContractsRepositoryModule } from '@/domain/contracts/contracts.repository.interface';
 import { DataDecoderRepositoryModule } from '@/domain/data-decoder/v2/data-decoder.repository.module';
+import { EarnRepositoryModule } from '@/domain/earn/earn.repository.module';
 import { HumanDescriptionRepositoryModule } from '@/domain/human-description/human-description.repository.interface';
 import { SafeAppsRepositoryModule } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { SafeRepositoryModule } from '@/domain/safe/safe.repository.interface';
@@ -66,6 +67,7 @@ import { BridgeRepositoryModule } from '@/domain/bridge/bridge.repository.module
     ContractsRepositoryModule,
     DataDecoderRepositoryModule,
     DelegatesV2RepositoryModule,
+    EarnRepositoryModule,
     GPv2DecoderModule,
     HumanDescriptionRepositoryModule,
     KilnNativeStakingHelperModule,

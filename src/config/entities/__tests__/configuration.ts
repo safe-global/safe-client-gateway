@@ -143,6 +143,16 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  earn: {
+    testnet: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+    },
+    mainnet: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+    },
+  },
   email: {
     applicationCode: faker.string.alphanumeric(),
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -151,6 +161,7 @@ export default (): ReturnType<typeof configuration> => ({
     fromName: faker.person.fullName(),
   },
   expirationTimeInSeconds: {
+    deviatePercent: faker.number.int({ min: 10, max: 20 }),
     default: faker.number.int(),
     rpc: faker.number.int(),
     hoodi: faker.number.int(),

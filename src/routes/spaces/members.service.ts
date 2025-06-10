@@ -97,4 +97,14 @@ export class MembersService {
       spaceId: args.spaceId,
     });
   }
+
+  public async selfRemove(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<void> {
+    return await this.membersRepository.removeSelf({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
+  }
 }

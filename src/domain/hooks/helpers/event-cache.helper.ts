@@ -24,6 +24,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import memoize from 'lodash/memoize';
 import type { MemoizedFunction } from 'lodash';
+import { EarnRepository } from '@/domain/earn/earn.repository';
 
 @Injectable()
 export class EventCacheHelper {
@@ -52,6 +53,8 @@ export class EventCacheHelper {
     private readonly safeRepository: ISafeRepository,
     @Inject(IStakingRepository)
     private readonly stakingRepository: IStakingRepository,
+    @Inject(EarnRepository)
+    private readonly earnRepository: EarnRepository,
     @Inject(ITransactionsRepository)
     private readonly transactionsRepository: ITransactionsRepository,
     @Inject(LoggingService)
@@ -256,6 +259,10 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
+      this.earnRepository.clearStakes({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
       this.safeRepository.clearModuleTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -307,6 +314,10 @@ export class EventCacheHelper {
         address: event.address,
       }),
       this.stakingRepository.clearStakes({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
+      this.earnRepository.clearStakes({
         chainId: event.chainId,
         safeAddress: event.address,
       }),
@@ -511,6 +522,7 @@ export class EventCacheHelper {
         this.blockchainRepository.clearApi(event.chainId);
         // Testnet status may have changed
         this.stakingRepository.clearApi(event.chainId);
+        this.earnRepository.clearApi(event.chainId);
         // Transaction Service may have changed
         this.transactionsRepository.clearApi(event.chainId);
         this.balancesRepository.clearApi(event.chainId);

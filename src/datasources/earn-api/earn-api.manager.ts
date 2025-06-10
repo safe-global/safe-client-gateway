@@ -12,8 +12,12 @@ import { IStakingApi } from '@/domain/interfaces/staking-api.interface';
 import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
+// Note: This mirrors that of StakingApiManager but as each widget deployment
+// is its own Kiln "organization", deployments have different base URLs when
+// compared to the staking API.
+
 @Injectable()
-export class StakingApiManager implements IStakingApiManager {
+export class EarnApiManager implements IStakingApiManager {
   private readonly apis: Record<string, IStakingApi> = {};
 
   constructor(
@@ -37,11 +41,12 @@ export class StakingApiManager implements IStakingApiManager {
 
     const env = chain.isTestnet ? 'testnet' : 'mainnet';
 
+    // Note: only difference to StakingApiManager logic
     const baseUrl = this.configurationService.getOrThrow<string>(
-      `staking.${env}.baseUri`,
+      `earn.${env}.baseUri`,
     );
     const apiKey = this.configurationService.getOrThrow<string>(
-      `staking.${env}.apiKey`,
+      `earn.${env}.apiKey`,
     );
 
     this.apis[chainId] = new KilnApi(
@@ -52,7 +57,7 @@ export class StakingApiManager implements IStakingApiManager {
       this.configurationService,
       this.cacheService,
       chain.chainId,
-      'staking',
+      'earn',
     );
 
     return Promise.resolve(this.apis[chainId]);
