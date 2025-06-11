@@ -8,6 +8,9 @@ import { IBridgeRepository } from '@/domain/bridge/bridge.repository.interface';
 import { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity';
 import { Address } from 'viem';
 import { BridgeAndSwapTransactionInfo } from '@/routes/transactions/entities/bridge/bridge-info.entity';
+import { Token } from '@/domain/tokens/entities/token.entity';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 
 @Injectable()
 export class BridgeTransactionMapper {
@@ -18,6 +21,8 @@ export class BridgeTransactionMapper {
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(IBridgeRepository)
     private readonly bridgeRepository: IBridgeRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {}
 
   // TODO:
@@ -37,8 +42,8 @@ export class BridgeTransactionMapper {
     const decoded = this.liFiDecoder.decodeBridgeAndMaybeSwap(args.data);
 
     const [fromToken, recipient, info] = await Promise.all([
-      this.tokenRepository.getToken({
-        address: decoded.fromToken,
+      this._getTokenInfo({
+        tokenAddress: decoded.fromToken,
         chainId: args.chainId,
       }),
       this.addressInfoHelper.getOrDefault(args.chainId, decoded.toAddress, [
@@ -60,6 +65,32 @@ export class BridgeTransactionMapper {
       toChain: decoded.toChain.toString(),
       ...info,
     });
+  }
+
+  private async _getTokenInfo(args: {
+    tokenAddress: `0x${string}`;
+    chainId: string;
+  }): Promise<Token> {
+    const isNativeCoin = args.tokenAddress === NULL_ADDRESS;
+    if (isNativeCoin) {
+      const { nativeCurrency } = await this.chainsRepository.getChain(
+        args.chainId,
+      );
+      return {
+        type: 'NATIVE_TOKEN' as const,
+        address: NULL_ADDRESS as `0x${string}`,
+        decimals: nativeCurrency.decimals,
+        logoUri: nativeCurrency.logoUri,
+        name: nativeCurrency.name,
+        symbol: nativeCurrency.symbol,
+        trusted: true,
+      };
+    } else {
+      return this.tokenRepository.getToken({
+        chainId: args.chainId,
+        address: args.tokenAddress,
+      });
+    }
   }
 
   private async getSwapAndBridgeInfo(args: {
