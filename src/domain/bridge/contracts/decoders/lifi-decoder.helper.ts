@@ -16,6 +16,13 @@ import {
 // Note: the following is heavily inspired by LiFi's CalldataVerificationFacet.sol
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Facets/CalldataVerificationFacet.sol
 
+type FeeData = {
+  tokenAddress: Address;
+  integratorFee: bigint;
+  lifiFee: bigint;
+  integratorAddress: Address;
+};
+
 @Injectable()
 export class LiFiDecoder {
   // ILiFi.BridgeData
@@ -187,12 +194,7 @@ export class LiFiDecoder {
     fromAmount: bigint;
     bridge: string;
     toChain: bigint;
-    fees: {
-      tokenAddress: Address;
-      integratorFee: bigint;
-      lifiFee: bigint;
-      integratorAddress: Address;
-    } | null;
+    fees: FeeData | null;
   } {
     const bridgeData = this.decodeBridgeData(data);
 
@@ -291,6 +293,7 @@ export class LiFiDecoder {
     toToken: Address;
     fromAmount: bigint;
     toAmount: bigint;
+    fees: FeeData | null;
   } {
     if (!this.isGenericSwapCalldata(data)) {
       throw new Error('Insufficient calldata for a generic swap call');
@@ -325,6 +328,14 @@ export class LiFiDecoder {
     const [firstSwap] = swapDataArr;
     const lastSwap = swapDataArr[swapDataArr.length - 1];
 
+    const feeData = swapDataArr.find((swapData) =>
+      this.isFeeCollection(swapData.callData),
+    );
+
+    const fees = feeData?.callData
+      ? this.decodeFeeCollection(feeData.callData)
+      : null;
+
     return {
       transactionId,
       toAddress,
@@ -332,6 +343,7 @@ export class LiFiDecoder {
       toToken: lastSwap.receivingAssetId,
       fromAmount: firstSwap.fromAmount,
       toAmount,
+      fees,
     };
   }
 

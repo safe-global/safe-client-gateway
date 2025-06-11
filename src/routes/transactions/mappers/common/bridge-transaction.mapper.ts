@@ -11,6 +11,7 @@ import { BridgeAndSwapTransactionInfo } from '@/routes/transactions/entities/bri
 import { Token } from '@/domain/tokens/entities/token.entity';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { IChainsRepository } from '@/domain/chains/chains.repository.interface';
+import { BridgeFee } from '@/routes/transactions/entities/bridge/fees.entity';
 
 @Injectable()
 export class BridgeTransactionMapper {
@@ -25,12 +26,40 @@ export class BridgeTransactionMapper {
     private readonly chainsRepository: IChainsRepository,
   ) {}
 
-  // TODO:
-  public mapSwap(data: `0x${string}`): SwapTransactionInfo {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const decoded = this.liFiDecoder.decodeSwap(data);
+  public async mapSwap(args: {
+    data: `0x${string}`;
+    chainId: string;
+  }): Promise<SwapTransactionInfo> {
+    const decoded = this.liFiDecoder.decodeSwap(args.data);
 
-    return new SwapTransactionInfo();
+    const [recipient, fromToken, toToken] = await Promise.all([
+      this.addressInfoHelper.getOrDefault(args.chainId, decoded.toAddress, [
+        'CONTRACT',
+      ]),
+      this._getTokenInfo({
+        tokenAddress: decoded.fromToken,
+        chainId: args.chainId,
+      }),
+      this._getTokenInfo({
+        tokenAddress: decoded.toToken,
+        chainId: args.chainId,
+      }),
+    ]);
+
+    return new SwapTransactionInfo({
+      recipient,
+      fees: decoded.fees
+        ? new BridgeFee({
+            tokenAddress: decoded.fees.tokenAddress,
+            integratorFee: decoded.fees.integratorFee.toString(),
+            lifiFee: decoded.fees.lifiFee.toString(),
+          })
+        : null,
+      fromToken,
+      fromAmount: decoded.fromAmount.toString(),
+      toToken,
+      toAmount: decoded.toAmount.toString(),
+    });
   }
 
   public async mapSwapAndBridge(args: {

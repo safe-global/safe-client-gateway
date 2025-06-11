@@ -7,6 +7,7 @@ import type { BridgeStatus } from '@/domain/bridge/entities/bridge-status.entity
 import { BridgeTransactionMapper } from './bridge-transaction.mapper';
 import { SwapTransactionInfo } from '@/routes/transactions/entities/bridge/bridge-info.entity';
 import { TokenInfo } from '@/routes/transactions/entities/swaps/token-info.entity';
+import type { IChainsRepository } from '@/domain/chains/chains.repository.interface';
 
 describe('BridgeTransactionMapper (Unit)', () => {
   let mapper: BridgeTransactionMapper;
@@ -14,6 +15,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
   let tokenRepository: jest.Mocked<ITokenRepository>;
   let addressInfoHelper: jest.Mocked<AddressInfoHelper>;
   let bridgeRepository: jest.Mocked<IBridgeRepository>;
+  let chainsRepository: jest.Mocked<IChainsRepository>;
 
   beforeEach(() => {
     liFiDecoder = {
@@ -42,11 +44,16 @@ describe('BridgeTransactionMapper (Unit)', () => {
       getRoutes: jest.fn(),
     } as unknown as jest.Mocked<IBridgeRepository>;
 
+    chainsRepository = {
+      getChain: jest.fn(),
+    } as unknown as jest.Mocked<IChainsRepository>;
+
     mapper = new BridgeTransactionMapper(
       liFiDecoder,
       tokenRepository,
       addressInfoHelper,
       bridgeRepository,
+      chainsRepository,
     );
   });
 
@@ -62,10 +69,16 @@ describe('BridgeTransactionMapper (Unit)', () => {
         toToken: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
         fromAmount: BigInt(1000000),
         toAmount: BigInt(1000000),
+        fees: {
+          tokenAddress: faker.finance.ethereumAddress() as `0x${string}`,
+          integratorFee: BigInt(100),
+          lifiFee: BigInt(200),
+          integratorAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        },
       };
       liFiDecoder.decodeSwap.mockReturnValue(decoded);
 
-      const result = mapper.mapSwap(data);
+      const result = mapper.mapSwap({ data, chainId: faker.string.numeric() });
 
       expect(result).toBeInstanceOf(SwapTransactionInfo);
       expect(liFiDecoder.decodeSwap).toHaveBeenCalledWith(data);

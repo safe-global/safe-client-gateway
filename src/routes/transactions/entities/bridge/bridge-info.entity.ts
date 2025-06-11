@@ -18,13 +18,45 @@ import {
   ApiPropertyOptional,
 } from '@nestjs/swagger';
 
-// TODO: Create common interface and align properties with existing decoding, e.g. buyToken, sellToken
+@ApiExtraModels(BridgeFee)
 export class SwapTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.Swap] })
   override type = TransactionInfoType.Swap;
 
-  constructor() {
+  @ApiProperty()
+  recipient: AddressInfo;
+
+  @ApiProperty({ type: BridgeFee, nullable: true })
+  fees: BridgeFee | null;
+
+  @ApiProperty()
+  fromToken: TokenInfo;
+
+  @ApiProperty()
+  fromAmount: string;
+
+  @ApiProperty()
+  toToken: TokenInfo;
+
+  @ApiProperty()
+  toAmount: string;
+
+  constructor(args: {
+    recipient: AddressInfo;
+    fees: BridgeFee | null;
+    fromToken: TokenInfo;
+    fromAmount: string;
+    toToken: TokenInfo;
+    toAmount: string;
+  }) {
     super(TransactionInfoType.Swap, null);
+
+    this.recipient = args.recipient;
+    this.fees = args.fees;
+    this.fromToken = args.fromToken;
+    this.fromAmount = args.fromAmount;
+    this.toToken = args.toToken;
+    this.toAmount = args.toAmount;
   }
 }
 
