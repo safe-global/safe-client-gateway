@@ -12,11 +12,7 @@ import {
   TransactionInfo,
   TransactionInfoType,
 } from '@/routes/transactions/entities/transaction-info.entity';
-import {
-  ApiExtraModels,
-  ApiProperty,
-  ApiPropertyOptional,
-} from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
 
 @ApiExtraModels(BridgeFee)
 export class SwapTransactionInfo extends TransactionInfo {
@@ -60,7 +56,7 @@ export class SwapTransactionInfo extends TransactionInfo {
   }
 }
 
-@ApiExtraModels(BridgeFee)
+@ApiExtraModels(BridgeFee, TokenInfo, AddressInfo)
 export class BridgeAndSwapTransactionInfo extends TransactionInfo {
   @ApiProperty({ enum: [TransactionInfoType.SwapAndBridge] })
   override type = TransactionInfoType.SwapAndBridge;
@@ -71,7 +67,7 @@ export class BridgeAndSwapTransactionInfo extends TransactionInfo {
   @ApiProperty()
   recipient: AddressInfo;
 
-  @ApiPropertyOptional()
+  @ApiProperty({ type: String, nullable: true })
   explorerUrl: string | null;
 
   @ApiProperty({ enum: [...StatusMessages, 'UNKNOWN', 'AWAITING_EXECUTION'] })
@@ -97,10 +93,10 @@ export class BridgeAndSwapTransactionInfo extends TransactionInfo {
   @ApiProperty()
   toChain: string;
 
-  @ApiProperty({ nullable: true })
+  @ApiProperty({ type: TokenInfo, nullable: true })
   toToken: TokenInfo | null;
 
-  @ApiProperty({ nullable: true })
+  @ApiProperty({ type: String, nullable: true })
   toAmount: string | null;
 
   constructor(args: {
