@@ -6,7 +6,7 @@ import { AuthNonce } from '@/routes/auth/entities/auth-nonce.entity';
 import {
   CheckTokenDto,
   CheckTokenDtoSchema,
-} from '@/routes/auth/entities/check-token.dto.entity';
+} from '@/routes/auth/entities/decode-token.dto.entity';
 import { SiweDto, SiweDtoSchema } from '@/routes/auth/entities/siwe.dto.entity';
 import { MembersService } from '@/routes/spaces/members.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -61,7 +61,7 @@ export class AuthController {
   }
 
   @HttpCode(200)
-  @Post('check-token')
+  @Post('decode-token')
   async checkToken(
     @Body(new ValidationPipe(CheckTokenDtoSchema)) body: CheckTokenDto,
   ): Promise<AuthPayloadWithAdminFlag> {
