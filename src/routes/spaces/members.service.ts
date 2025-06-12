@@ -86,6 +86,20 @@ export class MembersService {
     });
   }
 
+  public async updateName(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+    updateNameDto: { name: string };
+  }): Promise<void> {
+    return await this.membersRepository.updateName({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+      userId: args.userId,
+      name: args.updateNameDto.name,
+    });
+  }
+
   public async removeUser(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

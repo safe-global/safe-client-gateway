@@ -62,6 +62,13 @@ export interface IMembersRepository {
     role: Member['role'];
   }): Promise<void>;
 
+  updateName(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+    name: Member['name'];
+  }): Promise<void>;
+
   removeUser(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

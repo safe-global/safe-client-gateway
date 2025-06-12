@@ -305,6 +305,35 @@ export class MembersRepository implements IMembersRepository {
     }
   }
 
+  public async updateName(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+    name: Member['name'];
+  }): Promise<void> {
+    this.assertSignerAddress(args.authPayload);
+
+    const user = await this.usersRepository.findByWalletAddressOrFail(
+      args.authPayload.signer_address,
+    );
+
+    // Only allow users to update their own name
+    if (user.id !== args.userId) {
+      throw new UnauthorizedException("Cannot update another user's name");
+    }
+
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+    const updateResult = await membersRepository.update(
+      { user: { id: args.userId }, space: { id: args.spaceId } },
+      { name: args.name },
+    );
+
+    if (updateResult.affected === 0) {
+      throw new NotFoundException('Member not found.');
+    }
+  }
+
   public async removeUser(args: {
     authPayload: AuthPayload;
     userId: User['id'];

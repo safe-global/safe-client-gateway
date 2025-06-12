@@ -37,6 +37,10 @@ import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
 } from '@/routes/spaces/entities/accept-invite.dto.entity';
+import {
+  UpdateMemberNameDto,
+  UpdateMemberNameDtoSchema,
+} from '@/routes/spaces/entities/update-member-name.dto.entity';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -158,6 +162,36 @@ export class MembersController {
       spaceId,
       userId,
       updateRoleDto,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Update member name',
+    description:
+      'Update the name of a member in a space. Users can only update their own name.',
+  })
+  @ApiOkResponse({ description: 'Name updated' })
+  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiNotFoundResponse({
+    description: 'Signer, space or member not found',
+  })
+  @ApiUnauthorizedResponse({ description: "Cannot update another user's name" })
+  @Patch('/:spaceId/members/:userId/name')
+  @UseGuards(AuthGuard)
+  public async updateName(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    userId: number,
+    @Body(new ValidationPipe(UpdateMemberNameDtoSchema))
+    updateMemberNameDto: UpdateMemberNameDto,
+  ): Promise<void> {
+    return await this.membersService.updateName({
+      authPayload,
+      spaceId,
+      userId,
+      updateNameDto: updateMemberNameDto,
     });
   }
 
