@@ -58,7 +58,7 @@ describe('BridgeTransactionMapper (Unit)', () => {
   });
 
   describe('mapSwap', () => {
-    it('should return a SwapTransactionInfo', () => {
+    it('should return a SwapTransactionInfo', async () => {
       const data = faker.string.hexadecimal({ length: 40 }) as `0x${string}`;
       const decoded = {
         transactionId: faker.string.hexadecimal({
@@ -78,7 +78,10 @@ describe('BridgeTransactionMapper (Unit)', () => {
       };
       liFiDecoder.decodeSwap.mockReturnValue(decoded);
 
-      const result = mapper.mapSwap({ data, chainId: faker.string.numeric() });
+      const result = await mapper.mapSwap({
+        data,
+        chainId: faker.string.numeric(),
+      });
 
       expect(result).toBeInstanceOf(SwapTransactionInfo);
       expect(liFiDecoder.decodeSwap).toHaveBeenCalledWith(data);
