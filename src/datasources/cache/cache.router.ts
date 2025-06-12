@@ -8,6 +8,7 @@ export class CacheRouter {
   private static readonly ALL_TRANSACTIONS_KEY = 'all_transactions';
   private static readonly AUTH_NONCE_KEY = 'auth_nonce';
   private static readonly BACKBONE_KEY = 'backbone';
+  private static readonly BRIDGE_CHAINS_KEY = 'bridge_chains';
   private static readonly CHAIN_KEY = 'chain';
   private static readonly CHAINS_KEY = 'chains';
   private static readonly CONTRACT_KEY = 'contract';
@@ -79,6 +80,10 @@ export class CacheRouter {
 
   static getAuthNonceCacheDir(nonce: string): CacheDir {
     return new CacheDir(CacheRouter.getAuthNonceCacheKey(nonce), '');
+  }
+
+  static getBridgeChainsCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.BRIDGE_CHAINS_KEY, '');
   }
 
   static getBalancesCacheKey(args: {
