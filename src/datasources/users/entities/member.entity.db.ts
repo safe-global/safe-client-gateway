@@ -22,6 +22,7 @@ import {
 @Unique('UQ_members', ['user', 'space'])
 @Index('idx_members_name', ['name'])
 @Index('idx_members_role_status', ['role', 'status'])
+@Index('idx_members_alias', ['alias'])
 export class Member implements DomainMember {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_members_id',
@@ -50,6 +51,9 @@ export class Member implements DomainMember {
 
   @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
   name!: string;
+
+  @Column({ type: 'varchar', length: NAME_MAX_LENGTH, nullable: true })
+  alias!: string | null;
 
   // Postgres enums are string therefore we use integer
   @Column({

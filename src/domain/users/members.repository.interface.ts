@@ -62,6 +62,12 @@ export interface IMembersRepository {
     role: Member['role'];
   }): Promise<void>;
 
+  updateAlias(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    alias: Member['alias'];
+  }): Promise<void>;
+
   removeUser(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

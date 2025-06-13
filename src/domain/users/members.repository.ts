@@ -305,6 +305,39 @@ export class MembersRepository implements IMembersRepository {
     }
   }
 
+  public async updateAlias(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    alias: Member['alias'];
+  }): Promise<void> {
+    this.assertSignerAddress(args.authPayload);
+
+    const wallet = await this.walletsRepository.findOne(
+      {
+        address: args.authPayload.signer_address,
+        user: { members: { space: { id: args.spaceId } } },
+      },
+      { user: true },
+    );
+
+    if (!wallet) {
+      throw new NotFoundException(
+        'User not found or not a member of the space.',
+      );
+    }
+
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+    const updateResult = await membersRepository.update(
+      { user: { id: wallet.user.id }, space: { id: args.spaceId } },
+      { alias: args.alias },
+    );
+
+    if (updateResult.affected === 0) {
+      throw new NotFoundException('Member not found.');
+    }
+  }
+
   public async removeUser(args: {
     authPayload: AuthPayload;
     userId: User['id'];
