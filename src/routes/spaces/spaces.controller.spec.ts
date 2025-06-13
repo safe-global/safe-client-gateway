@@ -391,6 +391,7 @@ describe('SpacesController', () => {
                 {
                   id: expect.any(Number),
                   name: expect.any(String),
+                  alias: null,
                   invitedBy: null,
                   role: getEnumKey(MemberRole, MemberRole.ADMIN),
                   status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
@@ -415,6 +416,7 @@ describe('SpacesController', () => {
                 {
                   id: expect.any(Number),
                   name: expect.any(String),
+                  alias: null,
                   invitedBy: null,
                   role: getEnumKey(MemberRole, MemberRole.ADMIN),
                   status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
@@ -508,6 +510,7 @@ describe('SpacesController', () => {
               {
                 id: expect.any(Number),
                 name: expect.any(String),
+                alias: null,
                 invitedBy: null,
                 status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
                 role: getEnumKey(MemberRole, MemberRole.ADMIN),
