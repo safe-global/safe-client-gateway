@@ -305,11 +305,11 @@ export class MembersRepository implements IMembersRepository {
     }
   }
 
-  public async updateName(args: {
+  public async updateAlias(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     userId: User['id'];
-    name: Member['name'];
+    alias: Member['alias'];
   }): Promise<void> {
     this.assertSignerAddress(args.authPayload);
 
@@ -317,16 +317,16 @@ export class MembersRepository implements IMembersRepository {
       args.authPayload.signer_address,
     );
 
-    // Only allow users to update their own name
+    // Only allow users to update their own alias
     if (user.id !== args.userId) {
-      throw new UnauthorizedException("Cannot update another user's name");
+      throw new UnauthorizedException("Cannot update another user's alias");
     }
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const updateResult = await membersRepository.update(
       { user: { id: args.userId }, space: { id: args.spaceId } },
-      { name: args.name },
+      { alias: args.alias },
     );
 
     if (updateResult.affected === 0) {

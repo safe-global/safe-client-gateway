@@ -2,16 +2,16 @@ import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
 import { NameSchema } from '@/domain/common/entities/name.schema';
 
-export const UpdateMemberNameDtoSchema = z.object({
-  name: NameSchema,
+export const UpdateMemberAliasDtoSchema = z.object({
+  alias: NameSchema,
 });
 
-export class UpdateMemberNameDto
-  implements z.infer<typeof UpdateMemberNameDtoSchema>
+export class UpdateMemberAliasDto
+  implements z.infer<typeof UpdateMemberAliasDtoSchema>
 {
   @ApiProperty({
     type: String,
-    description: 'The new name for the member',
+    description: 'The new alias for the member',
   })
-  public readonly name!: string;
+  public readonly alias!: string;
 }

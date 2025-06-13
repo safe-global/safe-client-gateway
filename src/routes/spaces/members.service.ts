@@ -8,6 +8,7 @@ import type { InviteUsersDto } from '@/routes/spaces/entities/invite-users.dto.e
 import type { Invitation } from '@/routes/spaces/entities/invitation.entity';
 import type { MembersDto } from '@/routes/spaces/entities/members.dto.entity';
 import type { UpdateRoleDto } from '@/routes/spaces/entities/update-role.dto.entity';
+import type { UpdateMemberAliasDto } from '@/routes/spaces/entities/update-member-name.dto.entity';
 import { AcceptInviteDto } from '@/routes/spaces/entities/accept-invite.dto.entity';
 
 export class MembersService {
@@ -86,17 +87,17 @@ export class MembersService {
     });
   }
 
-  public async updateName(args: {
+  public async updateAlias(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     userId: User['id'];
-    updateNameDto: { name: string };
+    updateMemberAliasDto: UpdateMemberAliasDto;
   }): Promise<void> {
-    return await this.membersRepository.updateName({
+    await this.membersRepository.updateAlias({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
       userId: args.userId,
-      name: args.updateNameDto.name,
+      alias: args.updateMemberAliasDto.alias,
     });
   }
 

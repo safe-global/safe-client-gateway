@@ -38,8 +38,8 @@ import {
   AcceptInviteDtoSchema,
 } from '@/routes/spaces/entities/accept-invite.dto.entity';
 import {
-  UpdateMemberNameDto,
-  UpdateMemberNameDtoSchema,
+  UpdateMemberAliasDto,
+  UpdateMemberAliasDtoSchema,
 } from '@/routes/spaces/entities/update-member-name.dto.entity';
 
 @ApiTags('spaces')
@@ -166,32 +166,34 @@ export class MembersController {
   }
 
   @ApiOperation({
-    summary: 'Update member name',
+    summary: 'Update member alias',
     description:
-      'Update the name of a member in a space. Users can only update their own name.',
+      'Update the alias of a member in a space. Users can only update their own alias.',
   })
-  @ApiOkResponse({ description: 'Name updated' })
+  @ApiOkResponse({ description: 'Alias updated' })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
     description: 'Signer, space or member not found',
   })
-  @ApiUnauthorizedResponse({ description: "Cannot update another user's name" })
-  @Patch('/:spaceId/members/:userId/name')
+  @ApiUnauthorizedResponse({
+    description: "Cannot update another user's alias",
+  })
+  @Patch('/:spaceId/members/:userId/alias')
   @UseGuards(AuthGuard)
-  public async updateName(
+  public async updateAlias(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
-    @Body(new ValidationPipe(UpdateMemberNameDtoSchema))
-    updateMemberNameDto: UpdateMemberNameDto,
+    @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
+    updateMemberAliasDto: UpdateMemberAliasDto,
   ): Promise<void> {
-    return await this.membersService.updateName({
+    await this.membersService.updateAlias({
       authPayload,
       spaceId,
       userId,
-      updateNameDto: updateMemberNameDto,
+      updateMemberAliasDto,
     });
   }
 
