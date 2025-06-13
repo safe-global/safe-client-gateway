@@ -308,24 +308,25 @@ export class MembersRepository implements IMembersRepository {
   public async updateAlias(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    userId: User['id'];
     alias: Member['alias'];
   }): Promise<void> {
     this.assertSignerAddress(args.authPayload);
 
-    const user = await this.usersRepository.findByWalletAddressOrFail(
-      args.authPayload.signer_address,
-    );
+    const user = await this.walletsRepository.findOne({
+      address: args.authPayload.signer_address,
+      user: { members: { space: { id: args.spaceId } } },
+    });
 
-    // Only allow users to update their own alias
-    if (user.id !== args.userId) {
-      throw new UnauthorizedException("Cannot update another user's alias");
+    if (!user) {
+      throw new NotFoundException(
+        'User not found or not a member of the space.',
+      );
     }
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const updateResult = await membersRepository.update(
-      { user: { id: args.userId }, space: { id: args.spaceId } },
+      { user: { id: user.id }, space: { id: args.spaceId } },
       { alias: args.alias },
     );
 

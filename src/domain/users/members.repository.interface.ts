@@ -65,7 +65,6 @@ export interface IMembersRepository {
   updateAlias(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    userId: User['id'];
     alias: Member['alias'];
   }): Promise<void>;
 

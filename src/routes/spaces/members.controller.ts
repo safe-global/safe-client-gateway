@@ -168,31 +168,25 @@ export class MembersController {
   @ApiOperation({
     summary: 'Update member alias',
     description:
-      'Update the alias of a member in a space. Users can only update their own alias.',
+      'Update the alias of the authenticated member in a space. Users can only update their own alias.',
   })
   @ApiOkResponse({ description: 'Alias updated' })
   @ApiForbiddenResponse({ description: 'Signer not authorized' })
   @ApiNotFoundResponse({
     description: 'Signer, space or member not found',
   })
-  @ApiUnauthorizedResponse({
-    description: "Cannot update another user's alias",
-  })
-  @Patch('/:spaceId/members/:userId/alias')
+  @Patch('/:spaceId/members/alias')
   @UseGuards(AuthGuard)
   public async updateAlias(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
-    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    userId: number,
     @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
     updateMemberAliasDto: UpdateMemberAliasDto,
   ): Promise<void> {
     await this.membersService.updateAlias({
       authPayload,
       spaceId,
-      userId,
       updateMemberAliasDto,
     });
   }

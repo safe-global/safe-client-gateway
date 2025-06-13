@@ -90,13 +90,11 @@ export class MembersService {
   public async updateAlias(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    userId: User['id'];
     updateMemberAliasDto: UpdateMemberAliasDto;
   }): Promise<void> {
     await this.membersRepository.updateAlias({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
-      userId: args.userId,
       alias: args.updateMemberAliasDto.alias,
     });
   }
