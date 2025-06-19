@@ -51,7 +51,7 @@
     "lodash": "4.17.21",
     "nestjs-cls": "5.4.0",
     "pg": "8.14.1",
-    "postgres": "3.4.5",
+    "postgres": "3.4.7",
     "redis": "4.7.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
