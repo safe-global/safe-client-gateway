@@ -312,24 +312,14 @@ export class MembersRepository implements IMembersRepository {
   }): Promise<void> {
     this.assertSignerAddress(args.authPayload);
 
-    const wallet = await this.walletsRepository.findOne(
-      {
-        address: args.authPayload.signer_address,
-        user: { members: { space: { id: args.spaceId } } },
-      },
-      { user: true },
+    const user = await this.usersRepository.findByWalletAddressOrFail(
+      args.authPayload.signer_address,
     );
-
-    if (!wallet) {
-      throw new NotFoundException(
-        'User not found or not a member of the space.',
-      );
-    }
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const updateResult = await membersRepository.update(
-      { user: { id: wallet.user.id }, space: { id: args.spaceId } },
+      { user: { id: user.id }, space: { id: args.spaceId } },
       { alias: args.alias },
     );
 

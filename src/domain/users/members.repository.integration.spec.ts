@@ -2824,7 +2824,7 @@ describe('MembersRepository', () => {
           spaceId,
           alias: newAlias,
         }),
-      ).rejects.toThrow('User not found or not a member of the space.');
+      ).rejects.toThrow('User not found.');
     });
 
     it('should throw NotFoundException if signer is not a member of the space', async () => {
@@ -2865,7 +2865,7 @@ describe('MembersRepository', () => {
           spaceId,
           alias: newAlias,
         }),
-      ).rejects.toThrow('User not found or not a member of the space.');
+      ).rejects.toThrow('Member not found.');
     });
 
     it('should throw UnauthorizedException if signer address is not provided', async () => {

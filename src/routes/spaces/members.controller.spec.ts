@@ -2126,7 +2126,7 @@ describe('MembersController', () => {
         .send({ alias: newAlias })
         .expect(404)
         .expect({
-          message: 'User not found or not a member of the space.',
+          message: 'Member not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -2163,7 +2163,7 @@ describe('MembersController', () => {
         .send({ alias: newAlias })
         .expect(404)
         .expect({
-          message: 'User not found or not a member of the space.',
+          message: 'Member not found.',
           error: 'Not Found',
           statusCode: 404,
         });
