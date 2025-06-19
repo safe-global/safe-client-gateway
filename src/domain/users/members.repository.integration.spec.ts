@@ -2683,7 +2683,7 @@ describe('MembersRepository', () => {
   });
 
   describe('updateAlias', () => {
-    it('should update the alias of the authenticated user', async () => {
+    it('should add an alias for the authenticated user', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
