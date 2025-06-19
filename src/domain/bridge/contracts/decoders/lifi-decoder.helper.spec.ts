@@ -943,6 +943,7 @@ describe('LiFiDecoder', () => {
         toToken: args.swapData.receivingAssetId,
         fromAmount: args.swapData.fromAmount,
         toAmount: args.minAmountOut,
+        fees: null,
       });
     });
 
@@ -978,6 +979,7 @@ describe('LiFiDecoder', () => {
         toToken: args.swapData[2].receivingAssetId,
         fromAmount: args.swapData[0].fromAmount,
         toAmount: args.minAmountOut,
+        fees: null,
       });
     });
   });
