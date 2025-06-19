@@ -22,7 +22,6 @@ import {
 @Unique('UQ_members', ['user', 'space'])
 @Index('idx_members_name', ['name'])
 @Index('idx_members_role_status', ['role', 'status'])
-@Index('idx_members_alias', ['alias'])
 export class Member implements DomainMember {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_members_id',
