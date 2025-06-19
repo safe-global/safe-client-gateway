@@ -3,6 +3,7 @@ import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT as LIMIT } from '@/domain/common/constants';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder as decoderContractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
@@ -60,11 +61,13 @@ describe('ContractsRepository', () => {
   describe('trustedForDelegateCallContractsList disabled', () => {
     it('should return false if the contract is not trusted for delegate call', async () => {
       const chain = chainBuilder().build();
-      const contract = contractBuilder()
+      const contract = decoderContractBuilder()
         .with('trustedForDelegateCall', false)
         .build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
+
       mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-      mockTransactionApi.getContract.mockResolvedValue(rawify(contract));
+      mockDataDecoderApi.getContracts.mockResolvedValue(rawify(contractPage));
 
       const actual = await target.isTrustedForDelegateCall({
         chainId: chain.chainId,
@@ -72,10 +75,11 @@ describe('ContractsRepository', () => {
       });
 
       expect(actual).toBe(false);
-      expect(mockTransactionApi.getContract).toHaveBeenCalledTimes(1);
-      expect(mockTransactionApi.getContract).toHaveBeenCalledWith(
-        contract.address,
-      );
+      expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
+      expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
+        address: contract.address,
+        chainIds: [chain.chainId],
+      });
       expect(
         mockTransactionApi.getTrustedForDelegateCallContracts,
       ).not.toHaveBeenCalled();
@@ -83,11 +87,13 @@ describe('ContractsRepository', () => {
 
     it('should return true if the contract is trusted for delegate call', async () => {
       const chain = chainBuilder().build();
-      const contract = contractBuilder()
+      const contract = decoderContractBuilder()
         .with('trustedForDelegateCall', true)
         .build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
+
       mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-      mockTransactionApi.getContract.mockResolvedValue(rawify(contract));
+      mockDataDecoderApi.getContracts.mockResolvedValue(rawify(contractPage));
 
       const actual = await target.isTrustedForDelegateCall({
         chainId: chain.chainId,
@@ -95,10 +101,11 @@ describe('ContractsRepository', () => {
       });
 
       expect(actual).toBe(true);
-      expect(mockTransactionApi.getContract).toHaveBeenCalledTimes(1);
-      expect(mockTransactionApi.getContract).toHaveBeenCalledWith(
-        contract.address,
-      );
+      expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
+      expect(mockDataDecoderApi.getContracts).toHaveBeenCalledWith({
+        address: contract.address,
+        chainIds: [chain.chainId],
+      });
       expect(
         mockTransactionApi.getTrustedForDelegateCallContracts,
       ).not.toHaveBeenCalled();

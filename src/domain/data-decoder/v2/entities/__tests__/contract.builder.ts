@@ -26,5 +26,7 @@ export function contractBuilder(): IBuilder<Contract> {
     .with('chainId', faker.number.int() as unknown as string)
     .with('project', projectBuilder().build())
     .with('abi', abiBuilder().build())
-    .with('modified', faker.date.past());
+    .with('modified', faker.date.past())
+    .with('logoUrl', faker.internet.url({ appendSlash: false }))
+    .with('trustedForDelegateCall', faker.datatype.boolean());
 }

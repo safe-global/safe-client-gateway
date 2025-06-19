@@ -23,6 +23,8 @@ export const ContractSchema = z.object({
   project: ProjectSchema.nullable(),
   abi: AbiSchema,
   modified: z.coerce.date(),
+  trustedForDelegateCall: z.boolean(),
+  logoUrl: z.string().nullish().default(null),
 });
 
 export type Contract = z.infer<typeof ContractSchema>;

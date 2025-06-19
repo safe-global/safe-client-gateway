@@ -1,10 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import {
   ContractPageSchema,
-  ContractSchema,
 } from '@/domain/contracts/entities/schemas/contract.schema';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -12,7 +11,6 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
-import { Page } from '@/domain/entities/page.entity';
 import {
   Contract as DataDecoderContract,
   ContractPageSchema as DataDecoderContractPageSchema,
@@ -44,21 +42,16 @@ export class ContractsRepository implements IContractsRepository {
   async getContract(args: {
     chainId: string;
     contractAddress: `0x${string}`;
-  }): Promise<Contract> {
-    const api = await this.transactionApiManager.getApi(args.chainId);
-    const data = await api.getContract(args.contractAddress);
-    return ContractSchema.parse(data); //TODO: handle old entity 
-  }
-
-  async getContracts(args: {
-    chainId: string;
-    contractAddress: `0x${string}`;
-  }): Promise<Page<DataDecoderContract>> {
+  }): Promise<DataDecoderContract> {
     const contracts = await this.dataDecoderApi.getContracts({
       address: args.contractAddress,
       chainIds: [args.chainId],
     });
-    return DataDecoderContractPageSchema.parse(contracts);
+    const { count, results } = DataDecoderContractPageSchema.parse(contracts);
+    if (count === 0) {
+      throw new NotFoundException('Error fetching the contract data.');
+    }
+    return results[0];
   }
 
   async isTrustedForDelegateCall(args: {
