@@ -81,6 +81,8 @@ describe('BridgeTransactionMapper (Unit)', () => {
       const result = await mapper.mapSwap({
         data,
         chainId: faker.string.numeric(),
+        executionDate: null,
+        safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
       });
 
       expect(result).toBeInstanceOf(SwapTransactionInfo);

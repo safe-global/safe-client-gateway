@@ -28,7 +28,9 @@ export class BridgeTransactionMapper {
 
   public async mapSwap(args: {
     data: `0x${string}`;
+    executionDate: Date | null;
     chainId: string;
+    safeAddress: `0x${string}`;
   }): Promise<SwapTransactionInfo> {
     const decoded = this.liFiDecoder.decodeSwap(args.data);
 
@@ -46,6 +48,14 @@ export class BridgeTransactionMapper {
       }),
     ]);
 
+    const executedSwapInfos = args.executionDate
+      ? await this.getExecutedSwapInfo({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          decoded,
+        })
+      : null;
+
     return new SwapTransactionInfo({
       recipient,
       fees: decoded.fees
@@ -58,7 +68,8 @@ export class BridgeTransactionMapper {
       fromToken,
       fromAmount: decoded.fromAmount.toString(),
       toToken,
-      toAmount: decoded.toAmount.toString(),
+      toAmount: executedSwapInfos?.toAmount ?? decoded.toAmount.toString(),
+      lifiExplorerUrl: executedSwapInfos?.lifiExplorerUrl ?? null,
     });
   }
 
@@ -119,6 +130,34 @@ export class BridgeTransactionMapper {
         chainId: args.chainId,
         address: args.tokenAddress,
       });
+    }
+  }
+
+  private async getExecutedSwapInfo(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    decoded: ReturnType<LiFiDecoder['decodeSwap']>;
+  }): Promise<{
+    toAmount: string;
+    lifiExplorerUrl: string;
+  } | null> {
+    const status = await this.bridgeRepository.getStatus({
+      fromChain: args.chainId,
+      txHash: args.decoded.transactionId,
+      toChain: args.chainId,
+    });
+
+    switch (status.status) {
+      case 'DONE':
+        return {
+          toAmount: status.receiving.amount ?? '0',
+          lifiExplorerUrl: status.lifiExplorerLink,
+        };
+      case 'FAILED':
+      case 'INVALID':
+      case 'NOT_FOUND':
+      case 'PENDING':
+        return null;
     }
   }
 

@@ -37,6 +37,9 @@ export class SwapTransactionInfo extends TransactionInfo {
   @ApiProperty()
   toAmount: string;
 
+  @ApiProperty({ type: String, nullable: true })
+  lifiExplorerUrl: string | null;
+
   constructor(args: {
     recipient: AddressInfo;
     fees: BridgeFee | null;
@@ -44,6 +47,7 @@ export class SwapTransactionInfo extends TransactionInfo {
     fromAmount: string;
     toToken: TokenInfo;
     toAmount: string;
+    lifiExplorerUrl: string | null;
   }) {
     super(TransactionInfoType.Swap, null);
 
@@ -53,6 +57,7 @@ export class SwapTransactionInfo extends TransactionInfo {
     this.fromAmount = args.fromAmount;
     this.toToken = args.toToken;
     this.toAmount = args.toAmount;
+    this.lifiExplorerUrl = args.lifiExplorerUrl;
   }
 }
 

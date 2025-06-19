@@ -268,7 +268,9 @@ export class MultisigTransactionInfoMapper {
     try {
       return this.bridgeTransactionMapper.mapSwap({
         data: transaction.data,
+        executionDate: args.transaction.executionDate,
         chainId: args.chainId,
+        safeAddress: args.transaction.safe,
       });
     } catch (error) {
       this.loggingService.warn(error);
