@@ -23,7 +23,6 @@ const mockTransactionApiManager = {
   getApi: jest.fn(),
 } as jest.MockedObjectDeep<ITransactionApiManager>;
 const mockTransactionApi = {
-  getContract: jest.fn(),
   getTrustedForDelegateCallContracts: jest.fn(),
 } as jest.MockedObjectDeep<ITransactionApi>;
 const mockDataDecoderApi = {

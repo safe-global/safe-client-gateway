@@ -8,7 +8,9 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { AppModule } from '@/app.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder as contractTokenBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
@@ -123,6 +125,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -152,9 +157,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             default:
@@ -221,7 +226,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               to: {
                 value: contractResponse.address,
                 name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
+                logoUri: contractResponse.logoUrl,
               },
               value: previewTransactionDto.value,
               operation: previewTransactionDto.operation,
@@ -264,12 +269,19 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const depositContractResponse = contractBuilder()
           .with('address', depositTransaction.to)
+          .build();
+        const depositContractPageResponse = pageBuilder()
+          .with('results', [depositContractResponse])
           .build();
         const depositTokenResponse = tokenBuilder()
           .with('address', depositTransaction.to)
           .build();
+
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -299,14 +311,14 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${depositContractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${depositContractResponse.address}`:
               return Promise.resolve({
-                data: rawify(depositContractResponse),
+                data: rawify(depositContractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${depositTokenResponse.address}`:
@@ -378,7 +390,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               to: {
                 value: contractResponse.address,
                 name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
+                logoUri: contractResponse.logoUrl,
               },
               value: previewTransactionDto.value,
               operation: previewTransactionDto.operation,
@@ -403,6 +415,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -419,9 +434,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -469,6 +484,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -486,9 +504,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -537,6 +555,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -554,9 +575,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecodedBuilder}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -603,6 +624,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -620,9 +644,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -670,6 +694,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -687,9 +714,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -738,6 +765,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -764,9 +794,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -815,6 +845,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -841,9 +874,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -903,6 +936,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', deployment.address)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('data', data)
           .with('operation', Operation.CALL)
@@ -932,9 +968,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             default:
@@ -981,7 +1017,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               to: {
                 value: contractResponse.address,
                 name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
+                logoUri: contractResponse.logoUrl,
               },
               value: previewTransactionDto.value,
               operation: previewTransactionDto.operation,
@@ -1036,11 +1072,17 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
-        const tokenResponse = contractBuilder()
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
+        const tokenResponse = contractTokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
         const requestValidatorsExiContractResponse = contractBuilder()
           .with('address', deployment.address)
+          .build();
+        const requestValidatorsExiContractPageResponse = pageBuilder()
+          .with('results', [requestValidatorsExiContractResponse])
           .build();
         const requestValidatorsExitTokenResponse = tokenBuilder()
           .with('address', deployment.address)
@@ -1069,14 +1111,14 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${requestValidatorsExiContractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${requestValidatorsExiContractResponse.address}`:
               return Promise.resolve({
-                data: rawify(requestValidatorsExiContractResponse),
+                data: rawify(requestValidatorsExiContractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -1133,7 +1175,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               to: {
                 value: contractResponse.address,
                 name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
+                logoUri: contractResponse.logoUrl,
               },
               value: previewTransactionDto.value,
               operation: previewTransactionDto.operation,
@@ -1168,6 +1210,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -1184,9 +1229,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -1243,6 +1288,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -1260,9 +1308,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -1321,6 +1369,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -1338,9 +1389,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -1397,6 +1448,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -1414,9 +1468,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -1473,6 +1527,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', deployment.address)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('data', data)
           .with('operation', Operation.CALL)
@@ -1504,9 +1561,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -1560,6 +1617,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', deployment.address)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('data', data)
           .with('operation', Operation.CALL)
@@ -1591,9 +1651,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -1660,6 +1720,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', deployment.address)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('data', data)
           .with('operation', Operation.CALL)
@@ -1684,9 +1747,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             default:
@@ -1730,7 +1793,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               to: {
                 value: contractResponse.address,
                 name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
+                logoUri: contractResponse.logoUrl,
               },
               value: previewTransactionDto.value,
               operation: previewTransactionDto.operation,
@@ -1792,11 +1855,17 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
         const batchWithdrawCLFeeContractResponse = contractBuilder()
           .with('address', batchWithdrawCLFeeTransaction.to)
+          .build();
+        const batchWithdrawCLFeeContractPageResponse = pageBuilder()
+          .with('results', [batchWithdrawCLFeeContractResponse])
           .build();
         const batchWithdrawCLFeeTokenResponse = tokenBuilder()
           .with('address', batchWithdrawCLFeeTransaction.to)
@@ -1820,9 +1889,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${tokenResponse.address}`:
@@ -1830,9 +1899,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(tokenResponse),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${batchWithdrawCLFeeContractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${batchWithdrawCLFeeContractResponse.address}`:
               return Promise.resolve({
-                data: rawify(batchWithdrawCLFeeContractResponse),
+                data: rawify(batchWithdrawCLFeeContractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${batchWithdrawCLFeeTokenResponse.address}`:
@@ -1881,7 +1950,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
               to: {
                 value: contractResponse.address,
                 name: contractResponse.displayName,
-                logoUri: contractResponse.logoUri,
+                logoUri: contractResponse.logoUrl,
               },
               value: previewTransactionDto.value,
               operation: previewTransactionDto.operation,
@@ -1920,6 +1989,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -1936,9 +2008,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -2000,6 +2072,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -2017,9 +2092,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -2082,6 +2157,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -2099,9 +2177,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -2162,6 +2240,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const tokenResponse = tokenBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -2179,9 +2260,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/tokens/${previewTransactionDto.to}`:
@@ -2238,6 +2319,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const contractResponse = contractBuilder()
           .with('address', deployment.address)
           .build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [contractResponse])
+          .build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('data', data)
           .with('operation', Operation.CALL)
@@ -2261,9 +2345,9 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`:
+            case `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`:
               return Promise.resolve({
-                data: rawify(contractResponse),
+                data: rawify(contractPageResponse),
                 status: 200,
               });
             default:

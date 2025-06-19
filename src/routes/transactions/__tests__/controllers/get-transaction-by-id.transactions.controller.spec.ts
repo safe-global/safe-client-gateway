@@ -7,7 +7,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeAppBuilder } from '@/domain/safe-apps/entities/__tests__/safe-app.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
@@ -236,6 +236,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const contract = contractBuilder()
       .with('trustedForDelegateCall', false)
       .build();
+    const contractPage = pageBuilder().with('results', [contract]).build();
     const moduleTransactionId = faker.string.uuid();
     const moduleTransaction = moduleTransactionBuilder()
       .with('safe', getAddress(safe.address))
@@ -247,8 +248,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
-    const getContractUrl = `${chain.transactionService}/api/v1/contracts/${moduleTransaction.to}`;
-    const getModuleContractUrl = `${chain.transactionService}/api/v1/contracts/${moduleTransaction.module}`;
+    const getContractUrl = `${safeDecoderUrl}/api/v1/contracts/${moduleTransaction.to}`;
+    const getModuleContractUrl = `${safeDecoderUrl}/api/v1/contracts/${moduleTransaction.module}`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -261,9 +262,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
         case getContractUrl:
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         case getModuleContractUrl:
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -353,6 +354,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
     const contract = contractBuilder().build();
+    const contractPage = pageBuilder().with('results', [contract]).build();
     const transferId = faker.string.uuid();
     const transfer = nativeTokenTransferBuilder()
       .with('transferId', transferId)
@@ -361,8 +363,8 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${transferId}`;
-    const getFromContractUrl = `${chain.transactionService}/api/v1/contracts/${transfer.from}`;
-    const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${transfer.to}`;
+    const getFromContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transfer.from}`;
+    const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${transfer.to}`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -375,9 +377,9 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getSafeUrl:
           return Promise.resolve({ data: rawify(safe), status: 200 });
         case getFromContractUrl:
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         case getToContractUrl:
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         default:
           return Promise.reject(new Error(`Could not match ${url}`));
       }
@@ -466,6 +468,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       )
       .build();
     const contract = contractBuilder().build();
+    const contractPage = pageBuilder().with('results', [contract]).build();
     const executionDate = faker.date.recent();
     const safeTxGas = faker.number.int();
     const gasPrice = faker.string.numeric();
@@ -512,7 +515,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
-    const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${tx.to}`;
+    const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
@@ -533,7 +536,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getGasTokenContractUrl:
           return Promise.resolve({ data: rawify(gasToken), status: 200 });
         case getToContractUrl:
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         case getToTokenUrl:
           return Promise.resolve({ data: rawify(token), status: 200 });
         case getSafeAppsUrl:
@@ -659,6 +662,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       )
       .build();
     const contract = contractBuilder().build();
+    const contractPage = pageBuilder().with('results', [contract]).build();
     const executionDate = faker.date.recent();
     const safeTxGas = faker.number.int();
     const gasPrice = faker.string.numeric();
@@ -706,7 +710,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     }/api/v1/multisig-transactions/${tx.safeTxHash.slice(2)}/`;
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
-    const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${tx.to}`;
+    const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
@@ -727,7 +731,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getGasTokenContractUrl:
           return Promise.resolve({ data: rawify(gasToken), status: 200 });
         case getToContractUrl:
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         case getToTokenUrl:
           return Promise.resolve({ data: rawify(token), status: 200 });
         case getSafeAppsUrl:
@@ -852,6 +856,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
       .with('nonce', 5)
       .build();
     const contract = contractBuilder().build();
+    const contractPage = pageBuilder().with('results', [contract]).build();
     const executionDate = faker.date.recent();
     const safeTxGas = faker.number.int();
     const gasPrice = faker.string.numeric();
@@ -897,7 +902,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v1/multisig-transactions/${tx.safeTxHash}/`;
     const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
-    const getToContractUrl = `${chain.transactionService}/api/v1/contracts/${tx.to}`;
+    const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case getChainUrl:
@@ -917,7 +922,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
         case getGasTokenContractUrl:
           return Promise.resolve({ data: rawify(gasToken), status: 200 });
         case getToContractUrl:
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         case getSafeAppsUrl:
           return Promise.resolve({
             data: rawify(safeAppsResponse),
@@ -953,7 +958,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             to: {
               value: contract.address,
               name: contract.displayName,
-              logoUri: contract.logoUri,
+              logoUri: contract.logoUrl,
             },
             dataSize: expect.any(String),
             value: expect.any(String),
@@ -967,7 +972,7 @@ describe('Get by id - Transactions Controller (Unit)', () => {
             to: {
               value: contract.address,
               name: contract.displayName,
-              logoUri: contract.logoUri,
+              logoUri: contract.logoUrl,
             },
             value: tx.value,
             operation: tx.operation,

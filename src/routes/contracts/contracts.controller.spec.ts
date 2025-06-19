@@ -87,9 +87,9 @@ describe('Contracts controller', () => {
         .with('address', decoderContract.address)
         .with('name', decoderContract.name)
         .with('displayName', decoderContract.displayName ?? '')
-        .with('logoUri', decoderContract.project?.logoFile ?? null)
+        .with('logoUri', decoderContract.logoUrl)
         .with('contractAbi', { abi: decoderContract.abi.abiJson })
-        .with('trustedForDelegateCall', false)
+        .with('trustedForDelegateCall', decoderContract.trustedForDelegateCall)
         .build();
 
       networkService.get.mockImplementation(({ url }) => {

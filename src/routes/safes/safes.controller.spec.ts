@@ -7,7 +7,7 @@ import request from 'supertest';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { singletonBuilder } from '@/domain/chains/entities/__tests__/singleton.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   multisigTransactionBuilder,
@@ -52,6 +52,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Safes Controller (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let dataDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -80,6 +81,7 @@ describe('Safes Controller (Unit)', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    dataDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -102,15 +104,25 @@ describe('Safes Controller (Unit)', () => {
     const singletonInfo = contractBuilder()
       .with('address', getAddress(singletons[0].address))
       .build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('owners', [owner])
       .with('masterCopy', singletons[0].address)
       .with('version', masterCopyVersion)
       .build();
+
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
 
     const moduleTransactions = pageBuilder()
       .with('results', [
@@ -140,15 +152,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(
@@ -215,7 +227,7 @@ describe('Safes Controller (Unit)', () => {
         implementation: {
           value: singletonInfo.address,
           name: singletonInfo.displayName,
-          logoUri: singletonInfo.logoUri,
+          logoUri: singletonInfo.logoUrl,
         },
         implementationVersionState: 'UP_TO_DATE',
         collectiblesTag: '1474253704',
@@ -226,12 +238,12 @@ describe('Safes Controller (Unit)', () => {
         fallbackHandler: {
           value: getAddress(fallbackHandlerInfo.address),
           name: fallbackHandlerInfo.displayName,
-          logoUri: fallbackHandlerInfo.logoUri,
+          logoUri: fallbackHandlerInfo.logoUrl,
         },
         guard: {
           value: getAddress(guardInfo.address),
           name: guardInfo.displayName,
-          logoUri: guardInfo.logoUri,
+          logoUri: guardInfo.logoUrl,
         },
         version: safeInfo.version,
       });
@@ -241,6 +253,10 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .with('version', null)
@@ -248,9 +264,15 @@ describe('Safes Controller (Unit)', () => {
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -264,15 +286,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -312,12 +334,22 @@ describe('Safes Controller (Unit)', () => {
       .with('masterCopy', singletonInfo.address)
       .with('version', 'vI.N.V.A.L.I.D')
       .build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -331,15 +363,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -380,12 +412,22 @@ describe('Safes Controller (Unit)', () => {
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -399,15 +441,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -448,15 +490,25 @@ describe('Safes Controller (Unit)', () => {
         .build(),
     ];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
+
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -470,15 +522,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -519,14 +571,24 @@ describe('Safes Controller (Unit)', () => {
       singletonBuilder().with('address', supportedMasterCopy).build(),
     ];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', supportedMasterCopy)
       .with('version', '4.0.0')
       .build();
+
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -540,15 +602,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -584,15 +646,24 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
@@ -605,15 +676,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -669,15 +740,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const multisigTransactions = pageBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -691,15 +772,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -735,15 +816,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
@@ -756,15 +847,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -797,15 +888,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const multisigTransactions = pageBuilder().build();
     const collectibleTransfers = pageBuilder()
       .with('results', [
@@ -837,15 +938,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -881,15 +982,26 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
+
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const multisigTransactions = pageBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -903,15 +1015,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -947,15 +1059,24 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const multisigTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
@@ -968,15 +1089,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.reject({ status: 500 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
@@ -1009,15 +1130,24 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
@@ -1030,15 +1160,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -1094,15 +1224,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
@@ -1115,15 +1255,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -1182,15 +1322,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const moduleTransactions = pageBuilder().build();
     const messages = pageBuilder().build();
 
@@ -1202,15 +1352,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(
@@ -1267,15 +1417,24 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation(async ({ url }) => {
@@ -1286,15 +1445,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(pageBuilder().build()),
@@ -1351,15 +1510,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const multisigTransactions = pageBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -1373,15 +1542,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -1417,15 +1586,23 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation(({ url }) => {
@@ -1436,15 +1613,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(
@@ -1487,15 +1664,24 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation(({ url }) => {
@@ -1506,15 +1692,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.reject({ status: 500 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
@@ -1554,15 +1740,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
+
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const messages = pageBuilder().build();
 
     networkService.get.mockImplementation(({ url }) => {
@@ -1573,15 +1769,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.reject({ status: 500 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/multisig-transactions/`:
@@ -1608,15 +1804,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -1649,15 +1855,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -1693,15 +1899,25 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
+
     const safeInfo = safeBuilder()
       .with('masterCopy', singletonInfo.address)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
+
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
+
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -1716,15 +1932,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -1760,6 +1976,9 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const module1 = getAddress(faker.finance.ethereumAddress());
     const module2 = getAddress(faker.finance.ethereumAddress());
     const module3 = getAddress(faker.finance.ethereumAddress());
@@ -1768,12 +1987,19 @@ describe('Safes Controller (Unit)', () => {
       .with('modules', [module1, module2, module3])
       .build();
     const moduleInfo1 = contractBuilder().with('address', module1).build();
+    const module1Page = pageBuilder().with('results', [moduleInfo1]).build();
     const moduleInfo2 = contractBuilder().with('address', module2).build();
+    const module2Page = pageBuilder().with('results', [moduleInfo2]).build();
     const moduleInfo3 = contractBuilder().with('address', module3).build();
+    const module3Page = pageBuilder().with('results', [moduleInfo3]).build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', safeInfo.fallbackHandler)
       .build();
+    const fallbackHandlerPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
     const guardInfo = contractBuilder().with('address', safeInfo.guard).build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -1787,21 +2013,21 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${module1}`:
-          return Promise.resolve({ data: rawify(moduleInfo1), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${module2}`:
-          return Promise.resolve({ data: rawify(moduleInfo2), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${module3}`:
-          return Promise.resolve({ data: rawify(moduleInfo3), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${module1}`:
+          return Promise.resolve({ data: rawify(module1Page), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${module2}`:
+          return Promise.resolve({ data: rawify(module2Page), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${module3}`:
+          return Promise.resolve({ data: rawify(module3Page), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackHandlerPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -1830,17 +2056,17 @@ describe('Safes Controller (Unit)', () => {
         expect(response.body).toMatchObject({
           modules: [
             {
-              logoUri: moduleInfo1.logoUri,
+              logoUri: moduleInfo1.logoUrl,
               name: moduleInfo1.displayName,
               value: moduleInfo1.address,
             },
             {
-              logoUri: moduleInfo2.logoUri,
+              logoUri: moduleInfo2.logoUrl,
               name: moduleInfo2.displayName,
               value: moduleInfo2.address,
             },
             {
-              logoUri: moduleInfo3.logoUri,
+              logoUri: moduleInfo3.logoUrl,
               name: moduleInfo3.displayName,
               value: moduleInfo3.address,
             },
@@ -1853,6 +2079,9 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const safeInfo = safeBuilder()
       .with('modules', [])
       .with('masterCopy', singletonInfo.address)
@@ -1860,9 +2089,13 @@ describe('Safes Controller (Unit)', () => {
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackHandlerPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -1876,15 +2109,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackHandlerPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -1920,13 +2153,20 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const safeInfo = safeBuilder()
       .with('fallbackHandler', NULL_ADDRESS)
       .build();
     const fallbackHandlerInfo = contractBuilder()
       .with('address', getAddress(safeInfo.fallbackHandler))
       .build();
+    const fallbackHandlerPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
     const guardInfo = contractBuilder().build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -1940,15 +2180,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${safeInfo.fallbackHandler}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${safeInfo.fallbackHandler}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackHandlerPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -1984,8 +2224,12 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const safeInfo = safeBuilder().build();
     const guardInfo = contractBuilder().build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -1999,13 +2243,13 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${safeInfo.fallbackHandler}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${safeInfo.fallbackHandler}`:
           // Return 404 for Fallback Handler Info
           return Promise.reject({ status: 404 });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -2045,11 +2289,18 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const safeInfo = safeBuilder().with('guard', NULL_ADDRESS).build();
     const fallbackHandlerInfo = contractBuilder().build();
+    const fallbackHandlerPage = pageBuilder()
+      .with('results', [fallbackHandlerInfo])
+      .build();
     const guardInfo = contractBuilder()
       .with('address', getAddress(safeInfo.guard))
       .build();
+    const guardPage = pageBuilder().with('results', [guardInfo]).build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
     const moduleTransactions = pageBuilder().build();
@@ -2063,15 +2314,15 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${fallbackHandlerInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${fallbackHandlerInfo.address}`:
           return Promise.resolve({
-            data: rawify(fallbackHandlerInfo),
+            data: rawify(fallbackHandlerPage),
             status: 200,
           });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
-          return Promise.resolve({ data: rawify(guardInfo), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
+          return Promise.resolve({ data: rawify(guardPage), status: 200 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
           return Promise.resolve({
             data: rawify(collectibleTransfers),
@@ -2107,8 +2358,12 @@ describe('Safes Controller (Unit)', () => {
     const chain = chainBuilder().build();
     const singletons = [singletonBuilder().build()];
     const singletonInfo = contractBuilder().build();
+    const singletonPage = pageBuilder()
+      .with('results', [singletonInfo])
+      .build();
     const safeInfo = safeBuilder().build();
     const fallbackInfo = contractBuilder().build();
+    const fallbackPage = pageBuilder().with('results', [fallbackInfo]).build();
     const guardInfo = contractBuilder().build();
     const collectibleTransfers = pageBuilder().build();
     const queuedTransactions = pageBuilder().build();
@@ -2123,11 +2378,11 @@ describe('Safes Controller (Unit)', () => {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
         case `${chain.transactionService}/api/v1/about/singletons/`:
           return Promise.resolve({ data: rawify(singletons), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${singletonInfo.address}`:
-          return Promise.resolve({ data: rawify(singletonInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${safeInfo.fallbackHandler}`:
-          return Promise.resolve({ data: rawify(fallbackInfo), status: 200 });
-        case `${chain.transactionService}/api/v1/contracts/${guardInfo.address}`:
+        case `${dataDecoderUrl}/api/v1/contracts/${singletonInfo.address}`:
+          return Promise.resolve({ data: rawify(singletonPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${safeInfo.fallbackHandler}`:
+          return Promise.resolve({ data: rawify(fallbackPage), status: 200 });
+        case `${dataDecoderUrl}/api/v1/contracts/${guardInfo.address}`:
           // Return 404 for Guard Info
           return Promise.reject({ status: 404 });
         case `${chain.transactionService}/api/v1/safes/${safeInfo.address}/transfers/`:
