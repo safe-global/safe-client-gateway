@@ -1986,7 +1986,7 @@ describe('MembersController', () => {
   });
 
   describe('PATCH /v1/spaces/:spaceId/members/alias', () => {
-    it('should update the alias of the authenticated member', async () => {
+    it('should set the alias for the authenticated user when they are admin of the space', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
@@ -2017,6 +2017,64 @@ describe('MembersController', () => {
         .expect(200);
 
       expect(getMembersResponse.body.members[0].alias).toBe(newAlias);
+    });
+
+    it('should set the alias for the authenticated user when they are a member of the space', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+              name: memberName,
+            },
+          ],
+        })
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({ name: memberName })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({ alias: newAlias })
+        .expect(200);
+
+      // Verify the alias was updated by getting the members list
+      const getMembersResponse = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(200);
+
+      expect(getMembersResponse.body.members[1].user.id).toBe(userId);
+      expect(getMembersResponse.body.members[1].alias).toBe(newAlias);
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
