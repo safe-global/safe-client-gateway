@@ -2,9 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import {
-  ContractPageSchema,
-} from '@/domain/contracts/entities/schemas/contract.schema';
+import { ContractPageSchema } from '@/domain/contracts/entities/schemas/contract.schema';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';

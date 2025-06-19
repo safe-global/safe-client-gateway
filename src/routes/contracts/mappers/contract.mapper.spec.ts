@@ -17,7 +17,7 @@ describe('Contract Mapper', () => {
   const displayName = faker.word.words();
   const logoUri = faker.internet.url({ appendSlash: false });
   const contractAbi = JSON.parse(fakeJson()) as Record<string, unknown>;
-  const trustedForDelegateCall = false; //faker.datatype.boolean();
+  const trustedForDelegateCall = faker.datatype.boolean();
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -40,9 +40,11 @@ describe('Contract Mapper', () => {
       .with('name', name)
       .with('displayName', displayName)
       .with('chainId', faker.number.int() as unknown as string)
-      .with('project', projectBuilder().with('logoFile', logoUri).build())
+      .with('project', projectBuilder().build())
       .with('abi', abiBuilder().with('abiJson', [contractAbi]).build())
       .with('modified', faker.date.past())
+      .with('trustedForDelegateCall', trustedForDelegateCall)
+      .with('logoUrl', logoUri)
       .build();
 
     const actual = mapper.mapContract(contract);
@@ -58,8 +60,8 @@ describe('Contract Mapper', () => {
     expect(actual.displayName).toEqual('');
   });
 
-  it('should return logoUri = null if project is null', () => {
-    const contract = dataDecodedContractBuilder().with('project', null).build();
+  it('should return logoUri = null if logoUrl is null', () => {
+    const contract = dataDecodedContractBuilder().with('logoUrl', null).build();
 
     const actual = mapper.mapContract(contract);
     expect(actual.logoUri).toEqual(null);

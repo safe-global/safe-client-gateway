@@ -14,9 +14,9 @@ export class ContractMapper {
       address: contract.address,
       name: contract.name,
       displayName: contract.displayName ?? '',
-      logoUri: contract.project?.logoFile ?? null,
+      logoUri: contract.logoUrl,
       contractAbi: contractAbi,
-      trustedForDelegateCall: false, //TODO fix when the value is available
+      trustedForDelegateCall: contract.trustedForDelegateCall,
     };
   }
 }
