@@ -1,7 +1,8 @@
-import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { Module } from '@nestjs/common';
 import { ContractsRepository } from '@/domain/contracts/contracts.repository';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Contract } from '@/domain/data-decoder/v2/entities/contract.entity';
+import { DataDecodedApiModule } from '@/datasources/data-decoder-api/data-decoder-api.module';
 
 export const IContractsRepository = Symbol('IContractsRepository');
 
@@ -24,7 +25,7 @@ export interface IContractsRepository {
 }
 
 @Module({
-  imports: [TransactionApiManagerModule],
+  imports: [TransactionApiManagerModule, DataDecodedApiModule],
   providers: [
     {
       provide: IContractsRepository,

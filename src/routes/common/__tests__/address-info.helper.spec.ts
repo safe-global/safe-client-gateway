@@ -1,5 +1,5 @@
 import type { ContractsRepository } from '@/domain/contracts/contracts.repository';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
 import type { TokenRepository } from '@/domain/tokens/token.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -45,7 +45,7 @@ describe('AddressInfoHelper', () => {
       expect(result).toEqual({
         value: contract.address,
         name: contract.displayName,
-        logoUri: contract.logoUri,
+        logoUri: contract.logoUrl,
       });
       expect(contractsRepository.getContract).toHaveBeenCalledWith({
         chainId,
@@ -89,7 +89,7 @@ describe('AddressInfoHelper', () => {
       expect(result).toEqual({
         value: contract.address,
         name: contract.name,
-        logoUri: contract.logoUri,
+        logoUri: contract.logoUrl,
       });
       expect(contractsRepository.getContract).toHaveBeenCalledWith({
         chainId,
@@ -144,7 +144,7 @@ describe('AddressInfoHelper', () => {
         {
           value: contract.address,
           name: contract.displayName,
-          logoUri: contract.logoUri,
+          logoUri: contract.logoUrl,
         },
         {
           value: token.address,

@@ -246,6 +246,13 @@ describe('Contract', () => {
           message: 'Invalid date',
           path: ['modified'],
         },
+        {
+          code: 'invalid_type',
+          expected: 'boolean',
+          message: 'Required',
+          path: ['trustedForDelegateCall'],
+          received: 'undefined',
+        },
       ]);
     });
   });

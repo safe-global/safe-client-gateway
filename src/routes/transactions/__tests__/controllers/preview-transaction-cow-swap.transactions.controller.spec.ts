@@ -8,7 +8,7 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { AppModule } from '@/app.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import { dataDecodedBuilder } from '@/domain/data-decoder/v2/entities/__tests__/data-decoded.builder';
 import { Operation } from '@/domain/safe/entities/operation.entity';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
@@ -39,6 +39,7 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 
 describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -121,6 +122,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contractResponse = contractBuilder()
         .with('address', previewTransactionDto.to)
         .build();
+      const contractPageResponse = pageBuilder()
+        .with('results', [contractResponse])
+        .build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -145,10 +149,10 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
+          `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`
         ) {
           return Promise.resolve({
-            data: rawify(contractResponse),
+            data: rawify(contractPageResponse),
             status: 200,
           });
         }
@@ -219,7 +223,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             to: {
               value: previewTransactionDto.to,
               name: contractResponse.displayName,
-              logoUri: contractResponse.logoUri,
+              logoUri: contractResponse.logoUrl,
             },
             value: previewTransactionDto.value,
             operation: previewTransactionDto.operation,
@@ -259,6 +263,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contractResponse = contractBuilder()
         .with('address', previewTransactionDto.to)
         .build();
+      const contractPageResponse = pageBuilder()
+        .with('results', [contractResponse])
+        .build();
       const tokenResponse = tokenBuilder()
         .with('address', swapTransaction.to)
         .build();
@@ -286,10 +293,10 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
+          `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`
         ) {
           return Promise.resolve({
-            data: rawify(contractResponse),
+            data: rawify(contractPageResponse),
             status: 200,
           });
         }
@@ -366,7 +373,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             to: {
               value: previewTransactionDto.to,
               name: contractResponse.displayName,
-              logoUri: contractResponse.logoUri,
+              logoUri: contractResponse.logoUrl,
             },
             value: previewTransactionDto.value,
             operation: previewTransactionDto.operation,
@@ -394,6 +401,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contractResponse = contractBuilder()
         .with('address', previewTransactionDto.to)
         .build();
+      const contractPageResponse = pageBuilder()
+        .with('results', [contractResponse])
+        .build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -408,10 +418,10 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
+          `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`
         ) {
           return Promise.resolve({
-            data: rawify(contractResponse),
+            data: rawify(contractPageResponse),
             status: 200,
           });
         }
@@ -454,6 +464,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contractResponse = contractBuilder()
         .with('address', previewTransactionDto.to)
         .build();
+      const contractPageResponse = pageBuilder()
+        .with('results', [contractResponse])
+        .build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -478,10 +491,10 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
+          `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`
         ) {
           return Promise.resolve({
-            data: rawify(contractResponse),
+            data: rawify(contractPageResponse),
             status: 200,
           });
         }
@@ -524,6 +537,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contractResponse = contractBuilder()
         .with('address', previewTransactionDto.to)
         .build();
+      const contractPageResponse = pageBuilder()
+        .with('results', [contractResponse])
+        .build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -548,10 +564,10 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
+          `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`
         ) {
           return Promise.resolve({
-            data: rawify(contractResponse),
+            data: rawify(contractPageResponse),
             status: 200,
           });
         }
@@ -596,6 +612,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contractResponse = contractBuilder()
         .with('address', previewTransactionDto.to)
         .build();
+      const contractPageResponse = pageBuilder()
+        .with('results', [contractResponse])
+        .build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -620,10 +639,10 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/contracts/${contractResponse.address}`
+          `${dataDecoderUrl}/api/v1/contracts/${contractResponse.address}`
         ) {
           return Promise.resolve({
-            data: rawify(contractResponse),
+            data: rawify(contractPageResponse),
             status: 200,
           });
         }
@@ -695,6 +714,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contract = contractBuilder()
         .with('address', ComposableCowAddress)
         .build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -719,11 +739,8 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/contracts/${contract.address}`
-        ) {
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+        if (url === `${dataDecoderUrl}/api/v1/contracts/${contract.address}`) {
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -797,7 +814,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             to: {
               value: ComposableCowAddress,
               name: contract.displayName,
-              logoUri: contract.logoUri,
+              logoUri: contract.logoUrl,
             },
             value: previewTransactionDto.value,
             operation: previewTransactionDto.operation,
@@ -831,6 +848,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contract = contractBuilder()
         .with('address', previewTransactionDto.to)
         .build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
       const tokenResponse = tokenBuilder()
         .with('address', ComposableCowAddress)
         .build();
@@ -858,11 +876,8 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/contracts/${contract.address}`
-        ) {
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+        if (url === `${dataDecoderUrl}/api/v1/contracts/${contract.address}`) {
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         }
         if (
           url ===
@@ -942,7 +957,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
             to: {
               value: previewTransactionDto.to,
               name: contract.displayName,
-              logoUri: contract.logoUri,
+              logoUri: contract.logoUrl,
             },
             value: previewTransactionDto.value,
             operation: previewTransactionDto.operation,
@@ -964,6 +979,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contract = contractBuilder()
         .with('address', ComposableCowAddress)
         .build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -988,11 +1004,8 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/contracts/${contract.address}`
-        ) {
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+        if (url === `${dataDecoderUrl}/api/v1/contracts/${contract.address}`) {
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -1026,6 +1039,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contract = contractBuilder()
         .with('address', ComposableCowAddress)
         .build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
       networkService.get.mockImplementation(({ url }) => {
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -1050,11 +1064,8 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/contracts/${contract.address}`
-        ) {
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+        if (url === `${dataDecoderUrl}/api/v1/contracts/${contract.address}`) {
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });
@@ -1088,6 +1099,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
       const contract = contractBuilder()
         .with('address', ComposableCowAddress)
         .build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
       const fullAppData = {
         fullAppData: JSON.stringify({
           appCode:
@@ -1119,11 +1131,8 @@ describe('Preview transaction - CoW Swap - Transactions Controller (Unit)', () =
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/contracts/${contract.address}`
-        ) {
-          return Promise.resolve({ data: rawify(contract), status: 200 });
+        if (url === `${dataDecoderUrl}/api/v1/contracts/${contract.address}`) {
+          return Promise.resolve({ data: rawify(contractPage), status: 200 });
         }
         return Promise.reject(new Error(`Could not match ${url}`));
       });

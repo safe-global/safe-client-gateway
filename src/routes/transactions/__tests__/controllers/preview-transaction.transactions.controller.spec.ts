@@ -8,7 +8,6 @@ import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { AppModule } from '@/app.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
@@ -36,6 +35,8 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 
 describe('Preview transaction - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -108,10 +109,13 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const chainResponse = chainBuilder().build();
     const dataDecodedResponse = dataDecodedBuilder().build();
     const contractResponse = contractBuilder().build();
+    const contractPageResponse = pageBuilder()
+      .with('results', [contractResponse])
+      .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${dataDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -119,7 +123,10 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
         return Promise.resolve({ data: rawify(safeResponse), status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: rawify(contractResponse), status: 200 });
+        return Promise.resolve({
+          data: rawify(contractPageResponse),
+          status: 200,
+        });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -143,7 +150,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           to: {
             value: contractResponse.address,
             name: contractResponse.displayName,
-            logoUri: contractResponse.logoUri,
+            logoUri: contractResponse.logoUrl,
           },
           dataSize: '16',
           value: previewTransactionDto.value,
@@ -158,7 +165,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           to: {
             value: contractResponse.address,
             name: contractResponse.displayName,
-            logoUri: contractResponse.logoUri,
+            logoUri: contractResponse.logoUrl,
           },
           value: previewTransactionDto.value,
           operation: previewTransactionDto.operation,
@@ -181,7 +188,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${dataDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -250,7 +257,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${dataDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -325,10 +332,13 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
     const contractResponse = contractBuilder()
       .with('trustedForDelegateCall', true)
       .build();
+    const contractPageResponse = pageBuilder()
+      .with('results', [contractResponse])
+      .build();
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
       const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getContractUrlPattern = `${chainResponse.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${dataDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chainResponse), status: 200 });
       }
@@ -336,7 +346,10 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
         return Promise.resolve({ data: rawify(safeResponse), status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: rawify(contractResponse), status: 200 });
+        return Promise.resolve({
+          data: rawify(contractPageResponse),
+          status: 200,
+        });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -360,7 +373,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           to: {
             value: contractResponse.address,
             name: contractResponse.displayName,
-            logoUri: contractResponse.logoUri,
+            logoUri: contractResponse.logoUrl,
           },
           dataSize: '16',
           value: previewTransactionDto.value,
@@ -375,7 +388,7 @@ describe('Preview transaction - Transactions Controller (Unit)', () => {
           to: {
             value: contractResponse.address,
             name: contractResponse.displayName,
-            logoUri: contractResponse.logoUri,
+            logoUri: contractResponse.logoUrl,
           },
           value: previewTransactionDto.value,
           operation: previewTransactionDto.operation,
