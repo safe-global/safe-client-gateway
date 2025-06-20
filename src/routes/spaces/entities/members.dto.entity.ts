@@ -29,6 +29,9 @@ class Member {
   name!: DomainMember['name'];
 
   @ApiPropertyOptional({ type: String, nullable: true })
+  alias!: DomainMember['alias'];
+
+  @ApiPropertyOptional({ type: String, nullable: true })
   invitedBy!: DomainMember['invitedBy'];
 
   @ApiProperty()

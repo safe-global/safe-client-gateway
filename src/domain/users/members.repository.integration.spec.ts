@@ -261,6 +261,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: memberId,
         name: memberName,
+        alias: null,
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
@@ -312,6 +313,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: memberId,
         name: memberName,
+        alias: null,
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
@@ -383,6 +385,7 @@ describe('MembersRepository', () => {
           createdAt: expect.any(Date),
           id: memberId1,
           name: memberName1,
+          alias: null,
           role: memberRole1,
           status: memberStatus1,
           invitedBy: member1InvitedBy,
@@ -392,6 +395,7 @@ describe('MembersRepository', () => {
           createdAt: expect.any(Date),
           id: memberId2,
           name: memberName2,
+          alias: null,
           role: memberRole2,
           status: memberStatus2,
           invitedBy: member2InvitedBy,
@@ -462,6 +466,7 @@ describe('MembersRepository', () => {
           createdAt: expect.any(Date),
           id: memberId1,
           name: memberName1,
+          alias: null,
           role: memberRole1,
           status: memberStatus1,
           invitedBy: member1InvitedBy,
@@ -471,6 +476,7 @@ describe('MembersRepository', () => {
           createdAt: expect.any(Date),
           id: memberId2,
           name: memberName2,
+          alias: null,
           role: memberRole2,
           status: member2Status,
           invitedBy: member2InvitedBy,
@@ -901,6 +907,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: memberId,
         name: memberName,
+        alias: null,
         role: memberRole,
         status: 'ACTIVE',
         invitedBy: memberInvitedBy,
@@ -980,6 +987,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: memberId,
         name: updatedName,
+        alias: null,
         role: memberRole,
         status: 'ACTIVE',
         invitedBy: memberInvitedBy,
@@ -1273,6 +1281,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: memberId,
         name: memberName,
+        alias: null,
         role: memberRole,
         status: 'DECLINED',
         invitedBy: memberInvitedBy,
@@ -1528,6 +1537,7 @@ describe('MembersRepository', () => {
           createdAt: expect.any(Date),
           id: memberId,
           name: memberName,
+          alias: null,
           role: memberRole,
           status: 'ACTIVE',
           invitedBy: memberInvitedBy,
@@ -1778,6 +1788,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: expect.any(Number),
         name: memberName,
+        alias: null,
         role: 'ADMIN',
         status: 'ACTIVE',
         invitedBy: expect.any(String),
@@ -1797,6 +1808,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: expect.any(Number),
         name: member2Name,
+        alias: null,
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: expect.any(String),
@@ -2192,6 +2204,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: member2memberId,
         name: member2Name,
+        alias: null,
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: member2InvitedBy,
@@ -2587,6 +2600,7 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         id: signerMemberId2,
         name: member2Name,
+        alias: null,
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: signerMember2InvitedBy,
@@ -2665,6 +2679,212 @@ describe('MembersRepository', () => {
           spaceId,
         }),
       ).rejects.toThrow('Member not found.');
+    });
+  });
+
+  describe('updateAlias', () => {
+    it('should add an alias for the authenticated user', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: user.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      const member = await dbMembersRepository.insert({
+        user: user.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.updateAlias({
+          authPayload: new AuthPayload(authPayloadDto),
+          spaceId,
+          alias: newAlias,
+        }),
+      ).resolves.toBeUndefined();
+
+      const updatedMember = await dbMembersRepository.findOneOrFail({
+        where: { id: member.identifiers[0].id },
+      });
+      expect(updatedMember.alias).toBe(newAlias);
+    });
+
+    it('should update alias from one value to another', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: user.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      const member = await dbMembersRepository.insert({
+        user: user.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        alias: nameBuilder(),
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.updateAlias({
+          authPayload: new AuthPayload(authPayloadDto),
+          spaceId,
+          alias: newAlias,
+        }),
+      ).resolves.toBeUndefined();
+
+      const updatedMember = await dbMembersRepository.findOneOrFail({
+        where: { id: member.identifiers[0].id },
+      });
+      expect(updatedMember.alias).toBe(newAlias);
+    });
+
+    it('should update alias to null', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: user.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      const member = await dbMembersRepository.insert({
+        user: user.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        alias: nameBuilder(),
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.updateAlias({
+          authPayload: new AuthPayload(authPayloadDto),
+          spaceId,
+          alias: null,
+        }),
+      ).resolves.toBeUndefined();
+
+      const updatedMember = await dbMembersRepository.findOneOrFail({
+        where: { id: member.identifiers[0].id },
+      });
+      expect(updatedMember.alias).toBeNull();
+    });
+
+    it('should throw NotFoundException if user is not found', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const spaceName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+
+      await expect(
+        membersRepository.updateAlias({
+          authPayload: new AuthPayload(authPayloadDto),
+          spaceId,
+          alias: newAlias,
+        }),
+      ).rejects.toThrow('User not found.');
+    });
+
+    it('should throw NotFoundException if signer is not a member of the space', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbWalletRepo.insert({
+        user: user.generatedMaps[0],
+        address: authPayloadDto.signer_address,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+
+      const otherUser = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      await dbMembersRepository.insert({
+        user: otherUser.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        alias: null,
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.updateAlias({
+          authPayload: new AuthPayload(authPayloadDto),
+          spaceId,
+          alias: newAlias,
+        }),
+      ).rejects.toThrow('Member not found.');
+    });
+
+    it('should throw UnauthorizedException if signer address is not provided', async () => {
+      const spaceName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+
+      await expect(
+        membersRepository.updateAlias({
+          authPayload: new AuthPayload(),
+          spaceId,
+          alias: newAlias,
+        }),
+      ).rejects.toThrow('Signer address not provided.');
     });
   });
 });
