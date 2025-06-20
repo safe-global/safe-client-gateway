@@ -32,6 +32,12 @@ import {
   VaultRedeemTransactionInfo,
 } from '@/routes/transactions/entities/vaults/vault-transaction-info.entity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { BridgeTransactionMapper } from '@/routes/transactions/mappers/common/bridge-transaction.mapper';
+import { LiFiHelper } from '@/routes/transactions/helpers/lifi-helper';
+import {
+  BridgeAndSwapTransactionInfo,
+  SwapTransactionInfo,
+} from '@/routes/transactions/entities/bridge/bridge-info.entity';
 import {
   BaseDataDecoded,
   DataDecoded,
@@ -40,6 +46,7 @@ import {
 @Injectable()
 export class MultisigTransactionInfoMapper {
   private readonly isVaultTransactionsMappingEnabled: boolean;
+  private readonly isLifiTransactionsMappingEnabled: boolean;
   private readonly TRANSFER_METHOD = 'transfer';
   private readonly TRANSFER_FROM_METHOD = 'transferFrom';
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
@@ -60,9 +67,11 @@ export class MultisigTransactionInfoMapper {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly bridgeTransactionMapper: BridgeTransactionMapper,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
     private readonly customTransactionMapper: CustomTransactionMapper,
     private readonly settingsChangeMapper: SettingsChangeMapper,
+    private readonly liFiHelper: LiFiHelper,
     private readonly nativeCoinTransferMapper: NativeCoinTransferMapper,
     private readonly erc20TransferMapper: Erc20TransferMapper,
     private readonly erc721TransferMapper: Erc721TransferMapper,
@@ -78,6 +87,8 @@ export class MultisigTransactionInfoMapper {
   ) {
     this.isVaultTransactionsMappingEnabled =
       this.configurationService.getOrThrow('features.vaultTransactionsMapping');
+    this.isLifiTransactionsMappingEnabled =
+      this.configurationService.getOrThrow('features.lifiTransactionsMapping');
   }
 
   async mapTransactionInfo(
@@ -99,6 +110,23 @@ export class MultisigTransactionInfoMapper {
         chainId,
       );
 
+    if (this.isLifiTransactionsMappingEnabled) {
+      const swap = await this.mapSwap({
+        chainId,
+        transaction,
+      });
+      if (swap) {
+        return swap;
+      }
+
+      const swapAndBridge = await this.mapSwapAndBridge({
+        chainId,
+        transaction,
+      });
+      if (swapAndBridge) {
+        return swapAndBridge;
+      }
+    }
     const swapOrder: SwapOrderTransactionInfo | null = await this.mapSwapOrder(
       chainId,
       transaction,
@@ -226,6 +254,50 @@ export class MultisigTransactionInfoMapper {
       humanDescription,
       dataDecoded,
     );
+  }
+
+  private async mapSwap(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+  }): Promise<SwapTransactionInfo | null> {
+    const transaction = await this.liFiHelper.getSwapTransaction(args);
+    if (!transaction) {
+      return null;
+    }
+
+    try {
+      return this.bridgeTransactionMapper.mapSwap({
+        data: transaction.data,
+        executionDate: args.transaction.executionDate,
+        chainId: args.chainId,
+        safeAddress: args.transaction.safe,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
+  }
+
+  private async mapSwapAndBridge(args: {
+    chainId: string;
+    transaction: MultisigTransaction | ModuleTransaction;
+  }): Promise<BridgeAndSwapTransactionInfo | null> {
+    const transaction = await this.liFiHelper.getSwapAndBridgeTransaction(args);
+    if (!transaction) {
+      return null;
+    }
+
+    try {
+      return this.bridgeTransactionMapper.mapSwapAndBridge({
+        chainId: args.chainId,
+        data: transaction.data,
+        executionDate: args.transaction.executionDate,
+        safeAddress: args.transaction.safe,
+      });
+    } catch (error) {
+      this.loggingService.warn(error);
+      return null;
+    }
   }
 
   /**

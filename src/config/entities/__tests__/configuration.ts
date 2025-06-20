@@ -103,6 +103,10 @@ export default (): ReturnType<typeof configuration> => ({
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
   },
+  bridge: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    apiKey: faker.string.hexadecimal({ length: 32 }),
+  },
   contracts: {
     trustedForDelegateCall: {
       maxSequentialPages: faker.number.int({ min: 1, max: 5 }),
@@ -196,6 +200,7 @@ export default (): ReturnType<typeof configuration> => ({
     trustedForDelegateCallContractsList: false,
     filterValueParsing: false,
     vaultTransactionsMapping: false,
+    lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
   },
   httpClient: { requestTimeout: faker.number.int() },
