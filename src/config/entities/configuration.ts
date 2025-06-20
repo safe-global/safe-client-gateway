@@ -491,8 +491,10 @@ export default () => ({
     api: {
       1: 'https://api.cow.fi/mainnet',
       100: 'https://api.cow.fi/xdai',
+      137: 'https://api.cow.fi/polygon',
       8453: 'https://api.cow.fi/base',
       42161: 'https://api.cow.fi/arbitrum_one',
+      43114: 'https://api.cow.fi/avalanche',
       11155111: 'https://api.cow.fi/sepolia',
     },
     explorerBaseUri:
