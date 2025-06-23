@@ -305,6 +305,29 @@ export class MembersRepository implements IMembersRepository {
     }
   }
 
+  public async updateAlias(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    alias: Member['alias'];
+  }): Promise<void> {
+    this.assertSignerAddress(args.authPayload);
+
+    const user = await this.usersRepository.findByWalletAddressOrFail(
+      args.authPayload.signer_address,
+    );
+
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+    const updateResult = await membersRepository.update(
+      { user: { id: user.id }, space: { id: args.spaceId } },
+      { alias: args.alias },
+    );
+
+    if (updateResult.affected === 0) {
+      throw new NotFoundException('Member not found.');
+    }
+  }
+
   public async removeUser(args: {
     authPayload: AuthPayload;
     userId: User['id'];

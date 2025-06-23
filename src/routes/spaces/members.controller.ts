@@ -37,6 +37,10 @@ import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
 } from '@/routes/spaces/entities/accept-invite.dto.entity';
+import {
+  UpdateMemberAliasDto,
+  UpdateMemberAliasDtoSchema,
+} from '@/routes/spaces/entities/update-member-name.dto.entity';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })
@@ -158,6 +162,32 @@ export class MembersController {
       spaceId,
       userId,
       updateRoleDto,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Update member alias',
+    description:
+      'Update the alias of the authenticated member in a space. Users can only update their own alias.',
+  })
+  @ApiOkResponse({ description: 'Alias updated' })
+  @ApiForbiddenResponse({ description: 'Signer not authorized' })
+  @ApiNotFoundResponse({
+    description: 'Signer, space or member not found',
+  })
+  @Patch('/:spaceId/members/alias')
+  @UseGuards(AuthGuard)
+  public async updateAlias(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+    @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
+    updateMemberAliasDto: UpdateMemberAliasDto,
+  ): Promise<void> {
+    await this.membersService.updateAlias({
+      authPayload,
+      spaceId,
+      updateMemberAliasDto,
     });
   }
 

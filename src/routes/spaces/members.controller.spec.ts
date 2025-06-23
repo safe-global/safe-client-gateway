@@ -1218,6 +1218,7 @@ describe('MembersController', () => {
                 role: 'ADMIN',
                 status: 'ACTIVE',
                 name: `${spaceName} creator`,
+                alias: null,
                 invitedBy: null, // Space creator's `invitedBy` field value is null
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
@@ -1233,6 +1234,7 @@ describe('MembersController', () => {
                 role: 'ADMIN',
                 status: 'INVITED',
                 name: user1Name,
+                alias: null,
                 invitedBy: authPayloadDto.signer_address,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
@@ -1248,6 +1250,7 @@ describe('MembersController', () => {
                 role: 'MEMBER',
                 status: 'INVITED',
                 name: user2Name,
+                alias: null,
                 invitedBy: authPayloadDto.signer_address,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
@@ -1979,6 +1982,308 @@ describe('MembersController', () => {
           error: 'Conflict',
           statusCode: 409,
         });
+    });
+  });
+
+  describe('PATCH /v1/spaces/:spaceId/members/alias', () => {
+    it('should set the alias for the authenticated user when they are admin of the space', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ alias: newAlias })
+        .expect(200);
+
+      // Verify the alias was updated by getting the members list
+      const getMembersResponse = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(getMembersResponse.body.members[0].alias).toBe(newAlias);
+    });
+
+    it('should set the alias for the authenticated user when they are a member of the space', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const inviteeAuthPayloadDto = authPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+              name: memberName,
+            },
+          ],
+        })
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({ name: memberName })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({ alias: newAlias })
+        .expect(200);
+
+      // Verify the alias was updated by getting the members list
+      const getMembersResponse = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(200);
+
+      expect(getMembersResponse.body.members[1].user.id).toBe(userId);
+      expect(getMembersResponse.body.members[1].alias).toBe(newAlias);
+    });
+
+    it('should throw a 403 if the user is not authenticated', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .send({ alias: newAlias })
+        .expect(403)
+        .expect({
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
+    it('should throw a 404 if the space does not exist', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+      const newAlias = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ alias: newAlias })
+        .expect(404)
+        .expect({
+          message: 'Member not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should throw a 404 if the user is not a member of the space', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const nonMemberAuthPayloadDto = authPayloadDtoBuilder().build();
+      const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
+      const spaceName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
+        .send({ alias: newAlias })
+        .expect(404)
+        .expect({
+          message: 'Member not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should update alias from null to a value', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      // Verify initial alias is null
+      const initialMembersResponse = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(initialMembersResponse.body.members[0].alias).toBeNull();
+
+      // Update alias
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ alias: newAlias })
+        .expect(200);
+
+      // Verify the alias was updated
+      const updatedMembersResponse = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(updatedMembersResponse.body.members[0].alias).toBe(newAlias);
+    });
+
+    it('should update alias from one value to another', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const originalAlias = nameBuilder();
+      const newAlias = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      // First update: set initial alias
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ alias: originalAlias })
+        .expect(200);
+
+      // Verify initial alias was set
+      const initialMembersResponse = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(initialMembersResponse.body.members[0].alias).toBe(originalAlias);
+
+      // Second update: change to new alias
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ alias: newAlias })
+        .expect(200);
+
+      // Verify the alias was updated
+      const updatedMembersResponse = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(updatedMembersResponse.body.members[0].alias).toBe(newAlias);
+    });
+
+    it('should validate alias format', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const invalidAlias = '1';
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ alias: invalidAlias })
+        .expect(422);
     });
   });
 });
