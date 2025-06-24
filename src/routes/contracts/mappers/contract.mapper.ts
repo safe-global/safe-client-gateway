@@ -15,7 +15,7 @@ export class ContractMapper {
       name: contract.name,
       displayName: contract.displayName ?? '',
       logoUri: contract.logoUrl,
-      contractAbi: contractAbi,
+      contractAbi,
       trustedForDelegateCall: contract.trustedForDelegateCall,
     };
   }
