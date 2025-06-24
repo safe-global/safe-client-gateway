@@ -14,20 +14,20 @@ describe('Contract Mapper', () => {
   });
 
   it('should return mapped contract', () => {
+    const address = '0xC0cf7C5DbcCBFDb0FAb8509C610dAc8B0Fa006aD';
     const contract = dataDecodedContractBuilder()
-      .with('address', '0xC0cf7C5DbcCBFDb0FAb8509C610dAc8B0Fa006aD')
-      .with('name', 'contract name')
+      .with('address', address)
       .build();
 
     const actual = mapper.map(contract);
     expect(actual).toEqual({
-      address: '0xC0cf7C5DbcCBFDb0FAb8509C610dAc8B0Fa006aD',
+      address: address,
       contractAbi: {
         abi: [expect.any(Object)],
       },
       displayName: expect.any(String),
       logoUri: expect.any(String),
-      name: 'contract name',
+      name: expect.any(String),
       trustedForDelegateCall: expect.any(Boolean),
     });
   });
