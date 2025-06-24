@@ -1,23 +1,11 @@
-import { fakeJson } from '@/__tests__/faker';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
 import {
   abiBuilder,
   contractBuilder as dataDecodedContractBuilder,
-  projectBuilder,
 } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import { ContractMapper } from '@/routes/contracts/mappers/contract.mapper';
-import { faker } from '@faker-js/faker/.';
-import { getAddress } from 'viem';
 
 describe('Contract Mapper', () => {
   let mapper: ContractMapper;
-
-  const address = getAddress(faker.finance.ethereumAddress());
-  const name = faker.word.sample();
-  const displayName = faker.word.words();
-  const logoUri = faker.internet.url({ appendSlash: false });
-  const contractAbi = JSON.parse(fakeJson()) as Record<string, unknown>;
-  const trustedForDelegateCall = faker.datatype.boolean();
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -26,29 +14,22 @@ describe('Contract Mapper', () => {
   });
 
   it('should return mapped contract', () => {
-    const expected = contractBuilder()
-      .with('address', address)
-      .with('name', name)
-      .with('displayName', displayName)
-      .with('logoUri', logoUri)
-      .with('contractAbi', { abi: [contractAbi] })
-      .with('trustedForDelegateCall', trustedForDelegateCall)
-      .build();
-
     const contract = dataDecodedContractBuilder()
-      .with('address', address)
-      .with('name', name)
-      .with('displayName', displayName)
-      .with('chainId', faker.number.int() as unknown as string)
-      .with('project', projectBuilder().build())
-      .with('abi', abiBuilder().with('abiJson', [contractAbi]).build())
-      .with('modified', faker.date.past())
-      .with('trustedForDelegateCall', trustedForDelegateCall)
-      .with('logoUrl', logoUri)
+      .with('address', '0xC0cf7C5DbcCBFDb0FAb8509C610dAc8B0Fa006aD')
+      .with('name', 'contract name')
       .build();
 
-    const actual = mapper.mapContract(contract);
-    expect(actual).toEqual(expected);
+    const actual = mapper.map(contract);
+    expect(actual).toEqual({
+      address: '0xC0cf7C5DbcCBFDb0FAb8509C610dAc8B0Fa006aD',
+      contractAbi: {
+        abi: [expect.any(Object)],
+      },
+      displayName: expect.any(String),
+      logoUri: expect.any(String),
+      name: 'contract name',
+      trustedForDelegateCall: expect.any(Boolean),
+    });
   });
 
   it('should return displayName = "" if its null', () => {
@@ -56,14 +37,14 @@ describe('Contract Mapper', () => {
       .with('displayName', null)
       .build();
 
-    const actual = mapper.mapContract(contract);
+    const actual = mapper.map(contract);
     expect(actual.displayName).toEqual('');
   });
 
   it('should return logoUri = null if logoUrl is null', () => {
     const contract = dataDecodedContractBuilder().with('logoUrl', null).build();
 
-    const actual = mapper.mapContract(contract);
+    const actual = mapper.map(contract);
     expect(actual.logoUri).toEqual(null);
   });
 
@@ -72,7 +53,14 @@ describe('Contract Mapper', () => {
       .with('abi', abiBuilder().with('abiJson', null).build())
       .build();
 
-    const actual = mapper.mapContract(contract);
+    const actual = mapper.map(contract);
+    expect(actual.contractAbi).toEqual(null);
+  });
+
+  it('should return contractAbi = null if abi is null', () => {
+    const contract = dataDecodedContractBuilder().with('abi', null).build();
+
+    const actual = mapper.map(contract);
     expect(actual.contractAbi).toEqual(null);
   });
 });

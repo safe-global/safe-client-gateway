@@ -49,6 +49,7 @@ export class ContractsRepository implements IContractsRepository {
     if (count === 0) {
       throw new NotFoundException('Error fetching the contract data.');
     }
+    // We fetch index 0 as the Decoder API returns a page with a single contract for a given address and chainId
     return results[0];
   }
 

@@ -6,8 +6,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
-import { contractBuilder as decoderContractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -78,19 +77,8 @@ describe('Contracts controller', () => {
   describe('GET contract data for an address', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
-      const decoderContract = decoderContractBuilder().build();
-      const contractPage = pageBuilder()
-        .with('results', [decoderContract])
-        .build();
-
-      const contract = contractBuilder()
-        .with('address', decoderContract.address)
-        .with('name', decoderContract.name)
-        .with('displayName', decoderContract.displayName ?? '')
-        .with('logoUri', decoderContract.logoUrl)
-        .with('contractAbi', { abi: decoderContract.abi.abiJson })
-        .with('trustedForDelegateCall', decoderContract.trustedForDelegateCall)
-        .build();
+      const contract = contractBuilder().build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -109,7 +97,16 @@ describe('Contracts controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/contracts/${contract.address}`)
         .expect(200)
-        .expect(contract);
+        .expect({
+          address: contract.address,
+          contractAbi: {
+            abi: contract.abi?.abiJson,
+          },
+          displayName: contract.displayName,
+          logoUri: contract.logoUrl,
+          name: contract.name,
+          trustedForDelegateCall: contract.trustedForDelegateCall,
+        });
     });
 
     it('Failure: Config API fails', async () => {
@@ -154,7 +151,7 @@ describe('Contracts controller', () => {
 
     it('should get a validation error', async () => {
       const chain = chainBuilder().build();
-      const contract = decoderContractBuilder().build();
+      const contract = contractBuilder().build();
       const contractPage = pageBuilder()
         .with('results', [{ ...contract, name: false }])
         .build();

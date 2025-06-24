@@ -17,6 +17,6 @@ export class ContractsService {
     contractAddress: `0x${string}`;
   }): Promise<Contract> {
     const contract = await this.contractsRepository.getContract(args);
-    return this.contractMapper.mapContract(contract);
+    return this.contractMapper.map(contract);
   }
 }

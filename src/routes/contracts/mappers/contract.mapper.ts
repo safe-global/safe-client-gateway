@@ -4,10 +4,10 @@ import { Contract as DataDecoderContract } from '@/domain/data-decoder/v2/entiti
 
 @Injectable()
 export class ContractMapper {
-  constructor() {}
+  public constructor() {}
 
-  mapContract(contract: DataDecoderContract): Contract {
-    const contractAbi = contract.abi.abiJson
+  public map(contract: DataDecoderContract): Contract {
+    const contractAbi = contract.abi?.abiJson
       ? { abi: contract.abi.abiJson }
       : null;
     return {

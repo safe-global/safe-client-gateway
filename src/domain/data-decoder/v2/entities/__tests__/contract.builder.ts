@@ -11,8 +11,8 @@ export function projectBuilder(): IBuilder<NonNullable<Contract['project']>> {
     .with('logoFile', faker.internet.url());
 }
 
-export function abiBuilder(): IBuilder<Contract['abi']> {
-  return new Builder<Contract['abi']>()
+export function abiBuilder(): IBuilder<NonNullable<Contract['abi']>> {
+  return new Builder<NonNullable<Contract['abi']>>()
     .with('abiJson', [JSON.parse(fakeJson()) as Record<string, unknown>])
     .with('abiHash', faker.string.hexadecimal() as `0x${string}`)
     .with('modified', faker.date.past());
