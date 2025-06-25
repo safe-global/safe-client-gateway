@@ -1,16 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IContractsRepository } from '@/domain/contracts/contracts.repository.interface';
 import { Contract } from '@/domain/contracts/entities/contract.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import {
-  ContractPageSchema,
-  ContractSchema,
-} from '@/domain/contracts/entities/schemas/contract.schema';
+import { ContractPageSchema } from '@/domain/contracts/entities/schemas/contract.schema';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
+import {
+  Contract as DataDecoderContract,
+  ContractPageSchema as DataDecoderContractPageSchema,
+} from '@/domain/data-decoder/v2/entities/contract.entity';
 
 @Injectable()
 export class ContractsRepository implements IContractsRepository {
@@ -20,6 +22,8 @@ export class ContractsRepository implements IContractsRepository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
+    @Inject(IDataDecoderApi)
+    private readonly dataDecoderApi: IDataDecoderApi,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -36,10 +40,17 @@ export class ContractsRepository implements IContractsRepository {
   async getContract(args: {
     chainId: string;
     contractAddress: `0x${string}`;
-  }): Promise<Contract> {
-    const api = await this.transactionApiManager.getApi(args.chainId);
-    const data = await api.getContract(args.contractAddress);
-    return ContractSchema.parse(data);
+  }): Promise<DataDecoderContract> {
+    const contracts = await this.dataDecoderApi.getContracts({
+      address: args.contractAddress,
+      chainIds: [args.chainId],
+    });
+    const { count, results } = DataDecoderContractPageSchema.parse(contracts);
+    if (count === 0) {
+      throw new NotFoundException('Error fetching the contract data.');
+    }
+    // We fetch index 0 as the Decoder API returns a page with a single contract for a given address and chainId
+    return results[0];
   }
 
   async isTrustedForDelegateCall(args: {

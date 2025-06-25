@@ -9,7 +9,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
@@ -256,7 +256,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/${multisigTransaction.to}`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -391,7 +391,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       const getTokenUrlPattern = `${chain.transactionService}/api/v1/tokens/0x7Af3460d552f832fD7E2DE973c628ACeA59B0712`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
@@ -475,6 +475,9 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
     const chain = chainBuilder().build();
     const safeAppsResponse = [safeAppBuilder().build()];
     const contractResponse = contractBuilder().build();
+    const contractPageResponse = pageBuilder()
+      .with('results', [contractResponse])
+      .build();
     const signers = Array.from({ length: 3 }, () => {
       const privateKey = generatePrivateKey();
       return privateKeyToAccount(privateKey);
@@ -518,7 +521,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${domainTransaction.safe}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${domainTransaction.safe}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }
@@ -535,7 +538,10 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
         return Promise.resolve({ data: rawify(safe), status: 200 });
       }
       if (url.includes(getContractUrlPattern)) {
-        return Promise.resolve({ data: rawify(contractResponse), status: 200 });
+        return Promise.resolve({
+          data: rawify(contractPageResponse),
+          status: 200,
+        });
       }
       return Promise.reject(new Error(`Could not match ${url}`));
     });
@@ -566,7 +572,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
                   to: {
                     value: contractResponse.address,
                     name: contractResponse.displayName,
-                    logoUri: contractResponse.logoUri,
+                    logoUri: contractResponse.logoUrl,
                   },
                   dataSize: '16',
                   value: domainTransaction.value,
@@ -634,7 +640,7 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionsUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/multisig-transactions/`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getContractUrlPattern = `${chain.transactionService}/api/v1/contracts/`;
+      const getContractUrlPattern = `${safeDecoderUrl}/api/v1/contracts/`;
       if (url === getChainUrl) {
         return Promise.resolve({ data: rawify(chain), status: 200 });
       }

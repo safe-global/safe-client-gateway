@@ -10,7 +10,7 @@ export const ProjectSchema = z.object({
 
 export const AbiSchema = z.object({
   // We could use abitype here, but we don't consume the ABI/it would increase entity complexity
-  abiJson: z.array(z.record(z.unknown())),
+  abiJson: z.array(z.record(z.unknown())).nullable(),
   abiHash: HexSchema,
   modified: z.coerce.date(),
 });
@@ -21,8 +21,10 @@ export const ContractSchema = z.object({
   displayName: z.string().nullable(),
   chainId: z.number().transform(String),
   project: ProjectSchema.nullable(),
-  abi: AbiSchema,
+  abi: AbiSchema.nullable(),
   modified: z.coerce.date(),
+  trustedForDelegateCall: z.boolean(),
+  logoUrl: z.string().nullish().default(null),
 });
 
 export type Contract = z.infer<typeof ContractSchema>;

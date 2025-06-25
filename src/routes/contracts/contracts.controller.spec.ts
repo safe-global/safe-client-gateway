@@ -6,7 +6,7 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/domain/contracts/entities/__tests__/contract.builder';
+import { contractBuilder } from '@/domain/data-decoder/v2/entities/__tests__/contract.builder';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -27,10 +27,12 @@ import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 
 describe('Contracts controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let safeDataDecoderUrl: string;
   let networkService: jest.MockedObjectDeep<INetworkService>;
 
   beforeEach(async () => {
@@ -59,6 +61,9 @@ describe('Contracts controller', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    safeDataDecoderUrl = configurationService.getOrThrow(
+      'safeDataDecoder.baseUri',
+    );
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
@@ -73,12 +78,17 @@ describe('Contracts controller', () => {
     it('Success', async () => {
       const chain = chainBuilder().build();
       const contract = contractBuilder().build();
+      const contractPage = pageBuilder().with('results', [contract]).build();
+
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/contracts/${contract.address}`:
-            return Promise.resolve({ data: rawify(contract), status: 200 });
+          case `${safeDataDecoderUrl}/api/v1/contracts/${contract.address}`:
+            return Promise.resolve({
+              data: rawify(contractPage),
+              status: 200,
+            });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -87,7 +97,16 @@ describe('Contracts controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/chains/${chain.chainId}/contracts/${contract.address}`)
         .expect(200)
-        .expect(contract);
+        .expect({
+          address: contract.address,
+          contractAbi: {
+            abi: contract.abi?.abiJson,
+          },
+          displayName: contract.displayName,
+          logoUri: contract.logoUrl,
+          name: contract.name,
+          trustedForDelegateCall: contract.trustedForDelegateCall,
+        });
     });
 
     it('Failure: Config API fails', async () => {
@@ -107,17 +126,16 @@ describe('Contracts controller', () => {
         .expect(503);
     });
 
-    it('Failure: Transaction API fails', async () => {
+    it('Failure: Decoder API fails', async () => {
       const chain = chainBuilder().build();
       const contract = contractBuilder().build();
-      const transactionServiceUrl = `${chain.transactionService}/api/v1/contracts/${contract.address}`;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case transactionServiceUrl:
+          case safeDataDecoderUrl:
             return Promise.reject(
-              new NetworkResponseError(new URL(transactionServiceUrl), {
+              new NetworkResponseError(new URL(safeDataDecoderUrl), {
                 status: 503,
               } as Response),
             );
@@ -134,13 +152,16 @@ describe('Contracts controller', () => {
     it('should get a validation error', async () => {
       const chain = chainBuilder().build();
       const contract = contractBuilder().build();
+      const contractPage = pageBuilder()
+        .with('results', [{ ...contract, name: false }])
+        .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/contracts/${contract.address}`:
+          case `${safeDataDecoderUrl}/api/v1/contracts/${contract.address}`:
             return Promise.resolve({
-              data: rawify({ ...contract, name: false }),
+              data: rawify(contractPage),
               status: 200,
             });
           default:

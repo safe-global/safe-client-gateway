@@ -11,8 +11,8 @@ export function projectBuilder(): IBuilder<NonNullable<Contract['project']>> {
     .with('logoFile', faker.internet.url());
 }
 
-export function abiBuilder(): IBuilder<Contract['abi']> {
-  return new Builder<Contract['abi']>()
+export function abiBuilder(): IBuilder<NonNullable<Contract['abi']>> {
+  return new Builder<NonNullable<Contract['abi']>>()
     .with('abiJson', [JSON.parse(fakeJson()) as Record<string, unknown>])
     .with('abiHash', faker.string.hexadecimal() as `0x${string}`)
     .with('modified', faker.date.past());
@@ -26,5 +26,7 @@ export function contractBuilder(): IBuilder<Contract> {
     .with('chainId', faker.number.int() as unknown as string)
     .with('project', projectBuilder().build())
     .with('abi', abiBuilder().build())
-    .with('modified', faker.date.past());
+    .with('modified', faker.date.past())
+    .with('logoUrl', faker.internet.url({ appendSlash: false }))
+    .with('trustedForDelegateCall', faker.datatype.boolean());
 }
