@@ -1,16 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import {
   AbiParameterToPrimitiveType,
   Address,
   decodeAbiParameters,
+  decodeFunctionData,
   Hex,
   isAddressEqual,
+  parseAbi,
   parseAbiParameter,
   parseAbiParameters,
+  toFunctionSelector,
+  zeroAddress,
 } from 'viem';
 
 // Note: the following is heavily inspired by LiFi's CalldataVerificationFacet.sol
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Facets/CalldataVerificationFacet.sol
+
+type FeeData = {
+  tokenAddress: Address;
+  integratorFee: bigint;
+  lifiFee: bigint;
+  integratorAddress: Address;
+};
 
 @Injectable()
 export class LiFiDecoder {
@@ -35,25 +46,31 @@ export class LiFiDecoder {
     '0xaf7060fd',
   ] as const;
 
+  public static readonly FeeCollectorAbi = parseAbi([
+    'function collectNativeFees(uint256 integratorFee,uint256 lifiFee,address integratorAddress) external payable',
+    'function collectTokenFees(address tokenAddress,uint256 integratorFee,uint256 lifiFee,address integratorAddress) external',
+  ]);
+
   // Initial arguments of all swap* functions
   private static readonly GenericSwapParameters = parseAbiParameters(
     'bytes32 _transactionId, string _integrator, string _referrer, address _receiver, uint256 _minAmountOut',
   );
 
-  constructor(private readonly fromChain: string) {}
-
   /**
    * Checks if the given calldata represents a (no swap and) bridge call.
    *
-   * @param {Hex} data - The calldata to check.
+   * @param {Object} args - The arguments object.
+   * @param {string} args.chainId - The chain ID to check against.
+   * @param {Hex} args.data - The calldata to check.
    * @returns {boolean} True if the calldata is a bridge call, false otherwise.
    */
-  public isBridge(data: Hex): boolean {
+  public isBridge(args: { chainId: string; data: Hex }): boolean {
     try {
-      const { destinationChainId, hasSourceSwaps } =
-        this.decodeBridgeData(data);
+      const { destinationChainId, hasSourceSwaps } = this.decodeBridgeData(
+        args.data,
+      );
 
-      const isBridge = this.fromChain !== destinationChainId.toString();
+      const isBridge = args.chainId !== destinationChainId.toString();
       return isBridge && !hasSourceSwaps;
     } catch {
       return false;
@@ -63,12 +80,14 @@ export class LiFiDecoder {
   /**
    * Checks if the given calldata represents a swap call.
    *
-   * @param {Hex} data - The calldata to check.
+   * @param {Object} args - The arguments object.
+   * @param {string} args.chainId - The chain ID to check against.
+   * @param {Hex} args.data - The calldata to check.
    * @returns {boolean} True if the calldata is a swap call, false otherwise.
    */
-  public isSwap(data: Hex): boolean {
+  public isSwap(args: { chainId: string; data: Hex }): boolean {
     try {
-      const { fromToken, toToken } = this.decodeSwap(data);
+      const { fromToken, toToken } = this.decodeSwap(args.data);
 
       if (!isAddressEqual(fromToken, toToken)) {
         return true;
@@ -78,10 +97,11 @@ export class LiFiDecoder {
     }
 
     try {
-      const { destinationChainId, hasSourceSwaps } =
-        this.decodeBridgeData(data);
+      const { destinationChainId, hasSourceSwaps } = this.decodeBridgeData(
+        args.data,
+      );
 
-      const isBridge = this.fromChain !== destinationChainId.toString();
+      const isBridge = args.chainId !== destinationChainId.toString();
       return !isBridge && hasSourceSwaps;
     } catch {
       return false;
@@ -91,19 +111,77 @@ export class LiFiDecoder {
   /**
    * Checks if the given calldata represents a swap and bridge call.
    *
-   * @param {Hex} data - The calldata to check.
+   * @param {Object} args - The arguments object.
+   * @param {string} args.chainId - The chain ID to check against.
+   * @param {Hex} args.data - The calldata to check.
    * @returns {boolean} True if the calldata is a swap and bridge call, false otherwise.
    */
-  public isSwapAndBridge(data: Hex): boolean {
+  public isSwapAndBridge(args: { chainId: string; data: Hex }): boolean {
     try {
-      const { destinationChainId, hasSourceSwaps } =
-        this.decodeBridgeData(data);
+      const { destinationChainId, hasSourceSwaps } = this.decodeBridgeData(
+        args.data,
+      );
 
-      const isBridge = this.fromChain !== destinationChainId.toString();
+      const isBridge = args.chainId !== destinationChainId.toString();
       return isBridge && hasSourceSwaps;
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Checks if the given calldata represents a fee collection call.
+   *
+   * @param {Hex} data - The calldata to check.
+   * @returns {boolean} True if the calldata is a fee collection call, false otherwise.
+   */
+  private isFeeCollection(data: Hex): boolean {
+    return (
+      data.startsWith(toFunctionSelector(LiFiDecoder.FeeCollectorAbi[0])) ||
+      data.startsWith(toFunctionSelector(LiFiDecoder.FeeCollectorAbi[1]))
+    );
+  }
+
+  /**
+   * Decodes the fee collection data from the given calldata.
+   *
+   * @param {Hex} data - The calldata to decode.
+   * @returns {FeeData | null} The decoded fee collection data.
+   */
+  private decodeFeeCollection(data: Hex): {
+    tokenAddress: Address;
+    integratorFee: bigint;
+    lifiFee: bigint;
+    integratorAddress: Address;
+  } | null {
+    try {
+      const { functionName, args } = decodeFunctionData({
+        abi: LiFiDecoder.FeeCollectorAbi,
+        data,
+      });
+
+      if (functionName === 'collectNativeFees') {
+        return {
+          tokenAddress: zeroAddress,
+          integratorFee: args[0],
+          lifiFee: args[1],
+          integratorAddress: args[2],
+        };
+      }
+
+      if (functionName === 'collectTokenFees') {
+        return {
+          tokenAddress: args[0],
+          integratorFee: args[1],
+          lifiFee: args[2],
+          integratorAddress: args[3],
+        };
+      }
+    } catch {
+      // Fee collection may not be present
+    }
+
+    return null;
   }
 
   /**
@@ -125,25 +203,39 @@ export class LiFiDecoder {
     transactionId: Hex;
     toAddress: Address;
     fromToken: Address;
-    toToken: Address;
     fromAmount: bigint;
     bridge: string;
     toChain: bigint;
+    fees: FeeData | null;
   } {
     const bridgeData = this.decodeBridgeData(data);
 
     let fromToken: Address;
-    let toToken: Address;
     let fromAmount: bigint;
+    let fees = null;
 
     if (bridgeData.hasSourceSwaps) {
-      const [singleSwap] = this.decodeBridgeSwapData(data);
-      fromToken = singleSwap.sendingAssetId;
-      toToken = singleSwap.receivingAssetId;
-      fromAmount = singleSwap.fromAmount;
+      const allSwapData = this.decodeBridgeSwapData(data);
+      const singleSwap = allSwapData.find(
+        (swapData) => !this.isFeeCollection(swapData.callData),
+      );
+      const feeCollection = allSwapData.find((swapData) =>
+        this.isFeeCollection(swapData.callData),
+      );
+
+      fees = feeCollection
+        ? this.decodeFeeCollection(feeCollection.callData)
+        : null;
+
+      if (!singleSwap) {
+        fromToken = bridgeData.sendingAssetId;
+        fromAmount = bridgeData.minAmount;
+      } else {
+        fromToken = singleSwap.sendingAssetId;
+        fromAmount = singleSwap.fromAmount;
+      }
     } else {
       fromToken = bridgeData.sendingAssetId;
-      toToken = bridgeData.sendingAssetId;
       fromAmount = bridgeData.minAmount;
     }
 
@@ -151,10 +243,10 @@ export class LiFiDecoder {
       transactionId: bridgeData.transactionId,
       toAddress: bridgeData.receiver,
       fromToken,
-      toToken,
       fromAmount,
       bridge: bridgeData.bridge,
       toChain: bridgeData.destinationChainId,
+      fees,
     };
   }
 
@@ -213,6 +305,7 @@ export class LiFiDecoder {
     toToken: Address;
     fromAmount: bigint;
     toAmount: bigint;
+    fees: FeeData | null;
   } {
     if (!this.isGenericSwapCalldata(data)) {
       throw new Error('Insufficient calldata for a generic swap call');
@@ -247,6 +340,14 @@ export class LiFiDecoder {
     const [firstSwap] = swapDataArr;
     const lastSwap = swapDataArr[swapDataArr.length - 1];
 
+    const feeData = swapDataArr.find((swapData) =>
+      this.isFeeCollection(swapData.callData),
+    );
+
+    const fees = feeData?.callData
+      ? this.decodeFeeCollection(feeData.callData)
+      : null;
+
     return {
       transactionId,
       toAddress,
@@ -254,6 +355,7 @@ export class LiFiDecoder {
       toToken: lastSwap.receivingAssetId,
       fromAmount: firstSwap.fromAmount,
       toAmount,
+      fees,
     };
   }
 
@@ -387,3 +489,9 @@ export class LiFiDecoder {
     return `0x${data.slice(10)}`;
   }
 }
+
+@Module({
+  providers: [LiFiDecoder],
+  exports: [LiFiDecoder],
+})
+export class LiFiDecoderModule {}

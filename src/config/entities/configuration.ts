@@ -155,6 +155,10 @@ export default () => ({
       apiKey: process.env.INFURA_API_KEY,
     },
   },
+  bridge: {
+    baseUri: 'https://li.quest',
+    apiKey: process.env.BRIDGE_API_KEY,
+  },
   contracts: {
     trustedForDelegateCall: {
       maxSequentialPages: parseInt(
@@ -311,6 +315,8 @@ export default () => ({
       process.env.FF_FILTER_VALUE_PARSING?.toLowerCase() === 'true',
     vaultTransactionsMapping:
       process.env.FF_VAULT_TRANSACTIONS_MAPPING?.toLowerCase() === 'true',
+    lifiTransactionsMapping:
+      process.env.FF_LIFITRANSACTIONS_MAPPING?.toLowerCase() === 'true',
     cacheInFlightRequests:
       process.env.HTTP_CLIENT_CACHE_IN_FLIGHT_REQUESTS?.toLowerCase() ===
       'true',

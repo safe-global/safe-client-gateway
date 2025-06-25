@@ -6,6 +6,7 @@ import type { ParseStructs } from 'abitype/dist/types/human-readable/types/struc
 import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
 import type { IEncoder } from '@/__tests__/encoder-builder';
+import { LiFiDecoder } from '@/domain/bridge/contracts/decoders/lifi-decoder.helper';
 
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Interfaces/ILiFi.sol#L10-L21
 const BridgeDataStruct =
@@ -98,6 +99,7 @@ const startBridgeTokensViaAcrossV3Abi = parseAbi([
 
 type StartBridgeTokensViaAcrossV3Args = {
   bridgeData: BridgeDataStructArgs;
+  swapData: Array<SwapDataStructArgs>;
   acrossData: AcrossV3DataStructArgs;
 };
 
@@ -143,7 +145,7 @@ const swapAndStartBridgeTokensViaAcrossV3Abi = parseAbi([
 
 type SwapAndStartBridgeTokensViaAcrossV3Args = {
   bridgeData: BridgeDataStructArgs;
-  swapData: SwapDataStructArgs;
+  swapData: Array<SwapDataStructArgs>;
   acrossData: AcrossV3DataStructArgs;
 };
 
@@ -159,27 +161,35 @@ class SwapAndStartBridgeTokensViaAcrossV3Encoder<
     return encodeFunctionData({
       abi: swapAndStartBridgeTokensViaAcrossV3Abi,
       functionName: 'swapAndStartBridgeTokensViaAcrossV3',
-      args: [
-        bridgeData,
-        // Swap and bridge transactions only have one source swap
-        [swapData],
-        acrossData,
-      ],
+      args: [bridgeData, swapData, acrossData],
     });
   }
 }
 
 export function swapAndStartBridgeTokensViaAcrossV3Encoder(): SwapAndStartBridgeTokensViaAcrossV3Encoder<SwapAndStartBridgeTokensViaAcrossV3Args> {
-  const bridgeData = bridgeDataStructBuilder().build();
+  const bridgeData = bridgeDataStructBuilder()
+    .with('hasSourceSwaps', true)
+    .build();
 
   return new SwapAndStartBridgeTokensViaAcrossV3Encoder()
     .with('bridgeData', bridgeData)
-    .with(
-      'swapData',
+    .with('swapData', [
       swapDataStructBuilder()
-        .with('sendingAssetId', bridgeData.sendingAssetId)
+        .with(
+          'callData',
+          encodeFunctionData({
+            abi: LiFiDecoder.FeeCollectorAbi,
+            functionName: 'collectTokenFees',
+            args: [
+              faker.finance.ethereumAddress() as `0x${string}`,
+              faker.number.bigInt(),
+              faker.number.bigInt(),
+              faker.finance.ethereumAddress() as `0x${string}`,
+            ],
+          }),
+        )
         .build(),
-    )
+    ])
     .with('acrossData', acrossV3DataStructBuilder().build());
 }
 

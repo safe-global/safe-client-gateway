@@ -14,6 +14,10 @@ import {
   VaultDepositTransactionInfo,
   VaultRedeemTransactionInfo,
 } from '@/routes/transactions/entities/vaults/vault-transaction-info.entity';
+import {
+  BridgeAndSwapTransactionInfo,
+  SwapTransactionInfo,
+} from '@/routes/transactions/entities/bridge/bridge-info.entity';
 
 @ApiExtraModels(
   TransactionInfo,
@@ -21,7 +25,9 @@ import {
   CustomTransactionInfo,
   SettingsChangeTransaction,
   TransferTransactionInfo,
+  BridgeAndSwapTransactionInfo,
   SwapOrderTransactionInfo,
+  SwapTransactionInfo,
   SwapTransferTransactionInfo,
   TwapOrderTransactionInfo,
   NativeStakingDepositTransactionInfo,
@@ -38,6 +44,8 @@ export class BaseTransaction {
       { $ref: getSchemaPath(SettingsChangeTransaction) },
       { $ref: getSchemaPath(TransferTransactionInfo) },
       { $ref: getSchemaPath(SwapOrderTransactionInfo) },
+      { $ref: getSchemaPath(BridgeAndSwapTransactionInfo) },
+      { $ref: getSchemaPath(SwapTransactionInfo) },
       { $ref: getSchemaPath(SwapTransferTransactionInfo) },
       { $ref: getSchemaPath(TwapOrderTransactionInfo) },
       { $ref: getSchemaPath(NativeStakingDepositTransactionInfo) },
