@@ -175,17 +175,6 @@ export function swapAndStartBridgeTokensViaAcrossV3Encoder(): SwapAndStartBridge
     .with('bridgeData', bridgeData)
     .with('swapData', [
       swapDataStructBuilder()
-        .with('callTo', faker.finance.ethereumAddress() as `0x${string}`)
-        .with('approveTo', faker.finance.ethereumAddress() as `0x${string}`)
-        .with(
-          'sendingAssetId',
-          faker.finance.ethereumAddress() as `0x${string}`,
-        )
-        .with(
-          'receivingAssetId',
-          faker.finance.ethereumAddress() as `0x${string}`,
-        )
-        .with('fromAmount', faker.number.bigInt())
         .with(
           'callData',
           encodeFunctionData({
@@ -199,7 +188,6 @@ export function swapAndStartBridgeTokensViaAcrossV3Encoder(): SwapAndStartBridge
             ],
           }),
         )
-        .with('requiresDeposit', faker.datatype.boolean())
         .build(),
     ])
     .with('acrossData', acrossV3DataStructBuilder().build());

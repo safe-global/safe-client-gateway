@@ -129,6 +129,12 @@ export class LiFiDecoder {
     }
   }
 
+  /**
+   * Checks if the given calldata represents a fee collection call.
+   *
+   * @param {Hex} data - The calldata to check.
+   * @returns {boolean} True if the calldata is a fee collection call, false otherwise.
+   */
   private isFeeCollection(data: Hex): boolean {
     return (
       data.startsWith(toFunctionSelector(LiFiDecoder.FeeCollectorAbi[0])) ||
@@ -136,6 +142,12 @@ export class LiFiDecoder {
     );
   }
 
+  /**
+   * Decodes the fee collection data from the given calldata.
+   *
+   * @param {Hex} data - The calldata to decode.
+   * @returns {FeeData | null} The decoded fee collection data.
+   */
   private decodeFeeCollection(data: Hex): {
     tokenAddress: Address;
     integratorFee: bigint;

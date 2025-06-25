@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IBridgeRepository } from '@/domain/bridge/bridge.repository.interface';
 import {
   BridgeStatus,
@@ -24,7 +24,7 @@ export class BridgeRepository implements IBridgeRepository {
     });
 
     if (!chain) {
-      throw new Error(`Chain not found. chainId=${chainId}`);
+      throw new NotFoundException(`Chain not found. chainId=${chainId}`);
     }
     return chain.diamondAddress;
   }
