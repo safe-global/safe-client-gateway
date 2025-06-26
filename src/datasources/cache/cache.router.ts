@@ -74,6 +74,7 @@ export class CacheRouter {
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
+  private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -814,6 +815,27 @@ export class CacheRouter {
 
   static getOutreachFileProcessorCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.getOutreachFileProcessorCacheKey(), '');
+  }
+
+  static getTransactionsExportCacheKey(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+  }): string {
+    return `${args.chainId}_${CacheRouter.TRANSACTIONS_EXPORT_KEY}_${args.safeAddress}`;
+  }
+
+  static getTransactionsExportCacheDir(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    executionDateGte: string;
+    executionDateLte: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getTransactionsExportCacheKey(args),
+      `${args.executionDateGte}_${args.executionDateLte}_${args.limit}_${args.offset}`,
+    );
   }
 
   /**
