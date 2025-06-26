@@ -242,7 +242,7 @@ export const JobType = {
   HELLO_WORLD: 'hello-world',
 } as const;
 
-export type JobTypeName = typeof JobType[keyof typeof JobType];
+export type JobTypeName = (typeof JobType)[keyof typeof JobType];
 
 // Typed response DTOs for API endpoints
 export class JobStatusDto {
@@ -263,7 +263,7 @@ export class HelloWorldProcessor extends WorkerHost {
   async process(job: Job<HelloWorldJobData>): Promise<void> {
     if (job.name !== JobType.HELLO_WORLD) return;
     // Configurable processing delay via environment variables
-    await new Promise(resolve => setTimeout(resolve, this.processingDelayMs));
+    await new Promise((resolve) => setTimeout(resolve, this.processingDelayMs));
   }
 
   @OnWorkerEvent('completed')
@@ -300,6 +300,7 @@ Jobs are created programmatically through the `JobsService` within the applicati
 Uses existing Redis configuration from `redis` config section. Job queue automatically inherits Redis connection settings.
 
 Additional job-specific configurations:
+
 - `HELLO_WORLD_JOB_DELAY_MS`: Processing delay for HelloWorld jobs (default: 1000ms)
 
 ## Caching Strategy
