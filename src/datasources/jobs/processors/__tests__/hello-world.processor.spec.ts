@@ -3,6 +3,7 @@ import type { Job } from 'bullmq';
 import { HelloWorldProcessor } from '@/datasources/jobs/processors/hello-world.processor';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { JobType } from '@/datasources/jobs/types/job-types';
 import type { HelloWorldJobData } from '@/datasources/jobs/jobs.service';
 import { LogType } from '@/domain/common/entities/log-type.entity';
@@ -10,6 +11,7 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 describe('HelloWorldProcessor', () => {
   let processor: HelloWorldProcessor;
   let mockLoggingService: jest.MockedObjectDeep<ILoggingService>;
+  let mockConfigurationService: jest.MockedObjectDeep<IConfigurationService>;
 
   beforeEach(async () => {
     mockLoggingService = {
@@ -19,14 +21,27 @@ describe('HelloWorldProcessor', () => {
       debug: jest.fn(),
     };
 
+    mockConfigurationService = {
+      get: jest.fn(),
+      getOrThrow: jest.fn(),
+    };
+
+    // Mock environment variable for testing
+    process.env.HELLO_WORLD_JOB_DELAY_MS = '100';
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         HelloWorldProcessor,
         { provide: LoggingService, useValue: mockLoggingService },
+        { provide: IConfigurationService, useValue: mockConfigurationService },
       ],
     }).compile();
 
     processor = moduleRef.get<HelloWorldProcessor>(HelloWorldProcessor);
+  });
+
+  afterEach(() => {
+    delete process.env.HELLO_WORLD_JOB_DELAY_MS;
   });
 
   describe('process', () => {
