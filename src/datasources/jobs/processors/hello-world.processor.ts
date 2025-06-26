@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HelloWorldJobData } from '@/datasources/jobs/jobs.service';
 import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.module';
 import { LogType } from '@/domain/common/entities/log-type.entity';
@@ -10,16 +11,23 @@ import { JobType } from '@/datasources/jobs/types/job-types';
 @Injectable()
 @Processor(JOBS_QUEUE_NAME)
 export class HelloWorldProcessor extends WorkerHost {
+  private readonly processingDelayMs: number;
+
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject(IConfigurationService) private readonly configurationService: IConfigurationService,
   ) {
     super();
+    this.processingDelayMs = parseInt(
+      process.env.HELLO_WORLD_JOB_DELAY_MS ?? '1000',
+      10,
+    );
   }
 
   async process(job: Job<HelloWorldJobData>): Promise<void> {
-    if (job.name !== JobType.HELLO_WORLD as string) {
-      return;
-    }
+      if (job.name !== JobType.HELLO_WORLD.toString()) {
+        return;
+      }
 
     const data = job.data;
 
@@ -29,8 +37,8 @@ export class HelloWorldProcessor extends WorkerHost {
       event: `Processing hello world job: ${data.message}`,
     });
 
-    // Simulate some work
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Simulate some work (configurable delay for testing/demo purposes)
+    await new Promise((resolve) => setTimeout(resolve, this.processingDelayMs));
 
     this.loggingService.info({
       type: LogType.JobEvent,

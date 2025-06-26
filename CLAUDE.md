@@ -237,17 +237,33 @@ BullMQ is integrated for handling background job processing, enabling asynchrono
 ### Key Components
 
 ```typescript
-// Job types enum for type safety
-export enum JobType {
-  HELLO_WORLD = 'hello-world',
+// Job types with string literal types for better type safety
+export const JobType = {
+  HELLO_WORLD: 'hello-world',
+} as const;
+
+export type JobTypeName = typeof JobType[keyof typeof JobType];
+
+// Typed response DTOs for API endpoints
+export class JobStatusDto {
+  id?: string;
+  name?: string;
+  data?: Record<string, unknown>;
+  progress?: number | string | Record<string, unknown>;
+  processedOn?: number;
+  finishedOn?: number;
+  failedReason?: string;
+  returnvalue?: unknown;
 }
 
-// NestJS BullMQ processor
+// NestJS BullMQ processor with configurable processing
 @Injectable()
 @Processor(JOBS_QUEUE_NAME)
 export class HelloWorldProcessor extends WorkerHost {
   async process(job: Job<HelloWorldJobData>): Promise<void> {
-    // Process job logic
+    if (job.name !== JobType.HELLO_WORLD) return;
+    // Configurable processing delay via environment variables
+    await new Promise(resolve => setTimeout(resolve, this.processingDelayMs));
   }
 
   @OnWorkerEvent('completed')
@@ -273,14 +289,18 @@ Jobs are created programmatically through the `JobsService` within the applicati
 
 ### Adding New Job Types
 
-1. **Define job type** in `src/datasources/jobs/types/job-types.ts`
+1. **Define job type** in `src/datasources/jobs/types/job-types.ts` using string literal types
 2. **Create processor** extending `WorkerHost` with `@Processor` decorator
 3. **Add to JobsModule** - processors are automatically discovered by NestJS
 4. **Add service methods** in `JobsService` for job creation using `@InjectQueue`
+5. **Create DTOs** for API responses with proper Swagger documentation
 
 ### Configuration
 
 Uses existing Redis configuration from `redis` config section. Job queue automatically inherits Redis connection settings.
+
+Additional job-specific configurations:
+- `HELLO_WORLD_JOB_DELAY_MS`: Processing delay for HelloWorld jobs (default: 1000ms)
 
 ## Caching Strategy
 

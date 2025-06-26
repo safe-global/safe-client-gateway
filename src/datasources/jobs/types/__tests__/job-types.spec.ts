@@ -32,7 +32,7 @@ describe('JobTypes', () => {
 
   describe('JobData interface', () => {
     it('should define data structure for HELLO_WORLD jobs', () => {
-      const helloWorldData: JobData[JobType.HELLO_WORLD] = {
+      const helloWorldData: JobData['hello-world'] = {
         message: 'test message',
         timestamp: Date.now(),
       };
@@ -43,7 +43,7 @@ describe('JobTypes', () => {
 
     it('should enforce required properties', () => {
       // This test ensures TypeScript compilation would fail for invalid data
-      const validData: JobData[JobType.HELLO_WORLD] = {
+      const validData: JobData['hello-world'] = {
         message: 'required message',
         timestamp: 1234567890,
       };
@@ -63,7 +63,7 @@ describe('JobTypes', () => {
       ];
 
       testCases.forEach(message => {
-        const data: JobData[JobType.HELLO_WORLD] = {
+        const data: JobData['hello-world'] = {
           message,
           timestamp: Date.now(),
         };
@@ -83,7 +83,7 @@ describe('JobTypes', () => {
       ];
 
       timestamps.forEach(timestamp => {
-        const data: JobData[JobType.HELLO_WORLD] = {
+        const data: JobData['hello-world'] = {
           message: 'test',
           timestamp,
         };

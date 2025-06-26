@@ -132,7 +132,9 @@ describe('JobsController', () => {
 
       const result = await controller.getJobStatus(jobId);
 
-      expect(result.progress).toEqual({ current: 5, total: 10 });
+      expect(result).toEqual(expect.objectContaining({
+        progress: { current: 5, total: 10 }
+      }));
     });
   });
 });
