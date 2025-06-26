@@ -59,6 +59,8 @@ import {
 import { UsersModule } from '@/routes/users/users.module';
 import { SpacesModule } from '@/routes/spaces/spaces.module';
 import { MembersModule } from '@/routes/spaces/members.module';
+import { JobsModule } from '@/datasources/jobs/jobs.module';
+import { JobsRouteModule } from '@/routes/jobs/jobs.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -95,6 +97,7 @@ export class AppModule implements NestModule {
         EstimationsModule,
         HealthModule,
         HooksModule,
+        JobsRouteModule,
         NotificationsModuleV2,
         MessagesModule,
         NotificationsModule,
@@ -110,6 +113,7 @@ export class AppModule implements NestModule {
         TransactionsModule,
         // common
         CacheModule,
+        JobsModule,
         // Module for storing and reading from the async local storage
         ClsModule.forRoot({
           global: true,

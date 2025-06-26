@@ -223,18 +223,64 @@ yarn migration:revert
 
 ## Job Queue System (BullMQ)
 
-BullMQ is integrated for background job processing. Jobs are managed through Redis-backed queues with NestJS processors.
+### Overview
 
-### Key Endpoints
+BullMQ is integrated for handling background job processing, enabling asynchronous task execution like CSV generation, data processing, and other long-running operations.
 
-- `GET /jobs/:id/status` - Monitor job status and progress
+### Architecture
 
-### Adding New Jobs
+- **Queue:** Redis-backed BullMQ queue using `@nestjs/bullmq` integration
+- **Processors:** NestJS processors extending `WorkerHost` with `@Processor` decorator
+- **Events:** `@OnWorkerEvent` decorators for lifecycle event handling
+- **Logging:** Comprehensive lifecycle event logging (queued, active, completed, failed)
 
-1. Define job type in `src/datasources/jobs/types/job-types.ts`
-2. Create Zod schema for data validation in `src/datasources/jobs/entities/schemas/`
-3. Create processor extending `WorkerHost` with proper validation and error handling
-4. Add comprehensive tests for all components
+### Key Components
+
+```typescript
+// Job types enum for type safety
+export enum JobType {
+  HELLO_WORLD = 'hello-world',
+}
+
+// NestJS BullMQ processor
+@Injectable()
+@Processor(JOBS_QUEUE_NAME)
+export class HelloWorldProcessor extends WorkerHost {
+  async process(job: Job<HelloWorldJobData>): Promise<void> {
+    // Process job logic
+  }
+
+  @OnWorkerEvent('completed')
+  onCompleted(job: Job): void {
+    // Handle job completion
+  }
+
+  @OnWorkerEvent('failed')
+  onFailed(job: Job, err: Error): void {
+    // Handle job failure
+  }
+}
+```
+
+### Job Management
+
+```bash
+# Check job status (monitoring endpoint)
+GET /jobs/:jobId/status
+```
+
+Jobs are created programmatically through the `JobsService` within the application, not via REST endpoints.
+
+### Adding New Job Types
+
+1. **Define job type** in `src/datasources/jobs/types/job-types.ts`
+2. **Create processor** extending `WorkerHost` with `@Processor` decorator
+3. **Add to JobsModule** - processors are automatically discovered by NestJS
+4. **Add service methods** in `JobsService` for job creation using `@InjectQueue`
+
+### Configuration
+
+Uses existing Redis configuration from `redis` config section. Job queue automatically inherits Redis connection settings.
 
 ## Caching Strategy
 
@@ -301,8 +347,6 @@ BullMQ is integrated for background job processing. Jobs are managed through Red
 5. **DeFi Integrations:** Staking, swapping, and bridging capabilities
 6. **Comprehensive APIs:** Full REST API coverage for all Safe wallet functionality
 
-This project represents a production-ready, enterprise-scale backend service with comprehensive testing, monitoring, and integration capabilities.
-
 ## Development Memories
 
 - Run linting and code formatting and fix it after doing some changes
@@ -311,3 +355,5 @@ This project represents a production-ready, enterprise-scale backend service wit
 - Ensure code coverage for all critical functionalities
 - Check for latest documentation when introducing a new Technology to know more about it.
 - run the test:cov at the end of the implementation and fix it.
+
+This project represents a production-ready, enterprise-scale backend service with comprehensive testing, monitoring, and integration capabilities.
