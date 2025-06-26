@@ -4,12 +4,12 @@ import { JobsService } from '@/datasources/jobs/jobs.service';
 /**
  * Mock implementation of JobsService for testing
  */
- class MockJobsService {
-   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-   getJobStatus(_: string): null {
-     return null;
-   }
- }
+class MockJobsService {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getJobStatus(_: string): null {
+    return null;
+  }
+}
 
 /**
  * The {@link TestJobsModule} should be used whenever you want to
