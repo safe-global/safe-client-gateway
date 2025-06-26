@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { JobsService } from '@/datasources/jobs/jobs.service';
-import type { ILoggingService} from '@/logging/logging.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
 import { JobType } from '@/datasources/jobs/types/job-types';
 import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.module';
@@ -39,7 +39,9 @@ describe('JobsService', () => {
   describe('addHelloWorldJob', () => {
     it('should add a hello world job to the queue', async () => {
       const jobData = { message: 'Test message', timestamp: Date.now() };
-      const mockJob = { id: 'test-job-id' } as unknown as Awaited<ReturnType<Queue['add']>>;
+      const mockJob = { id: 'test-job-id' } as unknown as Awaited<
+        ReturnType<Queue['add']>
+      >;
       mockQueue.add.mockResolvedValue(mockJob);
 
       const result = await service.addHelloWorldJob(jobData);
@@ -56,7 +58,9 @@ describe('JobsService', () => {
   describe('getJobStatus', () => {
     it('should get job status from queue', async () => {
       const jobId = 'test-job-id';
-      const mockJob = { id: jobId, name: 'hello-world' } as unknown as Awaited<ReturnType<Queue['getJob']>>;
+      const mockJob = { id: jobId, name: 'hello-world' } as unknown as Awaited<
+        ReturnType<Queue['getJob']>
+      >;
       mockQueue.getJob.mockResolvedValue(mockJob);
 
       const result = await service.getJobStatus(jobId);
@@ -65,5 +69,4 @@ describe('JobsService', () => {
       expect(result).toBe(mockJob);
     });
   });
-
 });

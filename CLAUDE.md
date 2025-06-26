@@ -5,6 +5,7 @@
 The Safe Client Gateway is a NestJS-based backend service that serves as a bridge between Safe Wallet clients (Android, iOS, Web) and various Safe Core services. It provides UI-oriented mappings and data structures for easier integration with blockchain and Safe ecosystem services.
 
 **Key Features:**
+
 - RESTful API gateway for Safe wallet applications
 - Multi-chain blockchain integration
 - Transaction processing and decoding
@@ -167,7 +168,7 @@ yarn migration:generate ./migrations/MigrationName
 # Run migrations
 yarn migration:run
 
-# Revert migration  
+# Revert migration
 yarn migration:revert
 ```
 
@@ -241,7 +242,7 @@ export const JobType = {
   HELLO_WORLD: 'hello-world',
 } as const;
 
-export type JobTypeName = typeof JobType[keyof typeof JobType];
+export type JobTypeName = (typeof JobType)[keyof typeof JobType];
 
 // Typed response DTOs for API endpoints
 export class JobStatusDto {
@@ -262,7 +263,7 @@ export class HelloWorldProcessor extends WorkerHost {
   async process(job: Job<HelloWorldJobData>): Promise<void> {
     if (job.name !== JobType.HELLO_WORLD) return;
     // Configurable processing delay via environment variables
-    await new Promise(resolve => setTimeout(resolve, this.processingDelayMs));
+    await new Promise((resolve) => setTimeout(resolve, this.processingDelayMs));
   }
 
   @OnWorkerEvent('completed')
@@ -299,6 +300,7 @@ Jobs are created programmatically through the `JobsService` within the applicati
 Uses existing Redis configuration from `redis` config section. Job queue automatically inherits Redis connection settings.
 
 Additional job-specific configurations:
+
 - `HELLO_WORLD_JOB_DELAY_MS`: Processing delay for HelloWorld jobs (default: 1000ms)
 
 ## Caching Strategy
@@ -351,7 +353,7 @@ Additional job-specific configurations:
 ## Key Features
 
 1. **Multi-chain Safe Operations:** Support for Safe wallets across multiple blockchain networks
-2. **Transaction Decoding:** Comprehensive transaction decoding and human-readable descriptions  
+2. **Transaction Decoding:** Comprehensive transaction decoding and human-readable descriptions
 3. **User Spaces:** Organization and collaboration features for Safe users
 4. **Real-time Notifications:** Push notifications for transaction events
 5. **DeFi Integrations:** Staking, swapping, and bridging capabilities

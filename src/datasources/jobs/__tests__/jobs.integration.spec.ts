@@ -105,13 +105,27 @@ describe('Jobs Integration (Unit)', () => {
 
     it('should handle multiple jobs', async () => {
       const mockJobs = [
-        { id: 'job-1', name: JobType.HELLO_WORLD, data: { message: 'Job 1', timestamp: Date.now() } },
-        { id: 'job-2', name: JobType.HELLO_WORLD, data: { message: 'Job 2', timestamp: Date.now() } },
-        { id: 'job-3', name: JobType.HELLO_WORLD, data: { message: 'Job 3', timestamp: Date.now() } },
+        {
+          id: 'job-1',
+          name: JobType.HELLO_WORLD,
+          data: { message: 'Job 1', timestamp: Date.now() },
+        },
+        {
+          id: 'job-2',
+          name: JobType.HELLO_WORLD,
+          data: { message: 'Job 2', timestamp: Date.now() },
+        },
+        {
+          id: 'job-3',
+          name: JobType.HELLO_WORLD,
+          data: { message: 'Job 3', timestamp: Date.now() },
+        },
       ] as unknown as Array<Awaited<ReturnType<Queue['add']>>>;
 
       mockQueue.add.mockImplementation((_, data) => {
-        const index = mockJobs.findIndex(job => job.data.message === data.message);
+        const index = mockJobs.findIndex(
+          (job) => job.data.message === data.message,
+        );
         return Promise.resolve(mockJobs[index]);
       });
 

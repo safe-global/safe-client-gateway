@@ -8,14 +8,14 @@ describe('JobTypes', () => {
     });
 
     it('should have string values', () => {
-      Object.values(JobType).forEach(value => {
+      Object.values(JobType).forEach((value) => {
         expect(typeof value).toBe('string');
         expect(value.length).toBeGreaterThan(0);
       });
     });
 
     it('should have valid kebab-case naming', () => {
-      Object.values(JobType).forEach(value => {
+      Object.values(JobType).forEach((value) => {
         expect(value).toMatch(/^[a-z]+(-[a-z]+)*$/);
       });
     });
@@ -24,7 +24,7 @@ describe('JobTypes', () => {
       // Test that we can access job types as expected
       const jobTypes = Object.values(JobType);
       expect(jobTypes.length).toBeGreaterThan(0);
-      
+
       // Verify the current job type exists
       expect(jobTypes).toContain('hello-world');
     });
@@ -62,7 +62,7 @@ describe('JobTypes', () => {
         '',
       ];
 
-      testCases.forEach(message => {
+      testCases.forEach((message) => {
         const data: JobData['hello-world'] = {
           message,
           timestamp: Date.now(),
@@ -82,7 +82,7 @@ describe('JobTypes', () => {
         new Date().getTime(),
       ];
 
-      timestamps.forEach(timestamp => {
+      timestamps.forEach((timestamp) => {
         const data: JobData['hello-world'] = {
           message: 'test',
           timestamp,

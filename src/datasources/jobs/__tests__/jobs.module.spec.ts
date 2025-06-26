@@ -40,7 +40,7 @@ describe('JobsModule', () => {
         'redis.pass',
       ];
 
-      redisConfigKeys.forEach(key => {
+      redisConfigKeys.forEach((key) => {
         expect(typeof key).toBe('string');
         expect(key.startsWith('redis.')).toBe(true);
       });

@@ -15,7 +15,8 @@ export class HelloWorldProcessor extends WorkerHost {
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IConfigurationService) private readonly configurationService: IConfigurationService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
   ) {
     super();
     this.processingDelayMs = parseInt(
@@ -25,9 +26,9 @@ export class HelloWorldProcessor extends WorkerHost {
   }
 
   async process(job: Job<HelloWorldJobData>): Promise<void> {
-      if (job.name !== JobType.HELLO_WORLD.toString()) {
-        return;
-      }
+    if (job.name !== JobType.HELLO_WORLD.toString()) {
+      return;
+    }
 
     const data = job.data;
 
