@@ -15,9 +15,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
       useFactory: (configurationService: IConfigurationService) => ({
         connection: {
           host: configurationService.getOrThrow<string>('redis.host'),
-          port: Number(
-            configurationService.getOrThrow<string>('redis.port'),
-          ),
+          port: Number(configurationService.getOrThrow<string>('redis.port')),
           username: configurationService.get<string>('redis.user'),
           password: configurationService.get<string>('redis.pass'),
         },
