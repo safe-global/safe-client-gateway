@@ -319,3 +319,4 @@ This project represents a production-ready, enterprise-scale backend service wit
 - Check for similar patterns in the app before implementing it.
 - Ensure code coverage for all critical functionalities
 - Check for latest documentation when introducing a new Technology to know more about it.
+- run the test:cov at the end of the implementation and fix it.
