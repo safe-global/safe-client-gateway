@@ -41,9 +41,13 @@ describe('JobsController', () => {
 
     it('should throw NotFoundException when job does not exist', async () => {
       const jobId = 'non-existent-job';
-      mockJobsService.getJobStatus.mockRejectedValue(new NotFoundException('Job not found'));
+      mockJobsService.getJobStatus.mockRejectedValue(
+        new NotFoundException('Job not found'),
+      );
 
-      await expect(controller.getJobStatus(jobId)).rejects.toThrow(NotFoundException);
+      await expect(controller.getJobStatus(jobId)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockJobsService.getJobStatus).toHaveBeenCalledWith(jobId);
     });
 

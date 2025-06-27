@@ -2,12 +2,12 @@ import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { JobsService } from '@/routes/jobs/jobs.service';
+import type { HelloWorldJobData } from '@/domain/jobs/jobs.repository.interface';
+import { IJobsRepository } from '@/domain/jobs/jobs.repository.interface';
 import type {
-  HelloWorldJobData} from '@/domain/jobs/jobs.repository.interface';
-import {
-  IJobsRepository
-} from '@/domain/jobs/jobs.repository.interface';
-import type { JobStatusResponseDto, JobStatusDto } from '@/routes/jobs/entities/job-status.dto';
+  JobStatusResponseDto,
+  JobStatusDto,
+} from '@/routes/jobs/entities/job-status.dto';
 import { mockIJobsRepository } from '@/domain/jobs/__tests__/jobs.repository.interface.mock';
 
 describe('JobsService', () => {
@@ -41,7 +41,9 @@ describe('JobsService', () => {
 
       const result = await service.addHelloWorldJob(jobData);
 
-      expect(mockIJobsRepository.addHelloWorldJob).toHaveBeenCalledWith(jobData);
+      expect(mockIJobsRepository.addHelloWorldJob).toHaveBeenCalledWith(
+        jobData,
+      );
       expect(result).toEqual(mockJob);
     });
   });
@@ -133,7 +135,10 @@ describe('JobsService', () => {
 
       const result = await service.getJobStatus(jobId);
 
-      expect((result as JobStatusDto).progress).toEqual({ current: 5, total: 10 });
+      expect((result as JobStatusDto).progress).toEqual({
+        current: 5,
+        total: 10,
+      });
     });
   });
 });
