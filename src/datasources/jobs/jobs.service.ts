@@ -4,7 +4,7 @@ import { Queue, Job } from 'bullmq';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { JobType } from '@/datasources/jobs/types/job-types';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.module';
+import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
 
 export interface HelloWorldJobData {
   message: string;

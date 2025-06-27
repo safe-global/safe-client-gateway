@@ -1,4 +1,4 @@
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.module';
+import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
 
 describe('JobsModule', () => {
   describe('module configuration', () => {

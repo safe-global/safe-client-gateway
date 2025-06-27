@@ -378,3 +378,7 @@ Additional job-specific configurations:
 - run the test:cov at the end of the implementation and fix it.
 
 This project represents a production-ready, enterprise-scale backend service with comprehensive testing, monitoring, and integration capabilities.
+
+## Development Memories
+
+- Run linting and fixing it after doing some changes
