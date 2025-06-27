@@ -267,6 +267,7 @@ BullMQ is integrated for background job processing. Jobs are managed through Red
 - **Mock Files:** Create mocks inside a new mock file dedicated to that mock in the test folder.
 - **Comments:** Comment the method using JsDoc but comment code inside a method only if the code is not really readable.
 - **Access Modifiers:** Add access modifiers to all the methods in every class.
+- **Module Exports:** Always export modules/providers that other modules depend on for dependency injection (e.g., BullModule for queue injection).
 
 ## Deployment
 
