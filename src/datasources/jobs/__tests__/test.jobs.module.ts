@@ -66,6 +66,10 @@ const mockLoggingService = {
     { provide: HelloWorldProcessor, useClass: MockHelloWorldProcessor },
     { provide: LoggingService, useValue: mockLoggingService },
   ],
-  exports: [JobsRepository, getQueueToken(JOBS_QUEUE_NAME), HelloWorldProcessor],
+  exports: [
+    JobsRepository,
+    getQueueToken(JOBS_QUEUE_NAME),
+    HelloWorldProcessor,
+  ],
 })
 export class TestJobsModule {}
