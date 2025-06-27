@@ -8,7 +8,6 @@ import {
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
-import { BullModule } from '@nestjs/bullmq';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { join } from 'path';
 import { ChainsModule } from '@/routes/chains/chains.module';
@@ -60,9 +59,7 @@ import {
 import { UsersModule } from '@/routes/users/users.module';
 import { SpacesModule } from '@/routes/spaces/spaces.module';
 import { MembersModule } from '@/routes/spaces/members.module';
-import { JobsModule } from '@/datasources/jobs/jobs.module';
 import { JobsRouteModule } from '@/routes/jobs/jobs.module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -79,20 +76,6 @@ export class AppModule implements NestModule {
       module: AppModule,
       imports: [
         PostgresDatabaseModule,
-        // BullMQ configuration
-        BullModule.forRootAsync({
-          inject: [IConfigurationService],
-          useFactory: (configurationService: IConfigurationService) => ({
-            connection: {
-              host: configurationService.getOrThrow<string>('redis.host'),
-              port: Number(
-                configurationService.getOrThrow<string>('redis.port'),
-              ),
-              username: configurationService.get<string>('redis.user'),
-              password: configurationService.get<string>('redis.pass'),
-            },
-          }),
-        }),
         // features
         AboutModule,
         ...(isAccountsFeatureEnabled ? [AccountsModule] : []),
@@ -129,7 +112,6 @@ export class AppModule implements NestModule {
         TransactionsModule,
         // common
         CacheModule,
-        JobsModule,
         // Module for storing and reading from the async local storage
         ClsModule.forRoot({
           global: true,
