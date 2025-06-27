@@ -385,3 +385,4 @@ This project represents a production-ready, enterprise-scale backend service wit
 - Pay attention to security vulnerabilities
 - Check for similar patterns in the app before implementing it.
 - Ensure code coverage for all critical functionalities
+- Check for latest documentation when introducing a new Technology to know more about it.
