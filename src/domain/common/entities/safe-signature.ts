@@ -10,6 +10,7 @@ import {
   V_HEX_LENGTH,
 } from '@/domain/common/utils/signatures';
 import { ADDRESS_LENGTH, HEX_PREFIX_LENGTH } from '@/routes/common/constants';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 const ETH_SIGN_V_OFFSET = 4;
 
@@ -95,6 +96,15 @@ export class SafeSignature {
       return this.signature + this.hash;
     },
   );
+
+  @Cron(CronExpression.EVERY_HOUR, {
+    disabled: process.env.NODE_ENV === 'test',
+  })
+  public clearSignatureMemo(): void {
+    if (this._owner.cache.clear) {
+      this._owner.cache.clear();
+    }
+  }
 }
 
 function recoverAddress(args: {

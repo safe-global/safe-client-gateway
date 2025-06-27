@@ -18,6 +18,11 @@ async function redisClientFactory(
   const redisPass = configurationService.get<string>('redis.pass');
   const redisHost = configurationService.getOrThrow<string>('redis.host');
   const redisPort = configurationService.getOrThrow<string>('redis.port');
+  const redisConnectTimeout = configurationService.getOrThrow<number>(
+    'redis.connectTimeout',
+  );
+  const redisKeepAlive =
+    configurationService.getOrThrow<number>('redis.keepAlive');
   const redisDisableOfflineQueue = configurationService.getOrThrow<boolean>(
     'redis.disableOfflineQueue',
   );
@@ -25,6 +30,8 @@ async function redisClientFactory(
     socket: {
       host: redisHost,
       port: Number(redisPort),
+      keepAlive: redisKeepAlive,
+      connectTimeout: redisConnectTimeout,
     },
     username: redisUser,
     password: redisPass,
