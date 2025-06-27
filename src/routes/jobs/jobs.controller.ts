@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
-import { JobsService } from '@/datasources/jobs/jobs.service';
+import { JobsService } from '@/routes/jobs/jobs.service';
 import {
   JobStatusDto,
   JobStatusErrorDto,
@@ -26,29 +26,9 @@ export class JobsController {
     type: JobStatusErrorDto,
   })
   @Get(':id/status')
-  async getJobStatus(
+  public async getJobStatus(
     @Param('id') jobId: string,
   ): Promise<JobStatusResponseDto> {
-    const job = await this.jobsService.getJobStatus(jobId);
-
-    if (!job) {
-      return { error: 'Job not found' };
-    }
-
-    return {
-      id: job.id,
-      name: job.name,
-      data: job.data as Record<string, unknown>,
-      progress: job.progress as
-        | number
-        | string
-        | Record<string, unknown>
-        | boolean
-        | undefined,
-      processedOn: job.processedOn,
-      finishedOn: job.finishedOn,
-      failedReason: job.failedReason,
-      returnvalue: job.returnvalue,
-    };
+    return this.jobsService.getJobStatus(jobId);
   }
 }

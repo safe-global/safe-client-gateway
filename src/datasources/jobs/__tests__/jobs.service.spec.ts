@@ -1,14 +1,14 @@
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
-import { JobsService } from '@/datasources/jobs/jobs.service';
+import { JobsRepository } from '@/datasources/jobs/jobs.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
 import { JobType } from '@/datasources/jobs/types/job-types';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
+import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 
-describe('JobsService', () => {
-  let service: JobsService;
+describe('JobsRepository', () => {
+  let repository: JobsRepository;
   let mockQueue: jest.Mocked<Queue>;
   let mockLoggingService: jest.MockedObjectDeep<ILoggingService>;
 
@@ -27,13 +27,13 @@ describe('JobsService', () => {
 
     const moduleRef = await Test.createTestingModule({
       providers: [
-        JobsService,
+        JobsRepository,
         { provide: getQueueToken(JOBS_QUEUE_NAME), useValue: mockQueue },
         { provide: LoggingService, useValue: mockLoggingService },
       ],
     }).compile();
 
-    service = moduleRef.get<JobsService>(JobsService);
+    repository = moduleRef.get<JobsRepository>(JobsRepository);
   });
 
   describe('addHelloWorldJob', () => {
@@ -44,7 +44,7 @@ describe('JobsService', () => {
       >;
       mockQueue.add.mockResolvedValue(mockJob);
 
-      const result = await service.addHelloWorldJob(jobData);
+      const result = await repository.addHelloWorldJob(jobData);
 
       expect(mockQueue.add).toHaveBeenCalledWith(JobType.HELLO_WORLD, jobData, {
         priority: 1,
@@ -63,7 +63,7 @@ describe('JobsService', () => {
       >;
       mockQueue.getJob.mockResolvedValue(mockJob);
 
-      const result = await service.getJobStatus(jobId);
+      const result = await repository.getJobStatus(jobId);
 
       expect(mockQueue.getJob).toHaveBeenCalledWith(jobId);
       expect(result).toBe(mockJob);

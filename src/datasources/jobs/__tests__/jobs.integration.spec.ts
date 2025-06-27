@@ -1,15 +1,15 @@
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
-import type { HelloWorldJobData } from '@/datasources/jobs/jobs.service';
-import { JobsService } from '@/datasources/jobs/jobs.service';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
+import type { HelloWorldJobData } from '@/domain/jobs/jobs.repository.interface';
+import { JobsRepository } from '@/datasources/jobs/jobs.repository';
+import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 import { JobType } from '@/datasources/jobs/types/job-types';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
 
 describe('Jobs Integration (Unit)', () => {
-  let jobsService: JobsService;
+  let jobsRepository: JobsRepository;
   let mockQueue: jest.Mocked<Queue>;
   let mockLoggingService: jest.MockedObjectDeep<ILoggingService>;
 
@@ -29,13 +29,13 @@ describe('Jobs Integration (Unit)', () => {
 
     const moduleRef = await Test.createTestingModule({
       providers: [
-        JobsService,
+        JobsRepository,
         { provide: getQueueToken(JOBS_QUEUE_NAME), useValue: mockQueue },
         { provide: LoggingService, useValue: mockLoggingService },
       ],
     }).compile();
 
-    jobsService = moduleRef.get<JobsService>(JobsService);
+    jobsRepository = moduleRef.get<JobsRepository>(JobsRepository);
   });
 
   describe('Job Processing Flow', () => {
@@ -54,7 +54,7 @@ describe('Jobs Integration (Unit)', () => {
       mockQueue.add.mockResolvedValue(mockJob);
       mockQueue.getJob.mockResolvedValue(mockJob);
 
-      const job = await jobsService.addHelloWorldJob(jobData);
+      const job = await jobsRepository.addHelloWorldJob(jobData);
 
       expect(job).toBeDefined();
       expect(job.id).toBeDefined();
@@ -62,7 +62,7 @@ describe('Jobs Integration (Unit)', () => {
       expect(job.data).toEqual(jobData);
 
       // Verify job was added to queue
-      const retrievedJob = await jobsService.getJobStatus(job.id!);
+      const retrievedJob = await jobsRepository.getJobStatus(job.id!);
       expect(retrievedJob).toBeDefined();
       expect(retrievedJob!.id).toBe(job.id);
     });
@@ -70,7 +70,7 @@ describe('Jobs Integration (Unit)', () => {
     it('should return null for non-existent job', async () => {
       mockQueue.getJob.mockResolvedValue(null);
 
-      const status = await jobsService.getJobStatus('non-existent-job-id');
+      const status = await jobsRepository.getJobStatus('non-existent-job-id');
       expect(status).toBeNull();
     });
 
@@ -88,11 +88,11 @@ describe('Jobs Integration (Unit)', () => {
 
       mockQueue.add.mockResolvedValue(mockJob);
 
-      await jobsService.addHelloWorldJob(jobData);
+      await jobsRepository.addHelloWorldJob(jobData);
 
       expect(mockLoggingService.info).toHaveBeenCalledWith({
         type: 'JOB_EVENT',
-        source: 'JobsService',
+        source: 'JobsRepository',
         event: `Adding hello world job with message: ${jobData.message}`,
       });
     });
@@ -130,15 +130,15 @@ describe('Jobs Integration (Unit)', () => {
       });
 
       const jobs = await Promise.all([
-        jobsService.addHelloWorldJob({
+        jobsRepository.addHelloWorldJob({
           message: 'Job 1',
           timestamp: Date.now(),
         }),
-        jobsService.addHelloWorldJob({
+        jobsRepository.addHelloWorldJob({
           message: 'Job 2',
           timestamp: Date.now(),
         }),
-        jobsService.addHelloWorldJob({
+        jobsRepository.addHelloWorldJob({
           message: 'Job 3',
           timestamp: Date.now(),
         }),
