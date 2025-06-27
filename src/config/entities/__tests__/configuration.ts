@@ -349,4 +349,7 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  helloWorldJob: {
+    delayMs: faker.number.int({ min: 100, max: 5000 }),
+  },
 });
