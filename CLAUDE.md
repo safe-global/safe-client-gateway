@@ -326,6 +326,14 @@ Additional job-specific configurations:
 - **Builder pattern** for test data
 - **Factory pattern** for service creation
 - **Decorator pattern** for authentication and validation
+- **Testing modules:** We usually don't test .module files.
+- **Service file:** Create service files inside the routes layer and create repository files inside the datasource layer.
+- **Import Modules:** Import Datasource modules in the routes layer and then import route layer modules in the main AppModule.
+- **Throw errors:** Throw errors using NestJs error exception helpers e.g. `NotFoundException`, `UnprocessableEntityException` or `BadRequestException` from `@nestjs/common` library instead of returning them
+- **Configuration constants:** Create config constants in the `src/domain/common/entities/` folder.
+- **Mock Files:** Create mocks inside a new mock file dedicated to that mock in the test folder.
+- **Comments:** Comment the method using JsDoc but comment code inside a method only if the code is not really readable.
+- **Access Modifiers:** Add access modifiers to all the methods in every class.
 
 ## Deployment
 
