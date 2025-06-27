@@ -1,11 +1,13 @@
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
+import { ZodError } from 'zod';
 import { JobsRepository } from '@/datasources/jobs/jobs.repository';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
 import { JobType } from '@/datasources/jobs/types/job-types';
 import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
+import type { HelloWorldJobData } from '@/domain/jobs/jobs.repository.interface';
 
 describe('JobsRepository', () => {
   let repository: JobsRepository;
@@ -52,6 +54,22 @@ describe('JobsRepository', () => {
       });
       expect(result).toBe(mockJob);
       expect(mockLoggingService.info).toHaveBeenCalled();
+    });
+
+    it('should throw ZodError for invalid job data', async () => {
+      const invalidJobData = { message: '', timestamp: Date.now() };
+
+      await expect(repository.addHelloWorldJob(invalidJobData)).rejects.toThrow(
+        ZodError,
+      );
+    });
+
+    it('should throw ZodError for missing timestamp', async () => {
+      const invalidJobData = { message: 'Test message' } as HelloWorldJobData;
+
+      await expect(repository.addHelloWorldJob(invalidJobData)).rejects.toThrow(
+        ZodError,
+      );
     });
   });
 
