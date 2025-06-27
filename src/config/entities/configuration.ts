@@ -544,4 +544,7 @@ export default () => ({
       },
     },
   },
+  helloWorldJob: {
+    delayMs: parseInt(process.env.HELLO_WORLD_JOB_DELAY_MS ?? '1000'),
+  },
 });

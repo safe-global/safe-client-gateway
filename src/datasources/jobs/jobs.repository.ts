@@ -6,6 +6,7 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { JobType } from '@/datasources/jobs/types/job-types';
 import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 import { HelloWorldJobData } from '@/domain/jobs/jobs.repository.interface';
+import { HelloWorldJobDataSchema } from '@/datasources/jobs/entities/schemas/hello-world-job-data.schema';
 
 @Injectable()
 export class JobsRepository {
@@ -18,15 +19,19 @@ export class JobsRepository {
    * Adds a hello world job to the queue
    * @param data - The job data containing message and timestamp
    * @returns Promise resolving to the created Job
+   * @throws ZodError when job data validation fails
    */
   public async addHelloWorldJob(data: HelloWorldJobData): Promise<Job> {
+    // Validate job data before adding to queue
+    const validatedData = HelloWorldJobDataSchema.parse(data);
+
     this.loggingService.info({
       type: LogType.JobEvent,
       source: 'JobsRepository',
-      event: `Adding hello world job with message: ${data.message}`,
+      event: `Adding hello world job with message: ${validatedData.message}`,
     });
 
-    return this.queue.add(JobType.HELLO_WORLD, data, {
+    return this.queue.add(JobType.HELLO_WORLD, validatedData, {
       priority: 1,
       delay: 0,
     });

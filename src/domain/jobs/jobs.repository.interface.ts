@@ -27,7 +27,7 @@ export interface IJobsRepository {
 }
 
 @Module({
-  imports: [JobsModule.forRoot()],
+  imports: [JobsModule],
   providers: [
     {
       provide: IJobsRepository,
