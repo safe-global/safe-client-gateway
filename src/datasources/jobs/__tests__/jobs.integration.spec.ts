@@ -3,7 +3,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import type { HelloWorldJobData } from '@/datasources/jobs/jobs.service';
 import { JobsService } from '@/datasources/jobs/jobs.service';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.module';
+import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
 import { JobType } from '@/datasources/jobs/types/job-types';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';

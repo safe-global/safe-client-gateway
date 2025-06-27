@@ -5,7 +5,7 @@ import { JobsService } from '@/datasources/jobs/jobs.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
 import { JobType } from '@/datasources/jobs/types/job-types';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.module';
+import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
 
 describe('JobsService', () => {
   let service: JobsService;

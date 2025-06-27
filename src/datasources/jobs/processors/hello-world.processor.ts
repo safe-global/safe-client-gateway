@@ -4,7 +4,7 @@ import { Job } from 'bullmq';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HelloWorldJobData } from '@/datasources/jobs/jobs.service';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.module';
+import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { JobType } from '@/datasources/jobs/types/job-types';
 
@@ -26,7 +26,7 @@ export class HelloWorldProcessor extends WorkerHost {
   }
 
   async process(job: Job<HelloWorldJobData>): Promise<void> {
-    if (job.name !== JobType.HELLO_WORLD.toString()) {
+    if (job.name !== JobType.HELLO_WORLD as string) {
       return;
     }
 

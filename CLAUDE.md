@@ -360,3 +360,7 @@ Additional job-specific configurations:
 6. **Comprehensive APIs:** Full REST API coverage for all Safe wallet functionality
 
 This project represents a production-ready, enterprise-scale backend service with comprehensive testing, monitoring, and integration capabilities.
+
+## Development Memories
+
+- Run linting and fixing it after doing some changes

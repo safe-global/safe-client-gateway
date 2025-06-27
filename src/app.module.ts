@@ -129,7 +129,7 @@ export class AppModule implements NestModule {
         TransactionsModule,
         // common
         CacheModule,
-        JobsModule,
+        JobsModule.forRoot(),
         // Module for storing and reading from the async local storage
         ClsModule.forRoot({
           global: true,
