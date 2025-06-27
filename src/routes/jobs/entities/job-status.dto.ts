@@ -4,12 +4,12 @@ export class JobStatusDto {
   @ApiProperty({ description: 'Job ID', example: 'job-123' })
   id?: string;
 
-  @ApiProperty({ description: 'Job name/type', example: 'hello-world' })
+  @ApiProperty({ description: 'Job name/type', example: 'job-type' })
   name?: string;
 
   @ApiProperty({
     description: 'Job data payload',
-    example: { message: 'Hello World', timestamp: 1640995200000 },
+    example: { key: 'value' },
   })
   data?: Record<string, unknown>;
 

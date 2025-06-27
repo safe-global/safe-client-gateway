@@ -1,7 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { JobsRepository } from '@/datasources/jobs/jobs.repository';
-import { HelloWorldProcessor } from '@/datasources/jobs/processors/hello-world.processor';
 import { JobsShutdownHook } from '@/datasources/jobs/jobs.shutdown.hook';
 import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 
@@ -21,7 +20,7 @@ import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
       },
     }),
   ],
-  providers: [JobsRepository, HelloWorldProcessor, JobsShutdownHook],
+  providers: [JobsRepository, JobsShutdownHook],
   exports: [JobsRepository, BullModule],
 })
 export class JobsModule {}

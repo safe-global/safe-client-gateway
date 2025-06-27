@@ -1,9 +1,5 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { Job } from 'bullmq';
-import {
-  IJobsRepository,
-  HelloWorldJobData,
-} from '@/domain/jobs/jobs.repository.interface';
+import { IJobsRepository } from '@/domain/jobs/jobs.repository.interface';
 import { JobStatusResponseDto } from '@/routes/jobs/entities/job-status.dto';
 
 @Injectable()
@@ -12,15 +8,6 @@ export class JobsService {
     @Inject(IJobsRepository)
     private readonly jobsRepository: IJobsRepository,
   ) {}
-
-  /**
-   * Adds a hello world job to the queue
-   * @param data - The job data containing message and timestamp
-   * @returns Promise resolving to the created Job
-   */
-  public async addHelloWorldJob(data: HelloWorldJobData): Promise<Job> {
-    return this.jobsRepository.addHelloWorldJob(data);
-  }
 
   /**
    * Retrieves the status of a job by its ID

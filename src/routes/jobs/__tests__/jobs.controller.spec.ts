@@ -22,7 +22,7 @@ describe('JobsController', () => {
       const jobId = 'test-job-id';
       const mockJobStatusResponse: JobStatusResponseDto = {
         id: jobId,
-        name: 'hello-world',
+        name: 'test-job',
         data: { message: 'test', timestamp: 123456789 },
         progress: 50,
         processedOn: 1640995200000,
@@ -55,7 +55,7 @@ describe('JobsController', () => {
       const jobId = 'partial-job-id';
       const mockJobStatusResponse: JobStatusResponseDto = {
         id: jobId,
-        name: 'hello-world',
+        name: 'test-job',
         data: { message: 'test' },
         progress: undefined,
         processedOn: undefined,
@@ -75,7 +75,7 @@ describe('JobsController', () => {
       const jobId = 'failed-job-id';
       const mockJobStatusResponse: JobStatusResponseDto = {
         id: jobId,
-        name: 'hello-world',
+        name: 'test-job',
         data: { message: 'test', timestamp: 123456789 },
         progress: 75,
         processedOn: 1640995200000,
@@ -95,7 +95,7 @@ describe('JobsController', () => {
       const jobId = 'progress-job-id';
       const mockJobStatusResponse: JobStatusResponseDto = {
         id: jobId,
-        name: 'hello-world',
+        name: 'test-job',
         data: {},
         progress: { current: 5, total: 10 }, // object progress
       };

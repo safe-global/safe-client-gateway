@@ -5,19 +5,7 @@ import { JobsRepository } from '@/datasources/jobs/jobs.repository';
 
 export const IJobsRepository = Symbol('IJobsRepository');
 
-export interface HelloWorldJobData {
-  message: string;
-  timestamp: number;
-}
-
 export interface IJobsRepository {
-  /**
-   * Adds a hello world job to the queue
-   * @param data - The job data containing message and timestamp
-   * @returns Promise resolving to the created Job
-   */
-  addHelloWorldJob(data: HelloWorldJobData): Promise<Job>;
-
   /**
    * Retrieves the status of a job by its ID
    * @param jobId - The unique identifier of the job

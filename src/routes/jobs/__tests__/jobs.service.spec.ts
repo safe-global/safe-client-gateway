@@ -2,7 +2,6 @@ import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { JobsService } from '@/routes/jobs/jobs.service';
-import type { HelloWorldJobData } from '@/domain/jobs/jobs.repository.interface';
 import { IJobsRepository } from '@/domain/jobs/jobs.repository.interface';
 import type {
   JobStatusResponseDto,
@@ -24,37 +23,13 @@ describe('JobsService', () => {
     service = moduleRef.get<JobsService>(JobsService);
   });
 
-  describe('addHelloWorldJob', () => {
-    it('should add a hello world job', async () => {
-      const jobData: HelloWorldJobData = {
-        message: 'test message',
-        timestamp: Date.now(),
-      };
-
-      const mockJob = {
-        id: 'test-job-id',
-        name: 'hello-world',
-        data: jobData,
-      } as Job;
-
-      mockIJobsRepository.addHelloWorldJob.mockResolvedValue(mockJob);
-
-      const result = await service.addHelloWorldJob(jobData);
-
-      expect(mockIJobsRepository.addHelloWorldJob).toHaveBeenCalledWith(
-        jobData,
-      );
-      expect(result).toEqual(mockJob);
-    });
-  });
-
   describe('getJobStatus', () => {
     it('should return job status when job exists', async () => {
       const jobId = 'test-job-id';
       const mockJob = {
         id: jobId,
-        name: 'hello-world',
-        data: { message: 'test', timestamp: 123456789 },
+        name: 'test-job',
+        data: { key: 'value' },
         progress: 50,
         processedOn: 1640995200000,
         finishedOn: 1640995260000,
@@ -68,8 +43,8 @@ describe('JobsService', () => {
 
       const expectedResponse: JobStatusResponseDto = {
         id: jobId,
-        name: 'hello-world',
-        data: { message: 'test', timestamp: 123456789 },
+        name: 'test-job',
+        data: { key: 'value' },
         progress: 50,
         processedOn: 1640995200000,
         finishedOn: 1640995260000,
@@ -95,7 +70,7 @@ describe('JobsService', () => {
       const jobId = 'partial-job-id';
       const mockJob = {
         id: jobId,
-        name: 'hello-world',
+        name: 'test-job',
         data: { message: 'test' },
         progress: undefined,
         processedOn: undefined,
@@ -110,7 +85,7 @@ describe('JobsService', () => {
 
       const expectedResponse: JobStatusResponseDto = {
         id: jobId,
-        name: 'hello-world',
+        name: 'test-job',
         data: { message: 'test' },
         progress: undefined,
         processedOn: undefined,
@@ -126,7 +101,7 @@ describe('JobsService', () => {
       const jobId = 'progress-job-id';
       const mockJob = {
         id: jobId,
-        name: 'hello-world',
+        name: 'test-job',
         data: {},
         progress: { current: 5, total: 10 },
       } as unknown as Job;
