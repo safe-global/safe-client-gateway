@@ -382,3 +382,6 @@ This project represents a production-ready, enterprise-scale backend service wit
 ## Development Memories
 
 - Run linting and fixing it after doing some changes
+- Pay attention to security vulnerabilities
+- Check for similar patterns in the app before implementing it.
+- Ensure code coverage for all critical functionalities
