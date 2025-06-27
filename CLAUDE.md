@@ -226,9 +226,11 @@ yarn migration:revert
 BullMQ is integrated for background job processing. Jobs are managed through Redis-backed queues with NestJS processors.
 
 ### Key Endpoints
+
 - `GET /jobs/:id/status` - Monitor job status and progress
 
 ### Adding New Jobs
+
 1. Define job type in `src/datasources/jobs/types/job-types.ts`
 2. Create Zod schema for data validation in `src/datasources/jobs/entities/schemas/`
 3. Create processor extending `WorkerHost` with proper validation and error handling
