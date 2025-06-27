@@ -7,8 +7,12 @@ import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
 
 // Mock implementations for testing
 const mockQueue = {
-  add: jest.fn ? jest.fn().mockResolvedValue({ id: 'mock-job-id' }) : (): Promise<{ id: string }> => Promise.resolve({ id: 'mock-job-id' }),
-  getJob: jest.fn ? jest.fn().mockResolvedValue(null) : (): Promise<null> => Promise.resolve(null),
+  add: jest.fn
+    ? jest.fn().mockResolvedValue({ id: 'mock-job-id' })
+    : (): Promise<{ id: string }> => Promise.resolve({ id: 'mock-job-id' }),
+  getJob: jest.fn
+    ? jest.fn().mockResolvedValue(null)
+    : (): Promise<null> => Promise.resolve(null),
 };
 
 class MockJobsService {
@@ -31,7 +35,9 @@ class MockHelloWorldProcessor {
 @Module({})
 export class JobsModule {
   static forRoot(): DynamicModule {
-    const isTestEnvironment = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+    const isTestEnvironment =
+      process.env.NODE_ENV === 'test' ||
+      process.env.JEST_WORKER_ID !== undefined;
 
     if (isTestEnvironment) {
       // Return mock module for tests

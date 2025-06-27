@@ -26,7 +26,7 @@ export class HelloWorldProcessor extends WorkerHost {
   }
 
   async process(job: Job<HelloWorldJobData>): Promise<void> {
-    if (job.name !== JobType.HELLO_WORLD as string) {
+    if (job.name !== (JobType.HELLO_WORLD as string)) {
       return;
     }
 
