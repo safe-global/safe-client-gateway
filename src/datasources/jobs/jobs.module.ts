@@ -22,6 +22,6 @@ import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
     }),
   ],
   providers: [JobsRepository, HelloWorldProcessor, JobsShutdownHook],
-  exports: [JobsRepository],
+  exports: [JobsRepository, BullModule],
 })
 export class JobsModule {}
