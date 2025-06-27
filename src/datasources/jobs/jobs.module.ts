@@ -1,9 +1,9 @@
 import { Global, Module, DynamicModule } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { getQueueToken } from '@nestjs/bullmq';
-import { JobsService } from '@/datasources/jobs/jobs.service';
+import { JobsRepository } from '@/datasources/jobs/jobs.repository';
 import { HelloWorldProcessor } from '@/datasources/jobs/processors/hello-world.processor';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
+import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 
 // Mock implementations for testing
 const mockQueue = {
@@ -15,12 +15,12 @@ const mockQueue = {
     : (): Promise<null> => Promise.resolve(null),
 };
 
-class MockJobsService {
-  getJobStatus(): null {
+class MockJobsRepository {
+  public getJobStatus(): null {
     return null;
   }
 
-  addHelloWorldJob(): Promise<{ id: string }> {
+  public addHelloWorldJob(): Promise<{ id: string }> {
     return Promise.resolve({ id: 'mock-job-id' });
   }
 }
@@ -44,11 +44,11 @@ export class JobsModule {
       return {
         module: JobsModule,
         providers: [
-          { provide: JobsService, useClass: MockJobsService },
+          { provide: JobsRepository, useClass: MockJobsRepository },
           { provide: getQueueToken(JOBS_QUEUE_NAME), useValue: mockQueue },
           { provide: HelloWorldProcessor, useClass: MockHelloWorldProcessor },
         ],
-        exports: [JobsService],
+        exports: [JobsRepository],
       };
     }
 
@@ -69,8 +69,8 @@ export class JobsModule {
           },
         }),
       ],
-      providers: [JobsService, HelloWorldProcessor],
-      exports: [JobsService],
+      providers: [JobsRepository, HelloWorldProcessor],
+      exports: [JobsRepository],
     };
   }
 }

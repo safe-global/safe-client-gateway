@@ -1,21 +1,21 @@
 import { Global, Module } from '@nestjs/common';
 import { getQueueToken } from '@nestjs/bullmq';
-import { JobsService } from '@/datasources/jobs/jobs.service';
+import { JobsRepository } from '@/datasources/jobs/jobs.repository';
 import { HelloWorldProcessor } from '@/datasources/jobs/processors/hello-world.processor';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
+import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 import { LoggingService } from '@/logging/logging.interface';
 
 /**
- * Mock implementation of JobsService for testing
+ * Mock implementation of JobsRepository for testing
  */
-class MockJobsService {
+class MockJobsRepository {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getJobStatus(_: string): null {
+  public getJobStatus(_: string): null {
     return null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  addHelloWorldJob(_: unknown): Promise<{ id: string }> {
+  public addHelloWorldJob(_: unknown): Promise<{ id: string }> {
     return Promise.resolve({ id: 'mock-job-id' });
   }
 }
@@ -33,7 +33,7 @@ const mockQueue = {
  */
 class MockHelloWorldProcessor {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async process(_: unknown): Promise<void> {
+  public async process(_: unknown): Promise<void> {
     // Mock implementation
   }
 }
@@ -50,22 +50,22 @@ const mockLoggingService = {
 
 /**
  * The {@link TestJobsModule} should be used whenever you want to
- * override the values provided by the {@link JobsService}
+ * override the values provided by the {@link JobsRepository}
  *
  * Example:
  * Test.createTestingModule({ imports: [ModuleA, TestJobsModule]}).compile();
  *
  * This will create a TestModule which uses the implementation of ModuleA but
- * overrides the real Jobs Module with a fake one – {@link MockJobsService}
+ * overrides the real Jobs Module with a fake one – {@link MockJobsRepository}
  */
 @Global()
 @Module({
   providers: [
-    { provide: JobsService, useClass: MockJobsService },
+    { provide: JobsRepository, useClass: MockJobsRepository },
     { provide: getQueueToken(JOBS_QUEUE_NAME), useValue: mockQueue },
     { provide: HelloWorldProcessor, useClass: MockHelloWorldProcessor },
     { provide: LoggingService, useValue: mockLoggingService },
   ],
-  exports: [JobsService, getQueueToken(JOBS_QUEUE_NAME), HelloWorldProcessor],
+  exports: [JobsRepository, getQueueToken(JOBS_QUEUE_NAME), HelloWorldProcessor],
 })
 export class TestJobsModule {}

@@ -3,8 +3,8 @@ import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { HelloWorldJobData } from '@/datasources/jobs/jobs.service';
-import { JOBS_QUEUE_NAME } from '@/datasources/jobs/jobs.constants';
+import { HelloWorldJobData } from '@/domain/jobs/jobs.repository.interface';
+import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { JobType } from '@/datasources/jobs/types/job-types';
 
@@ -25,7 +25,7 @@ export class HelloWorldProcessor extends WorkerHost {
     );
   }
 
-  async process(job: Job<HelloWorldJobData>): Promise<void> {
+  public async process(job: Job<HelloWorldJobData>): Promise<void> {
     if (job.name !== (JobType.HELLO_WORLD as string)) {
       return;
     }
@@ -49,7 +49,7 @@ export class HelloWorldProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('completed')
-  onCompleted(job: Job): void {
+  public onCompleted(job: Job): void {
     this.loggingService.info({
       type: LogType.JobEvent,
       source: 'HelloWorldProcessor',
@@ -58,7 +58,7 @@ export class HelloWorldProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('failed')
-  onFailed(job: Job, err: Error): void {
+  public onFailed(job: Job, err: Error): void {
     this.loggingService.error({
       type: LogType.JobError,
       source: 'HelloWorldProcessor',
@@ -67,7 +67,7 @@ export class HelloWorldProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('active')
-  onActive(job: Job): void {
+  public onActive(job: Job): void {
     this.loggingService.debug({
       type: LogType.JobEvent,
       source: 'HelloWorldProcessor',

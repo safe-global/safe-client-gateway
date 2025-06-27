@@ -5,7 +5,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { JobType } from '@/datasources/jobs/types/job-types';
-import type { HelloWorldJobData } from '@/datasources/jobs/jobs.service';
+import type { HelloWorldJobData } from '@/domain/jobs/jobs.repository.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 
 describe('HelloWorldProcessor', () => {
