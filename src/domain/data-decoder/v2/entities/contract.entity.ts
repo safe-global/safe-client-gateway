@@ -17,7 +17,7 @@ export const AbiSchema = z.object({
 
 export const ContractSchema = z.object({
   address: AddressSchema,
-  name: z.string(),
+  name: z.string().nullable(),
   displayName: z.string().nullable(),
   chainId: z.number().transform(String),
   project: ProjectSchema.nullable(),

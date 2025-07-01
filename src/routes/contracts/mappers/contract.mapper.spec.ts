@@ -32,6 +32,13 @@ describe('Contract Mapper', () => {
     });
   });
 
+  it('should return name = "" if its null', () => {
+    const contract = dataDecodedContractBuilder().with('name', null).build();
+
+    const actual = mapper.map(contract);
+    expect(actual.name).toEqual('');
+  });
+
   it('should return displayName = "" if its null', () => {
     const contract = dataDecodedContractBuilder()
       .with('displayName', null)
