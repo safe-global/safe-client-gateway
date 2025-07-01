@@ -65,7 +65,7 @@ jobs:
             Only focus on things to improve.
             Do not need to check the comments of the PR.
 
-          trigger_phrase: "/claude-review"
+          trigger_phrase: '/claude-review'
           # Optional: Customize review based on file types
           # direct_prompt: |
           #   Review this PR focusing on:
@@ -82,7 +82,7 @@ jobs:
 
           # Optional: Add specific tools for running tests or linting
           # allowed_tools: "Bash(npm run test),Bash(npm run lint),Bash(npm run typecheck)"
-            
+
           # Optional: Skip review for certain conditions
           # if: |
           #   !contains(github.event.pull_request.title, '[skip-review]') &&
