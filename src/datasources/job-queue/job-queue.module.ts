@@ -1,9 +1,9 @@
 import { Global, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { JobsRepository } from '@/datasources/jobs/jobs.repository';
-import { HelloWorldProcessor } from '@/datasources/jobs/processors/hello-world.processor';
-import { JobsShutdownHook } from '@/datasources/jobs/jobs.shutdown.hook';
+import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
+import { JobQueueShutdownHook } from '@/datasources/job-queue/job-queue.shutdown.hook';
 import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
+import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 
 @Global()
 @Module({
@@ -21,7 +21,10 @@ import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
       },
     }),
   ],
-  providers: [JobsRepository, HelloWorldProcessor, JobsShutdownHook],
-  exports: [JobsRepository, BullModule],
+  providers: [
+    { provide: IJobQueueService, useClass: JobQueueService },
+    JobQueueShutdownHook,
+  ],
+  exports: [IJobQueueService, BullModule],
 })
-export class JobsModule {}
+export class JobQueueModule {}

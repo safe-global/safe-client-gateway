@@ -1,15 +1,14 @@
 import { Injectable, Inject, OnModuleDestroy } from '@nestjs/common';
-import { getQueueToken } from '@nestjs/bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 import { asError } from '@/logging/utils';
 
 @Injectable()
-export class JobsShutdownHook implements OnModuleDestroy {
+export class JobQueueShutdownHook implements OnModuleDestroy {
   constructor(
-    @Inject(getQueueToken(JOBS_QUEUE_NAME))
-    private readonly queue: Queue,
+    @InjectQueue(JOBS_QUEUE_NAME) private readonly queue: Queue,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {}

@@ -1,51 +1,18 @@
-import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { JobsService } from '@/routes/jobs/jobs.service';
-import type { HelloWorldJobData } from '@/domain/jobs/jobs.repository.interface';
-import { IJobsRepository } from '@/domain/jobs/jobs.repository.interface';
 import type {
   JobStatusResponseDto,
   JobStatusDto,
 } from '@/routes/jobs/entities/job-status.dto';
-import { mockIJobsRepository } from '@/domain/jobs/__tests__/jobs.repository.interface.mock';
+import { mockJobQueueService } from '@/datasources/job-queue/__test__/job-queue.service.mock';
 
 describe('JobsService', () => {
   let service: JobsService;
 
-  beforeEach(async () => {
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        JobsService,
-        { provide: IJobsRepository, useValue: mockIJobsRepository },
-      ],
-    }).compile();
-
-    service = moduleRef.get<JobsService>(JobsService);
-  });
-
-  describe('addHelloWorldJob', () => {
-    it('should add a hello world job', async () => {
-      const jobData: HelloWorldJobData = {
-        message: 'test message',
-        timestamp: Date.now(),
-      };
-
-      const mockJob = {
-        id: 'test-job-id',
-        name: 'hello-world',
-        data: jobData,
-      } as Job;
-
-      mockIJobsRepository.addHelloWorldJob.mockResolvedValue(mockJob);
-
-      const result = await service.addHelloWorldJob(jobData);
-
-      expect(mockIJobsRepository.addHelloWorldJob).toHaveBeenCalledWith(
-        jobData,
-      );
-      expect(result).toEqual(mockJob);
-    });
+  beforeEach(() => {
+    jest.resetAllMocks();
+    service = new JobsService(mockJobQueueService);
   });
 
   describe('getJobStatus', () => {
@@ -62,7 +29,7 @@ describe('JobsService', () => {
         returnvalue: 'success',
       } as unknown as Job;
 
-      mockIJobsRepository.getJobStatus.mockResolvedValue(mockJob);
+      mockJobQueueService.getJobStatus.mockResolvedValue(mockJob);
 
       const result = await service.getJobStatus(jobId);
 
@@ -77,18 +44,18 @@ describe('JobsService', () => {
         returnvalue: 'success',
       };
 
-      expect(mockIJobsRepository.getJobStatus).toHaveBeenCalledWith(jobId);
+      expect(mockJobQueueService.getJobStatus).toHaveBeenCalledWith(jobId);
       expect(result).toEqual(expectedResponse);
     });
 
     it('should throw NotFoundException when job does not exist', async () => {
       const jobId = 'non-existent-job';
-      mockIJobsRepository.getJobStatus.mockResolvedValue(null);
+      mockJobQueueService.getJobStatus.mockResolvedValue(null);
 
       await expect(service.getJobStatus(jobId)).rejects.toThrow(
         NotFoundException,
       );
-      expect(mockIJobsRepository.getJobStatus).toHaveBeenCalledWith(jobId);
+      expect(mockJobQueueService.getJobStatus).toHaveBeenCalledWith(jobId);
     });
 
     it('should handle job with partial data', async () => {
@@ -104,7 +71,7 @@ describe('JobsService', () => {
         returnvalue: undefined,
       } as unknown as Job;
 
-      mockIJobsRepository.getJobStatus.mockResolvedValue(mockJob);
+      mockJobQueueService.getJobStatus.mockResolvedValue(mockJob);
 
       const result = await service.getJobStatus(jobId);
 
@@ -131,7 +98,7 @@ describe('JobsService', () => {
         progress: { current: 5, total: 10 },
       } as unknown as Job;
 
-      mockIJobsRepository.getJobStatus.mockResolvedValue(mockJob);
+      mockJobQueueService.getJobStatus.mockResolvedValue(mockJob);
 
       const result = await service.getJobStatus(jobId);
 
