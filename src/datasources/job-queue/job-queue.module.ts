@@ -1,11 +1,10 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobQueueShutdownHook } from '@/datasources/job-queue/job-queue.shutdown.hook';
 import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 
-@Global()
 @Module({
   imports: [
     BullModule.registerQueue({
