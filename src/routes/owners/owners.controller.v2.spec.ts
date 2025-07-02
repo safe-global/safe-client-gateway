@@ -37,6 +37,8 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
+import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -64,6 +66,8 @@ describe('Owners Controller (Unit)', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

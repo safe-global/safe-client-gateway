@@ -43,6 +43,8 @@ import {
   newDelegateEventBuilder,
   updatedDelegateEventBuilder,
 } from '@/routes/hooks/entities/__tests__/delegate-events.builder';
+import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
+import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 function getSubscriptionCallback(
   queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,
@@ -82,6 +84,8 @@ describe('Hook Events for Cache (Unit)', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
     app = moduleFixture.createNestApplication();
 

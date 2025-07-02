@@ -34,6 +34,8 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { AccountsController } from '@/routes/accounts/accounts.controller';
 import type { Account } from '@/routes/accounts/entities/account.entity';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
+import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
+import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import {
@@ -88,6 +90,8 @@ describe('AccountsController', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     accountDataSource = moduleFixture.get(IAccountsDatasource);
