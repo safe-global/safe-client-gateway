@@ -1,7 +1,7 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import { asError } from '@/logging/utils';
-import { S3 } from '@aws-sdk/client-s3';
+import { PutObjectCommandInput, S3 } from '@aws-sdk/client-s3';
 import { Inject, Injectable } from '@nestjs/common';
 import path from 'path';
 import { Readable } from 'stream';
@@ -24,7 +24,6 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
       'targetedMessaging.fileStorage.aws.bucketName',
     );
   }
-
   async getFileContent(sourceFile: string): Promise<string> {
     try {
       const response = await this.s3Client.getObject({
@@ -40,6 +39,30 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
       throw new Error(
         `Error getting file content from S3: ${asError(err).message}`,
       );
+    }
+  }
+
+  // TODO add loggingService ?
+  // TODO specify bucket and key on class level ?
+  async uploadStream(
+    bucket: string,
+    key: string,
+    body: Readable,
+    options: Partial<PutObjectCommandInput> = {},
+  ): Promise<string> {
+    const params: PutObjectCommandInput = {
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      // e.g. ContentType: "text/csv",
+      ...options,
+    };
+
+    try {
+      await this.s3Client.putObject(params);
+      return `s3://${bucket}/${key}`;
+    } catch (err) {
+      throw new Error(`Error uploading content to S3: ${asError(err).message}`);
     }
   }
 
