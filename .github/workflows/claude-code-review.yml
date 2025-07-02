@@ -21,8 +21,8 @@ jobs:
     # Only run when manually triggered or when @claude review is mentioned in comments
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude-review')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude-review'))
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude review')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude review'))
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
@@ -65,7 +65,7 @@ jobs:
             Only focus on things to improve.
             Do not need to check the comments of the PR.
 
-          trigger_phrase: '/claude-review'
+          trigger_phrase: '@claude review'
           # Optional: Customize review based on file types
           # direct_prompt: |
           #   Review this PR focusing on:
