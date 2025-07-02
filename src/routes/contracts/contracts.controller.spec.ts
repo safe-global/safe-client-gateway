@@ -184,6 +184,41 @@ describe('Contracts controller', () => {
         });
     });
 
+    it('Should pass validation if displayName is null', async () => {
+      const chain = chainBuilder().build();
+      const contract = contractBuilder().build();
+      const contractPage = pageBuilder()
+        .with('results', [{ ...contract, displayName: null }])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${safeDataDecoderUrl}/api/v1/contracts/${contract.address}`:
+            return Promise.resolve({
+              data: rawify(contractPage),
+              status: 200,
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/contracts/${contract.address}`)
+        .expect(200)
+        .expect({
+          address: contract.address,
+          name: contract.name,
+          displayName: '',
+          logoUri: contract.logoUrl,
+          contractAbi: {
+            abi: contract.abi?.abiJson,
+          },
+          trustedForDelegateCall: contract.trustedForDelegateCall,
+        });
+    });
+
     it('Should get a validation error', async () => {
       const chain = chainBuilder().build();
       const contract = contractBuilder().build();
