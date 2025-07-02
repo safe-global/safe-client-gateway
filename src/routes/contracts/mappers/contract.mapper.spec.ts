@@ -32,7 +32,7 @@ describe('Contract Mapper', () => {
     });
   });
 
-  it('should return name = "" if its null', () => {
+  it('Should return name = "" if it is null', () => {
     const contract = dataDecodedContractBuilder().with('name', null).build();
 
     const actual = mapper.map(contract);
