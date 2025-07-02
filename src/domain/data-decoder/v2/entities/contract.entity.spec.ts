@@ -255,5 +255,23 @@ describe('Contract', () => {
         },
       ]);
     });
+
+    it('should default name to empty string', () => {
+      const contract = { ...contractBuilder().build(), name: null };
+
+      const result = ContractSchema.safeParse(contract);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.name).toBe('');
+    });
+
+    it('should default displayName to empty string', () => {
+      const contract = { ...contractBuilder().build(), displayName: null };
+
+      const result = ContractSchema.safeParse(contract);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.displayName).toBe('');
+    });
   });
 });

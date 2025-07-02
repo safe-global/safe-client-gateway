@@ -13,7 +13,7 @@ export class ContractMapper {
     return {
       address: contract.address,
       name: contract.name,
-      displayName: contract.displayName ?? '',
+      displayName: contract.displayName,
       logoUri: contract.logoUrl,
       contractAbi,
       trustedForDelegateCall: contract.trustedForDelegateCall,
