@@ -149,7 +149,7 @@ describe('Contracts controller', () => {
         .expect(503);
     });
 
-    it('should not get a validation error if name is null', async () => {
+    it('Should pass validation if name is null', async () => {    
       const chain = chainBuilder().build();
       const contract = contractBuilder().build();
       const contractPage = pageBuilder()
