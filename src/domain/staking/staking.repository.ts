@@ -37,6 +37,10 @@ import {
   DefiMorphoExtraReward,
   DefiMorphoExtraRewardsSchema,
 } from '@/datasources/staking-api/entities/defi-morpho-extra-reward.entity';
+import {
+  RewardsFee,
+  RewardsFeeSchema,
+} from '@/datasources/staking-api/entities/rewards-fee.entity';
 
 // TODO: Deduplicate code with EarnRepository
 
@@ -62,6 +66,15 @@ export class StakingRepository implements IStakingRepository {
       throw new Error('Deployment not found');
     }
     return deployment;
+  }
+
+  public async getRewardsFee(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<RewardsFee> {
+    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
+    const rewardsFee = await stakingApi.getRewardsFee(args.address);
+    return RewardsFeeSchema.parse(rewardsFee);
   }
 
   private async getDeployments(chainId: string): Promise<Array<Deployment>> {

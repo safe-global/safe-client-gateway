@@ -52,9 +52,13 @@ export class NativeStakingMapper {
     value: string | null;
     txHash: `0x${string}` | null;
   }): Promise<NativeStakingDepositTransactionInfo> {
-    const [chain, deployment] = await Promise.all([
+    const [chain, deployment, rewardsFee] = await Promise.all([
       this.chainsRepository.getChain(args.chainId),
       this.stakingRepository.getDeployment({
+        chainId: args.chainId,
+        address: args.to,
+      }),
+      this.stakingRepository.getRewardsFee({
         chainId: args.chainId,
         address: args.to,
       }),
@@ -78,7 +82,7 @@ export class NativeStakingMapper {
         Math.pow(10, chain.nativeCurrency.decimals) /
         NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
     );
-    const fee = deployment.product_fee ? Number(deployment.product_fee) : 0;
+    const fee = rewardsFee.fee ? Number(rewardsFee.fee) : 0;
     // NRR = GRR * (1 - service_fees)
     // Kiln also uses last_30d field, with product_fee
     const nrr = nativeStakingStats.gross_apy.last_30d * (1 - fee);
