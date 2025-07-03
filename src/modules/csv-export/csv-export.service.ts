@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { stringify } from 'csv-stringify';
+import { Options, stringify } from 'csv-stringify';
 import { Readable, Writable } from 'stream';
 import { pipeline } from 'stream/promises';
 
-export interface CsvOptions {
+export interface CsvOptions extends Options {
   header?: boolean;
   columns?: Array<string>;
 }
@@ -16,15 +16,14 @@ export class CsvExportService {
     options: CsvOptions = {},
   ): Promise<void> {
     const { header = true, columns: optColumns } = options;
-    let columns = optColumns;
-
-    //default columns to the keys of the first object in data if not provided
-    if (!columns && data.length && typeof data[0] === 'object') {
-      columns = Object.keys(data[0]);
-    }
+    // If no columns are provided or it's an empty array, derive them from the first object in the data
+    // or use an empty object to avoid errors when data is empty.
+    const columns = optColumns?.length
+      ? optColumns
+      : Object.keys(data?.[0] ?? {});
 
     const readable = Readable.from(data);
-    const stringifier = stringify({ header, columns });
+    const stringifier = stringify({ ...options, header, columns });
 
     await pipeline(readable, stringifier, writable);
   }
