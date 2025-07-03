@@ -4,7 +4,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 
 @Processor(JOBS_QUEUE_NAME)
-export class JobsConsumer extends WorkerHost {
+export class JobConsumer extends WorkerHost {
   constructor() {
     super();
   }

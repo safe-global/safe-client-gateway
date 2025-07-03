@@ -1,5 +1,6 @@
 import type { Queue } from 'bullmq';
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
+import { JobType } from '@/datasources/job-queue/types/job-types';
 
 describe('JobQueueService', () => {
   let service: JobQueueService;
@@ -47,6 +48,33 @@ describe('JobQueueService', () => {
 
       await expect(service.getJobStatus(jobId)).rejects.toThrow('Queue error');
       expect(mockQueue.getJob).toHaveBeenCalledWith(jobId);
+    });
+  });
+
+  describe('addJob', () => {
+    it('should add a job to the queue', async () => {
+      const jobName = JobType.CSV_EXPORT;
+      const jobData = { 'csv-export': { message: 'hi', timestamp: 1 } };
+      const mockJob = { id: '123', name: jobName } as unknown as Awaited<
+        ReturnType<Queue['add']>
+      >;
+      mockQueue.add.mockResolvedValue(mockJob);
+
+      const result = await service.addJob(jobName, jobData);
+
+      expect(mockQueue.add).toHaveBeenCalledWith(jobName, jobData);
+      expect(result).toBe(mockJob);
+    });
+
+    it('should propagate errors from the queue', async () => {
+      const jobName = JobType.CSV_EXPORT;
+      const jobData = { 'csv-export': { message: 'bye', timestamp: 2 } };
+      mockQueue.add.mockRejectedValue(new Error('add error'));
+
+      await expect(service.addJob(jobName, jobData)).rejects.toThrow(
+        'add error',
+      );
+      expect(mockQueue.add).toHaveBeenCalledWith(jobName, jobData);
     });
   });
 });

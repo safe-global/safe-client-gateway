@@ -4,7 +4,7 @@ import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobQueueShutdownHook } from '@/datasources/job-queue/job-queue.shutdown.hook';
 import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import { JobsConsumer } from '@/datasources/job-queue/processors/jobs.consumer';
+import { JobConsumer } from '@/datasources/job-queue/processors/job.consumer';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { JobsConsumer } from '@/datasources/job-queue/processors/jobs.consumer';
   providers: [
     { provide: IJobQueueService, useClass: JobQueueService },
     JobQueueShutdownHook,
-    JobsConsumer,
+    JobConsumer,
   ],
   exports: [IJobQueueService, BullModule],
 })
