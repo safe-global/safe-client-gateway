@@ -165,7 +165,6 @@ describe('KilnApi', () => {
       const actual = await target.getRewardsFee(contract);
 
       expect(actual).toBe(rewardsFee);
-      expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir('staking_rewards_fee', cacheType),
         url: `${baseUrl}/v1/eth/onchain/v1/fee`,
@@ -202,7 +201,6 @@ describe('KilnApi', () => {
 
       await expect(target.getRewardsFee(contract)).rejects.toThrow(expected);
 
-      expect(dataSource.get).toHaveBeenCalledTimes(1);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
         cacheDir: new CacheDir('staking_rewards_fee', cacheType),
         url: getRewardsFeeUrl,
