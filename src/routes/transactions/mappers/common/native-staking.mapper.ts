@@ -82,7 +82,7 @@ export class NativeStakingMapper {
         Math.pow(10, chain.nativeCurrency.decimals) /
         NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
     );
-    const fee = rewardsFee.fee ? Number(rewardsFee.fee) : 0;
+    const fee = rewardsFee.fee ?? 0;
     // NRR = GRR * (1 - service_fees)
     // Kiln also uses last_30d field, with product_fee
     const nrr = nativeStakingStats.gross_apy.last_30d * (1 - fee);
