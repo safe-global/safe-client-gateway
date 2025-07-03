@@ -5,6 +5,7 @@ import {
   defiVaultStatsBuilder,
 } from '@/datasources/staking-api/entities/__tests__/defi-vault-stats.entity.builder';
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
+import { rewardsFeeBuilder } from '@/datasources/staking-api/entities/__tests__/rewards-fee.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import type { EarnRepository } from '@/domain/earn/earn.repository';
 import { tokenBuilder } from '@/domain/tokens/__tests__/token.builder';
@@ -22,6 +23,7 @@ const mockEarnRepository = jest.mocked({
   getDefiVaultStats: jest.fn(),
   getDefiVaultStake: jest.fn(),
   getDefiMorphoExtraRewards: jest.fn(),
+  getRewardsFee: jest.fn(),
 } as jest.MockedObjectDeep<EarnRepository>);
 
 const mockTokenRepository = {
@@ -379,14 +381,16 @@ describe('VaultTransactionMapper', () => {
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
-        .with('product_fee', '0.1')
         .with('status', 'active')
         .with(
           'chain_id',
           Number(faker.string.numeric({ exclude: [chain.chainId] })),
         )
         .build();
+      const rewardsFee = rewardsFeeBuilder().build();
+
       mockEarnRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getRewardsFee.mockResolvedValue(rewardsFee);
 
       await expect(
         target.mapRedeemInfo({
