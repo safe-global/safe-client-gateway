@@ -9,9 +9,7 @@ describe('RewardsFeeSchema', () => {
     const result = RewardsFeeSchema.safeParse(rewardsFee);
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toStrictEqual(rewardsFee);
-    }
+    expect(result.data).toStrictEqual(rewardsFee);
   });
 
   it('should validate a RewardsFee object with null fee', () => {
@@ -20,9 +18,7 @@ describe('RewardsFeeSchema', () => {
     const result = RewardsFeeSchema.safeParse(rewardsFee);
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toStrictEqual(rewardsFee);
-    }
+    expect(result.data).toStrictEqual(rewardsFee);
   });
 
   it('should validate a RewardsFee object with undefined fee and default to null', () => {
@@ -31,9 +27,7 @@ describe('RewardsFeeSchema', () => {
     const result = RewardsFeeSchema.safeParse(rewardsFeeWithoutFee);
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.fee).toBe(null);
-    }
+    expect(result.data?.fee).toBe(null);
   });
 
   it.each([
@@ -49,15 +43,13 @@ describe('RewardsFeeSchema', () => {
       const result = RewardsFeeSchema.safeParse(rewardsFee);
 
       expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues[0]).toStrictEqual({
-          code: 'invalid_type',
-          expected: 'number',
-          message: `Expected number, received ${type}`,
-          path: ['fee'],
-          received: type,
-        });
-      }
+      expect(result.error?.issues[0]).toStrictEqual({
+        code: 'invalid_type',
+        expected: 'number',
+        message: `Expected number, received ${type}`,
+        path: ['fee'],
+        received: type,
+      });
     },
   );
 
@@ -71,18 +63,14 @@ describe('RewardsFeeSchema', () => {
     const result = RewardsFeeSchema.safeParse({ fee });
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toStrictEqual(rewardsFee);
-    }
+    expect(result.data).toStrictEqual(rewardsFee);
   });
 
   it('should validate an empty object and default fee to null', () => {
     const result = RewardsFeeSchema.safeParse({});
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.fee).toBe(null);
-    }
+    expect(result.data?.fee).toBe(null);
   });
 
   it('should validate a RewardsFee object with extra properties and strip them', () => {
@@ -94,10 +82,8 @@ describe('RewardsFeeSchema', () => {
     const result = RewardsFeeSchema.safeParse(rewardsFee);
 
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toStrictEqual({
-        fee: rewardsFee.fee,
-      });
-    }
+    expect(result.data).toStrictEqual({
+      fee: rewardsFee.fee,
+    });
   });
 });
