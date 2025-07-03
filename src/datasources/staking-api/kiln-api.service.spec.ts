@@ -11,6 +11,7 @@ import { defiVaultStatsBuilder } from '@/datasources/staking-api/entities/__test
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
 import { pooledStakingStatsBuilder } from '@/datasources/staking-api/entities/__tests__/pooled-staking-stats.entity.builder';
+import { rewardsFeeBuilder } from '@/datasources/staking-api/entities/__tests__/rewards-fee.entity.builder';
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 import { transactionStatusBuilder } from '@/datasources/staking-api/entities/__tests__/transaction-status.entity.builder';
 import { KilnApi } from '@/datasources/staking-api/kiln-api.service';
@@ -141,6 +142,76 @@ describe('KilnApi', () => {
         networkRequest: {
           headers: {
             Authorization: `Bearer ${apiKey}`,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+  });
+
+  describe('getRewardsFee', () => {
+    it('should return rewards fee', async () => {
+      const contract = getAddress(faker.finance.ethereumAddress());
+      const rewardsFee = rewardsFeeBuilder().build();
+      dataSource.get.mockResolvedValue(
+        rawify({
+          status: 200,
+          // Note: Kiln always return { data: T }
+          data: rewardsFee,
+        }),
+      );
+
+      const actual = await target.getRewardsFee(contract);
+
+      expect(actual).toBe(rewardsFee);
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: new CacheDir('staking_rewards_fee', cacheType),
+        url: `${baseUrl}/v1/eth/onchain/v1/fee`,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            integration: contract,
+          },
+        },
+        expireTimeSeconds: stakingExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+      });
+    });
+
+    it('should forward errors', async () => {
+      const contract = getAddress(faker.finance.ethereumAddress());
+      const getRewardsFeeUrl = `${baseUrl}/v1/eth/onchain/v1/fee`;
+      const errorMessage = faker.lorem.sentence();
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      dataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getRewardsFeeUrl),
+          {
+            status: statusCode,
+          } as Response,
+          new Error(errorMessage),
+        ),
+      );
+
+      await expect(target.getRewardsFee(contract)).rejects.toThrow(expected);
+
+      expect(dataSource.get).toHaveBeenCalledTimes(1);
+      expect(dataSource.get).toHaveBeenNthCalledWith(1, {
+        cacheDir: new CacheDir('staking_rewards_fee', cacheType),
+        url: getRewardsFeeUrl,
+        networkRequest: {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params: {
+            integration: contract,
           },
         },
         expireTimeSeconds: stakingExpirationTimeInSeconds,
