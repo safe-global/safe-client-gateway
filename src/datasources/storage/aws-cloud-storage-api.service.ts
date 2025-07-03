@@ -10,25 +10,30 @@ import { Readable } from 'stream';
 export class AwsCloudStorageApiService implements ICloudStorageApiService {
   private readonly s3Client: S3;
   private readonly bucket: string;
-  private readonly basePath: string;
+  private readonly targetedMessagingBasePath: string;
+  private readonly csvExportBasePath: string;
 
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
     this.s3Client = new S3();
-    this.basePath = this.configurationService.getOrThrow<string>(
-      'targetedMessaging.fileStorage.aws.basePath',
-    );
+    this.targetedMessagingBasePath =
+      this.configurationService.getOrThrow<string>(
+        'targetedMessaging.fileStorage.aws.basePath',
+      );
     this.bucket = this.configurationService.getOrThrow<string>(
       'targetedMessaging.fileStorage.aws.bucketName',
+    );
+    this.csvExportBasePath = this.configurationService.getOrThrow<string>(
+      'csvExport.fileStorage.aws.basePath',
     );
   }
   async getFileContent(sourceFile: string): Promise<string> {
     try {
       const response = await this.s3Client.getObject({
         Bucket: this.bucket,
-        Key: path.posix.join(this.basePath, sourceFile),
+        Key: path.posix.join(this.targetedMessagingBasePath, sourceFile),
       });
       if (response.Body instanceof Readable) {
         return await this.streamToString(response.Body);
@@ -42,16 +47,14 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
     }
   }
 
-  // TODO add loggingService ?
-  // TODO specify bucket and key on class level ?
   async uploadStream(
-    bucket: string,
-    key: string,
+    fileName: string,
     body: Readable,
     options: Partial<PutObjectCommandInput> = {},
   ): Promise<string> {
+    const key = path.posix.join(this.csvExportBasePath, fileName);
     const params: PutObjectCommandInput = {
-      Bucket: bucket,
+      Bucket: this.bucket,
       Key: key,
       Body: body,
       // e.g. ContentType: "text/csv",
@@ -60,7 +63,7 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
 
     try {
       await this.s3Client.putObject(params);
-      return `s3://${bucket}/${key}`;
+      return `s3://${this.bucket}/${key}`;
     } catch (err) {
       throw new Error(`Error uploading content to S3: ${asError(err).message}`);
     }

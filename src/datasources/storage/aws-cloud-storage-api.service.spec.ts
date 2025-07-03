@@ -26,6 +26,9 @@ describe('AwsCloudStorageApiService', () => {
     if (key === 'targetedMessaging.fileStorage.aws.basePath') {
       return basePath;
     }
+    if (key === 'csvExport.fileStorage.aws.basePath') {
+      return basePath;
+    }
     throw Error(`Unexpected key: ${key}`);
   });
   const target = new AwsCloudStorageApiService(mockConfigurationService);
@@ -56,6 +59,9 @@ describe('AwsCloudStorageApiService', () => {
         }
         if (key === 'targetedMessaging.fileStorage.aws.basePath') {
           return 'base//path///'; // Extra slashes should be normalized
+        }
+        if (key === 'csvExport.fileStorage.aws.basePath') {
+          return basePath;
         }
         throw Error(`Unexpected key: ${key}`);
       });
@@ -91,28 +97,28 @@ describe('AwsCloudStorageApiService', () => {
   describe('uploadStream', () => {
     it('should upload a stream to S3', async () => {
       const content = faker.lorem.paragraphs();
-      const key = 'test/upload/path/file.csv';
+      const fileName = 'file.csv';
       const body = buildStream(content);
 
       s3Mock.on(PutObjectCommand).resolves({});
 
-      const result = await target.uploadStream(bucketName, key, body);
-      expect(result).toBe(`s3://${bucketName}/${key}`);
+      const result = await target.uploadStream(fileName, body);
+      expect(result).toBe(`s3://${bucketName}/base/path/${fileName}`);
       expect(
         s3Mock.commandCalls(PutObjectCommand, {
           Bucket: bucketName,
-          Key: key,
+          Key: `base/path/${fileName}`,
         }),
       ).toHaveLength(1);
     });
 
     it('should throw error when upload fails', async () => {
-      const key = 'test/upload/path/file.csv';
+      const fileName = 'file.csv';
       const body = buildStream(faker.lorem.paragraphs());
 
       s3Mock.on(PutObjectCommand).rejects(new Error('PutObject error'));
 
-      await expect(target.uploadStream(bucketName, key, body)).rejects.toThrow(
+      await expect(target.uploadStream(fileName, body)).rejects.toThrow(
         'Error uploading content to S3: PutObject error',
       );
     });
