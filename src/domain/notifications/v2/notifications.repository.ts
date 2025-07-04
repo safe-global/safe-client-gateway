@@ -107,7 +107,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       async (entityManager: EntityManager): Promise<UUID> => {
         await this.removeGetSubscribersBySafeCache({
           entityManager,
-          subscriptionsDto: args.upsertSubscriptionsDto,
+          safes: args.upsertSubscriptionsDto.safes,
         });
         const device = await this.upsertDevice(entityManager, args);
         await this.deletePreviousSubscriptions(entityManager, {
@@ -245,6 +245,18 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
   ): Promise<Array<NotificationSubscription>> {
     return await entityManager.find(NotificationSubscription, {
       where: { id: In(subscriptionIds) },
+    });
+  }
+
+  private async getSubscriptionsByDeviceUuid(
+    deviceUuid: UUID,
+  ): Promise<Array<NotificationSubscription>> {
+    const notificationsSubscriptionsRepository =
+      await this.postgresDatabaseService.getRepository<NotificationSubscription>(
+        NotificationSubscription,
+      );
+    return await notificationsSubscriptionsRepository.find({
+      where: { push_notification_device: { device_uuid: deviceUuid } },
     });
   }
 
@@ -407,6 +419,10 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     }
 
     await notificationsSubscriptionsRepository.remove(subscription);
+    await this.removeGetSubscribersBySafeCache({
+      entityManager: notificationsSubscriptionsRepository.manager,
+      safes: [{ chainId: args.chainId, address: args.safeAddress }],
+    });
   }
 
   public async deleteDevice(deviceUuid: UUID): Promise<void> {
@@ -415,6 +431,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
         NotificationDevice,
       );
 
+    const subscriptions = await this.getSubscriptionsByDeviceUuid(deviceUuid);
     const deleteResult = await notificationsDeviceRepository.delete({
       device_uuid: deviceUuid,
     });
@@ -422,6 +439,14 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     if (!deleteResult.affected) {
       throw new NotFoundException('No Device Found!');
     }
+
+    await this.removeGetSubscribersBySafeCache({
+      entityManager: notificationsDeviceRepository.manager,
+      safes: subscriptions.map((subscription) => ({
+        chainId: subscription.chain_id,
+        address: subscription.safe_address,
+      })),
+    });
   }
 
   private getSubscribersBySafeCacheKey(args: {
@@ -437,10 +462,9 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
 
   private async removeGetSubscribersBySafeCache(args: {
     entityManager: EntityManager;
-    subscriptionsDto: UpsertSubscriptionsDto;
+    safes: Array<{ chainId: string; address: `0x${string}` }>;
   }): Promise<void> {
-    const safes = args.subscriptionsDto.safes;
-    for (const safe of safes) {
+    for (const safe of args.safes) {
       const subscriptionsCacheKey = this.getSubscribersBySafeCacheKey({
         chainId: safe.chainId,
         safeAddress: safe.address,
