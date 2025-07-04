@@ -556,13 +556,9 @@ export default () => ({
         // AWS_ACCESS_KEY_ID
         // AWS_SECRET_ACCESS_KEY
         // AWS_REGION
-        // bucketName:
-        //   process.env.AWS_STORAGE_BUCKET_NAME || 'safe-client-gateway',
+        bucketName:
+          process.env.AWS_STORAGE_BUCKET_NAME || 'safe-client-gateway',
         basePath: process.env.AWS_S3_CSV_EXPORT_PATH || 'assets/csv-export',
-      },
-      local: {
-        // This will be ignored if the TARGETED_MESSAGING_FILE_STORAGE_TYPE is set to 'aws'.
-        baseDir: process.env.CSV_EXPORT_LOCAL_DIR || 'assets/csv-export',
       },
     },
   },

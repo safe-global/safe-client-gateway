@@ -353,11 +353,8 @@ export default (): ReturnType<typeof configuration> => ({
     fileStorage: {
       type: 'local',
       aws: {
-        // bucketName: faker.string.alphanumeric(),
+        bucketName: faker.string.alphanumeric(),
         basePath: faker.system.directoryPath(),
-      },
-      local: {
-        baseDir: 'assets/csv-export',
       },
     },
   },
