@@ -26,6 +26,8 @@ import { SubmissionNotFoundError } from '@/domain/targeted-messaging/errors/subm
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
+import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker/.';
 import type { INestApplication } from '@nestjs/common';
@@ -59,6 +61,8 @@ describe('TargetedMessagingController', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
 
     targetedMessagingDatasource = moduleFixture.get(

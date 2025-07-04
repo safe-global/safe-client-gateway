@@ -36,6 +36,8 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { CounterfactualSafesController } from '@/routes/accounts/counterfactual-safes/counterfactual-safes.controller';
 import { AuthGuard } from '@/routes/auth/guards/auth.guard';
+import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
+import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import { NotFoundException } from '@nestjs/common';
@@ -86,6 +88,8 @@ describe('CounterfactualSafesController', () => {
       .useModule(TestPostgresDatabaseModuleV2)
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     accountsRepository = moduleFixture.get(IAccountsDatasource);

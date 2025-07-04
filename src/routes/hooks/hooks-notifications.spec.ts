@@ -65,6 +65,8 @@ import {
 } from '@/routes/hooks/entities/__tests__/delegate-events.builder';
 import type { ConsumeMessage } from 'amqplib';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
+import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 function getSubscriptionCallback(
   queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,
@@ -104,6 +106,8 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
       .useModule(TestPushNotificationsApiModule)
       .overrideModule(NotificationsRepositoryV2Module)
       .useModule(TestNotificationsRepositoryV2Module)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
     app = moduleFixture.createNestApplication();
 
@@ -2235,6 +2239,8 @@ describe('Hook Events for Notifications (Unit) pt. 2', () => {
       .useModule(TestPostgresDatabaseModuleV2)
       .overrideModule(PushNotificationsApiModule)
       .useModule(TestPushNotificationsApiModule)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
     app = moduleFixture.createNestApplication();
 

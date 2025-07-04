@@ -34,6 +34,8 @@ import { faker } from '@faker-js/faker/.';
 import { getAddress } from 'viem';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
+import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
+import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('SpaceSafesController', () => {
   let app: INestApplication<Server>;
@@ -75,6 +77,8 @@ describe('SpaceSafesController', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(NotificationsRepositoryV2Module)
       .useModule(TestNotificationsRepositoryV2Module)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);

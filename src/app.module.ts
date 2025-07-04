@@ -59,6 +59,7 @@ import {
 import { UsersModule } from '@/routes/users/users.module';
 import { SpacesModule } from '@/routes/spaces/spaces.module';
 import { MembersModule } from '@/routes/spaces/members.module';
+import { JobsModule } from '@/routes/jobs/jobs.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -95,6 +96,7 @@ export class AppModule implements NestModule {
         EstimationsModule,
         HealthModule,
         HooksModule,
+        JobsModule,
         NotificationsModuleV2,
         MessagesModule,
         NotificationsModule,

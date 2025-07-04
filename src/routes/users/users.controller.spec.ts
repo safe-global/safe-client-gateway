@@ -41,6 +41,8 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { createSiweMessage, generateSiweNonce } from 'viem/siwe';
 import { siweMessageBuilder } from '@/domain/siwe/entities/__tests__/siwe-message.builder';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
+import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('UsersController', () => {
   let app: INestApplication<Server>;
@@ -84,6 +86,8 @@ describe('UsersController', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(NotificationsRepositoryV2Module)
       .useModule(TestNotificationsRepositoryV2Module)
+      .overrideModule(JobQueueModule)
+      .useModule(TestJobQueueModule)
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
