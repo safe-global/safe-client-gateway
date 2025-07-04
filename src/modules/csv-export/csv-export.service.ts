@@ -15,16 +15,23 @@ export class CsvExportService {
     writable: Writable,
     options: CsvOptions = {},
   ): Promise<void> {
-    const { header = true, columns: optColumns } = options;
-    // If no columns are provided or it's an empty array, derive them from the first object in the data
-    // or use an empty object to avoid errors when data is empty.
-    const columns = optColumns?.length
-      ? optColumns
-      : Object.keys(data?.[0] ?? {});
+    const columns = this.resolveColumns(data, options.columns);
+    const { header = true, ...csvOptions } = options;
 
     const readable = Readable.from(data);
-    const stringifier = stringify({ ...options, header, columns });
-
+    const stringifier = stringify({
+      ...csvOptions,
+      header,
+      columns,
+    });
     await pipeline(readable, stringifier, writable);
+  }
+
+  private resolveColumns<T extends Record<string, unknown>>(
+    data: Array<T>,
+    optColumns?: Array<string>,
+  ): Array<string> {
+    if (optColumns?.length) return optColumns;
+    return Object.keys(data[0] ?? {});
   }
 }
