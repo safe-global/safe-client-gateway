@@ -12,29 +12,21 @@ describe('RewardsFeeSchema', () => {
     expect(result.data).toStrictEqual(rewardsFee);
   });
 
-  it('should validate a RewardsFee object with null fee', () => {
-    const rewardsFee = { fee: null };
-
+  it.each([
+    ['undefined fee', { fee: undefined }],
+    ['empty object', {}],
+  ])('should validate an %s and default to 0', (_, rewardsFee) => {
     const result = RewardsFeeSchema.safeParse(rewardsFee);
-
     expect(result.success).toBe(true);
-    expect(result.data).toStrictEqual(rewardsFee);
-  });
-
-  it('should validate a RewardsFee object with undefined fee and default to null', () => {
-    const rewardsFeeWithoutFee = {};
-
-    const result = RewardsFeeSchema.safeParse(rewardsFeeWithoutFee);
-
-    expect(result.success).toBe(true);
-    expect(result.data?.fee).toBe(null);
+    expect(result.data?.fee).toBe(0);
   });
 
   it.each([
-    ['string', faker.string.numeric() as unknown as number],
-    ['boolean', faker.datatype.boolean() as unknown as number],
-    ['object', {} as unknown as number],
-    ['array', [] as unknown as number],
+    ['string', faker.string.numeric()],
+    ['null', null],
+    ['boolean', faker.datatype.boolean()],
+    ['object', {}],
+    ['array', []],
   ])(
     'should not validate a RewardsFee object with %s fee',
     (type, invalidFee) => {
@@ -57,20 +49,13 @@ describe('RewardsFeeSchema', () => {
     ['zero', 0],
     ['negative', -0.1],
     ['very large', 999999.999],
-  ])('should validate a RewardsFee object with %s fee', (description, fee) => {
+  ])('should validate a RewardsFee object with %s fee', (_, fee) => {
     const rewardsFee = { fee };
 
     const result = RewardsFeeSchema.safeParse({ fee });
 
     expect(result.success).toBe(true);
     expect(result.data).toStrictEqual(rewardsFee);
-  });
-
-  it('should validate an empty object and default fee to null', () => {
-    const result = RewardsFeeSchema.safeParse({});
-
-    expect(result.success).toBe(true);
-    expect(result.data?.fee).toBe(null);
   });
 
   it('should validate a RewardsFee object with extra properties and strip them', () => {
