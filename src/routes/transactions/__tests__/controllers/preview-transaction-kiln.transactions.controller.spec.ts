@@ -172,7 +172,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds * 1_000,
-              fee: +rewardsFee.fee!,
+              fee: rewardsFee.fee,
               monthlyNrr,
               annualNrr,
               value,
@@ -341,7 +341,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds * 1_000,
-              fee: +rewardsFee.fee!,
+              fee: rewardsFee.fee,
               monthlyNrr,
               annualNrr,
               value,
