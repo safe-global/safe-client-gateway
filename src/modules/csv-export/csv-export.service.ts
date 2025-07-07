@@ -10,6 +10,13 @@ export interface CsvOptions extends Options {
 
 @Injectable()
 export class CsvExportService {
+  /**
+   * Exports data to CSV format and writes it to the provided writable stream.
+   * @param {Array<T>} data - Array of objects to be exported
+   * @param {Writable} writable - Writable stream where the CSV data will be written
+   * @param {CsvOptions} options - Options for CSV formatting.
+   * @returns {Promise<void>} A promise that resolves when the export is complete.
+   */
   async exportToCsv<T extends Record<string, unknown>>(
     data: Array<T>,
     writable: Writable,
