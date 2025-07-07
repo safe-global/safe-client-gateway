@@ -23,14 +23,14 @@ export class CsvExportService {
     options: CsvOptions = {},
   ): Promise<void> {
     const columns = this.resolveColumns(data, options.columns);
-    const { header = true, ...csvOptions } = options;
 
     const readable = Readable.from(data);
     const stringifier = stringify({
-      ...csvOptions,
-      header,
+      ...options,
+      header: options.header ?? true,
       columns,
     });
+
     await pipeline(readable, stringifier, writable);
   }
 
