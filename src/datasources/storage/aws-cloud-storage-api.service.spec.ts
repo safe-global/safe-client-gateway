@@ -1,4 +1,3 @@
-import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { AwsCloudStorageApiService } from '@/datasources/storage/aws-cloud-storage-api.service';
 import {
   GetObjectCommand,
@@ -10,28 +9,12 @@ import { sdkStreamMixin } from '@smithy/util-stream';
 import { mockClient } from 'aws-sdk-client-mock';
 import { Readable } from 'stream';
 
-const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
-const mockConfigurationService = jest.mocked(configurationService);
-
 describe('AwsCloudStorageApiService', () => {
   const s3Mock = mockClient(S3Client);
   const bucketName = faker.string.alphanumeric();
   const basePath = 'base/path';
-  mockConfigurationService.getOrThrow.mockImplementation((key) => {
-    if (key === 'targetedMessaging.fileStorage.aws.bucketName') {
-      return bucketName;
-    }
-    if (key === 'targetedMessaging.fileStorage.aws.basePath') {
-      return basePath;
-    }
-    if (key === 'csvExport.fileStorage.aws.basePath') {
-      return basePath;
-    }
-    throw Error(`Unexpected key: ${key}`);
-  });
-  const target = new AwsCloudStorageApiService(mockConfigurationService);
+
+  const target = new AwsCloudStorageApiService(bucketName, basePath);
 
   describe('getFileContent', () => {
     it('should return file content', async () => {
@@ -53,19 +36,8 @@ describe('AwsCloudStorageApiService', () => {
     });
 
     it('should normalize paths', async () => {
-      mockConfigurationService.getOrThrow.mockImplementation((key) => {
-        if (key === 'targetedMessaging.fileStorage.aws.bucketName') {
-          return bucketName;
-        }
-        if (key === 'targetedMessaging.fileStorage.aws.basePath') {
-          return 'base//path///'; // Extra slashes should be normalized
-        }
-        if (key === 'csvExport.fileStorage.aws.basePath') {
-          return basePath;
-        }
-        throw Error(`Unexpected key: ${key}`);
-      });
-      const target = new AwsCloudStorageApiService(mockConfigurationService);
+      const target = new AwsCloudStorageApiService(bucketName, 'base//path///');
+
       const content = faker.lorem.paragraphs();
       const sourceFile = '///source-file.json'; // Extra slashes should be normalized
       s3Mock
