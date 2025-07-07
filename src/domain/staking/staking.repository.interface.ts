@@ -17,7 +17,7 @@ export interface IStakingRepository {
     address: `0x${string}`;
   }): Promise<Deployment>;
 
-  getRewardsFee(args: {
+  getRewardsFee?(args: {
     chainId: string;
     address: `0x${string}`;
   }): Promise<RewardsFee>;

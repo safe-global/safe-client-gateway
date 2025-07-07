@@ -58,7 +58,7 @@ export class NativeStakingMapper {
         chainId: args.chainId,
         address: args.to,
       }),
-      this.stakingRepository.getRewardsFee({
+      this.stakingRepository?.getRewardsFee?.({
         chainId: args.chainId,
         address: args.to,
       }),
@@ -82,9 +82,10 @@ export class NativeStakingMapper {
         Math.pow(10, chain.nativeCurrency.decimals) /
         NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
     );
+    const fee = rewardsFee?.fee ?? 0;
     // NRR = GRR * (1 - service_fees)
     // Kiln also uses last_30d field, with product_fee
-    const nrr = nativeStakingStats.gross_apy.last_30d * (1 - rewardsFee.fee);
+    const nrr = nativeStakingStats.gross_apy.last_30d * (1 - fee);
     const expectedAnnualReward = (nrr / 100) * value;
     const expectedMonthlyReward = expectedAnnualReward / 12;
     const expectedFiatAnnualReward =
@@ -98,7 +99,7 @@ export class NativeStakingMapper {
       estimatedExitTime: networkStats.estimated_exit_time_seconds * 1_000,
       estimatedWithdrawalTime:
         networkStats.estimated_withdrawal_time_seconds * 1_000,
-      fee: rewardsFee.fee,
+      fee,
       monthlyNrr: nrr / 12,
       annualNrr: nrr,
       value: getNumberString(value),
