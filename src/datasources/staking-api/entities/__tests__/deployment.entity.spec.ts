@@ -74,6 +74,14 @@ describe('DeploymentSchema', () => {
     );
   });
 
+  it('should default external_links to null', () => {
+    const deployment = deploymentBuilder().build();
+    // @ts-expect-error - inferred type does not allow undefined
+    delete deployment.external_links;
+    const result = DeploymentSchema.safeParse(deployment);
+    expect(result.success && result.data.external_links).toBe(null);
+  });
+
   it('should default external_links.deposit_url to null', () => {
     const deployment = deploymentBuilder().build();
     // @ts-expect-error - inferred type does not allow undefined
