@@ -58,7 +58,6 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
-  faker.seed(123);
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let safeDecoderUrl: string;
