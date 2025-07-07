@@ -32,6 +32,6 @@ export class CsvExportService {
     optColumns?: Array<string>,
   ): Array<string> {
     if (optColumns?.length) return optColumns;
-    return Object.keys(data[0] ?? {});
+    return Object.keys(data?.[0] ?? {});
   }
 }
