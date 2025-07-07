@@ -3,8 +3,14 @@ import { RewardsFeeSchema } from '@/datasources/staking-api/entities/rewards-fee
 import { faker } from '@faker-js/faker';
 
 describe('RewardsFeeSchema', () => {
-  it('should validate a RewardsFee object with a number fee', () => {
-    const rewardsFee = rewardsFeeBuilder().build();
+  it.each([
+    ['number', faker.number.float()],
+    ['null', null],
+    ['zero', 0],
+    ['negative', -0.1],
+    ['very large', 999999.999],
+  ])('should validate a RewardsFee object with a %s fee value', (_, fee) => {
+    const rewardsFee = rewardsFeeBuilder().with('fee', fee).build();
 
     const result = RewardsFeeSchema.safeParse(rewardsFee);
 
@@ -15,7 +21,7 @@ describe('RewardsFeeSchema', () => {
   it.each([
     ['undefined fee', { fee: undefined }],
     ['empty object', {}],
-  ])('should validate an %s and default to 0', (_, rewardsFee) => {
+  ])('should validate an %s and default fee to 0', (_, rewardsFee) => {
     const result = RewardsFeeSchema.safeParse(rewardsFee);
     expect(result.success).toBe(true);
     expect(result.data?.fee).toBe(0);
@@ -23,12 +29,11 @@ describe('RewardsFeeSchema', () => {
 
   it.each([
     ['string', faker.string.numeric()],
-    ['null', null],
     ['boolean', faker.datatype.boolean()],
     ['object', {}],
     ['array', []],
   ])(
-    'should not validate a RewardsFee object with %s fee',
+    'should not validate a RewardsFee object with a %s fee value',
     (type, invalidFee) => {
       const rewardsFee = { fee: invalidFee };
 
@@ -44,19 +49,6 @@ describe('RewardsFeeSchema', () => {
       });
     },
   );
-
-  it.each([
-    ['zero', 0],
-    ['negative', -0.1],
-    ['very large', 999999.999],
-  ])('should validate a RewardsFee object with %s fee', (_, fee) => {
-    const rewardsFee = { fee };
-
-    const result = RewardsFeeSchema.safeParse({ fee });
-
-    expect(result.success).toBe(true);
-    expect(result.data).toStrictEqual(rewardsFee);
-  });
 
   it('should validate a RewardsFee object with extra properties and strip them', () => {
     const rewardsFee = {
