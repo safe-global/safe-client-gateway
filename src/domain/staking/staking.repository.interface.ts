@@ -17,11 +17,6 @@ export interface IStakingRepository {
     address: `0x${string}`;
   }): Promise<Deployment>;
 
-  getRewardsFee?(args: {
-    chainId: string;
-    address: `0x${string}`;
-  }): Promise<RewardsFee>;
-
   getNetworkStats(chainId: string): Promise<NetworkStats>;
 
   getDedicatedStakingStats(chainId: string): Promise<DedicatedStakingStats>;
@@ -65,3 +60,14 @@ export interface IStakingRepository {
 
   clearApi(chainId: string): void;
 }
+
+export interface IStakingRepositoryWithRewardsFee extends IStakingRepository {
+  getRewardsFee(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<RewardsFee>;
+}
+
+export const IStakingRepositoryWithRewardsFee = Symbol(
+  'IStakingRepositoryWithRewardsFee',
+);

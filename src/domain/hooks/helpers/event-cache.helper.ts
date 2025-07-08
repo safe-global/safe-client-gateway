@@ -12,7 +12,7 @@ import { IDelegatesV2Repository } from '@/domain/delegate/v2/delegates.v2.reposi
 import { IMessagesRepository } from '@/domain/messages/messages.repository.interface';
 import { ISafeAppsRepository } from '@/domain/safe-apps/safe-apps.repository.interface';
 import { ISafeRepository } from '@/domain/safe/safe.repository.interface';
-import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { IStakingRepositoryWithRewardsFee } from '@/domain/staking/staking.repository.interface';
 import { ITransactionsRepository } from '@/domain/transactions/transactions.repository.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
@@ -51,8 +51,8 @@ export class EventCacheHelper {
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    @Inject(IStakingRepository)
-    private readonly stakingRepository: IStakingRepository,
+    @Inject(IStakingRepositoryWithRewardsFee)
+    private readonly stakingRepository: IStakingRepositoryWithRewardsFee,
     @Inject(EarnRepository)
     private readonly earnRepository: EarnRepository,
     @Inject(ITransactionsRepository)

@@ -6,7 +6,7 @@ import {
 } from '@/domain/chains/chains.repository.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { KilnDecoder } from '@/domain/staking/contracts/decoders/kiln-decoder.helper';
-import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { IStakingRepositoryWithRewardsFee } from '@/domain/staking/staking.repository.interface';
 import { StakingRepositoryModule } from '@/domain/staking/staking.repository.module';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { NULL_ADDRESS } from '@/routes/common/constants';
@@ -26,8 +26,8 @@ export class NativeStakingMapper {
   private static readonly ETH_ETHERS_PER_VALIDATOR = 32;
 
   constructor(
-    @Inject(IStakingRepository)
-    private readonly stakingRepository: IStakingRepository,
+    @Inject(IStakingRepositoryWithRewardsFee)
+    private readonly stakingRepository: IStakingRepositoryWithRewardsFee,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly kilnDecoder: KilnDecoder,
@@ -58,7 +58,7 @@ export class NativeStakingMapper {
         chainId: args.chainId,
         address: args.to,
       }),
-      this.stakingRepository?.getRewardsFee?.({
+      this.stakingRepository.getRewardsFee({
         chainId: args.chainId,
         address: args.to,
       }),
@@ -82,7 +82,7 @@ export class NativeStakingMapper {
         Math.pow(10, chain.nativeCurrency.decimals) /
         NativeStakingMapper.ETH_ETHERS_PER_VALIDATOR,
     );
-    const fee = rewardsFee?.fee ?? 0;
+    const fee = rewardsFee.fee ?? 0;
     // NRR = GRR * (1 - service_fees)
     // Kiln also uses last_30d field, with product_fee
     const nrr = nativeStakingStats.gross_apy.last_30d * (1 - fee);

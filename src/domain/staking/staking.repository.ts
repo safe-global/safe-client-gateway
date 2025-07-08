@@ -7,7 +7,7 @@ import {
   PooledStakingStats,
   PooledStakingStatsSchema,
 } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
-import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { IStakingRepositoryWithRewardsFee } from '@/domain/staking/staking.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   DedicatedStakingStats,
@@ -45,7 +45,7 @@ import {
 // TODO: Deduplicate code with EarnRepository
 
 @Injectable()
-export class StakingRepository implements IStakingRepository {
+export class StakingRepository implements IStakingRepositoryWithRewardsFee {
   constructor(
     @Inject(IStakingApiManager)
     private readonly stakingApiFactory: IStakingApiManager,
