@@ -1,16 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { NetworkModule } from '@/datasources/network/network.module';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
 import { chainUpdateEventBuilder } from '@/routes/hooks/entities/__tests__/chain-update.builder';
 import { safeAppsEventBuilder } from '@/routes/hooks/entities/__tests__/safe-apps-update.builder';
@@ -46,12 +35,6 @@ import { messageCreatedEventBuilder } from '@/routes/hooks/entities/__tests__/me
 import { messageConfirmationBuilder } from '@/domain/messages/entities/__tests__/message-confirmation.builder';
 import type { UUID } from 'crypto';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
-import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
-import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
@@ -65,6 +48,7 @@ import {
 } from '@/routes/hooks/entities/__tests__/delegate-events.builder';
 import type { ConsumeMessage } from 'amqplib';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { createTestModule } from '@/__tests__/testing-module';
 
 function getSubscriptionCallback(
   queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,
@@ -83,28 +67,20 @@ describe('Hook Events for Notifications (Unit) pt. 1', () => {
   let queuesApiService: jest.MockedObjectDeep<IQueuesApiService>;
 
   async function initApp(): Promise<void> {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
-    })
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(TargetedMessagingDatasourceModule)
-      .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .overrideModule(QueuesApiModule)
-      .useModule(TestQueuesApiModule)
-      .overrideModule(PostgresDatabaseModuleV2)
-      .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(PushNotificationsApiModule)
-      .useModule(TestPushNotificationsApiModule)
-      .overrideModule(NotificationsRepositoryV2Module)
-      .useModule(TestNotificationsRepositoryV2Module)
-      .compile();
+    const moduleFixture = await createTestModule({
+      config: configuration,
+      modules: [
+        {
+          originalModule: PushNotificationsApiModule,
+          testModule: TestPushNotificationsApiModule,
+        },
+        {
+          originalModule: NotificationsRepositoryV2Module,
+          testModule: TestNotificationsRepositoryV2Module,
+        },
+      ],
+    });
+
     app = moduleFixture.createNestApplication();
 
     networkService = moduleFixture.get(NetworkService);
@@ -2216,26 +2192,16 @@ describe('Hook Events for Notifications (Unit) pt. 2', () => {
   let queuesApiService: jest.MockedObjectDeep<IQueuesApiService>;
 
   async function initApp(): Promise<void> {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
-    })
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(TargetedMessagingDatasourceModule)
-      .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .overrideModule(QueuesApiModule)
-      .useModule(TestQueuesApiModule)
-      .overrideModule(PostgresDatabaseModuleV2)
-      .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(PushNotificationsApiModule)
-      .useModule(TestPushNotificationsApiModule)
-      .compile();
+    const moduleFixture = await createTestModule({
+      config: configuration,
+      modules: [
+        {
+          originalModule: PushNotificationsApiModule,
+          testModule: TestPushNotificationsApiModule,
+        },
+      ],
+    });
+
     app = moduleFixture.createNestApplication();
 
     networkService = moduleFixture.get(NetworkService);

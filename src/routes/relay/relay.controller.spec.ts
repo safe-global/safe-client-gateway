@@ -1,14 +1,5 @@
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { NetworkModule } from '@/datasources/network/network.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -48,20 +39,13 @@ import {
 } from '@/domain/common/utils/deployments';
 import { createProxyWithNonceEncoder } from '@/domain/relay/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
 } from '@/domain/alerts/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
-import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { createTestModule } from '@/__tests__/testing-module';
 
 const supportedChainIds = faker.helpers.arrayElements(
   Object.keys(configuration().relay.apiKey),
@@ -108,24 +92,9 @@ describe('Relay controller', () => {
       },
     });
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
-    })
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(TargetedMessagingDatasourceModule)
-      .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .overrideModule(QueuesApiModule)
-      .useModule(TestQueuesApiModule)
-      .overrideModule(PostgresDatabaseModuleV2)
-      .useModule(TestPostgresDatabaseModuleV2)
-      .compile();
+    const moduleFixture = await createTestModule({
+      config: testConfiguration,
+    });
 
     configurationService = moduleFixture.get(IConfigurationService);
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
