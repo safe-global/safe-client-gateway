@@ -14,8 +14,10 @@ describe('RewardsFeeSchema', () => {
 
     const result = RewardsFeeSchema.safeParse(rewardsFee);
 
-    expect(result.success).toBe(true);
-    expect(result.data).toStrictEqual(rewardsFee);
+    expect(result).toStrictEqual({
+      success: true,
+      data: rewardsFee,
+    });
   });
 
   it.each([
@@ -23,8 +25,11 @@ describe('RewardsFeeSchema', () => {
     ['empty object', {}],
   ])('should validate an %s and default fee to 0', (_, rewardsFee) => {
     const result = RewardsFeeSchema.safeParse(rewardsFee);
-    expect(result.success).toBe(true);
-    expect(result.data?.fee).toBe(0);
+
+    expect(result).toStrictEqual({
+      success: true,
+      data: { fee: 0 },
+    });
   });
 
   it.each([
@@ -58,9 +63,9 @@ describe('RewardsFeeSchema', () => {
 
     const result = RewardsFeeSchema.safeParse(rewardsFee);
 
-    expect(result.success).toBe(true);
-    expect(result.data).toStrictEqual({
-      fee: rewardsFee.fee,
+    expect(result).toStrictEqual({
+      success: true,
+      data: { fee: rewardsFee.fee },
     });
   });
 });
