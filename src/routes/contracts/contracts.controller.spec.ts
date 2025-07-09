@@ -28,7 +28,6 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { JobsModule } from '@/routes/jobs/jobs.module';
 
 describe('Contracts controller', () => {
   let app: INestApplication<Server>;
@@ -56,8 +55,6 @@ describe('Contracts controller', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(JobsModule)
-      .useModule(JobsModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

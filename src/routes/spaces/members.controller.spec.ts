@@ -35,8 +35,6 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'net';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('MembersController', () => {
   let app: INestApplication<Server>;
@@ -79,8 +77,6 @@ describe('MembersController', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(NotificationsRepositoryV2Module)
       .useModule(TestNotificationsRepositoryV2Module)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);

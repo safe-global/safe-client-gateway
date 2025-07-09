@@ -39,8 +39,6 @@ import {
 import { UserStatus } from '@/domain/users/entities/user.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('SpacesController', () => {
   let app: INestApplication<Server>;
@@ -95,8 +93,6 @@ describe('SpacesController', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(NotificationsRepositoryV2Module)
       .useModule(TestNotificationsRepositoryV2Module)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);

@@ -37,8 +37,6 @@ import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.m
 import { TestNotificationsModuleV2 } from '@/routes/notifications/v2/test.notifications.module';
 import type { UUID } from 'crypto';
 import { createV2RegisterDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/create-registration-v2.dto.builder';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -73,8 +71,6 @@ describe('Notifications Controller (Unit)', () => {
       .useModule(TestNotificationsRepositoryV2Module)
       .overrideModule(NotificationsModuleV2)
       .useModule(TestNotificationsModuleV2)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

@@ -1,10 +1,11 @@
-import type { Job } from 'bullmq';
+import type { Job, Queue } from 'bullmq';
 import { Test } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { JobQueueService } from './../job-queue.service';
 import { TestJobConsumer } from './../__test__/test.job.consumer';
 import { JobType } from './../types/job-types';
-import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
+import { CSV_EXPORT_QUEUE } from '@/domain/common/entities/jobs.constants';
+import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 
 // This is a simple in-memory queue implementation to simulate job processing without an actual queue system.
 class InMemoryQueue {
@@ -20,7 +21,7 @@ class InMemoryQueue {
 }
 
 describe('JobQueueService & TestJobConsumer integration', () => {
-  let service: JobQueueService;
+  let service: IJobQueueService;
   let queue: InMemoryQueue;
   let consumer: TestJobConsumer;
 
@@ -29,15 +30,20 @@ describe('JobQueueService & TestJobConsumer integration', () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         TestJobConsumer,
-        JobQueueService,
         {
-          provide: getQueueToken(JOBS_QUEUE_NAME),
+          provide: IJobQueueService,
+          useFactory: (queue: Queue): IJobQueueService =>
+            new JobQueueService(queue),
+          inject: [getQueueToken(CSV_EXPORT_QUEUE)],
+        },
+        {
+          provide: getQueueToken(CSV_EXPORT_QUEUE),
           useValue: queue,
         },
       ],
     }).compile();
 
-    service = moduleRef.get(JobQueueService);
+    service = moduleRef.get(IJobQueueService);
     consumer = moduleRef.get(TestJobConsumer);
     queue.handlers.push((job) => consumer.process(job));
   });

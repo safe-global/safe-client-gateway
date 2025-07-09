@@ -24,8 +24,6 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('Health Controller tests', () => {
   let app: INestApplication<Server>;
@@ -52,8 +50,6 @@ describe('Health Controller tests', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);

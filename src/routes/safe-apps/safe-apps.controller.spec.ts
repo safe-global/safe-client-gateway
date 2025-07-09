@@ -29,8 +29,6 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('Safe Apps Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -57,8 +55,6 @@ describe('Safe Apps Controller (Unit)', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

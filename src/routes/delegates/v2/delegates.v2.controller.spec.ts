@@ -24,8 +24,6 @@ import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { createDelegateDtoBuilder } from '@/routes/delegates/entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateV2DtoBuilder } from '@/routes/delegates/v2/entities/__tests__/delete-delegate.v2.dto.builder';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -70,8 +68,6 @@ describe('Delegates controller', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
-import { JOBS_QUEUE_NAME } from '@/domain/common/entities/jobs.constants';
-@Processor(JOBS_QUEUE_NAME)
+import { CSV_EXPORT_QUEUE } from '@/domain/common/entities/jobs.constants';
+@Processor(CSV_EXPORT_QUEUE)
 export class TestJobConsumer extends WorkerHost {
   public handledJobs: Array<Job> = [];
 

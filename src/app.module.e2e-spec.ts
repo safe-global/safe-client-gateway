@@ -9,8 +9,6 @@ import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-
 import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('Application bootstrap', () => {
   it('should init the app', async () => {
@@ -28,8 +26,6 @@ describe('Application bootstrap', () => {
       .useModule(TestTargetedMessagingDatasourceModule)
       .overrideModule(QueuesApiModule)
       .useModule(TestQueuesApiModule)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     const app = moduleRef.createNestApplication();

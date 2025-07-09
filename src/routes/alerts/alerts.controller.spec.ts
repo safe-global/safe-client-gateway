@@ -58,8 +58,6 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
 import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.
@@ -127,8 +125,6 @@ describe('Alerts (Unit)', () => {
         .useModule(TestQueuesApiModule)
         .overrideModule(PostgresDatabaseModuleV2)
         .useModule(TestPostgresDatabaseModuleV2)
-        .overrideModule(JobQueueModule)
-        .useModule(TestJobQueueModule)
         .compile();
 
       configurationService = moduleFixture.get(IConfigurationService);
@@ -917,8 +913,6 @@ describe('Alerts (Unit)', () => {
           .useModule(TestQueuesApiModule)
           .overrideModule(PostgresDatabaseModuleV2)
           .useModule(TestPostgresDatabaseModuleV2)
-          .overrideModule(JobQueueModule)
-          .useModule(TestJobQueueModule)
           .compile();
 
         app = moduleFixture.createNestApplication();

@@ -56,8 +56,6 @@ import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messag
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded.entity';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
   let app: INestApplication<Server>;
@@ -112,8 +110,6 @@ describe('Transactions History Controller (Unit) - Imitation Transactions', () =
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

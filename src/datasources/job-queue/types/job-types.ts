@@ -1,6 +1,6 @@
-export const JobType = {
-  CSV_EXPORT: 'csv-export',
-} as const;
+export enum JobType {
+  CSV_EXPORT = 'csv-export',
+}
 
 export type JobTypeName = (typeof JobType)[keyof typeof JobType];
 

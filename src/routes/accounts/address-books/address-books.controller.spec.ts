@@ -46,8 +46,6 @@ import { accountDataSettingBuilder } from '@/domain/accounts/entities/__tests__/
 import { createAddressBookItemDtoBuilder } from '@/domain/accounts/address-books/entities/__tests__/create-address-book-item.dto.builder';
 import { AddressBookNotFoundError } from '@/domain/accounts/address-books/errors/address-book-not-found.error';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
@@ -90,8 +88,6 @@ describe('AddressBooksController', () => {
       .useModule(TestPostgresDatabaseModuleV2)
       .overrideModule(PostgresDatabaseModule)
       .useModule(TestPostgresDatabaseModule)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     accountsRepository = moduleFixture.get(IAccountsDatasource);

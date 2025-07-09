@@ -48,8 +48,6 @@ import { AddressBooksDatasourceModule } from '@/datasources/accounts/address-boo
 import { rawify } from '@/validation/entities/raw.entity';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('Notifications Controller V2 (Unit)', () => {
   let app: INestApplication<Server>;
@@ -96,8 +94,6 @@ describe('Notifications Controller V2 (Unit)', () => {
       .useModule(TestPostgresDatabaseModuleV2)
       .overrideModule(NotificationsRepositoryV2Module)
       .useModule(TestNotificationsRepositoryV2Module)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

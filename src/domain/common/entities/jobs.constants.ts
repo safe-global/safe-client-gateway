@@ -1,1 +1,1 @@
-export const JOBS_QUEUE_NAME = 'jobs';
+export const CSV_EXPORT_QUEUE = 'csv-export';

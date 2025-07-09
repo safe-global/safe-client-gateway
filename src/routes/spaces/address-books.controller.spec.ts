@@ -33,8 +33,6 @@ import { getAddress } from 'viem';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { addressBookItemBuilder } from '@/domain/spaces/address-books/entities/__tests__/address-book-item.db.builder';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
@@ -97,8 +95,6 @@ describe('AddressBooksController', () => {
       .useModule(TestQueuesApiModule)
       .overrideModule(NotificationsRepositoryV2Module)
       .useModule(TestNotificationsRepositoryV2Module)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);

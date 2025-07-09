@@ -47,8 +47,6 @@ import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messag
 import { rawify } from '@/validation/entities/raw.entity';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { nativeTokenTransferBuilder } from '@/domain/safe/entities/__tests__/native-token-transfer.builder';
-import { JobQueueModule } from '@/datasources/job-queue/job-queue.module';
-import { TestJobQueueModule } from '@/datasources/job-queue/__test__/test.job-queue.module';
 
 describe('List multisig transactions by Safe - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -87,8 +85,6 @@ describe('List multisig transactions by Safe - Transactions Controller (Unit)', 
       .useModule(TestQueuesApiModule)
       .overrideModule(PostgresDatabaseModuleV2)
       .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(JobQueueModule)
-      .useModule(TestJobQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
