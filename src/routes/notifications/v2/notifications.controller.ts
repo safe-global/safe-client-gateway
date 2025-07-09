@@ -21,6 +21,10 @@ import { ApiTags } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
+import {
+  DeleteAllSubscriptionsDto,
+  DeleteAllSubscriptionsDtoSchema,
+} from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
@@ -71,6 +75,16 @@ export class NotificationsControllerV2 {
       chainId,
       safeAddress,
     });
+  }
+
+  @Delete('notifications/subscriptions')
+  deleteAllSubscriptions(
+    @Body(new ValidationPipe(DeleteAllSubscriptionsDtoSchema))
+    deleteAllSubscriptionsDto: DeleteAllSubscriptionsDto,
+  ): Promise<void> {
+    return this.notificationsService.deleteAllSubscriptions(
+      deleteAllSubscriptionsDto,
+    );
   }
 
   @Delete('chains/:chainId/notifications/devices/:deviceUuid')
