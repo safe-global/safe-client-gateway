@@ -21,10 +21,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
-import {
-  DeleteAllSubscriptionsDto,
-  DeleteAllSubscriptionsDtoSchema,
-} from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
+import { DeleteAllSubscriptionsDtoSchema } from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
+import { DeleteAllSubscriptionsDto } from '@/routes/notifications/v2/entities/delete-all-subscriptions.dto.entity';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
