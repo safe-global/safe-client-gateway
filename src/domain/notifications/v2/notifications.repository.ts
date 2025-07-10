@@ -436,7 +436,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       await this.postgresDatabaseService.getRepository<NotificationSubscription>(
         NotificationSubscription,
       );
-    const subscriptionsQueryFilter = args.subscriptions.map((subscription) => ({
+    const whereConditions = args.subscriptions.map((subscription) => ({
       chain_id: subscription.chainId,
       safe_address: subscription.safeAddress,
       push_notification_device: {
@@ -444,7 +444,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       },
     }));
     const subscriptions = await notificationsSubscriptionsRepository.find({
-      where: subscriptionsQueryFilter,
+      where: whereConditions,
     });
 
     if (!subscriptions.length) {

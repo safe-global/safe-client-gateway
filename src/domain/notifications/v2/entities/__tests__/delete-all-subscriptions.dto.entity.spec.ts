@@ -157,7 +157,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
     const deleteAllSubscriptionsDto = {
       subscriptions: [
         {
-          chainId: 123 as unknown as string, // number instead of string
+          chainId: 123 as unknown as string,
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
@@ -183,7 +183,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
     const deleteAllSubscriptionsDto = {
       subscriptions: [
         {
-          chainId: faker.string.alpha(), // non-numeric string
+          chainId: faker.string.alpha(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },

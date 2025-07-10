@@ -988,7 +988,6 @@ describe('NotificationsRepositoryV2', () => {
 
   describe('deleteAllSubscriptions()', () => {
     it('Should delete all subscriptions successfully', async () => {
-      // Create multiple subscriptions
       const authPayloadDto1 = authPayloadDtoBuilder().build();
       const authPayload1 = new AuthPayload(authPayloadDto1);
       const upsertSubscriptionsDto1 = upsertSubscriptionsDtoBuilder().build();
@@ -1009,12 +1008,9 @@ describe('NotificationsRepositoryV2', () => {
         NotificationSubscription,
       );
 
-      // Verify subscriptions exist
       const subscriptionsBeforeDeletion =
         await notificationSubscriptionRepository.find();
-      expect(subscriptionsBeforeDeletion.length).toBeGreaterThan(0);
 
-      // Prepare delete request
       const deleteAllSubscriptionsDto = [
         {
           chainId: upsertSubscriptionsDto1.safes[0].chainId,
@@ -1028,12 +1024,10 @@ describe('NotificationsRepositoryV2', () => {
         },
       ];
 
-      // Delete all subscriptions
       await notificationsRepositoryService.deleteAllSubscriptions({
         subscriptions: deleteAllSubscriptionsDto,
       });
 
-      // Verify subscriptions are deleted
       const remainingSubscriptions =
         await notificationSubscriptionRepository.find({
           where: [
@@ -1054,6 +1048,7 @@ describe('NotificationsRepositoryV2', () => {
           ],
         });
 
+      expect(subscriptionsBeforeDeletion.length).toBeGreaterThan(0);
       expect(remainingSubscriptions).toHaveLength(0);
     });
 
@@ -1076,7 +1071,6 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should clear cache for all deleted subscriptions', async () => {
-      // Create subscriptions
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -1085,7 +1079,6 @@ describe('NotificationsRepositoryV2', () => {
         upsertSubscriptionsDto,
       });
 
-      // Cache the subscriptions
       const cacheKeys: Array<string> = [];
       for (const safe of upsertSubscriptionsDto.safes) {
         const cacheKey = CacheRouter.getOrnCacheKey(
@@ -1100,7 +1093,6 @@ describe('NotificationsRepositoryV2', () => {
         });
       }
 
-      // Verify cache exists
       const cacheResult: Array<string> = [];
       for (const cacheKey of cacheKeys) {
         const result = await dataSource.queryResultCache?.getFromCache({
@@ -1112,7 +1104,6 @@ describe('NotificationsRepositoryV2', () => {
         }
       }
 
-      // Delete all subscriptions
       const deleteAllSubscriptionsDto = upsertSubscriptionsDto.safes.map(
         (safe) => ({
           chainId: safe.chainId,
@@ -1125,7 +1116,6 @@ describe('NotificationsRepositoryV2', () => {
         subscriptions: deleteAllSubscriptionsDto,
       });
 
-      // Verify cache is cleared
       const cacheResultAfterDeletion: Array<string> = [];
       for (const cacheKey of cacheKeys) {
         const result = await dataSource.queryResultCache?.getFromCache({
@@ -1142,7 +1132,6 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should only delete matching subscriptions', async () => {
-      // Create two different subscriptions
       const authPayloadDto1 = authPayloadDtoBuilder().build();
       const authPayload1 = new AuthPayload(authPayloadDto1);
       const upsertSubscriptionsDto1 = upsertSubscriptionsDtoBuilder().build();
@@ -1163,7 +1152,6 @@ describe('NotificationsRepositoryV2', () => {
         NotificationSubscription,
       );
 
-      // Delete only the first subscription
       const deleteAllSubscriptionsDto = [
         {
           chainId: upsertSubscriptionsDto1.safes[0].chainId,
@@ -1176,7 +1164,6 @@ describe('NotificationsRepositoryV2', () => {
         subscriptions: deleteAllSubscriptionsDto,
       });
 
-      // Verify only the first subscription is deleted
       const firstSubscription = await notificationSubscriptionRepository.find({
         where: {
           chain_id: upsertSubscriptionsDto1.safes[0].chainId,

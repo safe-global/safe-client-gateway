@@ -1022,7 +1022,7 @@ describe('Notifications Controller V2 (Unit)', () => {
       });
     });
 
-    it('should handle empty subscriptions array', async () => {
+    it('Should handle empty subscriptions array', async () => {
       const deleteAllSubscriptionsDto: DeleteAllSubscriptionsDto = {
         subscriptions: [],
       };
@@ -1037,7 +1037,7 @@ describe('Notifications Controller V2 (Unit)', () => {
       ).toHaveBeenCalledTimes(0);
     });
 
-    it('should return 422 if chainId is invalid', async () => {
+    it('Should return 422 if chainId is invalid', async () => {
       const baseDto = deleteAllSubscriptionsDtoBuilder();
       const deleteAllSubscriptionsDto = {
         subscriptions: [

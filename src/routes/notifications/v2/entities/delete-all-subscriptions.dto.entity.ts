@@ -4,13 +4,13 @@ import { DeleteAllSubscriptionsDto as DomainDeleteAllSubscriptionsDto } from '@/
 
 export class DeleteAllSubscriptionItemDto {
   @ApiProperty()
-  chainId!: string;
+  public readonly chainId!: string;
 
   @ApiProperty()
-  deviceUuid!: UUID;
+  public readonly deviceUuid!: UUID;
 
   @ApiProperty()
-  safeAddress!: `0x${string}`;
+  public readonly safeAddress!: `0x${string}`;
 }
 
 export class DeleteAllSubscriptionsDto
@@ -22,5 +22,5 @@ export class DeleteAllSubscriptionsDto
     minItems: 1,
     description: 'At least one subscription is required',
   })
-  subscriptions!: Array<DeleteAllSubscriptionItemDto>;
+  public readonly subscriptions!: Array<DeleteAllSubscriptionItemDto>;
 }
