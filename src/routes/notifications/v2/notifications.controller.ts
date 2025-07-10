@@ -17,10 +17,17 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { OptionalAuthGuard } from '@/routes/auth/guards/optional-auth.guard';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
+import { DeleteAllSubscriptionsDtoSchema } from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
+import { DeleteAllSubscriptionsDto } from '@/routes/notifications/v2/entities/delete-all-subscriptions.dto.entity';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '2' })
@@ -71,6 +78,27 @@ export class NotificationsControllerV2 {
       chainId,
       safeAddress,
     });
+  }
+
+  @ApiOperation({
+    summary: 'Delete all subscriptions of a device',
+    description:
+      'Delete all subscriptions of a Safe on a device. This will delete all subscriptions of a Safe on a device for all chains passed in the request body.',
+  })
+  @ApiNotFoundResponse({
+    description: 'No subscription was found',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'The request body is invalid',
+  })
+  @Delete('notifications/subscriptions')
+  public async deleteAllSubscriptions(
+    @Body(new ValidationPipe(DeleteAllSubscriptionsDtoSchema))
+    deleteAllSubscriptionsDto: DeleteAllSubscriptionsDto,
+  ): Promise<void> {
+    return this.notificationsService.deleteAllSubscriptions(
+      deleteAllSubscriptionsDto,
+    );
   }
 
   @Delete('chains/:chainId/notifications/devices/:deviceUuid')

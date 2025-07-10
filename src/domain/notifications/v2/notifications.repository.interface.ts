@@ -38,6 +38,14 @@ export interface INotificationsRepositoryV2 {
     }>
   >;
 
+  deleteAllSubscriptions(args: {
+    subscriptions: Array<{
+      chainId: string;
+      deviceUuid: UUID;
+      safeAddress: `0x${string}`;
+    }>;
+  }): Promise<void>;
+
   deleteSubscription(args: {
     deviceUuid: UUID;
     chainId: string;
