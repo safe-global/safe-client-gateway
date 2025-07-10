@@ -260,6 +260,8 @@ export default (): ReturnType<typeof configuration> => ({
     port: process.env.REDIS_PORT || '6379',
     disableOfflineQueue:
       process.env.REDIS_DISABLE_OFFLINE_QUEUE?.toString() === 'true',
+    connectTimeout: process.env.REDIS_CONNECT_TIMEOUT || 10_000,
+    keepAlive: process.env.REDIS_KEEP_ALIVE || 30_000,
   },
   relay: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -346,6 +348,15 @@ export default (): ReturnType<typeof configuration> => ({
       },
       local: {
         baseDir: 'assets/targeted-messaging',
+      },
+    },
+  },
+  csvExport: {
+    fileStorage: {
+      type: 'local',
+      aws: {
+        bucketName: faker.string.alphanumeric(),
+        basePath: faker.system.directoryPath(),
       },
     },
   },

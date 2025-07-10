@@ -747,6 +747,64 @@ describe('NotificationsRepositoryV2', () => {
       expect(subscriptionAfterRemoval).toHaveLength(0);
     });
 
+    it('Should remove cache when deleting a subscription', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+
+      const cacheKeys: Array<string> = [];
+      for (const safe of upsertSubscriptionsDto.safes) {
+        const cacheKey = CacheRouter.getOrnCacheKey(
+          'getSubscribersBySafe',
+          safe.chainId,
+          safe.address,
+        );
+        cacheKeys.push(cacheKey);
+        await notificationsRepositoryService.getSubscribersBySafe({
+          chainId: safe.chainId,
+          safeAddress: safe.address,
+        });
+      }
+
+      const cacheResult: Array<string> = [];
+      for (const cacheKey of cacheKeys) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResult.push(result.identifier);
+        }
+      }
+
+      for (const safe of upsertSubscriptionsDto.safes) {
+        await notificationsRepositoryService.deleteSubscription({
+          deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+          chainId: safe.chainId,
+          safeAddress: safe.address,
+        });
+      }
+
+      const cacheResultAfterRemoval: Array<string> = [];
+      for (const cacheKey of cacheKeys) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResultAfterRemoval.push(result.identifier);
+        }
+      }
+
+      expect(cacheResult).toHaveLength(upsertSubscriptionsDto.safes.length);
+      expect(cacheResultAfterRemoval).toHaveLength(0);
+    });
+
     it('Should throw NotFoundException if a subscription does not exist', async () => {
       const authPayloadDto = authPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
@@ -871,6 +929,59 @@ describe('NotificationsRepositoryV2', () => {
 
       expect(device).toHaveLength(0);
       expect(subscription).toHaveLength(0);
+    });
+
+    it('Should remove device subscriptions cache when deleting a device', async () => {
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+
+      const cacheKeys: Array<string> = [];
+      for (const safe of upsertSubscriptionsDto.safes) {
+        const cacheKey = CacheRouter.getOrnCacheKey(
+          'getSubscribersBySafe',
+          safe.chainId,
+          safe.address,
+        );
+        cacheKeys.push(cacheKey);
+        await notificationsRepositoryService.getSubscribersBySafe({
+          chainId: safe.chainId,
+          safeAddress: safe.address,
+        });
+      }
+
+      const cacheResult: Array<string> = [];
+      for (const cacheKey of cacheKeys) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResult.push(result.identifier);
+        }
+      }
+
+      await notificationsRepositoryService.deleteDevice(
+        upsertSubscriptionsDto.deviceUuid as UUID,
+      );
+
+      const cacheResultAfterRemoval: Array<string> = [];
+      for (const cacheKey of cacheKeys) {
+        const result = await dataSource.queryResultCache?.getFromCache({
+          identifier: cacheKey,
+          duration: QUERY_CACHE_DURATION,
+        });
+        if (result?.identifier) {
+          cacheResultAfterRemoval.push(result.identifier);
+        }
+      }
+
+      expect(cacheResult).toHaveLength(upsertSubscriptionsDto.safes.length);
+      expect(cacheResultAfterRemoval).toHaveLength(0);
     });
   });
 });

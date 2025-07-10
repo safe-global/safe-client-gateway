@@ -1,3 +1,4 @@
+import { CsvExportService } from '@/modules/csv-export/csv-export.service';
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobQueueShutdownHook } from '@/datasources/job-queue/job-queue.shutdown.hook';
 import { CSV_EXPORT_QUEUE } from '@/domain/common/entities/jobs.constants';
@@ -23,6 +24,7 @@ import { Queue } from 'bullmq';
     }),
   ],
   providers: [
+    CsvExportService,
     {
       provide: IJobQueueService,
       useFactory: (queue: Queue): IJobQueueService =>
@@ -38,6 +40,6 @@ import { Queue } from 'bullmq';
       inject: [getQueueToken(CSV_EXPORT_QUEUE), LoggingService],
     },
   ],
-  exports: [BullModule],
+  exports: [CsvExportService, BullModule],
 })
 export class CsvExportModule {}
