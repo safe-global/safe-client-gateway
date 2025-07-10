@@ -1,34 +1,17 @@
 import { faker } from '@faker-js/faker';
 import { NotFoundException, type INestApplication } from '@nestjs/common';
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { AppModule } from '@/app.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
-import { NetworkModule } from '@/datasources/network/network.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { registerDeviceDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/register-device.dto.builder';
 import { safeRegistrationBuilder } from '@/routes/notifications/v1/entities/__tests__/safe-registration.builder';
 import type { RegisterDeviceDto } from '@/routes/notifications/v1/entities/register-device.dto.entity';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import type { Server } from 'net';
 import { getAddress } from 'viem';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
-import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
-import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
@@ -37,6 +20,7 @@ import { NotificationsModuleV2 } from '@/routes/notifications/v2/notifications.m
 import { TestNotificationsModuleV2 } from '@/routes/notifications/v2/test.notifications.module';
 import type { UUID } from 'crypto';
 import { createV2RegisterDtoBuilder } from '@/routes/notifications/v1/entities/__tests__/create-registration-v2.dto.builder';
+import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Notifications Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -50,28 +34,19 @@ describe('Notifications Controller (Unit)', () => {
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
-    })
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(TargetedMessagingDatasourceModule)
-      .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .overrideModule(QueuesApiModule)
-      .useModule(TestQueuesApiModule)
-      .overrideModule(PostgresDatabaseModuleV2)
-      .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(NotificationsRepositoryV2Module)
-      .useModule(TestNotificationsRepositoryV2Module)
-      .overrideModule(NotificationsModuleV2)
-      .useModule(TestNotificationsModuleV2)
-      .compile();
+    const moduleFixture = await createTestModule({
+      config: configuration,
+      modules: [
+        {
+          originalModule: NotificationsRepositoryV2Module,
+          testModule: TestNotificationsRepositoryV2Module,
+        },
+        {
+          originalModule: NotificationsModuleV2,
+          testModule: TestNotificationsModuleV2,
+        },
+      ],
+    });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,

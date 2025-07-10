@@ -1,25 +1,16 @@
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AppModule } from '@/app.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestAccountsDataSourceModule } from '@/datasources/accounts/__tests__/test.accounts.datasource.module';
 import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { NetworkModule } from '@/datasources/network/network.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 import { deleteAllSubscriptionsDtoBuilder } from '@/domain/notifications/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
 import type { Chain } from '@/routes/chains/entities/chain.entity';
@@ -29,27 +20,20 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
 import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
 import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { INotificationsRepositoryV2 } from '@/domain/notifications/v2/notifications.repository.interface';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
-import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
-import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address-books/__tests__/test.address-books.datasource.module';
 import { AddressBooksDatasourceModule } from '@/datasources/accounts/address-books/address-books.datasource.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
 import type { DeleteAllSubscriptionsDto } from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
+import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Notifications Controller V2 (Unit)', () => {
   let app: INestApplication<Server>;
@@ -71,32 +55,31 @@ describe('Notifications Controller V2 (Unit)', () => {
       },
     });
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
-    })
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(AccountsDatasourceModule)
-      .useModule(TestAccountsDataSourceModule)
-      .overrideModule(AddressBooksDatasourceModule)
-      .useModule(TestAddressBooksDataSourceModule)
-      .overrideModule(CounterfactualSafesDatasourceModule)
-      .useModule(TestCounterfactualSafesDataSourceModule)
-      .overrideModule(TargetedMessagingDatasourceModule)
-      .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .overrideModule(QueuesApiModule)
-      .useModule(TestQueuesApiModule)
-      .overrideModule(PostgresDatabaseModuleV2)
-      .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(NotificationsRepositoryV2Module)
-      .useModule(TestNotificationsRepositoryV2Module)
-      .compile();
+    const moduleFixture = await createTestModule({
+      config: testConfiguration,
+      modules: [
+        {
+          originalModule: NotificationsRepositoryV2Module,
+          testModule: TestNotificationsRepositoryV2Module,
+        },
+        {
+          originalModule: AccountsDatasourceModule,
+          testModule: TestAccountsDataSourceModule,
+        },
+        {
+          originalModule: AddressBooksDatasourceModule,
+          testModule: TestAddressBooksDataSourceModule,
+        },
+        {
+          originalModule: CounterfactualSafesDatasourceModule,
+          testModule: TestCounterfactualSafesDataSourceModule,
+        },
+        {
+          originalModule: NotificationsRepositoryV2Module,
+          testModule: TestNotificationsRepositoryV2Module,
+        },
+      ],
+    });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
@@ -1005,7 +988,8 @@ describe('Notifications Controller V2 (Unit)', () => {
 
   describe('DELETE /v2/notifications/subscriptions', () => {
     it('Should delete all subscriptions successfully', async () => {
-      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder();
+      const deleteAllSubscriptionsDto =
+        deleteAllSubscriptionsDtoBuilder().build();
 
       await request(app.getHttpServer())
         .delete('/v2/notifications/subscriptions')
@@ -1038,7 +1022,7 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     it('Should return 422 if chainId is invalid', async () => {
-      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const baseDto = deleteAllSubscriptionsDtoBuilder().build();
       const deleteAllSubscriptionsDto = {
         subscriptions: [
           {
@@ -1060,7 +1044,7 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     it('should return 422 if deviceUuid is invalid', async () => {
-      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const baseDto = deleteAllSubscriptionsDtoBuilder().build();
       const deleteAllSubscriptionsDto = {
         subscriptions: [
           {
@@ -1083,7 +1067,7 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     it('should return 422 if safeAddress is invalid', async () => {
-      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const baseDto = deleteAllSubscriptionsDtoBuilder().build();
       const deleteAllSubscriptionsDto = {
         subscriptions: [
           {
@@ -1120,7 +1104,8 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     it('should forward datasource errors', async () => {
-      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder();
+      const deleteAllSubscriptionsDto =
+        deleteAllSubscriptionsDtoBuilder().build();
       const error = new NotFoundException();
       notificationsRepository.deleteAllSubscriptions.mockRejectedValue(error);
 

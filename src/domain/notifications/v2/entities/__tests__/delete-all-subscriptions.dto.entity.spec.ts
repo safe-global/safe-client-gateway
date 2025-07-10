@@ -6,7 +6,8 @@ import { getAddress } from 'viem';
 
 describe('DeleteAllSubscriptionsDtoSchema', () => {
   it('should validate a valid DeleteAllSubscriptionsDto', () => {
-    const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder();
+    const deleteAllSubscriptionsDto =
+      deleteAllSubscriptionsDtoBuilder().build();
 
     const result = DeleteAllSubscriptionsDtoSchema.safeParse(
       deleteAllSubscriptionsDto,
