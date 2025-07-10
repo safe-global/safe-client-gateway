@@ -425,6 +425,46 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
     });
   }
 
+  public async deleteAllSubscriptions(args: {
+    subscriptions: Array<{
+      chainId: string;
+      deviceUuid: UUID;
+      safeAddress: `0x${string}`;
+    }>;
+  }): Promise<void> {
+    const notificationsSubscriptionsRepository =
+      await this.postgresDatabaseService.getRepository<NotificationSubscription>(
+        NotificationSubscription,
+      );
+    const whereConditions = args.subscriptions.map((subscription) => ({
+      chain_id: subscription.chainId,
+      safe_address: subscription.safeAddress,
+      push_notification_device: {
+        device_uuid: subscription.deviceUuid,
+      },
+    }));
+    const subscriptions = await notificationsSubscriptionsRepository.find({
+      where: whereConditions,
+    });
+
+    if (!subscriptions.length) {
+      throw new NotFoundException('No Subscription Found!');
+    }
+
+    await notificationsSubscriptionsRepository.remove(subscriptions);
+    for (const subscription of subscriptions) {
+      await this.removeGetSubscribersBySafeCache({
+        entityManager: notificationsSubscriptionsRepository.manager,
+        safes: [
+          {
+            chainId: subscription.chain_id,
+            address: subscription.safe_address,
+          },
+        ],
+      });
+    }
+  }
+
   public async deleteDevice(deviceUuid: UUID): Promise<void> {
     const notificationsDeviceRepository =
       await this.postgresDatabaseService.getRepository<NotificationDevice>(

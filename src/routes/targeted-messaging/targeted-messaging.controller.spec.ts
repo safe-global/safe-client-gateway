@@ -1,21 +1,8 @@
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AppModule } from '@/app.module';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { NetworkModule } from '@/datasources/network/network.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
-import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
@@ -24,13 +11,9 @@ import { submissionBuilder } from '@/domain/targeted-messaging/entities/tests/su
 import { targetedSafeBuilder } from '@/domain/targeted-messaging/entities/tests/targeted-safe.builder';
 import { SubmissionNotFoundError } from '@/domain/targeted-messaging/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/domain/targeted-messaging/errors/targeted-safe-not-found.error';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { rawify } from '@/validation/entities/raw.entity';
 import { faker } from '@faker-js/faker/.';
 import type { INestApplication } from '@nestjs/common';
-import type { TestingModule } from '@nestjs/testing';
-import { Test } from '@nestjs/testing';
 import type { Server } from 'http';
 import request from 'supertest';
 import { getAddress } from 'viem';
@@ -42,24 +25,7 @@ describe('TargetedMessagingController', () => {
   let targetedMessagingDatasource: jest.MockedObjectDeep<ITargetedMessagingDatasource>;
 
   beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule.register(configuration)],
-    })
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(TargetedMessagingDatasourceModule)
-      .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(QueuesApiModule)
-      .useModule(TestQueuesApiModule)
-      .overrideModule(PostgresDatabaseModuleV2)
-      .useModule(TestPostgresDatabaseModuleV2)
-      .compile();
+    const moduleFixture = await createTestModule();
 
     targetedMessagingDatasource = moduleFixture.get(
       ITargetedMessagingDatasource,
