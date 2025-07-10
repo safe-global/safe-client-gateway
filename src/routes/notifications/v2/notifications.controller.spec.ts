@@ -12,6 +12,7 @@ import { delegateBuilder } from '@/domain/delegate/entities/__tests__/delegate.b
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { safeBuilder } from '@/domain/safe/entities/__tests__/safe.builder';
 import { upsertSubscriptionsDtoBuilder } from '@/routes/notifications/v2/entities/__tests__/upsert-subscriptions.dto.builder';
+import { deleteAllSubscriptionsDtoBuilder } from '@/domain/notifications/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
 import type { Chain } from '@/routes/chains/entities/chain.entity';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -31,6 +32,7 @@ import { AddressBooksDatasourceModule } from '@/datasources/accounts/address-boo
 import { rawify } from '@/validation/entities/raw.entity';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
+import type { DeleteAllSubscriptionsDto } from '@/domain/notifications/v2/entities/delete-all-subscriptions.dto.entity';
 import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Notifications Controller V2 (Unit)', () => {
@@ -981,6 +983,144 @@ describe('Notifications Controller V2 (Unit)', () => {
           message: 'Not Found',
           statusCode: 404,
         });
+    });
+  });
+
+  describe('DELETE /v2/notifications/subscriptions', () => {
+    it('Should delete all subscriptions successfully', async () => {
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder();
+
+      await request(app.getHttpServer())
+        .delete('/v2/notifications/subscriptions')
+        .send(deleteAllSubscriptionsDto)
+        .expect(200);
+
+      expect(
+        notificationsRepository.deleteAllSubscriptions,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        notificationsRepository.deleteAllSubscriptions,
+      ).toHaveBeenNthCalledWith(1, {
+        subscriptions: deleteAllSubscriptionsDto.subscriptions,
+      });
+    });
+
+    it('Should handle empty subscriptions array', async () => {
+      const deleteAllSubscriptionsDto: DeleteAllSubscriptionsDto = {
+        subscriptions: [],
+      };
+
+      await request(app.getHttpServer())
+        .delete('/v2/notifications/subscriptions')
+        .send(deleteAllSubscriptionsDto)
+        .expect(422);
+
+      expect(
+        notificationsRepository.deleteAllSubscriptions,
+      ).toHaveBeenCalledTimes(0);
+    });
+
+    it('Should return 422 if chainId is invalid', async () => {
+      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const deleteAllSubscriptionsDto = {
+        subscriptions: [
+          {
+            ...baseDto.subscriptions[0],
+            chainId: faker.string.alpha(),
+          },
+        ],
+      };
+
+      await request(app.getHttpServer())
+        .delete('/v2/notifications/subscriptions')
+        .send(deleteAllSubscriptionsDto)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: ['subscriptions', 0, 'chainId'],
+        });
+    });
+
+    it('should return 422 if deviceUuid is invalid', async () => {
+      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const deleteAllSubscriptionsDto = {
+        subscriptions: [
+          {
+            ...baseDto.subscriptions[0],
+            deviceUuid: faker.string.alphanumeric(),
+          },
+        ],
+      };
+
+      await request(app.getHttpServer())
+        .delete('/v2/notifications/subscriptions')
+        .send(deleteAllSubscriptionsDto)
+        .expect({
+          statusCode: 422,
+          validation: 'uuid',
+          code: 'invalid_string',
+          message: 'Invalid UUID',
+          path: ['subscriptions', 0, 'deviceUuid'],
+        });
+    });
+
+    it('should return 422 if safeAddress is invalid', async () => {
+      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const deleteAllSubscriptionsDto = {
+        subscriptions: [
+          {
+            ...baseDto.subscriptions[0],
+            safeAddress: faker.string.alphanumeric(),
+          },
+        ],
+      };
+
+      await request(app.getHttpServer())
+        .delete('/v2/notifications/subscriptions')
+        .send(deleteAllSubscriptionsDto)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid address',
+          path: ['subscriptions', 0, 'safeAddress'],
+        });
+    });
+
+    it('should return 422 if required fields are missing', async () => {
+      const deleteAllSubscriptionsDto = {
+        subscriptions: [
+          {
+            chainId: faker.string.numeric(),
+          },
+        ],
+      };
+
+      await request(app.getHttpServer())
+        .delete('/v2/notifications/subscriptions')
+        .send(deleteAllSubscriptionsDto)
+        .expect(422);
+    });
+
+    it('should forward datasource errors', async () => {
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder();
+      const error = new NotFoundException();
+      notificationsRepository.deleteAllSubscriptions.mockRejectedValue(error);
+
+      await request(app.getHttpServer())
+        .delete('/v2/notifications/subscriptions')
+        .send(deleteAllSubscriptionsDto)
+        .expect({
+          message: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should handle invalid JSON in request body', async () => {
+      await request(app.getHttpServer())
+        .delete('/v2/notifications/subscriptions')
+        .send('invalid json')
+        .expect(422);
     });
   });
 
