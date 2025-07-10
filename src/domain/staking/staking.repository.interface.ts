@@ -10,6 +10,9 @@ import type { DefiMorphoExtraReward } from '@/datasources/staking-api/entities/d
 import type { RewardsFee } from '@/datasources/staking-api/entities/rewards-fee.entity';
 
 export const IStakingRepository = Symbol('IStakingRepository');
+export const IStakingRepositoryWithRewardsFee = Symbol(
+  'IStakingRepositoryWithRewardsFee',
+);
 
 export interface IStakingRepository {
   getDeployment(args: {
@@ -67,7 +70,3 @@ export interface IStakingRepositoryWithRewardsFee extends IStakingRepository {
     address: `0x${string}`;
   }): Promise<RewardsFee>;
 }
-
-export const IStakingRepositoryWithRewardsFee = Symbol(
-  'IStakingRepositoryWithRewardsFee',
-);
