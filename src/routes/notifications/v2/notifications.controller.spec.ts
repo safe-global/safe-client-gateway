@@ -988,7 +988,8 @@ describe('Notifications Controller V2 (Unit)', () => {
 
   describe('DELETE /v2/notifications/subscriptions', () => {
     it('Should delete all subscriptions successfully', async () => {
-      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder();
+      const deleteAllSubscriptionsDto =
+        deleteAllSubscriptionsDtoBuilder().build();
 
       await request(app.getHttpServer())
         .delete('/v2/notifications/subscriptions')
@@ -1021,7 +1022,7 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     it('Should return 422 if chainId is invalid', async () => {
-      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const baseDto = deleteAllSubscriptionsDtoBuilder().build();
       const deleteAllSubscriptionsDto = {
         subscriptions: [
           {
@@ -1043,7 +1044,7 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     it('should return 422 if deviceUuid is invalid', async () => {
-      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const baseDto = deleteAllSubscriptionsDtoBuilder().build();
       const deleteAllSubscriptionsDto = {
         subscriptions: [
           {
@@ -1066,7 +1067,7 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     it('should return 422 if safeAddress is invalid', async () => {
-      const baseDto = deleteAllSubscriptionsDtoBuilder();
+      const baseDto = deleteAllSubscriptionsDtoBuilder().build();
       const deleteAllSubscriptionsDto = {
         subscriptions: [
           {
@@ -1103,7 +1104,8 @@ describe('Notifications Controller V2 (Unit)', () => {
     });
 
     it('should forward datasource errors', async () => {
-      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder();
+      const deleteAllSubscriptionsDto =
+        deleteAllSubscriptionsDtoBuilder().build();
       const error = new NotFoundException();
       notificationsRepository.deleteAllSubscriptions.mockRejectedValue(error);
 
