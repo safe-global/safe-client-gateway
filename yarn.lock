@@ -5092,6 +5092,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"csv-stringify@npm:^6.5.2":
+  version: 6.5.2
+  resolution: "csv-stringify@npm:6.5.2"
+  checksum: 10/7715664020d291ccece25a32ecca617cea8d7e320af0c4e58cabbfb52d914832c3ea63c77c9796ca032ce6b47b899c879140c55bfd380105c42038ec305607a3
+  languageName: node
+  linkType: hard
+
 "dayjs@npm:^1.11.9":
   version: 1.11.13
   resolution: "dayjs@npm:1.11.13"
@@ -8918,6 +8925,7 @@ __metadata:
     aws-sdk-client-mock: "npm:4.1.0"
     cache-manager: "npm:6.4.1"
     cookie-parser: "npm:1.4.7"
+    csv-stringify: "npm:^6.5.2"
     eslint: "npm:9.22.0"
     eslint-config-prettier: "npm:10.1.5"
     husky: "npm:9.1.7"
