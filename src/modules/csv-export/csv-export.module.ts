@@ -7,6 +7,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { Queue } from 'bullmq';
+import { CsvExportConsumer } from '@/modules/csv-export/csv-export.consumer';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { Queue } from 'bullmq';
     }),
   ],
   providers: [
+    CsvExportConsumer,
     CsvExportService,
     {
       provide: IJobQueueService,
