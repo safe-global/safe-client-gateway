@@ -13,6 +13,7 @@ import type {
 import type { Deployment } from '@/datasources/staking-api/entities/deployment.entity';
 import type { NetworkStats } from '@/datasources/staking-api/entities/network-stats.entity';
 import type { PooledStakingStats } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
+import type { RewardsFee } from '@/datasources/staking-api/entities/rewards-fee.entity';
 import type { Stake } from '@/datasources/staking-api/entities/stake.entity';
 import type { TransactionStatus } from '@/datasources/staking-api/entities/transaction-status.entity';
 import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
@@ -67,6 +68,29 @@ export class KilnApi implements IStakingApi {
       networkRequest: {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
+        },
+      },
+      notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+      expireTimeSeconds: this.stakingExpirationTimeInSeconds,
+    });
+  }
+
+  // Important: there is no hook which invalidates this endpoint,
+  // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
+  async getRewardsFee(contract: `0x${string}`): Promise<Raw<RewardsFee>> {
+    const url = `${this.baseUrl}/v1/eth/onchain/v1/fee`;
+    const cacheDir = CacheRouter.getStakingRewardsFeeCacheDir(this.cacheType);
+    return await this.get<{
+      data: RewardsFee;
+    }>({
+      cacheDir,
+      url,
+      networkRequest: {
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        params: {
+          integration: contract,
         },
       },
       notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,

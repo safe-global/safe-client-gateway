@@ -1,5 +1,4 @@
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { z } from 'zod';
 
 export const DeploymentProductTypes = ['defi', 'pooling', 'dedicated'] as const;
@@ -35,7 +34,6 @@ export const DeploymentSchema = z.object({
   chain_id: z.number(),
   address: AddressSchema,
   status: z.enum([...DeploymentStatuses, 'unknown']).catch('unknown'),
-  product_fee: NumericStringSchema.nullish().default(null),
   external_links: DeploymentExternalLinksSchema.nullish().default(null),
 });
 

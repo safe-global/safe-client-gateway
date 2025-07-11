@@ -21,6 +21,5 @@ export function deploymentBuilder(): IBuilder<Deployment> {
     .with('chain_id', faker.number.int())
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('status', faker.helpers.arrayElement(DeploymentStatuses))
-    .with('product_fee', faker.string.numeric())
     .with('external_links', { deposit_url: faker.internet.url() });
 }

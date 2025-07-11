@@ -379,13 +379,13 @@ describe('VaultTransactionMapper', () => {
       const assets = faker.number.int();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
-        .with('product_fee', '0.1')
         .with('status', 'active')
         .with(
           'chain_id',
           Number(faker.string.numeric({ exclude: [chain.chainId] })),
         )
         .build();
+
       mockEarnRepository.getDeployment.mockResolvedValue(deployment);
 
       await expect(

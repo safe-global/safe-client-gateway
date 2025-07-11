@@ -50,6 +50,7 @@ export class CacheRouter {
   private static readonly STAKING_DEFI_MORPHO_EXTRA_REWARDS_KEY =
     'staking_defi_morpho_extra_rewards';
   private static readonly STAKING_DEPLOYMENTS_KEY = 'staking_deployments';
+  private static readonly STAKING_REWARDS_FEE_KEY = 'staking_rewards_fee';
   private static readonly STAKING_NETWORK_STATS_KEY = 'staking_network_stats';
   private static readonly STAKING_POOLED_STAKING_STATS_KEY =
     'staking_pooled_staking_stats';
@@ -649,6 +650,10 @@ export class CacheRouter {
     cacheType: 'earn' | 'staking',
   ): CacheDir {
     return new CacheDir(this.STAKING_DEPLOYMENTS_KEY, cacheType);
+  }
+
+  static getStakingRewardsFeeCacheDir(cacheType: 'earn' | 'staking'): CacheDir {
+    return new CacheDir(this.STAKING_REWARDS_FEE_KEY, cacheType);
   }
 
   static getStakingNetworkStatsCacheDir(

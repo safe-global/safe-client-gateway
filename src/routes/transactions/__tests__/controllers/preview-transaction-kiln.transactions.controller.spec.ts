@@ -36,6 +36,7 @@ import {
 } from '@/domain/contracts/__tests__/encoders/multi-send-encoder.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import { createTestModule } from '@/__tests__/testing-module';
+import { rewardsFeeBuilder } from '@/datasources/staking-api/entities/__tests__/rewards-fee.entity.builder';
 
 describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -72,8 +73,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
         const networkStats = networkStatsBuilder().build();
         // Transaction being proposed (no stakes exists)
@@ -112,6 +113,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify({ data: networkStats }),
                 status: 200,
               });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
+                status: 200,
+              });
             case `${stakingApiUrl}/v1/eth/stakes`:
               return Promise.resolve({
                 data: rawify({ data: stakes }),
@@ -140,7 +146,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
 
         const annualNrr =
           dedicatedStakingStats.gross_apy.last_30d *
-          (1 - Number(deployment.product_fee));
+          (1 - Number(rewardsFee.fee));
         const monthlyNrr = annualNrr / 12;
         const expectedAnnualReward = (annualNrr / 100) * Number(value);
         const expectedMonthlyReward = expectedAnnualReward / 12;
@@ -166,7 +172,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds * 1_000,
-              fee: +deployment.product_fee!,
+              fee: rewardsFee.fee,
               monthlyNrr,
               annualNrr,
               value,
@@ -207,8 +213,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const data = depositEncoder().encode();
         const value = getNumberString(64 * 10 ** 18 + 1);
         const depositTransaction = {
@@ -266,6 +272,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 data: rawify({ data: networkStats }),
                 status: 200,
               });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
+                status: 200,
+              });
             case `${stakingApiUrl}/v1/eth/stakes`:
               return Promise.resolve({
                 data: rawify({ data: stakes }),
@@ -304,7 +315,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
 
         const annualNrr =
           dedicatedStakingStats.gross_apy.last_30d *
-          (1 - Number(deployment.product_fee));
+          (1 - Number(rewardsFee.fee));
         const monthlyNrr = annualNrr / 12;
         const expectedAnnualReward = (annualNrr / 100) * Number(value);
         const expectedMonthlyReward = expectedAnnualReward / 12;
@@ -330,7 +341,7 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
                 networkStats.estimated_exit_time_seconds * 1_000,
               estimatedWithdrawalTime:
                 networkStats.estimated_withdrawal_time_seconds * 1_000,
-              fee: +deployment.product_fee!,
+              fee: rewardsFee.fee,
               monthlyNrr,
               annualNrr,
               value,
@@ -435,8 +446,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'defi')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const data = depositEncoder().encode();
         const value = getNumberString(64 * 10 ** 18 + 1);
@@ -462,6 +473,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -506,8 +522,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           .with('chain_id', +chain.chainId)
           .with('chain', 'unknown')
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const data = depositEncoder().encode();
         const value = getNumberString(64 * 10 ** 18 + 1);
@@ -533,6 +549,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -576,8 +597,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const data = depositEncoder().encode();
         const value = getNumberString(64 * 10 ** 18 + 1);
@@ -602,6 +623,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -645,8 +671,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', null)
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const data = depositEncoder().encode();
         const value = getNumberString(64 * 10 ** 18 + 1);
@@ -672,6 +698,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -715,8 +746,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const networkStats = networkStatsBuilder().build();
         const safe = safeBuilder().build();
         const data = depositEncoder().encode();
@@ -752,6 +783,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/eth/network-stats`:
               return Promise.resolve({
                 data: rawify({ data: networkStats }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -795,8 +831,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
         const safe = safeBuilder().build();
         const data = depositEncoder().encode();
@@ -833,6 +869,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/eth/network-stats`:
               return Promise.reject({
                 status: 500,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
+                status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
               return Promise.resolve({
@@ -876,8 +917,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const networkStats = networkStatsBuilder().build();
         const validators = [
@@ -916,6 +957,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${stakingApiUrl}/v1/eth/network-stats`:
@@ -998,8 +1044,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const networkStats = networkStatsBuilder().build();
         const validators = [
@@ -1059,6 +1105,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${stakingApiUrl}/v1/eth/network-stats`:
@@ -1248,8 +1299,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'defi')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const contractResponse = contractBuilder()
           .with('address', previewTransactionDto.to)
           .build();
@@ -1266,6 +1317,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -1324,8 +1380,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           .with('chain_id', +chain.chainId)
           .with('chain', 'unknown')
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('to', deployment.address)
           .with('data', data)
@@ -1347,6 +1403,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -1404,8 +1465,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const previewTransactionDto = previewTransactionDtoBuilder()
           .with('data', data)
           .with('operation', Operation.CALL)
@@ -1426,6 +1487,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -1468,8 +1534,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const validators = [
           faker.string.hexadecimal({
@@ -1510,6 +1576,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${stakingApiUrl}/v1/eth/network-stats`:
@@ -1561,8 +1632,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const networkStats = networkStatsBuilder().build();
         const validators = [
@@ -1600,6 +1671,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${stakingApiUrl}/v1/eth/network-stats`:
@@ -1653,8 +1729,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const validators = [
           faker.string.hexadecimal({
@@ -1700,6 +1776,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${stakingApiUrl}/v1/eth/stakes`:
@@ -1774,8 +1855,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const validators = [
           faker.string.hexadecimal({
@@ -1842,6 +1923,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${stakingApiUrl}/v1/eth/stakes`:
@@ -2009,8 +2095,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'defi')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const validators = [
           faker.string.hexadecimal({
             length: KilnDecoder.KilnPublicKeyLength,
@@ -2050,6 +2136,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -2094,8 +2185,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
           .with('chain_id', +chain.chainId)
           .with('chain', 'unknown')
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const validators = [
           faker.string.hexadecimal({
             length: KilnDecoder.KilnPublicKeyLength,
@@ -2135,6 +2226,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -2178,8 +2274,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const validators = [
           faker.string.hexadecimal({
             length: KilnDecoder.KilnPublicKeyLength,
@@ -2218,6 +2314,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${chain.transactionService}/api/v1/safes/${safe.address}`:
@@ -2260,8 +2361,8 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
         const deployment = deploymentBuilder()
           .with('chain_id', +chain.chainId)
           .with('product_type', 'dedicated')
-          .with('product_fee', faker.number.float().toString())
           .build();
+        const rewardsFee = rewardsFeeBuilder().build();
         const safe = safeBuilder().build();
         const validators = [
           faker.string.hexadecimal({
@@ -2299,6 +2400,11 @@ describe('Preview transaction - Kiln - Transactions Controller (Unit)', () => {
             case `${stakingApiUrl}/v1/deployments`:
               return Promise.resolve({
                 data: rawify({ data: [deployment] }),
+                status: 200,
+              });
+            case `${stakingApiUrl}/v1/eth/onchain/v1/fee`:
+              return Promise.resolve({
+                data: rawify({ data: rewardsFee }),
                 status: 200,
               });
             case `${stakingApiUrl}/v1/eth/stakes`:
