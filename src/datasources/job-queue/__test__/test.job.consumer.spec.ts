@@ -32,4 +32,21 @@ describe('TestJobConsumer', () => {
 
     expect(consumer.handledJobs).toEqual([job1, job2]);
   });
+
+  it('should record worker events', () => {
+    const job = { name: 'test-job' } as Job;
+    const error = new Error('oops');
+
+    consumer.onActive(job);
+    consumer.onProgress(job, 50);
+    consumer.onCompleted(job, 'done');
+    consumer.onFailed(job, error);
+    consumer.onWorkerError(error);
+
+    expect(consumer.activeJobs).toContain(job);
+    expect(consumer.progressEvents).toContainEqual({ job, progress: 50 });
+    expect(consumer.completedJobs).toContainEqual({ job, result: 'done' });
+    expect(consumer.failedJobs).toContainEqual({ job, error });
+    expect(consumer.workerErrors).toContain(error);
+  });
 });
