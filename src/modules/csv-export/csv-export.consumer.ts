@@ -1,5 +1,6 @@
 import { CSV_EXPORT_QUEUE } from '@/domain/common/entities/jobs.constants';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { CsvExportJobData } from '@/modules/csv-export/entities/csv-export-job-data.entity';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -12,7 +13,7 @@ export class CsvExportConsumer extends WorkerHost {
     super();
   }
 
-  process(job: Job): Promise<void> {
+  process(job: Job<CsvExportJobData>): Promise<void> {
     throw new Error(`Job ${job.name} is not implemented yet.`);
   }
 

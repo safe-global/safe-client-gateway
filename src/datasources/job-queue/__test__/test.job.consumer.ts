@@ -1,5 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
+
 @Processor('test-queue')
 export class TestJobConsumer extends WorkerHost {
   public handledJobs: Array<Job> = [];

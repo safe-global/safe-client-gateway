@@ -1,5 +1,4 @@
 import type { Job } from 'bullmq';
-import { JobType } from '@/datasources/job-queue/types/job-types';
 import { TestJobConsumer } from '@/datasources/job-queue/__test__/test.job.consumer';
 
 describe('TestJobConsumer', () => {
@@ -10,17 +9,23 @@ describe('TestJobConsumer', () => {
   });
 
   it('should store processed jobs', async () => {
-    const job = { name: JobType.CSV_EXPORT } as unknown as Job;
+    const job = { name: 'test-job' } as Job;
 
     await expect(consumer.process(job)).resolves.toEqual(
-      'Processed job: csv-export',
+      'Processed job: test-job',
     );
     expect(consumer.handledJobs).toContain(job);
   });
 
   it('should accumulate multiple jobs', async () => {
-    const job1 = { name: JobType.CSV_EXPORT, data: { a: 1 } } as unknown as Job;
-    const job2 = { name: JobType.CSV_EXPORT, data: { a: 2 } } as unknown as Job;
+    const job1 = {
+      name: 'test-job',
+      data: { message: 'hello' },
+    } as Job;
+    const job2 = {
+      name: 'test-job',
+      data: { message: 'world' },
+    } as Job;
 
     await consumer.process(job1);
     await consumer.process(job2);
