@@ -202,7 +202,6 @@ describe('LimitAddressesMapper', () => {
           version,
         });
         it('should limit Safe being recovered if an owner management batch', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
           const safeAddress = getAddress(faker.finance.ethereumAddress());
           const data = encoder()
             .with('to', address) // MultiSend
@@ -246,7 +245,6 @@ describe('LimitAddressesMapper', () => {
         });
 
         it('should throw if batches with non-official MultiSend', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
           const safeAddress = getAddress(faker.finance.ethereumAddress());
           const data = encoder()
             // to is not official MultiSend
@@ -291,7 +289,6 @@ describe('LimitAddressesMapper', () => {
         });
 
         it('should throw if there are non-owner management transactions in batch', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
           const safeAddress = getAddress(faker.finance.ethereumAddress());
           const data = encoder()
             .with('to', address) // MultiSend
@@ -329,7 +326,6 @@ describe('LimitAddressesMapper', () => {
         });
 
         it('should throw if there are transactions in batch not for the Safe', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
           const safeAddress = getAddress(faker.finance.ethereumAddress());
           const data = encoder()
             .with('to', address) // MultiSend
@@ -378,7 +374,6 @@ describe('LimitAddressesMapper', () => {
         });
 
         it('should throw if there are transactions in batch to more than one Safe', async () => {
-          const chainId = faker.helpers.arrayElement(supportedChainIds);
           const safeAddress = getAddress(faker.finance.ethereumAddress());
           const safeAddress2 = getAddress(faker.finance.ethereumAddress());
           const data = encoder()

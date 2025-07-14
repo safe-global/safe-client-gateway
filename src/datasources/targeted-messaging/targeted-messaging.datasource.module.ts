@@ -9,7 +9,13 @@ import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messa
 import { Module } from '@nestjs/common';
 
 @Module({
-  imports: [PostgresDatabaseModule, CloudStorageModule],
+  imports: [
+    PostgresDatabaseModule,
+    CloudStorageModule.register(
+      'targetedMessaging.fileStorage.aws.bucketName',
+      'targetedMessaging.fileStorage.aws.basePath',
+    ),
+  ],
   providers: [
     OutreachDbMapper,
     OutreachFileProcessor,

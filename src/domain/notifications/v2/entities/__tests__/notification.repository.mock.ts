@@ -7,5 +7,6 @@ export const MockNotificationRepositoryV2: jest.MockedObjectDeep<INotificationsR
     getSafeSubscription: jest.fn(),
     getSubscribersBySafe: jest.fn(),
     deleteSubscription: jest.fn(),
+    deleteAllSubscriptions: jest.fn(),
     deleteDevice: jest.fn(),
   };

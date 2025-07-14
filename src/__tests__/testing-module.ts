@@ -1,0 +1,106 @@
+import { Test, type TestingModule } from '@nestjs/testing';
+import { AppModule } from '@/app.module';
+import configuration from '@/config/entities/__tests__/configuration';
+import { CacheModule } from '@/datasources/cache/cache.module';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { RequestScopedLoggingModule } from '@/logging/logging.module';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { NetworkModule } from '@/datasources/network/network.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
+import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
+import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
+import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
+import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
+import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
+import type { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface';
+import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import type { Provider } from '@nestjs/common';
+
+export interface CreateBaseTestModuleOptions {
+  config?: typeof configuration;
+  overridePostgresV2?: boolean;
+  cacheKeyPrefix?: string;
+  modules?: Array<ModuleOverride>;
+  providers?: Array<Provider>;
+}
+
+export interface ModuleOverride {
+  originalModule: ModuleDefinition;
+  testModule: ModuleDefinition;
+}
+
+export async function createTestModule(
+  options: CreateBaseTestModuleOptions = {},
+): Promise<TestingModule> {
+  const {
+    config,
+    cacheKeyPrefix,
+    overridePostgresV2,
+    modules: additionalOverrides = [],
+    providers = [],
+  } = options;
+
+  return createBaseTestModule({
+    config,
+    overridePostgresV2,
+    cacheKeyPrefix,
+    providers,
+    modules: [
+      {
+        originalModule: CacheModule,
+        testModule: TestCacheModule,
+      },
+      {
+        originalModule: RequestScopedLoggingModule,
+        testModule: TestLoggingModule,
+      },
+      {
+        originalModule: NetworkModule,
+        testModule: TestNetworkModule,
+      },
+      ...additionalOverrides,
+    ],
+  });
+}
+
+export async function createBaseTestModule(
+  options: CreateBaseTestModuleOptions = {},
+): Promise<TestingModule> {
+  const {
+    config = configuration,
+    overridePostgresV2 = true, // Enable Postgres V2 by default
+    cacheKeyPrefix = crypto.randomUUID(),
+    modules: additionalOverrides = [],
+    providers = [],
+  } = options;
+
+  const moduleBuilder = Test.createTestingModule({
+    imports: [AppModule.register(config)],
+    providers: providers,
+  })
+    .overrideProvider(CacheKeyPrefix)
+    .useValue(cacheKeyPrefix)
+    .overrideModule(PostgresDatabaseModule)
+    .useModule(TestPostgresDatabaseModule)
+    .overrideModule(TargetedMessagingDatasourceModule)
+    .useModule(TestTargetedMessagingDatasourceModule)
+    .overrideModule(QueuesApiModule)
+    .useModule(TestQueuesApiModule);
+
+  if (overridePostgresV2) {
+    moduleBuilder
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2);
+  }
+  // Apply additional overrides
+  for (const override of additionalOverrides) {
+    moduleBuilder
+      .overrideModule(override.originalModule)
+      .useModule(override.testModule);
+  }
+
+  return moduleBuilder.compile();
+}

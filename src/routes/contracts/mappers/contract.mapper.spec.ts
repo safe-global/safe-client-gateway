@@ -32,15 +32,6 @@ describe('Contract Mapper', () => {
     });
   });
 
-  it('should return displayName = "" if its null', () => {
-    const contract = dataDecodedContractBuilder()
-      .with('displayName', null)
-      .build();
-
-    const actual = mapper.map(contract);
-    expect(actual.displayName).toEqual('');
-  });
-
   it('should return logoUri = null if logoUrl is null', () => {
     const contract = dataDecodedContractBuilder().with('logoUrl', null).build();
 

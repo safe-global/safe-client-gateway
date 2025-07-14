@@ -398,6 +398,8 @@ export default () => ({
     port: process.env.REDIS_PORT || '6379',
     disableOfflineQueue:
       process.env.REDIS_DISABLE_OFFLINE_QUEUE?.toString() === 'true',
+    connectTimeout: process.env.REDIS_CONNECT_TIMEOUT || 10_000,
+    keepAlive: process.env.REDIS_KEEP_ALIVE || 30_000,
   },
   relay: {
     baseUri:
@@ -541,6 +543,24 @@ export default () => ({
         baseDir:
           process.env.TARGETED_MESSAGING_LOCAL_BASE_DIR ||
           'assets/targeted-messaging',
+      },
+    },
+  },
+  csvExport: {
+    fileStorage: {
+      // The type of file storage to use. Defaults to 'local'.
+      // Supported values: 'aws', 'local'
+      type: process.env.CSV_EXPORT_FILE_STORAGE_TYPE || 'local',
+      aws: {
+        // This will be ignored if the CSV_EXPORT_FILE_STORAGE_TYPE is set to 'local'.
+        // For reference, these environment variables should be present in the environment,
+        // but they are not transferred to the memory/configuration file:
+        // AWS_ACCESS_KEY_ID
+        // AWS_SECRET_ACCESS_KEY
+        // AWS_REGION
+        bucketName:
+          process.env.AWS_STORAGE_BUCKET_NAME || 'safe-client-gateway',
+        basePath: process.env.AWS_S3_CSV_EXPORT_PATH || 'assets/csv-export',
       },
     },
   },

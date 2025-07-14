@@ -508,4 +508,142 @@ describe('NotificationsRepositoryV2', () => {
       });
     });
   });
+
+  describe('deleteAllSubscriptions()', () => {
+    it('Should delete all subscriptions successfully', async () => {
+      const mockSubscriptions = Array.from({ length: 3 }, () =>
+        notificationSubscriptionBuilder().build(),
+      );
+      const deleteAllSubscriptionsDto = [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ];
+
+      notificationSubscriptionsRepository.find.mockResolvedValue(
+        mockSubscriptions,
+      );
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
+
+      const args = {
+        subscriptions: deleteAllSubscriptionsDto,
+      };
+
+      await notificationsRepository.deleteAllSubscriptions(args);
+
+      expect(notificationSubscriptionsRepository.find).toHaveBeenCalledTimes(1);
+      expect(notificationSubscriptionsRepository.find).toHaveBeenCalledWith({
+        where: deleteAllSubscriptionsDto.map((subscription) => ({
+          chain_id: subscription.chainId,
+          safe_address: subscription.safeAddress,
+          push_notification_device: {
+            device_uuid: subscription.deviceUuid,
+          },
+        })),
+      });
+      expect(notificationSubscriptionsRepository.remove).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(notificationSubscriptionsRepository.remove).toHaveBeenCalledWith(
+        mockSubscriptions,
+      );
+    });
+
+    it('Should throw NotFoundException if no subscriptions are found', async () => {
+      const deleteAllSubscriptionsDto = [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ];
+
+      notificationSubscriptionsRepository.find.mockResolvedValue([]);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
+
+      const args = {
+        subscriptions: deleteAllSubscriptionsDto,
+      };
+
+      const result = notificationsRepository.deleteAllSubscriptions(args);
+
+      await expect(result).rejects.toThrow(
+        new NotFoundException('No Subscription Found!'),
+      );
+      expect(notificationSubscriptionsRepository.find).toHaveBeenCalledTimes(1);
+      expect(notificationSubscriptionsRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('Should clear cache for each subscription after deletion', async () => {
+      const mockSubscriptions = Array.from({ length: 2 }, () =>
+        notificationSubscriptionBuilder().build(),
+      );
+      const deleteAllSubscriptionsDto = [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ];
+
+      notificationSubscriptionsRepository.find.mockResolvedValue(
+        mockSubscriptions,
+      );
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
+
+      const args = {
+        subscriptions: deleteAllSubscriptionsDto,
+      };
+
+      await notificationsRepository.deleteAllSubscriptions(args);
+
+      expect(
+        notificationSubscriptionsRepository.manager.connection.queryResultCache
+          ?.remove,
+      ).toHaveBeenCalledTimes(mockSubscriptions.length);
+    });
+
+    it('Should handle empty subscriptions array', async () => {
+      const args = {
+        subscriptions: [],
+      };
+
+      notificationSubscriptionsRepository.find.mockResolvedValue([]);
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
+
+      const result = notificationsRepository.deleteAllSubscriptions(args);
+
+      await expect(result).rejects.toThrow(
+        new NotFoundException('No Subscription Found!'),
+      );
+      expect(notificationSubscriptionsRepository.find).toHaveBeenCalledWith({
+        where: [],
+      });
+    });
+  });
 });

@@ -1,3 +1,4 @@
+import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import type { ObjectLiteral, Repository } from 'typeorm';
 
 export const mockRepository = {
@@ -12,4 +13,5 @@ export const mockRepository = {
   count: jest.fn(),
   findBy: jest.fn(),
   findOneBy: jest.fn(),
+  manager: mockEntityManager,
 } as jest.MockedObjectDeep<Repository<ObjectLiteral>>;

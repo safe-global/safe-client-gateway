@@ -4,6 +4,7 @@ import {
 } from '@/datasources/staking-api/entities/__tests__/dedicated-staking-stats.entity.builder';
 import { deploymentBuilder } from '@/datasources/staking-api/entities/__tests__/deployment.entity.builder';
 import { networkStatsBuilder } from '@/datasources/staking-api/entities/__tests__/network-stats.entity.builder';
+import { rewardsFeeBuilder } from '@/datasources/staking-api/entities/__tests__/rewards-fee.entity.builder';
 import { stakeBuilder } from '@/datasources/staking-api/entities/__tests__/stake.entity.builder';
 import {
   transactionStatusBuilder,
@@ -34,6 +35,7 @@ import { concat, getAddress } from 'viem';
 
 const mockStakingRepository = jest.mocked({
   getDeployment: jest.fn(),
+  getRewardsFee: jest.fn(),
   getDedicatedStakingStats: jest.fn(),
   getNetworkStats: jest.fn(),
   getStakes: jest.fn(),
@@ -96,14 +98,14 @@ describe('NativeStakingMapper', () => {
   describe('mapDepositInfo', () => {
     it('should map a proposed native staking deposit info', async () => {
       const chain = chainBuilder().build();
-      const productFee = '0.5';
+      const productFee = 0.5;
       const deployment = deploymentBuilder()
         .with('product_type', 'dedicated')
-        .with('product_fee', productFee)
         .build();
       const networkStats = networkStatsBuilder()
         .with('eth_price_usd', 10_000)
         .build();
+      const rewardsFee = rewardsFeeBuilder().with('fee', productFee).build();
       const dedicatedStakingStats = dedicatedStakingStatsBuilder()
         .with(
           'gross_apy',
@@ -113,6 +115,7 @@ describe('NativeStakingMapper', () => {
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getRewardsFee.mockResolvedValue(rewardsFee);
       mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
         dedicatedStakingStats,
       );
@@ -156,14 +159,14 @@ describe('NativeStakingMapper', () => {
 
     it('should map a queued native staking deposit info', async () => {
       const chain = chainBuilder().build();
-      const productFee = '0.5';
+      const productFee = 0.5;
       const deployment = deploymentBuilder()
         .with('product_type', 'dedicated')
-        .with('product_fee', productFee)
         .build();
       const networkStats = networkStatsBuilder()
         .with('eth_price_usd', 10_000)
         .build();
+      const rewardsFee = rewardsFeeBuilder().with('fee', productFee).build();
       const dedicatedStakingStats = dedicatedStakingStatsBuilder()
         .with(
           'gross_apy',
@@ -173,6 +176,7 @@ describe('NativeStakingMapper', () => {
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getRewardsFee.mockResolvedValue(rewardsFee);
       mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
         dedicatedStakingStats,
       );
@@ -217,14 +221,14 @@ describe('NativeStakingMapper', () => {
 
     it('should map a native staking deposit info', async () => {
       const chain = chainBuilder().build();
-      const productFee = '0.5';
+      const productFee = 0.5;
       const deployment = deploymentBuilder()
         .with('product_type', 'dedicated')
-        .with('product_fee', productFee)
         .build();
       const networkStats = networkStatsBuilder()
         .with('eth_price_usd', 10_000)
         .build();
+      const rewardsFee = rewardsFeeBuilder().with('fee', productFee).build();
       const dedicatedStakingStats = dedicatedStakingStatsBuilder()
         .with(
           'gross_apy',
@@ -258,6 +262,7 @@ describe('NativeStakingMapper', () => {
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getRewardsFee.mockResolvedValue(rewardsFee);
       mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
         dedicatedStakingStats,
       );
@@ -310,9 +315,12 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+      const rewardsFee = rewardsFeeBuilder().build();
+
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getRewardsFee.mockResolvedValue(rewardsFee);
       mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
         dedicatedStakingStats,
       );
@@ -335,10 +343,12 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+      const rewardsFee = rewardsFeeBuilder().build();
 
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getRewardsFee.mockResolvedValue(rewardsFee);
       mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
         dedicatedStakingStats,
       );
@@ -361,10 +371,12 @@ describe('NativeStakingMapper', () => {
         .build();
       const networkStats = networkStatsBuilder().build();
       const dedicatedStakingStats = dedicatedStakingStatsBuilder().build();
+      const rewardsFee = rewardsFeeBuilder().build();
 
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockStakingRepository.getDeployment.mockResolvedValue(deployment);
       mockStakingRepository.getNetworkStats.mockResolvedValue(networkStats);
+      mockStakingRepository.getRewardsFee.mockResolvedValue(rewardsFee);
       mockStakingRepository.getDedicatedStakingStats.mockResolvedValue(
         dedicatedStakingStats,
       );

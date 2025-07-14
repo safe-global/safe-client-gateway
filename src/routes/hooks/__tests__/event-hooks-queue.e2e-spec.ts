@@ -2,27 +2,19 @@ import { amqpClientFactory } from '@/__tests__/amqp-client.factory';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { retry } from '@/__tests__/util/retry';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AppModule } from '@/app.module';
 import configuration from '@/config/entities/configuration';
-import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import type { ChannelWrapper } from 'amqp-connection-manager';
 import type { RedisClientType } from 'redis';
 import { getAddress } from 'viem';
 import type { Server } from 'net';
 import { TEST_SAFE } from '@/routes/common/__tests__/constants';
 import { chainBuilder } from '@/domain/chains/entities/__tests__/chain.builder';
-import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
-import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
 import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
+import { createBaseTestModule } from '@/__tests__/testing-module';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;
@@ -41,21 +33,16 @@ describe('Events queue processing e2e tests', () => {
         queue,
       },
     });
-
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
-    })
-      .overrideModule(PushNotificationsApiModule)
-      .useModule(TestPushNotificationsApiModule)
-      .overrideProvider(CacheKeyPrefix)
-      .useValue(cacheKeyPrefix)
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(PostgresDatabaseModuleV2)
-      .useModule(TestPostgresDatabaseModuleV2)
-      .overrideModule(TargetedMessagingDatasourceModule)
-      .useModule(TestTargetedMessagingDatasourceModule)
-      .compile();
+    const moduleRef = await createBaseTestModule({
+      config: testConfiguration,
+      cacheKeyPrefix,
+      modules: [
+        {
+          originalModule: PushNotificationsApiModule,
+          testModule: TestPushNotificationsApiModule,
+        },
+      ],
+    });
 
     app = await new TestAppProvider().provide(moduleRef);
     await app.init();

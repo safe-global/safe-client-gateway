@@ -1,9 +1,8 @@
 import { getAddress } from 'viem';
 import { faker } from '@faker-js/faker';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { AppModule } from '@/app.module';
+import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestAccountsDataSourceModule } from '@/datasources/accounts/__tests__/test.accounts.datasource.module';
 import { AccountsDatasourceModule } from '@/datasources/accounts/accounts.datasource.module';
@@ -11,21 +10,9 @@ import { TestAddressBooksDataSourceModule } from '@/datasources/accounts/address
 import { AddressBooksDatasourceModule } from '@/datasources/accounts/address-books/address-books.datasource.module';
 import { TestCounterfactualSafesDataSourceModule } from '@/datasources/accounts/counterfactual-safes/__tests__/test.counterfactual-safes.datasource.module';
 import { CounterfactualSafesDatasourceModule } from '@/datasources/accounts/counterfactual-safes/counterfactual-safes.datasource.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { NetworkModule } from '@/datasources/network/network.module';
-import { TestQueuesApiModule } from '@/datasources/queues/__tests__/test.queues-api.module';
-import { QueuesApiModule } from '@/datasources/queues/queues-api.module';
-import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/__tests__/test.targeted-messaging.datasource.module';
-import { TargetedMessagingDatasourceModule } from '@/datasources/targeted-messaging/targeted-messaging.datasource.module';
 import { NotificationsRepositoryV2Module } from '@/domain/notifications/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/domain/notifications/v2/test.notification.repository.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { authPayloadDtoBuilder } from '@/domain/auth/entities/__tests__/auth-payload-dto.entity.builder';
 import { UsersController } from '@/routes/users/users.controller';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
@@ -61,30 +48,28 @@ describe('UsersController', () => {
       },
     });
 
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule.register(testConfiguration)],
-    })
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(AccountsDatasourceModule)
-      .useModule(TestAccountsDataSourceModule)
-      .overrideModule(AddressBooksDatasourceModule)
-      .useModule(TestAddressBooksDataSourceModule)
-      .overrideModule(CounterfactualSafesDatasourceModule)
-      .useModule(TestCounterfactualSafesDataSourceModule)
-      .overrideModule(TargetedMessagingDatasourceModule)
-      .useModule(TestTargetedMessagingDatasourceModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .overrideModule(QueuesApiModule)
-      .useModule(TestQueuesApiModule)
-      .overrideModule(NotificationsRepositoryV2Module)
-      .useModule(TestNotificationsRepositoryV2Module)
-      .compile();
+    const moduleFixture = await createTestModule({
+      config: testConfiguration,
+      overridePostgresV2: false,
+      modules: [
+        {
+          originalModule: AccountsDatasourceModule,
+          testModule: TestAccountsDataSourceModule,
+        },
+        {
+          originalModule: AddressBooksDatasourceModule,
+          testModule: TestAddressBooksDataSourceModule,
+        },
+        {
+          originalModule: CounterfactualSafesDatasourceModule,
+          testModule: TestCounterfactualSafesDataSourceModule,
+        },
+        {
+          originalModule: NotificationsRepositoryV2Module,
+          testModule: TestNotificationsRepositoryV2Module,
+        },
+      ],
+    });
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     cacheService = moduleFixture.get(CacheService);

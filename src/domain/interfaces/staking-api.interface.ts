@@ -8,11 +8,14 @@ import type { TransactionStatus } from '@/datasources/staking-api/entities/trans
 import type { Raw } from '@/validation/entities/raw.entity';
 import type { DefiVaultStake } from '@/datasources/staking-api/entities/defi-vault-stake.entity';
 import type { DefiMorphoExtraReward } from '@/datasources/staking-api/entities/defi-morpho-extra-reward.entity';
+import type { RewardsFee } from '@/datasources/staking-api/entities/rewards-fee.entity';
 
 export const IStakingApi = Symbol('IStakingApi');
 
 export interface IStakingApi {
   getDeployments(): Promise<Raw<Array<Deployment>>>;
+
+  getRewardsFee(contract: `0x${string}`): Promise<Raw<RewardsFee>>;
 
   getNetworkStats(): Promise<Raw<NetworkStats>>;
 

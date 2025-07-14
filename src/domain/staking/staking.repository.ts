@@ -7,7 +7,7 @@ import {
   PooledStakingStats,
   PooledStakingStatsSchema,
 } from '@/datasources/staking-api/entities/pooled-staking-stats.entity';
-import { IStakingRepository } from '@/domain/staking/staking.repository.interface';
+import { IStakingRepositoryWithRewardsFee } from '@/domain/staking/staking.repository.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   DedicatedStakingStats,
@@ -37,11 +37,15 @@ import {
   DefiMorphoExtraReward,
   DefiMorphoExtraRewardsSchema,
 } from '@/datasources/staking-api/entities/defi-morpho-extra-reward.entity';
+import {
+  RewardsFee,
+  RewardsFeeSchema,
+} from '@/datasources/staking-api/entities/rewards-fee.entity';
 
 // TODO: Deduplicate code with EarnRepository
 
 @Injectable()
-export class StakingRepository implements IStakingRepository {
+export class StakingRepository implements IStakingRepositoryWithRewardsFee {
   constructor(
     @Inject(IStakingApiManager)
     private readonly stakingApiFactory: IStakingApiManager,
@@ -62,6 +66,15 @@ export class StakingRepository implements IStakingRepository {
       throw new Error('Deployment not found');
     }
     return deployment;
+  }
+
+  public async getRewardsFee(args: {
+    chainId: string;
+    address: `0x${string}`;
+  }): Promise<RewardsFee> {
+    const stakingApi = await this.stakingApiFactory.getApi(args.chainId);
+    const rewardsFee = await stakingApi.getRewardsFee(args.address);
+    return RewardsFeeSchema.parse(rewardsFee);
   }
 
   private async getDeployments(chainId: string): Promise<Array<Deployment>> {

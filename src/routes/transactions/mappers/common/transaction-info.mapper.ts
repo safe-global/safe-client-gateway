@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ModuleTransaction } from '@/domain/safe/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/domain/safe/entities/multisig-transaction.entity';
 import { Operation } from '@/domain/safe/entities/operation.entity';
@@ -111,22 +111,31 @@ export class MultisigTransactionInfoMapper {
       );
 
     if (this.isLifiTransactionsMappingEnabled) {
-      const swap = await this.mapSwap({
-        chainId,
-        transaction,
-      });
-      if (swap) {
-        return swap;
-      }
+      try {
+        const swap = await this.mapSwap({
+          chainId,
+          transaction,
+        });
+        if (swap) {
+          return swap;
+        }
 
-      const swapAndBridge = await this.mapSwapAndBridge({
-        chainId,
-        transaction,
-      });
-      if (swapAndBridge) {
-        return swapAndBridge;
+        const swapAndBridge = await this.mapSwapAndBridge({
+          chainId,
+          transaction,
+        });
+        if (swapAndBridge) {
+          return swapAndBridge;
+        }
+      } catch (error: unknown) {
+        if (error instanceof NotFoundException) {
+          this.loggingService.warn(error);
+        } else {
+          throw error;
+        }
       }
     }
+
     const swapOrder: SwapOrderTransactionInfo | null = await this.mapSwapOrder(
       chainId,
       transaction,
