@@ -1,4 +1,5 @@
 import { CSV_EXPORT_QUEUE } from '@/domain/common/entities/jobs.constants';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { CsvExportJobData } from '@/modules/csv-export/entities/csv-export-job-data.entity';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
@@ -19,25 +20,39 @@ export class CsvExportConsumer extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job, result: unknown): void {
-    this.loggingService.info(`Job ${job.id} completed; returned ${result}`);
+    this.loggingService.info({
+      type: LogType.JobEvent,
+      source: 'CsvExportConsumer',
+      event: `Job ${job.id} completed; returned ${result}`,
+    });
   }
 
   // Fired when a job fails (after all retries)
   @OnWorkerEvent('failed')
   onFailed(job: Job, error: Error): void {
-    this.loggingService.error(`Job ${job.id} failed: ${error}`);
+    this.loggingService.error({
+      type: LogType.JobError,
+      source: 'CsvExportConsumer',
+      event: `Job ${job.id} failed: ${error}`,
+    });
   }
 
   // Fired whenever `process()` calls job.updateProgress()
   @OnWorkerEvent('progress')
   onProgress(job: Job, progress: number): void {
-    this.loggingService.info(`Job ${job.id} progress: ${progress}%`);
+    this.loggingService.info({
+      type: LogType.JobEvent,
+      source: 'CsvExportConsumer',
+      event: `Job ${job.id} progress: ${progress}%`,
+    });
   }
 
   @OnWorkerEvent('error')
   onWorkerError(error: Error): void {
-    this.loggingService.error(
-      `Worker of ${CSV_EXPORT_QUEUE} queue encountered an error: ${error}`,
-    );
+    this.loggingService.error({
+      type: LogType.JobError,
+      source: 'CsvExportConsumer',
+      event: `Worker encountered an error: ${error}`,
+    });
   }
 }
