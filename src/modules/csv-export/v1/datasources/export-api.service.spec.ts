@@ -6,7 +6,7 @@ import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { transactionExportBuilder } from '@/modules/csv-export/v1/__tests__/transaction-export.builder';
+import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { getAddress } from 'viem';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
