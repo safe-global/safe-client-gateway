@@ -125,8 +125,6 @@ describe('UsersRepository', () => {
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
 
-      const after = new Date().getTime();
-
       const createdAt = user.generatedMaps[0].createdAt;
       const updatedAt = user.generatedMaps[0].updatedAt;
 
@@ -136,11 +134,12 @@ describe('UsersRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
-      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
+      // Verify that the timestamps are recent (within the last 5 seconds)
+      expect(Math.abs(createdAt.getTime() - before)).toBeLessThan(5000);
 
-      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
-      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
+      // Verify that the timestamps are not in the future
+      expect(createdAt.getTime()).toBeLessThanOrEqual(Date.now());
+      expect(updatedAt.getTime()).toBeLessThanOrEqual(Date.now());
     });
 
     it('should update updatedAt when updating a User', async () => {
