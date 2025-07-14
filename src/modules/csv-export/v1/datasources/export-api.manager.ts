@@ -6,7 +6,7 @@ import { ChainSchema } from '@/domain/chains/entities/schemas/chain.schema';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { IExportApi } from './export-api.interface';
 import { ExportApi } from './export-api.service';
-import { IExportApiManager } from '@/modules/csv-export/v1/export-api.manager.interface';
+import { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 
 @Injectable()
 export class ExportApiManager implements IExportApiManager {

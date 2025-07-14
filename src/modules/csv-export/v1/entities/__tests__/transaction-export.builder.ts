@@ -3,7 +3,7 @@ import { getAddress } from 'viem';
 import type { Hex } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
-import type { TransactionExport } from '@/modules/csv-export/v1/transaction-export.entity';
+import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 
 export function transactionExportBuilder(): IBuilder<TransactionExport> {
   return new Builder<TransactionExport>()
