@@ -1,4 +1,4 @@
-import { CsvExportService } from '@/modules/csv-export/csv-export.service';
+import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import { Module } from '@nestjs/common';
 
 @Module({

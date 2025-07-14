@@ -1,5 +1,5 @@
-import type { CsvOptions } from '@/modules/csv-export/csv-export.service';
-import { CsvExportService } from '@/modules/csv-export/csv-export.service';
+import type { CsvOptions } from '@/modules/csv-export/v1/csv-export.service';
+import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import { faker } from '@faker-js/faker';
 import { Writable } from 'stream';
 
