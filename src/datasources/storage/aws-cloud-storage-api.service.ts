@@ -4,7 +4,12 @@ import {
   AWS_BASE_PATH,
 } from '@/datasources/storage/constants';
 import { asError } from '@/logging/utils';
-import { PutObjectCommandInput, S3 } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  PutObjectCommandInput,
+  S3,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable } from '@nestjs/common';
 import path from 'path';
 import { Readable } from 'stream';
@@ -47,7 +52,6 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
       Bucket: this.bucket,
       Key: key,
       Body: body,
-      // e.g. ContentType: "text/csv",
       ...options,
     };
 
@@ -56,6 +60,20 @@ export class AwsCloudStorageApiService implements ICloudStorageApiService {
       return `s3://${this.bucket}/${key}`;
     } catch (err) {
       throw new Error(`Error uploading content to S3: ${asError(err).message}`);
+    }
+  }
+
+  async getSignedUrl(fileName: string, expiresIn: number): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: path.posix.join(this.basePath, fileName),
+    });
+    try {
+      return await getSignedUrl(this.s3Client, command, { expiresIn });
+    } catch (err) {
+      throw new Error(
+        `Error generating signed URL for S3: ${asError(err).message}`,
+      );
     }
   }
 
