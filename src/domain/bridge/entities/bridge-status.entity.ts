@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { TokenSchema } from '@/domain/bridge/entities/token.entity';
-import { FeeCostSchema } from '@/domain/bridge/entities/fee-cost.entity';
 
 // Adapted from StatusResponse of @lifi/types
 // @see https://github.com/lifinance/types/blob/f87f67730de3aa22e63fe2b4337115d2998c76ea/src/api.ts#L535
@@ -113,7 +112,6 @@ export const SuccessStatusDataSchema = BaseStatusDataSchema.extend({
   substatus: z.enum([...SubstatusesDone]),
   transactionId: z.string(),
   receiving: ExtendedTransactionInfoSchema,
-  feeCosts: z.array(FeeCostSchema),
   lifiExplorerLink: z.string(),
   metadata: TransferMetadataSchema,
   bridgeExplorerLink: z.string().nullish().default(null),
