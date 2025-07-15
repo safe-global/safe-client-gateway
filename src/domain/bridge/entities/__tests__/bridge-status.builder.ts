@@ -17,7 +17,6 @@ import type {
   TransferMetadata,
 } from '@/domain/bridge/entities/bridge-status.entity';
 import { tokenBuilder } from '@/domain/bridge/entities/__tests__/token.builder';
-import { feeCostBuilder } from '@/domain/bridge/entities/__tests__/fee-cost.builder';
 
 export function baseStatusDataBuilder<
   T extends SuccessStatusData | FailedStatusData | PendingStatusData,
@@ -86,8 +85,7 @@ export function successStatusDataBuilder<
     )
     .with('metadata', transferMetadataBuilder().build())
     .with('bridgeExplorerLink', faker.internet.url({ appendSlash: false }))
-    .with('lifiExplorerLink', faker.internet.url({ appendSlash: false }))
-    .with('feeCosts', [feeCostBuilder().build()]);
+    .with('lifiExplorerLink', faker.internet.url({ appendSlash: false }));
 }
 
 export function pendingStatusDataBuilder<

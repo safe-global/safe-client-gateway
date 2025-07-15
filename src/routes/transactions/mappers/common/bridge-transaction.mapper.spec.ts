@@ -250,7 +250,6 @@ describe('BridgeTransactionMapper (Unit)', () => {
           gasAmount: '0',
           timestamp: null,
         },
-        feeCosts: [],
         lifiExplorerLink: faker.internet.url(),
         fromAddress: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
         toAddress: faker.string.hexadecimal({ length: 40 }) as `0x${string}`,
