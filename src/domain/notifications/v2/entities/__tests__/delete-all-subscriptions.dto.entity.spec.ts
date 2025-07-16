@@ -203,4 +203,146 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       },
     ]);
   });
+
+  it('should validate signerAddress when provided', () => {
+    const deleteAllSubscriptionsDto = {
+      subscriptions: [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
+    };
+
+    const result = DeleteAllSubscriptionsDtoSchema.safeParse(
+      deleteAllSubscriptionsDto,
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it('should validate when signerAddress is not provided', () => {
+    const deleteAllSubscriptionsDto = {
+      subscriptions: [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
+    };
+
+    const result = DeleteAllSubscriptionsDtoSchema.safeParse(
+      deleteAllSubscriptionsDto,
+    );
+
+    expect(result.success).toBe(true);
+  });
+
+  it('should checksum signerAddress when provided', () => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
+    const deleteAllSubscriptionsDto = {
+      subscriptions: [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress: nonChecksummedAddress as `0x${string}`,
+        },
+      ],
+    };
+
+    const result = DeleteAllSubscriptionsDtoSchema.safeParse(
+      deleteAllSubscriptionsDto,
+    );
+
+    expect(result.success && result.data.subscriptions[0].signerAddress).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
+
+  it('should not allow non-hex address values for signerAddress', () => {
+    const deleteAllSubscriptionsDto = {
+      subscriptions: [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress: 'not-an-address' as `0x${string}`,
+        },
+      ],
+    };
+
+    const result = DeleteAllSubscriptionsDtoSchema.safeParse(
+      deleteAllSubscriptionsDto,
+    );
+
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: 'Invalid address',
+        path: ['subscriptions', 0, 'signerAddress'],
+      },
+    ]);
+  });
+
+  it('should validate when signerAddress is explicitly set to null', () => {
+    const deleteAllSubscriptionsDto = {
+      subscriptions: [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress: null,
+        },
+      ],
+    };
+
+    const result = DeleteAllSubscriptionsDtoSchema.safeParse(
+      deleteAllSubscriptionsDto,
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.subscriptions[0].signerAddress).toBe(
+      null,
+    );
+  });
+
+  it('should validate mixed signerAddress values in array', () => {
+    const deleteAllSubscriptionsDto = {
+      subscriptions: [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          // signerAddress omitted (undefined)
+        },
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress: null,
+        },
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
+    };
+
+    const result = DeleteAllSubscriptionsDtoSchema.safeParse(
+      deleteAllSubscriptionsDto,
+    );
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.subscriptions[0].signerAddress).toBeUndefined();
+      expect(result.data.subscriptions[1].signerAddress).toBe(null);
+      expect(result.data.subscriptions[2].signerAddress).toBeDefined();
+    }
+  });
 });

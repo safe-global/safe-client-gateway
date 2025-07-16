@@ -16,7 +16,7 @@ import { AuthPayload } from '@/domain/auth/entities/auth-payload.entity';
 import { NotificationSubscription } from '@/datasources/notifications/entities/notification-subscription.entity.db';
 import { NotificationDevice } from '@/datasources/notifications/entities/notification-devices.entity.db';
 import { NotificationType } from '@/datasources/notifications/entities/notification-type.entity.db';
-import { EntityManager, In } from 'typeorm';
+import { EntityManager, In, IsNull } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { NotificationSubscriptionNotificationType } from '@/datasources/notifications/entities/notification-subscription-notification-type.entity.db';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -430,19 +430,40 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       chainId: string;
       deviceUuid: UUID;
       safeAddress: `0x${string}`;
+      signerAddress?: `0x${string}` | null;
     }>;
   }): Promise<void> {
     const notificationsSubscriptionsRepository =
       await this.postgresDatabaseService.getRepository<NotificationSubscription>(
         NotificationSubscription,
       );
-    const whereConditions = args.subscriptions.map((subscription) => ({
-      chain_id: subscription.chainId,
-      safe_address: subscription.safeAddress,
-      push_notification_device: {
-        device_uuid: subscription.deviceUuid,
-      },
-    }));
+    const whereConditions = args.subscriptions.map((subscription) => {
+      const baseCondition = {
+        chain_id: subscription.chainId,
+        safe_address: subscription.safeAddress,
+        push_notification_device: {
+          device_uuid: subscription.deviceUuid,
+        },
+      };
+
+      // Handle signerAddress: undefined (omitted) vs null (explicit) vs string (specific address)
+      if (subscription.signerAddress === undefined) {
+        // Omitted: no signer filtering
+        return baseCondition;
+      } else if (subscription.signerAddress === null) {
+        // Explicit null: filter for records with signer_address = null
+        return {
+          ...baseCondition,
+          signer_address: IsNull(),
+        };
+      } else {
+        // Specific address: filter for records with that signer_address
+        return {
+          ...baseCondition,
+          signer_address: subscription.signerAddress,
+        };
+      }
+    });
     const subscriptions = await notificationsSubscriptionsRepository.find({
       where: whereConditions,
     });

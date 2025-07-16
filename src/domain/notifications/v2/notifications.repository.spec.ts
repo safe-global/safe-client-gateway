@@ -17,6 +17,7 @@ import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
 import { getAddress } from 'viem';
+import { IsNull } from 'typeorm';
 import type { ConfigService } from '@nestjs/config';
 
 describe('NotificationsRepositoryV2', () => {
@@ -643,6 +644,186 @@ describe('NotificationsRepositoryV2', () => {
       );
       expect(notificationSubscriptionsRepository.find).toHaveBeenCalledWith({
         where: [],
+      });
+    });
+
+    it('Should include signerAddress in where conditions when provided', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const deleteAllSubscriptionsDto = [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress,
+        },
+      ];
+
+      const mockSubscriptions = [notificationSubscriptionBuilder().build()];
+      notificationSubscriptionsRepository.find.mockResolvedValue(
+        mockSubscriptions,
+      );
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
+
+      const args = {
+        subscriptions: deleteAllSubscriptionsDto,
+      };
+
+      await notificationsRepository.deleteAllSubscriptions(args);
+
+      expect(notificationSubscriptionsRepository.find).toHaveBeenCalledWith({
+        where: [
+          {
+            chain_id: deleteAllSubscriptionsDto[0].chainId,
+            safe_address: deleteAllSubscriptionsDto[0].safeAddress,
+            push_notification_device: {
+              device_uuid: deleteAllSubscriptionsDto[0].deviceUuid,
+            },
+            signer_address: signerAddress,
+          },
+        ],
+      });
+    });
+
+    it('Should not include signerAddress in where conditions when not provided', async () => {
+      const deleteAllSubscriptionsDto = [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        },
+      ];
+
+      const mockSubscriptions = [notificationSubscriptionBuilder().build()];
+      notificationSubscriptionsRepository.find.mockResolvedValue(
+        mockSubscriptions,
+      );
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
+
+      const args = {
+        subscriptions: deleteAllSubscriptionsDto,
+      };
+
+      await notificationsRepository.deleteAllSubscriptions(args);
+
+      expect(notificationSubscriptionsRepository.find).toHaveBeenCalledWith({
+        where: [
+          {
+            chain_id: deleteAllSubscriptionsDto[0].chainId,
+            safe_address: deleteAllSubscriptionsDto[0].safeAddress,
+            push_notification_device: {
+              device_uuid: deleteAllSubscriptionsDto[0].deviceUuid,
+            },
+          },
+        ],
+      });
+    });
+
+    it('Should include signer_address: null in where conditions when signerAddress is explicitly null', async () => {
+      const deleteAllSubscriptionsDto = [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress: null,
+        },
+      ];
+
+      const mockSubscriptions = [notificationSubscriptionBuilder().build()];
+      notificationSubscriptionsRepository.find.mockResolvedValue(
+        mockSubscriptions,
+      );
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
+
+      const args = {
+        subscriptions: deleteAllSubscriptionsDto,
+      };
+
+      await notificationsRepository.deleteAllSubscriptions(args);
+
+      expect(notificationSubscriptionsRepository.find).toHaveBeenCalledWith({
+        where: [
+          {
+            chain_id: deleteAllSubscriptionsDto[0].chainId,
+            safe_address: deleteAllSubscriptionsDto[0].safeAddress,
+            push_notification_device: {
+              device_uuid: deleteAllSubscriptionsDto[0].deviceUuid,
+            },
+            signer_address: IsNull(),
+          },
+        ],
+      });
+    });
+
+    it('Should handle mixed signerAddress values in single request', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const deleteAllSubscriptionsDto = [
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          // signerAddress omitted (undefined)
+        },
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress: null,
+        },
+        {
+          chainId: faker.string.numeric(),
+          deviceUuid: faker.string.uuid() as UUID,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          signerAddress,
+        },
+      ];
+
+      const mockSubscriptions = [notificationSubscriptionBuilder().build()];
+      notificationSubscriptionsRepository.find.mockResolvedValue(
+        mockSubscriptions,
+      );
+      mockPostgresDatabaseService.getRepository.mockResolvedValue(
+        notificationSubscriptionsRepository,
+      );
+
+      const args = {
+        subscriptions: deleteAllSubscriptionsDto,
+      };
+
+      await notificationsRepository.deleteAllSubscriptions(args);
+
+      expect(notificationSubscriptionsRepository.find).toHaveBeenCalledWith({
+        where: [
+          {
+            chain_id: deleteAllSubscriptionsDto[0].chainId,
+            safe_address: deleteAllSubscriptionsDto[0].safeAddress,
+            push_notification_device: {
+              device_uuid: deleteAllSubscriptionsDto[0].deviceUuid,
+            },
+            // No signer_address field for undefined
+          },
+          {
+            chain_id: deleteAllSubscriptionsDto[1].chainId,
+            safe_address: deleteAllSubscriptionsDto[1].safeAddress,
+            push_notification_device: {
+              device_uuid: deleteAllSubscriptionsDto[1].deviceUuid,
+            },
+            signer_address: IsNull(),
+          },
+          {
+            chain_id: deleteAllSubscriptionsDto[2].chainId,
+            safe_address: deleteAllSubscriptionsDto[2].safeAddress,
+            push_notification_device: {
+              device_uuid: deleteAllSubscriptionsDto[2].deviceUuid,
+            },
+            signer_address: signerAddress,
+          },
+        ],
       });
     });
   });

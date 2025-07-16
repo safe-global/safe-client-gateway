@@ -43,6 +43,7 @@ export interface INotificationsRepositoryV2 {
       chainId: string;
       deviceUuid: UUID;
       safeAddress: `0x${string}`;
+      signerAddress?: `0x${string}` | null;
     }>;
   }): Promise<void>;
 
