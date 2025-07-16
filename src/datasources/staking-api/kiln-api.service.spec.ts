@@ -151,6 +151,12 @@ describe('KilnApi', () => {
   });
 
   describe('getRewardsFee', () => {
+    const chainId = faker.string.numeric();
+
+    beforeEach(() => {
+      createTarget(chainId);
+    });
+
     it('should return rewards fee', async () => {
       const contract = getAddress(faker.finance.ethereumAddress());
       const rewardsFee = rewardsFeeBuilder().build();
@@ -166,7 +172,10 @@ describe('KilnApi', () => {
 
       expect(actual).toBe(rewardsFee);
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_rewards_fee', cacheType),
+        cacheDir: new CacheDir(
+          `${chainId}_staking_rewards_fee_${contract}`,
+          cacheType,
+        ),
         url: `${baseUrl}/v1/eth/onchain/v1/fee`,
         networkRequest: {
           headers: {
@@ -202,7 +211,10 @@ describe('KilnApi', () => {
       await expect(target.getRewardsFee(contract)).rejects.toThrow(expected);
 
       expect(dataSource.get).toHaveBeenNthCalledWith(1, {
-        cacheDir: new CacheDir('staking_rewards_fee', cacheType),
+        cacheDir: new CacheDir(
+          `${chainId}_staking_rewards_fee_${contract}`,
+          cacheType,
+        ),
         url: getRewardsFeeUrl,
         networkRequest: {
           headers: {

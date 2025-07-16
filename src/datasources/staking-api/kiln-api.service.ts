@@ -79,7 +79,11 @@ export class KilnApi implements IStakingApi {
   // Therefore, this data will live in cache until [stakingExpirationTimeInSeconds]
   async getRewardsFee(contract: `0x${string}`): Promise<Raw<RewardsFee>> {
     const url = `${this.baseUrl}/v1/eth/onchain/v1/fee`;
-    const cacheDir = CacheRouter.getStakingRewardsFeeCacheDir(this.cacheType);
+    const cacheDir = CacheRouter.getStakingRewardsFeeCacheDir({
+      cacheType: this.cacheType,
+      chainId: this.chainId,
+      contract,
+    });
     return await this.get<{
       data: RewardsFee;
     }>({

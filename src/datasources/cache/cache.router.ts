@@ -652,8 +652,15 @@ export class CacheRouter {
     return new CacheDir(this.STAKING_DEPLOYMENTS_KEY, cacheType);
   }
 
-  static getStakingRewardsFeeCacheDir(cacheType: 'earn' | 'staking'): CacheDir {
-    return new CacheDir(this.STAKING_REWARDS_FEE_KEY, cacheType);
+  static getStakingRewardsFeeCacheDir(args: {
+    cacheType: 'earn' | 'staking';
+    chainId: string;
+    contract: `0x${string}`;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${this.STAKING_REWARDS_FEE_KEY}_${args.contract}`,
+      args.cacheType,
+    );
   }
 
   static getStakingNetworkStatsCacheDir(
