@@ -447,22 +447,15 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
       };
 
       // Handle signerAddress: undefined (omitted) vs null (explicit) vs string (specific address)
-      if (subscription.signerAddress === undefined) {
-        // Omitted: no signer filtering
-        return baseCondition;
-      } else if (subscription.signerAddress === null) {
-        // Explicit null: filter for records with signer_address = null
-        return {
-          ...baseCondition,
-          signer_address: IsNull(),
-        };
-      } else {
-        // Specific address: filter for records with that signer_address
-        return {
-          ...baseCondition,
-          signer_address: subscription.signerAddress,
-        };
-      }
+      return subscription.signerAddress === undefined
+        ? baseCondition
+        : {
+            ...baseCondition,
+            signer_address:
+              subscription.signerAddress === null
+                ? IsNull()
+                : subscription.signerAddress,
+          };
     });
     const subscriptions = await notificationsSubscriptionsRepository.find({
       where: whereConditions,

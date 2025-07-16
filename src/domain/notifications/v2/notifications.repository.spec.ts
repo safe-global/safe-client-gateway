@@ -18,6 +18,7 @@ import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postg
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
 import { getAddress } from 'viem';
 import { IsNull } from 'typeorm';
+import { deleteAllSubscriptionsDtoBuilder } from '@/domain/notifications/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
 import type { ConfigService } from '@nestjs/config';
 
 describe('NotificationsRepositoryV2', () => {
@@ -649,14 +650,16 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should include signerAddress in where conditions when provided', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const deleteAllSubscriptionsDto = [
-        {
-          chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
-          safeAddress: getAddress(faker.finance.ethereumAddress()),
-          signerAddress,
-        },
-      ];
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: faker.string.numeric(),
+            deviceUuid: faker.string.uuid() as UUID,
+            safeAddress: getAddress(faker.finance.ethereumAddress()),
+            signerAddress,
+          },
+        ])
+        .build().subscriptions;
 
       const mockSubscriptions = [notificationSubscriptionBuilder().build()];
       notificationSubscriptionsRepository.find.mockResolvedValue(
@@ -687,13 +690,15 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should not include signerAddress in where conditions when not provided', async () => {
-      const deleteAllSubscriptionsDto = [
-        {
-          chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
-          safeAddress: getAddress(faker.finance.ethereumAddress()),
-        },
-      ];
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: faker.string.numeric(),
+            deviceUuid: faker.string.uuid() as UUID,
+            safeAddress: getAddress(faker.finance.ethereumAddress()),
+          },
+        ])
+        .build().subscriptions;
 
       const mockSubscriptions = [notificationSubscriptionBuilder().build()];
       notificationSubscriptionsRepository.find.mockResolvedValue(
@@ -723,14 +728,16 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should include signer_address: null in where conditions when signerAddress is explicitly null', async () => {
-      const deleteAllSubscriptionsDto = [
-        {
-          chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
-          safeAddress: getAddress(faker.finance.ethereumAddress()),
-          signerAddress: null,
-        },
-      ];
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: faker.string.numeric(),
+            deviceUuid: faker.string.uuid() as UUID,
+            safeAddress: getAddress(faker.finance.ethereumAddress()),
+            signerAddress: null,
+          },
+        ])
+        .build().subscriptions;
 
       const mockSubscriptions = [notificationSubscriptionBuilder().build()];
       notificationSubscriptionsRepository.find.mockResolvedValue(
@@ -762,26 +769,28 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should handle mixed signerAddress values in single request', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const deleteAllSubscriptionsDto = [
-        {
-          chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
-          safeAddress: getAddress(faker.finance.ethereumAddress()),
-          // signerAddress omitted (undefined)
-        },
-        {
-          chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
-          safeAddress: getAddress(faker.finance.ethereumAddress()),
-          signerAddress: null,
-        },
-        {
-          chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
-          safeAddress: getAddress(faker.finance.ethereumAddress()),
-          signerAddress,
-        },
-      ];
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: faker.string.numeric(),
+            deviceUuid: faker.string.uuid() as UUID,
+            safeAddress: getAddress(faker.finance.ethereumAddress()),
+            // signerAddress omitted (undefined)
+          },
+          {
+            chainId: faker.string.numeric(),
+            deviceUuid: faker.string.uuid() as UUID,
+            safeAddress: getAddress(faker.finance.ethereumAddress()),
+            signerAddress: null,
+          },
+          {
+            chainId: faker.string.numeric(),
+            deviceUuid: faker.string.uuid() as UUID,
+            safeAddress: getAddress(faker.finance.ethereumAddress()),
+            signerAddress,
+          },
+        ])
+        .build().subscriptions;
 
       const mockSubscriptions = [notificationSubscriptionBuilder().build()];
       notificationSubscriptionsRepository.find.mockResolvedValue(

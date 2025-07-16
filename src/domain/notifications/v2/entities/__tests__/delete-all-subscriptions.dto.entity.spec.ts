@@ -205,16 +205,16 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
   });
 
   it('should validate signerAddress when provided', () => {
-    const deleteAllSubscriptionsDto = {
-      subscriptions: [
+    const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+      .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: getAddress(faker.finance.ethereumAddress()),
         },
-      ],
-    };
+      ])
+      .build();
 
     const result = DeleteAllSubscriptionsDtoSchema.safeParse(
       deleteAllSubscriptionsDto,
@@ -223,36 +223,38 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should validate when signerAddress is not provided', () => {
-    const deleteAllSubscriptionsDto = {
-      subscriptions: [
+  it('should validate when signerAddress is omitted (undefined)', () => {
+    const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+      .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
+          // signerAddress intentionally omitted
         },
-      ],
-    };
+      ])
+      .build();
 
     const result = DeleteAllSubscriptionsDtoSchema.safeParse(
       deleteAllSubscriptionsDto,
     );
 
     expect(result.success).toBe(true);
+    expect(result.success && result.data.subscriptions[0].signerAddress).toBeUndefined();
   });
 
   it('should checksum signerAddress when provided', () => {
     const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
-    const deleteAllSubscriptionsDto = {
-      subscriptions: [
+    const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+      .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: nonChecksummedAddress as `0x${string}`,
         },
-      ],
-    };
+      ])
+      .build();
 
     const result = DeleteAllSubscriptionsDtoSchema.safeParse(
       deleteAllSubscriptionsDto,
@@ -264,16 +266,16 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
   });
 
   it('should not allow non-hex address values for signerAddress', () => {
-    const deleteAllSubscriptionsDto = {
-      subscriptions: [
+    const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+      .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: 'not-an-address' as `0x${string}`,
         },
-      ],
-    };
+      ])
+      .build();
 
     const result = DeleteAllSubscriptionsDtoSchema.safeParse(
       deleteAllSubscriptionsDto,
@@ -289,16 +291,16 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
   });
 
   it('should validate when signerAddress is explicitly set to null', () => {
-    const deleteAllSubscriptionsDto = {
-      subscriptions: [
+    const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+      .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: null,
         },
-      ],
-    };
+      ])
+      .build();
 
     const result = DeleteAllSubscriptionsDtoSchema.safeParse(
       deleteAllSubscriptionsDto,
@@ -311,8 +313,8 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
   });
 
   it('should validate mixed signerAddress values in array', () => {
-    const deleteAllSubscriptionsDto = {
-      subscriptions: [
+    const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+      .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
@@ -331,8 +333,8 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: getAddress(faker.finance.ethereumAddress()),
         },
-      ],
-    };
+      ])
+      .build();
 
     const result = DeleteAllSubscriptionsDtoSchema.safeParse(
       deleteAllSubscriptionsDto,

@@ -22,6 +22,7 @@ import type { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { getAddress } from 'viem';
+import { deleteAllSubscriptionsDtoBuilder } from '@/domain/notifications/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
 
 describe('NotificationsRepositoryV2', () => {
   const mockLoggingService = {
@@ -1221,14 +1222,16 @@ describe('NotificationsRepositoryV2', () => {
         signer_address: signerAddress,
       });
 
-      const deleteAllSubscriptionsDto = [
-        {
-          chainId: upsertSubscriptionsDto.safes[0].chainId,
-          deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
-          safeAddress: upsertSubscriptionsDto.safes[0].address,
-          signerAddress,
-        },
-      ];
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: upsertSubscriptionsDto.safes[0].chainId,
+            deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            safeAddress: upsertSubscriptionsDto.safes[0].address,
+            signerAddress,
+          },
+        ])
+        .build().subscriptions;
 
       await notificationsRepositoryService.deleteAllSubscriptions({
         subscriptions: deleteAllSubscriptionsDto,
@@ -1283,14 +1286,16 @@ describe('NotificationsRepositoryV2', () => {
         signer_address: signerAddress1,
       });
 
-      const deleteAllSubscriptionsDto = [
-        {
-          chainId: upsertSubscriptionsDto.safes[0].chainId,
-          deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
-          safeAddress: upsertSubscriptionsDto.safes[0].address,
-          signerAddress: signerAddress2, // Different signer address
-        },
-      ];
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: upsertSubscriptionsDto.safes[0].chainId,
+            deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            safeAddress: upsertSubscriptionsDto.safes[0].address,
+            signerAddress: signerAddress2, // Different signer address
+          },
+        ])
+        .build().subscriptions;
 
       const result = notificationsRepositoryService.deleteAllSubscriptions({
         subscriptions: deleteAllSubscriptionsDto,
@@ -1347,14 +1352,16 @@ describe('NotificationsRepositoryV2', () => {
       // Ensure the subscription has null signerAddress (it should by default)
       expect(subscriptions[0].signer_address).toBe(null);
 
-      const deleteAllSubscriptionsDto = [
-        {
-          chainId: upsertSubscriptionsDto.safes[0].chainId,
-          deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
-          safeAddress: upsertSubscriptionsDto.safes[0].address,
-          signerAddress: null, // Explicitly set to null
-        },
-      ];
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: upsertSubscriptionsDto.safes[0].chainId,
+            deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            safeAddress: upsertSubscriptionsDto.safes[0].address,
+            signerAddress: null, // Explicitly set to null
+          },
+        ])
+        .build().subscriptions;
 
       await notificationsRepositoryService.deleteAllSubscriptions({
         subscriptions: deleteAllSubscriptionsDto,
@@ -1403,14 +1410,16 @@ describe('NotificationsRepositoryV2', () => {
       expect(subscriptions).toHaveLength(1);
       expect(subscriptions[0].signer_address).toBe(null);
 
-      const deleteAllSubscriptionsDto = [
-        {
-          chainId: upsertSubscriptionsDto.safes[0].chainId,
-          deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
-          safeAddress: upsertSubscriptionsDto.safes[0].address,
-          signerAddress: specificSignerAddress, // Specific address, not null
-        },
-      ];
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: upsertSubscriptionsDto.safes[0].chainId,
+            deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            safeAddress: upsertSubscriptionsDto.safes[0].address,
+            signerAddress: specificSignerAddress, // Specific address, not null
+          },
+        ])
+        .build().subscriptions;
 
       const result = notificationsRepositoryService.deleteAllSubscriptions({
         subscriptions: deleteAllSubscriptionsDto,

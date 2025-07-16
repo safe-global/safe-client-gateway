@@ -10,7 +10,7 @@ export const DeleteAllSubscriptionsDtoSchema = z.object({
         chainId: NumericStringSchema,
         deviceUuid: UuidSchema,
         safeAddress: AddressSchema,
-        signerAddress: AddressSchema.nullable().optional(),
+        signerAddress: AddressSchema.nullish(),
       }),
     )
     .min(1, 'At least one subscription is required'),
