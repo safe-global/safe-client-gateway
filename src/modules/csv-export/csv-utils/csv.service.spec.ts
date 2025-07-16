@@ -1,13 +1,13 @@
-import type { CsvOptions } from '@/modules/csv-export/csv-export.service';
-import { CsvExportService } from '@/modules/csv-export/csv-export.service';
+import type { CsvOptions } from '@/modules/csv-export/csv-utils/csv.service';
+import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { faker } from '@faker-js/faker';
 import { Writable } from 'stream';
 
-describe('CsvExportService', () => {
-  let service: CsvExportService;
+describe('CsvService', () => {
+  let service: CsvService;
 
   beforeEach(() => {
-    service = new CsvExportService();
+    service = new CsvService();
   });
 
   async function collectCsv<T extends Record<string, unknown>>(
@@ -24,7 +24,7 @@ describe('CsvExportService', () => {
       },
     });
 
-    await service.exportToCsv(data, writable, options);
+    await service.toCsv(data, writable, options);
     return Buffer.concat(chunks).toString('utf8');
   }
 
@@ -203,7 +203,7 @@ describe('CsvExportService', () => {
       },
     });
 
-    await expect(service.exportToCsv(data, writableWithError)).rejects.toThrow(
+    await expect(service.toCsv(data, writableWithError)).rejects.toThrow(
       errorMessage,
     );
   });
