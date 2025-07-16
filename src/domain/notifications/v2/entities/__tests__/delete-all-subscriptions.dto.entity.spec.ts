@@ -240,7 +240,9 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
     );
 
     expect(result.success).toBe(true);
-    expect(result.success && result.data.subscriptions[0].signerAddress).toBeUndefined();
+    expect(
+      result.success && result.data.subscriptions[0].signerAddress,
+    ).toBeUndefined();
   });
 
   it('should checksum signerAddress when provided', () => {
