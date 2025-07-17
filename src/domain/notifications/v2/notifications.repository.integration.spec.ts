@@ -1191,7 +1191,9 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should delete subscriptions with specific signerAddress when provided', async () => {
       const signerAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
@@ -1203,24 +1205,6 @@ describe('NotificationsRepositoryV2', () => {
       const notificationSubscriptionRepository = dataSource.getRepository(
         NotificationSubscription,
       );
-
-      // Manually update a subscription to have a signerAddress
-      const subscriptions = await notificationSubscriptionRepository.find({
-        where: {
-          chain_id: upsertSubscriptionsDto.safes[0].chainId,
-          safe_address: upsertSubscriptionsDto.safes[0].address,
-          push_notification_device: {
-            device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
-          },
-        },
-      });
-
-      expect(subscriptions).toHaveLength(1);
-
-      // Update the subscription to have a signerAddress
-      await notificationSubscriptionRepository.update(subscriptions[0].id, {
-        signer_address: signerAddress,
-      });
 
       const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
         .with('subscriptions', [

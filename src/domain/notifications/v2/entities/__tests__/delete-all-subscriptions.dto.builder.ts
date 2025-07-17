@@ -17,12 +17,7 @@ export function deleteAllSubscriptionsDtoBuilder(): IBuilder<DeleteAllSubscripti
           chainId: faker.string.numeric(),
           deviceUuid: faker.string.uuid() as UUID,
           safeAddress: getAddress(faker.finance.ethereumAddress()),
-          ...(faker.datatype.boolean() && {
-            signerAddress: faker.helpers.arrayElement([
-              getAddress(faker.finance.ethereumAddress()),
-              null,
-            ]),
-          }),
+          // signerAddress is undefined by default - use .with() to add it on demand
         };
       },
     ),
