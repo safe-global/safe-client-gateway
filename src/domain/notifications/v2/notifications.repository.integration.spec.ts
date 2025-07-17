@@ -1323,8 +1323,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should delete subscriptions with null signerAddress when explicitly set to null', async () => {
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
+      const authPayload = new AuthPayload();
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
       await notificationsRepositoryService.upsertSubscriptions({
@@ -1383,8 +1382,7 @@ describe('NotificationsRepositoryV2', () => {
 
     it('Should not delete subscriptions with null signerAddress when filtering by specific address', async () => {
       const specificSignerAddress = getAddress(faker.finance.ethereumAddress());
-      const authPayloadDto = authPayloadDtoBuilder().build();
-      const authPayload = new AuthPayload(authPayloadDto);
+      const authPayload = new AuthPayload();
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
 
       await notificationsRepositoryService.upsertSubscriptions({
