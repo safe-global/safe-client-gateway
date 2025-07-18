@@ -22,6 +22,7 @@ import type { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { getAddress } from 'viem';
+import { deleteAllSubscriptionsDtoBuilder } from '@/domain/notifications/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
 
 describe('NotificationsRepositoryV2', () => {
   const mockLoggingService = {
@@ -1186,6 +1187,245 @@ describe('NotificationsRepositoryV2', () => {
 
       expect(firstSubscription).toHaveLength(0);
       expect(secondSubscription).toHaveLength(1);
+    });
+
+    it('Should delete subscriptions with specific signerAddress when provided', async () => {
+      const signerAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder()
+        .with('signer_address', signerAddress)
+        .build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+
+      const notificationSubscriptionRepository = dataSource.getRepository(
+        NotificationSubscription,
+      );
+
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: upsertSubscriptionsDto.safes[0].chainId,
+            deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            safeAddress: upsertSubscriptionsDto.safes[0].address,
+            signerAddress,
+          },
+        ])
+        .build().subscriptions;
+
+      await notificationsRepositoryService.deleteAllSubscriptions({
+        subscriptions: deleteAllSubscriptionsDto,
+      });
+
+      const remainingSubscriptions =
+        await notificationSubscriptionRepository.find({
+          where: {
+            chain_id: upsertSubscriptionsDto.safes[0].chainId,
+            safe_address: upsertSubscriptionsDto.safes[0].address,
+            push_notification_device: {
+              device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            },
+            signer_address: signerAddress,
+          },
+        });
+
+      expect(remainingSubscriptions).toHaveLength(0);
+    });
+
+    it('Should not delete subscriptions with different signerAddress when signerAddress is specified', async () => {
+      const signerAddress1 = getAddress(faker.finance.ethereumAddress());
+      const signerAddress2 = getAddress(faker.finance.ethereumAddress());
+      const authPayloadDto = authPayloadDtoBuilder().build();
+      const authPayload = new AuthPayload(authPayloadDto);
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+
+      const notificationSubscriptionRepository = dataSource.getRepository(
+        NotificationSubscription,
+      );
+
+      // Manually update a subscription to have signerAddress1
+      const subscriptions = await notificationSubscriptionRepository.find({
+        where: {
+          chain_id: upsertSubscriptionsDto.safes[0].chainId,
+          safe_address: upsertSubscriptionsDto.safes[0].address,
+          push_notification_device: {
+            device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
+          },
+        },
+      });
+
+      expect(subscriptions).toHaveLength(1);
+
+      // Update the subscription to have signerAddress1
+      await notificationSubscriptionRepository.update(subscriptions[0].id, {
+        signer_address: signerAddress1,
+      });
+
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: upsertSubscriptionsDto.safes[0].chainId,
+            deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            safeAddress: upsertSubscriptionsDto.safes[0].address,
+            signerAddress: signerAddress2, // Different signer address
+          },
+        ])
+        .build().subscriptions;
+
+      const result = notificationsRepositoryService.deleteAllSubscriptions({
+        subscriptions: deleteAllSubscriptionsDto,
+      });
+
+      // Should throw NotFoundException since no subscription matches the different signerAddress
+      await expect(result).rejects.toThrow(
+        new NotFoundException('No Subscription Found!'),
+      );
+
+      // The subscription with signerAddress1 should still exist
+      const remainingSubscriptions =
+        await notificationSubscriptionRepository.find({
+          where: {
+            chain_id: upsertSubscriptionsDto.safes[0].chainId,
+            safe_address: upsertSubscriptionsDto.safes[0].address,
+            push_notification_device: {
+              device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            },
+            signer_address: signerAddress1,
+          },
+        });
+
+      expect(remainingSubscriptions).toHaveLength(1);
+    });
+
+    it('Should delete subscriptions with null signerAddress when explicitly set to null', async () => {
+      const authPayload = new AuthPayload();
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+
+      const notificationSubscriptionRepository = dataSource.getRepository(
+        NotificationSubscription,
+      );
+
+      // Find and update a subscription to have null signerAddress
+      const subscriptions = await notificationSubscriptionRepository.find({
+        where: {
+          chain_id: upsertSubscriptionsDto.safes[0].chainId,
+          safe_address: upsertSubscriptionsDto.safes[0].address,
+          push_notification_device: {
+            device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
+          },
+        },
+      });
+
+      expect(subscriptions).toHaveLength(1);
+
+      // Ensure the subscription has null signerAddress (it should by default)
+      expect(subscriptions[0].signer_address).toBe(null);
+
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: upsertSubscriptionsDto.safes[0].chainId,
+            deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            safeAddress: upsertSubscriptionsDto.safes[0].address,
+            signerAddress: null, // Explicitly set to null
+          },
+        ])
+        .build().subscriptions;
+
+      await notificationsRepositoryService.deleteAllSubscriptions({
+        subscriptions: deleteAllSubscriptionsDto,
+      });
+
+      const remainingSubscriptions =
+        await notificationSubscriptionRepository.find({
+          where: {
+            chain_id: upsertSubscriptionsDto.safes[0].chainId,
+            safe_address: upsertSubscriptionsDto.safes[0].address,
+            push_notification_device: {
+              device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            },
+          },
+        });
+
+      expect(remainingSubscriptions).toHaveLength(0);
+    });
+
+    it('Should not delete subscriptions with null signerAddress when filtering by specific address', async () => {
+      const specificSignerAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload();
+      const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
+
+      await notificationsRepositoryService.upsertSubscriptions({
+        authPayload,
+        upsertSubscriptionsDto,
+      });
+
+      const notificationSubscriptionRepository = dataSource.getRepository(
+        NotificationSubscription,
+      );
+
+      // Verify the subscription has null signerAddress
+      const subscriptions = await notificationSubscriptionRepository.find({
+        where: {
+          chain_id: upsertSubscriptionsDto.safes[0].chainId,
+          safe_address: upsertSubscriptionsDto.safes[0].address,
+          push_notification_device: {
+            device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
+          },
+        },
+      });
+
+      expect(subscriptions).toHaveLength(1);
+      expect(subscriptions[0].signer_address).toBe(null);
+
+      const deleteAllSubscriptionsDto = deleteAllSubscriptionsDtoBuilder()
+        .with('subscriptions', [
+          {
+            chainId: upsertSubscriptionsDto.safes[0].chainId,
+            deviceUuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            safeAddress: upsertSubscriptionsDto.safes[0].address,
+            signerAddress: specificSignerAddress, // Specific address, not null
+          },
+        ])
+        .build().subscriptions;
+
+      const result = notificationsRepositoryService.deleteAllSubscriptions({
+        subscriptions: deleteAllSubscriptionsDto,
+      });
+
+      // Should throw NotFoundException since subscription has null signer_address, not the specific address
+      await expect(result).rejects.toThrow(
+        new NotFoundException('No Subscription Found!'),
+      );
+
+      // The subscription with null signerAddress should still exist
+      const remainingSubscriptions =
+        await notificationSubscriptionRepository.find({
+          where: {
+            chain_id: upsertSubscriptionsDto.safes[0].chainId,
+            safe_address: upsertSubscriptionsDto.safes[0].address,
+            push_notification_device: {
+              device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
+            },
+          },
+        });
+
+      expect(remainingSubscriptions).toHaveLength(1);
+      expect(remainingSubscriptions[0].signer_address).toBe(null);
     });
   });
 });
