@@ -12,9 +12,20 @@ import {
 
 describe('SafeSignature', () => {
   it('should create an instance', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as `0x${string}`;
+    const baseSignature = faker.string.hexadecimal({
+      length: 128,
+    });
+    // Ensure last byte (v) is not 00 (which would make it a contract signature)
+    const v = faker.helpers.arrayElement([
+      '01',
+      '1b',
+      '1c',
+      '1d',
+      '1e',
+      '1f',
+      '20',
+    ]);
+    const signature = `${baseSignature}${v}` as `0x${string}`;
     const hash = faker.string.hexadecimal({ length: 66 }) as `0x${string}`;
 
     expect(() => new SafeSignature({ signature, hash })).not.toThrow();
