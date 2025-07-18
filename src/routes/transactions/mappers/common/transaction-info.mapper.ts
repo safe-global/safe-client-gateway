@@ -131,7 +131,7 @@ export class MultisigTransactionInfoMapper {
         if (error instanceof NotFoundException) {
           this.loggingService.warn(error);
         } else {
-          throw error;
+          this.loggingService.error(error);
         }
       }
     }
@@ -275,7 +275,7 @@ export class MultisigTransactionInfoMapper {
     }
 
     try {
-      return this.bridgeTransactionMapper.mapSwap({
+      return await this.bridgeTransactionMapper.mapSwap({
         data: transaction.data,
         executionDate: args.transaction.executionDate,
         chainId: args.chainId,
