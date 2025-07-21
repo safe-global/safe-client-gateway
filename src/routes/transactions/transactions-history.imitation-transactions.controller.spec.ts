@@ -42,6 +42,7 @@ import type { DataDecoded } from '@/domain/data-decoder/v2/entities/data-decoded
 import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Transactions History Controller (Unit) - Imitation Transactions', () => {
+  faker.seed(123);
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let safeDecoderUrl: string;

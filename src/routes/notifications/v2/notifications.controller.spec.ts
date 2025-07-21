@@ -74,10 +74,6 @@ describe('Notifications Controller V2 (Unit)', () => {
           originalModule: CounterfactualSafesDatasourceModule,
           testModule: TestCounterfactualSafesDataSourceModule,
         },
-        {
-          originalModule: NotificationsRepositoryV2Module,
-          testModule: TestNotificationsRepositoryV2Module,
-        },
       ],
     });
 
