@@ -121,11 +121,11 @@ describe('UsersRepository', () => {
     it('should set createdAt and updatedAt when creating a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const before = new Date().getTime();
-      const TIMEFRAME = 5000;
-
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
+
+      const after = new Date().getTime();
 
       const createdAt = user.generatedMaps[0].createdAt;
       const updatedAt = user.generatedMaps[0].updatedAt;
@@ -136,13 +136,11 @@ describe('UsersRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      // Verify that the timestamps are recent (within the last 5 seconds)
-      expect(Math.abs(createdAt.getTime() - before)).toBeLessThan(TIMEFRAME);
-      expect(Math.abs(updatedAt.getTime() - before)).toBeLessThan(TIMEFRAME);
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
 
-      // Verify that the timestamps are not in the future
-      expect(createdAt.getTime()).toBeLessThanOrEqual(Date.now());
-      expect(updatedAt.getTime()).toBeLessThanOrEqual(Date.now());
+      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
     it('should update updatedAt when updating a User', async () => {

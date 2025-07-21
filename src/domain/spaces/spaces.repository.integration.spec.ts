@@ -134,12 +134,13 @@ describe('SpacesRepository', () => {
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a Space', async () => {
       const before = new Date().getTime();
-      const TIMEFRAME = 5000;
 
       const space = await dbSpacesRepository.insert({
         name: faker.word.noun(),
         status: 'ACTIVE',
       });
+
+      const after = new Date().getTime();
 
       const createdAt = space.generatedMaps[0].createdAt;
       const updatedAt = space.generatedMaps[0].updatedAt;
@@ -150,13 +151,11 @@ describe('SpacesRepository', () => {
 
       expect(createdAt).toEqual(updatedAt);
 
-      // Verify that the timestamps are recent (within the last 5 seconds)
-      expect(Math.abs(createdAt.getTime() - before)).toBeLessThan(TIMEFRAME);
-      expect(Math.abs(updatedAt.getTime() - before)).toBeLessThan(TIMEFRAME);
+      expect(createdAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(createdAt.getTime()).toBeLessThanOrEqual(after);
 
-      // Verify that the timestamps are not in the future
-      expect(createdAt.getTime()).toBeLessThanOrEqual(Date.now());
-      expect(updatedAt.getTime()).toBeLessThanOrEqual(Date.now());
+      expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before);
+      expect(updatedAt.getTime()).toBeLessThanOrEqual(after);
     });
 
     it('should update updatedAt when updating a Space', async () => {
