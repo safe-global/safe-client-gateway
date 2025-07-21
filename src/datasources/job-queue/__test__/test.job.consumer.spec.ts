@@ -1,5 +1,7 @@
 import type { Job } from 'bullmq';
 import { TestJobConsumer } from '@/datasources/job-queue/__test__/test.job.consumer';
+import { faker } from '@faker-js/faker/.';
+import type { TestJobData } from '@/datasources/job-queue/__test__/job-queue.service.mock';
 
 describe('TestJobConsumer', () => {
   let consumer: TestJobConsumer;
@@ -9,7 +11,11 @@ describe('TestJobConsumer', () => {
   });
 
   it('should store processed jobs', async () => {
-    const job = { name: 'test-job' } as Job;
+    const job = {
+      name: 'test-job',
+      data: { message: faker.lorem.word(), timestamp: 0 },
+      updateProgress: jest.fn(),
+    } as unknown as Job<TestJobData>;
 
     await expect(consumer.process(job)).resolves.toEqual(
       'Processed job: test-job',
@@ -20,12 +26,14 @@ describe('TestJobConsumer', () => {
   it('should accumulate multiple jobs', async () => {
     const job1 = {
       name: 'test-job',
-      data: { message: 'hello' },
-    } as Job;
+      data: { message: faker.lorem.word(), timestamp: 0 },
+      updateProgress: jest.fn(),
+    } as unknown as Job<TestJobData>;
     const job2 = {
       name: 'test-job',
-      data: { message: 'world' },
-    } as Job;
+      data: { message: faker.lorem.word(), timestamp: 0 },
+      updateProgress: jest.fn(),
+    } as unknown as Job<TestJobData>;
 
     await consumer.process(job1);
     await consumer.process(job2);
