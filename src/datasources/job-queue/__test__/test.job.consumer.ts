@@ -1,3 +1,4 @@
+import { TestJobData } from '@/datasources/job-queue/__test__/job-queue.service.mock';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 
@@ -10,10 +11,18 @@ export class TestJobConsumer extends WorkerHost {
   public progressEvents: Array<{ job: Job; progress: number }> = [];
   public workerErrors: Array<Error> = [];
 
-  process(job: Job): Promise<string> {
+  async process(job: Job<TestJobData>): Promise<string> {
     this.handledJobs.push(job);
-    return Promise.resolve(`Processed job: ${job.name}`);
+
+    // Special condition to test job failure
+    if (job.data?.message === 'THROW_ERROR') {
+      throw new Error('Job failed');
+    }
+
+    await job.updateProgress(50);
+    return `Processed job: ${job.name}`;
   }
+
   @OnWorkerEvent('active')
   onActive(job: Job): void {
     this.activeJobs.push(job);

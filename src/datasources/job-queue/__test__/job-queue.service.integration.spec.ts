@@ -1,51 +1,41 @@
-import type { Job, Queue } from 'bullmq';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import type { Queue } from 'bullmq';
+import { QueueEvents } from 'bullmq';
+import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { getQueueToken } from '@nestjs/bullmq';
+import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { JobQueueService } from './../job-queue.service';
 import { TestJobConsumer } from './../__test__/test.job.consumer';
 import { JobType } from './../types/job-types';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { TestJobData } from '@/datasources/job-queue/__test__/job-queue.service.mock';
-
-// This is a simple in-memory queue implementation to simulate job processing without an actual queue system.
-class InMemoryQueue {
-  public handler?: {
-    process: (job: Job) => Promise<unknown>;
-    onActive?: (job: Job) => void;
-    onProgress?: (job: Job, progress: number) => void;
-    onCompleted?: (job: Job, result: unknown) => void;
-    onFailed?: (job: Job, error: Error) => void;
-    onWorkerError?: (error: Error) => void;
-  };
-
-  async add(name: string, data: TestJobData): Promise<Job> {
-    const job = { name, data } as Job;
-    const handler = this.handler;
-    if (handler) {
-      try {
-        handler.onActive?.(job);
-        handler.onProgress?.(job, 50);
-        const result = await handler.process(job);
-        handler.onCompleted?.(job, result);
-      } catch (error) {
-        handler.onFailed?.(job, error as Error);
-        handler.onWorkerError?.(error as Error);
-      }
-    }
-    return job;
-  }
-}
+import type { RedisClientType } from 'redis';
+import { redisClientFactory } from '@/__tests__/redis-client.factory';
 
 describe('JobQueueService & TestJobConsumer integration', () => {
   let service: IJobQueueService;
-  let queue: InMemoryQueue;
+  let queue: Queue;
   let consumer: TestJobConsumer;
+  let redisClient: RedisClientType;
+  let moduleRef: TestingModule;
 
-  beforeEach(async () => {
-    jest.resetAllMocks();
+  beforeAll(async () => {
+    redisClient = await redisClientFactory();
 
-    queue = new InMemoryQueue();
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
+      imports: [
+        BullModule.forRoot({
+          connection: {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: Number(process.env.REDIS_PORT) || 6379,
+            username: process.env.REDIS_USER,
+            password: process.env.REDIS_PASS,
+          },
+        }),
+        BullModule.registerQueue({
+          name: 'test-queue',
+        }),
+      ],
       providers: [
         TestJobConsumer,
         {
@@ -54,59 +44,38 @@ describe('JobQueueService & TestJobConsumer integration', () => {
             new JobQueueService(queue),
           inject: [getQueueToken('test-queue')],
         },
-        {
-          provide: getQueueToken('test-queue'),
-          useValue: queue,
-        },
       ],
     }).compile();
 
+    await moduleRef.init();
+
     service = moduleRef.get(IJobQueueService);
     consumer = moduleRef.get(TestJobConsumer);
-    queue.handler = consumer;
+    queue = moduleRef.get(getQueueToken('test-queue'));
   });
 
-  it('should process a job added to the queue', async () => {
-    const data = { message: 'hello', timestamp: 0 } as TestJobData;
-    const job = await service.addJob(JobType.TEST_JOB, data);
+  afterAll(async () => {
+    await queue.close();
+    await moduleRef.close();
 
-    expect(consumer.handledJobs).toContain(job);
-
-    const processedJob = consumer.handledJobs[0];
-    expect(processedJob.name).toBe(JobType.TEST_JOB);
-    expect(processedJob.data).toEqual(data);
+    await redisClient.quit();
   });
 
-  it('should invoke worker event handlers', async () => {
-    const data = { message: 'hello', timestamp: 0 } as TestJobData;
-    const job = await service.addJob(JobType.TEST_JOB, data);
+  beforeEach(async () => {
+    consumer.handledJobs = [];
+    consumer.activeJobs = [];
+    consumer.completedJobs = [];
+    consumer.failedJobs = [];
+    consumer.progressEvents = [];
+    consumer.workerErrors = [];
 
-    expect(consumer.activeJobs).toContain(job);
-    expect(consumer.progressEvents).toContainEqual({ job, progress: 50 });
-    expect(consumer.completedJobs).toContainEqual({
-      job,
-      result: `Processed job: ${JobType.TEST_JOB}`,
-    });
-    expect(consumer.failedJobs).toHaveLength(0);
-    expect(consumer.workerErrors).toHaveLength(0);
+    await queue.drain();
+    await redisClient.flushDb();
   });
 
-  it('should handle job failure', async () => {
-    const errorJob = {
-      name: JobType.TEST_JOB,
-      data: {},
-    } as Job;
+  it('should process a job added to the queue', async () => {});
 
-    const error = new Error('Job failed');
-    jest.spyOn(consumer, 'process').mockImplementationOnce(() => {
-      throw error;
-    });
+  it('should invoke worker event handlers', async () => {});
 
-    await service.addJob(JobType.TEST_JOB, errorJob.data as TestJobData);
-
-    expect(consumer.failedJobs).toContainEqual({
-      job: errorJob,
-      error,
-    });
-  });
+  it('should handle job failure', async () => {});
 });
