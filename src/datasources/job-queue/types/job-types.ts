@@ -1,4 +1,5 @@
 export enum JobType {
+  CSV_EXPORT = 'csv-export',
   TEST_JOB = 'test-job', // for testing purposes
 }
 
