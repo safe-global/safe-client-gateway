@@ -8,8 +8,6 @@ export enum LogType {
   ExternalRequestCacheHit = 'EXTERNAL_REQUEST_CACHE_HIT',
   ExternalRequestCacheMiss = 'EXTERNAL_REQUEST_CACHE_MISS',
   InvalidIp = 'INVALID_IP',
-  JobError = 'JOB_ERROR',
-  JobEvent = 'JOB_EVENT',
   MemoryHit = 'MEMORY_HIT',
   MemoryMiss = 'MEMORY_MISS',
   MessagePropose = 'MESSAGE_PROPOSE',

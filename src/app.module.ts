@@ -59,7 +59,6 @@ import {
 import { UsersModule } from '@/routes/users/users.module';
 import { SpacesModule } from '@/routes/spaces/spaces.module';
 import { MembersModule } from '@/routes/spaces/members.module';
-import { BullModule } from '@nestjs/bullmq';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -153,18 +152,6 @@ export class AppModule implements NestModule {
             };
           },
           inject: [ConfigService, LoggingService],
-        }),
-        BullModule.forRootAsync({
-          imports: [ConfigModule],
-          useFactory: (configService: ConfigService) => ({
-            connection: {
-              host: configService.getOrThrow<string>('redis.host'),
-              port: Number(configService.getOrThrow<string>('redis.port')),
-              username: configService.get<string>('redis.user'),
-              password: configService.get<string>('redis.pass'),
-            },
-          }),
-          inject: [ConfigService],
         }),
       ],
       providers: [
