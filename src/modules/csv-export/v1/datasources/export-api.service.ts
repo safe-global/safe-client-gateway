@@ -33,8 +33,8 @@ export class ExportApi implements IExportApi {
 
   async export(args: {
     safeAddress: `0x${string}`;
-    executionDateGte: string;
-    executionDateLte: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<TransactionExport>>> {

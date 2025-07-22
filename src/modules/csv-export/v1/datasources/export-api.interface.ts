@@ -7,8 +7,8 @@ export const IExportApi = Symbol('IExportApi');
 export interface IExportApi {
   export(args: {
     safeAddress: `0x${string}`;
-    executionDateGte: string; //todo Date?
-    executionDateLte: string; //todo Date?
+    executionDateGte: string;
+    executionDateLte: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<TransactionExport>>>;

@@ -827,8 +827,8 @@ export class CacheRouter {
   static getTransactionsExportCacheDir(args: {
     chainId: string;
     safeAddress: `0x${string}`;
-    executionDateGte: string;
-    executionDateLte: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
     limit?: number;
     offset?: number;
   }): CacheDir {

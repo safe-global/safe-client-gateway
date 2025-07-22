@@ -6,7 +6,7 @@ import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
+import { transactionExportRawBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { getAddress } from 'viem';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
@@ -48,7 +48,7 @@ describe('ExportApi', () => {
 
   describe('export', () => {
     it('should return export data', async () => {
-      const txnExport = transactionExportBuilder().build();
+      const txnExport = transactionExportRawBuilder().build();
       const page = pageBuilder().with('results', [txnExport]).build();
 
       const executionDateGte = faker.date.past().toISOString();
@@ -86,6 +86,43 @@ describe('ExportApi', () => {
             execution_date__lte: executionDateLte,
             limit: limit,
             offset: offset,
+          },
+        },
+        expireTimeSeconds: defaultExpiration,
+        notFoundExpireTimeSeconds: defaultNotFoundExpiration,
+      });
+    });
+
+    it('should return export data with only safeAddress', async () => {
+      const txnExport = transactionExportRawBuilder().build();
+      const page = pageBuilder().with('results', [txnExport]).build();
+
+      const exportUrl = `${baseUrl}/api/v1/safes/${txnExport.safe}/export`;
+      mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
+        if (exportUrl === url) {
+          return Promise.resolve(rawify(page));
+        }
+        throw new Error('Unexpected URL');
+      });
+
+      const actual = await service.export({
+        safeAddress: txnExport.safe,
+      });
+
+      expect(actual).toStrictEqual(page);
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith({
+        cacheDir: {
+          key: `${chainId}_transactions_export_${txnExport.safe}`,
+          field: `undefined_undefined_undefined_undefined`,
+        },
+        url: exportUrl,
+        networkRequest: {
+          params: {
+            execution_date__gte: undefined,
+            execution_date__lte: undefined,
+            limit: undefined,
+            offset: undefined,
           },
         },
         expireTimeSeconds: defaultExpiration,
