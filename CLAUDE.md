@@ -301,6 +301,15 @@ BullMQ is integrated for background job processing. Jobs are managed through Red
 5. **DeFi Integrations:** Staking, swapping, and bridging capabilities
 6. **Comprehensive APIs:** Full REST API coverage for all Safe wallet functionality
 
+## Development Memories
+
+- Run linting and code formatting and fix it after doing some changes
+- Pay attention to security vulnerabilities
+- Check for similar patterns in the app before implementing it.
+- Ensure code coverage for all critical functionalities
+- Check for latest documentation when introducing a new Technology to know more about it.
+- run the test:cov at the end of the implementation and fix it.
+
 This project represents a production-ready, enterprise-scale backend service with comprehensive testing, monitoring, and integration capabilities.
 
 ## Development Memories
