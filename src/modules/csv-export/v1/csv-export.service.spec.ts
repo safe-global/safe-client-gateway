@@ -13,6 +13,7 @@ import { PassThrough } from 'stream';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
+import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 
 const exportApi = {
   export: jest.fn(),
@@ -29,6 +30,12 @@ const csvService = {
   toCsv: jest.fn(),
 } as jest.MockedObjectDeep<CsvService>;
 const mockCsvService = jest.mocked(csvService);
+
+const jobQueueService = {
+  addJob: jest.fn(),
+  getJobStatus: jest.fn(),
+} as jest.MockedObjectDeep<IJobQueueService>;
+const mockJobQueueService = jest.mocked(jobQueueService);
 
 const cloudStorageApiService = {
   uploadStream: jest.fn(),
@@ -56,6 +63,7 @@ describe('CsvExportService', () => {
     service = new CsvExportService(
       mockExportApiManager,
       mockCsvService,
+      mockJobQueueService,
       mockCloudStorageApiService,
       mockConfigurationService,
     );
