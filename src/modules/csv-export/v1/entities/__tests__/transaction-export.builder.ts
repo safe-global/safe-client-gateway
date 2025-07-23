@@ -5,15 +5,14 @@ import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
 import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 
+export type TransactionExportRaw = Omit<TransactionExport, 'from'> & {
+  from_: `0x${string}`;
+};
 /**
  * Creates a builder for raw transaction export data with from_ field (before schema transformation)
  */
-export function transactionExportRawBuilder(): IBuilder<
-  Omit<TransactionExport, 'from'> & { from_: `0x${string}` }
-> {
-  return new Builder<
-    Omit<TransactionExport, 'from'> & { from_: `0x${string}` }
-  >()
+export function transactionExportRawBuilder(): IBuilder<TransactionExportRaw> {
+  return new Builder<TransactionExportRaw>()
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('from_', getAddress(faker.finance.ethereumAddress()))
     .with('to', getAddress(faker.finance.ethereumAddress()))
@@ -61,4 +60,14 @@ export function transactionExportBuilder(): IBuilder<TransactionExport> {
     .with('safeTxHash', faker.string.hexadecimal({ length: 64 }) as Hex)
     .with('method', faker.lorem.word())
     .with('contractAddress', getAddress(faker.finance.ethereumAddress()));
+}
+
+/**
+ * Converts raw transaction export data (with from_ field) to final format (with from field)
+ */
+export function convertRawToTransactionExport(
+  raw: TransactionExportRaw,
+): TransactionExport {
+  const { from_, ...rest } = raw;
+  return { ...rest, from: from_ };
 }
