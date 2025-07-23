@@ -3,8 +3,11 @@ import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storag
 import type { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import type { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
-import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
-import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
+import type { TransactionExportRaw } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
+import {
+  transactionExportRawBuilder,
+  convertRawToTransactionExport,
+} from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { faker } from '@faker-js/faker/.';
 import { PassThrough } from 'stream';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -41,8 +44,8 @@ const mockConfigurationService = jest.mocked(configurationService);
 
 describe('CsvExportService', () => {
   let service: CsvExportService;
-  const mockTransactionExport: TransactionExport =
-    transactionExportBuilder().build();
+  const mockTransactionExportRaw: TransactionExportRaw =
+    transactionExportRawBuilder().build();
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -74,7 +77,7 @@ describe('CsvExportService', () => {
 
     it('should successfully export transactions to CSV and return signed URL', async () => {
       const mockPage = pageBuilder()
-        .with('results', [mockTransactionExport])
+        .with('results', [mockTransactionExportRaw])
         .build();
 
       const expectedSignedUrl = 'https://signed-url.example.com';
@@ -110,8 +113,12 @@ describe('CsvExportService', () => {
         },
       );
 
+      const parsedTxnExport = convertRawToTransactionExport(
+        mockTransactionExportRaw,
+      );
+
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
-        mockPage.results,
+        [parsedTxnExport],
         expect.any(PassThrough),
       );
     });
@@ -138,7 +145,7 @@ describe('CsvExportService', () => {
 
     it('should throw error when upload to S3 fails', async () => {
       const mockPage = pageBuilder()
-        .with('results', [mockTransactionExport])
+        .with('results', [mockTransactionExportRaw])
         .build();
 
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
@@ -153,7 +160,7 @@ describe('CsvExportService', () => {
 
     it('should throw error when CSV generation fails', async () => {
       const mockPage = pageBuilder()
-        .with('results', [mockTransactionExport])
+        .with('results', [mockTransactionExportRaw])
         .build();
 
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
@@ -168,7 +175,7 @@ describe('CsvExportService', () => {
 
     it('should throw error when signed URL generation fails', async () => {
       const mockPage = pageBuilder()
-        .with('results', [mockTransactionExport])
+        .with('results', [mockTransactionExportRaw])
         .build();
 
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
