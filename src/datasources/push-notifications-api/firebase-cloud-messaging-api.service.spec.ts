@@ -26,6 +26,7 @@ describe('FirebaseCloudMessagingApiService', () => {
   let pushNotificationsProject: string;
   let pushNotificationsServiceAccountClientEmail: string;
   let pushNotificationsServiceAccountPrivateKey: string;
+  let oauth2TokenTtlBufferInSeconds: number;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -34,6 +35,7 @@ describe('FirebaseCloudMessagingApiService', () => {
     pushNotificationsProject = faker.word.noun();
     pushNotificationsServiceAccountClientEmail = faker.internet.email();
     pushNotificationsServiceAccountPrivateKey = faker.string.alphanumeric();
+    oauth2TokenTtlBufferInSeconds = faker.number.int({ min: 30, max: 100 });
 
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
@@ -51,6 +53,10 @@ describe('FirebaseCloudMessagingApiService', () => {
     fakeConfigurationService.set(
       'pushNotifications.serviceAccount.privateKey',
       pushNotificationsServiceAccountPrivateKey,
+    );
+    fakeConfigurationService.set(
+      'pushNotifications.oauth2TokenTtlBufferInSeconds',
+      oauth2TokenTtlBufferInSeconds,
     );
 
     fakeCacheService = new FakeCacheService();

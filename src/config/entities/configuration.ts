@@ -390,6 +390,10 @@ export default () => ({
       process.env.PUSH_NOTIFICATIONS_GET_SUBSCRIBERS_BY_SAFE_TTL_MILLISECONDS ||
       60 * 1_000
     ),
+    oauth2TokenTtlBufferInSeconds: parseInt(
+      process.env.PUSH_NOTIFICATIONS_API_OAUTH2_TOKEN_TTL_BUFFER_IN_SECONDS ??
+        `${120}`,
+    ),
   },
   redis: {
     user: process.env.REDIS_USER,

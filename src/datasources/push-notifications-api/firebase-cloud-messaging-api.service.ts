@@ -28,7 +28,6 @@ import { getFirstAvailable } from '@/domain/common/utils/array';
 export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
   private static readonly OAuth2TokenUrl =
     'https://oauth2.googleapis.com/token';
-  private static readonly OAuth2TokenTtlBufferInSeconds = 5;
   private static readonly Scope =
     'https://www.googleapis.com/auth/firebase.messaging';
 
@@ -40,6 +39,8 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
     'data.error_description',
     'data.error.message',
   ];
+
+  private static OAuth2TokenTtlBufferInSeconds: number;
 
   private readonly baseUrl: string;
   private readonly project: string;
@@ -69,6 +70,10 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
     this.privateKey = this.configurationService.getOrThrow<string>(
       'pushNotifications.serviceAccount.privateKey',
     );
+    FirebaseCloudMessagingApiService.OAuth2TokenTtlBufferInSeconds =
+      this.configurationService.getOrThrow<number>(
+        'pushNotifications.oauth2TokenTtlBufferInSeconds',
+      );
   }
 
   /**
