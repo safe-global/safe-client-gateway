@@ -1,6 +1,10 @@
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
+import { JobType } from '@/datasources/job-queue/types/job-types';
+import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import { CsvExportJobData } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
+
 import { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 import {
   TransactionExport,
@@ -8,16 +12,20 @@ import {
 } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PassThrough } from 'stream';
+import { Job } from 'bullmq';
 
 @Injectable()
 export class CsvExportService {
   private readonly signedUrlTtlSeconds: number;
   private readonly CONTENT_TYPE = 'text/csv';
 
+  //TODO where to put JobQueueShutdownHook ?
   constructor(
     @Inject(IExportApiManager)
     private readonly exportApiManager: IExportApiManager,
     private readonly csvService: CsvService,
+    @Inject(IJobQueueService)
+    private readonly jobQueueService: IJobQueueService,
     @Inject(ICloudStorageApiService)
     private readonly cloudStorageApiService: ICloudStorageApiService,
     @Inject(IConfigurationService)
@@ -26,6 +34,19 @@ export class CsvExportService {
     this.signedUrlTtlSeconds = this.configurationService.getOrThrow<number>(
       'csvExport.signedUrlTtlSeconds',
     );
+  }
+
+  async registerJob(args: {
+    chainId: string;
+    safeAddress: `0x${string}`;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Job<CsvExportJobData>> {
+    const data: CsvExportJobData = { ...args, timestamp: Date.now() };
+    //TODO need await here?
+    return await this.jobQueueService.addJob(JobType.CSV_EXPORT, data);
   }
 
   /**
