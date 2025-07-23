@@ -252,6 +252,7 @@ export default (): ReturnType<typeof configuration> => ({
       privateKey: faker.string.alphanumeric(),
     },
     getSubscribersBySafeTtlMilliseconds: faker.number.int({ min: 1, max: 100 }),
+    oauth2TokenTtlBufferInSeconds: faker.number.int({ min: 30, max: 100 }),
   },
   redis: {
     user: process.env.REDIS_USER,

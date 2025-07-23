@@ -31,6 +31,11 @@ export const RootConfigurationSchema = z
     PUSH_NOTIFICATIONS_API_PROJECT: z.string(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: z.string().email(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY: z.string(),
+    PUSH_NOTIFICATIONS_API_OAUTH2_TOKEN_TTL_BUFFER_IN_SECONDS: z
+      .number({ coerce: true })
+      .min(1)
+      .max(3599)
+      .optional(),
     RELAY_PROVIDER_API_KEY_OPTIMISM: z.string(),
     RELAY_PROVIDER_API_KEY_BSC: z.string(),
     RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: z.string(),
