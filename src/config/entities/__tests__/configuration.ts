@@ -359,5 +359,6 @@ export default (): ReturnType<typeof configuration> => ({
         basePath: faker.system.directoryPath(),
       },
     },
+    signedUrlTtlSeconds: faker.number.int(),
   },
 });
