@@ -26,7 +26,7 @@ export const TransactionExportSchema = z
   })
   .transform(({ from_, ...rest }) => ({
     ...rest,
-    from: from_, //transform to from
+    from: from_,
   }));
 
 export const TransactionExportPageSchema = buildPageSchema(
