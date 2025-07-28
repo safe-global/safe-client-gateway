@@ -68,7 +68,6 @@ export class CsvExportService {
       throw new NotFoundException('No data found for the given parameters');
     }
 
-    // Generate CSV file and upload to cloud storage
     const fileName = this.generateFileName(
       chainId,
       safeAddress,
@@ -77,7 +76,6 @@ export class CsvExportService {
     );
     await this.uploadCsvToStorage(fileName, page.results);
 
-    // Return signed URL for file access
     return await this.cloudStorageApiService.getSignedUrl(
       fileName,
       this.signedUrlTtlSeconds,
