@@ -7,7 +7,7 @@ import { JobData, JobTypeName } from '@/datasources/job-queue/types/job-types';
 export class JobQueueService implements IJobQueueService {
   constructor(private readonly queue: Queue) {}
 
-  public async getJobStatus(jobId: string): Promise<Job | null> {
+  public async getJob(jobId: string): Promise<Job | null> {
     return await this.queue.getJob(jobId);
   }
 

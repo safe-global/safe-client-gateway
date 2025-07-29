@@ -1,7 +1,11 @@
 import { CSV_EXPORT_QUEUE } from '@/domain/common/entities/jobs.constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { CsvExportJobData } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
+import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
+import {
+  CsvExportJobData,
+  CsvExportJobResponse,
+} from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -10,24 +14,55 @@ import { Job } from 'bullmq';
 export class CsvExportConsumer extends WorkerHost {
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    @Inject() private readonly csvExportService: CsvExportService,
   ) {
     super();
   }
 
-  process(job: Job<CsvExportJobData>): Promise<void> {
-    throw new Error(`Job ${job.name} is not implemented yet.`);
-  }
-
-  @OnWorkerEvent('completed')
-  onCompleted(job: Job, result: unknown): void {
+  async process(
+    job: Job<CsvExportJobData, CsvExportJobResponse>,
+  ): Promise<CsvExportJobResponse> {
     this.loggingService.info({
       type: LogType.JobEvent,
       source: 'CsvExportConsumer',
-      event: `Job ${job.id} completed; returned ${result}`,
+      event: `Received job ${job.id}, start processing`,
+    });
+
+    const {
+      chainId,
+      safeAddress,
+      executionDateGte,
+      executionDateLte,
+      limit,
+      offset,
+    } = job.data;
+    const signedUrl = await this.csvExportService.export(
+      {
+        chainId,
+        safeAddress,
+        executionDateGte,
+        executionDateLte,
+        limit,
+        offset,
+      },
+      async (progress: number) => {
+        await job.updateProgress(progress);
+      },
+    );
+
+    return { downloadUrl: signedUrl };
+  }
+
+  @OnWorkerEvent('completed')
+  onCompleted(job: Job, result: CsvExportJobResponse): void {
+    this.loggingService.info({
+      type: LogType.JobEvent,
+      source: 'CsvExportConsumer',
+      event: `Job ${job.id} completed, signed url: ${result.downloadUrl}`, //TODO should we log the URL ?
     });
   }
 
-  // Fired when a job fails (after all retries)
+  // Fired when a job fails after all retries
   @OnWorkerEvent('failed')
   onFailed(job: Job, error: Error): void {
     this.loggingService.error({
@@ -37,7 +72,6 @@ export class CsvExportConsumer extends WorkerHost {
     });
   }
 
-  // Fired whenever `process()` calls job.updateProgress()
   @OnWorkerEvent('progress')
   onProgress(job: Job, progress: number): void {
     this.loggingService.info({

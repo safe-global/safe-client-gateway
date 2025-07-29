@@ -17,15 +17,15 @@ describe('JobQueueService', () => {
     service = new JobQueueService(mockQueue);
   });
 
-  describe('getJobStatus', () => {
-    it('should get job status from queue', async () => {
+  describe('getJob', () => {
+    it('should get job data from queue', async () => {
       const jobId = 'test-job-id';
       const mockJob = { id: jobId, name: 'hello-world' } as unknown as Awaited<
         ReturnType<Queue['getJob']>
       >;
       mockQueue.getJob.mockResolvedValue(mockJob);
 
-      const result = await service.getJobStatus(jobId);
+      const result = await service.getJob(jobId);
 
       expect(mockQueue.getJob).toHaveBeenCalledWith(jobId);
       expect(result).toBe(mockJob);
@@ -35,7 +35,7 @@ describe('JobQueueService', () => {
       const jobId = 'non-existent-job-id';
       mockQueue.getJob.mockResolvedValue(null);
 
-      const result = await service.getJobStatus(jobId);
+      const result = await service.getJob(jobId);
 
       expect(mockQueue.getJob).toHaveBeenCalledWith(jobId);
       expect(result).toBeNull();
@@ -46,7 +46,7 @@ describe('JobQueueService', () => {
       const error = new Error('Queue error');
       mockQueue.getJob.mockRejectedValue(error);
 
-      await expect(service.getJobStatus(jobId)).rejects.toThrow('Queue error');
+      await expect(service.getJob(jobId)).rejects.toThrow('Queue error');
       expect(mockQueue.getJob).toHaveBeenCalledWith(jobId);
     });
   });
