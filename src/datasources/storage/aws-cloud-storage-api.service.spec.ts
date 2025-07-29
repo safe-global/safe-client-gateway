@@ -4,17 +4,28 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { faker } from '@faker-js/faker/.';
 import { sdkStreamMixin } from '@smithy/util-stream';
 import { mockClient } from 'aws-sdk-client-mock';
 import { Readable } from 'stream';
 
+jest.mock('@aws-sdk/s3-request-presigner', () => ({
+  getSignedUrl: jest.fn(),
+}));
+
 describe('AwsCloudStorageApiService', () => {
+  let target: AwsCloudStorageApiService;
+
   const s3Mock = mockClient(S3Client);
   const bucketName = faker.string.alphanumeric();
   const basePath = 'base/path';
 
-  const target = new AwsCloudStorageApiService(bucketName, basePath);
+  beforeEach(() => {
+    jest.resetAllMocks();
+
+    target = new AwsCloudStorageApiService(bucketName, basePath);
+  });
 
   describe('getFileContent', () => {
     it('should return file content', async () => {
@@ -93,6 +104,46 @@ describe('AwsCloudStorageApiService', () => {
       await expect(target.uploadStream(fileName, body)).rejects.toThrow(
         'Error uploading content to S3: PutObject error',
       );
+    });
+  });
+
+  describe('getSignedUrl', () => {
+    const getSignedUrlMock = getSignedUrl as jest.MockedFunction<
+      typeof getSignedUrl
+    >;
+
+    it('should generate a signed URL', async () => {
+      const fileName = 'test-file.csv';
+      const expiresIn = 3600;
+      const expectedSignedUrl = 'https://signed-url.example.com';
+
+      getSignedUrlMock.mockResolvedValue(expectedSignedUrl);
+
+      const result = await target.getSignedUrl(fileName, expiresIn);
+
+      expect(result).toBe(expectedSignedUrl);
+      expect(getSignedUrlMock).toHaveBeenCalledWith(
+        expect.any(S3Client),
+        expect.objectContaining({
+          input: {
+            Bucket: bucketName,
+            Key: `base/path/${fileName}`,
+          },
+        }),
+        { expiresIn },
+      );
+    });
+
+    it('should throw error when generating signed URL fails', async () => {
+      const fileName = 'test-file.csv';
+      const expiresIn = 3600;
+
+      getSignedUrlMock.mockRejectedValue(new Error('Signed URL error'));
+
+      await expect(target.getSignedUrl(fileName, expiresIn)).rejects.toThrow(
+        'Error generating signed URL for S3: Signed URL error',
+      );
+      expect(getSignedUrlMock).toHaveBeenCalled();
     });
   });
 });

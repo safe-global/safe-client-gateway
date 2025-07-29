@@ -567,5 +567,10 @@ export default () => ({
         basePath: process.env.AWS_S3_CSV_EXPORT_PATH || 'assets/csv-export',
       },
     },
+    // The time-to-live (TTL) for the signed URLs generated for CSV exports.
+    // Defaults to 3600 seconds (1 hour).
+    signedUrlTtlSeconds: parseInt(
+      process.env.CSV_EXPORT_SIGNED_URL_TTL_SECONDS ?? `${60 * 60}`,
+    ),
   },
 });

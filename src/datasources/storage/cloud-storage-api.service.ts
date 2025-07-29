@@ -23,4 +23,12 @@ export interface ICloudStorageApiService {
     body: Readable,
     options: Partial<PutObjectCommandInput>,
   ) => Promise<string>;
+
+  /**
+   * Generates a signed URL for accessing a file in S3
+   * @param {string} fileName The name of the file
+   * @param {number} expiresIn The number of seconds until the URL expires
+   * @returns {Promise<string>} The signed URL
+   */
+  getSignedUrl: (fileName: string, expiresIn: number) => Promise<string>;
 }
