@@ -14,6 +14,8 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
 import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { Page } from '@/domain/entities/page.entity';
 
 const exportApi = {
   export: jest.fn(),
@@ -33,7 +35,7 @@ const mockCsvService = jest.mocked(csvService);
 
 const jobQueueService = {
   addJob: jest.fn(),
-  getJobStatus: jest.fn(),
+  getJob: jest.fn(),
 } as jest.MockedObjectDeep<IJobQueueService>;
 const mockJobQueueService = jest.mocked(jobQueueService);
 
@@ -49,8 +51,15 @@ const configurationService = {
 } as jest.MockedObjectDeep<IConfigurationService>;
 const mockConfigurationService = jest.mocked(configurationService);
 
+const loggingService = {
+  info: jest.fn(),
+  error: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+const mockLoggingService = jest.mocked(loggingService);
+
 describe('CsvExportService', () => {
   let service: CsvExportService;
+  let mockPage: Page<TransactionExportRaw>;
   const mockTransactionExportRaw: TransactionExportRaw =
     transactionExportRawBuilder().build();
 
@@ -66,14 +75,20 @@ describe('CsvExportService', () => {
       mockJobQueueService,
       mockCloudStorageApiService,
       mockConfigurationService,
+      mockLoggingService,
     );
+
+    mockPage = pageBuilder()
+      .with('results', [mockTransactionExportRaw])
+      .with('next', null)
+      .build() as Page<TransactionExportRaw>;
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('exportTransactions', () => {
+  describe('export', () => {
     const exportArgs = {
       chainId: faker.string.numeric(1),
       safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
@@ -84,10 +99,6 @@ describe('CsvExportService', () => {
     };
 
     it('should successfully export transactions to CSV and return signed URL', async () => {
-      const mockPage = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
-        .build();
-
       const expectedSignedUrl = 'https://signed-url.example.com';
 
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
@@ -98,13 +109,15 @@ describe('CsvExportService', () => {
         expectedSignedUrl,
       );
 
-      const result = await service.exportTransactions(exportArgs);
+      const result = await service.export(exportArgs);
 
       expect(result).toBe(expectedSignedUrl);
 
       expect(mockExportApiManager.getApi).toHaveBeenCalledWith(
         exportArgs.chainId,
       );
+
+      expect(mockExportApi.export).toHaveBeenCalledTimes(1);
       expect(mockExportApi.export).toHaveBeenCalledWith({
         safeAddress: exportArgs.safeAddress,
         executionDateGte: exportArgs.executionDateGte,
@@ -131,61 +144,59 @@ describe('CsvExportService', () => {
       );
     });
 
-    it('should throw error when no data found', async () => {
-      const mockPage = pageBuilder()
+    it('should generate empty CSV when no data found', async () => {
+      mockPage = pageBuilder()
         .with('results', [])
-        .with('count', 0)
-        .build();
+        .with('next', null)
+        .build() as Page<TransactionExportRaw>;
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
 
-      await expect(service.exportTransactions(exportArgs)).rejects.toThrow(
-        'No data found for the given parameters',
+      const expectedSignedUrl = 'https://signed-url.example.com';
+      mockCloudStorageApiService.uploadStream.mockResolvedValue(
+        's3://bucket/file.csv',
+      );
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        expectedSignedUrl,
+      );
+
+      const result = await service.export(exportArgs);
+
+      expect(result).toBe(expectedSignedUrl);
+
+      // Verify empty array was passed to CSV service
+      expect(mockCsvService.toCsv).toHaveBeenCalledWith(
+        [],
+        expect.any(PassThrough),
       );
     });
 
     it('should throw error when exportApi call fails', async () => {
       mockExportApi.export.mockRejectedValue(new Error('API Error'));
 
-      await expect(service.exportTransactions(exportArgs)).rejects.toThrow(
-        'API Error',
-      );
+      await expect(service.export(exportArgs)).rejects.toThrow('API Error');
     });
 
     it('should throw error when upload to S3 fails', async () => {
-      const mockPage = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
-        .build();
-
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
       mockCloudStorageApiService.uploadStream.mockRejectedValue(
         new Error('Upload failed'),
       );
 
-      await expect(service.exportTransactions(exportArgs)).rejects.toThrow(
-        'Upload failed',
-      );
+      await expect(service.export(exportArgs)).rejects.toThrow('Upload failed');
     });
 
     it('should throw error when CSV generation fails', async () => {
-      const mockPage = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
-        .build();
-
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
       mockCsvService.toCsv.mockRejectedValue(
         new Error('CSV generation failed'),
       );
 
-      await expect(service.exportTransactions(exportArgs)).rejects.toThrow(
+      await expect(service.export(exportArgs)).rejects.toThrow(
         'CSV generation failed',
       );
     });
 
     it('should throw error when signed URL generation fails', async () => {
-      const mockPage = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
-        .build();
-
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
       mockCloudStorageApiService.uploadStream.mockResolvedValue(
         's3://bucket/file.csv',
@@ -194,9 +205,294 @@ describe('CsvExportService', () => {
         new Error('Signed URL generation failed'),
       );
 
-      await expect(service.exportTransactions(exportArgs)).rejects.toThrow(
+      await expect(service.export(exportArgs)).rejects.toThrow(
         'Signed URL generation failed',
       );
+    });
+
+    it('should handle pagination and fetch all pages', async () => {
+      const expectedSignedUrl = 'https://signed-url.example.com';
+      const mockTransactionExportRaw2 = transactionExportRawBuilder().build();
+      const mockTransactionExportRaw3 = transactionExportRawBuilder().build();
+
+      const mockPage1 = pageBuilder()
+        .with('results', [mockTransactionExportRaw])
+        .with('next', 'https://api.example.com/export?limit=100&offset=100')
+        .with('count', 3)
+        .build();
+
+      const mockPage2 = pageBuilder()
+        .with('results', [mockTransactionExportRaw2])
+        .with('next', 'https://api.example.com/export?limit=100&offset=200')
+        .with('count', 3)
+        .build();
+
+      // Third page without next URL (last page)
+      const mockPage3 = pageBuilder()
+        .with('results', [mockTransactionExportRaw3])
+        .with('next', null)
+        .with('count', 3)
+        .build();
+
+      mockExportApi.export
+        .mockResolvedValueOnce(rawify(mockPage1))
+        .mockResolvedValueOnce(rawify(mockPage2))
+        .mockResolvedValueOnce(rawify(mockPage3));
+
+      mockCloudStorageApiService.uploadStream.mockResolvedValue(
+        's3://bucket/file.csv',
+      );
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        expectedSignedUrl,
+      );
+
+      const result = await service.export(exportArgs);
+
+      expect(result).toBe(expectedSignedUrl);
+
+      expect(mockExportApi.export).toHaveBeenCalledTimes(3);
+
+      // Verify first call uses original parameters
+      expect(mockExportApi.export).toHaveBeenNthCalledWith(1, {
+        safeAddress: exportArgs.safeAddress,
+        executionDateGte: exportArgs.executionDateGte,
+        executionDateLte: exportArgs.executionDateLte,
+        limit: exportArgs.limit,
+        offset: exportArgs.offset,
+      });
+
+      // Verify second call uses parsed parameters from next URL
+      expect(mockExportApi.export).toHaveBeenNthCalledWith(2, {
+        safeAddress: exportArgs.safeAddress,
+        executionDateGte: exportArgs.executionDateGte,
+        executionDateLte: exportArgs.executionDateLte,
+        limit: 100,
+        offset: 100,
+      });
+
+      // Verify third call uses parsed parameters from next URL
+      expect(mockExportApi.export).toHaveBeenNthCalledWith(3, {
+        safeAddress: exportArgs.safeAddress,
+        executionDateGte: exportArgs.executionDateGte,
+        executionDateLte: exportArgs.executionDateLte,
+        limit: 100,
+        offset: 200,
+      });
+
+      const expectedCombinedResults = [
+        convertRawToTransactionExport(mockTransactionExportRaw),
+        convertRawToTransactionExport(mockTransactionExportRaw2),
+        convertRawToTransactionExport(mockTransactionExportRaw3),
+      ];
+
+      expect(mockCsvService.toCsv).toHaveBeenCalledWith(
+        expectedCombinedResults,
+        expect.any(PassThrough),
+      );
+
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: expect.any(String),
+          chainId: exportArgs.chainId,
+          safeAddress: exportArgs.safeAddress,
+          pageCount: 1,
+          resultsCount: 1,
+          totalCount: 3,
+          hasNext: true,
+        }),
+      );
+
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: expect.any(String),
+          chainId: exportArgs.chainId,
+          safeAddress: exportArgs.safeAddress,
+          pageCount: 2,
+          resultsCount: 1,
+          totalCount: 3,
+          hasNext: true,
+        }),
+      );
+
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: expect.any(String),
+          chainId: exportArgs.chainId,
+          safeAddress: exportArgs.safeAddress,
+          pageCount: 3,
+          resultsCount: 1,
+          totalCount: 3,
+          hasNext: false,
+        }),
+      );
+
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: expect.any(String),
+          event: 'All pages (3) have been succesfully fetched',
+        }),
+      );
+    });
+
+    it('should handle pagination with default values from URL params', async () => {
+      const mockPage1 = pageBuilder()
+        .with('results', [mockTransactionExportRaw])
+        .with('next', 'https://api.example.com/export')
+        .with('count', 1)
+        .build();
+
+      const mockPage2 = pageBuilder()
+        .with('results', [])
+        .with('next', null)
+        .with('count', 1)
+        .build();
+
+      mockExportApi.export
+        .mockResolvedValueOnce(rawify(mockPage1))
+        .mockResolvedValueOnce(rawify(mockPage2));
+
+      mockCloudStorageApiService.uploadStream.mockResolvedValue(
+        's3://bucket/file.csv',
+      );
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        'https://signed-url.example.com',
+      );
+
+      await service.export(exportArgs);
+
+      // Verify second call uses default values
+      expect(mockExportApi.export).toHaveBeenNthCalledWith(2, {
+        safeAddress: exportArgs.safeAddress,
+        executionDateGte: exportArgs.executionDateGte,
+        executionDateLte: exportArgs.executionDateLte,
+        limit: 100,
+        offset: 0,
+      });
+    });
+
+    it('should log and throw error when individual page fails', async () => {
+      mockPage = pageBuilder()
+        .with('results', [mockTransactionExportRaw])
+        .with('next', 'https://api.example.com/export?limit=100&offset=100')
+        .with('count', 2)
+        .build() as Page<TransactionExportRaw>;
+
+      mockExportApi.export
+        .mockResolvedValueOnce(rawify(mockPage))
+        .mockRejectedValueOnce(new Error('Second page API error'));
+
+      await expect(service.export(exportArgs)).rejects.toThrow(
+        'Second page API error',
+      );
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: expect.any(String),
+          chainId: exportArgs.chainId,
+          safeAddress: exportArgs.safeAddress,
+          pageCount: 2,
+          error: expect.any(Error),
+        }),
+      );
+    });
+
+    it('should generate correct filename when dates are not provided', async () => {
+      const exportArgsWithoutDates = {
+        chainId: faker.string.numeric(1),
+        safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+      };
+
+      const expectedSignedUrl = 'https://signed-url.example.com';
+
+      mockExportApi.export.mockResolvedValue(rawify(mockPage));
+      mockCloudStorageApiService.uploadStream.mockResolvedValue(
+        's3://bucket/file.csv',
+      );
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        expectedSignedUrl,
+      );
+
+      const result = await service.export(exportArgsWithoutDates);
+
+      expect(result).toBe(expectedSignedUrl);
+
+      expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
+        `${exportArgsWithoutDates.chainId}_${exportArgsWithoutDates.safeAddress}_-_-.csv`,
+        expect.any(PassThrough),
+        {
+          ContentType: 'text/csv',
+        },
+      );
+    });
+
+    it('should generate correct filename when only one date is provided', async () => {
+      const exportArgsPartialDates = {
+        chainId: faker.string.numeric(1),
+        safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        executionDateGte: faker.date.past().toISOString().split('T')[0],
+      };
+
+      const expectedSignedUrl = 'https://signed-url.example.com';
+
+      mockExportApi.export.mockResolvedValue(rawify(mockPage));
+      mockCloudStorageApiService.uploadStream.mockResolvedValue(
+        's3://bucket/file.csv',
+      );
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        expectedSignedUrl,
+      );
+
+      const result = await service.export(exportArgsPartialDates);
+
+      expect(result).toBe(expectedSignedUrl);
+
+      expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
+        `${exportArgsPartialDates.chainId}_${exportArgsPartialDates.safeAddress}_${exportArgsPartialDates.executionDateGte}_-.csv`,
+        expect.any(PassThrough),
+        {
+          ContentType: 'text/csv',
+        },
+      );
+    });
+
+    it('should call progress callback with correct progress values', async () => {
+      const progressCallback = jest.fn().mockResolvedValue(undefined);
+      const mockTransactionExportRaw2 = transactionExportRawBuilder().build();
+
+      const mockPage1 = pageBuilder()
+        .with('results', [mockTransactionExportRaw])
+        .with('next', 'https://api.example.com/export?limit=100&offset=100')
+        .with('count', 5)
+        .build();
+
+      const mockPage2 = pageBuilder()
+        .with('results', [mockTransactionExportRaw2])
+        .with('next', null)
+        .with('count', 5)
+        .build();
+
+      mockExportApi.export
+        .mockResolvedValueOnce(rawify(mockPage1))
+        .mockResolvedValueOnce(rawify(mockPage2));
+
+      mockCloudStorageApiService.uploadStream.mockResolvedValue(
+        's3://bucket/file.csv',
+      );
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        'https://signed-url.example.com',
+      );
+
+      await service.export(exportArgs, progressCallback);
+
+      expect(progressCallback).toHaveBeenCalledTimes(5);
+      // First page: 1/5 * 60 = 12%
+      expect(progressCallback).toHaveBeenNthCalledWith(1, 12);
+      // Second page: 2/5 * 100 * 0.6 = 24%
+      expect(progressCallback).toHaveBeenNthCalledWith(2, 24);
+      // Rest of operations
+      expect(progressCallback).toHaveBeenNthCalledWith(3, 80);
+      expect(progressCallback).toHaveBeenNthCalledWith(4, 90);
+      expect(progressCallback).toHaveBeenNthCalledWith(5, 100);
     });
   });
 });

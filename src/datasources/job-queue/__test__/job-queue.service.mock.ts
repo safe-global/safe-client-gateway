@@ -6,7 +6,7 @@ export interface TestJobData extends JobData {
 }
 
 export const mockJobQueueService = {
-  getJobStatus: jest.fn().mockResolvedValue(null),
+  getJob: jest.fn().mockResolvedValue(null),
   addJob: jest.fn().mockResolvedValue({
     id: 'mock-job-id',
     name: 'mock-job-name',
@@ -15,5 +15,6 @@ export const mockJobQueueService = {
     opts: {},
     progress: 0,
     timestamp: Date.now(),
+    returnvalue: 'mock-return-value',
   }),
 } as jest.MockedObjectDeep<IJobQueueService>;

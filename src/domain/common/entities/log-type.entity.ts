@@ -19,4 +19,6 @@ export enum LogType {
   RateLimit = 'RATE_LIMIT',
   TransactionPropose = 'TRANSACTION_PROPOSE',
   TransactionValidity = 'TRANSACTION_VALIDITY',
+  TxnExportFetchRequest = 'TRANSACTION_EXPORT_FETCH_REQUEST',
+  TxnExportFetchRequestError = 'TRANSACTION_EXPORT_FETCH_REQUEST_ERROR',
 }
