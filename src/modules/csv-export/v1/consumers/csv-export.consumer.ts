@@ -36,6 +36,7 @@ export class CsvExportConsumer extends WorkerHost {
       limit,
       offset,
     } = job.data;
+
     const signedUrl = await this.csvExportService.export(
       {
         chainId,

@@ -28,7 +28,7 @@ import {
 //TODO create a separate path in swagger
 @ApiTags('export')
 @Controller({
-  path: '',
+  path: 'export',
   version: '1',
 })
 export class CsvExportController {
@@ -59,6 +59,7 @@ export class CsvExportController {
       limit,
       offset,
     };
+    //TODO change the response type
     return this.csvExportService.registerJob(args);
   }
 

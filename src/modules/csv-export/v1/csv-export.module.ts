@@ -27,8 +27,11 @@ import { CloudStorageModule } from '@/datasources/storage/cloud-storage.module';
         attempts: 3,
       },
     }),
+    CloudStorageModule.register(
+      'csvExport.fileStorage.aws.bucketName',
+      'csvExport.fileStorage.aws.basePath',
+    ),
     ExportApiManagerModule,
-    CloudStorageModule,
     CsvModule,
   ],
   controllers: [CsvExportController],

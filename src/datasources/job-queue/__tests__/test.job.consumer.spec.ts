@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
-import { TestJobConsumer } from '@/datasources/job-queue/__test__/test.job.consumer';
+import { TestJobConsumer } from '@/datasources/job-queue/__tests__/test.job.consumer';
 import { faker } from '@faker-js/faker/.';
-import type { TestJobData } from '@/datasources/job-queue/__test__/job-queue.service.mock';
+import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 
 describe('TestJobConsumer', () => {
   let consumer: TestJobConsumer;
