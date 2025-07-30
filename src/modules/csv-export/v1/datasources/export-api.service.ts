@@ -39,8 +39,8 @@ export class ExportApi implements IExportApi {
     offset?: number;
   }): Promise<Raw<Page<TransactionExport>>> {
     try {
-      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/export`;
-      return await this.dataSource.get<Page<TransactionExport>>({
+      const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/export/`;
+      return await this.dataSource.get<Raw<Page<TransactionExport>>>({
         cacheDir: CacheRouter.getTransactionsExportCacheDir({
           ...args,
           chainId: this.chainId,

@@ -13,14 +13,28 @@ import {
 } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 import { Inject, Injectable } from '@nestjs/common';
 import { PassThrough } from 'stream';
-import { Job } from 'bullmq';
+import path from 'path';
+import fs from 'fs';
+import { pipeline } from 'stream/promises';
+import { Job, UnrecoverableError } from 'bullmq';
 import { JobStatusResponseDto } from '@/routes/jobs/entities/job-status.dto';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
+import { asError } from '@/logging/utils';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 
 @Injectable()
 export class CsvExportService {
   private readonly signedUrlTtlSeconds: number;
-  private readonly CONTENT_TYPE = 'text/csv';
+  private readonly storageType: FileStorageType;
+  private readonly localBaseDir: string;
+
+  private static readonly CONTENT_TYPE = 'text/csv';
+  private static readonly CSV_OPTIONS = {
+    cast: {
+      date: (value: Date): string => value.toISOString(),
+    },
+  };
 
   private static readonly DEFAULT_LIMIT = '100';
   private static readonly DEFAULT_OFFSET = '0';
@@ -40,6 +54,12 @@ export class CsvExportService {
   ) {
     this.signedUrlTtlSeconds = this.configurationService.getOrThrow<number>(
       'csvExport.signedUrlTtlSeconds',
+    );
+    this.storageType = this.configurationService.getOrThrow<FileStorageType>(
+      'csvExport.fileStorage.type',
+    );
+    this.localBaseDir = this.configurationService.getOrThrow<string>(
+      'csvExport.fileStorage.local.baseDir',
     );
   }
 
@@ -61,7 +81,30 @@ export class CsvExportService {
   }
 
   /**
-   * Exports transactions to CSV format and returns a signed URL for download
+   * Fetch job's data by ID
+   * @param jobId Id of the job
+   * @returns {Promise<JobStatusResponseDto>} Job-related data or error in case it's not found
+   */
+  async getExportStatus(jobId: string): Promise<JobStatusResponseDto> {
+    const job = await this.jobQueueService.getJob(jobId);
+    if (!job) {
+      return { error: 'Job not found' };
+    }
+
+    return {
+      id: job.id,
+      name: job.name,
+      data: job.data as CsvExportJobData,
+      progress: job.progress,
+      processedOn: job.processedOn,
+      finishedOn: job.finishedOn,
+      failedReason: job.failedReason,
+      returnValue: job.returnvalue,
+    };
+  }
+
+  /**
+   * Exports transactions to CSV format and returns a signed URL (or local path) for download
    * @param args Export parameters including chain ID, safe address, and date range
    * @param onProgress Optional callback to report progress (0-100)
    * @returns {Promise<string>} Signed URL for accessing the generated CSV file
@@ -106,13 +149,10 @@ export class CsvExportService {
     );
     await this.uploadCsvToStorage(fileName, transactionExports, onProgress);
 
-    const signedUrl = await this.cloudStorageApiService.getSignedUrl(
-      fileName,
-      this.signedUrlTtlSeconds,
-    );
+    const downloadUrl = await this.getFileUrl(fileName);
 
     await onProgress(100);
-    return signedUrl;
+    return downloadUrl;
   }
 
   /**
@@ -194,8 +234,12 @@ export class CsvExportService {
           chainId,
           safeAddress,
           pageCount: pageCount + 1,
-          error,
+          error: asError(error),
         });
+        if (error instanceof DataSourceError && error.code === 404) {
+          // move the job to failed without retries (Bullmq-specific error)
+          throw new UnrecoverableError('Transactions not found.');
+        }
         throw error;
       }
     } while (nextUrl);
@@ -208,59 +252,41 @@ export class CsvExportService {
     return results;
   }
 
-  /**
-   * Fetch job's data by ID
-   * @param jobId Id of the job
-   * @returns {Promise<JobStatusResponseDto>} Job-related data or error in case it's not found
-   */
-  async getExportStatus(jobId: string): Promise<JobStatusResponseDto> {
-    const job = await this.jobQueueService.getJob(jobId);
-    if (!job) {
-      return { error: 'Job not found' };
-    }
-
-    return {
-      id: job.id,
-      name: job.name,
-      data: job.data as CsvExportJobData,
-      progress: job.progress,
-      processedOn: job.processedOn,
-      finishedOn: job.finishedOn,
-      failedReason: job.failedReason,
-      returnValue: job.returnvalue,
-    };
-  }
-
-  private generateFileName(
-    chainId: string,
-    safeAddress: string,
-    executionDateGte?: string,
-    executionDateLte?: string,
-  ): string {
-    return `${chainId}_${safeAddress}_${executionDateGte || '-'}_${executionDateLte || '-'}.csv`;
-  }
-
   private async uploadCsvToStorage(
     fileName: string,
     results: Array<TransactionExport>,
     onProgress: (percentage: number) => Promise<void>,
   ): Promise<void> {
     const passThrough = new PassThrough();
-    const uploadPromise = this.cloudStorageApiService.uploadStream(
-      fileName,
-      passThrough,
-      {
-        ContentType: this.CONTENT_TYPE,
-      },
-    );
 
-    await this.csvService.toCsv(results, passThrough);
+    const uploadPromise =
+      this.storageType === 'aws'
+        ? this.cloudStorageApiService.uploadStream(fileName, passThrough, {
+            ContentType: CsvExportService.CONTENT_TYPE,
+          })
+        : this.uploadToLocalStorage(fileName, passThrough);
+
+    await this.csvService.toCsv(
+      results,
+      passThrough,
+      CsvExportService.CSV_OPTIONS,
+    );
     await onProgress(80);
 
     passThrough.end();
 
     await uploadPromise;
     await onProgress(90);
+  }
+
+  private async uploadToLocalStorage(
+    fileName: string,
+    passThrough: PassThrough,
+  ): Promise<void> {
+    const writable = fs.createWriteStream(
+      path.resolve(this.localBaseDir, fileName),
+    );
+    return pipeline(passThrough, writable);
   }
 
   /**
@@ -277,5 +303,24 @@ export class CsvExportService {
       progress = Math.round((currentCount / totalCount) * 60);
     }
     await onProgress(progress);
+  }
+
+  //TODO timestamp of creation so the prev arent overriden
+  private generateFileName(
+    chainId: string,
+    safeAddress: string,
+    executionDateGte?: string,
+    executionDateLte?: string,
+  ): string {
+    return `${chainId}_${safeAddress}_${executionDateGte || '-'}_${executionDateLte || '-'}.csv`;
+  }
+
+  private async getFileUrl(fileName: string): Promise<string> {
+    return this.storageType === 'aws'
+      ? await this.cloudStorageApiService.getSignedUrl(
+          fileName,
+          this.signedUrlTtlSeconds,
+        )
+      : path.resolve(this.localBaseDir, fileName);
   }
 }

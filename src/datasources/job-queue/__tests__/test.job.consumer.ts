@@ -1,4 +1,4 @@
-import { TestJobData } from '@/datasources/job-queue/__test__/job-queue.service.mock';
+import { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 

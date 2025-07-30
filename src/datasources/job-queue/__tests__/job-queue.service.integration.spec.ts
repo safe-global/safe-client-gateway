@@ -2,10 +2,10 @@ import type { Queue } from 'bullmq';
 import { Test } from '@nestjs/testing';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { JobQueueService } from './../job-queue.service';
-import { TestJobConsumer } from './../__test__/test.job.consumer';
+import { TestJobConsumer } from './../__tests__/test.job.consumer';
 import { JobType } from './../types/job-types';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import type { TestJobData } from '@/datasources/job-queue/__test__/job-queue.service.mock';
+import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 import { faker } from '@faker-js/faker/.';
 import type { INestApplication } from '@nestjs/common';
 

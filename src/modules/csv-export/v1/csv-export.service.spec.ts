@@ -16,6 +16,10 @@ import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.
 import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { Page } from '@/domain/entities/page.entity';
+import { mkdir, rm, readFile } from 'fs/promises';
+import path from 'path';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { UnrecoverableError } from 'bullmq';
 
 const exportApi = {
   export: jest.fn(),
@@ -63,11 +67,31 @@ describe('CsvExportService', () => {
   const mockTransactionExportRaw: TransactionExportRaw =
     transactionExportRawBuilder().build();
 
+  const exportArgs = {
+    chainId: faker.string.numeric(1),
+    safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+    executionDateGte: faker.date.past().toISOString().split('T')[0],
+    executionDateLte: faker.date.recent().toISOString().split('T')[0],
+    limit: faker.number.int({ min: 1, max: 10 }),
+    offset: faker.number.int({ min: 0, max: 10 }),
+  };
+
   beforeEach(() => {
     jest.resetAllMocks();
 
     mockExportApiManager.getApi.mockResolvedValue(mockExportApi);
-    mockConfigurationService.getOrThrow.mockReturnValue(3600);
+    mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
+      switch (key) {
+        case 'csvExport.signedUrlTtlSeconds':
+          return 3600;
+        case 'csvExport.fileStorage.type':
+          return 'aws';
+        case 'csvExport.fileStorage.local.baseDir':
+          return '/tmp/csv-exports';
+        default:
+          return 3600;
+      }
+    });
 
     service = new CsvExportService(
       mockExportApiManager,
@@ -89,15 +113,6 @@ describe('CsvExportService', () => {
   });
 
   describe('export', () => {
-    const exportArgs = {
-      chainId: faker.string.numeric(1),
-      safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
-      executionDateGte: faker.date.past().toISOString().split('T')[0],
-      executionDateLte: faker.date.recent().toISOString().split('T')[0],
-      limit: faker.number.int({ min: 1, max: 10 }),
-      offset: faker.number.int({ min: 0, max: 10 }),
-    };
-
     it('should successfully export transactions to CSV and return signed URL', async () => {
       const expectedSignedUrl = 'https://signed-url.example.com';
 
@@ -141,6 +156,7 @@ describe('CsvExportService', () => {
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
         [parsedTxnExport],
         expect.any(PassThrough),
+        expect.anything(),
       );
     });
 
@@ -167,6 +183,7 @@ describe('CsvExportService', () => {
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
         [],
         expect.any(PassThrough),
+        expect.anything(),
       );
     });
 
@@ -174,6 +191,19 @@ describe('CsvExportService', () => {
       mockExportApi.export.mockRejectedValue(new Error('API Error'));
 
       await expect(service.export(exportArgs)).rejects.toThrow('API Error');
+    });
+
+    it('should throw UnrecoverableError when exportApi returns 404', async () => {
+      mockExportApi.export.mockRejectedValue(
+        new DataSourceError('Not found', 404),
+      );
+
+      await expect(service.export(exportArgs)).rejects.toThrow(
+        UnrecoverableError,
+      );
+      await expect(service.export(exportArgs)).rejects.toThrow(
+        'Transactions not found.',
+      );
     });
 
     it('should throw error when upload to S3 fails', async () => {
@@ -288,6 +318,7 @@ describe('CsvExportService', () => {
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
         expectedCombinedResults,
         expect.any(PassThrough),
+        expect.anything(),
       );
 
       expect(mockLoggingService.info).toHaveBeenCalledWith(
@@ -489,10 +520,85 @@ describe('CsvExportService', () => {
       expect(progressCallback).toHaveBeenNthCalledWith(1, 12);
       // Second page: 2/5 * 100 * 0.6 = 24%
       expect(progressCallback).toHaveBeenNthCalledWith(2, 24);
-      // Rest of operations
+
       expect(progressCallback).toHaveBeenNthCalledWith(3, 80);
       expect(progressCallback).toHaveBeenNthCalledWith(4, 90);
       expect(progressCallback).toHaveBeenNthCalledWith(5, 100);
+    });
+  });
+
+  describe('export with local storage', () => {
+    let csvRow: string = '';
+    const csvHeader = 'id,chainId,type,timestamp';
+    const localBaseDir = 'assets/csv-export';
+    const fileName = `${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.executionDateGte}_${exportArgs.executionDateLte}.csv`;
+
+    beforeEach(async () => {
+      jest.resetAllMocks();
+      await mkdir(localBaseDir, { recursive: true });
+
+      // Simulate writing to the stream with faker data
+      csvRow = `${faker.string.uuid()},${faker.string.numeric(1)},${faker.lorem.word()},${faker.date.recent().toISOString()}`;
+      mockCsvService.toCsv.mockImplementation(async (_, stream) => {
+        stream.write(csvHeader + '\n');
+        stream.write(csvRow + '\n');
+        return Promise.resolve();
+      });
+
+      mockExportApiManager.getApi.mockResolvedValue(mockExportApi);
+      mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
+        switch (key) {
+          case 'csvExport.signedUrlTtlSeconds':
+            return 3600;
+          case 'csvExport.fileStorage.type':
+            return 'local';
+          case 'csvExport.fileStorage.local.baseDir':
+            return localBaseDir;
+          default:
+            return 3600;
+        }
+      });
+
+      service = new CsvExportService(
+        mockExportApiManager,
+        mockCsvService,
+        mockJobQueueService,
+        mockCloudStorageApiService,
+        mockConfigurationService,
+        mockLoggingService,
+      );
+
+      mockPage = pageBuilder()
+        .with('results', [mockTransactionExportRaw])
+        .with('next', null)
+        .build() as Page<TransactionExportRaw>;
+    });
+
+    afterEach(async () => {
+      await rm(path.resolve(localBaseDir, fileName));
+      jest.clearAllMocks();
+    });
+
+    it('should handle local storage type and return local file path', async () => {
+      const expectedLocalPath = path.resolve(localBaseDir, fileName);
+      mockExportApi.export.mockResolvedValue(rawify(mockPage));
+
+      const result = await service.export(exportArgs);
+
+      expect(result).toBe(expectedLocalPath);
+
+      expect(mockCloudStorageApiService.uploadStream).not.toHaveBeenCalled();
+      expect(mockCloudStorageApiService.getSignedUrl).not.toHaveBeenCalled();
+
+      expect(mockCsvService.toCsv).toHaveBeenCalledWith(
+        [convertRawToTransactionExport(mockTransactionExportRaw)],
+        expect.any(PassThrough),
+        expect.anything(),
+      );
+
+      const fileContent = await readFile(expectedLocalPath, 'utf-8');
+      expect(fileContent).toContain(csvHeader);
+      expect(fileContent).toContain(csvRow);
     });
   });
 });

@@ -360,6 +360,9 @@ export default (): ReturnType<typeof configuration> => ({
         bucketName: faker.string.alphanumeric(),
         basePath: faker.system.directoryPath(),
       },
+      local: {
+        baseDir: 'assets/csv-export',
+      },
     },
     signedUrlTtlSeconds: faker.number.int(),
   },

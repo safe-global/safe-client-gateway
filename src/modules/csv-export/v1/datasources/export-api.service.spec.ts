@@ -56,7 +56,7 @@ describe('ExportApi', () => {
       const limit = faker.number.int({ min: 1, max: 100 });
       const offset = faker.number.int({ min: 0, max: 10 });
 
-      const exportUrl = `${baseUrl}/api/v1/safes/${txnExport.safe}/export`;
+      const exportUrl = `${baseUrl}/api/v1/safes/${txnExport.safe}/export/`;
       mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
         if (exportUrl === url) {
           return Promise.resolve(rawify(page));
@@ -97,7 +97,7 @@ describe('ExportApi', () => {
       const txnExport = transactionExportRawBuilder().build();
       const page = pageBuilder().with('results', [txnExport]).build();
 
-      const exportUrl = `${baseUrl}/api/v1/safes/${txnExport.safe}/export`;
+      const exportUrl = `${baseUrl}/api/v1/safes/${txnExport.safe}/export/`;
       mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
         if (exportUrl === url) {
           return Promise.resolve(rawify(page));
@@ -140,7 +140,7 @@ describe('ExportApi', () => {
         types: ['clientError', 'serverError'],
       });
 
-      const exportUrl = `${baseUrl}/api/v1/safes/${safeAddress}/export`;
+      const exportUrl = `${baseUrl}/api/v1/safes/${safeAddress}/export/`;
       mockCacheFirstDataSource.get.mockImplementation(({ url }) => {
         if (exportUrl === url) {
           return Promise.reject(

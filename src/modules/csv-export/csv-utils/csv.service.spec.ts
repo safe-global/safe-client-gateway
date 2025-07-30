@@ -160,20 +160,23 @@ describe('CsvExportService', () => {
   });
 
   it('handles custom casting', async () => {
-    const data: Array<Record<string, boolean>> = [
-      { isActive: true },
-      { isActive: false },
+    const date1 = faker.date.past();
+    const date2 = faker.date.recent();
+    const data: Array<Record<string, boolean | Date>> = [
+      { isActive: true, createdAt: date1 },
+      { isActive: false, createdAt: date2 },
     ];
 
     const csv = await collectCsv(data, {
       cast: {
         boolean: (value: boolean) => (value ? 'true' : 'false'),
+        date: (value: Date) => value.toISOString(),
       },
     });
     const lines = csv.trim().split(/\r?\n/);
-    expect(lines[0]).toBe('isActive');
-    expect(lines[1]).toBe('true');
-    expect(lines[2]).toBe('false');
+    expect(lines[0]).toBe('isActive,createdAt');
+    expect(lines[1]).toBe(`true,${date1.toISOString()}`);
+    expect(lines[2]).toBe(`false,${date2.toISOString()}`);
   });
 
   it('ignores values that are not specified in columns', async () => {

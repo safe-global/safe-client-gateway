@@ -18,6 +18,8 @@ import { TestTargetedMessagingDatasourceModule } from '@/datasources/targeted-me
 import type { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface';
 import { CacheKeyPrefix } from '@/datasources/cache/constants';
 import type { Provider } from '@nestjs/common';
+import { CsvExportModule } from '@/modules/csv-export/v1/csv-export.module';
+import { TestCsvExportModule } from '@/modules/csv-export/v1/__tests__/test.csv-export.module';
 
 export interface CreateBaseTestModuleOptions {
   config?: typeof configuration;
@@ -97,7 +99,9 @@ export async function createBaseTestModule(
     .overrideModule(TargetedMessagingDatasourceModule)
     .useModule(TestTargetedMessagingDatasourceModule)
     .overrideModule(QueuesApiModule)
-    .useModule(TestQueuesApiModule);
+    .useModule(TestQueuesApiModule)
+    .overrideModule(CsvExportModule)
+    .useModule(TestCsvExportModule);
 
   if (overridePostgresV2) {
     moduleBuilder

@@ -1,7 +1,7 @@
 import type { Queue } from 'bullmq';
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
 import { JobType } from '@/datasources/job-queue/types/job-types';
-import type { TestJobData } from '@/datasources/job-queue/__test__/job-queue.service.mock';
+import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 describe('JobQueueService', () => {
   let service: JobQueueService;
   let mockQueue: jest.Mocked<Queue>;
