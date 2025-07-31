@@ -16,12 +16,17 @@ import { PassThrough } from 'stream';
 import path from 'path';
 import fs from 'fs';
 import { pipeline } from 'stream/promises';
-import { Job, UnrecoverableError } from 'bullmq';
-import { JobStatusResponseDto } from '@/routes/jobs/entities/job-status.dto';
+import { UnrecoverableError } from 'bullmq';
+import {
+  JobStatusDto,
+  JobStatusResponseDto,
+  toJobStatusDto,
+} from '@/routes/jobs/entities/job-status.dto';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
 import { asError } from '@/logging/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
 
 @Injectable()
 export class CsvExportService {
@@ -30,12 +35,7 @@ export class CsvExportService {
   private readonly localBaseDir: string;
 
   private static readonly CONTENT_TYPE = 'text/csv';
-  private static readonly CSV_OPTIONS = {
-    cast: {
-      date: (value: Date): string => value.toISOString(),
-    },
-  };
-
+  private static readonly FILE_NAME = 'transactions_export';
   private static readonly DEFAULT_LIMIT = '100';
   private static readonly DEFAULT_OFFSET = '0';
 
@@ -75,9 +75,10 @@ export class CsvExportService {
     executionDateLte?: string;
     limit?: number;
     offset?: number;
-  }): Promise<Job<CsvExportJobData>> {
+  }): Promise<JobStatusDto> {
     const data: CsvExportJobData = { ...args, timestamp: Date.now() };
-    return this.jobQueueService.addJob(JobType.CSV_EXPORT, data);
+    const job = await this.jobQueueService.addJob(JobType.CSV_EXPORT, data);
+    return toJobStatusDto(job);
   }
 
   /**
@@ -90,17 +91,7 @@ export class CsvExportService {
     if (!job) {
       return { error: 'Job not found' };
     }
-
-    return {
-      id: job.id,
-      name: job.name,
-      data: job.data as CsvExportJobData,
-      progress: job.progress,
-      processedOn: job.processedOn,
-      finishedOn: job.finishedOn,
-      failedReason: job.failedReason,
-      returnValue: job.returnvalue,
-    };
+    return toJobStatusDto(job);
   }
 
   /**
@@ -113,6 +104,7 @@ export class CsvExportService {
     args: {
       chainId: string;
       safeAddress: `0x${string}`;
+      timestamp: number;
       executionDateGte?: string;
       executionDateLte?: string;
       limit?: number;
@@ -123,6 +115,7 @@ export class CsvExportService {
     const {
       chainId,
       safeAddress,
+      timestamp,
       executionDateGte,
       executionDateLte,
       limit,
@@ -141,12 +134,7 @@ export class CsvExportService {
       onProgress,
     );
 
-    const fileName = this.generateFileName(
-      chainId,
-      safeAddress,
-      executionDateGte,
-      executionDateLte,
-    );
+    const fileName = this.generateFileName(timestamp);
     await this.uploadCsvToStorage(fileName, transactionExports, onProgress);
 
     const downloadUrl = await this.getFileUrl(fileName);
@@ -266,11 +254,7 @@ export class CsvExportService {
           })
         : this.uploadToLocalStorage(fileName, passThrough);
 
-    await this.csvService.toCsv(
-      results,
-      passThrough,
-      CsvExportService.CSV_OPTIONS,
-    );
+    await this.csvService.toCsv(results, passThrough, CSV_OPTIONS);
     await onProgress(80);
 
     passThrough.end();
@@ -305,14 +289,8 @@ export class CsvExportService {
     await onProgress(progress);
   }
 
-  //TODO timestamp of creation so the prev arent overriden
-  private generateFileName(
-    chainId: string,
-    safeAddress: string,
-    executionDateGte?: string,
-    executionDateLte?: string,
-  ): string {
-    return `${chainId}_${safeAddress}_${executionDateGte || '-'}_${executionDateLte || '-'}.csv`;
+  private generateFileName(timestamp: number): string {
+    return `${CsvExportService.FILE_NAME}_${timestamp}.csv`;
   }
 
   private async getFileUrl(fileName: string): Promise<string> {

@@ -1,5 +1,6 @@
 import { JobData, JobResponse } from '@/datasources/job-queue/types/job-types';
 import { ApiProperty } from '@nestjs/swagger';
+import { Job } from 'bullmq';
 
 export class JobStatusDto {
   @ApiProperty({ description: 'Job ID' })
@@ -42,7 +43,7 @@ export class JobStatusDto {
   @ApiProperty({
     description: 'Job return value',
   })
-  returnValue?: JobResponse; //TODO do even need this? maybe use Record<string, any>
+  returnValue?: JobResponse;
 }
 
 export class JobStatusErrorDto {
@@ -51,3 +52,27 @@ export class JobStatusErrorDto {
 }
 
 export type JobStatusResponseDto = JobStatusDto | JobStatusErrorDto;
+
+export function toJobStatusDto<T extends JobData>(job: Job<T>): JobStatusDto {
+  const {
+    id,
+    name,
+    data,
+    progress,
+    processedOn,
+    finishedOn,
+    failedReason,
+    returnvalue,
+  } = job;
+
+  return {
+    id,
+    name,
+    data: data,
+    progress,
+    processedOn,
+    finishedOn,
+    failedReason,
+    returnValue: returnvalue,
+  };
+}
