@@ -68,7 +68,7 @@ export class CsvExportService {
    * @param args Export parameters including chain ID, safe address, and date range
    * @returns {Promise<Job>} Job-related data: status, progress, payload etc.
    */
-  async registerJob(args: {
+  async registerExportJob(args: {
     chainId: string;
     safeAddress: `0x${string}`;
     executionDateGte?: string;
@@ -82,11 +82,11 @@ export class CsvExportService {
   }
 
   /**
-   * Fetch job's data by ID
+   * Fetch the job's data by ID
    * @param jobId Id of the job
    * @returns {Promise<JobStatusResponseDto>} Job-related data or error in case it's not found
    */
-  async getExportStatus(jobId: string): Promise<JobStatusResponseDto> {
+  async getExportJobStatus(jobId: string): Promise<JobStatusResponseDto> {
     const job = await this.jobQueueService.getJob(jobId);
     if (!job) {
       return { error: 'Job not found' };
