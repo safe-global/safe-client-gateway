@@ -22,6 +22,7 @@ import {
   JobStatusErrorDto,
   JobStatusResponseDto,
 } from '@/routes/jobs/entities/job-status.dto';
+import { DateStringSchema } from '@/validation/entities/schemas/date-string.schema';
 
 @ApiTags('export')
 @Controller({
@@ -37,12 +38,14 @@ export class CsvExportController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @Post('chains/:chainId/:safeAddress')
-  async export(
+  async launchExport(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
-    @Query('executionDateGte') executionDateGte?: string,
-    @Query('executionDateLte') executionDateLte?: string,
+    @Query('executionDateGte', new ValidationPipe(DateStringSchema.optional()))
+    executionDateGte?: string,
+    @Query('executionDateLte', new ValidationPipe(DateStringSchema.optional()))
+    executionDateLte?: string,
     @Query('limit', new ParseIntPipe({ optional: true }))
     limit?: number,
     @Query('offset', new ParseIntPipe({ optional: true }))
@@ -56,7 +59,7 @@ export class CsvExportController {
       limit,
       offset,
     };
-    return this.csvExportService.registerJob(args);
+    return this.csvExportService.registerExportJob(args);
   }
 
   @ApiOkResponse({
@@ -68,9 +71,9 @@ export class CsvExportController {
     type: JobStatusErrorDto,
   })
   @Get('/:jobId/status')
-  async getExportJobStatus(
+  async getExportStatus(
     @Param('jobId', new ValidationPipe(NumericStringSchema)) jobId: string,
   ): Promise<JobStatusResponseDto> {
-    return this.csvExportService.getExportStatus(jobId);
+    return this.csvExportService.getExportJobStatus(jobId);
   }
 }
