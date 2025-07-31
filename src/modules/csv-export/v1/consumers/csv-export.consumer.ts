@@ -31,6 +31,7 @@ export class CsvExportConsumer extends WorkerHost {
     const {
       chainId,
       safeAddress,
+      timestamp,
       executionDateGte,
       executionDateLte,
       limit,
@@ -41,6 +42,7 @@ export class CsvExportConsumer extends WorkerHost {
       {
         chainId,
         safeAddress,
+        timestamp,
         executionDateGte,
         executionDateLte,
         limit,
@@ -55,11 +57,11 @@ export class CsvExportConsumer extends WorkerHost {
   }
 
   @OnWorkerEvent('completed')
-  onCompleted(job: Job, result: CsvExportJobResponse): void {
+  onCompleted(job: Job): void {
     this.loggingService.info({
       type: LogType.JobEvent,
       source: 'CsvExportConsumer',
-      event: `Job ${job.id} completed, signed url: ${result.downloadUrl}`, //TODO should we log the URL ?
+      event: `Job ${job.id} completed`,
     });
   }
 

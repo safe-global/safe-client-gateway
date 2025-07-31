@@ -6,7 +6,7 @@ export enum JobType {
 export type JobTypeName = (typeof JobType)[keyof typeof JobType];
 
 export interface JobData {
-  timestamp?: number;
+  timestamp: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

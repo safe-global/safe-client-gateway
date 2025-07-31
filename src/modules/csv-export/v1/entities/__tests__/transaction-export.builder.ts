@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { formatUnits, getAddress } from 'viem';
 import type { Hex } from 'viem';
 import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
@@ -16,7 +16,7 @@ export function transactionExportRawBuilder(): IBuilder<TransactionExportRaw> {
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('from_', getAddress(faker.finance.ethereumAddress()))
     .with('to', getAddress(faker.finance.ethereumAddress()))
-    .with('amount', faker.number.int({ min: 1, max: 1000 }).toString())
+    .with('amount', faker.number.bigInt().toString())
     .with(
       'assetType',
       faker.helpers.arrayElement(['native', 'erc20', 'erc721']),
@@ -31,7 +31,6 @@ export function transactionExportRawBuilder(): IBuilder<TransactionExportRaw> {
     .with('note', faker.lorem.sentence())
     .with('transactionHash', faker.string.hexadecimal({ length: 64 }) as Hex)
     .with('safeTxHash', faker.string.hexadecimal({ length: 64 }) as Hex)
-    .with('method', faker.lorem.word())
     .with('contractAddress', getAddress(faker.finance.ethereumAddress()));
 }
 
@@ -43,7 +42,7 @@ export function transactionExportBuilder(): IBuilder<TransactionExport> {
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('from', getAddress(faker.finance.ethereumAddress()))
     .with('to', getAddress(faker.finance.ethereumAddress()))
-    .with('amount', faker.number.int({ min: 1, max: 1000 }).toString())
+    .with('amount', faker.number.bigInt.toString())
     .with(
       'assetType',
       faker.helpers.arrayElement(['native', 'erc20', 'erc721']),
@@ -58,16 +57,17 @@ export function transactionExportBuilder(): IBuilder<TransactionExport> {
     .with('note', faker.lorem.sentence())
     .with('transactionHash', faker.string.hexadecimal({ length: 64 }) as Hex)
     .with('safeTxHash', faker.string.hexadecimal({ length: 64 }) as Hex)
-    .with('method', faker.lorem.word())
     .with('contractAddress', getAddress(faker.finance.ethereumAddress()));
 }
 
 /**
- * Converts raw transaction export data (with from_ field) to final format (with from field)
+ * Converts raw transaction export data to final format
+ * from_ field to from and the amount conversion
  */
 export function convertRawToTransactionExport(
   raw: TransactionExportRaw,
 ): TransactionExport {
-  const { from_, ...rest } = raw;
-  return { ...rest, from: from_ };
+  const { from_, amount, assetDecimals, ...rest } = raw;
+  const convertedAmount = formatUnits(BigInt(amount), assetDecimals ?? 0);
+  return { ...rest, from: from_, amount: convertedAmount, assetDecimals };
 }

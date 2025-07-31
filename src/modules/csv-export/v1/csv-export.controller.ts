@@ -16,16 +16,13 @@ import {
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { object } from 'zod';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
-import { Job } from 'bullmq';
 import {
   JobStatusDto,
   JobStatusErrorDto,
   JobStatusResponseDto,
 } from '@/routes/jobs/entities/job-status.dto';
 
-//TODO create a separate path in swagger
 @ApiTags('export')
 @Controller({
   path: 'export',
@@ -34,7 +31,7 @@ import {
 export class CsvExportController {
   constructor(private readonly csvExportService: CsvExportService) {}
 
-  @ApiAcceptedResponse({ type: object }) //TODO fix (job-related data) + status 200/201 or 202 ?
+  @ApiAcceptedResponse({ type: JobStatusDto })
   @ApiQuery({ name: 'executionDateGte', required: false, type: String })
   @ApiQuery({ name: 'executionDateLte', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -44,13 +41,13 @@ export class CsvExportController {
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: `0x${string}`,
-    @Query('executionDateGte') executionDateGte?: string, //todo preserve the original format 'execution_date__gte' ? validation ?
-    @Query('executionDateLte') executionDateLte?: string, //todo preserve the original format 'execution_date__lte' ?
+    @Query('executionDateGte') executionDateGte?: string,
+    @Query('executionDateLte') executionDateLte?: string,
     @Query('limit', new ParseIntPipe({ optional: true }))
     limit?: number,
     @Query('offset', new ParseIntPipe({ optional: true }))
     offset?: number,
-  ): Promise<Job> {
+  ): Promise<JobStatusDto> {
     const args = {
       chainId,
       safeAddress,
@@ -59,7 +56,6 @@ export class CsvExportController {
       limit,
       offset,
     };
-    //TODO change the response type
     return this.csvExportService.registerJob(args);
   }
 
@@ -73,7 +69,7 @@ export class CsvExportController {
   })
   @Get('/:jobId/status')
   async getExportJobStatus(
-    @Param('jobId') jobId: string,
+    @Param('jobId', new ValidationPipe(NumericStringSchema)) jobId: string,
   ): Promise<JobStatusResponseDto> {
     return this.csvExportService.getExportStatus(jobId);
   }

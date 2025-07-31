@@ -70,6 +70,7 @@ describe('CsvExportService', () => {
   const exportArgs = {
     chainId: faker.string.numeric(1),
     safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+    timestamp: faker.date.recent().getTime(),
     executionDateGte: faker.date.past().toISOString().split('T')[0],
     executionDateLte: faker.date.recent().toISOString().split('T')[0],
     limit: faker.number.int({ min: 1, max: 10 }),
@@ -142,7 +143,7 @@ describe('CsvExportService', () => {
       });
 
       expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
-        `${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.executionDateGte}_${exportArgs.executionDateLte}.csv`,
+        `transactions_export_${exportArgs.timestamp}.csv`,
         expect.any(PassThrough),
         {
           ContentType: 'text/csv',
@@ -431,6 +432,7 @@ describe('CsvExportService', () => {
       const exportArgsWithoutDates = {
         chainId: faker.string.numeric(1),
         safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        timestamp: faker.date.recent().getTime(),
       };
 
       const expectedSignedUrl = 'https://signed-url.example.com';
@@ -448,7 +450,7 @@ describe('CsvExportService', () => {
       expect(result).toBe(expectedSignedUrl);
 
       expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
-        `${exportArgsWithoutDates.chainId}_${exportArgsWithoutDates.safeAddress}_-_-.csv`,
+        `transactions_export_${exportArgsWithoutDates.timestamp}.csv`,
         expect.any(PassThrough),
         {
           ContentType: 'text/csv',
@@ -460,6 +462,7 @@ describe('CsvExportService', () => {
       const exportArgsPartialDates = {
         chainId: faker.string.numeric(1),
         safeAddress: faker.finance.ethereumAddress() as `0x${string}`,
+        timestamp: faker.date.recent().getTime(),
         executionDateGte: faker.date.past().toISOString().split('T')[0],
       };
 
@@ -478,7 +481,7 @@ describe('CsvExportService', () => {
       expect(result).toBe(expectedSignedUrl);
 
       expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
-        `${exportArgsPartialDates.chainId}_${exportArgsPartialDates.safeAddress}_${exportArgsPartialDates.executionDateGte}_-.csv`,
+        `transactions_export_${exportArgsPartialDates.timestamp}.csv`,
         expect.any(PassThrough),
         {
           ContentType: 'text/csv',
@@ -531,7 +534,7 @@ describe('CsvExportService', () => {
     let csvRow: string = '';
     const csvHeader = 'id,chainId,type,timestamp';
     const localBaseDir = 'assets/csv-export';
-    const fileName = `${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.executionDateGte}_${exportArgs.executionDateLte}.csv`;
+    const fileName = `transactions_export_${exportArgs.timestamp}.csv`;
 
     beforeEach(async () => {
       jest.resetAllMocks();

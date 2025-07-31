@@ -240,4 +240,106 @@ describe('CsvExportService', () => {
     expect(lines.length).toBe(10001);
     expect(endTime - startTime).toBeLessThan(5000); // Should complete within 5 seconds
   });
+
+  it('handles object-based column configuration with key and header', async () => {
+    const name = faker.person.firstName();
+    const age = faker.number.int();
+    const email = faker.internet.email();
+    const data = [
+      { name, age, email },
+      { name, age, email },
+    ];
+
+    const csv = await collectCsv(data, {
+      columns: [
+        { key: 'name', header: 'Full Name' },
+        { key: 'age', header: 'Years Old' },
+        { key: 'email', header: 'Email Address' },
+      ],
+    });
+
+    const lines = csv.trim().split(/\r?\n/);
+    expect(lines[0]).toBe('Full Name,Years Old,Email Address');
+    expect(lines[1]).toBe(`${name},${age},${email}`);
+    expect(lines[2]).toBe(`${name},${age},${email}`);
+  });
+
+  it('handles object columns with custom ordering', async () => {
+    const id = faker.number.int();
+    const name = faker.person.firstName();
+    const email = faker.internet.email();
+    const data = [{ id, name, email }];
+
+    const csv = await collectCsv(data, {
+      columns: [
+        { key: 'email', header: 'Contact Email' },
+        { key: 'name', header: 'Name' },
+        { key: 'id', header: 'Identifier' },
+      ],
+    });
+
+    const lines = csv.trim().split(/\r?\n/);
+    expect(lines[0]).toBe('Contact Email,Name,Identifier');
+    expect(lines[1]).toBe(`${email},${name},${id}`);
+  });
+
+  it('handles object columns with subset of data fields', async () => {
+    const id = faker.number.int();
+    const name = faker.person.firstName();
+    const age = faker.number.int();
+    const email = faker.internet.email();
+    const data = [{ id, name, age, email }];
+
+    const csv = await collectCsv(data, {
+      columns: [
+        { key: 'name', header: 'Full Name' },
+        { key: 'email', header: 'Email Address' },
+      ],
+    });
+
+    const lines = csv.trim().split(/\r?\n/);
+    expect(lines[0]).toBe('Full Name,Email Address');
+    expect(lines[1]).toBe(`${name},${email}`);
+  });
+
+  it('handles object columns with nested property access', async () => {
+    const name = faker.person.firstName();
+    const age = faker.number.int();
+    const city = faker.location.city();
+    const data = [
+      {
+        name,
+        details: { age, address: { city } },
+      },
+    ];
+
+    const csv = await collectCsv(data, {
+      columns: [
+        { key: 'name', header: 'Name' },
+        { key: 'details.age', header: 'Age' },
+        { key: 'details.address.city', header: 'City' },
+      ],
+    });
+
+    const lines = csv.trim().split(/\r?\n/);
+    expect(lines[0]).toBe('Name,Age,City');
+    expect(lines[1]).toBe(`${name},${age},${city}`);
+  });
+
+  it('handles object columns with missing data properties', async () => {
+    const name = faker.person.firstName();
+    const data = [{ name }];
+
+    const csv = await collectCsv(data, {
+      columns: [
+        { key: 'name', header: 'Name' },
+        { key: 'age', header: 'Age' },
+        { key: 'email', header: 'Email' },
+      ],
+    });
+
+    const lines = csv.trim().split(/\r?\n/);
+    expect(lines[0]).toBe('Name,Age,Email');
+    expect(lines[1]).toBe(`${name},,`);
+  });
 });
