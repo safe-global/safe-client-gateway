@@ -11,7 +11,10 @@ export class JobQueueService implements IJobQueueService {
     return await this.queue.getJob(jobId);
   }
 
-  public async addJob(name: JobTypeName, data: JobData): Promise<Job> {
+  public async addJob<T extends JobData>(
+    name: JobTypeName,
+    data: T,
+  ): Promise<Job<T>> {
     return await this.queue.add(name, data);
   }
 }

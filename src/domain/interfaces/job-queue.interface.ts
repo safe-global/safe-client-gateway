@@ -20,5 +20,5 @@ export interface IJobQueueService {
    * @param data - The data associated with the job
    * @returns Promise resolving to the created Job
    */
-  addJob(name: JobTypeName, data: JobData): Promise<Job>;
+  addJob<T extends JobData>(name: JobTypeName, data: T): Promise<Job<T>>;
 }

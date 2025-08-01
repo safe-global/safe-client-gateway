@@ -366,17 +366,43 @@ describe('CsvExportService', () => {
       );
     });
 
-    it('should handle pagination with default values from URL params', async () => {
+    it('should handle pagination with default values', async () => {
+      const exportArgsNoPagination = {
+        ...exportArgs,
+        limit: undefined,
+        offset: undefined,
+      };
+
+      mockExportApi.export.mockResolvedValue(rawify(mockPage));
+      mockCloudStorageApiService.uploadStream.mockResolvedValue(
+        's3://bucket/file.csv',
+      );
+      mockCloudStorageApiService.getSignedUrl.mockResolvedValue(
+        'https://signed-url.example.com',
+      );
+
+      await service.export(exportArgsNoPagination);
+
+      expect(mockExportApi.export).toHaveBeenCalledWith({
+        safeAddress: exportArgs.safeAddress,
+        executionDateGte: exportArgs.executionDateGte,
+        executionDateLte: exportArgs.executionDateLte,
+        limit: 100,
+        offset: 0,
+      });
+    });
+
+    it('should calculate next offset/limit when URL has no parameters', async () => {
       const mockPage1 = pageBuilder()
         .with('results', [mockTransactionExportRaw])
-        .with('next', 'https://api.example.com/export')
-        .with('count', 1)
+        .with('next', 'https://api.example.com/export?limit=25')
+        .with('count', 2)
         .build();
 
       const mockPage2 = pageBuilder()
-        .with('results', [])
+        .with('results', [mockTransactionExportRaw])
         .with('next', null)
-        .with('count', 1)
+        .with('count', 2)
         .build();
 
       mockExportApi.export
@@ -392,13 +418,22 @@ describe('CsvExportService', () => {
 
       await service.export(exportArgs);
 
-      // Verify second call uses default values
+      // Verify first call uses original parameters
+      expect(mockExportApi.export).toHaveBeenNthCalledWith(1, {
+        safeAddress: exportArgs.safeAddress,
+        executionDateGte: exportArgs.executionDateGte,
+        executionDateLte: exportArgs.executionDateLte,
+        limit: exportArgs.limit,
+        offset: exportArgs.offset,
+      });
+
+      // Verify second call calculates next offset
       expect(mockExportApi.export).toHaveBeenNthCalledWith(2, {
         safeAddress: exportArgs.safeAddress,
         executionDateGte: exportArgs.executionDateGte,
         executionDateLte: exportArgs.executionDateLte,
-        limit: 100,
-        offset: 0,
+        limit: 25, // From URL
+        offset: exportArgs.offset + 25, // Calculated based on initial request + new limit
       });
     });
 
