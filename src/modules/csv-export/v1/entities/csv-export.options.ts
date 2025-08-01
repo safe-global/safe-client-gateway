@@ -9,7 +9,7 @@ export const CSV_OPTIONS: CsvOptions = {
     { key: 'transactionHash', header: 'Transaction Hash' },
     { key: 'contractAddress', header: 'Contract Address' },
     { key: 'amount', header: 'Amount' },
-    { key: 'asssetType', header: 'Asset' },
+    { key: 'assetType', header: 'Asset' },
     { key: 'proposedAt', header: 'Created at' },
     { key: 'executedAt', header: 'Executed at' },
     { key: 'proposerAddress', header: 'Proposer Address' },

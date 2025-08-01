@@ -25,13 +25,14 @@ export class CsvExportConsumer extends WorkerHost {
     this.loggingService.info({
       type: LogType.JobEvent,
       source: 'CsvExportConsumer',
-      event: `Received job ${job.id}, start processing`,
+      event: `Processing job ${job.id}`,
+      attemptsMade: job.attemptsMade,
     });
 
+    const { timestamp } = job;
     const {
       chainId,
       safeAddress,
-      timestamp,
       executionDateGte,
       executionDateLte,
       limit,
@@ -71,7 +72,7 @@ export class CsvExportConsumer extends WorkerHost {
     this.loggingService.error({
       type: LogType.JobError,
       source: 'CsvExportConsumer',
-      event: `Job ${job.id} failed: ${error}`,
+      event: `Job ${job.id} failed. ${error}`,
     });
   }
 
