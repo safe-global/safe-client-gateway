@@ -185,6 +185,68 @@ describe('TransactionExportSchema', () => {
     }
   });
 
+  it('should transform amount using assetDecimals', () => {
+    const rawAmount = '1000000000000000000'; // 1 ETH in wei
+    const expectedAmount = '1';
+
+    const transactionExport = transactionExportRawBuilder()
+      .with('amount', rawAmount)
+      .with('assetDecimals', 18)
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.amount).toBe(expectedAmount);
+    expect(typeof result.data?.amount).toBe('string');
+  });
+
+  it('should not transform amount when assetDecimals is null (defaults to 0)', () => {
+    const rawAmount = '100';
+    const expectedAmount = '100';
+
+    const transactionExport = transactionExportRawBuilder()
+      .with('amount', rawAmount)
+      .with('assetDecimals', null)
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.amount).toBe(expectedAmount);
+  });
+
+  it('should handle small amounts with high decimals', () => {
+    const rawAmount = '1'; // smallest unit
+    const assetDecimals = 18;
+    const expectedAmount = '0.000000000000000001';
+
+    const transactionExport = transactionExportRawBuilder()
+      .with('amount', rawAmount)
+      .with('assetDecimals', assetDecimals)
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.amount).toBe(expectedAmount);
+  });
+
+  it('should handle large amounts correctly', () => {
+    const rawAmount = '123456789012345678901'; // Large amount in wei
+    const expectedAmount = '123.456789012345678901';
+
+    const transactionExport = transactionExportRawBuilder()
+      .with('amount', rawAmount)
+      .with('assetDecimals', 18)
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.amount).toBe(expectedAmount);
+  });
+
   it('should accept null for nullable fields', () => {
     const transactionExport = transactionExportRawBuilder()
       .with('assetAddress', null)
@@ -196,7 +258,6 @@ describe('TransactionExportSchema', () => {
       .with('executedAt', null)
       .with('note', null)
       .with('safeTxHash', null)
-      .with('method', null)
       .with('contractAddress', null)
       .build();
 
@@ -213,7 +274,6 @@ describe('TransactionExportSchema', () => {
       expect(result.data.executedAt).toBeNull();
       expect(result.data.note).toBeNull();
       expect(result.data.safeTxHash).toBeNull();
-      expect(result.data.method).toBeNull();
       expect(result.data.contractAddress).toBeNull();
     }
   });

@@ -8,11 +8,11 @@ export const IJobQueueService = Symbol('IJobQueueService');
 
 export interface IJobQueueService {
   /**
-   * Retrieves the status of a job by its ID
+   * Retrieves the metadata of a job by its ID
    * @param jobId - The unique identifier of the job
    * @returns Promise resolving to the Job object or null if not found
    */
-  getJobStatus(jobId: string): Promise<Job | null>;
+  getJob(jobId: string): Promise<Job | null>;
 
   /**
    * Adds a job to the queue
@@ -20,5 +20,5 @@ export interface IJobQueueService {
    * @param data - The data associated with the job
    * @returns Promise resolving to the created Job
    */
-  addJob(name: JobTypeName, data: JobData): Promise<Job>;
+  addJob<T extends JobData>(name: JobTypeName, data: T): Promise<Job<T>>;
 }
