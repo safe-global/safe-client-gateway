@@ -36,8 +36,8 @@ export class CsvExportService {
 
   private static readonly CONTENT_TYPE = 'text/csv';
   private static readonly FILE_NAME = 'transactions_export';
-  private static readonly DEFAULT_LIMIT = '100';
-  private static readonly DEFAULT_OFFSET = '0';
+  private static readonly DEFAULT_LIMIT = 100;
+  private static readonly DEFAULT_OFFSET = 0;
 
   constructor(
     @Inject(IExportApiManager)
@@ -76,7 +76,7 @@ export class CsvExportService {
     limit?: number;
     offset?: number;
   }): Promise<JobStatusDto> {
-    const data: CsvExportJobData = { ...args, timestamp: Date.now() };
+    const data: CsvExportJobData = args;
     const job = await this.jobQueueService.addJob(JobType.CSV_EXPORT, data);
     return toJobStatusDto(job);
   }
@@ -172,8 +172,8 @@ export class CsvExportService {
 
     const results: Array<TransactionExport> = [];
     let nextUrl: string | null = null;
-    let currentLimit = limit;
-    let currentOffset = offset;
+    let currentLimit = limit ?? CsvExportService.DEFAULT_LIMIT;
+    let currentOffset = offset ?? CsvExportService.DEFAULT_OFFSET;
     let pageCount = 0;
 
     const api = await this.exportApiManager.getApi(chainId);
@@ -209,11 +209,10 @@ export class CsvExportService {
         // For subsequent requests, parse the next URL to get new offset/limit
         if (nextUrl) {
           const url = new URL(nextUrl);
-          currentLimit = parseInt(
-            url.searchParams.get('limit') || CsvExportService.DEFAULT_LIMIT,
-          );
-          currentOffset = parseInt(
-            url.searchParams.get('offset') || CsvExportService.DEFAULT_OFFSET,
+          currentLimit = Number(url.searchParams.get('limit') ?? currentLimit);
+          // If URL doesn't have offset, calculate next offset to ensure progression
+          currentOffset = Number(
+            url.searchParams.get('offset') ?? currentOffset + currentLimit,
           );
         }
       } catch (error) {
@@ -284,7 +283,7 @@ export class CsvExportService {
   ): Promise<void> {
     let progress = 10;
     if (totalCount && totalCount > 0) {
-      progress = Math.round((currentCount / totalCount) * 60);
+      progress = Math.min(60, Math.floor((currentCount / totalCount) * 60));
     }
     await onProgress(progress);
   }

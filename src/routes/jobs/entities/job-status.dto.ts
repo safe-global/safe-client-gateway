@@ -7,12 +7,17 @@ export class JobStatusDto {
   id?: string;
 
   @ApiProperty({ description: 'Job name' })
-  name?: string;
+  name!: string;
 
   @ApiProperty({
     description: 'Job data payload',
   })
-  data?: JobData;
+  data!: JobData;
+
+  @ApiProperty({
+    description: 'Timestamp when the job was created',
+  })
+  timestamp!: number;
 
   @ApiProperty({
     description: 'Job progress',
@@ -23,7 +28,7 @@ export class JobStatusDto {
       { type: 'object', example: { current: 5, total: 10 } },
     ],
   })
-  progress?: number | string | boolean | object;
+  progress!: number | string | boolean | object;
 
   @ApiProperty({
     description: 'Timestamp when job processing started',
@@ -43,7 +48,7 @@ export class JobStatusDto {
   @ApiProperty({
     description: 'Job return value',
   })
-  returnValue?: JobResponse;
+  returnValue!: JobResponse;
 }
 
 export class JobStatusErrorDto {
@@ -58,6 +63,7 @@ export function toJobStatusDto<T extends JobData>(job: Job<T>): JobStatusDto {
     id,
     name,
     data,
+    timestamp,
     progress,
     processedOn,
     finishedOn,
@@ -69,6 +75,7 @@ export function toJobStatusDto<T extends JobData>(job: Job<T>): JobStatusDto {
     id,
     name,
     data: data,
+    timestamp,
     progress,
     processedOn,
     finishedOn,
