@@ -8,7 +8,7 @@ import { z } from 'zod';
 export const TransactionExportSchema = z
   .object({
     safe: AddressSchema,
-    from_: AddressSchema, // input expects from_
+    from: AddressSchema,
     to: AddressSchema,
     amount: NumericStringSchema,
     assetType: z.string(),
@@ -21,12 +21,10 @@ export const TransactionExportSchema = z
     executedAt: z.coerce.date().nullable(),
     note: z.string().nullable(),
     transactionHash: HexSchema,
-    safeTxHash: HexSchema.nullable(),
     contractAddress: AddressSchema.nullable(),
   })
-  .transform(({ from_, amount, assetDecimals, ...rest }) => ({
+  .transform(({ amount, assetDecimals, ...rest }) => ({
     ...rest,
-    from: from_,
     assetDecimals,
     amount: formatUnits(BigInt(amount), assetDecimals ?? 0),
   }));
