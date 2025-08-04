@@ -40,7 +40,7 @@ export class ExportApi implements IExportApi {
   }): Promise<Raw<Page<TransactionExport>>> {
     try {
       const url = `${this.baseUrl}/api/v1/safes/${args.safeAddress}/export/`;
-      return await this.dataSource.get<Raw<Page<TransactionExport>>>({
+      return await this.dataSource.get<Page<TransactionExport>>({
         cacheDir: CacheRouter.getTransactionsExportCacheDir({
           ...args,
           chainId: this.chainId,

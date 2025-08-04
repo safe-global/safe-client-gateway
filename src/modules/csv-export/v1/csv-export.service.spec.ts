@@ -3,10 +3,9 @@ import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storag
 import type { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import type { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
-import type { TransactionExportRaw } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import {
-  transactionExportRawBuilder,
-  convertRawToTransactionExport,
+  transactionExportBuilder,
+  transformTransactionExport,
 } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { faker } from '@faker-js/faker/.';
 import { PassThrough } from 'stream';
@@ -20,6 +19,7 @@ import { mkdir, rm, readFile } from 'fs/promises';
 import path from 'path';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { UnrecoverableError } from 'bullmq';
+import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 
 const exportApi = {
   export: jest.fn(),
@@ -63,9 +63,9 @@ const mockLoggingService = jest.mocked(loggingService);
 
 describe('CsvExportService', () => {
   let service: CsvExportService;
-  let mockPage: Page<TransactionExportRaw>;
-  const mockTransactionExportRaw: TransactionExportRaw =
-    transactionExportRawBuilder().build();
+  let mockPage: Page<TransactionExport>;
+  const mockTransactionExport: TransactionExport =
+    transactionExportBuilder().build();
 
   const exportArgs = {
     chainId: faker.string.numeric(1),
@@ -104,9 +104,9 @@ describe('CsvExportService', () => {
     );
 
     mockPage = pageBuilder()
-      .with('results', [mockTransactionExportRaw])
+      .with('results', [mockTransactionExport])
       .with('next', null)
-      .build() as Page<TransactionExportRaw>;
+      .build() as Page<TransactionExport>;
   });
 
   it('should be defined', () => {
@@ -150,12 +150,8 @@ describe('CsvExportService', () => {
         },
       );
 
-      const parsedTxnExport = convertRawToTransactionExport(
-        mockTransactionExportRaw,
-      );
-
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
-        [parsedTxnExport],
+        [transformTransactionExport(mockTransactionExport)],
         expect.any(PassThrough),
         expect.anything(),
       );
@@ -165,7 +161,7 @@ describe('CsvExportService', () => {
       mockPage = pageBuilder()
         .with('results', [])
         .with('next', null)
-        .build() as Page<TransactionExportRaw>;
+        .build() as Page<TransactionExport>;
       mockExportApi.export.mockResolvedValue(rawify(mockPage));
 
       const expectedSignedUrl = 'https://signed-url.example.com';
@@ -243,24 +239,24 @@ describe('CsvExportService', () => {
 
     it('should handle pagination and fetch all pages', async () => {
       const expectedSignedUrl = 'https://signed-url.example.com';
-      const mockTransactionExportRaw2 = transactionExportRawBuilder().build();
-      const mockTransactionExportRaw3 = transactionExportRawBuilder().build();
+      const mockTransactionExport2 = transactionExportBuilder().build();
+      const mockTransactionExport3 = transactionExportBuilder().build();
 
       const mockPage1 = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
+        .with('results', [mockTransactionExport])
         .with('next', 'https://api.example.com/export?limit=100&offset=100')
         .with('count', 3)
         .build();
 
       const mockPage2 = pageBuilder()
-        .with('results', [mockTransactionExportRaw2])
+        .with('results', [mockTransactionExport2])
         .with('next', 'https://api.example.com/export?limit=100&offset=200')
         .with('count', 3)
         .build();
 
       // Third page without next URL (last page)
       const mockPage3 = pageBuilder()
-        .with('results', [mockTransactionExportRaw3])
+        .with('results', [mockTransactionExport3])
         .with('next', null)
         .with('count', 3)
         .build();
@@ -311,9 +307,9 @@ describe('CsvExportService', () => {
       });
 
       const expectedCombinedResults = [
-        convertRawToTransactionExport(mockTransactionExportRaw),
-        convertRawToTransactionExport(mockTransactionExportRaw2),
-        convertRawToTransactionExport(mockTransactionExportRaw3),
+        transformTransactionExport(mockTransactionExport),
+        transformTransactionExport(mockTransactionExport2),
+        transformTransactionExport(mockTransactionExport3),
       ];
 
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
@@ -394,13 +390,13 @@ describe('CsvExportService', () => {
 
     it('should calculate next offset/limit when URL has no parameters', async () => {
       const mockPage1 = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
+        .with('results', [mockTransactionExport])
         .with('next', 'https://api.example.com/export?limit=25')
         .with('count', 2)
         .build();
 
       const mockPage2 = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
+        .with('results', [mockTransactionExport])
         .with('next', null)
         .with('count', 2)
         .build();
@@ -439,10 +435,10 @@ describe('CsvExportService', () => {
 
     it('should log and throw error when individual page fails', async () => {
       mockPage = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
+        .with('results', [mockTransactionExport])
         .with('next', 'https://api.example.com/export?limit=100&offset=100')
         .with('count', 2)
-        .build() as Page<TransactionExportRaw>;
+        .build() as Page<TransactionExport>;
 
       mockExportApi.export
         .mockResolvedValueOnce(rawify(mockPage))
@@ -526,16 +522,16 @@ describe('CsvExportService', () => {
 
     it('should call progress callback with correct progress values', async () => {
       const progressCallback = jest.fn().mockResolvedValue(undefined);
-      const mockTransactionExportRaw2 = transactionExportRawBuilder().build();
+      const mockTransactionExport2 = transactionExportBuilder().build();
 
       const mockPage1 = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
+        .with('results', [mockTransactionExport])
         .with('next', 'https://api.example.com/export?limit=100&offset=100')
         .with('count', 5)
         .build();
 
       const mockPage2 = pageBuilder()
-        .with('results', [mockTransactionExportRaw2])
+        .with('results', [mockTransactionExport2])
         .with('next', null)
         .with('count', 5)
         .build();
@@ -607,9 +603,9 @@ describe('CsvExportService', () => {
       );
 
       mockPage = pageBuilder()
-        .with('results', [mockTransactionExportRaw])
+        .with('results', [mockTransactionExport])
         .with('next', null)
-        .build() as Page<TransactionExportRaw>;
+        .build() as Page<TransactionExport>;
     });
 
     afterEach(async () => {
@@ -629,7 +625,7 @@ describe('CsvExportService', () => {
       expect(mockCloudStorageApiService.getSignedUrl).not.toHaveBeenCalled();
 
       expect(mockCsvService.toCsv).toHaveBeenCalledWith(
-        [convertRawToTransactionExport(mockTransactionExportRaw)],
+        [transformTransactionExport(mockTransactionExport)],
         expect.any(PassThrough),
         expect.anything(),
       );

@@ -6,7 +6,7 @@ import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { transactionExportRawBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
+import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { getAddress } from 'viem';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
@@ -48,7 +48,7 @@ describe('ExportApi', () => {
 
   describe('export', () => {
     it('should return export data', async () => {
-      const txnExport = transactionExportRawBuilder().build();
+      const txnExport = transactionExportBuilder().build();
       const page = pageBuilder().with('results', [txnExport]).build();
 
       const executionDateGte = faker.date.past().toISOString();
@@ -94,7 +94,7 @@ describe('ExportApi', () => {
     });
 
     it('should return export data with only safeAddress', async () => {
-      const txnExport = transactionExportRawBuilder().build();
+      const txnExport = transactionExportBuilder().build();
       const page = pageBuilder().with('results', [txnExport]).build();
 
       const exportUrl = `${baseUrl}/api/v1/safes/${txnExport.safe}/export/`;
