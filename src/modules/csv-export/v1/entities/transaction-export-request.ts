@@ -21,7 +21,7 @@ export class TransactionExportDto {
 
   @ApiProperty({
     required: false,
-    description: 'Number of transactions to skip',
+    description: 'Number of transactions to start from',
   })
   offset?: number;
 }

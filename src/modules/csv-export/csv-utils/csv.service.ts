@@ -5,7 +5,7 @@ import { pipeline } from 'stream/promises';
 
 export interface CsvOptions extends Options {
   header?: boolean;
-  columns?: Array<string> | Array<ColumnOption>;
+  columns?: Array<ColumnOption>;
 }
 
 @Injectable()
@@ -36,9 +36,9 @@ export class CsvService {
 
   private resolveColumns<T extends Record<string, unknown>>(
     data: Array<T>,
-    optColumns?: Array<string> | Array<ColumnOption>,
-  ): Array<string> | Array<ColumnOption> {
+    optColumns?: Array<ColumnOption>,
+  ): Array<ColumnOption> {
     if (optColumns?.length) return optColumns;
-    return Object.keys(data?.[0] ?? {});
+    return Object.keys(data?.[0] ?? {}).map((key) => ({ key }));
   }
 }

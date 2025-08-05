@@ -68,7 +68,9 @@ describe('CsvExportService', () => {
       { name, age },
     ];
 
-    const csv = await collectCsv(data, { columns: ['age', 'name'] });
+    const csv = await collectCsv(data, {
+      columns: [{ key: 'age' }, { key: 'name' }],
+    });
 
     const lines = csv.trim().split(/\r?\n/);
     expect(lines[0]).toBe('age,name');
@@ -80,7 +82,9 @@ describe('CsvExportService', () => {
     const data: Array<Record<string, string>> = [];
     const col = faker.string.alpha({ length: 3 });
 
-    const csv = await collectCsv(data, { columns: [col, col] });
+    const csv = await collectCsv(data, {
+      columns: [{ key: col }, { key: col }],
+    });
     expect(csv.trim()).toBe(`${col},${col}`);
   });
 
@@ -151,7 +155,11 @@ describe('CsvExportService', () => {
     ];
 
     const csv = await collectCsv(data, {
-      columns: ['name', 'details.age', 'details.active'],
+      columns: [
+        { key: 'name' },
+        { key: 'details.age' },
+        { key: 'details.active' },
+      ],
     });
 
     const lines = csv.trim().split(/\r?\n/);
@@ -185,7 +193,9 @@ describe('CsvExportService', () => {
     const age = faker.number.int();
     const data: Array<Record<string, string | number>> = [{ id, name, age }];
 
-    const csv = await collectCsv(data, { columns: ['id', 'name'] });
+    const csv = await collectCsv(data, {
+      columns: [{ key: 'id' }, { key: 'name' }],
+    });
     const lines = csv.trim().split(/\r?\n/);
     expect(lines[0]).toBe('id,name');
     expect(lines[1]).toBe(`${id},${name}`);

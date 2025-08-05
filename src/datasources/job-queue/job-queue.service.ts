@@ -15,6 +15,9 @@ export class JobQueueService implements IJobQueueService {
     name: JobTypeName,
     data: T,
   ): Promise<Job<T>> {
-    return await this.queue.add(name, data);
+    const customJobId = crypto.randomUUID();
+    return await this.queue.add(name, data, {
+      jobId: customJobId,
+    });
   }
 }

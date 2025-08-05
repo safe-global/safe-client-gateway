@@ -134,7 +134,7 @@ export class CsvExportService {
       onProgress,
     );
 
-    const fileName = this.generateFileName(timestamp);
+    const fileName = this.generateFileName(chainId, safeAddress, timestamp);
     await this.uploadCsvToStorage(fileName, transactionExports, onProgress);
 
     const downloadUrl = await this.getFileUrl(fileName);
@@ -191,7 +191,7 @@ export class CsvExportService {
         const page = TransactionExportPageSchema.parse(rawPage);
         pageCount++;
 
-        this.loggingService.info({
+        this.loggingService.debug({
           type: LogType.TxnExportFetchRequest,
           chainId,
           safeAddress,
@@ -209,10 +209,23 @@ export class CsvExportService {
         // For subsequent requests, parse the next URL to get new offset/limit
         if (nextUrl) {
           const url = new URL(nextUrl);
-          currentLimit = Number(url.searchParams.get('limit') ?? currentLimit);
-          // If URL doesn't have offset, calculate next offset to ensure progression
+          const params = url.searchParams;
+          const missing = ['limit', 'offset']
+            .filter((p) => !params.get(p))
+            .join(', ');
+
+          if (missing)
+            this.loggingService.warn({
+              type: LogType.TxnExportFetchRequestError,
+              chainId,
+              safeAddress,
+              pageCount,
+              message: `nextUrl is missing required parameter(s): ${missing}. URL: ${nextUrl}`,
+            });
+
+          currentLimit = Number(params.get('limit') ?? currentLimit);
           currentOffset = Number(
-            url.searchParams.get('offset') ?? currentOffset + currentLimit,
+            params.get('offset') ?? currentOffset + currentLimit,
           );
         }
       } catch (error) {
@@ -288,8 +301,12 @@ export class CsvExportService {
     await onProgress(progress);
   }
 
-  private generateFileName(timestamp: number): string {
-    return `${CsvExportService.FILE_NAME}_${timestamp}.csv`;
+  private generateFileName(
+    chainId: string,
+    safeAddress: `0x${string}`,
+    timestamp: number,
+  ): string {
+    return `${CsvExportService.FILE_NAME}_${chainId}_${safeAddress}_${timestamp}.csv`;
   }
 
   private async getFileUrl(fileName: string): Promise<string> {
