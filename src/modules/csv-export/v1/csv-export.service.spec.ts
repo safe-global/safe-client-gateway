@@ -56,7 +56,9 @@ const configurationService = {
 const mockConfigurationService = jest.mocked(configurationService);
 
 const loggingService = {
+  debug: jest.fn(),
   info: jest.fn(),
+  warn: jest.fn(),
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 const mockLoggingService = jest.mocked(loggingService);
@@ -143,7 +145,7 @@ describe('CsvExportService', () => {
       });
 
       expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
-        `transactions_export_${exportArgs.timestamp}.csv`,
+        `transactions_export_${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.timestamp}.csv`,
         expect.any(PassThrough),
         {
           ContentType: 'text/csv',
@@ -318,7 +320,7 @@ describe('CsvExportService', () => {
         expect.anything(),
       );
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           type: expect.any(String),
           chainId: exportArgs.chainId,
@@ -330,7 +332,7 @@ describe('CsvExportService', () => {
         }),
       );
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           type: expect.any(String),
           chainId: exportArgs.chainId,
@@ -342,7 +344,7 @@ describe('CsvExportService', () => {
         }),
       );
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           type: expect.any(String),
           chainId: exportArgs.chainId,
@@ -389,9 +391,10 @@ describe('CsvExportService', () => {
     });
 
     it('should calculate next offset/limit when URL has no parameters', async () => {
+      const nextUrl = 'https://api.example.com/export?limit=25';
       const mockPage1 = pageBuilder()
         .with('results', [mockTransactionExport])
-        .with('next', 'https://api.example.com/export?limit=25')
+        .with('next', nextUrl)
         .with('count', 2)
         .build();
 
@@ -431,6 +434,16 @@ describe('CsvExportService', () => {
         limit: 25, // From URL
         offset: exportArgs.offset + 25, // Calculated based on initial request + new limit
       });
+
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: expect.any(String),
+          chainId: exportArgs.chainId,
+          safeAddress: exportArgs.safeAddress,
+          pageCount: 1,
+          message: `nextUrl is missing required parameter(s): offset. URL: ${nextUrl}`,
+        }),
+      );
     });
 
     it('should log and throw error when individual page fails', async () => {
@@ -481,7 +494,7 @@ describe('CsvExportService', () => {
       expect(result).toBe(expectedSignedUrl);
 
       expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
-        `transactions_export_${exportArgsWithoutDates.timestamp}.csv`,
+        `transactions_export_${exportArgsWithoutDates.chainId}_${exportArgsWithoutDates.safeAddress}_${exportArgsWithoutDates.timestamp}.csv`,
         expect.any(PassThrough),
         {
           ContentType: 'text/csv',
@@ -512,7 +525,7 @@ describe('CsvExportService', () => {
       expect(result).toBe(expectedSignedUrl);
 
       expect(mockCloudStorageApiService.uploadStream).toHaveBeenCalledWith(
-        `transactions_export_${exportArgsPartialDates.timestamp}.csv`,
+        `transactions_export_${exportArgsPartialDates.chainId}_${exportArgsPartialDates.safeAddress}_${exportArgsPartialDates.timestamp}.csv`,
         expect.any(PassThrough),
         {
           ContentType: 'text/csv',
@@ -565,7 +578,7 @@ describe('CsvExportService', () => {
     let csvRow: string = '';
     const csvHeader = 'id,chainId,type,timestamp';
     const localBaseDir = 'assets/csv-export';
-    const fileName = `transactions_export_${exportArgs.timestamp}.csv`;
+    const fileName = `transactions_export_${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.timestamp}.csv`;
 
     beforeEach(async () => {
       jest.resetAllMocks();
