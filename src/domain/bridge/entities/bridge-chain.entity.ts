@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const BridgeChainSchema = z.object({
   id: z.coerce.string(),
-  diamondAddress: AddressSchema,
+  diamondAddress: AddressSchema.optional(),
 });
 
 export type BridgeChain = z.infer<typeof BridgeChainSchema>;

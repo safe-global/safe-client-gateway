@@ -35,4 +35,40 @@ describe('BridgeChainSchema', () => {
       getAddress(nonChecksummedAddress),
     );
   });
+
+  it('should allow diamondAddress to be undefined', () => {
+    const bridgeChain = bridgeChainBuilder()
+      .with('diamondAddress', undefined)
+      .build();
+
+    const result = BridgeChainSchema.safeParse(bridgeChain);
+
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.diamondAddress).toBeUndefined();
+  });
+
+  it('should allow diamondAddress to be omitted', () => {
+    const bridgeChain = {
+      id: faker.string.numeric(),
+    };
+
+    const result = BridgeChainSchema.safeParse(bridgeChain);
+
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.diamondAddress).toBeUndefined();
+  });
+
+  it('should reject invalid diamondAddress format', () => {
+    const invalidAddress = 'invalid-address';
+    const bridgeChain = bridgeChainBuilder()
+      .with('diamondAddress', invalidAddress as `0x${string}`)
+      .build();
+
+    const result = BridgeChainSchema.safeParse(bridgeChain);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Invalid address');
+    }
+  });
 });
