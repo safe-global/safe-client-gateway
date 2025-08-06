@@ -9,6 +9,7 @@ export interface ICacheService {
     cacheDir: CacheDir,
     value: string,
     expireTimeSeconds: number | undefined,
+    expireDeviatePercent?: number,
   ): Promise<void>;
 
   hGet(cacheDir: CacheDir): Promise<string | undefined>;
@@ -18,11 +19,13 @@ export interface ICacheService {
   increment(
     cacheKey: string,
     expireTimeSeconds: number | undefined,
+    expireDeviatePercent?: number,
   ): Promise<number>;
 
   setCounter(
     key: string,
     value: number,
     expireTimeSeconds: number | undefined,
+    expireDeviatePercent?: number,
   ): Promise<void>;
 }
