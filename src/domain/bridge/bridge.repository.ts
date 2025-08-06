@@ -20,12 +20,13 @@ export class BridgeRepository implements IBridgeRepository {
     const result = await api.getChains();
     const { chains } = BridgeChainPageSchema.parse(result);
     const chain = chains.find((chain) => {
-      return chain.id === chainId;
+      return chain.id === chainId && chain.diamondAddress;
     });
 
-    if (!chain) {
+    if (!chain || !chain.diamondAddress) {
       throw new NotFoundException(`Chain not found. chainId=${chainId}`);
     }
+
     return chain.diamondAddress;
   }
 
