@@ -190,6 +190,7 @@ export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {
       // Buffer ensures token is not cached beyond expiration if caching took time
       data.expires_in -
         FirebaseCloudMessagingApiService.OAuth2TokenTtlBufferInSeconds,
+      0,
     );
 
     return data.access_token;
