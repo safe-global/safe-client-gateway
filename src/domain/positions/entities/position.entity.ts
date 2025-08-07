@@ -8,7 +8,14 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 
 enum PositionType {
   deposit = 1,
-  unknown = 2,
+  loan = 2,
+  locked = 3,
+  staked = 4,
+  reward = 5,
+  wallet = 6,
+  airdrop = 7,
+  margin = 8,
+  unknown = 9,
 }
 
 export type Position = z.infer<typeof PositionSchema>;

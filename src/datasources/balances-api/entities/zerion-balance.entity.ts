@@ -65,7 +65,19 @@ export const ZerionAttributesSchema = z.object({
   fungible_info: ZerionFungibleInfoSchema,
   flags: ZerionFlagsSchema,
   protocol: z.string().nullish().default(null),
-  position_type: z.enum(['deposit', 'unknown']).catch('unknown'),
+  position_type: z
+    .enum([
+      'deposit',
+      'loan',
+      'locked',
+      'staked',
+      'reward',
+      'wallet',
+      'airdrop',
+      'margin',
+      'unknown',
+    ])
+    .catch('unknown'),
 });
 
 export const ZerionBalanceSchema = z.object({
